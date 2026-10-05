@@ -75,11 +75,30 @@ deploy:
 oss-tree:
 	@./scripts/oss-tree.sh
 
+# oss-publish puts the current release on the public repo (guregodevo/memdoor-oss):
+# the oss-tree laid over a clone of it, one commit named after the version, a tag,
+# pushed (scripts/oss-publish.sh). Private commit messages never travel.
+oss-publish:
+	@./scripts/oss-publish.sh
+
 # github-protect sets the repository's rules on GitHub: squash-only, main behind
 # a PR that CI passed and the code owner approved, no force push, fork PR runs
 # wait for approval. Run after the repo is public (scripts/github-protect.sh).
 github-protect:
 	@./scripts/github-protect.sh
+
+# metrics prints adoption from the prod access log (installs, active installs,
+# landing visitors), accounts and seats, GitHub stars/views/clones and the HN
+# post, and saves a snapshot under .memdoor/metrics/.
+metrics:
+	@mkdir -p .memdoor/metrics && ./scripts/metrics.sh | tee .memdoor/metrics/$$(date +%Y-%m-%dT%H%M).txt
+
+# rollback puts the previous release back on memdoor.ai (scripts/rollback.sh);
+# releases lists what the deploys kept.
+rollback:
+	@./scripts/rollback.sh
+releases:
+	@. ./.envrc && ssh $$VPS_HOST 'ls -1t /var/lib/memdoor/releases 2>/dev/null || echo none'
 
 # rotate-admin rotates the prod admin password through the API (owner-run:
 # needs your admin session; see scripts/rotate-admin.sh).

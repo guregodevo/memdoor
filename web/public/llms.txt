@@ -1,6 +1,6 @@
 # Memdoor
 
-> An AI coding agent in your terminal that runs on your own API key, with a decision model that cuts what it reads, and workflows: your steps run as a checked, resumable graph with a gate for you. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
+> An open-source AI coding agent in your terminal that runs on your own API key, with a decision model that cuts what it reads, and workflows: your steps run as a checked, resumable graph with a gate for you. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
 
 ## What it is
 
@@ -41,6 +41,7 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 
 ## Links
 
+- Source (Apache 2.0): https://github.com/guregodevo/memdoor-oss
 - Home: https://memdoor.ai
 - Docs: https://memdoor.ai/docs/getting-started
 - Features, with the comparison to other coding agents: https://memdoor.ai/features

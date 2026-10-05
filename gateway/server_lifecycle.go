@@ -526,7 +526,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 		w.Header().Set("Cache-Control", "no-cache")
 		_, _ = w.Write(indexHTML)
 	}
-	staticFS := http.FileServer(http.FS(distFS))
+	staticFS := newGzipStatic(distFS, http.FileServer(http.FS(distFS)))
 
 	// SPA routes - serve the React app's index.html for client-side routing
 	for _, route := range []string{"/login", "/verify-email", "/forgot-password", "/reset-password", "/pricing", "/extension", "/extension/install", "/extension/connect"} {
