@@ -1,0 +1,111 @@
+{
+  "auth": {
+    "login": "लॉगिन",
+    "register": "पंजीकरण",
+    "logout": "लॉगआउट",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "name": "नाम",
+    "username": "उपयोगकर्ता नाम",
+    "createAccount": "खाता बनाएं",
+    "loginFailed": "लॉगिन विफल",
+    "registrationFailed": "पंजीकरण विफल",
+    "noAccount": "खाता नहीं है?",
+    "hasAccount": "पहले से खाता है?",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "न्यूनतम 8 अक्षर",
+    "namePlaceholder": "आपका प्रदर्शित नाम",
+    "usernamePlaceholder": "उपयोगकर्ता नाम चुनें"
+  },
+  "sidebar": {
+    "channels": "चैनल",
+    "directMessages": "सीधे संदेश",
+    "agents": "एजेंट",
+    "threads": "थ्रेड्स",
+    "admin": "व्यवस्थापक",
+    "createChannel": "चैनल बनाएं",
+    "searchChannels": "चैनल खोजें..."
+  },
+  "chat": {
+    "typeMessage": "संदेश लिखें...",
+    "send": "भेजें",
+    "reply": "उत्तर दें",
+    "thread": "थ्रेड",
+    "editMessage": "संदेश संपादित करें",
+    "deleteMessage": "संदेश हटाएं",
+    "noMessages": "अभी तक कोई संदेश नहीं",
+    "loadMore": "और लोड करें",
+    "connected": "जुड़ा हुआ",
+    "disconnected": "डिस्कनेक्ट",
+    "reconnecting": "पुनः कनेक्ट हो रहा है...",
+    "mentionUser": "उपयोगकर्ता या एजेंट का उल्लेख करें",
+    "searchAll": "सभी संदेशों में खोजें...",
+    "searchConversation": "इस बातचीत में खोजें...",
+    "searchIn": "#{{channel}} में खोजें...",
+    "searchMessages": "संदेश खोजें..."
+  },
+  "channel": {
+    "createChannel": "चैनल बनाएं",
+    "channelName": "चैनल का नाम",
+    "description": "विवरण",
+    "makePrivate": "निजी बनाएं",
+    "privateHint": "केवल आमंत्रित सदस्य ही इस चैनल को देख सकते हैं",
+    "create": "बनाएं",
+    "cancel": "रद्द करें",
+    "details": "चैनल विवरण",
+    "members": "सदस्य",
+    "addMember": "सदस्य जोड़ें",
+    "removeMember": "सदस्य हटाएं",
+    "loadingMembers": "सदस्य लोड हो रहे हैं...",
+    "joinChannel": "चैनल में शामिल हों",
+    "leaveChannel": "चैनल छोड़ें",
+    "noChannels": "कोई चैनल नहीं मिला"
+  },
+  "agent": {
+    "agents": "एजेंट",
+    "active": "सक्रिय",
+    "inactive": "निष्क्रिय",
+    "model": "मॉडल",
+    "skills": "कौशल",
+    "tools": "उपकरण",
+    "noAgents": "कोई एजेंट उपलब्ध नहीं"
+  },
+  "admin": {
+    "title": "व्यवस्थापक पैनल",
+    "users": "उपयोगकर्ता",
+    "role": "भूमिका",
+    "actions": "कार्रवाइयां",
+    "memberRole": "सदस्य",
+    "adminRole": "व्यवस्थापक",
+    "workspaceSettings": "कार्यक्षेत्र सेटिंग्स",
+    "defaultLanguage": "डिफ़ॉल्ट भाषा",
+    "defaultLanguageHint": "सभी उपयोगकर्ताओं के लिए डिफ़ॉल्ट भाषा। उपयोगकर्ता भाषा स्विचर से बदल सकते हैं।",
+    "settingsSaved": "सेटिंग्स सहेजी गईं"
+  },
+  "common": {
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें",
+    "delete": "हटाएं",
+    "edit": "संपादित करें",
+    "close": "बंद करें",
+    "loading": "लोड हो रहा है...",
+    "error": "त्रुटि",
+    "success": "सफलता",
+    "search": "खोजें",
+    "noResults": "कोई परिणाम नहीं मिला",
+    "retry": "पुनः प्रयास करें"
+  },
+  "landing": {
+    "title": "एजेंट मिलकर काम कर रहे हैं",
+    "subtitle": "मल्टी-एजेंट सहयोग मंच",
+    "agentToAgent": "एजेंट से एजेंट",
+    "getStarted": "शुरू करें",
+    "stats": {
+      "agents": "एजेंट",
+      "channels": "चैनल",
+      "messages": "संदेश",
+      "users": "उपयोगकर्ता"
+    }
+  }
+}

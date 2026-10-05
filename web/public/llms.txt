@@ -1,0 +1,51 @@
+# Memdoor
+
+> An AI coding agent in your terminal that runs on your own API key, with a decision model that cuts what it reads, and workflows: your steps run as a checked, resumable graph with a gate for you. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
+
+## What it is
+
+Memdoor reads your files, writes patches, runs the build and fixes what it broke, in the directory you launch it from (`memdoor tui`). Every model call is on your own account: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or a company AI gateway (`memdoor connect`, or export the key). Memdoor adds nothing to the bill and your code does not pass through memdoor.ai.
+
+A decision model (Jev, by TypeSafe) sits in front of the chat model and answers typed questions with a calibrated probability in under half a second. The harness acts on the answers:
+
+- Judged reads: search hits, file sections and log lines are scored against the task; only what counts reaches the model.
+- A toolbox sized to the turn: only the tools the request needs are sent (schemas were 37% of an edit turn's input when measured).
+- A stop instead of a cap: a turn that stops making progress ends with what it has.
+- `/model` pins any tool-capable model of a connected provider at its list price.
+
+Measured over 20 paired runs (same tasks, decisions off and on, alternating): 49% fewer input tokens on a question about the codebase, 26% fewer on an edit that had to compile and pass a test; all 20 answers right, every edit green under `go test` and `go vet`.
+
+## Workflows
+
+Describe the steps and the coder writes a workflow: one YAML per task in `.memdoor/workflows/<name>/steps/`, run as a DAG by mario. Task kinds: `command` (a shell line; its exit code is the proof), `llm` (one model call), `agent` (a turn of the coder). Independent tasks run in parallel. A task is done when its target exists (a file, a command that exits 0); a target already true is skipped. An `external: true` task is a gate: the run waits until a person approves (`a` in /workflow, `memdoor workflow approve <run> <task>`). A failed run resumes at the failed step. `memdoor cron add --workflow <name>` runs one on your local cron. The catalog at /workflows lists workflows that exist as files and have run, each with a recording: ship, review, tui-check, issue-to-pr, release-check, digest, karpathy-recipe.
+
+## Remote control (Pro)
+
+`/remote` in the TUI prints a link and a QR code. The page it opens on a phone is the terminal itself, running on your computer; screen and keystrokes are end-to-end encrypted, the relay on memdoor.ai forwards what it cannot read. `/remote off` revokes the link.
+
+## Price
+
+- Free: the agent, the decision model (on an OpenRouter key or a decision key) and workflows with local schedules, on your own key.
+- Pro, $10/month: remote control through the memdoor.ai relay, and every workflow run's state kept on memdoor.ai, one table per workspace, so a workflow can wait on a task another workflow produced, from any machine; `memdoor workflow history` answers from anywhere. Coming: runs with the laptop closed. A seat never supplies a model key. https://memdoor.ai/pricing or `memdoor account subscribe`.
+- Enterprise: the hosted state and the relay served for a company on its own instance or host, people and admins set up by us, invoiced. hello@memdoor.ai.
+
+## Install
+
+```
+curl -fsSL https://memdoor.ai/install.sh | bash
+export OPEN_ROUTER_API_KEY=sk-or-...
+cd your-project && memdoor tui
+```
+
+Windows: `irm https://memdoor.ai/install.ps1 | iex`
+
+## Links
+
+- Home: https://memdoor.ai
+- Docs: https://memdoor.ai/docs/getting-started
+- Features, with the comparison to other coding agents: https://memdoor.ai/features
+- Workflows: https://memdoor.ai/workflows (catalog), https://memdoor.ai/docs/workflows (guide), https://memdoor.ai/docs/cron (schedules)
+- Remote control: https://memdoor.ai/docs/remote
+- Installer (plain shell, SHA-256 verified): https://memdoor.ai/install.sh
+- Pricing: https://memdoor.ai/pricing
+- Enterprise: hello@memdoor.ai

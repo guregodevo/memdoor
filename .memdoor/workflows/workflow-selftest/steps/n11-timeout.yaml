@@ -1,0 +1,11 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=n11-timeout; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  s=$(./t.sh run n11-timeout)
+  echo "$s" | grep -q "timed out after 3s" && [ ! -f SLOW.txt ] && pass "stopped at its timeout, said so, wrote nothing" || fail "$(echo "$s" | grep -E 'killed|timed' | head -1)"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/n11-timeout.txt"
+timeout: 3m

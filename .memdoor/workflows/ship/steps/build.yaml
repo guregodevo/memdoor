@@ -1,0 +1,6 @@
+type: command
+command: |
+  make build
+requires:
+  - table_pattern: clean
+timeout: 10m

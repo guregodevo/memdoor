@@ -1,0 +1,11 @@
+# Copy this file to .envrc and adjust if needed.
+# Then run: source .envrc
+#
+# Every model call runs on your own provider key; there is no local model.
+# export OPEN_ROUTER_API_KEY="sk-or-..."   # or ANTHROPIC_API_KEY, …; or memdoor connect
+
+# Email provider (resend | smtp | local | console)
+export EMAIL_PROVIDER="local"
+export RESEND_API_KEY="re_your_api_key_here"
+export EMAIL_FROM="noreply@memdoor.ai"
+export EMAIL_FROM_NAME="Memdoor"

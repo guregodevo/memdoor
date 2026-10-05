@@ -1,0 +1,111 @@
+{
+  "auth": {
+    "login": "Войти",
+    "register": "Регистрация",
+    "logout": "Выйти",
+    "email": "Электронная почта",
+    "password": "Пароль",
+    "name": "Имя",
+    "username": "Имя пользователя",
+    "createAccount": "Создать аккаунт",
+    "loginFailed": "Ошибка входа",
+    "registrationFailed": "Ошибка регистрации",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Минимум 8 символов",
+    "namePlaceholder": "Ваше отображаемое имя",
+    "usernamePlaceholder": "Выберите имя пользователя"
+  },
+  "sidebar": {
+    "channels": "Каналы",
+    "directMessages": "Сообщения",
+    "agents": "Агенты",
+    "threads": "Темы",
+    "admin": "Админ",
+    "createChannel": "Создать канал",
+    "searchChannels": "Поиск каналов..."
+  },
+  "chat": {
+    "typeMessage": "Введите сообщение...",
+    "send": "Отправить",
+    "reply": "Ответить",
+    "thread": "Тема",
+    "editMessage": "Редактировать сообщение",
+    "deleteMessage": "Удалить сообщение",
+    "noMessages": "Сообщений пока нет",
+    "loadMore": "Загрузить ещё",
+    "connected": "Подключено",
+    "disconnected": "Отключено",
+    "reconnecting": "Переподключение...",
+    "mentionUser": "Упомянуть пользователя или агента",
+    "searchAll": "Поиск по всем сообщениям...",
+    "searchConversation": "Поиск в этом разговоре...",
+    "searchIn": "Поиск в #{{channel}}...",
+    "searchMessages": "Поиск сообщений..."
+  },
+  "channel": {
+    "createChannel": "Создать канал",
+    "channelName": "Название канала",
+    "description": "Описание",
+    "makePrivate": "Сделать приватным",
+    "privateHint": "Только приглашённые участники могут видеть этот канал",
+    "create": "Создать",
+    "cancel": "Отмена",
+    "details": "Детали канала",
+    "members": "Участники",
+    "addMember": "Добавить участника",
+    "removeMember": "Удалить участника",
+    "loadingMembers": "Загрузка участников...",
+    "joinChannel": "Присоединиться",
+    "leaveChannel": "Покинуть канал",
+    "noChannels": "Каналы не найдены"
+  },
+  "agent": {
+    "agents": "Агенты",
+    "active": "Активен",
+    "inactive": "Неактивен",
+    "model": "Модель",
+    "skills": "Навыки",
+    "tools": "Инструменты",
+    "noAgents": "Нет доступных агентов"
+  },
+  "admin": {
+    "title": "Панель администратора",
+    "users": "Пользователи",
+    "role": "Роль",
+    "actions": "Действия",
+    "memberRole": "Участник",
+    "adminRole": "Администратор",
+    "workspaceSettings": "Настройки рабочего пространства",
+    "defaultLanguage": "Язык по умолчанию",
+    "defaultLanguageHint": "Язык по умолчанию для всех пользователей. Пользователи могут изменить его через переключатель языка.",
+    "settingsSaved": "Настройки сохранены"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "close": "Закрыть",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "search": "Поиск",
+    "noResults": "Ничего не найдено",
+    "retry": "Повторить"
+  },
+  "landing": {
+    "title": "Агенты работают вместе",
+    "subtitle": "Платформа совместной работы агентов",
+    "agentToAgent": "Агент к агенту",
+    "getStarted": "Начать",
+    "stats": {
+      "agents": "Агенты",
+      "channels": "Каналы",
+      "messages": "Сообщения",
+      "users": "Пользователи"
+    }
+  }
+}

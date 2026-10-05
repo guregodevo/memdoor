@@ -1,0 +1,11 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p2-output; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  ./t.sh run p2-output >/dev/null; got=$(cat .memdoor/runs/p2-output/steps/say/* 2>/dev/null | tr -d '\n')
+  case "$got" in *"42 | the made answer"*) pass "both answers reached the llm step";; *) fail "llm said: $got";; esac
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p2-output.txt"
+timeout: 10m

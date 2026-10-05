@@ -1,0 +1,9 @@
+type: command
+command: |
+  sc="$(command -v staticcheck || true)"
+  [ -x "$sc" ] || sc="$(go env GOPATH)/bin/staticcheck"
+  [ -x "$sc" ] || sc="go run honnef.co/go/tools/cmd/staticcheck@2026.1"
+  $sc -checks U1000 ./gateway/... ./pkg/... ./tools/... ./cmd/...
+requires:
+  - table_pattern: clean
+timeout: 15m

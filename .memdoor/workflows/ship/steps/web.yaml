@@ -1,0 +1,6 @@
+type: command
+command: |
+  cd web && npx tsc -b
+requires:
+  - table_pattern: clean
+timeout: 10m

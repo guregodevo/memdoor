@@ -1,0 +1,4 @@
+type: command
+command: echo one > ONE.txt
+target:
+  file: ONE.txt

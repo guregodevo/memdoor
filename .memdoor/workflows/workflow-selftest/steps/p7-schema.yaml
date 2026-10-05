@@ -1,0 +1,11 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p7-schema; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  ./t.sh run p7-schema >/dev/null; got=$(cat .memdoor/runs/p7-schema/steps/facts/* 2>/dev/null)
+  echo "$got" | python3 -c 'import json,sys; d=json.loads(sys.stdin.read()); assert isinstance(d["files"],int)' 2>/dev/null && pass "schema-valid answer: $got" || fail "answer: $got"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p7-schema.txt"
+timeout: 10m

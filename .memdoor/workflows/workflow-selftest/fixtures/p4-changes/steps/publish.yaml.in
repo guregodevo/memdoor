@@ -1,0 +1,8 @@
+type: command
+command: cp GREETING.md PUBLISHED.md
+requires:
+  - table_pattern: draft
+  - table_pattern: review
+    external: true
+target:
+  file: PUBLISHED.md

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memdoor — AI coding agent in your terminal, on your own API key</title>
+    <meta name="description" content="A coding agent for the terminal on your own API key (OpenRouter, Anthropic, OpenAI…). Describe the steps; it runs them as a checked, resumable workflow. Free." />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://memdoor.ai" />
+    <link rel="canonical" href="https://memdoor.ai/" />
+    <meta property="og:title" content="Memdoor — AI coding agent in your terminal, on your own API key" />
+    <meta property="og:description" content="A coding agent for the terminal on your own API key (OpenRouter, Anthropic, OpenAI…). Describe the steps; it runs them as a checked, resumable workflow. Free." />
+    <meta property="og:image" content="https://memdoor.ai/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Memdoor" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Memdoor — AI coding agent in your terminal, on your own API key" />
+    <meta name="twitter:description" content="A coding agent for the terminal on your own API key (OpenRouter, Anthropic, OpenAI…). Describe the steps; it runs them as a checked, resumable workflow. Free." />
+    <meta name="twitter:image" content="https://memdoor.ai/og-image.png" />
+
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="msvalidate.01" content="1459DAF135A0EA34F991D25DA8CB4076" />
+
+    <!-- The #root prerendered fallback below is for crawlers / curl / LLM
+         agents that read raw HTML (they don't apply CSS, so they still get
+         the text). Real browsers must NOT paint it: the JS bundle is large
+         enough that, without this, the marketing fallback flashes on screen
+         before React mounts and swaps in the requested page. This inline
+         style lives in <head> so it's parsed before the body paints — zero
+         flash. React clears #root on mount, so the rule is moot afterward. -->
+    <style>.prerender-fallback { display: none !important; }</style>
+
+    <!-- Structured data — helps agents and search engines classify the product. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Memdoor",
+      "description": "A coding agent for the terminal on your own API key (OpenRouter, Anthropic, OpenAI…). Describe the steps; it runs them as a checked, resumable workflow. Free. Pro ($10/month) adds remote control from a phone and workflow state kept on memdoor.ai.",
+      "image": "https://memdoor.ai/og-image.png",
+      "author": { "@type": "Organization", "name": "Memdoor", "url": "https://memdoor.ai" },
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS, Linux, Windows",
+      "url": "https://memdoor.ai",
+      "downloadUrl": "https://memdoor.ai/install.sh",
+      "offers": [
+        { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free — the agent, the decision model and workflows on your own provider key" },
+        { "@type": "Offer", "price": "10", "priceCurrency": "USD", "name": "Pro — remote control and workflows across machines, per month" }
+      ]
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <!--
+        Prerendered fallback for crawlers, curl, and LLM agents fetching the raw HTML.
+        React replaces this on mount in real browsers, so end users never see it.
+        Keep this in sync with /llms.txt and the binary's `memdoor --help` output.
+      -->
+      <main class="prerender-fallback" style="max-width:720px;margin:2rem auto;padding:0 1rem;font-family:system-ui,sans-serif;line-height:1.5;color:#171717">
+        <h1>Memdoor: an AI coding agent in your terminal, on your own API key</h1>
+        <p>Memdoor reads your files, writes patches, runs the build and fixes what it broke, on your own account at OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq or xAI. A decision model in front of the chat model keeps what it reads to what the task needs: 49% fewer input tokens on a question about a codebase, 26% fewer on an edit, measured over twenty paired runs with every answer right.</p>
+        <p>Describe the steps and it builds a workflow: one task file per step, run as a graph. Independent steps run in parallel, a step is done when its file exists or its command passes, a gate waits for your approval, and a failed run resumes at the failed step. Workflows run by hand or on your local cron.</p>
+        <p>Free: the agent, the decision model and workflows. Pro, $10 a month: remote control from your phone (the page is your terminal, end-to-end encrypted) and workflow state kept on memdoor.ai so a workflow can wait on what another produced, from any machine. Every model call is on your own key.</p>
+        <h2>Install (macOS, Linux, Windows)</h2>
+        <pre style="background:#171717;color:#fafafa;padding:1rem;border-radius:8px;overflow-x:auto"><code>curl -fsSL https://memdoor.ai/install.sh | bash
+export OPEN_ROUTER_API_KEY=sk-or-...
+cd your-project &amp;&amp; memdoor tui</code></pre>
+        <p>One binary, no Docker, no Python. <a href="/install.sh">Read the installer</a>. Windows: <code>irm https://memdoor.ai/install.ps1 | iex</code>.</p>
+        <p><a href="/docs/getting-started">Docs</a> · <a href="/workflows">Workflow catalog</a> · <a href="/features">Features</a> · <a href="/pricing">Pricing</a> · <a href="/llms.txt">llms.txt</a></p>
+      </main>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

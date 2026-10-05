@@ -1,0 +1,25 @@
+type: command
+args:
+  prompt: Create a file hello.txt containing the single line hello, then cat it.
+  gateway: http://localhost:18789
+command: |
+  set -e
+  command -v tmux >/dev/null || { echo "tmux is required"; exit 1; }
+  work="$(mktemp -d /tmp/tui-check.XXXXXX)"; (cd "$work" && git init -q)
+  cap=".memdoor/runs/tui-{{.partition}}.txt"; mkdir -p .memdoor/runs
+  s="tuicheck-{{.partition}}"
+  # HOME is passed in the pane's command: a tmux server already running has
+  # its own environment, and the TUI signed in as the wrong user (live
+  # 2026-10-05: "Couldn't reach the agent: Authentication required").
+  env -u CMUX_WORKSPACE_ID -u CMUX_SOCKET_PATH -u CMUX_BUNDLED_CLI_PATH tmux new-session -d -s "$s" -x 150 -y 46 -c "$work" "HOME='$HOME' MEMDOOR_NO_BROWSER=1 $(pwd)/memdoor --gateway {{.gateway}} tui"
+  trap 'tmux kill-session -t "$s" 2>/dev/null || true' EXIT
+  sleep 12
+  tmux send-keys -t "$s" -l "{{.prompt}}"; tmux send-keys -t "$s" Enter
+  sleep 8
+  for i in $(seq 1 60); do tmux capture-pane -t "$s" -p | grep -q "esc to interrupt" || break; sleep 3; done
+  sleep 3
+  tmux capture-pane -t "$s" -p -S -200 > "$cap"
+  echo "work dir: $work" >> "$cap"
+  if grep -q "Couldn't reach the agent" "$cap"; then cat "$cap"; echo "the TUI never reached the agent"; exit 1; fi
+  echo "screen kept in $cap ($(wc -l < "$cap") lines), project $work"
+timeout: 10m

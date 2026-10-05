@@ -1,0 +1,17 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p4-changes; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  s=$(./t.sh run p4-changes); id=$(./t.sh id p4-changes "$s"); first=$(cat GREETING.md 2>/dev/null)
+  echo "$s" | grep -q "· waiting ·" || { fail "no review gate: $(echo "$s" | head -1)"; exit 0; }
+  n8=$($M workflow changes $id ghost anything 2>&1)
+  $M workflow changes $id draft "write the greeting in French" >/dev/null 2>&1
+  for i in $(seq 1 100); do [ "$(cat GREETING.md)" != "$first" ] && $M workflow status $id 2>&1 | head -1 | grep -q "· waiting ·" && break; sleep 3; done
+  second=$(cat GREETING.md); [ -f PUBLISHED.md ] && { fail "published before approval"; exit 0; }
+  $M workflow approve $id review >/dev/null 2>&1; s=$(./t.sh wait $id)
+  echo "$s" | grep -q "· done ·" && [ "$second" != "$first" ] && [ "$(cat PUBLISHED.md)" = "$second" ] && echo "$n8" | grep -q "has no task ghost" && pass "sent back, rewritten ('$second'), gate again, published" || fail "n8='$n8' first='$first' second='$second'"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p4-changes.txt"
+timeout: 10m

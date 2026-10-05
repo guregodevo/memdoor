@@ -1,0 +1,13 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p6-partition; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  ./t.sh run p6-partition today >/dev/null; f=OUT-$(date +%Y-%m-%d).txt
+  [ -f "$f" ] || { fail "no $f"; exit 0; }
+  m1=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f"); sleep 2; ./t.sh run p6-partition today >/dev/null; m2=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f")
+  [ "$m1" = "$m2" ] && pass "named partition in the file; a rerun skipped it" || fail "the rerun rewrote $f"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p6-partition.txt"
+timeout: 10m

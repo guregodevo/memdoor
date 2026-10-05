@@ -1,0 +1,263 @@
+*** Begin Patch
+*** Update File: cmd/cli/cmd/tui_remote.go
+@@
+ import (
+ 	"bytes"
+ 	"crypto/aes"
+ 	"crypto/cipher"
+ 	"crypto/rand"
+@@
+ 	"github.com/mdp/qrterminal/v3"
+ 	"github.com/gorilla/websocket"
+ 	"golang.org/x/crypto/hkdf"
+ )
+*** Update File: cmd/cli/cmd/tui_remote.go
+@@
+ const remoteSiteBase = "https://memdoor.ai"
++
++// remoteRelayEvery bounds how long the terminal waits between reconnect
++// attempts to /api/relay. A backoff, not a tight loop: the gateway being
++// down must not spin the laptop awake.
++const remoteRelayReconnectWait = 5 * time.Second
+*** Update File: cmd/cli/cmd/tui_remote.go
+@@
+ func remoteBrowserVerifier(key string) (string, error) {
+ 	proof, err := remoteBrowserProof(key)
+ 	if err != nil {
+ 		return "", err
+ 	}
+ 	sum := sha256.Sum256([]byte(proof))
+ 	return base64.RawURLEncoding.EncodeToString(sum[:]), nil
+ }
++
++// remoteAEAD builds the session's AES-GCM cipher from the link key.
++func remoteAEAD(key string) (cipher.AEAD, []byte, error) {
++	aeadKey, nonceBase, err := remoteSessionKey(key)
++	if err != nil {
++		return nil, nil, err
++	}
++	block, err := aes.NewCipher(aeadKey)
++	if err != nil {
++		return nil, nil, err
++	}
++	aead, err := cipher.NewGCM(block)
++	if err != nil {
++		return nil, nil, err
++	}
++	return aead, nonceBase, nil
++}
++
++// remoteSeal encrypts one relay payload for the terminal -> browser
++// direction. Nonce = 4 zero bytes (direction tag) || 8-byte big-endian
++// counter; the browser uses the same construction under tag 1, so the two
++// counters never collide and no state is shared between the ends.
++func remoteSeal(aead cipher.AEAD, nonceBase []byte, toBrowser bool, n uint64, plaintext []byte) ([]byte, error) {
++	nonce := remoteNonce(nonceBase, toBrowser, n)
++	return aead.Seal(nil, nonce, plaintext, nil)
++}
++
++// remoteOpen decrypts one relay payload from the browser's direction.
++func remoteOpen(aead cipher.AEAD, nonceBase []byte, n uint64, ciphertext []byte) ([]byte, error) {
++	return aead.Open(nil, remoteNonce(nonceBase, false, n), ciphertext, nil)
++}
++
++// remoteNonce builds one frame's nonce: the HKDF base with the direction in
++// the first byte and the counter in the last eight.
++func remoteNonce(base []byte, toBrowser bool, n uint64) []byte {
++	nonce := make([]byte, 12)
++	copy(nonce, base)
++	if toBrowser {
++		nonce[0] |= 0x01
++	}
++	binary.BigEndian.PutUint64(nonce[4:], n)
++	return nonce
++}
++
++// remoteRelayWire is one frame as it crosses the relay socket: the gateway
++// forwards it verbatim, payload opaque.
++type remoteRelayWire struct {
++	Kind    string          `json:"kind"`
++	Payload json.RawMessage `json:"payload"`
++}
++
++// RemoteRelayClient is the terminal side of the relay: it dials /api/relay
++// with the link's id and the browser verifier, and trades encrypted frames
++// with whatever browser holds the link's key. Events go out (Subscribe), a
++// browser's turns come back (SetTurns). Reconnects forever at a calm
++// interval; the session on the gateway survives a laptop asleep, the
++// sweeper retires only what stays empty for 12h.
++type RemoteRelayClient struct {
++	link   remoteLink
++	token  string
++	events <-chan gateway.AgentEvent
++	turns  chan remoteRelayTurn
++	closed chan struct{}
++	once   sync.Once
++}
++
++// NewRemoteRelayClient starts the terminal side for one conversation's link.
++// events is the TUI's agent-event feed (the websocket adapter's — the same
++// events the screen shows); a channel the caller closes ends the client.
++func NewRemoteRelayClient(link remoteLink, token string, events <-chan gateway.AgentEvent) *RemoteRelayClient {
++	rc := &RemoteRelayClient{
++		link:   link,
++		token:  token,
++		events: events,
++		turns:  make(chan remoteRelayTurn, 8),
++		closed: make(chan struct{}),
++	}
++	go rc.run()
++	return rc
++}
++
++// Turns is where a browser's turns arrive; read it in a goroutine of the
++// caller (the TUI posts each as a chat turn through the poster).
++func (rc *RemoteRelayClient) Turns() <-chan remoteRelayTurn { return rc.turns }
++
++// Close stops the client: no reconnect, no more turns.
++func (rc *RemoteRelayClient) Close() { rc.once.Do(func() { close(rc.closed) }) }
++
++// run connects, pumps events, and reconnects until closed.
++func (rc *RemoteRelayClient) run() {
++	for {
++		select {
++		case <-rc.closed:
++			return
++		default:
++		}
++		if err := rc.connect(); err != nil {
++			select {
++			case <-rc.closed:
++				return
++			case <-time.After(remoteRelayReconnectWait):
++			}
++		}
++	}
++}
++
++// connect dials one relay session and pumps until the socket breaks.
++func (rc *RemoteRelayClient) connect() error {
++	verifier, err := remoteBrowserVerifier(rc.link.Key)
++	if err != nil {
++		return err
++	}
++	wsURL := strings.Replace(remoteSiteBase, "https://", "wss://", 1)
++	wsURL = strings.Replace(wsURL, "http://", "ws://", 1)
++	// A local gateway (the usual dev case) is reached directly, not through
++	// the public site: the relay lives on whatever served the TUI.
++	if base := strings.TrimSuffix(strings.TrimSuffix(gatewayAddr, "/"), ""); gatewayAddr != "" && !strings.HasPrefix(gatewayAddr, "https://memdoor.ai") {
++		u, perr := url.Parse(gatewayAddr)
++		if perr == nil && u.Host != "" {
++			wsURL = "ws://" + u.Host
++			if strings.HasPrefix(gatewayAddr, "https://") {
++				wsURL = "wss://" + u.Host
++			}
++		}
++	}
++	q := url.Values{}
++	q.Set("id", rc.link.ID)
++	q.Set("verifier", verifier)
++	q.Set("token", rc.token)
++	conn, _, err := websocket.DefaultDialer.Dial(wsURL+"/api/relay?"+q.Encode(), nil)
++	if err != nil {
++		return err
++	}
++	defer conn.Close()
++
++	aead, nonceBase, err := remoteAEAD(rc.link.Key)
++	if err != nil {
++		return err
++	}
++
++	// Read side: decrypt browser frames, deliver their turns.
++	go func() {
++		var n uint64
++		for {
++			_, raw, err := conn.ReadMessage()
++			if err != nil {
++				return
++			}
++			var wire remoteRelayWire
++			if json.Unmarshal(raw, &wire) != nil || wire.Kind != "turn" || len(wire.Payload) == 0 {
++				continue
++			}
++			clear, err := remoteOpen(aead, nonceBase, n, wire.Payload)
++			if err != nil {
++				continue // wrong key, replay, or garbage: drop the frame
++			}
++			n++
++			var turn remoteRelayTurn
++			if json.Unmarshal(clear, &turn) == nil {
++				select {
++				case rc.turns <- turn:
++				case <-rc.closed:
++					return
++				}
++			}
++		}
++	}()
++
++	// Write side: seal each agent event as a frame.
++	seq := uint64(time.Now().UnixNano()) // a random-ish start: nonces must never repeat across runs
++	for {
++		select {
++		case <-rc.closed:
++			return nil
++		case ev, ok := <-rc.events:
++			if !ok {
++				return nil
++			}
++			body, err := json.Marshal(remoteRelayFrameData{
++				RunID:     ev.RunID,
++				SessionID: ev.SessionID,
++				Seq:       ev.Seq,
++				Stream:    string(ev.Stream),
++				Data:      ev.Data,
++				Timestamp: ev.Timestamp,
++			})
++			if err != nil {
++				continue
++			}
++			payload, err := remoteSeal(aead, nonceBase, true, seq, body)
++			if err != nil {
++				continue
++			}
++			seq++
++			raw, err := json.Marshal(remoteRelayWire{Kind: "event", Payload: payload})
++			if err != nil {
++				continue
++			}
++			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
++			if err := conn.WriteMessage(websocket.TextMessage, raw); err != nil {
++				return err // socket broke: reconnect and keep streaming
++			}
++		}
++	}
++}
+*** Update File: cmd/cli/cmd/tui_remote.go
+@@
+ import (
+ 	"bytes"
+ 	"crypto/aes"
+ 	"crypto/cipher"
+ 	"crypto/rand"
+ 	"crypto/sha256"
++	"encoding/binary"
+ 	"encoding/base64"
+ 	"encoding/json"
+ 	"fmt"
+ 	"io"
+ 	"net/url"
+ 	"os"
+ 	"path/filepath"
+ 	"strings"
+ 	"sync"
+ 	"time"
+ 
++	"memdoor/gateway"
++
+ 	"github.com/mdp/qrterminal/v3"
+ 	"github.com/gorilla/websocket"
+ 	"golang.org/x/crypto/hkdf"
+ )
+*** End Patch

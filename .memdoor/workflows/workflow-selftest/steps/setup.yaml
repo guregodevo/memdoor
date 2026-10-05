@@ -1,0 +1,11 @@
+type: command
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"
+  F=""; for c in .memdoor/workflows/workflow-selftest/fixtures "$HOME/.memdoor/workflows/workflow-selftest/fixtures"; do [ -d "$c" ] && F=$(cd "$c" && pwd) && break; done
+  [ -n "$F" ] || { echo "fixtures not found"; exit 1; }
+  rm -rf "$T" && mkdir -p "$T/results" && cd "$T" && git init -q && echo selftest > README.md && git add . && git -c user.name=selftest -c user.email=selftest@localhost commit -qm init
+  cp "$F/t.sh" "$T/t.sh" && chmod +x "$T/t.sh"
+  for d in "$F"/*/; do n=$(basename "$d"); mkdir -p ".memdoor/workflows/$n/steps"; cp "$d/README.md" ".memdoor/workflows/$n/"; for f in "$d"/steps/*.in; do b=$(basename "$f" .in); cp "$f" ".memdoor/workflows/$n/steps/$b"; done; done
+  echo "scratch project $T with $(ls .memdoor/workflows | wc -l | tr -d ' ') fixture workflows"
+target:
+  command: test -x "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/t.sh"

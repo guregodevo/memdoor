@@ -1,0 +1,6 @@
+type: command
+command: |
+  printf 'navigate https://memdoor.ai/\nwait 2\nscreenshot .memdoor/runs/ship-home-{{.partition}}.png\n' | ./memdoor chrome run && test -s ".memdoor/runs/ship-home-{{.partition}}.png"
+requires:
+  - table_pattern: verify
+timeout: 3m

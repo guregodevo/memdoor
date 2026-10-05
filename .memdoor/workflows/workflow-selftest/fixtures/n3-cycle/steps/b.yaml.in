@@ -1,0 +1,6 @@
+type: command
+command: echo b > CB.txt
+requires:
+  - table_pattern: a
+target:
+  file: CB.txt

@@ -1,0 +1,8 @@
+# written by memdoor: run outputs, the run table, the rules memdoor keeps and this machine's workspace are never committed; workflows/ is the project's — commit it
+runs/
+runs.db
+runs.db-*
+AGENTS.md
+workspace
+worktrees/
+paste-*.png

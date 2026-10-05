@@ -1,0 +1,5 @@
+type: command
+command: sleep 20 && echo late > SLOW.txt
+target:
+  file: SLOW.txt
+timeout: 3s

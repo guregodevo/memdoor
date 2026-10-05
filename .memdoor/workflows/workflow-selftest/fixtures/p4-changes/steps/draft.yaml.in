@@ -1,0 +1,6 @@
+type: agent
+model: deepseek:deepseek-flash
+prompt: Write GREETING.md with one line greeting the reader in English. Nothing else in the file.
+target:
+  file: GREETING.md
+timeout: 5m

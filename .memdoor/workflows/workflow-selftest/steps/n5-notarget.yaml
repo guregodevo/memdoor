@@ -1,0 +1,11 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=n5-notarget; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  s=$(./t.sh run n5-notarget)
+  echo "$s" | grep -q "· failed ·" && echo "$s" | grep -q "target is not there" && pass "a proof no agent can meet: failed after its retry, said why" || fail "$(echo "$s" | grep "· run " | head -1)"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/n5-notarget.txt"
+timeout: 10m

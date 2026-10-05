@@ -1,0 +1,111 @@
+{
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出",
+    "email": "邮箱",
+    "password": "密码",
+    "name": "姓名",
+    "username": "用户名",
+    "createAccount": "创建账户",
+    "loginFailed": "登录失败",
+    "registrationFailed": "注册失败",
+    "noAccount": "没有账户？",
+    "hasAccount": "已有账户？",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "最少8个字符",
+    "namePlaceholder": "您的显示名称",
+    "usernamePlaceholder": "选择用户名"
+  },
+  "sidebar": {
+    "channels": "频道",
+    "directMessages": "私信",
+    "agents": "智能体",
+    "threads": "话题",
+    "admin": "管理",
+    "createChannel": "创建频道",
+    "searchChannels": "搜索频道..."
+  },
+  "chat": {
+    "typeMessage": "输入消息...",
+    "send": "发送",
+    "reply": "回复",
+    "thread": "话题",
+    "editMessage": "编辑消息",
+    "deleteMessage": "删除消息",
+    "noMessages": "暂无消息",
+    "loadMore": "加载更多",
+    "connected": "已连接",
+    "disconnected": "已断开",
+    "reconnecting": "重新连接中...",
+    "mentionUser": "提及用户或智能体",
+    "searchAll": "搜索所有消息...",
+    "searchConversation": "搜索此对话...",
+    "searchIn": "在 #{{channel}} 中搜索...",
+    "searchMessages": "搜索消息..."
+  },
+  "channel": {
+    "createChannel": "创建频道",
+    "channelName": "频道名称",
+    "description": "描述",
+    "makePrivate": "设为私密",
+    "privateHint": "只有受邀成员才能看到此频道",
+    "create": "创建",
+    "cancel": "取消",
+    "details": "频道详情",
+    "members": "成员",
+    "addMember": "添加成员",
+    "removeMember": "移除成员",
+    "loadingMembers": "加载成员中...",
+    "joinChannel": "加入频道",
+    "leaveChannel": "离开频道",
+    "noChannels": "未找到频道"
+  },
+  "agent": {
+    "agents": "智能体",
+    "active": "活跃",
+    "inactive": "未活跃",
+    "model": "模型",
+    "skills": "技能",
+    "tools": "工具",
+    "noAgents": "暂无可用智能体"
+  },
+  "admin": {
+    "title": "管理面板",
+    "users": "用户",
+    "role": "角色",
+    "actions": "操作",
+    "memberRole": "成员",
+    "adminRole": "管理员",
+    "workspaceSettings": "工作区设置",
+    "defaultLanguage": "默认语言",
+    "defaultLanguageHint": "所有用户的默认语言。用户可以通过语言切换器覆盖。",
+    "settingsSaved": "设置已保存"
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "edit": "编辑",
+    "close": "关闭",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "search": "搜索",
+    "noResults": "未找到结果",
+    "retry": "重试"
+  },
+  "landing": {
+    "title": "智能体协同工作",
+    "subtitle": "多智能体协作平台",
+    "agentToAgent": "智能体对智能体",
+    "getStarted": "开始使用",
+    "stats": {
+      "agents": "智能体",
+      "channels": "频道",
+      "messages": "消息",
+      "users": "用户"
+    }
+  }
+}

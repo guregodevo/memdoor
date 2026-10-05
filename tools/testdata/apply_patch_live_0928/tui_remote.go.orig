@@ -1,0 +1,192 @@
+package cmd
+
+import (
+	"bytes"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/mdp/qrterminal/v3"
+	"golang.org/x/crypto/hkdf"
+)
+
+// REMOTE CONTROL (Greg, 2026-09-28: "remote control"): /remote gives this
+// conversation a link and a QR code to open it on another device, and the
+// TUI runs the terminal side of the relay while the conversation is open.
+//
+// The link is https://memdoor.ai/r/<id>#k=<key>. The id names the
+// conversation to the relay; the key encrypts everything that passes through
+// it, and it sits after "#", the part of a link a browser never sends to a
+// server — so memdoor.ai can carry the session but cannot read it.
+
+const remoteSiteBase = "https://memdoor.ai"
+
+// remoteLink is one conversation's remote identity, kept on this machine so
+// the relay client can find it (~/.memdoor/remote.json).
+type remoteLink struct {
+	ChannelID string    `json:"channel_id"`
+	ID        string    `json:"id"`
+	Key       string    `json:"key"`
+	Created   time.Time `json:"created"`
+}
+
+func remoteLinksPath() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".memdoor", "remote.json")
+}
+
+func loadRemoteLinks() map[string]remoteLink {
+	links := map[string]remoteLink{}
+	if b, err := os.ReadFile(remoteLinksPath()); err == nil {
+		_ = json.Unmarshal(b, &links)
+	}
+	return links
+}
+
+func randomToken(n int) (string, error) {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// remoteLinkFor returns the conversation's link, making one the first time.
+// "off" forgets it, so the old link and key stop meaning anything.
+func remoteLinkFor(channelID string, off bool) (remoteLink, bool, error) {
+	links := loadRemoteLinks()
+	if off {
+		_, had := links[channelID]
+		delete(links, channelID)
+		return remoteLink{}, had, saveRemoteLinks(links)
+	}
+	if l, ok := links[channelID]; ok {
+		return l, true, nil
+	}
+	id, err := randomToken(12)
+	if err != nil {
+		return remoteLink{}, false, err
+	}
+	key, err := randomToken(32) // 256-bit key
+	if err != nil {
+		return remoteLink{}, false, err
+	}
+	l := remoteLink{ChannelID: channelID, ID: id, Key: key, Created: time.Now()}
+	links[channelID] = l
+	return l, false, saveRemoteLinks(links)
+}
+
+func saveRemoteLinks(links map[string]remoteLink) error {
+	b, err := json.MarshalIndent(links, "", "  ")
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(remoteLinksPath()), 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(remoteLinksPath(), b, 0o600) // it holds keys: owner only
+}
+
+func (l remoteLink) url() string {
+	return remoteSiteBase + "/r/" + l.ID + "#k=" + l.Key
+}
+
+// qrText draws a link as a QR code in half-block characters.
+func qrText(link string) string {
+	var buf bytes.Buffer
+	qrterminal.GenerateHalfBlock(link, qrterminal.L, &buf)
+	return strings.TrimRight(buf.String(), "\n")
+}
+
+// tuiRemote answers /remote and /remote off for one conversation.
+func tuiRemote(channelID string) func(arg string) (string, error) {
+	return func(arg string) (string, error) {
+		if strings.TrimSpace(arg) == "off" {
+			_, had, err := remoteLinkFor(channelID, true)
+			if err != nil {
+				return "", err
+			}
+			if !had {
+				return "Remote control was not on for this conversation.", nil
+			}
+			return "Remote control is off: the old link and its key no longer open this conversation.", nil
+		}
+		l, existing, err := remoteLinkFor(channelID, false)
+		if err != nil {
+			return "", err
+		}
+		lead := "Remote control for this conversation — open the link or scan the code:"
+		if existing {
+			lead = "Remote control is on for this conversation — the same link as before:"
+		}
+		return fmt.Sprintf("%s\n\n%s\n\n%s\n\nThe key after # never leaves your devices; memdoor.ai only carries what it cannot read. "+
+			"/remote off revokes the link.", lead, l.url(), qrText(l.url())), nil
+	}
+}
+
+// remoteRelayCiphertext is one relay payload before encryption: what the
+// terminal and the browser trade, always a framed struct. The AEAD wraps it.
+type remoteRelayCleartext struct {
+	Kind string `json:"kind"` // "event" (terminal -> browser) | "turn" (browser -> terminal)
+	Body string `json:"body"` // JSON of remoteRelayFrameData / remoteRelayTurn
+}
+
+// remoteRelayTurn is a browser's turn: the text to send, the permission mode
+// it was typed under, and the question id when it answers a picker.
+type remoteRelayTurn struct {
+	Text           string `json:"text,omitempty"`
+	PermissionMode string `json:"permission_mode,omitempty"`
+	QuestionID     string `json:"question_id,omitempty"`
+	Answer         string `json:"answer,omitempty"`
+	Cancel         bool   `json:"cancel,omitempty"`
+}
+
+// remoteSessionKey derives the AEAD key and the two direction nonces' base
+// from the link key with HKDF-SHA256. The domain-separated labels mean a key
+// reused across two of this product's crypto purposes derives independent
+// subkeys, and each DIRECTION gets its own — so a reflected frame never
+// decrypts on the way back.
+func remoteSessionKey(key string) (aeadKey, nonceBase []byte, err error) {
+	ok := hkdf.Extract(sha256.New, []byte(key), []byte("memdoor/remote-control/v1"))
+	expander := hkdf.Expand(sha256.New, ok, []byte("session"))
+	aeadKey = make([]byte, 32)
+	nonceBase = make([]byte, 12)
+	if _, err = io.ReadFull(expander, aeadKey); err != nil {
+		return nil, nil, err
+	}
+	if _, err = io.ReadFull(expander, nonceBase); err != nil {
+		return nil, nil, err
+	}
+	return aeadKey, nonceBase, nil
+}
+
+// remoteBrowserProof is what a browser shows the relay to join the session:
+// an HKDF subkey of the link key under its own label, so it proves the key
+// without revealing it or the AEAD key. The terminal registers
+// remoteBrowserVerifier (its sha256) when it attaches.
+func remoteBrowserProof(key string) (string, error) {
+	prk := hkdf.Extract(sha256.New, []byte(key), []byte("memdoor/remote-control/v1"))
+	proof := make([]byte, 32)
+	if _, err := io.ReadFull(hkdf.Expand(sha256.New, prk, []byte("browser-auth")), proof); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(proof), nil
+}
+
+// remoteBrowserVerifier is the value the terminal sends as ?verifier= on
+// /api/relay: base64url(sha256(proof)).
+func remoteBrowserVerifier(key string) (string, error) {
+	proof, err := remoteBrowserProof(key)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256([]byte(proof))
+	return base64.RawURLEncoding.EncodeToString(sum[:]), nil
+}

@@ -1,0 +1,155 @@
+package providers
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"memdoor/gateway/logs"
+	"memdoor/pkg/llm"
+)
+
+// responsesSSE writes the Responses API's event stream.
+func responsesSSE(w http.ResponseWriter, events ...string) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	for _, ev := range events {
+		var probe struct {
+			Type string `json:"type"`
+		}
+		_ = json.Unmarshal([]byte(ev), &probe)
+		_, _ = io.WriteString(w, "event: "+probe.Type+"\ndata: "+ev+"\n\n")
+	}
+}
+
+func responsesTestClient(t *testing.T, handler http.HandlerFunc) (LLMClient, func()) {
+	t.Helper()
+	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	old := oaiRetryAfter
+	oaiRetryAfter = []time.Duration{0, 0}
+	srv := httptest.NewServer(handler)
+	return newResponsesClient("pat-123", srv.URL+"/ai", "mytestprovider-slug"), func() { srv.Close(); oaiRetryAfter = old }
+}
+
+// The request is the company gateway's: POST <base>/v1/responses, Bearer
+// token, model = the provider slug, instructions, input items (a user
+// message, the assistant's function_call, its function_call_output), tools
+// as functions — and the reply's message and function_call come back as
+// text and tool_use the agent loop already reads.
+func TestResponsesRequestAndReply(t *testing.T) {
+	t.Setenv("MEMDOOR_VENDOR_HEADERS", "X-Team: data-eng")
+	var got map[string]any
+	var hdr http.Header
+	var path string
+	c, done := responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		hdr, path = r.Header.Clone(), r.URL.Path
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &got)
+		responsesSSE(w,
+			`{"type":"response.created","response":{"id":"resp_1"}}`,
+			`{"type":"response.output_item.added","output_index":0,"item":{"type":"message","id":"msg_1"}}`,
+			`{"type":"response.output_text.delta","output_index":0,"delta":"List"}`,
+			`{"type":"response.output_text.delta","output_index":0,"delta":"ing."}`,
+			`{"type":"response.output_item.added","output_index":1,"item":{"type":"function_call","id":"fc_1","call_id":"call_9","name":"bash"}}`,
+			`{"type":"response.function_call_arguments.delta","output_index":1,"delta":"{\"command\":"}`,
+			`{"type":"response.function_call_arguments.done","output_index":1,"arguments":"{\"command\":\"ls\"}"}`,
+			`{"type":"response.completed","response":{"id":"resp_1","model":"mytestprovider-slug","status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Listing."}]},{"type":"function_call","call_id":"call_9","name":"bash","arguments":"{\"command\":\"ls\"}"}],"usage":{"input_tokens":30,"output_tokens":9}}}`)
+	})
+	defer done()
+	desc := "Run a command"
+	tool := llm.ToolParam{Name: "bash", Description: &desc, InputSchema: llm.ToolInputSchemaParam{Type: "object", Properties: map[string]any{"command": map[string]any{"type": "string"}}}}
+	var deltas []string
+	ctx := llm.WithStreamCallback(context.Background(), func(d string) { deltas = append(deltas, d) })
+	msg, err := c.Messages().New(ctx, llm.MessageNewParams{
+		Model: "ignored", MaxTokens: 300, Agent: "coder",
+		System: []llm.TextBlockParam{{Type: "text", Text: "You are the coder."}},
+		Tools:  []llm.ToolUnionParam{{OfTool: &tool}},
+		Messages: []llm.MessageParam{
+			llm.NewUserMessage(llm.NewTextBlock("ls please")),
+			{Role: llm.MessageParamRoleAssistant, Content: []llm.ContentBlockParamUnion{{OfToolUse: &llm.ToolUseBlockParam{Type: "tool_use", ID: "call_1", Name: "bash", Input: json.RawMessage(`{"command":"ls"}`)}}}},
+			{Role: llm.MessageParamRoleUser, Content: []llm.ContentBlockParamUnion{{OfToolResult: &llm.ToolResultBlockParam{Type: "tool_result", ToolUseID: "call_1", Content: []llm.ToolResultBlockParamContentUnion{{OfText: &llm.TextBlockParam{Type: "text", Text: "a.go"}}}}}}},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(deltas, "|") != "List|ing." || got["stream"] != true {
+		t.Fatalf("text deltas reach the window; the request asks for a stream: %v %v", deltas, got["stream"])
+	}
+	if path != "/ai/v1/responses" || hdr.Get("Authorization") != "Bearer pat-123" || hdr.Get("X-Team") != "data-eng" {
+		t.Fatalf("path %s headers %v", path, hdr)
+	}
+	if got["model"] != "mytestprovider-slug" || got["instructions"] != "You are the coder." || got["max_output_tokens"] != float64(300) {
+		t.Fatalf("model/instructions/max: %v %v %v", got["model"], got["instructions"], got["max_output_tokens"])
+	}
+	in := got["input"].([]any)
+	if len(in) != 3 {
+		t.Fatalf("input items: %d", len(in))
+	}
+	if u := in[0].(map[string]any); u["role"] != "user" || u["content"].([]any)[0].(map[string]any)["type"] != "input_text" {
+		t.Fatalf("user item: %v", u)
+	}
+	if fc := in[1].(map[string]any); fc["type"] != "function_call" || fc["call_id"] != "call_1" || fc["arguments"] != `{"command":"ls"}` {
+		t.Fatalf("function_call item: %v", fc)
+	}
+	if fo := in[2].(map[string]any); fo["type"] != "function_call_output" || fo["call_id"] != "call_1" || fo["output"] != "a.go" {
+		t.Fatalf("function_call_output item: %v", fo)
+	}
+	if tl := got["tools"].([]any)[0].(map[string]any); tl["type"] != "function" || tl["name"] != "bash" || tl["parameters"] == nil {
+		t.Fatalf("tools: %v", got["tools"])
+	}
+	if msg.StopReason != llm.StopReasonToolUse || len(msg.Content) != 2 || msg.Content[0].Text != "Listing." || msg.Content[1].ID != "call_9" || string(msg.Content[1].Input) != `{"command":"ls"}` || msg.Usage.OutputTokens != 9 {
+		t.Fatalf("reply: %+v", msg)
+	}
+}
+
+// A cut-off reply is max_tokens, and the gateway's error comes back in its words.
+func TestResponsesIncompleteAndErrors(t *testing.T) {
+	c, done := responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		responsesSSE(w,
+			`{"type":"response.output_item.added","output_index":0,"item":{"type":"message"}}`,
+			`{"type":"response.output_text.delta","output_index":0,"delta":"half"}`,
+			`{"type":"response.incomplete","response":{"id":"r","model":"m","status":"incomplete","incomplete_details":{"reason":"max_output_tokens"},"output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"half"}]}],"usage":{"input_tokens":1,"output_tokens":1}}}`)
+	})
+	if msg, err := ask(c); err != nil || msg.StopReason != llm.StopReasonMaxTokens || msg.Content[0].Text != "half" {
+		t.Fatalf("incomplete: %+v %v", msg, err)
+	}
+	done()
+	c, done = responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = io.WriteString(w, `{"error":{"code":"forbidden","message":"token has no access to this provider"}}`)
+	})
+	defer done()
+	if _, err := ask(c); err == nil || !strings.Contains(err.Error(), "HTTP 403") || !strings.Contains(err.Error(), "no access") {
+		t.Fatalf("gateway error in its words: %v", err)
+	}
+}
+
+// A gateway that streams deltas but sends no final object still yields the
+// reply, assembled from what arrived; a failed stream says why.
+func TestResponsesStreamWithoutAFinalObjectAndFailure(t *testing.T) {
+	c, done := responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		responsesSSE(w,
+			`{"type":"response.output_item.added","output_index":0,"item":{"type":"message"}}`,
+			`{"type":"response.output_text.delta","output_index":0,"delta":"only "}`,
+			`{"type":"response.output_text.delta","output_index":0,"delta":"deltas"}`,
+			`{"type":"response.output_item.added","output_index":1,"item":{"type":"function_call","call_id":"c1","name":"bash"}}`,
+			`{"type":"response.function_call_arguments.delta","output_index":1,"delta":"{\"command\":\"ls\"}"}`)
+	})
+	msg, err := ask(c)
+	if err != nil || len(msg.Content) != 2 || msg.Content[0].Text != "only deltas" || msg.Content[1].ID != "c1" || string(msg.Content[1].Input) != `{"command":"ls"}` || msg.StopReason != llm.StopReasonToolUse {
+		t.Fatalf("assembled from deltas: %+v %v", msg, err)
+	}
+	done()
+	c, done = responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		responsesSSE(w, `{"type":"response.failed","response":{"id":"r","error":{"code":"server_error","message":"upstream down"}}}`)
+	})
+	defer done()
+	if _, err := ask(c); err == nil || !strings.Contains(err.Error(), "upstream down") {
+		t.Fatalf("a failed stream in words: %v", err)
+	}
+}

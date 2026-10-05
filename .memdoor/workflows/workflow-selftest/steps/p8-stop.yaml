@@ -1,0 +1,13 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p8-stop; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  out=$($M workflow run p8-stop --dir "$T" 2>&1); id=$(./t.sh id p8-stop "$out"); sleep 2
+  n10=$($M workflow run p8-stop --dir "$T" 2>&1 | head -1)
+  $M workflow stop $id >/dev/null 2>&1; ok=""; for i in $(seq 1 10); do $M workflow status $id 2>&1 | head -1 | grep -q "· stopped" && ok=1 && break; sleep 1; done
+  st=$($M workflow status $id 2>&1 | grep -E "^ +. long"); [ -n "$ok" ] && [ ! -f LATE.txt ] && echo "$st" | grep -q "stopped" && echo "$n10" | grep -q "already running" && pass "stopped within ${i}s; a second start refused" || fail "stopped='$ok' step='$st' n10='$n10'"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p8-stop.txt"
+timeout: 3m

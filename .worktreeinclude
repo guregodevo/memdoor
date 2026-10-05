@@ -1,0 +1,3 @@
+# Untracked paths a worktree needs to build (memdoor tui --worktree links them in).
+# A file inside a tracked folder is listed as the file: the folder is already there.
+web/dist/

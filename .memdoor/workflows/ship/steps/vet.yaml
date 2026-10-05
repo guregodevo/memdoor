@@ -1,0 +1,6 @@
+type: command
+command: |
+  go vet ./gateway/... ./pkg/... ./tools/... ./cmd/...
+requires:
+  - table_pattern: clean
+timeout: 10m

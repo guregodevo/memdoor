@@ -1,0 +1,6 @@
+type: command
+command: |
+  go test -count=1 ./gateway/... ./pkg/... ./tools/... ./cmd/...
+requires:
+  - table_pattern: clean
+timeout: 20m

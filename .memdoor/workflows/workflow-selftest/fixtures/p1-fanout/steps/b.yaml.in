@@ -1,0 +1,4 @@
+type: command
+command: sleep 2 && date +%s.%N > B.txt
+target:
+  file: B.txt

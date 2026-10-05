@@ -1,0 +1,10 @@
+type: agent
+model: deepseek:deepseek-flash
+requires:
+  - table_pattern: prep
+  - table_pattern: approve
+    external: true
+prompt: Write DONE3.md containing exactly the line "approved and done".
+target:
+  file: DONE3.md
+timeout: 5m

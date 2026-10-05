@@ -1,0 +1,24 @@
+type: command
+requires:
+  - table_pattern: n11-timeout
+  - table_pattern: n13-schema
+  - table_pattern: n14-schema-impossible
+  - table_pattern: n4-cmdfail
+  - table_pattern: n5-notarget
+  - table_pattern: n9-undeclared
+  - table_pattern: p1-fanout
+  - table_pattern: p2-output
+  - table_pattern: p3-gate
+  - table_pattern: p4-changes
+  - table_pattern: p5-resume
+  - table_pattern: p6-partition
+  - table_pattern: p7-schema
+  - table_pattern: p8-stop
+  - table_pattern: refusals
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"
+  { echo "# Workflow selftest {{.partition}}"; echo; echo "$(grep -l '^PASS' "$T"/results/*.txt | wc -l | tr -d ' ') passed, $(grep -l '^FAIL' "$T"/results/*.txt | wc -l | tr -d ' ') failed, scratch project $T"; echo; cat "$T"/results/*.txt | sort -r; } > SELFTEST-{{.partition}}.md
+  cat SELFTEST-{{.partition}}.md
+  ! grep -q '^FAIL' SELFTEST-{{.partition}}.md
+target:
+  file: SELFTEST-{{.partition}}.md

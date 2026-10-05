@@ -1,0 +1,10 @@
+type: command
+command: |
+  git push && git status -sb | head -1
+requires:
+  - table_pattern: build
+  - table_pattern: vet
+  - table_pattern: tests
+  - table_pattern: unused
+  - table_pattern: web
+timeout: 5m

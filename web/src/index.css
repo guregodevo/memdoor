@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #171717;
+  --color-primary-hover: #404040;
+  --color-secondary: #525252;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f5f5f5;
+  --color-border: #e5e5e5;
+  --color-accent-cyan: #171717;
+  --color-accent-purple: #171717;
+  --color-accent-pink: #171717;
+}
+
+body {
+  background-color: var(--color-background);
+  color: #171717;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* The default border colour. In the base layer, so a border-* utility wins:
+   unlayered, this rule beat every one of them and each border on the site
+   was this grey whatever its class said. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+}
+
+/* Glow utilities — no-op in light theme */
+.glow-cyan, .glow-purple, .glow-pink {}
+
+/* Retro grid — no-op in light theme */
+.retro-grid {}
+
+/* Scanline overlay — no-op in light theme */
+.scanlines::after {}
+
+/* Heading utility. It was a cyan→purple→pink gradient, from the days when the
+   pages using it were dark; on the white they wear now its cyan end is 1.8:1
+   and its purple 3.5:1 — a title you have to lean in to read. It is the
+   heading colour, like every other page's title. */
+.text-gradient {
+  color: #171717;
+}
+
+/* Custom scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background-color: var(--color-surface);
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, #a855f7 30%, transparent);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, #a855f7 50%, transparent);
+}
+
+/* Input focus glow */
+input:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #a855f7 30%, transparent), 0 0 15px color-mix(in srgb, #a855f7 10%, transparent);
+}
+
+/* Tiptap / ProseMirror editor styles */
+.ProseMirror {
+  min-height: 60px;
+  max-height: 300px;
+  overflow-y: auto;
+  color: rgb(243 244 246);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: rgb(107 114 128);
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror p {
+  margin: 0.25em 0;
+}
+
+.ProseMirror ul, .ProseMirror ol {
+  padding-left: 1.5em;
+  margin: 0.25em 0;
+}
+
+.ProseMirror li {
+  margin: 0.1em 0;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid color-mix(in srgb, #a855f7 50%, transparent);
+  padding-left: 0.75em;
+  margin: 0.25em 0;
+  color: rgb(156 163 175);
+}
+
+.ProseMirror code {
+  background-color: color-mix(in srgb, #a855f7 15%, transparent);
+  color: color-mix(in srgb, #a855f7 80%, white);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.85em;
+  font-family: ui-monospace, monospace;
+}
+
+.ProseMirror pre {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.75em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+
+.ProseMirror pre code {
+  background: none;
+  color: rgb(209 213 219);
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.85em;
+}
+
+.ProseMirror strong {
+  font-weight: 700;
+  color: white;
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror s {
+  text-decoration: line-through;
+}
+
+.ProseMirror a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.ProseMirror .mention {
+  color: var(--color-accent-cyan);
+  background: rgba(34, 211, 238, 0.1);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-weight: 500;
+}
+
+/* Edited indicator */
+.edited-indicator {
+  color: rgb(107 114 128);
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
+
+/* Landing hero source-carousel fade-in on each cycle. Used via the
+   arbitrary value `animate-[fadeInUp_400ms_ease-out]` on a key-based
+   remounting span, so each new source smoothly replaces the previous. */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Indeterminate progress sweep. Used by the shared <ProgressBar> via
+   `animate-[indeterminateBar_1.4s_ease-in-out_infinite]` to signal an
+   in-flight operation of unknown duration. */
+@keyframes indeterminateBar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}

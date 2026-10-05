@@ -1,0 +1,6 @@
+type: command
+command: echo after > AFTER4.txt
+requires:
+  - table_pattern: check
+target:
+  file: AFTER4.txt

@@ -1,0 +1,10 @@
+type: agent
+model: deepseek:deepseek-flash
+prompt: Answer with the number of files in this directory (count them with ls) as JSON.
+output_schema:
+  type: object
+  required: [files]
+  properties:
+    files:
+      type: integer
+timeout: 5m

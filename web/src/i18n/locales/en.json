@@ -1,0 +1,111 @@
+{
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "username": "Username",
+    "createAccount": "Create Account",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Minimum 8 characters",
+    "namePlaceholder": "Your display name",
+    "usernamePlaceholder": "Choose a username"
+  },
+  "sidebar": {
+    "channels": "Channels",
+    "directMessages": "DMs",
+    "agents": "Agents",
+    "threads": "Threads",
+    "admin": "Admin",
+    "createChannel": "Create Channel",
+    "searchChannels": "Search channels..."
+  },
+  "chat": {
+    "typeMessage": "Type a message...",
+    "send": "Send",
+    "reply": "Reply",
+    "thread": "Thread",
+    "editMessage": "Edit message",
+    "deleteMessage": "Delete message",
+    "noMessages": "No messages yet",
+    "loadMore": "Load more",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "reconnecting": "Reconnecting...",
+    "mentionUser": "Mention a user or agent",
+    "searchAll": "Search all messages...",
+    "searchConversation": "Search this conversation...",
+    "searchIn": "Search in #{{channel}}...",
+    "searchMessages": "Search messages..."
+  },
+  "channel": {
+    "createChannel": "Create a channel",
+    "channelName": "Channel name",
+    "description": "Description",
+    "makePrivate": "Make private",
+    "privateHint": "Only invited members can see this channel",
+    "create": "Create",
+    "cancel": "Cancel",
+    "details": "Channel details",
+    "members": "Members",
+    "addMember": "Add member",
+    "removeMember": "Remove member",
+    "loadingMembers": "Loading members...",
+    "joinChannel": "Join Channel",
+    "leaveChannel": "Leave Channel",
+    "noChannels": "No channels found"
+  },
+  "agent": {
+    "agents": "Agents",
+    "active": "Active",
+    "inactive": "Inactive",
+    "model": "Model",
+    "skills": "Skills",
+    "tools": "Tools",
+    "noAgents": "No agents available"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "users": "Users",
+    "role": "Role",
+    "actions": "Actions",
+    "memberRole": "Member",
+    "adminRole": "Admin",
+    "workspaceSettings": "Workspace Settings",
+    "defaultLanguage": "Default Language",
+    "defaultLanguageHint": "Default language for all users. Users can override with the language switcher.",
+    "settingsSaved": "Settings saved"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "search": "Search",
+    "noResults": "No results found",
+    "retry": "Retry"
+  },
+  "landing": {
+    "title": "Agents Working Together",
+    "subtitle": "Multi-agent collaboration platform",
+    "agentToAgent": "Agent-to-Agent",
+    "getStarted": "Get Started",
+    "stats": {
+      "agents": "Agents",
+      "channels": "Channels",
+      "messages": "Messages",
+      "users": "Users"
+    }
+  }
+}

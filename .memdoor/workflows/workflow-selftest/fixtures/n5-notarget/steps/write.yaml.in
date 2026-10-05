@@ -1,0 +1,7 @@
+type: agent
+model: deepseek:deepseek-flash
+prompt: Write NOTE5.md containing the word hi.
+target:
+  command: "false"
+max_retries: 1
+timeout: 60s

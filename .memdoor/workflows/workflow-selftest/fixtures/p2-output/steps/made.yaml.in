@@ -1,0 +1,4 @@
+type: command
+command: echo made > MADE.txt && echo "the made answer"
+target:
+  file: MADE.txt

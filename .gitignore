@@ -1,0 +1,122 @@
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+.envrc
+
+# pre-commit
+.pre-commit-config.yaml
+
+# Go binaries
+/cli
+agent
+bash_tool
+edit_tool
+list_files
+read
+read_verbose
+gateway-server
+gateway/gateway-server
+/memdoor
+greg
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Session files (stored in ~/.memdoor/, not in the repo)
+# Note: Sessions are stored in user home directory, not in repo
+*.jsonl
+*.jsonl.cache.json
+
+# Demo files
+*.js
+# but DO track the Chrome extension's JS files (popup, options, background
+# service worker). The extension is plain JS by Manifest V3 design — no
+# build step, files are loaded directly by Chrome from web/extension/.
+!web/extension/*.js
+
+# Logs
+*.log
+gateway/*.log
+
+# Test databases and artifacts
+*.db
+whatsapp-qr.png
+**/whatsapp-qr.png
+
+# Node
+web/node_modules/
+web/dist/
+
+# IDE
+.idea/
+.vscode/
+
+# Business strategy documents (private, not for open source repo)
+docs/business-strategy/
+docs/roadmap/
+
+# Note: docs/ folder SHOULD be tracked - contains project documentation
+
+# Temporary test scripts
+test_*.sh
+
+# Tokenizer library files (Go CGo deps at repo root)
+/lib/
+# Profiling artifacts
+tests/load/*.prof
+.env
+
+# LoRA models and training artifacts
+data/**/lora-adapter*/
+data/**/.venv/
+data/**/training-data/
+*.safetensors
+*.jsonl
+*.cache.json
+.envrc.swp
+
+# Local workspace marker (do NOT commit — contains workspace slug), run state,
+# and personal workflows. The repo's own workflow-selftest IS committed: it is
+# the project's workflow, run in this folder (`make workflow-selftest`).
+.memdoor/*
+!.memdoor/.gitignore
+!.memdoor/workflows/
+.memdoor/workflows/*
+!.memdoor/workflows/workflow-selftest/
+!.memdoor/workflows/ship/
+!.memdoor/workflows/review/
+!.memdoor/workflows/tui-check/
+/SELFTEST-*.md
+
+# Mac app build products (scripts/app/build.sh makes them)
+dist/
+memdoor.next
+
+# Media a clipper tool fetched: never source, never committed. A test that
+# called clip_fetch without an out_dir once wrote 42 MB of video into
+# tools/ and it reached a commit (2026-09-17).
+*.mp4
+*.webm
+*.mkv
+*.source.json
+*.transcript.txt
+*.words.v2.json
+
+# Agent tooling is agent-agnostic (.agents/); .claude/ is Claude-specific local
+# config, so the WHOLE directory is ignored — its settings, its local permission
+# history and its scheduled_tasks.lock included.
+.claude/
+
+# edit-bench run outputs (HASHLINE §7 measurement)
+eval/editbench/results/

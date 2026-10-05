@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://memdoor.ai/sitemap.xml
+
+# Agent-readable summary of this product:
+# https://memdoor.ai/llms.txt

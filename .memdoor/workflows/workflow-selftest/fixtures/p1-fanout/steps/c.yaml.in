@@ -1,0 +1,7 @@
+type: command
+command: cat A.txt B.txt > C.txt
+requires:
+  - table_pattern: a
+  - table_pattern: b
+target:
+  file: C.txt

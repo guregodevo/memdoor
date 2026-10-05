@@ -1,0 +1,11 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=n4-cmdfail; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  s=$(./t.sh run n4-cmdfail)
+  echo "$s" | grep -q "· failed ·" && echo "$s" | grep -q "target is not there" && [ ! -f AFTER4.txt ] && pass "failing proof named; the step after it never ran" || fail "$(echo "$s" | grep "· run " | head -1)"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/n4-cmdfail.txt"
+timeout: 3m

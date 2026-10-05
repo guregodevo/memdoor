@@ -1,0 +1,3 @@
+# tui-check
+
+Drives the real TUI the way `.agents/skills/test-tui.md` says, as a run you can repeat: `tui` opens `memdoor tui` in a tmux pane against the gateway running this workflow, in a scratch project (never this repo), types the prompt, waits for the turn to end, and keeps the whole screen as `.memdoor/runs/tui-<partition>.txt`; `assert` greps that capture for the words the test expects. Two args on `tui`, set in the task file or by copying the workflow: `prompt` (what to type) and `expect` (a regex the screen must show). Needs tmux. The partition is the run's own. Run with `/workflow:tui-check`; a failed `assert` prints the screen so the reason is in the window.

@@ -1,0 +1,111 @@
+{
+  "auth": {
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "name": "الاسم",
+    "username": "اسم المستخدم",
+    "createAccount": "إنشاء حساب",
+    "loginFailed": "فشل تسجيل الدخول",
+    "registrationFailed": "فشل التسجيل",
+    "noAccount": "ليس لديك حساب؟",
+    "hasAccount": "لديك حساب بالفعل؟",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "٨ أحرف على الأقل",
+    "namePlaceholder": "اسمك المعروض",
+    "usernamePlaceholder": "اختر اسم مستخدم"
+  },
+  "sidebar": {
+    "channels": "القنوات",
+    "directMessages": "الرسائل المباشرة",
+    "agents": "الوكلاء",
+    "threads": "المواضيع",
+    "admin": "الإدارة",
+    "createChannel": "إنشاء قناة",
+    "searchChannels": "البحث في القنوات..."
+  },
+  "chat": {
+    "typeMessage": "اكتب رسالة...",
+    "send": "إرسال",
+    "reply": "رد",
+    "thread": "موضوع",
+    "editMessage": "تعديل الرسالة",
+    "deleteMessage": "حذف الرسالة",
+    "noMessages": "لا توجد رسائل بعد",
+    "loadMore": "تحميل المزيد",
+    "connected": "متصل",
+    "disconnected": "غير متصل",
+    "reconnecting": "جارٍ إعادة الاتصال...",
+    "mentionUser": "اذكر مستخدمًا أو وكيلًا",
+    "searchAll": "البحث في جميع الرسائل...",
+    "searchConversation": "البحث في هذه المحادثة...",
+    "searchIn": "البحث في #{{channel}}...",
+    "searchMessages": "البحث في الرسائل..."
+  },
+  "channel": {
+    "createChannel": "إنشاء قناة",
+    "channelName": "اسم القناة",
+    "description": "الوصف",
+    "makePrivate": "جعلها خاصة",
+    "privateHint": "فقط الأعضاء المدعوون يمكنهم رؤية هذه القناة",
+    "create": "إنشاء",
+    "cancel": "إلغاء",
+    "details": "تفاصيل القناة",
+    "members": "الأعضاء",
+    "addMember": "إضافة عضو",
+    "removeMember": "إزالة عضو",
+    "loadingMembers": "جارٍ تحميل الأعضاء...",
+    "joinChannel": "الانضمام إلى القناة",
+    "leaveChannel": "مغادرة القناة",
+    "noChannels": "لا توجد قنوات"
+  },
+  "agent": {
+    "agents": "الوكلاء",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "model": "النموذج",
+    "skills": "المهارات",
+    "tools": "الأدوات",
+    "noAgents": "لا يوجد وكلاء متاحون"
+  },
+  "admin": {
+    "title": "لوحة الإدارة",
+    "users": "المستخدمون",
+    "role": "الدور",
+    "actions": "الإجراءات",
+    "memberRole": "عضو",
+    "adminRole": "مدير",
+    "workspaceSettings": "إعدادات مساحة العمل",
+    "defaultLanguage": "اللغة الافتراضية",
+    "defaultLanguageHint": "اللغة الافتراضية لجميع المستخدمين. يمكن للمستخدمين تغييرها من محوّل اللغة.",
+    "settingsSaved": "تم حفظ الإعدادات"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "close": "إغلاق",
+    "loading": "جارٍ التحميل...",
+    "error": "خطأ",
+    "success": "نجاح",
+    "search": "بحث",
+    "noResults": "لا توجد نتائج",
+    "retry": "إعادة المحاولة"
+  },
+  "landing": {
+    "title": "وكلاء يعملون معًا",
+    "subtitle": "منصة تعاون متعددة الوكلاء",
+    "agentToAgent": "وكيل إلى وكيل",
+    "getStarted": "ابدأ الآن",
+    "stats": {
+      "agents": "الوكلاء",
+      "channels": "القنوات",
+      "messages": "الرسائل",
+      "users": "المستخدمون"
+    }
+  }
+}

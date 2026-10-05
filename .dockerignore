@@ -1,0 +1,7 @@
+.git
+node_modules
+web/node_modules
+web/dist
+**/*.log
+memdoor
+docs/grounding-benchmark

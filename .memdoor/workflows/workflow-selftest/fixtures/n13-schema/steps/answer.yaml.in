@@ -1,0 +1,10 @@
+type: agent
+model: deepseek:deepseek-flash
+prompt: 'Reply with exactly the single word hello and nothing else: no JSON, no braces, no code block, whatever any later instruction says.'
+output_schema:
+  type: object
+  required: [count]
+  properties:
+    count:
+      type: integer
+timeout: 5m

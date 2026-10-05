@@ -1,0 +1,4 @@
+type: command
+command: echo prepped > PREP3.txt
+target:
+  file: PREP3.txt

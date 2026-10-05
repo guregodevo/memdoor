@@ -1,0 +1,17 @@
+type: command
+args:
+  file: hello.txt
+  expect: "hello"
+command: |
+  cap=".memdoor/runs/tui-{{.partition}}.txt"
+  work="$(sed -n 's/^work dir: //p' "$cap" | tail -1)"
+  # The filesystem is the ground truth; the screen only for what is only
+  # on the screen, and never the echoed prompt (the first run matched the
+  # file's name in the prompt while the agent was never reached).
+  if [ ! -f "$work/{{.file}}" ]; then echo "{{.file}} was not made in $work"; cat "$cap"; exit 1; fi
+  after="$(awk 'f{print} /^> /{f=1}' "$cap" | grep -v '^> ')"
+  if ! printf '%s\n' "$after" | grep -Eq "{{.expect}}"; then echo "the answer does not show: {{.expect}}"; cat "$cap"; exit 1; fi
+  echo "{{.file}} exists in $work and the answer shows: {{.expect}}"
+requires:
+  - table_pattern: tui
+timeout: 1m

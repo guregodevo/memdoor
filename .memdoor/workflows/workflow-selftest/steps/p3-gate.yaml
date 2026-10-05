@@ -1,0 +1,14 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p3-gate; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  s=$(./t.sh run p3-gate); id=$(./t.sh id p3-gate "$s")
+  echo "$s" | grep -q "· waiting ·" || { fail "did not wait at the gate: $(echo "$s" | head -1)"; exit 0; }
+  n7=$($M workflow approve $id prep 2>&1)
+  $M workflow approve $id approve >/dev/null 2>&1; s=$(./t.sh wait $id)
+  echo "$s" | grep -q "· done ·" && [ -f DONE3.md ] && echo "$n7" | grep -q "is not a gate" && pass "waited, refused a non-gate approval, approved, done" || fail "n7='$n7' $(echo "$s" | head -1)"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p3-gate.txt"
+timeout: 10m

@@ -1,0 +1,61 @@
+# Runs build + format check + go vet + the FULL test suite. The old name
+# ("Lint & Format Check") undersold it. Set this job as a required status
+# check in the repo's branch-protection rules so it gates merges to main —
+# the security regressions this caught would otherwise have slipped through.
+name: CI (build, vet, test)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  ci:
+    name: Build, vet & test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.25'
+
+    - name: Set up Node
+      uses: actions/setup-node@v5
+      with:
+        node-version: '22'
+
+    # gateway/web/embed.go does `//go:embed all:dist`, and web/dist is
+    # gitignored — a fresh checkout has no dist/, so `go vet`/`go test`
+    # fail with "pattern all:dist: no matching files found". Build the
+    # frontend first (same as scripts/deploy.sh) so the embed resolves.
+    - name: Build web frontend
+      run: cd web && npm ci && npm run build
+
+    # The memory store's cgo SQLite helpers need sqlite3.h.
+    - name: Install cgo deps (sqlite)
+      run: |
+        sudo apt-get update -qq && sudo apt-get install -y -qq libsqlite3-dev
+
+    - name: Check formatting
+      run: make check-fmt
+
+    - name: Run go vet
+      run: CGO_CFLAGS="-DSQLITE_ENABLE_FTS5" CGO_LDFLAGS="-lm" go vet ./...
+
+    - name: Run tests
+      # -lm links libm so the SQLite FTS5 BM25 module (uses log()) finds
+      # its math symbols on Linux. Without it the test link step fails
+      # with "undefined reference to log". macOS links libm implicitly.
+      run: CGO_CFLAGS="-DSQLITE_ENABLE_FTS5" CGO_LDFLAGS="-lm" go test ./... -v
+
+env:
+  CGO_ENABLED: "1"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

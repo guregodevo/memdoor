@@ -1,0 +1,499 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { RemoteDemo } from './RemoteDemo';
+import { HOME_META, setMeta } from '../meta';
+import { TerminalDemo } from './TerminalDemo';
+import { WorkflowDemo } from './WorkflowDemo';
+import { Cast } from './Cast';
+import { DemoGallery } from './DemoGallery';
+
+// The landing page, 2026-09-27 epoch (Greg: "the value proposition is a tui
+// layer that uses decision model to reduce your byod model bill", "the landing
+// page should be targetting solo dev"). One reader: the developer who pays for
+// their own tokens. One claim, with the day's measured numbers behind it, and
+// one action: install it.
+//
+// Remote control has the one section that is not about the bill (Greg,
+// 2026-09-29: "we can also show it off in our landing page", "the /remote is a
+// killer feature"). Every other feature stays on /features. Remote control is
+// Pro since 2026-10-04 (Greg: "Remote should be pro only").
+//
+// Copy pass 2026-10-05 (Greg: "review landing ai slop"): each fact once, plain
+// declaratives, no "X, not Y" refrains, no list-of-three cadence.
+//
+// The Pro card used to ask for an email, because Stripe held no $10 price. It
+// holds one from 2026-09-27, so the card sends people to /pricing, where the
+// checkout is (Greg: "a proper pricing page", "No email to hello").
+
+const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
+
+// The day's paired runs (docs/features/DECIDE.md, 2026-09-27): same tasks, the
+// decision model off and on, alternating, on the cheapest rung.
+const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
+  { work: 'A question about the codebase', off: '57,423', on: '29,458', saved: '−49%' },
+  { work: 'An edit with a test, run green', off: '140,862', on: '103,775', saved: '−26%' },
+];
+
+// The hero's proof, each figure measured (docs/features/DECIDE.md): paired
+// runs, the same tasks with the decision model off and on.
+// The hero's three cards are what a workflow gives that a chat does not
+// (Greg, 2026-10-04: the hero "does not show off the powerfulness of workflow").
+const HERO_PROOF: { value: string; label: string }[] = [
+  { value: 'Checked', label: 'a step is done when the file it names exists or its command passes' },
+  { value: 'Gated', label: 'the run stops at a step only you can approve, with the diff in front of you' },
+  { value: 'Resumable', label: 'a failed run starts again at the failed step' },
+];
+
+const MECHANISMS: { title: string; body: string }[] = [
+  {
+    title: 'It reads the hits that matter',
+    body: 'Search, file and log reads go through the decision model first; only the hits that count reach the coding model. A judged search returns a twelfth of what grep would (median over 59 searches).',
+  },
+  {
+    title: 'The toolbox is sized to the turn',
+    body: 'Tool schemas are resent on every call: 37% of an edit turn’s input when we measured. Only the tools the request needs are sent.',
+  },
+  {
+    title: 'It stops instead of looping',
+    body: 'No cap on tool calls. After each step the decision model judges whether the turn is still making progress; if not, it ends with what it has.',
+  },
+  {
+    title: 'You choose the model, at its real price',
+    body: 'Each agent starts on the cheapest rung of its ladder; the footer says which model answered. /model lists every model of your providers with its list price.',
+  },
+];
+
+// Each of these is a fact of the code: the link and its key
+// (cmd/cli/cmd/tui_remote.go), the relay that forwards what it cannot read
+// (gateway/remote_relay.go), the second TUI the page draws
+// (cmd/cli/cmd/tui_remote_tty.go).
+const REMOTE: { title: string; body: string }[] = [
+  {
+    title: 'One command',
+    body: '/remote prints a link and a QR code. /remote off revokes it.',
+  },
+  {
+    title: 'End-to-end encrypted',
+    body: 'The key is in the link after #, which browsers never send. The relay forwards frames it cannot read.',
+  },
+  {
+    title: 'Nothing to install',
+    body: 'A web page. No app, no open port.',
+  },
+];
+
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: 'Does my code leave my machine?',
+    a: 'Only what the model reads leaves: the prompt and the judged excerpts, to the provider you connected. Files, sessions and commands stay on your machine.',
+  },
+  {
+    q: 'Can I follow a turn from my phone?',
+    a: 'Yes, with Pro: /remote. The page is your terminal, end-to-end encrypted.',
+  },
+  {
+    q: 'What is the decision model?',
+    a: 'Jev, by TypeSafe: a calibrated probability to a question like "is this hit relevant", in under half a second. It decides what the coding model reads; it never writes code.',
+  },
+  {
+    q: 'Does reading less make it worse?',
+    a: 'Not on the twenty runs above: every answer right, every edit green under go test and go vet.',
+  },
+  {
+    q: 'Which models can I run?',
+    a: 'Any tool-capable model of a connected provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI.',
+  },
+  {
+    q: 'Is it free?',
+    a: 'The agent, the decision model and workflows are free on your own key. Pro, $10 a month, is remote control and workflow state on memdoor.ai; it never buys inference.',
+  },
+  {
+    q: 'What is a workflow?',
+    a: 'One YAML per step, run as a DAG: independent steps in parallel, a step done when its target exists, a gate that waits for you. Describe the steps and the coder writes the files.',
+  },
+];
+
+function InstallLine({ dark = false }: { dark?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(INSTALL);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* clipboard may be unavailable — the command is on screen either way */
+    }
+  };
+  return (
+    <div
+      className={`flex w-full max-w-2xl items-center gap-3 rounded-xl border px-4 py-3 text-left font-mono text-[13px] sm:text-sm ${
+        dark ? 'border-neutral-700 bg-neutral-900 text-neutral-100' : 'border-neutral-300 bg-white text-neutral-900'
+      }`}
+    >
+      <span className={`shrink-0 select-none ${dark ? 'text-neutral-500' : 'text-neutral-400'}`}>$</span>
+      <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap">{INSTALL}</code>
+      <button
+        onClick={copy}
+        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+          dark ? 'bg-white text-neutral-900 hover:bg-neutral-200' : 'bg-neutral-900 text-white hover:bg-neutral-700'
+        }`}
+      >
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+    </div>
+  );
+}
+
+export function CoderHeader({ dark = false }: { dark?: boolean }) {
+  const navigate = useNavigate();
+  return (
+    <header
+      className={`flex items-center justify-between px-6 py-4 sm:px-10 ${
+        dark ? 'bg-neutral-950 text-white' : 'border-b border-neutral-100'
+      }`}
+    >
+      <button onClick={() => navigate('/')} aria-label="Memdoor home">
+        <img src="/memdoor-logo.png" alt="Memdoor" className={`h-9 ${dark ? 'invert' : ''}`} />
+      </button>
+      <nav className="flex items-center gap-5 text-sm">
+        <a
+          href="/workflows"
+          className={dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}
+        >
+          Workflows
+        </a>
+        <a
+          href="/#remote"
+          className={`hidden sm:inline ${dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
+        >
+          Remote
+        </a>
+        <a
+          href="/pricing"
+          className={dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}
+        >
+          Pricing
+        </a>
+        <a
+          href="/docs/getting-started"
+          className={dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}
+        >
+          Docs
+        </a>
+        <a
+          href="/#install"
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            dark ? 'bg-white text-neutral-900 hover:bg-neutral-200' : 'bg-neutral-900 text-white hover:bg-neutral-700'
+          }`}
+        >
+          Install
+        </a>
+      </nav>
+    </header>
+  );
+}
+
+export function CoderLandingPage() {
+  useEffect(() => {
+    setMeta({ ...HOME_META, path: '/' });
+  }, []);
+  // A link like /#remote from another page loads this page with the hash
+  // already set; the browser looks for the element before React has drawn it
+  // and stays at the top (live 2026-10-04: "the link is broken"). Scroll once
+  // the sections exist.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    const t = window.setTimeout(() => document.getElementById(id)?.scrollIntoView(), 50);
+    return () => window.clearTimeout(t);
+  }, []);
+  return (
+    <div className="flex min-h-screen flex-col bg-white text-neutral-800">
+      {/* HERO — the one message, its proof, and the terminal it happens in (2026-09-28: "find the way to sell it"). */}
+      <div className="bg-neutral-950 text-white">
+        <CoderHeader dark />
+        <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
+          <div className="text-center lg:text-left">
+            <div className="mb-4 text-xs uppercase tracking-[0.2em] text-neutral-400">
+              A coding agent in your terminal · your own key, any provider
+            </div>
+            <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
+              Don't build code. Build workflows.
+            </h1>
+            <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
+              Tell it the steps. It runs them, checks each one, and stops only when it needs you.
+            </p>
+            <ul className="mx-auto mb-8 max-w-xl space-y-2 text-left text-sm text-neutral-300 lg:mx-0">
+              {HERO_PROOF.map((p) => (
+                <li key={p.value} className="flex gap-3">
+                  <span className="w-20 shrink-0 font-semibold text-white">{p.value}</span>
+                  <span>{p.label}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-col items-center gap-3 lg:items-start">
+              <InstallLine dark />
+              <p className="text-xs text-neutral-500">Free on your own key, any provider.</p>
+              <a href="#demos" className="text-xs text-neutral-300 underline underline-offset-4 hover:text-white">
+                Every demo on this page is a recording of a real session
+              </a>
+            </div>
+          </div>
+          <div className="w-full">
+            <WorkflowDemo />
+          </div>
+        </section>
+      </div>
+
+      <main className="flex-1">
+        {/* ORCHESTRATION — the Airflow analogy (Greg, 2026-10-04: "it does not
+            give you the orchestration"). Cron+make existed; teams still moved
+            to Airflow. Pi+a Makefile is cron+make for agents. */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">Orchestration</div>
+          <h2 className="mx-auto mb-4 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+            Airflow, for agents.
+          </h2>
+          <p className="mx-auto mb-10 max-w-2xl text-center text-sm leading-relaxed text-neutral-500">
+            Data teams had cron and make and moved to Airflow anyway, for the run state and the retries. A workflow
+            is that for agent work.
+          </p>
+          <div className="mx-auto mb-10 w-full max-w-3xl">
+            <Cast
+              src="/workflow-release.cast"
+              poster="npt:0:31"
+              caption="A real run: two steps in parallel, a merge, the run waiting at the gate until a person approves."
+            />
+          </div>
+          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3">
+            {[
+              ['A run is a record', 'Each step keeps what it changed and whether it passed. Fix a failed step and resume; finished steps are skipped.'],
+              ['You approve at a gate', 'The run stops at a gate with the diff in front of you. A comment sends the step back and reruns what depends on it.'],
+              ['Done means the target exists', 'A step is done when its file exists or its command exits 0, whatever the model says.'],
+            ].map(([title, body]) => (
+              <div key={title} className="rounded-2xl border border-neutral-200 bg-white p-6">
+                <h3 className="mb-2 text-base font-semibold text-neutral-900">{title}</h3>
+                <p className="text-sm leading-relaxed text-neutral-500">{body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* THE NUMBERS — the claim about the bill, measured. */}
+        <section className="border-t border-neutral-100 bg-neutral-50">
+        <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">
+            Measured on paired runs
+          </div>
+          <h2 className="mx-auto mb-3 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+            Half the input tokens on a question.
+          </h2>
+          <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
+            Ten pairs: the same task on the same model, decisions off and on. All twenty answers were right; the
+            edits passed <code className="text-neutral-700">go test</code> and <code className="text-neutral-700">go vet</code>.
+          </p>
+          <div className="mx-auto max-w-3xl overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-400">
+                  <th className="py-3 pr-4 font-medium">The work</th>
+                  <th className="py-3 pr-4 text-right font-medium">Without</th>
+                  <th className="py-3 pr-4 text-right font-medium">With</th>
+                  <th className="py-3 text-right font-medium">Saved</th>
+                </tr>
+              </thead>
+              <tbody className="text-neutral-700">
+                {MEASURED.map((m) => (
+                  <tr key={m.work} className="border-b border-neutral-100">
+                    <td className="py-4 pr-4">{m.work}</td>
+                    <td className="py-4 pr-4 text-right tabular-nums text-neutral-500">{m.off}</td>
+                    <td className="py-4 pr-4 text-right tabular-nums font-semibold text-neutral-900">{m.on}</td>
+                    <td className="py-4 text-right font-semibold text-emerald-600">{m.saved}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-neutral-400">
+            Means over five pairs each. The harness that produced these rows is in the source tree.
+          </p>
+          <div className="mx-auto mt-10 w-full max-w-3xl">
+            <TerminalDemo />
+          </div>
+        </div>
+        </section>
+
+        {/* HOW — four mechanisms, no mystery. */}
+        {/* DEMOS — a gallery: every take on this page, each a real session, played on click. */}
+        <section id="demos" className="scroll-mt-4 border-t border-neutral-100 bg-neutral-950 text-white">
+          <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
+            <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">Demos</div>
+            <h2 className="mx-auto mb-3 max-w-3xl text-center text-3xl font-bold tracking-tight sm:text-4xl">
+              Recorded sessions.
+            </h2>
+            <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-400">
+              Click one to play. Nothing is cut or staged.
+            </p>
+            <DemoGallery />
+            <p className="mt-8 text-center text-sm text-neutral-400">
+              <a href="/docs/workflows" className="text-neutral-200 underline underline-offset-4 hover:text-white">
+                How workflows work
+              </a>
+            </p>
+          </div>
+        </section>
+
+        <section className="border-t border-neutral-100 bg-white">
+          <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
+            <div className="mb-10 text-center text-xs uppercase tracking-widest text-neutral-400">
+              Where the saving comes from
+            </div>
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+              {MECHANISMS.map((m) => (
+                <div key={m.title} className="rounded-2xl border border-neutral-200 bg-white p-6">
+                  <h3 className="mb-2 text-lg font-semibold text-neutral-900">{m.title}</h3>
+                  <p className="text-sm leading-relaxed text-neutral-500">{m.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* REMOTE — the terminal, on a phone. The one section that is not about the bill. */}
+        <section id="remote" className="scroll-mt-4 border-t border-neutral-100 bg-neutral-950 text-white">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 py-16 sm:px-12 lg:grid-cols-[1.2fr_1fr]">
+            <div>
+              <div className="mb-3 text-xs uppercase tracking-widest text-neutral-500">Remote control</div>
+              <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">The same terminal, on your phone.</h2>
+              <p className="mb-8 max-w-xl text-base leading-relaxed text-neutral-300">
+                Type <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-sm text-white">/remote</code> and scan
+                the code. The page that opens is your terminal, drawn on your phone.
+              </p>
+              <div className="space-y-4">
+                {REMOTE.map((r) => (
+                  <div key={r.title} className="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+                    <h3 className="mb-1 text-base font-semibold text-white">{r.title}</h3>
+                    <p className="text-sm leading-relaxed text-neutral-400">{r.body}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-5 text-xs text-neutral-500">
+                Part of Pro: the memdoor.ai relay carries it. Sign in with{' '}
+                <code className="text-neutral-300">memdoor login you@example.com</code>.{' '}
+                <a href="/docs/remote" className="underline underline-offset-4 hover:text-neutral-300">
+                  How it works
+                </a>
+              </p>
+            </div>
+            <RemoteDemo />
+          </div>
+        </section>
+
+        {/* PRICE — a solo dev's arithmetic, stated plainly. */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">What it costs</div>
+          <h2 className="mx-auto mb-10 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+            Free on your key. Pro for what runs on memdoor.ai.
+          </h2>
+          <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-7">
+              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-400">Free</div>
+              <div className="mb-4 text-3xl font-bold text-neutral-900">Your own key</div>
+              <p className="mb-4 text-sm leading-relaxed text-neutral-500">
+                The agent, the decision model and workflows, on your own account at OpenRouter, Anthropic, OpenAI,
+                Gemini, DeepSeek, Baseten, Groq or xAI. Memdoor adds nothing to the bill.
+              </p>
+              <InstallLine />
+            </div>
+            <div className="rounded-2xl border-2 border-neutral-900 bg-white p-7">
+              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-400">Pro</div>
+              <div className="mb-4 text-3xl font-bold text-neutral-900">
+                $10<span className="text-lg font-medium text-neutral-400"> / month</span>
+              </div>
+              <p className="mb-4 text-sm leading-relaxed text-neutral-500">
+                Remote control from your phone, and workflow state kept on memdoor.ai so a workflow can wait on
+                what another produced, from any machine. Coming: runs with your laptop closed.
+              </p>
+              <a
+                href="/pricing"
+                className="inline-block rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-700"
+              >
+                Subscribe — $10 / month
+              </a>
+              <p className="mt-3 text-xs text-neutral-400">
+                Cancel any month.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* INSTALL — the whole first session, four lines. */}
+        <section id="install" className="border-t border-neutral-100 bg-neutral-950 text-white">
+          <div className="mx-auto w-full max-w-3xl px-6 py-16 sm:px-12">
+            <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">Start</div>
+            <h2 className="mb-8 text-center text-3xl font-bold tracking-tight sm:text-4xl">Two minutes.</h2>
+            <div className="space-y-3 font-mono text-[13px] sm:text-sm">
+              {[
+                ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
+                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account — or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …, or memdoor connect'],
+                ['memdoor setup', 'a workspace on this machine, once'],
+                ['cd your-project && memdoor tui', 'the agent works in the directory you launch it from'],
+                ['/model', 'which model is answering, and what it lists for'],
+              ].map(([cmd, note]) => (
+                <div key={cmd} className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3">
+                  <div className="flex gap-3">
+                    <span className="select-none text-neutral-600">$</span>
+                    <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-neutral-100">{cmd}</code>
+                  </div>
+                  <p className="mt-1 pl-6 text-xs text-neutral-500">{note}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-center text-xs text-neutral-500">
+              Read the installer first if you like: <a className="underline underline-offset-4" href="/install.sh">/install.sh</a>. Windows:{' '}
+              <code>irm https://memdoor.ai/install.ps1 | iex</code>.
+            </p>
+          </div>
+        </section>
+
+        {/* QUESTIONS */}
+        <section className="border-t border-neutral-100 bg-neutral-50">
+          <div className="mx-auto w-full max-w-3xl px-6 py-16 sm:px-12">
+            <div className="mb-8 text-center text-xs uppercase tracking-widest text-neutral-400">Questions</div>
+            <div className="divide-y divide-neutral-200 rounded-2xl border border-neutral-200 bg-white">
+              {FAQ.map((f) => (
+                <details key={f.q} className="group px-6 py-4">
+                  <summary className="cursor-pointer select-none text-base font-semibold text-neutral-900">
+                    {f.q}
+                  </summary>
+                  <p className="mt-2 text-sm leading-relaxed text-neutral-500">{f.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-neutral-100 py-8 text-center">
+        <p className="text-xs text-neutral-400">
+          Built by a solo dev, for solo devs.{' '}
+          <a href="/features" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
+            Features
+          </a>
+          <span className="px-2">·</span>
+          <a href="/#remote" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
+            Remote control
+          </a>
+          <span className="px-2">·</span>
+          <a href="/pricing" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
+            Pricing
+          </a>
+          <span className="px-2">·</span>
+          <a href="/docs/getting-started" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
+            Docs
+          </a>
+        </p>
+      </footer>
+    </div>
+  );
+}

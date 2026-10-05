@@ -1,0 +1,6 @@
+type: command
+command: echo a > CA.txt
+requires:
+  - table_pattern: b
+target:
+  file: CA.txt

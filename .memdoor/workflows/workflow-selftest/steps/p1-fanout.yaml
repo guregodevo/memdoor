@@ -1,0 +1,12 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p1-fanout; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  s=$(./t.sh run p1-fanout); a=$(cat A.txt 2>/dev/null); b=$(cat B.txt 2>/dev/null)
+  gap=$(echo "$a $b" | awk '{d=$1-$2; if(d<0)d=-d; print (d<1)?"parallel":"serial"}')
+  echo "$s" | grep -q "· done · 3/3" && [ "$gap" = parallel ] && [ -f C.txt ] && pass "a and b in parallel, merge after" || fail "$gap; $(echo "$s" | head -1)"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p1-fanout.txt"
+timeout: 10m

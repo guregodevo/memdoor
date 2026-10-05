@@ -1,0 +1,13 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=p5-resume; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  s=$(./t.sh run p5-resume); id=$(./t.sh id p5-resume "$s")
+  echo "$s" | grep -q "· failed ·" || { fail "should fail before the fix"; exit 0; }
+  echo fix > FIX.txt; r=$($M workflow resume $id --dir "$T" 2>&1); nid=$(./t.sh id p5-resume "$r"); s=$(./t.sh wait $nid)
+  echo "$s" | grep -q "· done · 2/2" && [ -f TWO.txt ] && pass "failed, fixed, resumed, done" || fail "$(echo "$s" | grep "· run " | head -1)"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/p5-resume.txt"
+timeout: 10m

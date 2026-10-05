@@ -1,0 +1,12 @@
+type: agent
+model: deepseek:deepseek-flash
+prompt: Count the files in this directory with ls and answer with the count.
+output_schema:
+  type: object
+  required: [count]
+  properties:
+    count:
+      type: integer
+      minimum: 5
+      maximum: 3
+timeout: 5m

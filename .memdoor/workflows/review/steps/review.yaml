@@ -1,0 +1,11 @@
+type: agent
+agent: coder
+prompt: |
+  Review commit {{.partition}} of this repository with the `review` skill (load it first). If {{.partition}} is not a commit (`git rev-parse -q --verify "{{.partition}}^{commit}"` fails), review HEAD.
+  Read the commit's diff (`git show --stat` then the files that matter), and for every finding cite file:line and VERIFY it by running — a build, a test, a command — never by opinion. Then sweep the files the commit did NOT touch for the same class of claim the commit changed (a sentence, a name, a rule it removed or introduced): a leftover in a doc, a comment, a test, a message.
+  Write `.memdoor/runs/REVIEW-{{.partition}}.md` with three sections: **Verified** (what the commit does and what you ran to confirm it), **Must fix** (defects, each with file:line and the exact change — or "nothing"), **Could fix** (nits). Change no source file: this step only reads and writes the review.
+target:
+  file: .memdoor/runs/REVIEW-{{.partition}}.md
+budget: 300000
+timeout: 20m
+max_retries: 1

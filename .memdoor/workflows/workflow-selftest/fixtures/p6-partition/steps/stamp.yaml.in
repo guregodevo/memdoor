@@ -1,0 +1,4 @@
+type: command
+command: echo "run {{.partition}}" > OUT-{{.partition}}.txt
+target:
+  file: OUT-{{.partition}}.txt

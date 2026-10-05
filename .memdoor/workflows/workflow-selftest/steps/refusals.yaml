@@ -1,0 +1,17 @@
+type: command
+requires:
+  - table_pattern: setup
+command: |-
+  T="${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}"; cd "$T" || exit 1; M=${MEMDOOR_BIN:-memdoor}
+  N=refusals; pass(){ echo "PASS $N — $*" > results/$N.txt; }; fail(){ echo "FAIL $N — $*" > results/$N.txt; }
+  r1=$(./t.sh run n1-badkey 2>&1); r2=$(./t.sh run n2-missing 2>&1); r3=$(./t.sh run n3-cycle 2>&1); r12=$(./t.sh run n12-badtype 2>&1); r6=$($M workflow run nothing-here --dir "$T" 2>&1)
+  bad=""
+  echo "$r1" | grep -q "steps/a.yaml" && echo "$r1" | grep -q colour || bad="$bad n1"
+  echo "$r2" | grep -q ghost || bad="$bad n2"
+  echo "$r3" | grep -q cycle || bad="$bad n3"
+  echo "$r12" | grep -q "must be one of" || bad="$bad n12"
+  echo "$r6" | grep -q "no workflow" || bad="$bad n6"
+  [ -z "$bad" ] && pass "bad key (file named), missing dependency, cycle, bad type, unknown workflow: all refused" || fail "not refused clearly:$bad"
+target:
+  command: test -f "${TMPDIR:-/tmp}/memdoor-selftest-{{.partition}}/results/refusals.txt"
+timeout: 3m

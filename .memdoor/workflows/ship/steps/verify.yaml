@@ -1,0 +1,13 @@
+type: command
+command: |
+  set -e
+  want="$(git describe --tags --abbrev=0)"
+  got="$(curl -sf -m 10 https://memdoor.ai/dl/VERSION)"
+  test "$got" = "$want" || { echo "served $got, newest tag $want"; exit 1; }
+  curl -sf -m 10 https://memdoor.ai/billing/v1/health | grep -q '"status":"ok"'
+  curl -sf -m 10 https://memdoor.ai/state/v1/health | grep -q '"status":"ok"'
+  test "$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://memdoor.ai/)" = 200
+  echo "memdoor.ai serves $got; billing, state and the home page answer"
+requires:
+  - table_pattern: deploy
+timeout: 3m

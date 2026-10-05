@@ -1,0 +1,7 @@
+type: llm
+model: deepseek:deepseek-flash
+requires:
+  - table_pattern: count
+  - table_pattern: made
+prompt: |
+  Repeat these two values exactly, on one line, separated by " | ": {{ output "count" }} and {{ output "made" }}

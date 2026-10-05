@@ -1,0 +1,111 @@
+{
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "username": "Nombre de usuario",
+    "createAccount": "Crear cuenta",
+    "loginFailed": "Error al iniciar sesión",
+    "registrationFailed": "Error en el registro",
+    "noAccount": "¿No tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "emailPlaceholder": "tu@ejemplo.com",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "namePlaceholder": "Tu nombre visible",
+    "usernamePlaceholder": "Elige un nombre de usuario"
+  },
+  "sidebar": {
+    "channels": "Canales",
+    "directMessages": "Mensajes directos",
+    "agents": "Agentes",
+    "threads": "Hilos",
+    "admin": "Admin",
+    "createChannel": "Crear canal",
+    "searchChannels": "Buscar canales..."
+  },
+  "chat": {
+    "typeMessage": "Escribe un mensaje...",
+    "send": "Enviar",
+    "reply": "Responder",
+    "thread": "Hilo",
+    "editMessage": "Editar mensaje",
+    "deleteMessage": "Eliminar mensaje",
+    "noMessages": "No hay mensajes aún",
+    "loadMore": "Cargar más",
+    "connected": "Conectado",
+    "disconnected": "Desconectado",
+    "reconnecting": "Reconectando...",
+    "mentionUser": "Mencionar un usuario o agente",
+    "searchAll": "Buscar en todos los mensajes...",
+    "searchConversation": "Buscar en esta conversación...",
+    "searchIn": "Buscar en #{{channel}}...",
+    "searchMessages": "Buscar mensajes..."
+  },
+  "channel": {
+    "createChannel": "Crear un canal",
+    "channelName": "Nombre del canal",
+    "description": "Descripción",
+    "makePrivate": "Hacer privado",
+    "privateHint": "Solo los miembros invitados pueden ver este canal",
+    "create": "Crear",
+    "cancel": "Cancelar",
+    "details": "Detalles del canal",
+    "members": "Miembros",
+    "addMember": "Agregar miembro",
+    "removeMember": "Eliminar miembro",
+    "loadingMembers": "Cargando miembros...",
+    "joinChannel": "Unirse al canal",
+    "leaveChannel": "Salir del canal",
+    "noChannels": "No se encontraron canales"
+  },
+  "agent": {
+    "agents": "Agentes",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "model": "Modelo",
+    "skills": "Habilidades",
+    "tools": "Herramientas",
+    "noAgents": "No hay agentes disponibles"
+  },
+  "admin": {
+    "title": "Panel de administración",
+    "users": "Usuarios",
+    "role": "Rol",
+    "actions": "Acciones",
+    "memberRole": "Miembro",
+    "adminRole": "Administrador",
+    "workspaceSettings": "Configuración del espacio de trabajo",
+    "defaultLanguage": "Idioma predeterminado",
+    "defaultLanguageHint": "Idioma predeterminado para todos los usuarios. Los usuarios pueden cambiarlo con el selector de idioma.",
+    "settingsSaved": "Configuración guardada"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "search": "Buscar",
+    "noResults": "Sin resultados",
+    "retry": "Reintentar"
+  },
+  "landing": {
+    "title": "Agentes trabajando juntos",
+    "subtitle": "Plataforma de colaboración multi-agente",
+    "agentToAgent": "Agente a Agente",
+    "getStarted": "Comenzar",
+    "stats": {
+      "agents": "Agentes",
+      "channels": "Canales",
+      "messages": "Mensajes",
+      "users": "Usuarios"
+    }
+  }
+}

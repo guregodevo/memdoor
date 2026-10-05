@@ -1,0 +1,6 @@
+type: command
+command: test -f FIX.txt && cp FIX.txt TWO.txt
+requires:
+  - table_pattern: one
+target:
+  file: TWO.txt

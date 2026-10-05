@@ -1,0 +1,8 @@
+type: command
+command: |
+  make deploy
+requires:
+  - table_pattern: push
+  - table_pattern: approve
+    external: true
+timeout: 15m

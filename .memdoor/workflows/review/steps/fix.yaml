@@ -1,0 +1,12 @@
+type: agent
+agent: coder
+prompt: |
+  Read `.memdoor/runs/REVIEW-{{.partition}}.md`. Apply every item under **Must fix** exactly as it says (file:line and change); leave **Could fix** alone. Then `go build ./...`, `go vet ./gateway/... ./pkg/... ./tools/... ./cmd/...` and `go test ./gateway/... ./pkg/... ./tools/... ./cmd/...`; fix what they show. Commit with a message that says why, not what, and answer the commit's short sha.
+  If **Must fix** says "nothing", change nothing, commit nothing, and answer "nothing to fix".
+requires:
+  - table_pattern: review
+  - table_pattern: approve
+    external: true
+budget: 400000
+timeout: 30m
+max_retries: 1
