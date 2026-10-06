@@ -1,0 +1,71 @@
+type: agent
+agent: coder
+prompt: |
+  Sweep this repository against what Memdoor is TODAY and write the findings to
+  `.memdoor/runs/SWEEP-{{.partition}}.md`. This step only reads: change no source
+  file, commit nothing.
+
+  THE TRUTH TO SWEEP AGAINST. Memdoor is, today:
+  - a coding agent in the terminal, on the user's own API key, at any of eight
+    providers (`memdoor providers`, `memdoor connect`);
+  - a decision model — Jev by TypeSafe, a hosted model — on an OpenRouter key or
+    an explicit decision key, and OFF on a vendor key alone;
+  - workflows on mario: one YAML per task, done = the target exists, a gate = an
+    external task (`external: true`, approved by a person), resume by partition;
+    free, with local cron schedules (`memdoor cron add`);
+  - Pro = 10 dollars a month, for remote control (`/remote`) and the hosted
+    workflow state on memdoor.ai; Enterprise by invoice;
+  - the public repo `github.com/guregodevo/memdoor` and the private
+    `memdoor-private`; `aktapus.ai` redirects to `memdoor.ai`;
+  - and there is NO local model, NO GPU rental, NO broker, NO clipper, NO fitness
+    product, NO Mac app, NO hosted scheduler, NO device-code or `--browser`
+    login, and NO heartbeat checklist (no `HEARTBEAT.md`).
+  Anything promising the opposite, or naming one of those removed designs, is stale.
+
+  WHAT TO READ — read the actual file before you claim anything about it:
+  - `README.md`, `GETTING_STARTED.md`, `CONTRIBUTING.md`, `AGENTS.md`, `MEMO.md`,
+    and every `docs/**/*.md`;
+  - the published site: `web/public/docs/**`, `llms.txt`, `web/index.html`, and
+    the user-visible strings in `web/src/**` (marketing copy, pricing, the i18n
+    locale files, FAQ);
+  - user-visible strings in `cmd/**` and `gateway/**`: `--help` and usage text,
+    error messages, onboarding/console output, email subjects and bodies;
+  - comments left behind that explain a design that was removed (a "no X" or
+    "X is gone" paragraph in Go or Markdown).
+  Grep first (`grep -rn`), then read each hit's file so your quote is exact.
+  Needles worth trying: `local model`, `Mac app`, `macOS`, `device code`,
+  `--browser`, `broker`, `clipper`, `GPU`, `fitness`, `heartbeat`, `HEARTBEAT.md`,
+  `hosted scheduler`, `waitlist`, `beta`, `Jev`, `seat`, `rent`, `per month`,
+  `$`, `aktapus`, `memdoor-private`, `latency`.
+
+  FOR EVERY FINDING, all five of these, no exceptions:
+  1. `path/to/file:LINE` — the line number in the file as it is now;
+  2. the stale sentence, quoted exactly;
+  3. why it is stale — which truth above it contradicts;
+  4. the exact replacement text, the literal new sentence, ready to paste;
+  5. how you verified it: you read the file, and for a link you ran
+     `curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' <url>`.
+  A finding you did not read the file for is not a finding — drop it. Do not
+  propose a "fix" for something that is already correct.
+
+  LINKS: collect every `memdoor.ai` / `aktapus.ai` URL the docs, the site and the
+  code name and check each one with curl. A 404/410, or a redirect landing
+  somewhere other than where the text promises, is a dead link and a finding.
+
+  WRITE `.memdoor/runs/SWEEP-{{.partition}}.md` (create the directory if needed)
+  with exactly this shape:
+  - a short preamble naming the date, the partition, and the truths above;
+  - `## Must fix (N)` — every false USER-VISIBLE claim (what a person reads: a
+    doc, the site, `--help`, an error, an email) and every dead link. Each item is
+    the five parts above.
+  - `## Could fix (N)` — internal comments, dead prose and anything not
+    user-visible, or that you are not sure of. Same five parts.
+  - `## Checked, clean` — the files and needles you read and found nothing in, so
+    the next sweep need not repeat them.
+  The `N` in each heading is exactly the number of items under it; a section with
+  nothing says `nothing`. Never pad a section to look busy.
+target:
+  file: .memdoor/runs/SWEEP-{{.partition}}.md
+budget: 600000
+timeout: 45m
+max_retries: 1

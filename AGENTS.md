@@ -142,8 +142,9 @@ grep -r "duplicate_code" .    # Search before coding
   judged reads, a per-turn toolbox, a stop instead of a cap, `/model` with real
   list prices. Free is the agent **and the decision model** on their key (Greg,
   2026-10-03: "jev decision model is not pro"), and so are workflows and
-  their local schedules (2026-10-04); Pro is $10/month: remote control, and
-  the hosted scheduler when it comes. A seat never supplies a key: every model
+  their local schedules (2026-10-04); Pro is $10/month: remote control and
+  the hosted workflow state (one table per workspace on memdoor.ai, shipped
+  2026-10-05); runs with the laptop closed are coming. A seat never supplies a key: every model
   and decision call is on the user's own (`autoDecisionModel` never picks the
   broker; every chat request goes through a provider, `providers/factory.go`).
   Command line only — one binary, no app, no feature flags. The

@@ -31,7 +31,7 @@ Setup auto-starts the gateway and registers the admin. It downloads nothing: the
 memdoor tui
 ```
 
-The coding agent works on the directory you launch it from — reads, edits, builds and searches confined to it. Claude-style UX — tool frames, a live thinking indicator, context usage in the header, `Esc` to interrupt a turn, `Shift+Tab` for plan mode. Slash commands without leaving the chat: `/model` (which model answers, on which provider), `/model-search` (pick a provider, then a model), `/connect` (add a provider), `/usage` (what this month cost, and what the decision model kept out of it), `/help`. Your files, sessions and memory stay on your machine; only what a model has to read leaves it, to the provider you chose.
+The coding agent works on the directory you launch it from — reads, edits, builds and searches confined to it. Claude-style UX — tool frames, a live thinking indicator, context usage in the header, `Esc` to interrupt a turn, `Shift+Tab` to cycle the reasoning effort. Slash commands without leaving the chat: `/model` (which model answers, on which provider), `/model-search` (pick a provider, then a model), `/connect` (add a provider), `/usage` (what this month cost, and what the decision model kept out of it), `/help`. Your files, sessions and memory stay on your machine; only what a model has to read leaves it, to the provider you chose.
 
 ## Connect your own models
 

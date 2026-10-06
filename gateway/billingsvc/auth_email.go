@@ -210,7 +210,7 @@ func (s *Server) handleAuthEmail(w http.ResponseWriter, r *http.Request) {
 
     %s
 
-Type it in the app. It works for %d minutes and once.
+Type it in the terminal: memdoor login you@example.com. It works for %d minutes and once.
 
 If you did not ask for it, ignore this email — nothing happens without the code.
 
@@ -371,7 +371,7 @@ func (s *Server) handleCheckoutSeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if already {
-		writeErr(w, http.StatusConflict, fmt.Errorf("this email already has a seat — open the app and sign in with it"))
+		writeErr(w, http.StatusConflict, fmt.Errorf("this email already has a seat — sign in with it: memdoor login <your email>"))
 		return
 	}
 	link, id, err := CreateSubscriptionCheckout(ws, req.Period, addr)

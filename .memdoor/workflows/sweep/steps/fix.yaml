@@ -1,0 +1,22 @@
+type: agent
+agent: coder
+prompt: |
+  Read `.memdoor/runs/SWEEP-{{.partition}}.md`. Apply every item under **Must fix**
+  exactly as written — the file:line, the quoted sentence and the exact
+  replacement — and change nothing else. Leave **Could fix** alone. If **Must fix**
+  says `nothing`, change nothing, commit nothing and answer only "nothing to fix".
+  Otherwise verify, in this order, and fix what they show until all four pass:
+  - `go build ./...`
+  - `go vet ./gateway/... ./pkg/... ./tools/... ./cmd/...`
+  - `go test -count=1 ./gateway/... ./pkg/... ./tools/... ./cmd/...`
+  - the web type check: `cd web && npx tsc -b`
+  Then commit everything with a message that says WHY those claims were stale (not
+  a list of what changed), and with NO trailers: no `Co-Authored-By`, no
+  "Generated with", no tool name. Answer the commit's short sha.
+requires:
+  - table_pattern: sweep
+  - table_pattern: approve
+    external: true
+budget: 500000
+timeout: 45m
+max_retries: 1

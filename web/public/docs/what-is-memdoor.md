@@ -65,9 +65,8 @@ are excluded from the ladders.
 
 ## Price
 
-**Free** is the whole agent on your own key: the terminal, the ladder, the model
-picker, and `/remote` to reach it from your phone
-([Remote control](/docs/remote)).
+**Free** is the whole agent on your own key: the terminal, the ladder, the
+model picker, the decision model and workflows with local schedules.
 
 `memdoor savings` prints what it kept out of your bill this month, from your own
 turns: bytes the judge read that the chat model did not, tool schemas not sent,

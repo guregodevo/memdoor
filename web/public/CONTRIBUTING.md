@@ -1,6 +1,6 @@
 # Contributing to Memdoor
 
-Memdoor is open source under the Apache License 2.0. Issues and pull requests are welcome: say what you changed and why, with a test that fails without it.
+Memdoor is open source under the Apache License 2.0 and has one maintainer, Gregory Desvaux. Issues are welcome: a bug with the steps to reproduce it, or a request with the problem it would solve. External pull requests are not merged at this stage; a PR is still useful as a proposal (see `CONTRIBUTING.md`).
 
 ---
 
@@ -8,8 +8,8 @@ Memdoor is open source under the Apache License 2.0. Issues and pull requests ar
 
 ### Prerequisites
 
-- **Go 1.22+** - Backend and CLI
-- **Node.js 18+** - Web frontend
+- **Go 1.25** - Backend and CLI
+- **Node.js 22** - Web frontend
 - **SQLite 3** - Default database
 - **Make** - Build automation
 

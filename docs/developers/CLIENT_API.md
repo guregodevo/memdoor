@@ -827,5 +827,5 @@ while True:
 ---
 
 **Questions?**
-- GitHub: [memdoor/memdoor](https://github.com/memdoor/memdoor)
-- Discussions: [Ask questions](https://github.com/memdoor/memdoor/discussions)
+- GitHub: [guregodevo/memdoor](https://github.com/guregodevo/memdoor)
+- Discussions: [Ask questions](https://github.com/guregodevo/memdoor/issues)

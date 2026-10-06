@@ -10,7 +10,7 @@ a command that exits 0, or the agent's answer — never because the model said
 so. The engine is [`guregodevo/mario`](https://github.com/guregodevo/mario)
 (Luigi-style DAG runner, imported as a library); the YAML is mario's own, and
 Memdoor adds one task type, `agent`, the way
-[`mario-llm`](https://github.com/guregodevo/mario-llm) adds `llm_agent`.
+`mario-llm` (a sibling, private factory) adds `llm_agent`.
 
 ```
 /workflow run release        in the TUI: starts it, draws the graph as it runs

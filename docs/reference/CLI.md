@@ -26,7 +26,7 @@ Complete command-line interface reference for Memdoor.
   - [sessions](#sessions)
   - [channels](#channels)
   - [users](#users)
-  - [account](#account) — the creator's sign-in
+  - [account](#account) — sign in with your email (a code arrives, you type it)
   - [resume](#resume) — reopen a previous conversation
   - [login](#login) — sign in with your email (short for `account login`)
   - [logout](#logout) — sign out of memdoor.ai; the engine stays signed in
@@ -1137,7 +1137,7 @@ the model) — there's no `--model` or `--provider` flag on the buddy row.
 **Examples**:
 ```bash
 memdoor agent update writer --personality "Friendly and concise"
-memdoor agent update coach --system-prompt "You are a fitness coach..."
+memdoor agent update coder --system-prompt "You are a code reviewer. Check the diff, not the summary."
 ```
 
 ---
@@ -1671,10 +1671,9 @@ Requires admin role. Only workspace administrators can demote other admins.
 
 ### account
 
-The creator's sign-in. One email, one code; this machine's gateway is prepared
-behind it without a question (directories, its own first user, a workspace
-named like the account). The Mac app runs exactly these commands behind
-its sign-in screen; a terminal user runs them by hand.
+The sign-in. One email, one code; this machine's gateway is prepared behind it
+without a question (directories, its own first user, a workspace named like
+the account). The command line runs exactly these steps; a person types them.
 
 ```bash
 memdoor login sara@example.com              # a code is emailed; type it when asked (= account login)
@@ -1690,7 +1689,7 @@ that user. `login` sets it up for you, and `logout` leaves it alone: the agent
 on your key keeps working, and nothing would renew that session without a
 memdoor.ai account.
 
-Non-interactive (what the app does):
+Non-interactive (scripts and CI):
 
 ```bash
 memdoor account login sara@example.com --send-only --json             # step one: mail the code
@@ -1785,7 +1784,8 @@ Workflows need no sign-in.
 ### logout
 
 Sign out of memdoor.ai on this Mac: the seat's token and the account record
-are forgotten, so workflows are off. This Mac's engine
+are forgotten, so remote control and the hosted workflow state are off; local
+workflows and their local schedules keep running. This Mac's engine
 session stays — the agent on your own key keeps working. It is
 `memdoor account logout` under its short name.
 

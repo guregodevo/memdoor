@@ -1,0 +1,6 @@
+type: command
+command: |
+  go vet ./gateway/... ./pkg/... ./tools/... ./cmd/... && go test -count=1 ./gateway/... ./pkg/... ./tools/... ./cmd/... && cd web && npx tsc -b
+requires:
+  - table_pattern: fix
+timeout: 30m

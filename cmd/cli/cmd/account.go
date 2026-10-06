@@ -99,8 +99,8 @@ var accountLoginCmd = &cobra.Command{
 	Use:   "login [email]",
 	Short: "Sign in: a code is emailed, type it here (short: memdoor login)",
 	Example: `  memdoor account login sara@example.com
-  memdoor account login sara@example.com --send-only        # the app: step one
-  memdoor account login sara@example.com --code 482913 --json  # the app: step two`,
+  memdoor account login sara@example.com --send-only        # step one: mail the code
+  memdoor account login sara@example.com --code 482913 --json  # step two: verify it`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		email := ""
@@ -177,7 +177,7 @@ var accountStatusCmd = &cobra.Command{
 		}
 		fmt.Println(engineLine(st.Engine))
 		if !st.SignedIn {
-			fmt.Println("memdoor.ai    not signed in (workflows run free here; Pro is remote control and the hosted scheduler) — memdoor login you@example.com")
+			fmt.Println("memdoor.ai    not signed in (workflows run free here; Pro is remote control and the hosted workflow state) — memdoor login you@example.com")
 			return nil
 		}
 		fmt.Printf("memdoor.ai    %s · workspace %s · %s\n", st.Email, st.Workspace, describePlan(st.Plan, st.Billing))
@@ -202,7 +202,7 @@ func signOut() error {
 	for _, f := range []string{billingTokenFile, accountRecordFile} {
 		_ = os.Remove(homePath(f))
 	}
-	fmt.Println("Signed out of memdoor.ai: workflows are off on this Mac.")
+	fmt.Println("Signed out of memdoor.ai: remote control and the hosted workflow state are off here; workflows still run in this project.")
 	if creds, err := loadCredentials(); err == nil {
 		fmt.Printf("The engine stays signed in as %s, so the agent keeps working on your key.\n", creds.Email)
 	}
@@ -290,7 +290,7 @@ func currentAccountStatus() accountStatus {
 	}
 	st.LocalReady = gatewayReachable()
 	if !st.LocalReady {
-		st.Note = "the engine is not running — it starts with the app"
+		st.Note = "the engine is not running — any memdoor command starts it"
 		return st
 	}
 	if r := readBrain(NewClient()); r.State != "" {

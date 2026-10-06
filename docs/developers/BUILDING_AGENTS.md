@@ -607,13 +607,4 @@ The remote agent developer guide this section used to link no longer exists; the
 
 ---
 
-## Community Examples
-
-Check out community-built agents:
-
-- **[Awesome Memdoor Agents](https://github.com/guregodevo/awesome-agents)** - Community agent library
-- **[Agent Marketplace](https://marketplace.memdoor.dev)** - Share and discover agents
-
----
-
 **Happy building! **

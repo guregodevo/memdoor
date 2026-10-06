@@ -56,18 +56,18 @@ grep -r "TODO" src/ | memdoor agent -m "Prioritize these TODOs by impact" -c gen
 
 ### [Authentication](features/authentication.md)
 
-Sign in to memdoor.ai with an emailed code (or `--browser`); the same command
+Sign in to memdoor.ai with an emailed code; the same command
 sets up this Mac's engine session. Signing out forgets the seat only.
 
 ```bash
-memdoor login you@example.com     # code by email; --browser to approve in the browser
+memdoor login you@example.com     # code by email, typed here
 memdoor account status            # this Mac's engine user, and the memdoor.ai account
 memdoor logout                    # sign out of memdoor.ai; the agent keeps working
 ```
 
 **Features**:
 - Secure token storage in `~/.memdoor/credentials.json`
-- 24-hour token expiration
+- 30-day session tokens (`memdoor auth logout` or expiry is what ends one; the email-verification link lives 24 hours)
 - Cross-platform browser support
 - Headless mode for servers
 
@@ -300,7 +300,6 @@ All interfaces share the same gateway and database.
 ### Agent Tools
 Built-in tools available to agents:
 - `memory`: Store/retrieve agent facts
-- `rag_search`: Semantic document search
 - `bash`: Execute shell commands
 - `read_file`: Read files from workspace
 - `write_file`: Write files to workspace

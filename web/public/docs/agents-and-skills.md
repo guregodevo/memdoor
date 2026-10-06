@@ -13,7 +13,7 @@ A workspace ships with a small team. Each has its own tools, prompt, and session
 | `runner` | Executes commands on behalf of another agent |
 | `narrator` | Announces what's happening in a channel |
 
-`memdoor tui` talks to the coder; start a message with `@planner` (or another agent's name) to send it there instead. `memdoor agent list` shows what's in your workspace. Agents can mention each other (`@coder`, `@chief`) and reply in threads, and scheduled heartbeat turns run maintenance in the background.
+`memdoor tui` talks to the coder; start a message with `@planner` (or another agent's name) to send it there instead. `memdoor agent list` shows what's in your workspace. Agents can mention each other (`@coder`, `@chief`) and reply in threads. A scheduled check's answer, or a spawned subagent's report, wakes the conversation that asked for it.
 
 Agents are configuration, not code: tool allowlists, model, temperature, and prompt live in the database per agent, and `memdoor agent update` changes them.
 
@@ -64,9 +64,7 @@ Edit a file and the next call uses it — no rebuild, no restart. A skill you dr
 |---|---|
 | `chrome` | Reading pages that need a real browser, driven through the `chrome` CLI |
 | `review` | Read and understand an existing repo before changing it |
-| `scraping` | Finding video sources on a site or a topic for clipping |
-| `clipping` | Turning long-form audio/video into short shareable clips |
-| `documentary` | A short documentary from news articles, with narration |
+| `workflow` | Build a workflow's task files from what the person asked for, then run it |
 
 **Running one deliberately.** `/skill:review src/auth.go` makes that skill the turn's task, rather than hoping the model decides to load it.
 

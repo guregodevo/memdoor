@@ -9,7 +9,7 @@ turn has stopped making progress ([features/DECIDE.md](features/DECIDE.md),
 [ADR-0015](adr/0015-decisions-through-jev-on-openrouter.md)). Chat goes
 through a provider on the person's own key (OpenRouter, a vendor, a company
 AI gateway, or one added with `memdoor connect`).
-Pro is remote control and the hosted scheduler. The CLI and TUI are the product; the web UI is login/admin.
+Pro is remote control and the hosted workflow state on memdoor.ai. The CLI and TUI are the product; the web UI is login/admin.
 The coder uses the person's MCP servers ([features/MCP.md](features/MCP.md), 2026-10-01) and runs
 on any provider's key — the company's gateway, Anthropic, OpenAI, Gemini, Groq, xAI, DeepSeek,
 Baseten or OpenRouter ([features/PROVIDERS.md](features/PROVIDERS.md), 2026-10-02). The current direction is the epoch note at the

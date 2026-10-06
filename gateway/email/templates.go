@@ -204,7 +204,7 @@ const demoRequestTemplate = `<!DOCTYPE html>
                     <tr>
                         <td style="padding: 20px 40px; border-top: 1px solid rgba(168,85,247,0.15); border-radius: 0 0 12px 12px;">
                             <p style="margin: 0; color: #4b5563; font-size: 12px; text-align: center; font-family: monospace;">
-                                Memdoor // Creator AI Agents
+                                Memdoor // coding agent for the terminal
                             </p>
                         </td>
                     </tr>

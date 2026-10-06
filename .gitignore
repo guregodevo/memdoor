@@ -97,6 +97,7 @@ data/**/training-data/
 !.memdoor/workflows/ship/
 !.memdoor/workflows/review/
 !.memdoor/workflows/tui-check/
+!.memdoor/workflows/sweep/
 /SELFTEST-*.md
 
 # Mac app build products (scripts/app/build.sh makes them)
