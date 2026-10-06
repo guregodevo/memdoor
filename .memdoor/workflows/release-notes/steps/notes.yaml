@@ -1,0 +1,24 @@
+type: agent
+prompt: |
+  Write the changelog entry for the release {{.partition}} at the TOP of CHANGELOG.md in this project.
+
+  What changed, from git:
+
+  1. The release before this one: `git tag --list 'v*-wiki' --sort=-v:refname | grep -A1 -x '{{.partition}}' | tail -1` is the tag listed immediately after {{.partition}} there — the newest release older than it. When that prints nothing, {{.partition}} is the first release: read the whole history instead.
+  2. Every commit between them: `git log --format='%h %s%n%b' <prev>..{{.partition}}` — read the messages to the end, and `git show <hash>` for any commit whose message does not say what a user would notice.
+  3. The date of the tag: `git log -1 --format=%cs {{.partition}}` (today's date if it does not resolve).
+
+  Write, at the very top of CHANGELOG.md:
+
+  - If CHANGELOG.md does not exist, create it with `# Changelog` as its first line, a blank line, then the entry.
+  - The heading, exactly: `## {{.partition}} — <date>` (an em dash between the tag and the date).
+  - Then up to three lists, in this order, each introduced by `### Added`, `### Changed`, `### Fixed`.
+  - Each item is ONE sentence about what a person using Memdoor notices: a command, a flag, a behavior that changed, a crash that is gone, a page that loads. No file names, no commit hashes, no internal refactors, renames, tests, dependency bumps or doc tweaks nobody sees.
+  - Group commits that are one change a person sees into a single item, so one item may cover several commits. When the whole range holds nothing a user notices, say that in one item under Changed.
+  - Omit a list that has no items entirely — never leave an empty heading.
+
+  Leave every older entry below the new one, word for word. Do not commit, do not run git add, and do not touch any file other than CHANGELOG.md.
+target:
+  command: grep -q '^## {{.partition}} ' CHANGELOG.md
+timeout: 15m
+max_retries: 1

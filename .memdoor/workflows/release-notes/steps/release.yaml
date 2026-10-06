@@ -1,0 +1,13 @@
+type: command
+command: |
+  set -e
+  tag="{{.partition}}"
+  if gh release view "$tag" -R guregodevo/memdoor >/dev/null 2>&1; then
+    echo "release $tag is already on guregodevo/memdoor - nothing to publish"
+    exit 0
+  fi
+  awk -v pat="## $tag " 'index($0, pat) == 1 { on = 1; next } on && substr($0, 1, 3) == "## " { exit } on' CHANGELOG.md \
+    | gh release create "$tag" -R guregodevo/memdoor --title "$tag" --notes-file -
+requires:
+  - table_pattern: commit
+timeout: 5m

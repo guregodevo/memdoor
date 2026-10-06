@@ -1,0 +1,11 @@
+type: command
+command: |
+  set -e
+  git add CHANGELOG.md
+  git commit -m "Changelog for {{.partition}}"
+  git push origin main
+requires:
+  - table_pattern: notes
+  - table_pattern: approve
+    external: true
+timeout: 5m
