@@ -502,6 +502,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	http.Handle("/api/invite", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleSendInvite))))    // Send invite email
 	http.Handle("/api/email/send", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleSendEmail)))) // Send email (agent tool)
 	http.Handle("/api/demo-request", addCORS(http.HandlerFunc(server.handleDemoRequest)))                     // Demo request form (public, no auth)
+	http.Handle("/api/status", addCORS(http.HandlerFunc(handleStatus)))                                        // Up, and which version (readiness polls)
 	http.Handle("/api/setup/status", addCORS(http.HandlerFunc(server.handleSetupStatus)))                     // Workspace setup status (public)
 	http.Handle("/api/setup", addCORS(http.HandlerFunc(server.handleSetup)))                                  // First-time workspace setup (public, one-time)
 	http.Handle("/api/telemetry", addCORS(http.HandlerFunc(server.handleTelemetry)))                          // Receives event batches from remote memdoor installs (public; bearer-token spam deterrent)

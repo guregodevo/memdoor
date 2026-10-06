@@ -1,0 +1,80 @@
+type: command
+command: |
+  set -euo pipefail
+  partition="{{.partition}}"
+  out=".memdoor/runs/HN-${partition}.md"
+  mkdir -p .memdoor/runs
+  # 36 hours back, on macOS (date -v) and on GNU date -d
+  since=$(date -u -v-36H +%s 2>/dev/null || date -u -d '36 hours ago' +%s)
+  work=$(mktemp -d)
+  i=0
+  for q in "coding agent" "agent skills" "agent workflows" "claude code" "codex cli" "openrouter" "api key cost" "terminal agent"; do
+    i=$((i + 1))
+    curl -sS --get 'https://hn.algolia.com/api/v1/search' \
+      --data-urlencode "query=${q}" \
+      --data-urlencode 'tags=story' \
+      --data-urlencode "numericFilters=created_at_i>${since},points>20" \
+      --data-urlencode 'hitsPerPage=50' \
+      -o "${work}/${i}.json"
+  done
+  python3 - "${work}" "${out}" "${partition}" "${since}" <<'PY'
+  import glob
+  import json
+  import os
+  import sys
+  import time
+
+  work, out, partition, since = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+  now = time.time()
+
+  hits = {}
+  for path in sorted(glob.glob(os.path.join(work, "*.json"))):
+      with open(path) as fh:
+          data = json.load(fh)
+      for hit in data.get("hits", []):
+          oid = hit.get("objectID")
+          if not oid:
+              continue
+          old = hits.get(oid)
+          if old is None or (hit.get("points") or 0) > (old.get("points") or 0):
+              hits[oid] = hit
+
+  rows = sorted(hits.values(), key=lambda h: (h.get("points") or 0), reverse=True)
+
+
+  def cell(text):
+      return str(text if text is not None else "").replace("|", "\\|").replace("\n", " ").strip()
+
+
+  lines = [
+      "# Hacker News watch - " + partition,
+      "",
+      "Stories of the last 36 hours with more than 20 points, one Algolia query per topic, merged by story id and sorted by points.",
+      "",
+  ]
+  if rows:
+      lines.append("| Points | Comments | Age (h) | Title | Link |")
+      lines.append("| --- | --- | --- | --- | --- |")
+      for hit in rows:
+          created = hit.get("created_at_i") or 0
+          age = (now - created) / 3600.0 if created else 0.0
+          lines.append("| %d | %d | %.1f | %s | https://news.ycombinator.com/item?id=%s |" % (
+              hit.get("points") or 0,
+              hit.get("num_comments") or 0,
+              age,
+              cell(hit.get("title")),
+              hit.get("objectID"),
+          ))
+  else:
+      lines.append("No story matched.")
+  lines.append("")
+
+  with open(out, "w") as fh:
+      fh.write("\n".join(lines))
+  print("%d stories since %s written to %s" % (len(rows), since, out))
+  PY
+  rm -rf "${work}"
+target:
+  file: .memdoor/runs/HN-{{.partition}}.md
+timeout: 10m
+max_retries: 1

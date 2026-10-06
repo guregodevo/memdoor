@@ -1,0 +1,20 @@
+type: agent
+agent: coder
+prompt: |
+  Read `.memdoor/runs/HN-{{.partition}}.md` — the Hacker News stories step `search` just wrote (points, comments, age, title, link to news.ycombinator.com).
+
+  Append ONE section to that same file, headed exactly:
+
+  ## Where a comment adds something
+
+  Memdoor's author is the person who builds Memdoor: a coding agent for solo developers that runs on the reader's OWN API key (any provider), where the decision model is what cuts their model bill, plus agent skills and agent workflows with local schedules.
+
+  Under the heading list at most five threads from the table where such a comment would be relevant to the thread's TOPIC and add something: what workflows are versus skills and when each pays, running an agent on your own provider key and what that costs, what agents actually cost to run per turn, what a terminal agent should and should not do. Each entry is the thread's link, then ONE line naming the angle and why that thread's topic invites it. No comment text, no drafts, no quotes, no extra bullets.
+
+  Be strict: a thread that only says "agent", "API key" or "workflow" in passing is OUT — relevance is to the thread's subject, not to a keyword in its title. Fewer than five is right when fewer fit. If none of the threads fits, put that one sentence under the heading instead. Never invent a thread and never pad the list to five. Do not change anything above the heading and do not touch any other file.
+requires:
+  - table_pattern: search
+target:
+  command: grep -q 'Where a comment adds something' .memdoor/runs/HN-{{.partition}}.md
+timeout: 15m
+max_retries: 1
