@@ -655,7 +655,14 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// Start HTTP server with security headers on all responses.
 	// Wrap with workspace middleware: /{workspace}/api/... → /api/... with
 	// workspace set in ExecutionContext. Also handles /{workspace}/chat/ws.
-	handler := workspaceMiddleware(addSecurityHeaders(http.DefaultServeMux))
+	slugExists := func(string) bool { return false }
+	if db, ok := server.repoFactory.DB().(*sql.DB); ok && db != nil {
+		slugExists = func(slug string) bool {
+			var one int
+			return db.QueryRow(`SELECT 1 FROM workspaces WHERE slug = ?`, slug).Scan(&one) == nil
+		}
+	}
+	handler := workspaceMiddleware(addSecurityHeaders(http.DefaultServeMux), slugExists)
 	srv := &http.Server{
 		Addr:         addr,
 		Handler:      handler,
@@ -949,13 +956,20 @@ var knownPrefixes = map[string]bool{
 	"sessions": true, "queue": true, "guide": true, "extension": true,
 	"assets": true, "favicon.png": true,
 	"icon-192.png": true, "memdoor-logo.png": true, "og-image.png": true,
+	"features": true, "workflows": true, "download": true, "devs": true, "setup": true,
+	"r": true, "s": true, "topup": true, "pro": true, "dl": true, "billing": true, "state": true,
+	"install.sh": true, "install.ps1": true, "sitemap.xml": true, "robots.txt": true, "llms.txt": true,
 }
 
 // workspaceMiddleware extracts workspace from URL prefix: /{workspace}/api/...
 // Strips the prefix so downstream handlers see /api/... and sets WorkspaceSlug
 // in ExecutionContext. Passes through URLs without workspace prefix unchanged.
 // Also respects X-Forwarded-Workspace header from load balancer.
-func workspaceMiddleware(next http.Handler) http.Handler {
+// A first segment is a workspace only when a workspace of that slug EXISTS
+// (slugExists): until 2026-10-06 any word was one, so /zzz and every URL of
+// the old wiki (/cyberlaw, /localllm) were rewritten to / and answered the
+// home page with 200 — Google kept three pages of them as copies of it.
+func workspaceMiddleware(next http.Handler, slugExists func(string) bool) http.Handler {
 	slugRe := regexp.MustCompile(`^[A-Za-z0-9_\-]+$`)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -964,7 +978,7 @@ func workspaceMiddleware(next http.Handler) http.Handler {
 
 		// Check if first segment is a workspace slug (not a known prefix)
 		slug := ""
-		if len(parts) >= 1 && parts[0] != "" && !knownPrefixes[parts[0]] && slugRe.MatchString(parts[0]) {
+		if len(parts) >= 1 && parts[0] != "" && !knownPrefixes[parts[0]] && slugRe.MatchString(parts[0]) && slugExists(parts[0]) {
 			slug = parts[0]
 			// Strip workspace prefix from path
 			if len(parts) == 2 {
