@@ -46,7 +46,7 @@ func ByokKey() string {
 // key, answered by the cheapest rung of the coder's ladder (the search
 // itself is OpenRouter's server tool, the model only answers from it).
 func WebSearch() tools.WebSearchBackend {
-	return tools.WebSearchBackend{Endpoint: byokEndpoint, Key: ByokKey(), Model: byokLadders["coder"][0]}
+	return tools.WebSearchBackend{Endpoint: byokEndpoint, Key: ByokKey(), Model: byokLadders["coder"][0], Headers: AppHeaders(byokEndpoint)}
 }
 
 // byokLadders is each agent's ladder, cheapest rung first. A conversation

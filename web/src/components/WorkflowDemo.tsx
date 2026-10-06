@@ -96,7 +96,7 @@ export function WorkflowDemo() {
         ))}
       </div>
       <p className="mb-3 text-sm text-neutral-300">
-        <span className="text-neutral-500">You say: </span>
+        <span className="text-neutral-400">You say: </span>
         <span className="italic">“{take.ask}”</span>
       </p>
       <div ref={host} className="overflow-hidden rounded-xl border border-neutral-700 shadow-lg" />

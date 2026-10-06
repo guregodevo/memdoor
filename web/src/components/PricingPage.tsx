@@ -113,7 +113,7 @@ export function PricingPage() {
       {/* THE TWO TIERS. Free first: most readers belong there, and a page that
           hides the free tier to sell the paid one reads as a trap. */}
       <section className="mx-auto w-full max-w-6xl px-6 py-14 sm:px-12 sm:py-20">
-        <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">Pricing</div>
+        <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">Pricing</div>
         <h1 className="mx-auto mb-4 max-w-3xl text-center text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
           Free on your key. Pro for what runs on memdoor.ai.
         </h1>
@@ -124,7 +124,7 @@ export function PricingPage() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="rounded-2xl border border-neutral-200 bg-white p-8">
-            <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-400">Free</div>
+            <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Free</div>
             <div className="mb-1 text-4xl font-bold text-neutral-900">$0</div>
             <div className="mb-6 text-sm text-neutral-500">
               Your own key, no memdoor.ai account needed.
@@ -146,9 +146,9 @@ export function PricingPage() {
           </div>
 
           <div className="rounded-2xl border-2 border-neutral-900 bg-white p-8">
-            <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-400">Pro</div>
+            <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
             <div className="mb-1 text-4xl font-bold text-neutral-900">
-              $10<span className="text-lg font-medium text-neutral-400"> / month</span>
+              $10<span className="text-lg font-medium text-neutral-500"> / month</span>
             </div>
             <div className="mb-6 text-sm text-neutral-500">Everything in Free, plus remote control and workflows across machines. Always your key.</div>
             <ul className="mb-8 space-y-3 text-sm leading-relaxed text-neutral-600">
@@ -168,7 +168,7 @@ export function PricingPage() {
           </div>
 
           <div className="rounded-2xl border border-neutral-200 bg-white p-8">
-            <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-400">Enterprise</div>
+            <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Enterprise</div>
             <div className="mb-1 text-4xl font-bold text-neutral-900">
               By invoice
             </div>
@@ -207,7 +207,7 @@ export function PricingPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[34rem] text-left text-sm">
               <thead>
-                <tr className="border-b border-neutral-200 text-xs uppercase tracking-wider text-neutral-400">
+                <tr className="border-b border-neutral-200 text-xs uppercase tracking-wider text-neutral-500">
                   <th className="py-3 pr-4 font-medium">The same work</th>
                   <th className="py-3 pr-4 font-medium">Input tokens, off</th>
                   <th className="py-3 pr-4 font-medium">On</th>
@@ -263,7 +263,7 @@ export function PricingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-neutral-100 py-8 text-center text-xs text-neutral-400">
+      <footer className="border-t border-neutral-100 py-8 text-center text-xs text-neutral-500">
         <a href="/docs/getting-started" className="hover:text-neutral-700">
           Docs
         </a>

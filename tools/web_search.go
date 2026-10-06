@@ -31,6 +31,7 @@ const (
 // there is none.
 type WebSearchBackend struct {
 	Endpoint, Key, Model string
+	Headers              map[string]string // the app's identity for OpenRouter's apps page; nil elsewhere
 }
 
 var webSearchBackend = func() WebSearchBackend { return WebSearchBackend{} }
@@ -90,6 +91,9 @@ func WebSearch(input json.RawMessage) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+be.Key)
+	for k, v := range be.Headers {
+		req.Header.Set(k, v)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := (&http.Client{Timeout: webSearchTimeout}).Do(req)
 	if err != nil {

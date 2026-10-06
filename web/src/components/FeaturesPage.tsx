@@ -125,12 +125,17 @@ export function FeaturesPage() {
         <p className="mx-auto mb-8 max-w-2xl text-center text-sm text-neutral-500">
           Compared with Claude Code, Codex CLI, Gemini CLI, Aider, OpenCode, Cline, Copilot CLI, Amp, Goose and Cursor
           CLI (and, for sharing, Command Code, Kilo Code, pi and omp), from their own docs. The right-hand column
-          says who else documents each one.
+          says who else documents each one. One page each:{' '}
+          <a className="text-neutral-900 underline underline-offset-4" href="/compare/claude-code">Claude Code</a>,{' '}
+          <a className="text-neutral-900 underline underline-offset-4" href="/compare/codex-cli">Codex CLI</a>,{' '}
+          <a className="text-neutral-900 underline underline-offset-4" href="/compare/gemini-cli">Gemini CLI</a>,{' '}
+          <a className="text-neutral-900 underline underline-offset-4" href="/compare/aider">Aider</a>,{' '}
+          <a className="text-neutral-900 underline underline-offset-4" href="/compare/pi">pi</a>.
         </p>
         <div className="mx-auto max-w-5xl overflow-x-auto">
           <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-neutral-200 text-xs uppercase tracking-wider text-neutral-400">
+              <tr className="border-b border-neutral-200 text-xs uppercase tracking-wider text-neutral-500">
                 <th className="py-3 pr-4 font-medium">Feature</th>
                 <th className="py-3 pr-4 font-medium">In Memdoor</th>
                 <th className="py-3 font-medium">Also in</th>
@@ -147,7 +152,7 @@ export function FeaturesPage() {
             </tbody>
           </table>
         </div>
-        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-neutral-400">
+        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-neutral-500">
           Read from each agent’s docs on 28 September 2026; an agent not named in a row may still have the feature.
         </p>
         <div className="mt-12 text-center">

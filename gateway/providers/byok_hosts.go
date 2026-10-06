@@ -70,6 +70,7 @@ func FetchEndpoints(key, id string) ([]Endpoint, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+key)
+	SetAppHeaders(req)
 	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("the host listing did not answer: %v", err)

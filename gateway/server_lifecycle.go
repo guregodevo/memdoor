@@ -960,7 +960,7 @@ var knownPrefixes = map[string]bool{
 	"sessions": true, "queue": true, "guide": true, "extension": true,
 	"assets": true, "favicon.png": true,
 	"icon-192.png": true, "memdoor-logo.png": true, "og-image.png": true,
-	"features": true, "workflows": true, "download": true, "devs": true, "setup": true,
+	"features": true, "workflows": true, "download": true, "devs": true, "setup": true, "compare": true,
 	"r": true, "s": true, "topup": true, "pro": true, "dl": true, "billing": true, "state": true,
 	"install.sh": true, "install.ps1": true, "sitemap.xml": true, "robots.txt": true, "llms.txt": true,
 }

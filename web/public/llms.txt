@@ -45,7 +45,7 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 - Why workflows rather than skills (the author's write-up): https://guregodevo.github.io/2026/10/06/workflows-not-skills/
 - Home: https://memdoor.ai
 - Docs: https://memdoor.ai/docs/getting-started
-- Features, with the comparison to other coding agents: https://memdoor.ai/features
+- Features, with the comparison to other coding agents: https://memdoor.ai/features — one page each: https://memdoor.ai/compare/claude-code, /compare/codex-cli, /compare/gemini-cli, /compare/aider, /compare/pi
 - Workflows: https://memdoor.ai/workflows (catalog), https://memdoor.ai/docs/workflows (guide), https://memdoor.ai/docs/cron (schedules)
 - Remote control: https://memdoor.ai/docs/remote
 - Installer (plain shell, SHA-256 verified): https://memdoor.ai/install.sh

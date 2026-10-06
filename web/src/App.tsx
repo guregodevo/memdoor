@@ -13,6 +13,7 @@ import { CoderLandingPage } from './components/CoderLandingPage';
 import { WorkflowCatalogPage } from './components/WorkflowCatalogPage';
 import { PricingPage } from './components/PricingPage';
 import { FeaturesPage } from './components/FeaturesPage';
+import { ComparePage } from './components/ComparePage';
 import { DocsPage } from './components/DocsPage';
 import { RemotePage } from './components/RemotePage';
 import { SharePage } from './components/SharePage';
@@ -98,6 +99,10 @@ function App() {
   }
   if (location.pathname === '/features') {
     return <FeaturesPage />;
+  }
+  // One page per coding agent people search against (public).
+  if (location.pathname.startsWith('/compare/')) {
+    return <ComparePage slug={location.pathname.slice('/compare/'.length).replace(/\/+$/, '')} />;
   }
   if (location.pathname === '/workflows') {
     return <WorkflowCatalogPage />;

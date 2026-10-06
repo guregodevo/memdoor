@@ -10,6 +10,7 @@ var spaRoutes = map[string]bool{
 	"/forgot-password": true, "/login": true, "/pricing": true, "/reset-password": true,
 	"/setup": true, "/verify-email": true, "/workflows": true,
 	"/extension": true, "/extension/install": true, "/extension/connect": true,
+	"/compare/claude-code": true, "/compare/codex-cli": true, "/compare/gemini-cli": true, "/compare/aider": true, "/compare/pi": true,
 }
 
 var spaPrefixes = []string{"/docs/", "/r/", "/s/", "/topup", "/pro/"}

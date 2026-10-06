@@ -113,7 +113,7 @@ const FAQ: { q: string; a: string }[] = [
   },
 ];
 
-function InstallLine({ dark = false }: { dark?: boolean }) {
+export function InstallLine({ dark = false }: { dark?: boolean }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -153,7 +153,7 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
       }`}
     >
       <button onClick={() => navigate('/')} aria-label="Memdoor home">
-        <img src="/memdoor-logo.png" alt="Memdoor" className={`h-9 ${dark ? 'invert' : ''}`} />
+        <img src="/memdoor-logo.png" alt="Memdoor" width={1409} height={351} className={`h-9 w-auto ${dark ? 'invert' : ''}`} />
       </button>
       <nav className="flex items-center gap-5 text-sm">
         <a
@@ -221,7 +221,7 @@ export function CoderLandingPage() {
       {/* HERO — the one message, its proof, and the terminal it happens in (2026-09-28: "find the way to sell it"). */}
       <div className="bg-neutral-950 text-white">
         <CoderHeader dark />
-        <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
+        <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
           <div className="text-center lg:text-left">
             <div className="mb-4 text-xs uppercase tracking-[0.2em] text-neutral-400">
               A coding agent in your terminal · your own key, any provider
@@ -242,13 +242,13 @@ export function CoderLandingPage() {
             </ul>
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />
-              <p className="text-xs text-neutral-500">Free on your own key, any provider.</p>
+              <p className="text-xs text-neutral-400">Free on your own key, any provider.</p>
               <a href="#demos" className="text-xs text-neutral-300 underline underline-offset-4 hover:text-white">
                 Every demo on this page is a recording of a real session
               </a>
             </div>
           </div>
-          <div className="w-full">
+          <div className="w-full min-h-[520px]">
             <WorkflowDemo />
           </div>
         </section>
@@ -259,7 +259,7 @@ export function CoderLandingPage() {
             give you the orchestration"). Cron+make existed; teams still moved
             to Airflow. Pi+a Makefile is cron+make for agents. */}
         <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
-          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">Orchestration</div>
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">Orchestration</div>
           <h2 className="mx-auto mb-4 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
             Airflow, for agents.
           </h2>
@@ -291,7 +291,7 @@ export function CoderLandingPage() {
         {/* THE NUMBERS — the claim about the bill, measured. */}
         <section className="border-t border-neutral-100 bg-neutral-50">
         <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
-          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">
             Measured on paired runs
           </div>
           <h2 className="mx-auto mb-3 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
@@ -304,7 +304,7 @@ export function CoderLandingPage() {
           <div className="mx-auto max-w-3xl overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-400">
+                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
                   <th className="py-3 pr-4 font-medium">The work</th>
                   <th className="py-3 pr-4 text-right font-medium">Without</th>
                   <th className="py-3 pr-4 text-right font-medium">With</th>
@@ -317,13 +317,13 @@ export function CoderLandingPage() {
                     <td className="py-4 pr-4">{m.work}</td>
                     <td className="py-4 pr-4 text-right tabular-nums text-neutral-500">{m.off}</td>
                     <td className="py-4 pr-4 text-right tabular-nums font-semibold text-neutral-900">{m.on}</td>
-                    <td className="py-4 text-right font-semibold text-emerald-600">{m.saved}</td>
+                    <td className="py-4 text-right font-semibold text-emerald-700">{m.saved}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-neutral-400">
+          <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-neutral-500">
             Means over five pairs each. The harness that produced these rows is in the source tree.
           </p>
           <div className="mx-auto mt-10 w-full max-w-3xl">
@@ -354,7 +354,7 @@ export function CoderLandingPage() {
 
         <section className="border-t border-neutral-100 bg-white">
           <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
-            <div className="mb-10 text-center text-xs uppercase tracking-widest text-neutral-400">
+            <div className="mb-10 text-center text-xs uppercase tracking-widest text-neutral-500">
               Where the saving comes from
             </div>
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
@@ -372,7 +372,7 @@ export function CoderLandingPage() {
         <section id="remote" className="scroll-mt-4 border-t border-neutral-100 bg-neutral-950 text-white">
           <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 py-16 sm:px-12 lg:grid-cols-[1.2fr_1fr]">
             <div>
-              <div className="mb-3 text-xs uppercase tracking-widest text-neutral-500">Remote control</div>
+              <div className="mb-3 text-xs uppercase tracking-widest text-neutral-400">Remote control</div>
               <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">The same terminal, on your phone.</h2>
               <p className="mb-8 max-w-xl text-base leading-relaxed text-neutral-300">
                 Type <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-sm text-white">/remote</code> and scan
@@ -386,7 +386,7 @@ export function CoderLandingPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-5 text-xs text-neutral-500">
+              <p className="mt-5 text-xs text-neutral-400">
                 Part of Pro: the memdoor.ai relay carries it. Sign in with{' '}
                 <code className="text-neutral-300">memdoor login you@example.com</code>.{' '}
                 <a href="/docs/remote" className="underline underline-offset-4 hover:text-neutral-300">
@@ -400,13 +400,13 @@ export function CoderLandingPage() {
 
         {/* PRICE — a solo dev's arithmetic, stated plainly. */}
         <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
-          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">What it costs</div>
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">What it costs</div>
           <h2 className="mx-auto mb-10 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
             Free on your key. Pro for what runs on memdoor.ai.
           </h2>
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="rounded-2xl border border-neutral-200 bg-white p-7">
-              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-400">Free</div>
+              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Free</div>
               <div className="mb-4 text-3xl font-bold text-neutral-900">Your own key</div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
                 The agent, the decision model and workflows, on your own account at OpenRouter, Anthropic, OpenAI,
@@ -415,9 +415,9 @@ export function CoderLandingPage() {
               <InstallLine />
             </div>
             <div className="rounded-2xl border-2 border-neutral-900 bg-white p-7">
-              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-400">Pro</div>
+              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
               <div className="mb-4 text-3xl font-bold text-neutral-900">
-                $10<span className="text-lg font-medium text-neutral-400"> / month</span>
+                $10<span className="text-lg font-medium text-neutral-500"> / month</span>
               </div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
                 Remote control from your phone, and workflow state kept on memdoor.ai so a workflow can wait on
@@ -429,7 +429,7 @@ export function CoderLandingPage() {
               >
                 Subscribe — $10 / month
               </a>
-              <p className="mt-3 text-xs text-neutral-400">
+              <p className="mt-3 text-xs text-neutral-500">
                 Cancel any month.
               </p>
             </div>
@@ -439,7 +439,7 @@ export function CoderLandingPage() {
         {/* INSTALL — the whole first session, four lines. */}
         <section id="install" className="border-t border-neutral-100 bg-neutral-950 text-white">
           <div className="mx-auto w-full max-w-3xl px-6 py-16 sm:px-12">
-            <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">Start</div>
+            <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-400">Start</div>
             <h2 className="mb-8 text-center text-3xl font-bold tracking-tight sm:text-4xl">Two minutes.</h2>
             <div className="space-y-3 font-mono text-[13px] sm:text-sm">
               {[
@@ -454,11 +454,11 @@ export function CoderLandingPage() {
                     <span className="select-none text-neutral-600">$</span>
                     <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-neutral-100">{cmd}</code>
                   </div>
-                  <p className="mt-1 pl-6 text-xs text-neutral-500">{note}</p>
+                  <p className="mt-1 pl-6 text-xs text-neutral-400">{note}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-center text-xs text-neutral-500">
+            <p className="mt-6 text-center text-xs text-neutral-400">
               Read the installer first if you like: <a className="underline underline-offset-4" href="/install.sh">/install.sh</a>. Windows:{' '}
               <code>irm https://memdoor.ai/install.ps1 | iex</code>.
             </p>
@@ -468,7 +468,7 @@ export function CoderLandingPage() {
         {/* QUESTIONS */}
         <section className="border-t border-neutral-100 bg-neutral-50">
           <div className="mx-auto w-full max-w-3xl px-6 py-16 sm:px-12">
-            <div className="mb-8 text-center text-xs uppercase tracking-widest text-neutral-400">Questions</div>
+            <div className="mb-8 text-center text-xs uppercase tracking-widest text-neutral-500">Questions</div>
             <div className="divide-y divide-neutral-200 rounded-2xl border border-neutral-200 bg-white">
               {FAQ.map((f) => (
                 <details key={f.q} className="group px-6 py-4">
@@ -484,7 +484,7 @@ export function CoderLandingPage() {
       </main>
 
       <footer className="border-t border-neutral-100 py-8 text-center">
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-neutral-500">
           Open source, Apache 2.0:{' '}
           <a href="https://github.com/guregodevo/memdoor" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
             github.com/guregodevo/memdoor

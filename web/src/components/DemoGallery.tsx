@@ -109,11 +109,11 @@ function Card({ d }: { d: (typeof DEMOS)[number] }) {
     <div className="flex flex-col rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
       <div className="mb-1 text-sm font-semibold text-white">{d.title}</div>
       <p className="mb-3 text-xs text-neutral-400">
-        <span className="text-neutral-500">You say: </span>
+        <span className="text-neutral-400">You say: </span>
         <span className="italic">“{d.ask}”</span>
       </p>
       <div ref={host} className="overflow-hidden rounded-lg border border-neutral-700" />
-      <div className="mt-2 text-center text-[11px] text-neutral-500">{d.note}</div>
+      <div className="mt-2 text-center text-[11px] text-neutral-400">{d.note}</div>
     </div>
   );
 }

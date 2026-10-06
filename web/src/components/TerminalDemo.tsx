@@ -49,7 +49,7 @@ export function TerminalDemo() {
   return (
     <div className="mx-auto w-full max-w-3xl text-left">
       <div ref={host} className="overflow-hidden rounded-xl border border-neutral-700 shadow-lg" />
-      <p className="mt-2 text-center text-xs text-neutral-400">
+      <p className="mt-2 text-center text-xs text-neutral-500">
         A real <code className="text-neutral-300">memdoor tui</code> session on this repository, GLM 5.3 Flash on the
         cheapest rung, with the waits cut: 36 seconds played in 15. <code className="text-neutral-300">jgrep</code> kept 6 of 29
         hunks, <code className="text-neutral-300">jread</code> 4 of 41 sections.
