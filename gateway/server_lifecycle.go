@@ -576,6 +576,10 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 			http.NotFound(w, r)
 			return
 		}
+		if to, ok := legacyRedirects["/"+strings.TrimSuffix(clean, "/")]; ok {
+			http.Redirect(w, r, to, http.StatusMovedPermanently)
+			return
+		}
 		if !isSPARoute("/" + clean) {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.Header().Set("Cache-Control", "no-cache")
