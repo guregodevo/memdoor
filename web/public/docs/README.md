@@ -3,8 +3,9 @@
 A coding agent in your terminal, running on **your own key, any provider's**,
 with a decision model in front of the chat model to cut what it reads and what
 it costs. Measured over twenty paired runs: 49% fewer input tokens on a question
-about the codebase, 26% fewer on an edit, every answer still correct. Free on
-your own key, decision model included; workflows are $10 a month.
+about the codebase, 26% fewer on an edit, every answer still correct. The
+agent, the decision model and workflows are free on your own key; Pro is $10 a
+month for remote control and workflow state kept on memdoor.ai.
 
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
@@ -28,6 +29,7 @@ cd your-project && memdoor tui
 ## Reference
 
 - **[Slash commands](/docs/slash-commands)** — everything you can type in the TUI.
+- **[Where your data goes](/docs/security)** — every host the binary can contact, and when; the decision model is a hosted model.
 - **[CLI](/docs/cli)** — every command, grouped by what you're doing.
 - **[Configuration](/docs/configuration)** — environment variables, file locations, workspace resolution.
 

@@ -85,7 +85,7 @@ const REMOTE: { title: string; body: string }[] = [
 const FAQ: { q: string; a: string }[] = [
   {
     q: 'Does my code leave my machine?',
-    a: 'Only what the model reads leaves: the prompt and the judged excerpts, to the provider you connected. Files, sessions and commands stay on your machine.',
+    a: 'Only what a model reads leaves: the prompt to the provider you connected, and the excerpts being judged to the decision model (a hosted model, on your OpenRouter key or a decision key). Files, sessions and commands stay on your machine. Every host the binary can contact is listed at /docs/security.',
   },
   {
     q: 'Can I follow a turn from my phone?',
@@ -93,7 +93,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'What is the decision model?',
-    a: 'Jev, by TypeSafe: a calibrated probability to a question like "is this hit relevant", in under half a second. It decides what the coding model reads; it never writes code.',
+    a: 'Jev, by TypeSafe: a hosted model that answers a question like "is this hit relevant" with a calibrated probability in under half a second. It decides what the coding model reads; it never writes code. It runs through OpenRouter on your OpenRouter key, or on a decision key (memdoor connect typesafe); on an Anthropic, OpenAI or Gemini key alone it is off and the agent works without the savings.',
   },
   {
     q: 'Does reading less make it worse?',

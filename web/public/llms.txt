@@ -6,7 +6,7 @@
 
 Memdoor reads your files, writes patches, runs the build and fixes what it broke, in the directory you launch it from (`memdoor tui`). Every model call is on your own account: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or a company AI gateway (`memdoor connect`, or export the key). Memdoor adds nothing to the bill and your code does not pass through memdoor.ai.
 
-A decision model (Jev, by TypeSafe) sits in front of the chat model and answers typed questions with a calibrated probability in under half a second. The harness acts on the answers:
+A decision model (Jev, by TypeSafe — a hosted model, not a local one) sits in front of the chat model and answers typed questions with a calibrated probability in under half a second. The excerpts being judged go to it, through OpenRouter on your OpenRouter key or directly on a decision key (`memdoor connect typesafe`); on an Anthropic, OpenAI or Gemini key alone it is off and the agent works without the savings. Every host the binary can contact: https://memdoor.ai/docs/security. The harness acts on the answers:
 
 - Judged reads: search hits, file sections and log lines are scored against the task; only what counts reaches the model.
 - A toolbox sized to the turn: only the tools the request needs are sent (schemas were 37% of an edit turn's input when measured).

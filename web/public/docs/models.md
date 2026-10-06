@@ -39,7 +39,7 @@ on every request. The gateway's first log line says which key serves it;
 call at all; the decision model stays off
 unless the gateway holds a decision key of its own. The full table of every
 host the binary can name, and when, is
-[docs/SECURITY.md](https://github.com/guregodevo/memdoor/blob/main/docs/SECURITY.md)
+[docs/SECURITY.md](/docs/security)
 — the page to hand your reviewer.
 
 ## Connect a provider

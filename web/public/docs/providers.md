@@ -114,7 +114,7 @@ the same coding turn on its fast model — a planted bug, a failing test,
   `MEMDOOR_MODEL` and `MEMDOOR_MODEL_CONTEXT`.
 - With it set, nothing but the gateway is contacted — no OpenRouter, no
   memdoor.ai, no catalogue, no public reference (the last copy on disk
-  answers). [Where your data goes](https://github.com/guregodevo/memdoor/blob/main/docs/SECURITY.md).
+  answers). [Where your data goes](/docs/security).
 
 ## Any OpenAI-compatible endpoint
 
