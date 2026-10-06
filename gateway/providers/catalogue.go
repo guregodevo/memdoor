@@ -221,7 +221,11 @@ func (m anthropicModel) model() Model {
 }
 
 func anthropicHeaders(p Provider) map[string]string {
-	return map[string]string{"x-api-key": p.Key, "anthropic-version": anthropicVersion}
+	h := map[string]string{"x-api-key": p.Key, "anthropic-version": anthropicVersion}
+	for k, v := range AppHeaders(p.Base) {
+		h[k] = v
+	}
+	return h
 }
 
 func (anthropicReader) ListModels(ctx context.Context, p Provider) ([]Model, error) {

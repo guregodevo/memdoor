@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"memdoor/gateway"
+	"memdoor/gateway/providers"
 	"memdoor/gateway/telemetry"
 	"memdoor/pkg/shared"
 
@@ -68,6 +69,7 @@ var gatewayCmd = &cobra.Command{
 		// installs the wrapper. Cycle-free: cmd → telemetry; gateway
 		// → telemetry; cmd → gateway; no telemetry → cmd or gateway → cmd.
 		telemetry.GatewayVersion = Version
+		providers.SetAppVersion(Version)
 
 		// One-line banner so the user sees the URL immediately and most
 		// terminals auto-link it. Below this, slog prints structured

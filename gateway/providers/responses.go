@@ -171,6 +171,7 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		}
 		hr.Header.Set("Content-Type", "application/json")
 		hr.Header.Set("Authorization", "Bearer "+m.client.token)
+		SetAppHeaders(hr)
 		setVendorHeaders(hr.Header)
 		setAttributionHeaders(ctx, hr.Header)
 		resp, err = m.client.httpClient.Do(hr)

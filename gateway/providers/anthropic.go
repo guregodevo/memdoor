@@ -142,6 +142,7 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("x-api-key", m.client.apiKey)
+		SetAppHeaders(req)
 		req.Header.Set("anthropic-version", anthropicVersion)
 		setVendorHeaders(req.Header)
 		setAttributionHeaders(ctx, req.Header)

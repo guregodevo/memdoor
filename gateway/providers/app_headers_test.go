@@ -2,6 +2,7 @@ package providers
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -14,9 +15,12 @@ func TestOnlyOpenRouterLearnsTheAppsName(t *testing.T) {
 	other, _ := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/messages", nil)
 	SetAppHeaders(other)
 	if other.Header.Get("X-Title") != "" || other.Header.Get("HTTP-Referer") != "" {
-		t.Fatalf("a vendor request carries nothing extra: %v", other.Header)
+		t.Fatalf("a vendor request carries no OpenRouter headers: %v", other.Header)
 	}
-	if AppHeaders("https://api.openai.com/v1") != nil || AppHeaders("https://openrouter.ai/api/v1/models")["X-Title"] != "Memdoor" {
+	if !strings.HasPrefix(other.Header.Get("User-Agent"), "Memdoor/") || !strings.Contains(other.Header.Get("User-Agent"), "memdoor.ai") {
+		t.Fatalf("every provider sees the app's name: %q", other.Header.Get("User-Agent"))
+	}
+	if AppHeaders("https://api.openai.com/v1")["X-Title"] != "" || AppHeaders("https://api.openai.com/v1")["User-Agent"] == "" || AppHeaders("https://openrouter.ai/api/v1/models")["X-Title"] != "Memdoor" {
 		t.Fatal("the map form agrees with the request form")
 	}
 }

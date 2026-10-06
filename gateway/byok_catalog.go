@@ -62,6 +62,7 @@ func (c *byokCatalog) models(key string) ([]byokModel, error) {
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+key)
+	providers.SetAppHeaders(req)
 	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("the model catalogue did not answer: %v", err)
