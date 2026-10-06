@@ -1,0 +1,58 @@
+# The published installers, run on each platform GitHub provides: install
+# from memdoor.ai exactly as a person does, print the version, start the
+# gateway, ask it for its status. Windows is the one nobody on the project
+# owns (2026-10-06: the PowerShell installer had refused every install for
+# weeks and no machine was there to notice).
+name: Installers (from memdoor.ai)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - scripts/install.sh
+      - scripts/install.ps1
+      - .github/workflows/installers.yml
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'   # Mondays, in case the site changed under the scripts
+
+jobs:
+  unix:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install
+        run: curl -fsSL https://memdoor.ai/install.sh | bash
+      - name: Version, gateway, status
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          memdoor --version
+          nohup memdoor gateway > gw.log 2>&1 &
+          for i in $(seq 1 40); do curl -sf http://127.0.0.1:18789/api/status >/dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:18789/api/status
+          memdoor setup --non-interactive --admin-email ci@example.test --admin-password ci-first-run-2026 --workspace-name ci
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Install
+        shell: pwsh
+        run: irm https://memdoor.ai/install.ps1 | iex
+      - name: Version, gateway, status
+        shell: pwsh
+        run: |
+          $bin = Join-Path $env:LOCALAPPDATA 'Memdoor\bin\memdoor.exe'
+          & $bin --version
+          $gw = Start-Process -FilePath $bin -ArgumentList 'gateway' -PassThru -RedirectStandardOutput gw.log -RedirectStandardError gw.err
+          $ok = $false
+          foreach ($i in 1..40) {
+            try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:18789/api/status | Out-Null; $ok = $true; break } catch { Start-Sleep 1 }
+          }
+          if (-not $ok) { Get-Content gw.log, gw.err; throw "gateway did not answer" }
+          (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:18789/api/status).Content
+          & $bin setup --non-interactive --admin-email ci@example.test --admin-password ci-first-run-2026 --workspace-name ci
+          Stop-Process -Id $gw.Id
