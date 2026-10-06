@@ -568,9 +568,19 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 		}
 		// No file at that path. If it has a file extension it's a real
 		// asset request (e.g. /assets/missing.css) and should 404. If
-		// not, treat it as an SPA route and serve index.html.
+		// not, treat it as an SPA route and serve index.html — with a 404
+		// status when it is not a route the app has: every URL of the old
+		// wiki (/cyberlaw/…, /localllm/…) answered 200 with the home page
+		// and Google kept three pages of them as copies of it (2026-10-06).
 		if path.Ext(clean) != "" {
 			http.NotFound(w, r)
+			return
+		}
+		if !isSPARoute("/" + clean) {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Header().Set("Cache-Control", "no-cache")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write(indexHTML)
 			return
 		}
 		serveIndex(w, r)
