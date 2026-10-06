@@ -102,4 +102,4 @@ docs/          features, reference, ADRs
 ## License
 
 Apache License 2.0 — [LICENSE](LICENSE), [NOTICE](NOTICE). The public
-repository is [github.com/guregodevo/memdoor-oss](https://github.com/guregodevo/memdoor-oss); issues there.
+repository is [github.com/guregodevo/memdoor](https://github.com/guregodevo/memdoor); issues there.

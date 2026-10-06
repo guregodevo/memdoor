@@ -75,7 +75,7 @@ deploy:
 oss-tree:
 	@./scripts/oss-tree.sh
 
-# oss-publish puts the current release on the public repo (guregodevo/memdoor-oss):
+# oss-publish puts the current release on the public repo (guregodevo/memdoor):
 # the oss-tree laid over a clone of it, one commit named after the version, a tag,
 # pushed (scripts/oss-publish.sh). Private commit messages never travel.
 oss-publish:

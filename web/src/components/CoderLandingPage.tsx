@@ -181,7 +181,7 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
           Docs
         </a>
         <a
-          href="https://github.com/guregodevo/memdoor-oss"
+          href="https://github.com/guregodevo/memdoor"
           className={`hidden sm:inline-flex items-center gap-1.5 ${dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
           aria-label="Memdoor on GitHub"
         >
@@ -487,8 +487,8 @@ export function CoderLandingPage() {
       <footer className="border-t border-neutral-100 py-8 text-center">
         <p className="text-xs text-neutral-400">
           Open source, Apache 2.0:{' '}
-          <a href="https://github.com/guregodevo/memdoor-oss" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
-            github.com/guregodevo/memdoor-oss
+          <a href="https://github.com/guregodevo/memdoor" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
+            github.com/guregodevo/memdoor
           </a>
           <span className="px-2">·</span>
           <a href="/features" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
