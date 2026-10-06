@@ -36,7 +36,13 @@ try {
 # every machine that ran this line.
 Write-Host "Verifying checksum ..."
 try {
-    $sums = (Invoke-WebRequest -Uri "$Base/SHA256SUMS" -UseBasicParsing).Content
+    # /dl/ is served as application/octet-stream (so browsers download the
+    # binaries), and for that type PowerShell hands back bytes, not text: the
+    # manifest then matched nothing and every Windows install was refused
+    # (found 2026-10-06). Decode it as text whatever the server says.
+    $resp = Invoke-WebRequest -Uri "$Base/SHA256SUMS" -UseBasicParsing
+    if ($resp.Content -is [byte[]]) { $sums = [System.Text.Encoding]::UTF8.GetString($resp.Content) }
+    else { $sums = [string]$resp.Content }
 } catch {
     Remove-Item $tmp -Force -ErrorAction SilentlyContinue
     Fail "could not fetch $Base/SHA256SUMS — refusing to install an unverified binary."

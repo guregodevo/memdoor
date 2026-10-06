@@ -113,12 +113,23 @@ DEST="$DEST_DIR/memdoor"
 # reinstalling from a different mode (--user vs sudo) so the old
 # binary lives at a different path.
 [ -x "$DEST" ] && echo "==> Existing install detected at $DEST"
+# The gateway's port: 18789 unless the person runs it elsewhere (MEMDOOR_PORT).
+GW_PORT="${MEMDOOR_PORT:-18789}"
+# A running gateway is one that answers on the port — never a guess from lsof:
+# BusyBox's lsof (Alpine) ignores its arguments, said "running" on an empty
+# box and the kill that followed hit the installer itself (2026-10-06). The
+# processes are found by name, which pgrep has everywhere; lsof is the fallback.
+gw_pids() {
+    pgrep -f "memdoor gateway" 2>/dev/null || lsof -ti:"$GW_PORT" -sTCP:LISTEN 2>/dev/null || true
+}
 WAS_RUNNING=0
-if lsof -i :18789 -sTCP:LISTEN >/dev/null 2>&1; then
-    echo "==> Gateway running on :18789 — sending SIGTERM for graceful shutdown..."
-    lsof -ti:18789 -sTCP:LISTEN | xargs kill -TERM 2>/dev/null || true
+if curl -sf --max-time 3 "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then
+    echo "==> Gateway running on :$GW_PORT — stopping it so the new binary can take over..."
+    pids=$(gw_pids)
+    [ -n "$pids" ] && kill -TERM $pids 2>/dev/null || true
     sleep 3
-    lsof -ti:18789 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
+    pids=$(gw_pids)
+    [ -n "$pids" ] && kill -9 $pids 2>/dev/null || true
     echo "  ✓ stopped gateway"
     WAS_RUNNING=1
 fi
@@ -256,10 +267,30 @@ echo
 # The path is "export your provider key and go"; this block used to point at
 # surfaces and downloads that belonged to an earlier product.
 #
-# A stopped gateway is still worth saying, because this script stops one.
+# The gateway this script stopped is started again on the new binary (an
+# upgrade that left it down cost a working session on 2026-10-06): in the
+# background, its log beside the data, and reported either way. It starts
+# with this shell's environment — keys kept by `memdoor connect` are on disk
+# and come back; a key that only lived in the old gateway's shell does not.
+if [ "${WAS_RUNNING:-0}" = "1" ]; then
+    mkdir -p "$HOME/.memdoor"
+    nohup "$DEST" gateway --port "$GW_PORT" >> "$HOME/.memdoor/gateway.log" 2>&1 &
+    i=0
+    while [ $i -lt 20 ]; do
+        if curl -sf "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then break; fi
+        sleep 1; i=$((i+1))
+    done
+    if curl -sf "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then
+        echo "✓ Gateway restarted on :$GW_PORT with the new binary (log: ~/.memdoor/gateway.log)."
+        WAS_RUNNING=0
+    else
+        echo "⚠ The gateway did not come back on :$GW_PORT — see ~/.memdoor/gateway.log."
+    fi
+    echo
+fi
 echo "Next:"
 if [ "${WAS_RUNNING:-0}" = "1" ]; then
-    echo "  memdoor gateway &                      # restart it (this upgrade stopped it)"
+    echo "  memdoor gateway &                      # restart it (this upgrade stopped it and could not restart it)"
 fi
 if [ "$HAD_DATA_DIR" != "1" ]; then
     echo "  memdoor setup                          # once on this machine"
