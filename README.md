@@ -27,7 +27,8 @@ Independent steps run in parallel; a step is done when its file exists or its
 command exits 0; a gate waits for your approval; a failed run resumes at the
 failed step. The files live in your repo, so a workflow is kept, shared and
 run again, by hand or on your local cron
-([`docs/features/WORKFLOWS.md`](docs/features/WORKFLOWS.md)).
+([`docs/features/WORKFLOWS.md`](docs/features/WORKFLOWS.md)). Why workflows
+rather than skills: [the write-up](https://guregodevo.github.io/2026/10/06/workflows-not-skills/).
 
 **[▶ Watch the review loop](https://memdoor.ai/workflows)** — a recorded
 session: findings verified by running, a gate, the fixes applied.

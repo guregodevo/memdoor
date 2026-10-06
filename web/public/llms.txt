@@ -42,6 +42,7 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 ## Links
 
 - Source (Apache 2.0): https://github.com/guregodevo/memdoor-oss
+- Why workflows rather than skills (the author's write-up): https://guregodevo.github.io/2026/10/06/workflows-not-skills/
 - Home: https://memdoor.ai
 - Docs: https://memdoor.ai/docs/getting-started
 - Features, with the comparison to other coding agents: https://memdoor.ai/features
