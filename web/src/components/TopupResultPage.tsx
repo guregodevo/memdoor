@@ -31,7 +31,7 @@ export function TopupResultPage() {
       ? 'The checkout was cancelled and no subscription was started. The agent runs on your own key either way, decision model included.'
       : 'The payment was cancelled and your balance is unchanged.'
     : seat
-      ? 'Remote control is on for your account. Four lines and you are working, and they are in the email we just sent too.'
+      ? 'Remote control is on, and your workflows’ state is kept on memdoor.ai from now on. Four lines and you are working, and they are in the email we just sent too.'
       : 'Thanks — the payment went through and lands on your workspace within a few seconds.';
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-white px-6 py-16 text-neutral-800">

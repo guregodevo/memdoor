@@ -412,7 +412,9 @@ func (s *Server) welcomeAfterSubscription(ws string) {
 4. Start working:  cd your-project && memdoor tui
 
 From now on /remote in the TUI opens your session on your phone, sealed end
-to end. The hosted scheduler comes with Pro too, when it ships.
+to end, and every workflow run's state is kept on memdoor.ai: a workflow can
+wait on what another produced, from any machine, and memdoor workflow history
+answers from anywhere. Runs with the laptop closed are coming.
 
 $10 a month, cancel any month. Reply to this email if anything is unclear — a
 person answers.
