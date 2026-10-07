@@ -1,8 +1,12 @@
 package gateway
 
 import (
+	"context"
 	"strings"
 	"testing"
+
+	"memdoor/gateway/providers"
+	sharedctx "memdoor/pkg/shared/context"
 )
 
 // A BLANK TURN IS NEVER THE ANSWER. An empty reply is retried once whether
@@ -27,5 +31,31 @@ func TestAnEmptyReplyIsRetriedOnceThenSaidOutLoud(t *testing.T) {
 	}
 	if !strings.Contains(emptyReplyNotice, "Ask again") || !strings.Contains(emptyReplyNotice, "nothing was done") {
 		t.Fatalf("the notice says what happened and what to do: %q", emptyReplyNotice)
+	}
+}
+
+// Blank twice on a rung, the ladder's next rung gets one try: the next
+// tier and its model, unless the person pinned a model, the ladder is at
+// its last rung (a clamped tier is the same model), or no engine answers.
+func TestEmptyTwiceClimbsToTheNextRung(t *testing.T) {
+	if err := providers.SetRemoteEngine(providers.RemoteEngine{Model: "x", Endpoint: "http://e", AgentLadders: map[string][]string{"coder": {"a", "b", "c"}}}); err != nil {
+		t.Fatal(err)
+	}
+	defer providers.ClearRemoteEngine()
+
+	if rung, m := nextRungAfterEmpty(context.Background(), "coder"); rung != 1 || m != "b" {
+		t.Fatalf("from the first rung: got %d %q, want 1 b", rung, m)
+	}
+	second := context.WithValue(context.Background(), sharedctx.TierKey, 1)
+	if rung, m := nextRungAfterEmpty(second, "coder"); rung != 2 || m != "c" {
+		t.Fatalf("from the second rung: got %d %q, want 2 c", rung, m)
+	}
+	last := context.WithValue(context.Background(), sharedctx.TierKey, 2)
+	if _, m := nextRungAfterEmpty(last, "coder"); m != "" {
+		t.Fatalf("the last rung has nothing above it, got %q", m)
+	}
+	pinned := context.WithValue(context.Background(), sharedctx.ModelKey, "z")
+	if _, m := nextRungAfterEmpty(pinned, "coder"); m != "" {
+		t.Fatalf("a pinned model is the person's choice, got %q", m)
 	}
 }

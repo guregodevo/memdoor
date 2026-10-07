@@ -1,8 +1,10 @@
 package gateway
 
 import (
+	"context"
 	"strings"
 
+	"memdoor/gateway/providers"
 	"memdoor/pkg/llm"
 )
 
@@ -44,4 +46,25 @@ func emptyRetryPrompt(extra string, stop llm.StopReason) string {
 		return scrubbedNudge
 	}
 	return extra + "\n\n" + scrubbedNudge
+}
+
+// nextRungAfterEmpty is the rung to try once the answering rung has
+// answered nothing twice: the next one of the agent's ladder, as a tier
+// index and its model. Nothing when the person pinned a model (their
+// choice stands), when no engine was chosen at start, or when the ladder
+// has no further rung that is a different model.
+func nextRungAfterEmpty(ctx context.Context, agent string) (int, string) {
+	if providers.ModelFromContext(ctx) != "" {
+		return 0, ""
+	}
+	re := providers.ActiveRemoteEngine()
+	if re == nil {
+		return 0, ""
+	}
+	cur := providers.TierFromContext(ctx)
+	next := re.ModelForTier(agent, cur+1)
+	if next == "" || next == re.ModelForTier(agent, cur) {
+		return 0, ""
+	}
+	return cur + 1, next
 }

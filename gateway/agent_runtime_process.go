@@ -378,6 +378,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	const maxCallsPerMessage = 24
 	abandoned := 0
 	emptyStepRetried := false
+	emptyStepClimbed := false
 	reasoningOnlyRetried := false
 	recapRetried := false
 	doneRounds := 0
@@ -769,6 +770,30 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 			// the session keeps that sentence in place of the blank, so the
 			// next reply has nothing empty to imitate.
 			if strings.TrimSpace(responseText) == "" && emptyStepRetried && ar.agentWorksOnCodebase(ctx) {
+				// The same model blank twice is that model's answer for this
+				// prompt; the ladder has a next rung for exactly this. One
+				// more try there, then the notice. Live 2026-10-07: the
+				// first rung wrote a workflow step's start stamp, answered
+				// nothing twice, and the turn ended with the target missing
+				// — a run a person had scheduled for the night, failed on
+				// its first step with two rungs never asked.
+				if agent, _ := ctx.Value("buddy_agent_name").(string); !emptyStepClimbed {
+					if rung, model := nextRungAfterEmpty(ctx, agent); model != "" {
+						emptyStepClimbed = true
+						log.Warn("Empty completion twice — climbing the ladder for one more try",
+							slog.Int("rung", rung+1), slog.String("model", model),
+							slog.Int("tools_executed", len(response.ToolsExecuted)))
+						conversation = conversation[:len(conversation)-1]
+						climbCtx := context.WithValue(context.WithValue(ctx, retryTemperatureKey{}, 0.7), sharedctx.TierKey, rung)
+						message, conversation, err = ar.runInference(climbCtx, conversation, extraSystemPrompt)
+						if err != nil {
+							log.WithError(err).Error("Empty-step climb inference failed")
+							break
+						}
+						conversation = append(conversation, message.ToParam())
+						continue
+					}
+				}
 				log.Warn("Empty completion twice — ending the turn with a visible notice",
 					slog.Int("tools_executed", len(response.ToolsExecuted)))
 				response.Text = emptyReplyNotice

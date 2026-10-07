@@ -36,5 +36,8 @@ script cannot touch its way past the check:
 
 ## Run
 
+Give the grade step a proper model; it is the one doing the judging
+(`/model` in the TUI, or `MEMDOOR_MODEL`).
+
     memdoor workflow run nightly-rule --partition 2026-10-07
     memdoor cron add --id nightly-rule --schedule "0 1 * * *" --workflow nightly-rule --partition today

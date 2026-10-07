@@ -13,7 +13,7 @@ require (
 	github.com/charmbracelet/x/exp/teatest v0.0.0-20260622092256-25656177ba8e
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/guregodevo/mario v0.0.0-20261007161402-ef2919c2cfb0
+	github.com/guregodevo/mario v0.0.0-20261007173746-95db74458a16
 	github.com/invopop/jsonschema v0.13.0
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/pmezard/go-difflib v1.0.0
