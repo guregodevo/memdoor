@@ -522,10 +522,11 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	if indexErr != nil {
 		return fmt.Errorf("embedded web/dist/index.html missing — was `vite build` run before `go build`? (%w)", indexErr)
 	}
-	serveIndex := func(w http.ResponseWriter, _ *http.Request) {
+	pages := &indexRenderer{index: indexHTML, dist: distFS}
+	serveIndex := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-cache")
-		_, _ = w.Write(indexHTML)
+		_, _ = w.Write(pages.For(r.URL.Path))
 	}
 	staticFS := newGzipStatic(distFS, http.FileServer(http.FS(distFS)))
 

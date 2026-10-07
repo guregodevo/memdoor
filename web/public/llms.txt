@@ -51,3 +51,4 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 - Installer (plain shell, SHA-256 verified): https://memdoor.ai/install.sh
 - Pricing: https://memdoor.ai/pricing
 - Enterprise: hello@memdoor.ai
+- Listed on AlternativeTo: https://alternativeto.net/software/memdoor/
