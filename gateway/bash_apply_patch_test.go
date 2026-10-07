@@ -41,6 +41,6 @@ func TestBashIsToldApplyPatchIsAToolOnlyWhenItRanIt(t *testing.T) {
 
 	info = run("echo start\napply_patch \"*** Begin Patch\"")
 	if !strings.Contains(info.Error, "apply_patch is a TOOL") {
-		t.Fatalf("running apply_patch in bash must be explained: %q", info.Error)
+		t.Fatalf("running apply_patch in bash must be explained: error=%q output=%q", info.Error, info.Output)
 	}
 }

@@ -97,7 +97,14 @@ func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chu
 	var pending []byte // produced since the last flush
 	capped := false
 
-	w := writerFunc(func(p []byte) (int, error) {
+	// A POINTER, so Stdout and Stderr compare equal and os/exec hands the
+	// child ONE pipe: output arrives in the order the command wrote it. A
+	// func value is not comparable, so exec opened two pipes with a copying
+	// goroutine each, and stderr could land before the stdout written
+	// ahead of it — "bash: apply_patch: command not found" came back on the
+	// same line as the "Output:" label, after "start" should have, and the
+	// hint that reads bash's own message never fired (public CI, 2026-10-07).
+	w := &streamWriter{write: func(p []byte) (int, error) {
 		mu.Lock()
 		defer mu.Unlock()
 		if capped {
@@ -117,7 +124,7 @@ func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chu
 		buf = append(buf, p...)
 		pending = append(pending, p...)
 		return len(p), nil
-	})
+	}}
 
 	cmd := exec.CommandContext(cctx, "bash", "-c", command)
 	// The workdir comes from the harness, not from a cd inside the command.
@@ -183,7 +190,10 @@ func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chu
 	return out, truncated, runErr
 }
 
-// writerFunc adapts a function to io.Writer.
-type writerFunc func([]byte) (int, error)
+// streamWriter is the one io.Writer a streamed command's stdout and stderr
+// share. It is a pointer type on purpose: see runStreamingCommand.
+type streamWriter struct {
+	write func([]byte) (int, error)
+}
 
-func (f writerFunc) Write(p []byte) (int, error) { return f(p) }
+func (s *streamWriter) Write(p []byte) (int, error) { return s.write(p) }

@@ -57,8 +57,10 @@ func toolOutcomeEvent(info ToolExecutionInfo, sessionID, runID string, d time.Du
 // is told.
 const applyPatchIsATool = "apply_patch is a TOOL, not a shell command — bash cannot run it. Call the apply_patch tool directly, with the FULL patch text (*** Begin Patch ... *** End Patch) as its input. Run builds/tests in a separate bash call"
 
-// shellRanApplyPatch matches bash's own "command not found" for apply_patch.
-var shellRanApplyPatch = regexp.MustCompile(`(?m)^bash: (line \d+: )?apply_patch: command not found`)
+// shellRanApplyPatch matches bash's own "command not found" for apply_patch,
+// wherever it sits in the result: the formatter puts the first output line
+// after its "Output:" label, so the message is not always at a line start.
+var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)bash: (line \d+: )?apply_patch: command not found`)
 
 func (ar *AgentRuntime) executeTool(ctx context.Context, toolUse *llm.ToolUseBlock, runID string, session *Session) (info ToolExecutionInfo, result llm.ContentBlockParamUnion) {
 	// Returning is progress: the turn backstop counts from here (sharedctx.WithIdleTimeout).
