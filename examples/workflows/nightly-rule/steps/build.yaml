@@ -1,0 +1,13 @@
+type: agent
+prompt: |
+  Today's partition is {{.partition}}.
+  1. FIRST, record the current time in UTC (ISO 8601) into rules/{{.partition}}.start
+     (create the rules/ directory if needed) — this stamp must be written BEFORE
+     anything else, so later steps can tell whether the rule is stale.
+  2. THEN write today's trading rule into rules/{{.partition}}.md: a simple
+     moving-average crossover rule with made-up numbers (e.g. buy when the
+     12-day MA crosses above the 26-day MA, sell when it crosses below, plus a
+     position-sizing note). A short markdown file with parameters and the rule.
+target:
+  file: rules/{{.partition}}.md
+timeout: 10m

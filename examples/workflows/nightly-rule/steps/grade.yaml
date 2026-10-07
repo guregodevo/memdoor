@@ -1,0 +1,14 @@
+type: agent
+prompt: |
+  Today's partition is {{.partition}}.
+  Read rules/{{.partition}}.md and grade today's trading rule: assess it
+  briefly (clarity, risk profile, plausibility) and write a JSON object
+  {"score": <0-100 integer>, "verdict": "<one sentence>"} into
+  grades/{{.partition}}.json (create grades/ if needed).
+requires:
+  - table_pattern: build
+target:
+  # structural staleness gate, run by the engine, not by the agent:
+  # the grade must exist AND be newer than step 1's start stamp.
+  command: test "grades/{{.partition}}.json" -nt "rules/{{.partition}}.start" && test -s "grades/{{.partition}}.json"
+timeout: 10m

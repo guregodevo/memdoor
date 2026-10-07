@@ -29,6 +29,7 @@ failed step. The files live in your repo, so a workflow is kept, shared and
 run again, by hand or on your local cron
 ([`docs/features/WORKFLOWS.md`](docs/features/WORKFLOWS.md)). Why workflows
 rather than skills: [the write-up](https://guregodevo.github.io/2026/10/06/workflows-not-skills/).
+Worked examples, each run before it was added: [`examples/workflows/`](examples/workflows/).
 
 **[▶ Watch the review loop](https://memdoor.ai/workflows)** — a recorded
 session: findings verified by running, a gate, the fixes applied.
@@ -97,6 +98,7 @@ pkg/           the domain: decision, metering, plan, workflow (the mario task fa
 web/           the memdoor.ai site and the served docs (React, Vite)
 scripts/       install.sh, install.ps1, deploy.sh
 docs/          features, reference, ADRs
+examples/      workflows built by the coder and run, to copy into a project
 ```
 
 ## License

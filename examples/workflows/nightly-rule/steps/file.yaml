@@ -1,0 +1,13 @@
+type: agent
+prompt: |
+  Today's partition is {{.partition}}.
+  Read grades/{{.partition}}.json and rules/{{.partition}}.md and write the
+  final result (the rule's score and verdict, with a one-paragraph summary)
+  into results/{{.partition}}.md (create results/ if needed).
+requires:
+  - table_pattern: grade
+target:
+  # structural staleness gate, run by the engine, not by the agent:
+  # the result must exist AND be newer than step 1's start stamp.
+  command: test "results/{{.partition}}.md" -nt "rules/{{.partition}}.start" && test -s "results/{{.partition}}.md"
+timeout: 10m
