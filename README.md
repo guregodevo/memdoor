@@ -38,9 +38,8 @@ session: findings verified by running, a gate, the fixes applied.
 
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
-export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, … or `memdoor connect`
-memdoor setup
-cd your-project && memdoor tui
+export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, … or /connect inside
+cd your-project && memdoor tui         # the first run sets the machine up
 ```
 
 macOS (Apple Silicon), Linux (amd64, arm64; static), Windows

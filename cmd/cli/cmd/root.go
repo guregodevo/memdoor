@@ -189,6 +189,12 @@ func requireWorkspaceSlug(cmd *cobra.Command, _ []string) error {
 			slug, source, ok = only, workspaceSource{kind: "only workspace"}, true
 		}
 	}
+	if !ok && top.Name() == "tui" && len(listAllWorkspaceSlugs()) == 0 {
+		// A machine with no workspace at all is a first run: the TUI sets
+		// it up itself (tui_firstrun.go) instead of sending a stranger to
+		// `memdoor setup` (stranger walk, 2026-10-08).
+		return nil
+	}
 	if !ok {
 		return noWorkspaceErrorMessage(top.Name())
 	}

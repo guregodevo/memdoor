@@ -9,19 +9,18 @@ For the full walkthrough with explanations, see [`GETTING_STARTED.md`](../../GET
 - macOS Apple Silicon (darwin/arm64), Linux (linux/amd64, linux/arm64 — static binary, no glibc dependency), or Windows 64-bit (`irm https://memdoor.ai/install.ps1 | iex`). Intel Macs have no prebuilt binary — run Linux on that hardware.
 - **Your own key.** `OPEN_ROUTER_API_KEY` in the environment, or any provider's through `/connect` (Anthropic, OpenAI, Gemini, Groq, xAI, DeepSeek, Baseten, a company AI gateway — `docs/features/PROVIDERS.md`).
 
-## Install + register admin (one shot)
+## Install
 
 ```bash
-# Installs to ~/.local/bin — no sudo (pass --system for /usr/local/bin)
+# Installs to ~/.local/bin — no sudo (pass --system for /usr/local/bin); adds it to your shell's PATH
 curl -fsSL https://memdoor.ai/install.sh | bash
-
-memdoor setup \
-  --admin-email you@example.com \
-  --admin-password 'choose-a-long-random-string' \
-  --workspace-name 'My Project'
+export OPEN_ROUTER_API_KEY=sk-or-...   # or any provider's key, or /connect inside the TUI
 ```
 
-Setup auto-starts the gateway and registers the admin. It downloads nothing: the agent runs on your provider key.
+The first `memdoor tui` starts the gateway and makes the workspace and this
+machine's user, with nothing to answer. For scripts and shared gateways,
+`memdoor setup --admin-email … --admin-password … --workspace-name …` still
+does it explicitly. Nothing is downloaded: the agent runs on your provider key.
 
 **Building from source instead:** clone the repo and run `make build` — produces `./memdoor` for in-repo dev work.
 

@@ -96,7 +96,14 @@ func runTUI(opts tuiOptions) error {
 		// Authenticate like the CLI: NewClient loads the saved credentials
 		// (~/.memdoor/credentials.json) and carries the Bearer token +
 		// X-Forwarded-Workspace on every request.
+		// A machine that never ran Memdoor is set up here, without a
+		// question; a key the shell holds reaches a gateway that started
+		// without it (tui_firstrun.go).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		c := NewClient()
+		handShellKeyToGateway(c)
 
 		// The conversation is scoped to the workspace, and the session key the
 		// gateway builds carries it.

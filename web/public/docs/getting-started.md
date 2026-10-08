@@ -21,20 +21,9 @@ iex`.
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
-Or `memdoor connect`, which asks for a provider and a key, probes it and keeps
-it. This is the whole account setup: your key, your bill, at the provider's
-list prices. Put it in your shell profile so it is there next time.
-
-## Set up
-
-```bash
-memdoor setup
-```
-
-Interactive, once: a name for the workspace, an email and password for this
-machine. It starts the local gateway in the background. For
-scripts, pass everything as flags: `memdoor setup --workspace-name 'My Project'
---admin-email you@example.com --admin-password '…'`.
+No key at hand? Skip it: type `/connect` inside the TUI and paste one. This
+is the whole account setup: your key, your bill, at the provider's list
+prices. Put the export in your shell profile so it is there next time.
 
 ## First turn
 
@@ -42,6 +31,10 @@ scripts, pass everything as flags: `memdoor setup --workspace-name 'My Project'
 cd your-project
 memdoor tui
 ```
+
+The first run sets this machine up by itself: it starts the local gateway in
+the background and makes the workspace, with nothing to answer. A key you
+export later reaches it the next time you run `memdoor tui`.
 
 The agent works on the directory you launched it from: its file tools stay inside it and its commands start there — not a sandbox: a shell command can still reach other folders. Type a task:
 

@@ -444,9 +444,8 @@ export function CoderLandingPage() {
             <div className="space-y-3 font-mono text-[13px] sm:text-sm">
               {[
                 ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
-                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account — or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …, or memdoor connect'],
-                ['memdoor setup', 'a workspace on this machine, once'],
-                ['cd your-project && memdoor tui', 'the agent works in the directory you launch it from'],
+                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account — or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …, or /connect inside'],
+                ['cd your-project && memdoor tui', 'the first run sets the machine up; the agent works where you launch it'],
                 ['/model', 'which model is answering, and what it lists for'],
               ].map(([cmd, note]) => (
                 <div key={cmd} className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3">

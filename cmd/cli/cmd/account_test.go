@@ -136,7 +136,7 @@ func TestTheBrainGateNamesTheNextStep(t *testing.T) {
 	g := brainGate("none")
 	// One way out: a key of your own. A seat never supplies one (Greg,
 	// 2026-10-04: "Pro seat never offer key"), so it is not offered here.
-	if !strings.Contains(g, "OPEN_ROUTER_API_KEY") || !strings.Contains(g, "memdoor connect") || strings.Contains(g, "subscribe") {
+	if !strings.Contains(g, "OPEN_ROUTER_API_KEY") || !strings.Contains(g, "/connect") || !strings.Contains(g, "memdoor tui again") || strings.Contains(g, "subscribe") {
 		t.Fatalf("nothing configured names the key, never a seat: %q", g)
 	}
 	if strings.Contains(g, "shorts") {

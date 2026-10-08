@@ -125,7 +125,7 @@ func readBrain(c *Client) brainRead {
 func brainGate(state string) string {
 	switch state {
 	case "none":
-		return "no model configured — `memdoor connect` (or export a provider's key: OPEN_ROUTER_API_KEY, ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …) — every model runs on your own key"
+		return "no model yet — type /connect and paste a provider's key, or quit, export OPEN_ROUTER_API_KEY=… (or ANTHROPIC_API_KEY, …) and run memdoor tui again — every model runs on your own key"
 	}
 	return ""
 }

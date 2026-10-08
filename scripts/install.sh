@@ -242,18 +242,36 @@ else
     echo "✓ Installed memdoor → $DEST"
 fi
 
-# PATH hint for user-mode installs. Skip if $DEST_DIR is already on
-# PATH (most macOS users picked up ~/.local/bin via pipx, pyenv, asdf,
-# or a manual rc entry).
+# PATH for user-mode installs: written to the shell's rc, not left as a
+# hint. A default Mac has no ~/.local/bin on PATH, so the next command a
+# stranger typed answered "command not found" (stranger walk, 2026-10-08:
+# about twenty installs the day before, not one TUI opened). New terminals
+# get it from the rc; this one is handed the full path below.
+ON_PATH=1
 case "$INSTALL_MODE" in
     user|prefix|existing)
         case ":$PATH:" in
             *":$DEST_DIR:"*)
                 ;;
             *)
-                echo
-                echo "⚠ $DEST_DIR is not on your PATH. Add this to your shell rc:"
-                echo "    export PATH=\"$DEST_DIR:\$PATH\""
+                ON_PATH=0
+                RC=""
+                LINE="export PATH=\"$DEST_DIR:\$PATH\""
+                case "$(basename "${SHELL:-}")" in
+                    zsh)  RC="$HOME/.zshrc" ;;
+                    bash) if [ "$(uname -s)" = "Darwin" ]; then RC="$HOME/.bash_profile"; else RC="$HOME/.bashrc"; fi ;;
+                    fish) RC="$HOME/.config/fish/config.fish"; LINE="fish_add_path $DEST_DIR" ;;
+                    *)    RC="$HOME/.profile" ;;
+                esac
+                if [ -n "$RC" ] && ! grep -qs "$DEST_DIR" "$RC" 2>/dev/null; then
+                    mkdir -p "$(dirname "$RC")" 2>/dev/null || true
+                    if printf '\n# memdoor\n%s\n' "$LINE" >> "$RC" 2>/dev/null; then
+                        echo "✓ Added $DEST_DIR to your PATH in $RC (new terminals have it)."
+                    else
+                        echo "⚠ $DEST_DIR is not on your PATH. Add this to your shell rc:"
+                        echo "    $LINE"
+                    fi
+                fi
                 ;;
         esac
         ;;
@@ -292,10 +310,12 @@ echo "Next:"
 if [ "${WAS_RUNNING:-0}" = "1" ]; then
     echo "  memdoor gateway &                      # restart it (this upgrade stopped it and could not restart it)"
 fi
-if [ "$HAD_DATA_DIR" != "1" ]; then
-    echo "  memdoor setup                          # once on this machine"
-fi
-echo "  memdoor connect                        # your provider's key (or export OPEN_ROUTER_API_KEY=sk-or-...)"
-echo "  cd <your-project> && memdoor tui       # start working"
+# Two lines, both runnable in THIS shell: the first run of the TUI sets the
+# machine up itself (no setup step, no admin email), and a key exported
+# here reaches the gateway it starts. No key at hand: /connect inside.
+MD="memdoor"
+[ "$ON_PATH" = "0" ] && MD="$DEST"
+echo "  export OPEN_ROUTER_API_KEY=sk-or-...   # your key (or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or /connect inside)"
+echo "  cd <your-project> && $MD tui"
 echo
 echo "Pro (remote control)? memdoor login you@example.com"

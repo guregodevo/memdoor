@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -321,7 +322,15 @@ func ensureGatewayRunning() {
 	if err != nil {
 		return
 	}
-	cmd := exec.Command(binary, "gateway", "--port", "18789")
+	port, local := localGatewayPort()
+	if !local {
+		// A gateway elsewhere (MEMDOOR_GATEWAY, --gateway) is not this
+		// machine's to start; starting one on 18789 instead answered a
+		// different address than the one the CLI was told to use.
+		_ = logF.Close()
+		return
+	}
+	cmd := exec.Command(binary, "gateway", "--port", port)
 	cmd.Stdout = logF
 	cmd.Stderr = logF
 	if err := cmd.Start(); err != nil {
@@ -332,9 +341,12 @@ func ensureGatewayRunning() {
 	// keeps the OS handle but Go's exec doesn't auto-reap; calling
 	// .Release() lets the gateway outlive setup cleanly.
 	if cmd.Process != nil {
+		// The pid marks this gateway as one Memdoor started, the only kind
+		// the TUI may restart (to hand it a key exported after it started).
+		_ = os.WriteFile(shared.MemdoorHome(gatewayPidFile), []byte(strconv.Itoa(cmd.Process.Pid)), 0o600)
 		_ = cmd.Process.Release()
 	}
-	fmt.Fprintln(os.Stderr, "  → starting gateway on :18789 (background)")
+	fmt.Fprintln(os.Stderr, "  → starting gateway on :"+port+" (background)")
 	// Give it a moment to bind the port and run migrations before
 	// the rest of setup hits /api/setup/status.
 	for i := 0; i < 30; i++ {
