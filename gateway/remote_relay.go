@@ -113,6 +113,11 @@ type remoteRelaySession struct {
 	terminal *remoteRelayConn
 	browsers map[*remoteRelayConn]bool
 	lastSeen time.Time
+	// ended is set when the terminal's end frame removed the session. A page
+	// whose handshake finished in between attaches to nothing that will ever
+	// speak: it is closed as revoked instead (public CI, 2026-10-08: the
+	// page waited out its deadline on a session already gone).
+	ended bool
 }
 
 // NewRemoteRelayHub creates the relay and starts its session sweeper; call
@@ -275,10 +280,12 @@ func (h *remoteRelayHub) HandleRelayBrowser(w http.ResponseWriter, r *http.Reque
 	}
 	conn.SetReadLimit(remoteRelayMaxFrame)
 	browser := &remoteRelayConn{conn: conn, send: make(chan []byte, 64)}
-	if !s.attachBrowser(browser) {
-		_ = conn.WriteControl(websocket.CloseMessage,
-			websocket.FormatCloseMessage(websocket.CloseTryAgainLater, "this session has as many pages open as it takes"),
-			time.Now().Add(remoteRelayWriteWait))
+	if ok, ended := s.attachBrowser(browser); !ok {
+		msg := websocket.FormatCloseMessage(websocket.CloseTryAgainLater, "this session has as many pages open as it takes")
+		if ended {
+			msg = websocket.FormatCloseMessage(remoteRelayRevokedCode, "this link was turned off")
+		}
+		_ = conn.WriteControl(websocket.CloseMessage, msg, time.Now().Add(remoteRelayWriteWait))
 		_ = conn.Close()
 		return
 	}
@@ -356,18 +363,21 @@ func (h *remoteRelayHub) attachTerminal(key, userID string, verifier [sha256.Siz
 }
 
 // attachBrowser puts c on the session unless a browser is already there.
-func (s *remoteRelaySession) attachBrowser(c *remoteRelayConn) bool {
+func (s *remoteRelaySession) attachBrowser(c *remoteRelayConn) (ok, ended bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.ended {
+		return false, true
+	}
 	if len(s.browsers) >= remoteRelayMaxBrowsers {
-		return false
+		return false, false
 	}
 	if s.browsers == nil {
 		s.browsers = make(map[*remoteRelayConn]bool)
 	}
 	s.browsers[c] = true
 	s.lastSeen = time.Now()
-	return true
+	return true, false
 }
 
 // admits reports whether proof hashes to the verifier the terminal set.
@@ -415,13 +425,14 @@ func (h *remoteRelayHub) end(s *remoteRelaySession) {
 		delete(h.sessions, s.key)
 	}
 	h.mu.Unlock()
-	s.mu.RLock()
+	s.mu.Lock()
+	s.ended = true
 	for b := range s.browsers {
 		_ = b.conn.WriteControl(websocket.CloseMessage,
 			websocket.FormatCloseMessage(remoteRelayRevokedCode, "this link was turned off"),
 			time.Now().Add(remoteRelayWriteWait))
 	}
-	s.mu.RUnlock()
+	s.mu.Unlock()
 	s.dropConn(false, nil)
 }
 

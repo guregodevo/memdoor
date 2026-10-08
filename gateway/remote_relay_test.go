@@ -293,3 +293,19 @@ func TestRelayPageCannotEndTheSession(t *testing.T) {
 		t.Fatal("a page ended the session")
 	}
 }
+
+// A page whose handshake finished after the terminal ended the session is
+// refused as revoked, not attached to a session nothing will ever speak on
+// (the public CI page waited 2 s for a close that had already been sent).
+func TestAPageJoiningAnEndedSessionIsRevoked(t *testing.T) {
+	h := NewRemoteRelayHub()
+	defer h.Shutdown()
+	s := &remoteRelaySession{key: "k", browsers: map[*remoteRelayConn]bool{}}
+	h.mu.Lock()
+	h.sessions["k"] = s
+	h.mu.Unlock()
+	h.end(s)
+	if ok, ended := s.attachBrowser(&remoteRelayConn{send: make(chan []byte, 1)}); ok || !ended {
+		t.Fatalf("a page joining after the end must be told it was revoked: ok=%v ended=%v", ok, ended)
+	}
+}
