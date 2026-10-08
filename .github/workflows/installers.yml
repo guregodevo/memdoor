@@ -26,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install
-        run: curl -fsSL https://memdoor.ai/install.sh | bash
+        run: curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
       - name: Version, gateway, status
         run: |
           export PATH="$HOME/.local/bin:$PATH"
@@ -41,7 +41,7 @@ jobs:
     steps:
       - name: Install
         shell: pwsh
-        run: irm https://memdoor.ai/install.ps1 | iex
+        run: $env:MEMDOOR_CI = '1'; irm 'https://memdoor.ai/install.ps1?ci=1' | iex
       - name: Version, gateway, status
         shell: pwsh
         run: |

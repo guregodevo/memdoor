@@ -26,7 +26,9 @@ if ([Environment]::Is64BitOperatingSystem -ne $true) {
 Write-Host "Downloading $Asset ..."
 $tmp = Join-Path ([System.IO.Path]::GetTempPath()) "memdoor-$([guid]::NewGuid()).exe"
 try {
-    Invoke-WebRequest -Uri "$Base/$Asset" -OutFile $tmp -UseBasicParsing
+    # Our own test runs mark their download so adoption counts people only.
+    $ciMark = if ($env:MEMDOOR_CI) { "?ci=1" } else { "" }
+    Invoke-WebRequest -Uri "$Base/$Asset$ciMark" -OutFile $tmp -UseBasicParsing
 } catch {
     Fail "could not download $Base/$Asset — $($_.Exception.Message)"
 }

@@ -41,6 +41,10 @@ case "${OS}-${ARCH}" in
 esac
 
 URL="https://memdoor.ai/dl/memdoor-${OS}-${ARCH}"
+# Our own test runs mark their download, so adoption counts people only
+# (make metrics drops ?ci=1): every publish installs on three CI runners,
+# and on 2026-10-07 those were every download the logs held.
+[ -n "${MEMDOOR_CI:-}" ] && URL="$URL?ci=1"
 
 # Two install modes:
 #   1. system-wide (default): /usr/local/bin/memdoor, requires sudo.
