@@ -437,6 +437,11 @@ func tuiRoute(workspace, channelID, agent string) func(arg string) (string, erro
 			// before the turn rather than discovered during it
 			// (model_pin_warning.go).
 			warn = pinWarning(words[0])
+			// A bare id another connected provider also lists: say which
+			// one served, and how to pin it on the other (providers.go).
+			if also := alsoListedBy(words[0], rv.Provider); also != "" {
+				warn = strings.TrimSpace(warn + "\n" + also)
+			}
 		default:
 			var tier interface{} = arg
 			n, numErr := strconv.Atoi(arg)

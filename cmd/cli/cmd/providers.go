@@ -546,7 +546,48 @@ func chatgptSignInOnce(out io.Writer, in io.Reader, title string) error {
 			fmt.Fprintf(out, "  e.g. %s\n", strings.Join(r.res.Sample, ", "))
 		}
 		fmt.Fprintln(out, "  Your plan's allowance answers Memdoor's turns, no API key. ChatGPT → Settings → Usage shows the weekly cap per app.")
-		fmt.Fprintln(out, "  memdoor tui — /model <id> pins one of its models; memdoor connect --remove chatgpt signs out.")
+		fmt.Fprintln(out, "  memdoor tui — /model chatgpt:<id> pins one of its models (the chatgpt: prefix: an OpenAI key lists the same ids); memdoor connect --remove chatgpt signs out.")
 		return nil
 	}
+}
+
+// alsoListedBy says which OTHER connected providers list a bare model id the
+// person just pinned, and how to pin it there. A bare id goes to the active
+// provider first (registry.go FindModel): live 2026-10-10, `/model
+// gpt-5.6-sol` after Sign in with ChatGPT went to the OpenAI API key in the
+// environment, whose chat endpoint refuses that model with tools, when the
+// plan lists the same id for nothing. "" when the id is unambiguous, or
+// when it was pinned with a provider prefix already.
+func alsoListedBy(pinned, served string) string {
+	if strings.Contains(pinned, ":") || served == "" {
+		return ""
+	}
+	var res struct {
+		Providers []struct {
+			ID        string `json:"id"`
+			Connected bool   `json:"connected"`
+			Models    []struct {
+				ID string `json:"id"`
+			} `json:"models"`
+		} `json:"providers"`
+	}
+	if err := NewClient().GetJSON("/api/models?limit=0", &res); err != nil {
+		return ""
+	}
+	var others []string
+	for _, p := range res.Providers {
+		if p.ID == served || !p.Connected {
+			continue
+		}
+		for _, m := range p.Models {
+			if m.ID == pinned {
+				others = append(others, fmt.Sprintf("/model %s:%s", p.ID, pinned))
+				break
+			}
+		}
+	}
+	if len(others) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("Served by %s. Also listed elsewhere: %s.", served, strings.Join(others, " · "))
 }

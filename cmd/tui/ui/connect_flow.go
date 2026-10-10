@@ -400,7 +400,7 @@ func (m *Model) connectDone(msg connectResultMsg) {
 		if len(r.Sample) > 0 {
 			s += "\n  e.g. " + strings.Join(r.Sample, ", ")
 		}
-		s += "\n  /model <id> pins one of its models for this conversation; ChatGPT → Settings → Usage shows the weekly cap per app."
+		s += "\n  /model chatgpt:<id> pins one of its models for this conversation (the chatgpt: prefix, since an OpenAI key lists the same ids); ChatGPT → Settings → Usage shows the weekly cap per app."
 		m.note(s)
 	default:
 		r := msg.res
