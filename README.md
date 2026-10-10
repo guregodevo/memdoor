@@ -22,7 +22,7 @@ Describe the steps and the coder writes them as a workflow, one YAML per step,
 run as a graph. A step is done when its file exists or its command exits 0,
 never because the model says so. Independent steps run in parallel, a gate
 waits for your approval, a failed run resumes at the failed step. Free, on
-your own API key; built by one developer; Memdoor ships itself with
+your own API key. Memdoor ships itself with
 [its own workflow](https://memdoor.ai/workflows).
 
 ---

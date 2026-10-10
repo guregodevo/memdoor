@@ -206,7 +206,7 @@ export function CoderLandingPage() {
                 Linux, Windows.
               </p>
               <p className="text-xs text-neutral-400">
-                Built by one developer, Gregory Desvaux. Memdoor ships itself with{' '}
+                Memdoor ships itself with{' '}
                 <a href="/workflows" className="text-neutral-300 underline underline-offset-4 hover:text-white">
                   its own workflow
                 </a>
