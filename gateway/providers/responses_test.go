@@ -153,3 +153,33 @@ func TestResponsesStreamWithoutAFinalObjectAndFailure(t *testing.T) {
 		t.Fatalf("a failed stream in words: %v", err)
 	}
 }
+
+// A stream whose completed object carries no output (a ChatGPT plan with
+// store:false, live 2026-10-10) is read from its events: the text from the
+// deltas, the call from the item's done event, the usage from the final.
+func TestAStreamWhoseFinalObjectIsEmptyIsReadFromItsEvents(t *testing.T) {
+	c, done := responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		responsesSSE(w,
+			`{"type":"response.output_item.added","output_index":0,"item":{"type":"message","id":"m1","content":[]}}`,
+			`{"type":"response.output_text.delta","output_index":0,"delta":"On "}`,
+			`{"type":"response.output_text.delta","output_index":0,"delta":"it."}`,
+			`{"type":"response.output_item.added","output_index":1,"item":{"type":"function_call","id":"fc1","call_id":"call_9","name":"bash","arguments":""}}`,
+			`{"type":"response.function_call_arguments.delta","output_index":1,"delta":"{\"command\":"}`,
+			`{"type":"response.output_item.done","output_index":1,"item":{"type":"function_call","id":"fc1","call_id":"call_9","name":"bash","arguments":"{\"command\":\"go test ./...\"}"}}`,
+			`{"type":"response.completed","response":{"id":"r9","model":"gpt-6.1-sol","status":"completed","output":[],"usage":{"input_tokens":13,"output_tokens":5}}}`)
+	})
+	defer done()
+	msg, err := c.Messages().New(context.Background(), llm.MessageNewParams{Model: "x", Messages: []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("hi"))}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if msg.ID != "r9" || msg.Usage.InputTokens != 13 || msg.Usage.OutputTokens != 5 || string(msg.Model) != "gpt-6.1-sol" {
+		t.Fatalf("the final object's id, model and usage are kept: %+v", msg)
+	}
+	if len(msg.Content) != 2 || msg.Content[0].Text != "On it." || msg.Content[1].Type != "tool_use" || msg.Content[1].Name != "bash" || msg.Content[1].ID != "call_9" || string(msg.Content[1].Input) != `{"command":"go test ./..."}` {
+		t.Fatalf("the text and the whole call come from the events: %+v", msg.Content)
+	}
+	if msg.StopReason != llm.StopReasonToolUse {
+		t.Fatalf("a call ends the turn as tool_use: %v", msg.StopReason)
+	}
+}

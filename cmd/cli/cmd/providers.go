@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -416,6 +417,10 @@ func chatgptLoginStart() (id, authURL string, err error) {
 	return out.ID, out.AuthURL, err
 }
 
+// errSignInAgain is the gateway's "registered; approve once more": the
+// caller starts a fresh sign-in, now under the issued client id.
+var errSignInAgain = fmt.Errorf("sign in again")
+
 // chatgptLoginWait waits up to 25 s: done with the probe's result, or not yet.
 func chatgptLoginWait(id string) (done bool, res ui.ConnectResult, err error) {
 	var out struct {
@@ -423,9 +428,13 @@ func chatgptLoginWait(id string) (done bool, res ui.ConnectResult, err error) {
 		Done    bool   `json:"done"`
 		Pending bool   `json:"pending"`
 		Err     string `json:"error"`
+		Again   bool   `json:"again"`
 	}
 	if err := chatgptPost(map[string]any{"action": "login/wait", "id": id}, &out); err != nil {
 		return false, res, err
+	}
+	if out.Again {
+		return false, res, fmt.Errorf("%w: %s", errSignInAgain, out.Err)
 	}
 	if out.Err != "" && !out.Done {
 		return false, res, fmt.Errorf("%s", out.Err)
@@ -462,12 +471,22 @@ func tuiConnectLoginStart(kind string) (id, u string, opened, copied bool, err e
 // chatgptSignIn runs the sign-in from the shell: the browser opens, the link
 // is printed and copied, a pasted redirect URL is accepted, Ctrl+C cancels.
 func chatgptSignIn(out io.Writer, in io.Reader) error {
+	err := chatgptSignInOnce(out, in, "Sign in with ChatGPT")
+	if errors.Is(err, errSignInAgain) {
+		// A first registration: the host now has its client id; the
+		// second approval, under it, completes (pkg/chatgpt ErrSignInAgain).
+		return chatgptSignInOnce(out, in, "Memdoor is now registered with your ChatGPT — one more approval completes the sign-in")
+	}
+	return err
+}
+
+func chatgptSignInOnce(out io.Writer, in io.Reader, title string) error {
 	id, authURL, err := chatgptLoginStart()
 	if err != nil {
 		return err
 	}
 	copied := clipboard.WriteAll(authURL) == nil
-	fmt.Fprintln(out, "\nSign in with ChatGPT")
+	fmt.Fprintln(out, "\n"+title)
 	if os.Getenv("MEMDOOR_NO_BROWSER") == "" && openBrowser(authURL) == nil {
 		fmt.Fprintln(out, "  Your browser is opening. If it doesn't, open this link:")
 	} else {

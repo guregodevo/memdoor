@@ -287,7 +287,11 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 
 // consumeResponsesStream reads the Responses API's events: text deltas go
 // to the window; items are assembled by output index; the final response
-// object wins when one arrives.
+// object wins when one arrives WITH its output. A ChatGPT plan's stream
+// (store:false) ends on a completed object whose output is [] — the text
+// and the calls exist only in the events (live 2026-10-10: "ok" streamed,
+// output: [], and the turn read as nothing readable twice) — so an empty
+// final keeps its id, model, status and usage over the assembled items.
 func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.StreamGuard) (*responsesResponse, bool, error) {
 	var final *responsesResponse
 	built := &responsesResponse{}
@@ -325,18 +329,49 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 			return nil
 		}
 		switch ev.Type {
-		case "response.output_item.added":
+		case "response.output_item.added", "response.output_item.done":
 			var it struct {
-				Type   string `json:"type"`
-				ID     string `json:"id"`
-				CallID string `json:"call_id"`
-				Name   string `json:"name"`
+				Type      string `json:"type"`
+				ID        string `json:"id"`
+				CallID    string `json:"call_id"`
+				Name      string `json:"name"`
+				Arguments string `json:"arguments"`
+				Content   []struct {
+					Type string `json:"type"`
+					Text string `json:"text"`
+				} `json:"content"`
 			}
 			_ = json.Unmarshal(ev.Item, &it)
 			x := at(ev.OutputIndex)
-			x.typ, x.id, x.callID, x.name = it.Type, it.ID, it.CallID, it.Name
+			if it.Type != "" {
+				x.typ = it.Type
+			}
+			if it.ID != "" {
+				x.id = it.ID
+			}
+			if it.CallID != "" {
+				x.callID = it.CallID
+			}
+			if it.Name != "" {
+				x.name = it.Name
+			}
 			if it.Type == "function_call" {
 				sawTool = true
+			}
+			if ev.Type == "response.output_item.done" {
+				// The done item is definitive: its arguments whole, its
+				// text whole when no delta carried it.
+				if it.Arguments != "" {
+					x.args.Reset()
+					x.args.WriteString(it.Arguments)
+				}
+				if x.text.Len() == 0 {
+					for _, c := range it.Content {
+						if c.Type == "output_text" {
+							x.text.WriteString(c.Text)
+						}
+					}
+				}
 			}
 		case "response.output_text.delta":
 			x := at(ev.OutputIndex)
@@ -382,7 +417,7 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 	if streamErr != nil {
 		return nil, false, streamErr
 	}
-	if final != nil && !guarded {
+	if final != nil && !guarded && len(final.Output) > 0 {
 		return final, false, nil
 	}
 	for _, i := range order {

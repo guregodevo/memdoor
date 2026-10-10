@@ -219,6 +219,13 @@ func (m *Model) connectLoginWaited(msg connectLoginWaitMsg) tea.Cmd {
 		return nil
 	}
 	if msg.err != nil {
+		if strings.Contains(msg.err.Error(), "one more approval") {
+			// A first registration (pkg/chatgpt ErrSignInAgain): start over,
+			// now under the issued client id.
+			m.note("Memdoor is now registered with your ChatGPT — one more approval completes the sign-in.")
+			f.loginID, f.loginURL = "", ""
+			return m.connectLoginStart()
+		}
 		m.connect = nil
 		m.input.Reset()
 		m.note("✗ not signed in: " + msg.err.Error())

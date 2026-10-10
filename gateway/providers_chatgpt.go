@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -107,7 +108,7 @@ func (s *Server) handleProvidersChatGPT(w http.ResponseWriter, r *http.Request) 
 				chatgptLogins.Unlock()
 				l.cancel()
 				if res.err != nil {
-					ok(map[string]string{"error": res.err.Error()})
+					ok(map[string]any{"error": res.err.Error(), "again": errors.Is(res.err, chatgpt.ErrSignInAgain)})
 					return
 				}
 				out := chatgptProbe(r.Context())

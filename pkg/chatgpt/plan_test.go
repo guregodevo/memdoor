@@ -2,6 +2,7 @@ package chatgpt
 
 import (
 	"context"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -22,15 +23,16 @@ import (
 // first sign-in, checks PKCE on the exchange, rotates the refresh token, and
 // signs ID tokens with a key its JWKS publishes.
 type fakeOpenAI struct {
-	srv       *httptest.Server
-	key       *rsa.PrivateKey
-	mu        sync.Mutex
-	exchanges []url.Values
-	refreshes []url.Values
-	refuse    string // a token-endpoint error code to answer with, when set
-	nonce     string // the nonce the next ID token carries (read from the authorize URL)
-	clientID  string // the audience of the next ID token
-	challenge string // the PKCE challenge the authorize URL carried
+	srv        *httptest.Server
+	key        *rsa.PrivateKey
+	mu         sync.Mutex
+	exchanges  []url.Values
+	refreshes  []url.Values
+	refuse     string // a token-endpoint error code to answer with, when set
+	refuseOnce bool   // refuse the next exchange only (a registration's first exchange, live 2026-10-10)
+	nonce      string // the nonce the next ID token carries (read from the authorize URL)
+	clientID   string // the audience of the next ID token
+	challenge  string // the PKCE challenge the authorize URL carried
 }
 
 func newFakeOpenAI(t *testing.T) *fakeOpenAI {
@@ -55,6 +57,12 @@ func newFakeOpenAI(t *testing.T) *fakeOpenAI {
 		if f.refuse != "" {
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": f.refuse, "error_description": "no"})
+			return
+		}
+		if f.refuseOnce && r.PostForm.Get("grant_type") == "authorization_code" {
+			f.refuseOnce = false
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid_grant"})
 			return
 		}
 		switch r.PostForm.Get("grant_type") {
@@ -90,7 +98,7 @@ func (f *fakeOpenAI) idToken(t *testing.T, aud, nonce string) string {
 	c, _ := json.Marshal(map[string]any{"iss": f.srv.URL, "sub": "user-7", "aud": aud, "exp": time.Now().Add(time.Hour).Unix(), "nonce": nonce, "email": "dev@example.com"})
 	signed := base64.RawURLEncoding.EncodeToString(h) + "." + base64.RawURLEncoding.EncodeToString(c)
 	sum := sha256.Sum256([]byte(signed))
-	sig, err := rsa.SignPKCS1v15(rand.Reader, f.key, 0, sum[:])
+	sig, err := rsa.SignPKCS1v15(rand.Reader, f.key, crypto.SHA256, sum[:])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +116,10 @@ func (f *fakeOpenAI) browse(t *testing.T, l *Login, issued string) url.Values {
 	}
 	q := u.Query()
 	f.mu.Lock()
-	f.nonce, f.clientID, f.challenge = q.Get("nonce"), issued, q.Get("code_challenge")
+	f.nonce, f.challenge = q.Get("nonce"), q.Get("code_challenge")
+	if issued != "" {
+		f.clientID = issued
+	}
 	f.mu.Unlock()
 	cb := q.Get("redirect_uri") + "?" + url.Values{"code": {"c1"}, "state": {q.Get("state")}, "client_id": {issued}}.Encode()
 	resp, err := http.Get(cb)
@@ -250,5 +261,37 @@ func TestAnIDTokenSignedByAnotherKeyIsRefused(t *testing.T) {
 	}
 	if c, err := verifyIDToken(context.Background(), f.srv.Client(), ep, good, "oaiapp_123", "n1"); err != nil || c.Email != "dev@example.com" {
 		t.Fatalf("the right token verifies: %+v %v", c, err)
+	}
+}
+
+// OpenAI's docs: a registration's first exchange may answer invalid_grant;
+// the issued client id is kept and a fresh sign-in under it completes.
+func TestARegistrationRefusedOnceKeepsTheIssuedIDAndSignsInAgain(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	f := newFakeOpenAI(t)
+	f.refuseOnce = true
+	store := NewStore(t.TempDir())
+	l, err := BeginLogin(context.Background(), f.endpoints(), store, f.srv.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.browse(t, l, "oaiapp_777")
+	if _, err := l.Wait(context.Background()); err != ErrSignInAgain {
+		t.Fatalf("a refused registration says to sign in again, got %v", err)
+	}
+	if c, _ := store.Load(); c != nil {
+		t.Fatal("nothing is signed in yet")
+	}
+	l2, err := BeginLogin(context.Background(), f.endpoints(), store, f.srv.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	q2 := f.browse(t, l2, "") // reauthorization: the callback carries no client id
+	if q2.Get("client_id") != "oaiapp_777" || q2.Get("agent_name_hint") != "" {
+		t.Fatalf("the second sign-in runs under the issued id: %v", q2)
+	}
+	c, err := l2.Wait(context.Background())
+	if err != nil || c.ClientID != "oaiapp_777" || c.AccessToken != "at-1" {
+		t.Fatalf("the second sign-in completes: %+v %v", c, err)
 	}
 }

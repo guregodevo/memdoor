@@ -18,6 +18,7 @@ package chatgpt
 
 import (
 	"context"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -34,6 +35,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -83,6 +85,14 @@ const (
 // ErrNotSignedIn is the token source's answer when nobody signed in, or the
 // sign-in expired: `memdoor connect chatgpt` again.
 var ErrNotSignedIn = errors.New("not signed in with ChatGPT: run memdoor connect chatgpt (or /connect chatgpt in the window)")
+
+// ErrSignInAgain is a registration that ended as OpenAI's docs say it can:
+// the host was issued its client id and the code exchange answered
+// invalid_grant. The id is kept; the next sign-in, under it, completes
+// (developers.openai.com/siwc/token-sharing-open-source/sign-in: "discard
+// that code and start a fresh authorization with the issued client ID").
+// Live 2026-10-10: two registrations in a row ended exactly so.
+var ErrSignInAgain = errors.New("Memdoor is now registered with your ChatGPT; one more approval completes the sign-in")
 
 // Credential is one host's sign-in, as OpenAI's docs lay it out.
 type Credential struct {
@@ -218,6 +228,22 @@ func (s *Store) savedClientID() string {
 	return f.ClientID
 }
 
+// saveClientID keeps the id a registration issued, before any exchange: it
+// is the host's from now on, whatever the first exchange answers.
+func (s *Store) saveClientID(id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	f, err := s.read()
+	if err != nil {
+		return err
+	}
+	if f.ClientID == id {
+		return nil
+	}
+	f.ClientID = id
+	return s.write(f)
+}
+
 // Login is one sign-in in progress: open AuthURL in a browser; the code
 // arrives at the local listener, or through Deliver; Wait finishes it.
 type Login struct {
@@ -239,6 +265,7 @@ type Login struct {
 
 type callbackResult struct {
 	code, clientID, err string
+	params              string // the callback's parameter names, for a refusal's diagnosis
 }
 
 // BeginLogin starts a sign-in: the local listener, PKCE, and the URL to
@@ -303,7 +330,18 @@ func (l *Login) callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, callbackPage, "Signed in to Memdoor with ChatGPT", "You can close this tab and go back to the terminal.")
-	l.deliver(callbackResult{code: q.Get("code"), clientID: q.Get("client_id")})
+	l.deliver(callbackResult{code: q.Get("code"), clientID: q.Get("client_id"), params: paramNames(q)})
+}
+
+// paramNames lists a query's parameter names (never their values), so a
+// refused exchange can say what the callback carried.
+func paramNames(q url.Values) string {
+	names := make([]string, 0, len(q))
+	for k := range q {
+		names = append(names, k)
+	}
+	sort.Strings(names)
+	return strings.Join(names, ",")
 }
 
 func (l *Login) deliver(r callbackResult) {
@@ -347,8 +385,12 @@ func (l *Login) Wait(ctx context.Context) (*Credential, error) {
 		return nil, fmt.Errorf("OpenAI refused the sign-in: %s", r.err)
 	}
 	clientID := l.clientID
-	if r.clientID != "" {
-		clientID = r.clientID // the id this host was just issued
+	registered := false
+	if r.clientID != "" && r.clientID != l.clientID {
+		clientID, registered = r.clientID, true // the id this host was just issued
+		if err := l.store.saveClientID(clientID); err != nil {
+			return nil, fmt.Errorf("the issued client id could not be kept: %w", err)
+		}
 	}
 	if clientID == dynamicClient {
 		return nil, errors.New("the sign-in returned no client id for this host")
@@ -363,7 +405,11 @@ func (l *Login) Wait(ctx context.Context) (*Credential, error) {
 	}
 	tr, err := tokenRequest(ctx, l.http, l.ep.Token, form)
 	if err != nil {
-		return nil, err
+		var te *TokenError
+		if registered && errors.As(err, &te) && te.Code == "invalid_grant" {
+			return nil, ErrSignInAgain
+		}
+		return nil, fmt.Errorf("%w (callback carried %s; client %s; redirect %s)", err, r.params, abbreviate(clientID), l.redirect)
 	}
 	claims, err := verifyIDToken(ctx, l.http, l.ep, tr.IDToken, clientID, l.nonce)
 	if err != nil {
@@ -416,8 +462,8 @@ func tokenRequest(ctx context.Context, hc *http.Client, endpoint string, form ur
 	_ = json.Unmarshal(b, &tr)
 	if resp.StatusCode >= 300 || tr.AccessToken == "" {
 		why := strings.TrimSpace(tr.Error + " " + tr.Description)
-		if why == "" {
-			why = truncate(string(b), 200)
+		if tr.Description == "" {
+			why = strings.TrimSpace(why + " " + truncate(string(b), 300))
 		}
 		return nil, &TokenError{Status: resp.StatusCode, Code: tr.Error, Message: why}
 	}
@@ -555,7 +601,7 @@ func verifyIDToken(ctx context.Context, hc *http.Client, ep Endpoints, token, cl
 		}
 		switch {
 		case header.Alg == "RS256" && k.Kty == "RSA":
-			if pub, err := k.rsa(); err == nil && rsa.VerifyPKCS1v15(pub, 0, sum[:], sig) == nil {
+			if pub, err := k.rsa(); err == nil && rsa.VerifyPKCS1v15(pub, crypto.SHA256, sum[:], sig) == nil {
 				verified = true
 			}
 		case header.Alg == "ES256" && k.Kty == "EC":
@@ -702,6 +748,14 @@ func uuid4() string {
 	b[6] = (b[6] & 0x0f) | 0x40
 	b[8] = (b[8] & 0x3f) | 0x80
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+}
+
+// abbreviate is a client id's shape for a message: its prefix and length.
+func abbreviate(id string) string {
+	if len(id) <= 8 {
+		return id
+	}
+	return id[:8] + "…(" + fmt.Sprint(len(id)) + ")"
 }
 
 func truncate(s string, n int) string {
