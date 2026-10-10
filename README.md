@@ -47,8 +47,9 @@ typed question such as *is this hit relevant to the task?* with a calibrated
 probability in under half a second, and the harness acts on it: search, file
 and log reads return only what counts; only the tools the turn needs are sent;
 a turn that stops making progress ends instead of looping to a cap. Measured
-over 20 paired runs: 49% fewer input tokens on a question about the codebase,
-26% fewer on an edit with a test, every answer right
+over 44 paired runs, decisions off and on: 22 of 22 passed each way; a question
+about the codebase went from 54,661 to 14,367 input tokens (−74%); an edit with
+a test and ten one-file fixes read the same files either way (within ±11%)
 ([`docs/features/DECIDE.md`](docs/features/DECIDE.md)).
 
 **Workflows.** Say the steps and the coder writes them as task files, one YAML

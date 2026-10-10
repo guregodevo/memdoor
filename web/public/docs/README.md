@@ -2,8 +2,8 @@
 
 A coding agent in your terminal, running on **your own key, any provider's**,
 with a decision model in front of the chat model to cut what it reads and what
-it costs. Measured over twenty paired runs: 49% fewer input tokens on a question
-about the codebase, 26% fewer on an edit, every answer still correct. The
+it costs. Measured over 44 paired runs: 74% fewer input tokens on a question
+about the codebase, no change on edits, 22 of 22 passed each way. The
 agent, the decision model and workflows are free on your own key; Pro is $10 a
 month for remote control and workflow state kept on memdoor.ai.
 

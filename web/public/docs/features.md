@@ -20,8 +20,8 @@ probability, in under half a second, and the harness acts on the answer. Judged
 reads return the search hits, file sections and log lines the task needs. The
 tool schemas sent per call are narrowed to the kind of work the request needs.
 A turn that has stopped making progress is ended rather than looped to a cap.
-Measured over twenty paired runs: 49% fewer input tokens on a code question, 26%
-fewer on an edit, with all twenty answers correct.
+Measured over 44 paired runs: 74% fewer input tokens on a code question, no
+change on an edit or on small fixes, 22 of 22 passed each way.
 
 → **[What is Memdoor](/docs/what-is-memdoor)**, **[Why Memdoor](/docs/why)**
 

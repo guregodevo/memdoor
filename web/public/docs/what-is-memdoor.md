@@ -30,16 +30,19 @@ expensive model reads a fraction of the text and gives the same answer.
 
 ## What that measured
 
-Twenty runs, ten pairs: the same tasks on the same model, decisions off and on,
-alternating, on the cheapest rung of the ladder.
+44 runs, 22 pairs: the same tasks on the same model, decisions off and on,
+alternating, on the cheapest rung of the ladder (10 October 2026).
 
-| The work | Without | With | Saved |
+| The work | Without | With | Change |
 |---|---|---|---|
-| A question about the codebase | 57,423 input tokens | 29,458 | **−49%** |
-| An edit with a test, run green | 140,862 input tokens | 103,775 | **−26%** |
+| A question about this codebase (3 pairs) | 54,661 input tokens | 14,367 | **−74%** |
+| An edit with a test, run green (3 pairs) | 64,274 input tokens | 69,746 | +9% |
+| Ten one-file fixes, test green (10 pairs) | 37,374 input tokens | 41,621 | +11% |
 
-All twenty answers were right: every edit passed `go test` and `go vet` on its
-own copy of the repository, every question named the correct file. Reading less
+22 of 22 passed under each condition: every edit and fix under `go test` on its
+own copy, every question naming the right file. The saving is on reads with
+something to judge; where the task reads the same files either way, nothing
+changes. Reading less
 never cost a correct answer — that is the bar, and the reason each mechanism
 errs on the side of sending too much rather than too little.
 

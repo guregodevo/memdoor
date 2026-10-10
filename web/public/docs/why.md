@@ -6,8 +6,8 @@ A whole file when three functions mattered. Every grep hit when two did. A
 whole log when ten lines answered. Each of those sits in the transcript
 and is resent on every later call of the turn, so the waste compounds. Memdoor
 puts a decision model in front of the one writing your code and passes on only
-what the task needs: 49% fewer input tokens on a question about the codebase,
-measured over ten pairs of runs.
+what the task needs: 74% fewer input tokens on a question about the codebase,
+measured over three pairs of runs, with the same pass rate on everything else.
 
 ## 2. A cheap model does most of the work, if something decides when it cannot
 

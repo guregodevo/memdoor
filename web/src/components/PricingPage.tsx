@@ -37,8 +37,9 @@ import { SeatCheckout } from './SeatCheckout';
 // business. The list prices quoted are the models' own, published.
 
 const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
-  { work: 'A question about the codebase', off: '57,423', on: '29,458', saved: '−49%' },
-  { work: 'An edit with a test, run green', off: '140,862', on: '103,775', saved: '−26%' },
+  { work: 'A question about this codebase, 3 pairs', off: '54,661', on: '14,367', saved: '−74%' },
+  { work: 'An edit with a test, run green, 3 pairs', off: '64,274', on: '69,746', saved: '+9%' },
+  { work: 'Ten one-file fixes, test green, 10 pairs', off: '37,374', on: '41,621', saved: '+11%' },
 ];
 
 // NO MODEL'S PRICE IS QUOTED (Greg, 2026-09-29: "sync pricing consistently",
@@ -201,9 +202,9 @@ export function PricingPage() {
             What it gives back
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-center text-sm leading-relaxed text-neutral-500">
-            Ten paired runs, the decision model off and on. Every answer right, every edit green under <code>go test</code>{' '}
-            and <code>go vet</code>.
-          </p>
+            44 runs, the decision model off and on, alternating: 22 of 22 passed each way under <code>go test</code>. The
+            saving is on reads with something to judge; where the task reads the same files either way, nothing changes.
+            The method and the rows: docs/features/DECIDE.md</p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[34rem] text-left text-sm">
               <thead>

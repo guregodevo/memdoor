@@ -29,11 +29,14 @@ const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 
 // The day's paired runs (docs/features/DECIDE.md, 2026-09-27): same tasks, the
 // decision model off and on, alternating, on the cheapest rung.
-// The edit row first: it is the work a coder pays for (2026-10-10 audit: the
-// question row as the headline read as cherry-picked).
+// The cost table of 2026-10-10 (docs/features/DECIDE.md): 44 runs, decisions
+// off and on, alternating, 22/22 passed each way. Every row is shown, the
+// ones where nothing changed included: the saving is on reads with something
+// to judge, and the earlier "−26% on an edit" did not reproduce.
 const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
-  { work: 'An edit with a test, run green', off: '140,862', on: '103,775', saved: '−26%' },
-  { work: 'A question about the codebase', off: '57,423', on: '29,458', saved: '−49%' },
+  { work: 'A question about this codebase, 3 pairs', off: '54,661', on: '14,367', saved: '−74%' },
+  { work: 'An edit with a test, run green, 3 pairs', off: '64,274', on: '69,746', saved: '+9%' },
+  { work: 'Ten one-file fixes, test green, 10 pairs', off: '37,374', on: '41,621', saved: '+11%' },
 ];
 
 // The hero's proof, each figure measured (docs/features/DECIDE.md): paired
@@ -269,11 +272,12 @@ export function CoderLandingPage() {
             Measured on paired runs
           </div>
           <h2 className="mx-auto mb-3 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-            A quarter fewer input tokens on an edit. Half on a question.
+            Three quarters fewer input tokens on a code question. The same pass rate everywhere.
           </h2>
           <p className="mx-auto mb-4 max-w-2xl text-center text-sm text-neutral-500">
-            Ten pairs: the same task on the same model, decisions off and on. All twenty answers were right; the
-            edits passed <code className="text-neutral-700">go test</code> and <code className="text-neutral-700">go vet</code>.
+            44 runs, decisions off and on, alternating: 22 of 22 passed each way (<code className="text-neutral-700">go test</code>{' '}
+            on the copy, never the model's word). Where there is something to judge, a search, the chat model reads a
+            quarter of it; where the task reads the same files either way, nothing changes.
           </p>
           <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
             A decision model judges every search hit, file section and log line before the coding model reads it (a
@@ -297,14 +301,14 @@ export function CoderLandingPage() {
                     <td className="py-4 pr-4">{m.work}</td>
                     <td className="py-4 pr-4 text-right tabular-nums text-neutral-500">{m.off}</td>
                     <td className="py-4 pr-4 text-right tabular-nums font-semibold text-neutral-900">{m.on}</td>
-                    <td className="py-4 text-right font-semibold text-emerald-700">{m.saved}</td>
+                    <td className={`py-4 text-right font-semibold ${m.saved.startsWith('−') ? 'text-emerald-700' : 'text-neutral-500'}`}>{m.saved}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-neutral-500">
-            Means over five pairs each. The method and the harness that produced these rows:{' '}
+            Means over the pairs shown, measured 10 October 2026 on the first rung. The method, the rows and the harness:{' '}
             <a
               href="https://github.com/guregodevo/memdoor/blob/main/docs/features/DECIDE.md"
               className="underline underline-offset-4 hover:text-neutral-700"

@@ -45,7 +45,24 @@ func main() {
 	model := flag.String("model", "", "OpenRouter model id")
 	format := flag.String("format", "patch", "edit_format: patch | hashline")
 	taskIdx := flag.Int("task", -1, "task index (default: all)")
+	dump := flag.String("dump", "", "write every task's broken module under this directory (NN-name/) and exit: the cost table (scripts/cost_table.py) runs the whole coder on them")
 	flag.Parse()
+	if *dump != "" {
+		for i, tk := range tasks() {
+			dir := filepath.Join(*dump, fmt.Sprintf("%02d-%s", i, tk.name))
+			for path, content := range tk.files {
+				full := filepath.Join(dir, path)
+				_ = os.MkdirAll(filepath.Dir(full), 0o755)
+				if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(1)
+				}
+			}
+			_ = os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module bench\n\ngo 1.21\n"), 0o644)
+		}
+		fmt.Printf("%d tasks written under %s\n", len(tasks()), *dump)
+		return
+	}
 	if *model == "" {
 		fmt.Fprintln(os.Stderr, "-model required")
 		os.Exit(2)

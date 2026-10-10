@@ -443,6 +443,68 @@ families, off against Jev, same tasks, alternating order, rung 1:
   tokens removed were cache hits, and a family change between turns of one
   conversation re-reads the prefix once — worth watching in a long session.
 
+### Cost table, 2026-10-10 (44 runs, decisions off and on)
+
+The measurement in the shape a reader believes (docs/internal/GROWTH_STRATEGY.md,
+move 3): did it pass, what did it read, what did the key get billed. Two
+scratch gateways ran this binary on the same OpenRouter key and the same first
+rung (`z-ai/glm-5.3-flash`); one had no decision provider (a non-local
+`MEMDOOR_SYSTEMONE_URL` with no key, which the client refuses at
+construction, so nothing is judged), the other had Jev on the key with
+`decision_tool_routing=on` (the fresh-workspace default is off; the first "on"
+pass ran with it off and measured an idle decision model, so it was redone).
+Each task ran in a fresh copy through the real `memdoor tui` in tmux
+(`scripts/cost_table.py`), conditions alternating per task. Pass is `go test`
+on the copy afterwards, or a regex on the answer for a question. Tokens and
+cache from the meter; dollars from OpenRouter's record of each generation
+(`/api/v1/generation`), what the key was billed. Rows:
+`eval/costtable/rows-2026-10-10*.jsonl`.
+
+**Ten one-file fixes** (`eval/editbench` modules, one test broken by one
+mutation; prompt "Make `go test ./...` pass"; one pair each):
+
+| | pairs | passed | input tokens (mean) | cached | calls | $ billed (mean) | seconds |
+|---|---|---|---|---|---|---|---|
+| decisions off | 10 | 10/10 | 37,374 | 69% | 5.2 | $0.0009 | 15 |
+| decisions on | 10 | 10/10 | 41,621 | 90% | 6.2 | $0.0007 | 16 |
+
+**Three tasks on this repository** (a copy of HEAD; three pairs each):
+
+| task | condition | passed | input tokens (mean) | cached | calls | $ billed (mean) | seconds |
+|---|---|---|---|---|---|---|---|
+| "where does a turn give up on a failing tool?" (file:line) | off | 3/3 | 54,661 | 54% | 4.7 | $0.0016 | 21 |
+| | on | 3/3 | **14,367 (−74%)** | 25% | 2.0 | $0.0006 (−62%) | 15 |
+| "where is a subagent's result turned into the re-run?" | off | 3/3 | 41,673 | 84% | 4.7 | $0.0009 | 16 |
+| | on | 3/3 | 45,834 (+10%) | 73% | 4.7 | $0.0011 | 17 |
+| add `ParseChannelSessionID` with a table test, run green | off | 3/3 | 64,274 | 76% | 7.0 | $0.0019 | 37 |
+| | on | 3/3 | 69,746 (+9%) | 79% | 6.3 | $0.0018 | 31 |
+
+What it says, and what the pages now say:
+
+- **Nothing was lost: 22/22 passed under each condition, 44 runs.** That is
+  the answer to the thread's "what did you lose".
+- **Where there is something to judge, the saving is large and stable**: the
+  question with a search answer went from 43–72k input tokens to 14.3k three
+  times out of three (−74%), two calls instead of five, because `jgrep`
+  returned the hunk that answers and nothing else.
+- **Where the task reads the same files either way, nothing changes**: the
+  small fixes (+11% tokens, one more call on some turns: the toolbox
+  judgment), the second question (+10%, with runs from 13k to 84k on both
+  sides) and the edit (+9%) are within the run-to-run noise. The dollars
+  moved more than the tokens (−17% on the fixes) because OpenRouter's cache
+  hit 90% on the "on" runs and 69% on the "off" ones: that is the provider's
+  cache, not the decision model, and it says the judged requests did not
+  break it.
+- **The earlier edit claim did not reproduce.** 2026-09-27 measured −26% on
+  an edit (five pairs on a larger task, the broker throttle, since deleted).
+  Today's edit, three pairs, is +9%. The pages no longer say a quarter fewer
+  on an edit; they say the pass rate is the same everywhere and the saving is
+  on reads with something to judge.
+
+To reproduce: `go run ./eval/editbench -dump /tmp/ct/tasks`, two gateways as
+above, `scripts/cost_table.py` with their homes and ports (its docstring has
+the environment), `--table` on the rows.
+
 ## Any model can run the coding agent (32 probed, 2026-09-27)
 
 `memdoor model check [vendor/name …]` asks a model to do what a coder turn
