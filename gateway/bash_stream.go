@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"memdoor/pkg/secrets"
 	"memdoor/tools"
 	"os/exec"
@@ -173,6 +174,12 @@ func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chu
 	}()
 
 	err := cmd.Run()
+	// The command exited; what Run waited WaitDelay for was a backgrounded
+	// child still holding the output pipe (`(…) & echo bg`). That is the
+	// shape of running something in the background, not a failure: the
+	// exit status decides (live: "Command FAILED (exec: WaitDelay expired
+	// before I/O complete)" on an exit-0 launch, twice in one turn, 2026-10-10).
+	err = ignoreWaitDelayAfterExit(cmd, err)
 	close(done)
 	flushWG.Wait()
 
@@ -192,6 +199,16 @@ func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chu
 		runErr = err
 	}
 	return out, truncated, runErr
+}
+
+// ignoreWaitDelayAfterExit returns nil for exec.ErrWaitDelay when the process
+// itself exited 0: its output up to the delay was captured, and the pipe was
+// held by a child it left running on purpose.
+func ignoreWaitDelayAfterExit(cmd *exec.Cmd, err error) error {
+	if errors.Is(err, exec.ErrWaitDelay) && cmd.ProcessState != nil && cmd.ProcessState.Success() {
+		return nil
+	}
+	return err
 }
 
 // streamWriter is the one io.Writer a streamed command's stdout and stderr

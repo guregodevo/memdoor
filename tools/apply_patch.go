@@ -476,7 +476,12 @@ func ApplyPatch(input json.RawMessage) (_ string, err error) {
 			// verbatim) must not report success — the model reads "Patch applied" as
 			// task done and stops without ever making the change. Refuse with the
 			// shape of a real hunk spelled out.
-			if prev, rerr := os.ReadFile(target); rerr == nil && contentEquivalent(string(prev), updated) {
+			// Whitespace IS the change when a hunk says so: a "-"/"+" pair that
+			// differs only in indentation re-indents a Python line (live: an
+			// IndentationError repair refused three times, 2026-10-10), so the
+			// collapsed comparison applies only to a patch without such a pair.
+			if prev, rerr := os.ReadFile(target); rerr == nil && contentEquivalent(string(prev), updated) &&
+				(string(prev) == updated || !hasExplicitReplacement(h.chunks)) {
 				return "", fmt.Errorf("apply_patch update %s: the patch changed NOTHING — it contains only context lines (no additions or removals), or its changes match the file as-is. Write a hunk with the line to change as \"-old line\" and its replacement as \"+new line\". Changing several lines? read_file %s and REWRITE it with *** Add File: %s using its ACTUAL content plus your change", h.path, filepath.Base(target), filepath.Base(target))
 			}
 			dest := target
@@ -2109,6 +2114,17 @@ func anchorMatchesExisting(orig []string, anchor string) bool {
 
 // collapseWS trims and collapses every run of whitespace to a single space, so anchor
 // comparison ignores the indentation a small model routinely gets wrong.
+// hasExplicitReplacement: some hunk both removes and adds lines, so the
+// model spelled out an old line and its replacement.
+func hasExplicitReplacement(chunks []patchChunk) bool {
+	for _, ch := range chunks {
+		if ch.hasRemoval && len(ch.addedLines) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func collapseWS(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }

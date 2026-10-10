@@ -1550,3 +1550,22 @@ func TestApplyPatchStripsUnifiedDiffCoords(t *testing.T) {
 		t.Fatalf("coords leaked or broke the file:\n%s", s)
 	}
 }
+
+// Live (qant, 2026-10-10): a patch that re-indents one Python line — "-" the
+// eight-space line, "+" the four-space one — was refused three times as
+// "changed NOTHING" and apply_patch locked out; a sed with the same edit
+// worked. Whitespace is the change in Python, YAML and make: an explicit
+// -/+ pair that differs only in indentation is an edit, not a no-op.
+func TestApplyPatchAppliesAnIndentationOnlyChange(t *testing.T) {
+	dir := t.TempDir()
+	orig := "def main():\n    x = 1\n        print(x)\n"
+	os.WriteFile(filepath.Join(dir, "goal.py"), []byte(orig), 0o644)
+	patch := "*** Begin Patch\n*** Update File: goal.py\n@@ def main():\n     x = 1\n-        print(x)\n+    print(x)\n*** End Patch"
+	if _, err := runPatch(t, dir, patch, "goal.py"); err != nil {
+		t.Fatalf("an indentation-only -/+ hunk must apply: %v", err)
+	}
+	b, _ := os.ReadFile(filepath.Join(dir, "goal.py"))
+	if string(b) != "def main():\n    x = 1\n    print(x)\n" {
+		t.Fatalf("file after patch:\n%s", b)
+	}
+}

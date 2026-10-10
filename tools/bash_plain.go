@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -65,6 +66,11 @@ func runPlainBash(command, dir string) (string, error) {
 	go func() { done <- cmd.Wait() }()
 	select {
 	case err := <-done:
+		// Exit 0 with a backgrounded child still on the pipe is a launch,
+		// not a failure (see gateway/bash_stream.go).
+		if errors.Is(err, exec.ErrWaitDelay) && cmd.ProcessState != nil && cmd.ProcessState.Success() {
+			err = nil
+		}
 		return stripTerminalEscapes([]byte(buf.String())), err
 	case <-time.After(timeout):
 		_ = killProcessGroup(cmd)

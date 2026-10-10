@@ -146,3 +146,21 @@ func TestTheStreamerReadsAMissingPathAsAnAnswer(t *testing.T) {
 		t.Fatalf("a command that is not a read still fails: %q", out)
 	}
 }
+
+// A command that launches something in the background and exits 0 is a
+// launch, not a failure, even though the child holds the output pipe past
+// WaitDelay (live, 2026-10-10: `(python3 … > log) & echo bg` and a `nohup sh
+// -c … &` both came back "Command FAILED (exec: WaitDelay expired before I/O
+// complete)" with the exit code 0 and "bg" printed).
+func TestRunStreamingCommand_BackgroundLaunchIsNotAFailure(t *testing.T) {
+	out, truncated, err := runStreamingCommand(context.Background(), "(sleep 7 > /dev/null 2>&1; sleep 0) & echo bg", "", nil)
+	if err != nil {
+		t.Fatalf("an exit-0 launch must not fail: %v", err)
+	}
+	if truncated || !strings.Contains(out, "bg") {
+		t.Fatalf("out=%q truncated=%v, want bg and not truncated", out, truncated)
+	}
+	if _, _, err := runStreamingCommand(context.Background(), "(sleep 7 > /dev/null 2>&1; sleep 0) & exit 3", "", nil); err == nil {
+		t.Fatal("a non-zero exit must still fail")
+	}
+}
