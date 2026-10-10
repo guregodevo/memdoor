@@ -4,9 +4,9 @@ Every run is a conversation on your gateway, whether a window was open or
 not. That is what lets you leave a run alone and come back into it live,
 instead of killing it and starting over.
 
-Headless means no window, not no machine: the gateway is a process on the
-machine the run belongs to (your laptop, a CI runner), and it has to be up.
-You never start it by hand: `memdoor tui`, `memdoor acp`, `memdoor workflow
+Headless means it runs without a desktop app or an interface: the gateway is
+a background process on the machine the run belongs to (your laptop, a CI
+runner), and nothing else is needed. You never start it by hand: `memdoor tui`, `memdoor acp`, `memdoor workflow
 run`, `memdoor workflow resume` and `memdoor cron add` start one when none
 is running, and set the machine up the first time. A run with the laptop
 closed is not here yet; it is what the hosted workflow state on memdoor.ai
