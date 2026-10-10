@@ -357,3 +357,19 @@ func TestRenderPartitionMatchesMario(t *testing.T) {
 		t.Fatalf("%q", got)
 	}
 }
+
+// A workflow run after the task files were written is the turn's check: its
+// targets are the proof (and the window shows them); a failed run fails it.
+func TestAWorkflowRunIsTheTurnsCheck(t *testing.T) {
+	steps := ToolExecutionInfo{Name: "write_file", Input: `{"path":".memdoor/workflows/check/steps/vet.yaml"}`}
+	run := ToolExecutionInfo{Name: workflowToolName, Input: `{"action":"run","name":"check"}`, Output: "▶ check · 3 tasks · check-20261010-175634. It reports here on its own"}
+	r := receiptsOf([]ToolExecutionInfo{steps, run})
+	if !r.checkedAfterChange || r.failingAfterChange || !strings.HasPrefix(r.line(), "✓ checked: ") || !strings.Contains(r.line(), "workflow ▶ check") {
+		t.Fatalf("a started run is the check for its task files: %+v\n%s", r, r.line())
+	}
+	failed := ToolExecutionInfo{Name: workflowToolName, Input: `{"action":"status"}`, Output: "check-20261010-175547 · failed · 0/3 done\n  failed  build"}
+	r = receiptsOf([]ToolExecutionInfo{steps, failed})
+	if !r.failingAfterChange || !strings.HasPrefix(r.line(), "⚠ failing after the change: ") {
+		t.Fatalf("a failed run fails the turn: %+v\n%s", r, r.line())
+	}
+}

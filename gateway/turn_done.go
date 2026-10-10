@@ -285,6 +285,25 @@ func receiptsOf(executed []ToolExecutionInfo) turnReceipts {
 				r.checks = append(r.checks, c)
 				lastCheck, lastCheckPass = i, c.pass
 			}
+		case workflowToolName:
+			// A WORKFLOW RUN IS THE CHECK (clean-machine walk, 2026-10-10): a
+			// sentence became three task files and a run to ■ done, and the
+			// receipt read "unverified: 4 files changed · no build, test or
+			// run after it". The run's targets are the proof and the window
+			// shows them as they land; a run that started, or is still
+			// going, is the check the task files got; one that failed, the
+			// failing one.
+			if t.Error != "" {
+				continue
+			}
+			head := firstLine(t.Output, 100)
+			if head == "" {
+				continue
+			}
+			pass := !strings.Contains(head, "· failed")
+			c := turnCheck{label: "workflow " + head, pass: pass}
+			r.checks = append(r.checks, c)
+			lastCheck, lastCheckPass = i, pass
 		}
 		if t.Error != "" {
 			r.lastFailure = t.Name + ": " + firstLine(t.Error, 160)
