@@ -53,3 +53,17 @@ func TestTheFilesPanelPutsWhatTheTurnTouchedFirst(t *testing.T) {
 		t.Fatalf("filtered: %+v", p.matches)
 	}
 }
+
+// A search's hits are files the conversation found: they appear in the
+// panel with their count, newest first with the rest.
+func TestFilesPanelCountsSearchHits(t *testing.T) {
+	var m Model
+	m.messages = []Message{{Role: "tool_call", ToolName: "grep", ToolInput: `{"pattern":"retry"}`, ToolOutput: "net/retry.go:12:func retry\nnet/retry.go:40:retry()\ncmd/run.go:8:retry(x)\n", Timestamp: time.Now()}}
+	touched := m.filesTouched()
+	if e := touched["net/retry.go"]; e == nil || e.hits != 2 {
+		t.Fatalf("net/retry.go hits = %+v", e)
+	}
+	if e := touched["cmd/run.go"]; e == nil || e.hits != 1 || e.lastTool != "grep" {
+		t.Fatalf("cmd/run.go = %+v", e)
+	}
+}

@@ -3,6 +3,7 @@ package ui
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 // Each kind of work wears its own colour, and a tool nobody registered stays
@@ -232,5 +233,185 @@ func TestANullArgumentNeverRendersAsNil(t *testing.T) {
 	got = genericLabel("skill", `{"path": null, "name": "new-program"}`, 120)
 	if !strings.Contains(got, "new-program") || strings.Contains(got, "<nil>") {
 		t.Errorf("the real argument lost to the null one: %s", got)
+	}
+}
+
+// A grep reads as its hits grouped by file, most hits first; nothing found
+// says so; ctrl+o hands the raw output back to the generic body.
+func TestSearchViewGroupsGrepHits(t *testing.T) {
+	out := "a.go:10:func main() {\nb.go:3:x := 1\na.go:20:main()\n"
+	body := stripANSI(viewFor("grep").Body(ToolRender{Output: out, Width: 100}))
+	for _, want := range []string{"3 hits in 2 files", "a.go · 2", "b.go · 1"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("grep body missing %q:\n%s", want, body)
+		}
+	}
+	if strings.Index(body, "a.go") > strings.Index(body, "b.go") {
+		t.Errorf("the file with more hits comes first:\n%s", body)
+	}
+	if got := viewFor("grep").Body(ToolRender{Output: out, Expand: true}); got != "" {
+		t.Errorf("an expanded frame shows the raw output, got %q", got)
+	}
+	if got := stripANSI(viewFor("grep").Body(ToolRender{Output: "No matches found"})); !strings.Contains(got, "no hits") {
+		t.Errorf("nothing found must read as nothing found, got %q", got)
+	}
+	if got := stripANSI(viewFor("glob").Body(ToolRender{Output: "x/a.go\nx/b.go\n"})); !strings.Contains(got, "2 files") {
+		t.Errorf("glob body: %q", got)
+	}
+}
+
+// A web search reads as its sources, the answer's first line above them.
+func TestSearchViewListsWebSources(t *testing.T) {
+	out := "Go 1.26 was released in February.\nMore text.\n\nSources:\n[1] Go 1.26 release notes — https://go.dev/doc/go1.26\n    snippet here\n[2] Blog — https://www.example.org/post\n"
+	body := stripANSI(viewFor("web_search").Body(ToolRender{Output: out, Width: 100}))
+	for _, want := range []string{"2 sources", "[1] Go 1.26 release notes go.dev", "[2] Blog example.org", "Go 1.26 was released"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("web search body missing %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "snippet here") {
+		t.Errorf("snippets are the model's to read, not the frame's:\n%s", body)
+	}
+}
+
+// locate keeps its head line and the ranked places, not the quoted sections.
+func TestSearchViewLocateKeepsPlaces(t *testing.T) {
+	out := "Where \"retry\" lives (judged: 2 of 5 sections kept), most relevant first:\n1. net/retry.go:12-40  p=0.93\n2. cmd/run.go:88-120  p=0.71\n\n== net/retry.go:12-40 (p=0.93)\n12 func retry() {\n13   …\n"
+	body := stripANSI(viewFor("locate").Body(ToolRender{Output: out, Width: 100}))
+	for _, want := range []string{"Where \"retry\" lives", "1. net/retry.go:12-40", "2. cmd/run.go:88-120"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("locate body missing %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "func retry()") {
+		t.Errorf("the section text belongs to ctrl+o:\n%s", body)
+	}
+	if got, _ := searchHitFiles("locate", out); len(got) != 2 || got[0] != "net/retry.go" {
+		t.Errorf("locate's files for the files panel: %v", got)
+	}
+}
+
+// A spawned run's frame draws its trail live and closes it when it reports.
+func TestSpawnViewDrawsTheTrail(t *testing.T) {
+	out := "▶ run-7f3a spawned as coder (session agent:coder:subagent:run-7f3a, up to 600s). It runs in the background and reports here when done — do not wait."
+	if got := spawnSession(out); got != "agent:coder:subagent:run-7f3a" {
+		t.Fatalf("spawnSession = %q", got)
+	}
+	labelled := "▶ run-31e4 \"test-and-read\" spawned as coder (session agent:coder:subagent:run-31e4, up to 300s). It runs in the background."
+	if got := spawnSession(labelled); got != "agent:coder:subagent:run-31e4" {
+		t.Fatalf("a labelled spawned line (live 2026-10-11) must parse, got %q", got)
+	}
+	if body := stripANSI(viewFor("sessions_spawn").Body(ToolRender{Output: labelled})); !strings.Contains(body, "▶ coder · test-and-read") {
+		t.Fatalf("the label is in the head line:\n%s", body)
+	}
+	body := stripANSI(viewFor("sessions_spawn").Body(ToolRender{Output: out, Trail: []trailStep{{"bash", 12}, {"read_file", 0}}}))
+	for _, want := range []string{"▶ coder", "run-7f3a", "up to 600s", "◦ Bash 12s", "◦ Read"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("spawn body missing %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "reported back") {
+		t.Errorf("a running child has not reported back:\n%s", body)
+	}
+	done := stripANSI(viewFor("sessions_spawn").Body(ToolRender{Output: out, Trail: []trailStep{{"bash", 12}}, TrailDone: true}))
+	if !strings.Contains(done, "✓ reported back") {
+		t.Errorf("a finished child closes the trail:\n%s", done)
+	}
+	if got := stripANSI(viewFor("sessions_spawn").Label(`{"task":"run the tests\nand report"}`, 100)); got != "Spawn(run the tests …)" {
+		t.Errorf("label = %q", got)
+	}
+
+	// The window keeps the trail from the child's beats: a new tool is a
+	// step, the same tool again only grows its seconds, done closes it.
+	var m Model
+	for _, b := range []subagentWorkMsg{
+		{sessionID: "s1", agent: "coder", tool: "bash", seconds: 5},
+		{sessionID: "s1", agent: "coder", tool: "bash", seconds: 10},
+		{sessionID: "s1", agent: "coder", tool: "read_file", seconds: 0},
+		{sessionID: "s1", done: true},
+	} {
+		m.noteSubagentStep(b)
+	}
+	tr := m.subagentTrail["s1"]
+	if tr == nil || len(tr.steps) != 2 || tr.steps[0].seconds != 10 || !tr.done {
+		t.Fatalf("trail = %+v", tr)
+	}
+}
+
+// The workflow tool's frame draws the run's tasks with the panel's glyphs.
+func TestWorkflowViewDrawsTasks(t *testing.T) {
+	out := "▶ release · 4 tasks · started. It reports here on its own — do not wait, sleep or poll; say it is running and end your turn.\nwf-12 · running · 1/4 done\n  done     vet\n  running  test  ← vet\n  waiting  notes  ← test  (external)\n  waiting  tag  ← notes"
+	body := stripANSI(viewFor("workflow").Body(ToolRender{Output: out, Width: 100}))
+	for _, want := range []string{"wf-12 · running · 1/4 done", "✓ vet", "▶ test", "← vet", "⏸ notes", "○ tag"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("workflow body missing %q:\n%s", want, body)
+		}
+	}
+	if got := viewFor("workflow").Label(`{"action":"run","name":"release"}`, 100); got != "Workflow(run release)" {
+		t.Errorf("label = %q", got)
+	}
+	if got := viewFor("workflow").Body(ToolRender{Output: "■ wf-12 stopped — nothing more starts."}); got != "" {
+		t.Errorf("an answer with no task lines falls through to the generic body, got %q", got)
+	}
+}
+
+// The gateway's grep prints file:content with no line number and absolute
+// paths (live 2026-10-11): still grouped, the shared folder said once.
+func TestSearchViewGroupsPathOnlyHits(t *testing.T) {
+	out := "/tmp/w/calc.go:func Add(a, b int) int {\n/tmp/w/calc_test.go:func TestAdd(t *testing.T) {\n/tmp/w/calc_test.go:    if Add(2, 3) != 5 {\n"
+	body := stripANSI(viewFor("grep").Body(ToolRender{Output: out, Width: 100}))
+	for _, want := range []string{"3 hits in 2 files", "in /tmp/w/", "calc_test.go · 2", "calc.go · 1"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("grep body missing %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "/tmp/w/calc.go") {
+		t.Errorf("the shared folder is said once, not per file:\n%s", body)
+	}
+	// In the project's own window the folder is the project: not said at all;
+	// a folder under it reads relative.
+	if body := stripANSI(viewFor("grep").Body(ToolRender{Output: out, Root: "/tmp/w"})); strings.Contains(body, " · in ") {
+		t.Errorf("the project folder itself is not named:\n%s", body)
+	}
+	if body := stripANSI(viewFor("grep").Body(ToolRender{Output: out, Root: "/tmp"})); !strings.Contains(body, "in w/") {
+		t.Errorf("a folder under the project reads relative:\n%s", body)
+	}
+}
+
+// A spawn frame stays out of scrollback while its child works, and its
+// render follows the trail (the cache key moves with it).
+func TestSpawnFrameStaysLiveWhileTheChildWorks(t *testing.T) {
+	out := "▶ run-1 spawned as coder (session agent:coder:subagent:run-1, up to 300s). It runs in the background."
+	var m Model
+	m.width, m.height = 100, 40
+	m.messages = []Message{
+		{Role: "user", Content: "spawn it"},
+		{Role: "tool_call", ToolName: "sessions_spawn", ToolInput: `{"task":"t"}`, ToolOutput: out, ToolDone: true, Timestamp: time.Now()},
+		{Role: "assistant", Content: "Spawned."},
+	}
+	if !m.spawnLive(m.messages[1]) {
+		t.Fatal("a fresh spawn frame waits for its child's first beat")
+	}
+	m.noteSubagentStep(subagentWorkMsg{sessionID: "agent:coder:subagent:run-1", agent: "coder", tool: "bash", seconds: 3})
+	first := plainText(m.renderBlock(1, m.messages[1]))
+	if !strings.Contains(first, "◦ Bash 3s") {
+		t.Fatalf("the frame draws the trail:\n%s", first)
+	}
+	m.noteSubagentStep(subagentWorkMsg{sessionID: "agent:coder:subagent:run-1", agent: "coder", tool: "bash", seconds: 8})
+	second := plainText(m.renderBlock(1, m.messages[1]))
+	if !strings.Contains(second, "◦ Bash 8s") {
+		t.Fatalf("a new beat re-renders the frame (the cache key must move):\n%s", second)
+	}
+	// settledCount flushes a frame only when the message rule AND the
+	// trail rule agree: this one is settled as a message, live as a spawn.
+	if !settled(m.messages[1]) || !m.spawnLive(m.messages[1]) {
+		t.Fatal("the spawn frame must not be flushed while the child works")
+	}
+	m.noteSubagentStep(subagentWorkMsg{sessionID: "agent:coder:subagent:run-1", done: true})
+	if m.spawnLive(m.messages[1]) {
+		t.Fatal("a reported child settles its frame")
+	}
+	if !strings.Contains(plainText(m.renderBlock(1, m.messages[1])), "✓ reported back") {
+		t.Fatal("the settled frame says the child reported back")
 	}
 }

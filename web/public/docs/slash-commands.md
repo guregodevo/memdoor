@@ -34,6 +34,7 @@ Everything you can type in the TUI. The `/` key opens a dropdown that filters as
 | `/compact [focus]` | Summarize the conversation now, rather than waiting for the budget. The focus says what to keep in mind |
 | `/agents` | The agents in this workspace and how many tools each holds |
 | `/files [filter]` | The project's files with the ones this conversation read or changed first, newest first, each with what happened to it; `ctrl+f` opens it too. Type to filter, enter previews, `ctrl+d` shows the diff, `ctrl+e` opens the file in `$EDITOR`, tab puts `@path` in the prompt, esc closes |
+| `/graph` | This turn as a graph: reads, edits, runs and what each depended on; the failing check in red (`ctrl+g`) |
 | `/mcp` | Every connected MCP server and its state; `a` adds one, arrows move, enter signs in or tests |
 | `/mcp add <…>` | Add a server from a URL, a command line or a `.mcp.json` snippet; connects at once and signs in if asked |
 | `/mcp search <words>` | Search the official MCP registry; a result is added as the entry it describes |

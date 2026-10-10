@@ -30,6 +30,7 @@ type fileEntry struct {
 	path     string
 	reads    int
 	edits    int
+	hits     int // named by a search's result (grep, glob, locate)
 	last     time.Time
 	lastTool string
 }
@@ -113,6 +114,33 @@ func (m *Model) filesTouched() map[string]*fileEntry {
 			continue
 		}
 		kind := toolKindOf(msg.ToolName)
+		// A search's hits are files the conversation found, newest first
+		// like the rest: ctrl+f after a grep is the hit list (2026-10-11).
+		switch msg.ToolName {
+		case "grep", "search", "glob", "locate":
+			files, counts := searchHitFiles(msg.ToolName, msg.ToolOutput)
+			for _, f := range files {
+				n := counts[f]
+				if m.filesPanel != nil && filepath.IsAbs(f) {
+					if rel, err := filepath.Rel(m.filesPanel.root, f); err == nil && !strings.HasPrefix(rel, "..") {
+						f = rel
+					}
+				}
+				f = filepath.ToSlash(strings.TrimSpace(f))
+				if f == "" {
+					continue
+				}
+				e := out[f]
+				if e == nil {
+					e = &fileEntry{path: f}
+					out[f] = e
+				}
+				e.hits += n
+				if msg.Timestamp.After(e.last) {
+					e.last, e.lastTool = msg.Timestamp, msg.ToolName
+				}
+			}
+		}
 		switch kind {
 		case fileToolRead, fileToolEdit:
 			for _, k := range []string{"path", "file_path", "file"} {
@@ -414,15 +442,20 @@ func (m Model) renderFilesPanel() string {
 			mark, style = "✎ ", edited
 		} else if e.reads > 0 {
 			mark, style = "◦ ", read
+		} else if e.hits > 0 {
+			mark, style = "⌕ ", read
 		}
 		label := e.path
-		if e.edits > 0 || e.reads > 0 {
+		if e.edits > 0 || e.reads > 0 || e.hits > 0 {
 			var parts []string
 			if e.edits > 0 {
 				parts = append(parts, fmt.Sprintf("%d edit%s", e.edits, plural(e.edits)))
 			}
 			if e.reads > 0 {
 				parts = append(parts, fmt.Sprintf("%d read%s", e.reads, plural(e.reads)))
+			}
+			if e.hits > 0 {
+				parts = append(parts, fmt.Sprintf("%d hit%s", e.hits, plural(e.hits)))
 			}
 			label += "  " + strings.Join(parts, " · ")
 		}

@@ -57,17 +57,17 @@ func TestChangedMessageIsRebuilt(t *testing.T) {
 // the expand toggle included, or ctrl+o would appear to do nothing.
 func TestKeyCoversToolResultAndExpansion(t *testing.T) {
 	msg := Message{Role: "tool_call", ToolName: "bash", ToolInput: `{"command":"ls"}`}
-	base := blockKey(msg, 80, false)
+	base := blockKey(msg, 80, false, "")
 
 	withOutput := msg
 	withOutput.ToolOutput = "a.go"
-	if blockKey(withOutput, 80, false) == base {
+	if blockKey(withOutput, 80, false, "") == base {
 		t.Error("a tool result must change the key, or the frame renders forever empty")
 	}
-	if blockKey(msg, 80, true) == base {
+	if blockKey(msg, 80, true, "") == base {
 		t.Error("the expand toggle must change the key, or ctrl+o does nothing")
 	}
-	if blockKey(msg, 100, false) == base {
+	if blockKey(msg, 100, false, "") == base {
 		t.Error("width must change the key — the render wraps to it")
 	}
 }

@@ -90,10 +90,11 @@ downloads.
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted (Pro) |
 | `/share` | A read-only link to the conversation, encrypted, secrets removed; `/unshare` deletes it |
 | `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, each with what happened to it; enter previews, `ctrl+d` diffs, `ctrl+e` opens in `$EDITOR`, tab puts `@path` in the prompt |
+| `/graph` or `ctrl+g` | This turn as a graph: the reads, the edits that depended on them, the runs that depended on the edits, the failing check in red |
 | `/mcp` | Connect MCP servers from a URL, a command or a `.mcp.json` snippet |
 | `/help` | The rest |
 
-`Esc` interrupts a turn, `ctrl+f` opens the files panel, `ctrl+o` expands tool
+`Esc` interrupts a turn, `ctrl+f` opens the files panel, `ctrl+g` the turn as a graph, `ctrl+o` expands tool
 frames, `Shift+Tab` sets the reasoning effort, `@path` mentions a file. `MEMDOOR_APPROVE=changes` asks
 before every command and write, for machines whose policy requires it.
 

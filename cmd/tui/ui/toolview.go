@@ -34,6 +34,14 @@ type ToolRender struct {
 	Err           string // non-empty when the tool failed
 	Width         int
 	Expand        bool // ctrl+o — show everything
+	// Trail is what a spawned run has done so far (spawnView), TrailDone
+	// whether it reported back; the renderer fills them from the window's
+	// mirror of the child's beats.
+	Trail     []trailStep
+	TrailDone bool
+	// Root is the project the window runs in: a search's absolute paths
+	// read relative to it.
+	Root string
 }
 
 // viewFor resolves a tool to its view. Aliases are folded here (the model
@@ -43,8 +51,14 @@ func viewFor(tool string) ToolView {
 	switch strings.ToLower(tool) {
 	case "bash", "shell", "run", "run_command":
 		return commandView{}
-	case "read", "read_file", "grep", "glob", "locate", "ls", "search", "web_search", "fetch":
+	case "read", "read_file", "ls", "fetch":
 		return readView{tool: tool}
+	case "grep", "glob", "locate", "search", "web_search":
+		return searchView{tool: tool}
+	case "sessions_spawn":
+		return spawnView{}
+	case "workflow":
+		return workflowView{}
 	case "jgrep", "jread", "jlogs":
 		return judgedView{tool: strings.ToLower(tool)}
 	case "apply_patch", "edit", "edit_file", "write", "write_file", "create_file", "str_replace":

@@ -91,6 +91,31 @@ shows whole, as added), `ctrl+e` to open it in `$EDITOR` and come back,
 tab to put `@path` into the prompt, esc to close. No modes to learn: one key
 in, one key out.
 
+## This turn as a graph
+
+`ctrl+g` (or `/graph`) draws the turn so far the way `/workflow` draws a
+run: the reads and searches in the first layer, the edits that depended on
+them, the runs and checks that depended on the edits, each with its state
+and time, the failing check in red with its reason. The head line says how
+many reads, edits and runs, and whether the last run passed. `↑↓` move,
+`enter` on a file step opens it in the files panel, `esc` closes.
+
+## What a frame shows
+
+A frame says what happened in the shape you scan for, and `ctrl+o` shows
+the raw result underneath:
+
+- **a search** (`grep`, `glob`, `locate`, `web_search`) reads as its hits
+  grouped by file with counts, most hits first; a web search as its
+  sources; nothing found as "no hits".
+- **a spawned run** (`Spawn(…)`) shows the child's own steps as it takes
+  them, newest last, and `✓ reported back` when its result wakes the
+  conversation.
+- **a workflow call** shows the run's tasks with the panel's glyphs:
+  `✓` done, `▶` running, `⏸` waiting for you, `✗` failed.
+- **a change** shows its diff; **a command** streams its tail while it
+  runs.
+
 ## Slash commands
 
 ### Typing `/` lists everything

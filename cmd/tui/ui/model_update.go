@@ -96,8 +96,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if handled, cmd := m.updateMCPPanel(msg); handled {
 		return m, cmd
 	}
-	// The files panel (files_panel.go) takes every key while open.
+	// The files panel (files_panel.go) and the turn graph (turn_graph.go)
+	// take every key while open.
 	if handled, cmd := m.updateFilesPanel(msg); handled {
+		return m, cmd
+	}
+	if handled, cmd := m.updateTurnGraph(msg); handled {
 		return m, cmd
 	}
 	if handled, cmd := m.updateWorkflowPanel(msg); handled {
@@ -391,6 +395,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlF:
 			// The files panel: what this conversation touched, first.
 			m.openFilesPanel("")
+			return m, nil
+
+		case tea.KeyCtrlG:
+			// This turn as a graph: what depended on what, what failed.
+			m.openTurnGraph()
 			return m, nil
 
 		case tea.KeyCtrlO:
@@ -1089,10 +1098,18 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case subagentWorkMsg:
-		// A run this screen spawned, saying what it is doing. It lives in the
-		// status line only: its tool frames belong to its own transcript.
+		// A run this screen spawned, saying what it is doing: the status line
+		// shows the current step, and the Spawn frame that started it draws
+		// the whole trail (toolview_frames.go). Its own tool frames stay in
+		// its own transcript.
 		if m.interrupted {
 			return m, nil
+		}
+		m.noteSubagentStep(msg)
+		// The Spawn frame draws the trail: redraw the live view now, not at
+		// the next event of this window's own.
+		if m.viewport.Height > 0 {
+			m.refreshFollow()
 		}
 		if msg.done {
 			delete(m.subagentWork, msg.sessionID)

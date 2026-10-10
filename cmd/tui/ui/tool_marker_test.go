@@ -89,7 +89,7 @@ func TestTheRenderCacheDoesNotFreezeASilentToolAsASpinner(t *testing.T) {
 	running := Message{Role: "tool_call", ToolName: "bash", ToolInput: `{"command":"touch x"}`, Timestamp: time.Now()}
 	done := running
 	done.ToolDone = true
-	if blockKey(running, 100, false) == blockKey(done, 100, false) {
+	if blockKey(running, 100, false, "") == blockKey(done, 100, false, "") {
 		t.Fatal("a finished frame must not hash like the running one")
 	}
 

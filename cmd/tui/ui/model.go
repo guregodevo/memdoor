@@ -52,6 +52,7 @@ type Model struct {
 	workflowLast       map[string]WorkflowRun                         // the last state drawn per run; the clock redraws from it
 	mcpPanel           *mcpPanelState                                 // the /mcp panel, when open
 	filesPanel         *filesPanelState                               // the /files panel (ctrl+f), when open
+	turnGraph          *turnGraphState                                // the turn as a DAG (ctrl+g, /graph), when open
 	mcpPrompts         map[string]MCPPrompt                           // the servers' prompts, by /server:prompt
 	mcpSeen            map[string]bool                                // every MCP server name the panel has reported
 	updateOp           func() (string, error)                         // /update — install the published build (update.go)
@@ -109,6 +110,7 @@ type Model struct {
 	activeTools       map[string]time.Time         // Tool name -> start time (for running tools)
 	activeSubagents   map[string]string            // Session ID -> task description
 	subagentWork      map[string]subagentWorkState // Session ID -> what a SPAWNED run is doing (mirrored; see subagentWorkState)
+	subagentTrail     map[string]*spawnTrail       // Session ID -> everything a spawned run has done, drawn under its Spawn frame
 	compacting        bool                         // agent is trimming/summarizing its context window
 	compactedTokens   [2]int                       // [before, after] from the last compaction
 	activityStartTime time.Time                    // When current activity started (for duration)
@@ -267,6 +269,7 @@ func loadSlashCommands(agent string) []string {
 		"/model-search", // find a model in the catalogue to pin
 		"/connect",      // add a provider: the company gateway, Anthropic, OpenAI, Gemini, any endpoint
 		"/files",        // the project's files, what this conversation touched first (ctrl+f)
+		"/graph",        // this turn as a graph: reads, edits, runs and what each depended on (ctrl+g)
 		"/usage",        // what this workspace has used this month
 		"/remote",       // open this conversation on another device (link + QR)
 		"/fresh",        // a clean session: the agent forgets this conversation; with a request, sends it

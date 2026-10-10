@@ -178,13 +178,18 @@ func (m Model) renderMessage(msg Message) string {
 
 		// The view decides how its own result reads — a change renders as a diff,
 		// everything else falls through to the generic body below.
-		viewBody := view.Body(ToolRender{
+		render := ToolRender{
 			Input:  msg.ToolInput,
 			Output: msg.ToolOutput,
 			Err:    msg.ToolError,
 			Width:  m.width,
 			Expand: m.expandTools,
-		})
+			Root:   launchDir(),
+		}
+		if t := m.subagentTrail[spawnSession(msg.ToolOutput)]; t != nil {
+			render.Trail, render.TrailDone = t.steps, t.done
+		}
+		viewBody := view.Body(render)
 		if viewBody != "" {
 			output.WriteString("\n" + viewBody)
 		}
@@ -585,7 +590,7 @@ func osc8(url, text string) string {
 // to `func (m *Model) f(x *T)`. Only prose tools get markdown.
 func (m Model) formatToolOutput(tool, text string) string {
 	switch viewFor(tool).(type) {
-	case commandView, readView, judgedView:
+	case commandView, readView, judgedView, searchView:
 		lines := strings.Split(text, "\n")
 		for i, l := range lines {
 			lines[i] = m.wrapText(l, m.width-8)

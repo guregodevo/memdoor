@@ -27,7 +27,7 @@ type cachedBlock struct {
 // changed, the previous render is still correct — and if any of it did, the key
 // changes and the block is rebuilt. Width is included because the render wraps
 // to it.
-func blockKey(msg Message, width int, expanded bool) uint64 {
+func blockKey(msg Message, width int, expanded bool, live string) uint64 {
 	h := fnv.New64a()
 	write := func(s string) { _, _ = h.Write([]byte(s)); _, _ = h.Write([]byte{0}) }
 	write(msg.Role)
@@ -50,6 +50,10 @@ func blockKey(msg Message, width int, expanded bool) uint64 {
 	// expandTools is model state that renderMessage reads (ctrl+o), not message
 	// state — but it changes what a tool frame renders, so it belongs in the key.
 	write(strconv.FormatBool(expanded))
+	// What the window knows about the frame beyond the message itself: a
+	// spawned run's trail (toolview_frames.go). Left out, the frame stayed
+	// "starting …" for the whole child run (live 2026-10-11).
+	write(live)
 	return h.Sum64()
 }
 
@@ -61,7 +65,7 @@ func (m Model) renderBlock(i int, msg Message) string {
 	if msg.Role == "tool_call" && !msg.toolSettled() {
 		return strings.TrimRight(m.renderMessage(msg), "\n \t")
 	}
-	key := blockKey(msg, m.width, m.expandTools)
+	key := blockKey(msg, m.width, m.expandTools, m.trailKey(msg))
 	if m.blocks != nil {
 		if got, ok := m.blocks[i]; ok && got.key == key {
 			return got.text

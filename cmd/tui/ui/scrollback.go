@@ -76,7 +76,7 @@ func (m Model) settledCount() int {
 
 	final := 0
 	for i := 0; i < len(m.messages); i++ {
-		if !settled(m.messages[i]) {
+		if !settled(m.messages[i]) || m.spawnLive(m.messages[i]) {
 			break
 		}
 		final = i + 1
