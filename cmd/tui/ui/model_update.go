@@ -96,6 +96,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if handled, cmd := m.updateMCPPanel(msg); handled {
 		return m, cmd
 	}
+	// The files panel (files_panel.go) takes every key while open.
+	if handled, cmd := m.updateFilesPanel(msg); handled {
+		return m, cmd
+	}
 	if handled, cmd := m.updateWorkflowPanel(msg); handled {
 		return m, cmd
 	}
@@ -382,6 +386,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Jump back to the latest output — the "scroll down" button for a user
 			// who scrolled up (wheel/PgUp) to read history while a long run streams.
 			m.gotoBottom()
+			return m, nil
+
+		case tea.KeyCtrlF:
+			// The files panel: what this conversation touched, first.
+			m.openFilesPanel("")
 			return m, nil
 
 		case tea.KeyCtrlO:

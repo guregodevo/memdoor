@@ -68,7 +68,9 @@ func (m Model) View() string {
 
 	// Interactive /model picker (shows above footer when open)
 	modelPicker := ""
-	if m.mcpPanel != nil {
+	if m.filesPanel != nil {
+		modelPicker = "\n" + m.renderFilesPanel()
+	} else if m.mcpPanel != nil {
 		modelPicker = "\n" + m.renderMCPPanel()
 	} else if m.workflowPanel != nil {
 		modelPicker = "\n" + m.renderWorkflowPanel()
@@ -639,10 +641,10 @@ func (m Model) renderFooter() string {
 	// line: "questions interrupt via picker" (an explanation, and the picker
 	// announces itself), "wheel/PgUp scroll" (every terminal does that), and
 	// "End: latest" (the jump bar says exactly that, exactly when it matters).
-	keys := "/ commands · @ files · ctrl+v image · alt+enter newline · ctrl+o expand · ctrl+c quit"
+	keys := "/ commands · @ files · ctrl+f files · ctrl+v image · alt+enter newline · ctrl+o expand · ctrl+c quit"
 	if len(pageAgents()) > 1 {
 		// ctrl+t only appears when there is a second page to switch to.
-		keys = "/ commands · @ files · ctrl+v image · alt+enter newline · ctrl+t page · ctrl+o expand · ctrl+c quit"
+		keys = "/ commands · @ files · ctrl+f files · ctrl+v image · alt+enter newline · ctrl+t page · ctrl+o expand · ctrl+c quit"
 	}
 	// busy() includes the turn itself: between a tool's end and the next
 	// token — a brain retrying a 503 for a minute — nothing was "thinking"

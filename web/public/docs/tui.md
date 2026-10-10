@@ -79,6 +79,18 @@ Type a task; every tool call renders as a frame:
 
 The agent works in the directory you launched from: its file tools stay inside it and its commands start there — not a sandbox: a shell command can still reach other folders.
 
+## What it touched
+
+After a turn you want to know what changed and where, not to browse a tree.
+`ctrl+f` (or `/files`) opens the project's files with the ones this
+conversation read or changed first, newest first, each with what happened to
+it (`✎ calc.go  2 edits · 1 read`); the rest of the tree is behind the same
+filter. Type to filter, `↑↓` to move, enter to preview the file beside the
+list, `ctrl+d` for its diff since the turn started (a file the turn created
+shows whole, as added), `ctrl+e` to open it in `$EDITOR` and come back,
+tab to put `@path` into the prompt, esc to close. No modes to learn: one key
+in, one key out.
+
 ## Slash commands
 
 ### Typing `/` lists everything

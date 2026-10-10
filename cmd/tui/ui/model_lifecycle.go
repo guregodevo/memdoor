@@ -51,7 +51,7 @@ func isNetworkCmd(cmd string) bool {
 	switch cmd {
 	case "/model-search",
 		"/usage", "/meter", "/model", "/update", "/remote", "/share", "/unshare",
-		"/clear", "/fresh", "/compact", "/handoff", "/mcp", "/workflow", "/connect":
+		"/clear", "/fresh", "/compact", "/handoff", "/mcp", "/workflow", "/connect", "/files":
 		return true
 	}
 	return strings.HasPrefix(cmd, "/workflow:")
@@ -134,6 +134,8 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 		arg := strings.Join(fields[1:], " ")
 		op := m.remote
 		return func() tea.Msg { s, e := op(arg); return noteResultMsg{summary: s, err: e} }
+	case "/files":
+		return m.filesCommand(fields[1:])
 	case "/clear", "/fresh":
 		// FRESH SESSION, KEEP THE TASK (session_fresh.go on the gateway): a
 		// long conversation full of old reads degrades every later turn. Both

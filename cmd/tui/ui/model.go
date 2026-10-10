@@ -51,6 +51,7 @@ type Model struct {
 	workflowRunning    string                                         // this window's run while it runs or waits: Esc stops it
 	workflowLast       map[string]WorkflowRun                         // the last state drawn per run; the clock redraws from it
 	mcpPanel           *mcpPanelState                                 // the /mcp panel, when open
+	filesPanel         *filesPanelState                               // the /files panel (ctrl+f), when open
 	mcpPrompts         map[string]MCPPrompt                           // the servers' prompts, by /server:prompt
 	mcpSeen            map[string]bool                                // every MCP server name the panel has reported
 	updateOp           func() (string, error)                         // /update — install the published build (update.go)
@@ -265,6 +266,7 @@ func loadSlashCommands(agent string) []string {
 		"/model",        // which model answers this conversation; pin one
 		"/model-search", // find a model in the catalogue to pin
 		"/connect",      // add a provider: the company gateway, Anthropic, OpenAI, Gemini, any endpoint
+		"/files",        // the project's files, what this conversation touched first (ctrl+f)
 		"/usage",        // what this workspace has used this month
 		"/remote",       // open this conversation on another device (link + QR)
 		"/fresh",        // a clean session: the agent forgets this conversation; with a request, sends it
