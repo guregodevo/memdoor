@@ -183,3 +183,31 @@ func TestAStreamWhoseFinalObjectIsEmptyIsReadFromItsEvents(t *testing.T) {
 		t.Fatalf("a call ends the turn as tool_use: %v", msg.StopReason)
 	}
 }
+
+// A retry that must open on a call says tool_choice required, as the chat
+// client does; an ordinary request leaves the choice to the model.
+func TestAForcedCallIsRequiredOnTheResponsesRequest(t *testing.T) {
+	var bodies []map[string]any
+	c, done := responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		var b map[string]any
+		_ = json.Unmarshal(raw, &b)
+		bodies = append(bodies, b)
+		responsesSSE(w, `{"type":"response.completed","response":{"id":"r1","model":"m","status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":1,"output_tokens":1}}}`)
+	})
+	defer done()
+	tool := llm.ToolParam{Name: "bash", InputSchema: llm.ToolInputSchemaParam{Properties: map[string]any{"command": map[string]any{"type": "string"}}}}
+	params := llm.MessageNewParams{Model: "m", Tools: []llm.ToolUnionParam{{OfTool: &tool}}, Messages: []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("hi"))}}
+	if _, err := c.Messages().New(context.Background(), params); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Messages().New(llm.WithForcedToolCall(context.Background()), params); err != nil {
+		t.Fatal(err)
+	}
+	if _, there := bodies[0]["tool_choice"]; there {
+		t.Fatalf("an ordinary request leaves the choice to the model: %v", bodies[0]["tool_choice"])
+	}
+	if bodies[1]["tool_choice"] != "required" {
+		t.Fatalf("a forced call says required: %v", bodies[1]["tool_choice"])
+	}
+}

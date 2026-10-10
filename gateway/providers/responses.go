@@ -64,6 +64,11 @@ type responsesRequest struct {
 	Temperature     float64         `json:"temperature,omitempty"`
 	Stream          bool            `json:"stream"`
 	Store           *bool           `json:"store,omitempty"`
+	// ToolChoice is "required" on a retry that must open on a call
+	// (llm.WithForcedToolCall), as the chat client sends it; absent
+	// otherwise, so the model decides. Missed when the OpenAI key moved to
+	// this client (review by the coder itself, 2026-10-10).
+	ToolChoice string `json:"tool_choice,omitempty"`
 }
 
 type responsesTool struct {
@@ -176,6 +181,9 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		}
 		req.Tools = append(req.Tools, responsesTool{Type: "function", Name: t.OfTool.Name, Description: desc, Parameters: t.OfTool.InputSchema})
 		toolNames = append(toolNames, t.OfTool.Name)
+	}
+	if len(req.Tools) > 0 && llm.ForcedToolCallFromContext(ctx) {
+		req.ToolChoice = "required"
 	}
 	body, err := json.Marshal(req)
 	if err != nil {
