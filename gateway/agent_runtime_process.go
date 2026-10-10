@@ -531,7 +531,8 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 				var toolInfo ToolExecutionInfo
 				var toolResult llm.ContentBlockParamUnion
 				failKey := failureKey(toolUse.Name, toolUse.Input)
-				refused := failsByTool.retired(failKey, maxFailsPerTool)
+				failAt := failureState(toolUse.Name, toolUse.Input, turnWorkdir(ctx))
+				refused := failsByTool.retired(failKey, maxFailsPerTool, failAt)
 				if refused {
 					toolInfo, toolResult = retiredToolResult(toolUse.Name, failKey, string(toolUse.Input),
 						toolUse.ID, failsByTool.count(failKey), failsByTool.reason(failKey))
@@ -630,7 +631,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 					// "6 times") as if the tool were breaking again, when
 					// nothing had run at all.
 					if !refused {
-						failsByTool.failed(failKey, toolInfo.Error)
+						failsByTool.failed(failKey, toolInfo.Error, failAt)
 					}
 					if repeatedFail[fk] >= maxRepeatedFail || consecutiveFail >= maxConsecutiveFail {
 						stuck = true

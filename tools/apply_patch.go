@@ -365,6 +365,9 @@ func ApplyPatch(input json.RawMessage) (_ string, err error) {
 			pendingGoDirs[filepath.Dir(t)] = true
 		}
 	}
+	// Every file the patch touches is this patch's alone until it is
+	// written or refused (file_lock.go).
+	defer LockFiles(targets...)()
 	for i := range hunks {
 		h := &hunks[i]
 		if h.kind != "add" {

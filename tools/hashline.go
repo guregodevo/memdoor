@@ -487,6 +487,15 @@ func applyHashlinePatch(text, cwd string) (string, error) {
 		spans                          [][2]int
 	}
 	var writes []write
+	locked := make([]string, 0, len(secs))
+	for _, sec := range secs {
+		if cwd != "" && !filepath.IsAbs(sec.path) {
+			locked = append(locked, filepath.Join(cwd, sec.path))
+		} else {
+			locked = append(locked, sec.path)
+		}
+	}
+	defer LockFiles(locked...)()
 	for _, sec := range secs {
 		target := sec.path
 		if cwd != "" && !filepath.IsAbs(target) {

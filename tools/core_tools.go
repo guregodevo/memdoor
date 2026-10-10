@@ -83,6 +83,7 @@ func WriteFile(input json.RawMessage) (string, error) {
 	if params.Content == "" {
 		return "", fmt.Errorf("content is required")
 	}
+	defer LockFiles(params.Path)()
 
 	// Create parent directories if needed
 	dir := filepath.Dir(params.Path)
@@ -114,6 +115,7 @@ func WriteFileWithContext(input json.RawMessage, ctx interface{}) (string, error
 	if params.Content == "" {
 		return "", fmt.Errorf("content is required")
 	}
+	defer LockFiles(params.Path)()
 
 	// Extract sandbox context
 	sandboxCtx, ok := ctx.(sandbox.SandboxContext)
@@ -241,6 +243,7 @@ func EditFile(input json.RawMessage) (string, error) {
 	if params.FilePath == "" {
 		return "", fmt.Errorf("file_path is required")
 	}
+	defer LockFiles(params.FilePath)()
 
 	// Create / whole-file overwrite: with no anchor to match — an empty old_string,
 	// or a file that doesn't exist yet — write new_string as the entire file. This is
@@ -917,7 +920,8 @@ func SearchReplace(input json.RawMessage) (string, error) {
 			}
 		}
 
-		// Read file
+		// Read file — this file is ours until the callback returns.
+		defer LockFiles(path)()
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil

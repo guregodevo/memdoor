@@ -69,9 +69,9 @@ func TestRetiredToolCostsNothing(t *testing.T) {
 func TestRefusingATooldoesNotCountAsFailingAgain(t *testing.T) {
 	l := toolFailureLedger{}
 	for i := 0; i < 3; i++ {
-		l.failed("clip_inspect", "no such file: pourquoi-les-francais.mp4")
+		l.failed("clip_inspect", "no such file: pourquoi-les-francais.mp4", "")
 	}
-	if !l.retired("clip_inspect", 3) {
+	if !l.retired("clip_inspect", 3, "") {
 		t.Fatal("three real failures must retire the tool")
 	}
 	before := l.count("clip_inspect")
@@ -102,10 +102,10 @@ func TestRefusingATooldoesNotCountAsFailingAgain(t *testing.T) {
 // been fixed before the next arrived.
 func TestADifferentFailureIsProgressNotRepetition(t *testing.T) {
 	l := toolFailureLedger{}
-	l.failed("clip_stitch", "no transcript for meli_1.mp4")
-	l.failed("clip_stitch", "no transcript for meli_2.mp4")
-	l.failed("clip_stitch", "no transcript for meli_3.mp4")
-	if l.retired("clip_stitch", 3) {
+	l.failed("clip_stitch", "no transcript for meli_1.mp4", "")
+	l.failed("clip_stitch", "no transcript for meli_2.mp4", "")
+	l.failed("clip_stitch", "no transcript for meli_3.mp4", "")
+	if l.retired("clip_stitch", 3, "") {
 		t.Fatal("a tool that fixed each problem in turn was retired")
 	}
 	if l.count("clip_stitch") != 1 {
@@ -115,9 +115,9 @@ func TestADifferentFailureIsProgressNotRepetition(t *testing.T) {
 	// THE SAME WALL still retires it — that is what the rule is for.
 	stuck := toolFailureLedger{}
 	for i := 0; i < 3; i++ {
-		stuck.failed("legacy_tool", "no workspace available")
+		stuck.failed("legacy_tool", "no workspace available", "")
 	}
-	if !stuck.retired("legacy_tool", 3) {
+	if !stuck.retired("legacy_tool", 3, "") {
 		t.Fatal("three identical failures must still retire the tool")
 	}
 	if stuck.reason("legacy_tool") != "no workspace available" {
@@ -126,7 +126,7 @@ func TestADifferentFailureIsProgressNotRepetition(t *testing.T) {
 
 	// And a success still clears everything.
 	stuck.succeeded("legacy_tool")
-	if stuck.retired("legacy_tool", 3) || stuck.count("legacy_tool") != 0 {
+	if stuck.retired("legacy_tool", 3, "") || stuck.count("legacy_tool") != 0 {
 		t.Fatal("a success must clear the count")
 	}
 }
@@ -142,12 +142,12 @@ func TestApplyPatchRetiresPerFile(t *testing.T) {
 	l := toolFailureLedger{}
 	broken := failureKey("apply_patch", patch("tools/apply_patch.go"))
 	for i := 0; i < 3; i++ {
-		l.failed(broken, "patch would BREAK apply_patch.go")
+		l.failed(broken, "patch would BREAK apply_patch.go", "")
 	}
-	if !l.retired(broken, 3) {
+	if !l.retired(broken, 3, "") {
 		t.Fatal("the failing file must be retired")
 	}
-	if other := failureKey("apply_patch", patch("README.md")); other == broken || l.retired(other, 3) {
+	if other := failureKey("apply_patch", patch("README.md")); other == broken || l.retired(other, 3, "") {
 		t.Fatalf("another file must still be editable (key %q)", other)
 	}
 	hashline, _ := json.Marshal(map[string]string{"input": "[tools/apply_patch.go#1A2B]\nreplace 3 \"abc\":\n+x"})

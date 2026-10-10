@@ -3,6 +3,8 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"memdoor/tools"
@@ -52,6 +54,9 @@ func failureKey(tool string, input []byte) string {
 type toolFailures struct {
 	n   int
 	why string
+	// at is the state of what the tool failed against (a patch's files, by
+	// size and mtime) at the last failure: the wall the retirement counts.
+	at string
 }
 
 type toolFailureLedger map[string]toolFailures
@@ -69,7 +74,7 @@ type toolFailureLedger map[string]toolFailures
 // So a DIFFERENT reason resets the count. It is the same argument a
 // success makes, one step earlier: this tool is not in the category the
 // retirement exists for.
-func (l toolFailureLedger) failed(name, why string) {
+func (l toolFailureLedger) failed(name, why, at string) {
 	f := l[name]
 	if why != "" && f.why != "" && why != f.why {
 		f.n = 0
@@ -78,13 +83,49 @@ func (l toolFailureLedger) failed(name, why string) {
 	if why != "" {
 		f.why = why
 	}
+	f.at = at
 	l[name] = f
 }
 
 // succeeded clears the tool's failures: it has just proved it can work.
 func (l toolFailureLedger) succeeded(name string) { delete(l, name) }
 
-func (l toolFailureLedger) retired(name string, max int) bool { return l[name].n >= max }
+// retired: the same wall `max` times. A wall that MOVED is not the same
+// wall: a patch refused three times on goal.py retired apply_patch on it for
+// the turn, the model re-indented the line with sed, and its next, different
+// patch to the changed file was refused unrun and went in through a Python
+// heredoc with no diff and no guards (live 2026-10-10). When what the tool
+// failed against has changed since the last failure, the count starts over.
+func (l toolFailureLedger) retired(name string, max int, at string) bool {
+	f := l[name]
+	if f.n >= max && at != "" && f.at != "" && at != f.at {
+		delete(l, name)
+		return false
+	}
+	return f.n >= max
+}
+
+// failureState is what a tool's failures are measured against: for
+// apply_patch the size and mtime of each file the patch names (a missing
+// file counts as a state too); for every other tool nothing.
+func failureState(tool string, input []byte, workdir string) string {
+	if tool != tools.ApplyPatchDefinition.Name {
+		return ""
+	}
+	var b strings.Builder
+	for _, p := range tools.PatchTargets(input) {
+		if workdir != "" && !filepath.IsAbs(p) {
+			p = filepath.Join(workdir, p)
+		}
+		st, err := os.Stat(p)
+		if err != nil {
+			fmt.Fprintf(&b, "%s:missing;", p)
+			continue
+		}
+		fmt.Fprintf(&b, "%s:%d:%d;", p, st.Size(), st.ModTime().UnixNano())
+	}
+	return b.String()
+}
 
 func (l toolFailureLedger) count(name string) int     { return l[name].n }
 func (l toolFailureLedger) reason(name string) string { return l[name].why }
