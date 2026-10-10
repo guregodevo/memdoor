@@ -4,6 +4,14 @@ Every run is a conversation on your gateway, whether a window was open or
 not. That is what lets you leave a run alone and come back into it live,
 instead of killing it and starting over.
 
+Headless means no window, not no machine: the gateway is a process on the
+machine the run belongs to (your laptop, a CI runner), and it has to be up.
+You never start it by hand: `memdoor tui`, `memdoor acp`, `memdoor workflow
+run`, `memdoor workflow resume` and `memdoor cron add` start one when none
+is running, and set the machine up the first time. A run with the laptop
+closed is not here yet; it is what the hosted workflow state on memdoor.ai
+is for, and it is coming.
+
 ## Runs that need no window
 
 - **A scheduled check.** Inside a turn the agent schedules its own re-check
@@ -14,6 +22,8 @@ instead of killing it and starting over.
 - **A workflow from the shell or CI.** `memdoor workflow run <name>` starts
   the project's workflow and prints the run; `memdoor workflow status
   <run-id>` shows every task's state, `history <name>` what earlier runs did.
+  On a CI runner the whole job is the installer, the key in the environment
+  and that one command: it starts the gateway and sets the runner up itself.
   See [Workflows](/docs/workflows).
 - **An editor session.** The coder in VS Code, Zed or JetBrains is a
   conversation on the same gateway. See [In your editor](/docs/editor).
@@ -34,10 +44,13 @@ Recent conversations:
 $ memdoor resume 2
 ```
 
-The window opens on that conversation, with the run's frames in view and
-the same session underneath: your next line is the next turn of that run.
-`memdoor resume <id>` takes the id a run printed, from any directory; with
-no `--all` the list is this folder's conversations.
+The window opens on that conversation, its saved messages in view and the
+same session underneath: your next line is the next turn of that run. If a
+turn is running when you attach, you see it from that moment on (its tool
+frames, its answer) and `Esc` interrupts it; what it did before you arrived
+is in the saved messages, not replayed as frames. `memdoor resume <id>`
+takes the id a run printed, from any directory; with no `--all` the list is
+this folder's conversations.
 
 ## A run waiting on you
 

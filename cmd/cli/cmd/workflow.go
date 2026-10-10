@@ -141,6 +141,11 @@ var workflowRunCmd = &cobra.Command{
 	Short: "Start .memdoor/workflows/<name>/ in this project — a fresh run",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Headless: a run from a shell or CI needs no window and no gateway
+		// started by hand — the same first-run check as memdoor tui (2026-10-11).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		dir, err := workflowDir(workflowDirFlag)
 		if err != nil {
 			return err
@@ -212,6 +217,10 @@ var workflowResumeCmd = &cobra.Command{
 	Short: "Continue a failed or stopped run: what it finished is skipped",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Headless, like run.
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		dir, err := workflowDir(workflowDirFlag)
 		if err != nil {
 			return err

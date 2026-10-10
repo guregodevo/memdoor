@@ -86,6 +86,10 @@ var cronAddCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add a new cron job",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Headless: a schedule set from a shell starts the gateway it needs.
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		c := NewClient()
 		message := cronAddMessage
 		workdir := ""

@@ -338,14 +338,18 @@ func TestSpawnViewDrawsTheTrail(t *testing.T) {
 	}
 }
 
-// The workflow tool's frame draws the run's tasks with the panel's glyphs.
+// The workflow tool's frame is the run's head line; the tasks are the live
+// graph's below it, never a stale copy here.
 func TestWorkflowViewDrawsTasks(t *testing.T) {
 	out := "▶ release · 4 tasks · started. It reports here on its own — do not wait, sleep or poll; say it is running and end your turn.\nwf-12 · running · 1/4 done\n  done     vet\n  running  test  ← vet\n  waiting  notes  ← test  (external)\n  waiting  tag  ← notes"
 	body := stripANSI(viewFor("workflow").Body(ToolRender{Output: out, Width: 100}))
-	for _, want := range []string{"wf-12 · running · 1/4 done", "✓ vet", "▶ test", "← vet", "⏸ notes", "○ tag"} {
+	for _, want := range []string{"wf-12 · running · 1/4 done", "4 tasks, drawn below"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("workflow body missing %q:\n%s", want, body)
 		}
+	}
+	if strings.Contains(body, "✓ vet") || strings.Contains(body, "○ tag") {
+		t.Errorf("the tasks belong to the live graph, not to a copy in the frame:\n%s", body)
 	}
 	if got := viewFor("workflow").Label(`{"action":"run","name":"release"}`, 100); got != "Workflow(run release)" {
 		t.Errorf("label = %q", got)
