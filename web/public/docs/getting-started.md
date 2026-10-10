@@ -91,4 +91,5 @@ neither, nothing is judged and every tool returns its unjudged output.
 - **[Your key and the models](/docs/your-key)** — the ladder, pins, prices.
 - **[The TUI](/docs/tui)** — the screens and the keys.
 - **[Remote control](/docs/remote)** — the same terminal, on your phone.
+- **[In your editor](/docs/editor)** — the same coder in VS Code, Zed or JetBrains.
 - **[Slash commands](/docs/slash-commands)** and **[CLI](/docs/cli)** — reference.

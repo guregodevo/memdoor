@@ -107,7 +107,7 @@ Zed and JetBrains host it natively; VS Code through an ACP client extension
 
 Each editor session is a conversation on your local gateway; a prompt is a
 turn in the editor's workspace folder, and the turn's text, tool calls and
-approvals show as the editor's own.
+approvals show as the editor's own. The steps: [memdoor.ai/docs/editor](https://memdoor.ai/docs/editor).
 
 ## Where your data goes
 

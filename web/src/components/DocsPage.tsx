@@ -82,6 +82,7 @@ const docsStructure: DocEntry[] = [
     children: [
       { title: 'The TUI', path: 'tui' },
       { title: 'Remote control', path: 'remote' },
+      { title: 'In your editor', path: 'editor' },
       { title: 'Models', path: 'models' },
       { title: 'Providers', path: 'providers' },
       { title: 'Agents and skills', path: 'agents-and-skills' },
