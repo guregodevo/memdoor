@@ -95,6 +95,20 @@ downloads.
 reasoning effort, `@path` mentions a file. `MEMDOOR_APPROVE=changes` asks
 before every command and write, for machines whose policy requires it.
 
+## In your editor
+
+`memdoor acp` serves the same coder over the [Agent Client Protocol](https://agentclientprotocol.com):
+Zed and JetBrains host it natively; VS Code through an ACP client extension
+(for example "ACP Client"), with one setting:
+
+```json
+"acp.agents": { "Memdoor": { "command": "memdoor", "args": ["acp"] } }
+```
+
+Each editor session is a conversation on your local gateway; a prompt is a
+turn in the editor's workspace folder, and the turn's text, tool calls and
+approvals show as the editor's own.
+
 ## Where your data goes
 
 Files, sessions and commands stay on your machine. What leaves is what the

@@ -166,8 +166,8 @@ Error: no workspace resolved for "channels". Set one of:
 ## Command index
 
 <!-- cli-index:start -->
-Generated from the binary's `--help` by `make cli-index` (35 top-level commands).
-`memdoor --help` shows 27 of them; the others are hidden from it and run when typed:
+Generated from the binary's `--help` by `make cli-index` (36 top-level commands).
+`memdoor --help` shows 28 of them; the others are hidden from it and run when typed:
 `auth`, `billing`, `channels`, `chrome`, `cron`, `messages`, `sessions`, `users`. A command that appears here
 and nowhere else in this file is documented by its own `memdoor <command> --help`.
 
@@ -232,6 +232,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **Other commands**
 
+- `acp` — Runs Memdoor as an Agent Client Protocol agent on stdin/stdout, for an
 - `connect` — Adds a provider to this gateway. The kind is one of: gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, custom.
 - `conversations` — List recent conversations (what `memdoor resume` picks from)
 - `join` — Open a link that /remote printed on another computer, in this terminal

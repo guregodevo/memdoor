@@ -39,6 +39,7 @@ var nextStepSuggestions = map[string]string{
 // equals a prefix or starts with "<prefix> " — so "auth token" covers itself
 // and "logs" covers "logs query" / "logs errors".
 var machineReadablePrefixes = []string{
+	"acp", // stdout is the JSON-RPC stream an editor reads (acp.go)
 	"tui", // interactive: whatever it printed last (a worktree's hand-back) is the last word
 	"auth token",
 	"auth whoami",
