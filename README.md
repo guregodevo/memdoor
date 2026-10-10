@@ -1,7 +1,7 @@
 <div align="center">
   <img src="web/public/memdoor-logo.png" alt="Memdoor" width="128" height="128">
   <h1>Memdoor</h1>
-  <p><strong>A coding agent whose steps are done when their output exists.</strong></p>
+  <p><strong>Stop babysitting your coding agent. Say the steps once; each one is done when its output exists, not when the model says so.</strong></p>
   <p>
     <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue"></a>
     <a href="https://github.com/guregodevo/memdoor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/guregodevo/memdoor/actions/workflows/ci.yml/badge.svg"></a>

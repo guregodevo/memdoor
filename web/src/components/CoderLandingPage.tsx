@@ -41,8 +41,8 @@ const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
 // The hero's three cards are what a workflow gives that a chat does not
 // (Greg, 2026-10-04: the hero "does not show off the powerfulness of workflow").
 const HERO_PROOF: { value: string; label: string }[] = [
-  { value: 'Checked', label: 'a step is done when the file it names exists or its command passes' },
-  { value: 'Gated', label: 'the run stops at a step only you can approve, with the diff in front of you' },
+  { value: 'Checked', label: 'a step is done when its file exists or its command exits 0, not when the model says so' },
+  { value: 'Gated', label: 'the run stops where only you can approve, with the diff in front of you' },
   { value: 'Resumable', label: 'a failed run starts again at the failed step' },
 ];
 
@@ -185,11 +185,11 @@ export function CoderLandingPage() {
               Open-source coding agent for the terminal · your own API key · Apache 2.0
             </div>
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
-              A coding agent whose steps are done when their output exists.
+              Stop babysitting your coding agent.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
-              Describe the steps. It writes them as a workflow, runs them in parallel, waits at the gate for you,
-              and a step passes only when its file exists or its command exits 0.
+              Say the steps once. Memdoor runs them as a workflow and comes back when it needs you. On your own API
+              key, free.
             </p>
             <ul className="mx-auto mb-8 max-w-xl space-y-2 text-left text-sm text-neutral-300 lg:mx-0">
               {HERO_PROOF.map((p) => (
