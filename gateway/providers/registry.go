@@ -493,6 +493,8 @@ func FindModel(ctx context.Context, id string) (Provider, Model, bool) {
 	active := ActiveProviderID()
 	var found *Provider
 	var foundModel Model
+	var plan *Provider
+	var planModel Model
 	for _, p := range Providers() {
 		if !p.Connected() {
 			continue
@@ -505,14 +507,29 @@ func FindModel(ctx context.Context, id string) (Provider, Model, bool) {
 			if m.ID != id {
 				continue
 			}
-			if p.ID == active {
+			if p.ID == ChatGPTID {
+				pp := p
+				plan, planModel = &pp, m
+				continue
+			}
+			if p.ID == active && p.ID != "openai" {
 				return p, m, true
 			}
-			if found == nil {
+			if found == nil || (found.ID == "openai" && p.ID == active) {
 				pp := p
 				found, foundModel = &pp, m
 			}
 		}
+	}
+	// THE PLAN BEFORE THE KEY (live 2026-10-10): a signed-in ChatGPT plan
+	// and an OPENAI_API_KEY in the environment list the same ids, and a
+	// bare pin went to the key, whose chat endpoint refuses those models
+	// with tools ("Function tools with reasoning_effort are not supported
+	// for gpt-6-astra in /v1/chat/completions"). The plan is the person's
+	// own sign-in and costs them nothing; the key is ambient. An explicit
+	// "openai:<id>" still reaches the key (SplitPin, above).
+	if plan != nil && (found == nil || found.ID == "openai") {
+		return *plan, planModel, true
 	}
 	if found != nil {
 		return *found, foundModel, true

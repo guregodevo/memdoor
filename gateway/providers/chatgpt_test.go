@@ -124,3 +124,35 @@ func TestAPlanRefusalSaysWhatToDo(t *testing.T) {
 		t.Fatal("after a sign-out the plan is not connected")
 	}
 }
+
+// A bare id both the plan and an OpenAI key list goes to the plan; the key
+// is reached by name (openai:<id>); an id only the key lists stays on it.
+func TestABareIDThePlanAndTheOpenAIKeyListGoesToThePlan(t *testing.T) {
+	clearProviderEnv(t)
+	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	_ = chatgpt.NewStore(shared.MemdoorHome()).Save(&chatgpt.Credential{ClientID: "oaiapp_1", AccessToken: "plan-token", RefreshToken: "rt", ExpiresAt: time.Now().Add(time.Hour)})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.Header.Get("Authorization"), "Bearer plan-token"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"models": []map[string]string{{"slug": "gpt-6-astra", "visibility": "list"}}})
+		default: // the OpenAI key's list
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "gpt-6-astra"}, {"id": "gpt-4.1-mini"}}})
+		}
+	}))
+	defer srv.Close()
+	oldBase := chatgptBase
+	chatgptBase = srv.URL + "/v1"
+	t.Cleanup(func() { chatgptBase = oldBase })
+	t.Setenv("OPENAI_API_KEY", "sk-key")
+	t.Setenv("OPENAI_BASE_URL", srv.URL+"/v1")
+	ctx := context.Background()
+	if p, _, ok := FindModel(ctx, "gpt-6-astra"); !ok || p.ID != ChatGPTID {
+		t.Fatalf("a bare id both list goes to the plan, got %q %v", p.ID, ok)
+	}
+	if p, _, ok := FindModel(ctx, "openai:gpt-6-astra"); !ok || p.ID != "openai" {
+		t.Fatalf("the key by name, got %q %v", p.ID, ok)
+	}
+	if p, _, ok := FindModel(ctx, "gpt-4.1-mini"); !ok || p.ID != "openai" {
+		t.Fatalf("an id only the key lists stays on it, got %q %v", p.ID, ok)
+	}
+}
