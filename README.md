@@ -16,7 +16,12 @@ export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, G
 cd your-project && memdoor tui         # the first run sets the machine up
 ```
 
-No money on the key yet? A free OpenRouter account and `/model
+On a ChatGPT Plus or Pro plan? Skip the key: `memdoor connect chatgpt` (or
+`/connect chatgpt` in the window) opens Sign in with ChatGPT, and your plan's
+allowance answers Memdoor's turns. A Claude subscription cannot be used this
+way (Anthropic's terms); Claude needs an API key.
+
+No money on a key yet? A free OpenRouter account and `/model
 nvidia/nemotron-3-super-120b-a12b:free` run a real session: 50 requests a day,
 and the free hosts train on what they are sent, so a trial, not private code.
 
@@ -78,7 +83,7 @@ downloads.
 | Command | What it does |
 |---|---|
 | `/model` | Which model answers: the agent's ladder (cheapest rung first), or pin any model of your providers, with list prices |
-| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, your company's AI gateway |
+| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, your company's AI gateway; `/connect chatgpt` signs in with a ChatGPT Plus/Pro plan, no key |
 | `/workflow` | The project's workflows and runs; enter opens a run's graph, `a` approves a gate, `/workflow:<name>` runs one |
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted (Pro) |

@@ -237,7 +237,7 @@ func runTUI(opts tuiOptions) error {
 					Effort:         tuiEffort(wsID, chID, agent),
 					MCP:            tuiMCPOps(curDir),
 					Workflow:       tuiWorkflowOps(curDir, wsID, chID),
-					Connect:        ui.ConnectOps{Connect: tuiConnect, KeySource: providerKeySource},
+					Connect:        ui.ConnectOps{Connect: tuiConnect, KeySource: providerKeySource, LoginStart: tuiConnectLoginStart, LoginWait: chatgptLoginWait, LoginPaste: chatgptLoginPaste, LoginCancel: chatgptLoginCancel},
 					Status: func() ui.Status {
 						st := tuiPageStatus(curDir(), wsID, chID, agent)
 						st.Update = tuiUpdateNotice()

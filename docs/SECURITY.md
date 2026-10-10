@@ -17,6 +17,7 @@ places, chosen by configuration, never mixed:
 | **Your company's vendor key** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY`, `BASETEN_API_KEY`, `GROQ_API_KEY` or `DEEPSEEK_API_KEY` (+ `*_BASE_URL` for a proxy in front) | That vendor, or the proxy in front of it | **Yes.** No OpenRouter, no memdoor.ai broker, no catalogue, no web search. `MEMDOOR_VENDOR_HEADERS` adds attribution headers to every request. |
 | Your own OpenRouter key | `OPEN_ROUTER_API_KEY` | OpenRouter, with `data_collection: deny` and hosts that train on inputs excluded; a pinned `:free` model is the exception (`allow`, warned at the pin) | OpenRouter also serves the model catalogue and web search. |
 | A provider you connected | `memdoor connect`, kept in `~/.memdoor/providers.json` | That provider | Used when no key above is set, or when you pin one of its models. |
+| Your ChatGPT plan | `memdoor connect chatgpt` (Sign in with ChatGPT, in the browser; the tokens kept encrypted in `~/.memdoor/chatgpt-login.json`) | OpenAI's Responses API, with your plan's bearer token, `store: false` | Used like a connected provider. No API key, no client secret; `memdoor connect --remove chatgpt` signs out. |
 
 A Pro seat changes nothing about where prompts go: it never supplies a model
 key. No memdoor.ai call carries a prompt in the clear (the hosts table below
@@ -28,7 +29,8 @@ lists them; the remote-control relay is sealed end to end).
 |---|---|---|
 | *(your gateway's host)* | The company's own AI gateway — not a literal in the binary; it comes from `AI_GATEWAY_BASE_URL` | Company-gateway mode, every model call |
 | `api.anthropic.com` | Anthropic's Messages API | Company-key mode with `ANTHROPIC_API_KEY`; `ANTHROPIC_BASE_URL` replaces it with the company gateway |
-| `api.openai.com` | OpenAI's API (OpenAI-compatible client) | Company-key mode with `OPENAI_API_KEY`; `OPENAI_BASE_URL` replaces it. Also a row in the built-in model table (`pkg/domain/models.go`), never a call by itself |
+| `auth.openai.com` | Sign in with ChatGPT: the authorize page (opened in your browser), the token endpoint, the signing keys (JWKS) | Only during `memdoor connect chatgpt`, and when the plan's access token is renewed (hourly, with the refresh token) |
+| `api.openai.com` | OpenAI's API (OpenAI-compatible client); a signed-in ChatGPT plan's Responses requests and its model list | Company-key mode with `OPENAI_API_KEY`; `OPENAI_BASE_URL` replaces it. A ChatGPT plan: every model call. Also a row in the built-in model table (`pkg/domain/models.go`), never a call by itself |
 | `generativelanguage.googleapis.com` | Gemini's OpenAI-compatible endpoint | Company-key mode with `GEMINI_API_KEY`; `GEMINI_BASE_URL` replaces it |
 | `api.x.ai` | xAI's Grok API (OpenAI-compatible) | Company-key mode with `XAI_API_KEY`; `XAI_BASE_URL` replaces it |
 | `inference.baseten.co` | Baseten's inference API (OpenAI-compatible) | Company-key mode with `BASETEN_API_KEY`; `BASETEN_BASE_URL` replaces it |

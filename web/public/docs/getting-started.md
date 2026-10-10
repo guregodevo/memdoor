@@ -22,7 +22,13 @@ iex`.
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
-No money on the key yet? A free OpenRouter account is enough to try it: in the
+On a ChatGPT Plus or Pro plan? Skip the key: `memdoor connect chatgpt` (or
+`/connect chatgpt` in the window) opens Sign in with ChatGPT, and your plan's
+allowance answers Memdoor's turns; `memdoor connect --remove chatgpt` signs
+out. A Claude subscription cannot be used this way (Anthropic's terms forbid
+it); Claude needs an API key from console.anthropic.com.
+
+No money on a key yet? A free OpenRouter account is enough to try it: in the
 window, `/model nvidia/nemotron-3-super-120b-a12b:free` pins a free model
 (50 requests a day; 1,000 once $10 has ever been bought). Free hosts train on
 what they are sent, and Memdoor says so at the pin: a trial, not private code.

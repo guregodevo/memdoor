@@ -232,7 +232,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **Other commands**
 
-- `connect` — Adds a provider to this gateway. The kind is one of: gateway, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, custom.
+- `connect` — Adds a provider to this gateway. The kind is one of: gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, custom.
 - `conversations` — List recent conversations (what `memdoor resume` picks from)
 - `join` — Open a link that /remote printed on another computer, in this terminal
 - `meter` — Every model request: the model that answered, its tokens and cost (the ledger /usage sums)

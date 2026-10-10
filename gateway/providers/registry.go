@@ -115,6 +115,8 @@ func (p Provider) Engine(model string) RemoteEngine {
 		vendor = VendorGatewayChat
 	case APIOpenRouter:
 		byok = true
+	case APIChatGPT:
+		vendor = VendorChatGPT
 	}
 	ctxLen := p.Context
 	if ctxLen == 0 {
@@ -134,6 +136,9 @@ func (p Provider) Client(ctx context.Context, model string) LLMClient {
 	re := p.Engine(model)
 	if p.API == APIOpenRouter {
 		return newDirectOpenRouterClient(ctx, &re, model)
+	}
+	if p.API == APIChatGPT {
+		return newChatGPTClient(model)
 	}
 	return newVendorClient(ctx, &re, model)
 }
@@ -287,6 +292,7 @@ func builtInProviders() []Provider {
 	out = append(out,
 		Provider{ID: "anthropic", Name: "Anthropic", API: APIAnthropic, Base: envOr("ANTHROPIC_BASE_URL", anthropicDefaultBase), Key: os.Getenv("ANTHROPIC_API_KEY"), KeySource: "env ANTHROPIC_API_KEY", Context: anthropicDefaultContext, BuiltIn: true},
 		Provider{ID: "openai", Name: "OpenAI", API: APIChat, Base: envOr("OPENAI_BASE_URL", openaiDefaultBase), Key: os.Getenv("OPENAI_API_KEY"), KeySource: "env OPENAI_API_KEY", Context: openaiDefaultContext, BuiltIn: true},
+		chatgptProvider(),
 		Provider{ID: "gemini", Name: "Google Gemini", API: APIChat, Base: envOr("GEMINI_BASE_URL", googleDefaultBase), Key: os.Getenv("GEMINI_API_KEY"), KeySource: "env GEMINI_API_KEY", Context: googleDefaultContext, BuiltIn: true},
 		Provider{ID: "xai", Name: "xAI Grok", API: APIChat, Base: envOr("XAI_BASE_URL", xaiDefaultBase), Key: xaiKey(), KeySource: "env " + xaiKeyVar(), Context: xaiDefaultContext, BuiltIn: true},
 		Provider{ID: "baseten", Name: "Baseten", API: APIChat, Base: envOr("BASETEN_BASE_URL", basetenDefaultBase), Key: os.Getenv("BASETEN_API_KEY"), KeySource: "env BASETEN_API_KEY", Context: basetenDefaultContext, BuiltIn: true},
@@ -550,6 +556,8 @@ func providerOfEngine(re *RemoteEngine) string {
 		return "openrouter"
 	case re.Vendor == VendorAnthropic:
 		return "anthropic"
+	case re.Vendor == VendorChatGPT:
+		return ChatGPTID
 	case re.Vendor == VendorGateway || re.Vendor == VendorGatewayChat:
 		for _, p := range Providers() {
 			if p.Base == re.Endpoint && p.Key == re.APIKey {

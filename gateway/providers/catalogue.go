@@ -58,8 +58,12 @@ func readerFor(p Provider) ModelReader {
 		return deepseekReader{}
 	case "baseten":
 		return basetenReader{}
+	case ChatGPTID:
+		return chatgptReader{}
 	}
 	switch p.API {
+	case APIChatGPT:
+		return chatgptReader{}
 	case APIAnthropic:
 		return anthropicReader{}
 	case APIOpenRouter:

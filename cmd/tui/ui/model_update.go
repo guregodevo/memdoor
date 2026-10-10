@@ -246,6 +246,18 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.gotoBottom()
 		return m, nil
 	}
+	if r, ok := msg.(connectLoginStartedMsg); ok {
+		cmd := m.connectLoginStarted(r)
+		m.viewport.SetContent(m.renderMessages())
+		m.gotoBottom()
+		return m, cmd
+	}
+	if r, ok := msg.(connectLoginWaitMsg); ok {
+		cmd := m.connectLoginWaited(r)
+		m.viewport.SetContent(m.renderMessages())
+		m.gotoBottom()
+		return m, cmd
+	}
 
 	if k, ok := msg.(tea.KeyMsg); ok && m.pendingQuestion != nil {
 		q := m.pendingQuestion

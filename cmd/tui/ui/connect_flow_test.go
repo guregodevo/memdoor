@@ -29,11 +29,11 @@ func TestConnectFlowPicksTypesProbesAndSays(t *testing.T) {
 	if cmd := m.connectCommand(nil); cmd != nil || m.connect == nil || m.connect.step != connectStepKind {
 		t.Fatal("/connect opens the kind picker")
 	}
-	if v := m.renderConnect(lipglossPlain(), lipglossPlain()); !strings.Contains(v, "which kind") || !strings.Contains(v, "2. OpenRouter") || !strings.Contains(v, "3. Anthropic") {
+	if v := m.renderConnect(lipglossPlain(), lipglossPlain()); !strings.Contains(v, "which kind") || !strings.Contains(v, "2. ChatGPT") || !strings.Contains(v, "3. OpenRouter") || !strings.Contains(v, "4. Anthropic") {
 		t.Fatalf("picker: %q", v)
 	}
-	if h, _ := m.connectKey(press(tea.KeyRunes, '3')); !h || m.connect.kind.ID != "anthropic" || m.connect.step != connectStepBase || m.input.Value() != "https://api.anthropic.com" {
-		t.Fatalf("3 picks Anthropic and prefills its base: %+v %q", m.connect, m.input.Value())
+	if h, _ := m.connectKey(press(tea.KeyRunes, '4')); !h || m.connect.kind.ID != "anthropic" || m.connect.step != connectStepBase || m.input.Value() != "https://api.anthropic.com" {
+		t.Fatalf("4 picks Anthropic and prefills its base: %+v %q", m.connect, m.input.Value())
 	}
 	if h, _ := m.connectKey(press(tea.KeyEnter)); !h || m.connect.step != connectStepKey || m.connect.base != "https://api.anthropic.com" {
 		t.Fatalf("enter keeps the base: %+v", m.connect)

@@ -65,11 +65,15 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Which models can I run?',
-    a: 'Any tool-capable model of a connected provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI.',
+    a: 'Any tool-capable model of a connected provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, or the models your ChatGPT plan allows after Sign in with ChatGPT.',
   },
   {
     q: 'Is it free?',
     a: 'The agent, the decision model and workflows are free on your own key. Pro, $10 a month, is remote control and workflow state on memdoor.ai; it never buys inference.',
+  },
+  {
+    q: 'Can I use my ChatGPT subscription?',
+    a: 'Yes: /connect chatgpt opens Sign in with ChatGPT in your browser, and a Plus or Pro plan then answers Memdoor\'s turns on its own allowance, no API key (OpenAI opened this to open-source, locally run apps in September 2026; ChatGPT → Settings → Usage sets the weekly cap per app). A Claude subscription cannot be used this way: Anthropic\'s terms forbid it, so Claude needs an API key.',
   },
   {
     q: 'What is a workflow?',
@@ -202,8 +206,9 @@ export function CoderLandingPage() {
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />
               <p className="text-xs text-neutral-400">
-                Free. Needs an API key: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek… A free OpenRouter account is
-                enough to try it. macOS (Apple Silicon), Linux, Windows.
+                Free. Runs on an API key (OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek…) or on a ChatGPT Plus/Pro
+                plan with Sign in with ChatGPT, no key. A free OpenRouter account is enough to try it. macOS (Apple
+                Silicon), Linux, Windows.
               </p>
               <p className="text-xs text-neutral-400">
                 Memdoor ships itself with{' '}
@@ -380,7 +385,7 @@ export function CoderLandingPage() {
             <div className="space-y-3 font-mono text-[13px] sm:text-sm">
               {[
                 ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
-                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account — or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …, or /connect inside'],
+                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account — or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …, or /connect inside; on a ChatGPT Plus/Pro plan, skip this: /connect chatgpt signs in, no key'],
                 ['cd your-project && memdoor tui', 'the first run sets the machine up; the agent works where you launch it'],
                 ['/model nvidia/nemotron-3-super-120b-a12b:free', 'no money on the key yet: a free model, 50 requests a day; its hosts train on what they are sent, so a trial, not private code'],
                 ['/model', 'which model is answering, and what it lists for'],

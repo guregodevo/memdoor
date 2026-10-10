@@ -27,6 +27,9 @@ type ConnectKind struct {
 
 var ConnectKinds = []ConnectKind{
 	{"gateway", "Company AI gateway", "", "https://ai-gateway.example.com/ai", "the base before /v1; a personal or service-account token", true, ""},
+	// Sign in with ChatGPT (2026-10-10): a Plus or Pro plan's allowance, no
+	// key; the browser step runs on the gateway (gateway/providers_chatgpt.go).
+	{"chatgpt", "ChatGPT plan (Plus/Pro)", "chatgpt", "https://api.openai.com/v1", "sign in with ChatGPT in the browser: your plan's allowance, no API key", false, ""},
 	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPEN_ROUTER_API_KEY"},
 	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY"},
 	{"openai", "OpenAI", "chat", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY"},
@@ -64,12 +67,22 @@ type ConnectResult struct {
 	Saved  bool     `json:"saved"`
 }
 
-// ConnectOps is the one call /connect makes.
+// ConnectOps is the one call /connect makes, and the browser sign-in's
+// four (Sign in with ChatGPT: start, wait, a pasted link, cancel), the
+// same shape as the MCP sign-in's.
 type ConnectOps struct {
 	Connect func(req ConnectRequest) (ConnectResult, error)
 	// KeySource is where a provider's key already comes from on the gateway
 	// ("env ANTHROPIC_API_KEY", "providers.json", or ""), for the prefill.
 	KeySource func(id string) string
+	// LoginStart begins a browser sign-in for a kind: its id, the link,
+	// whether a browser opened and whether the link was copied.
+	LoginStart func(kind string) (id, url string, opened, copied bool, err error)
+	// LoginWait waits up to ~25 s: done with the probe's result, or not yet.
+	LoginWait func(id string) (done bool, res ConnectResult, err error)
+	// LoginPaste hands the sign-in a redirect URL pasted in the window.
+	LoginPaste  func(id, value string) error
+	LoginCancel func(id string)
 }
 
 const (
@@ -79,6 +92,7 @@ const (
 	connectStepKey
 	connectStepModel
 	connectStepProbing
+	connectStepBrowser // a sign-in in the browser; the window waits
 )
 
 // connectFlow is the window's state while /connect runs.
@@ -92,12 +106,32 @@ type connectFlow struct {
 	model  string
 	keyVar string // prefilled on the token step: the kind's variable, or the one the gateway has
 	keySet bool   // the gateway already holds it
+	// The browser sign-in, once started.
+	loginID  string
+	loginURL string
+	opened   bool
+	copied   bool
 }
 
 type connectResultMsg struct {
 	req ConnectRequest
 	res ConnectResult
 	err error
+}
+
+// connectLoginStartedMsg is the browser sign-in's start: the link to open.
+type connectLoginStartedMsg struct {
+	id, url        string
+	opened, copied bool
+	err            error
+}
+
+// connectLoginWaitMsg is one wait on the sign-in: done, or ask again.
+type connectLoginWaitMsg struct {
+	id   string
+	done bool
+	res  ConnectResult
+	err  error
 }
 
 // connectCommand is "/connect [kind]".
@@ -124,7 +158,76 @@ func (m *Model) connectCommand(args []string) tea.Cmd {
 	}
 	m.connect = f
 	m.input.Reset()
+	if f.kind.ID != "" && connectKindSignsIn(f.kind) {
+		return m.connectLoginStart()
+	}
 	m.connectPrefill()
+	return nil
+}
+
+// connectKindSignsIn says whether a kind is a browser sign-in rather than a
+// pasted key.
+func connectKindSignsIn(k ConnectKind) bool { return k.API == "chatgpt" }
+
+// connectLoginStart begins the browser sign-in on the gateway.
+func (m *Model) connectLoginStart() tea.Cmd {
+	f := m.connect
+	f.step = connectStepBrowser
+	if m.connectOps.LoginStart == nil {
+		m.connect = nil
+		m.note("Signing in with " + f.kind.Name + " isn't available in this build.")
+		return nil
+	}
+	kind, start := f.kind.ID, m.connectOps.LoginStart
+	return func() tea.Msg {
+		id, u, opened, copied, err := start(kind)
+		return connectLoginStartedMsg{id: id, url: u, opened: opened, copied: copied, err: err}
+	}
+}
+
+// connectLoginStarted shows the link and starts waiting.
+func (m *Model) connectLoginStarted(msg connectLoginStartedMsg) tea.Cmd {
+	f := m.connect
+	if f == nil {
+		return nil
+	}
+	if msg.err != nil {
+		m.connect = nil
+		m.note("✗ the sign-in could not start: " + msg.err.Error())
+		return nil
+	}
+	f.loginID, f.loginURL, f.opened, f.copied = msg.id, msg.url, msg.opened, msg.copied
+	return m.connectLoginWait()
+}
+
+func (m *Model) connectLoginWait() tea.Cmd {
+	f := m.connect
+	if f == nil || m.connectOps.LoginWait == nil {
+		return nil
+	}
+	id, wait := f.loginID, m.connectOps.LoginWait
+	return func() tea.Msg {
+		done, res, err := wait(id)
+		return connectLoginWaitMsg{id: id, done: done, res: res, err: err}
+	}
+}
+
+// connectLoginWaited is one answer of the wait: the result, or ask again.
+func (m *Model) connectLoginWaited(msg connectLoginWaitMsg) tea.Cmd {
+	f := m.connect
+	if f == nil || f.loginID != msg.id {
+		return nil
+	}
+	if msg.err != nil {
+		m.connect = nil
+		m.input.Reset()
+		m.note("✗ not signed in: " + msg.err.Error())
+		return nil
+	}
+	if !msg.done {
+		return m.connectLoginWait()
+	}
+	m.connectDone(connectResultMsg{req: ConnectRequest{ID: f.kind.ID, Name: f.kind.Name, API: f.kind.API}, res: msg.res})
 	return nil
 }
 
@@ -162,12 +265,28 @@ func (m *Model) connectKey(k tea.KeyMsg) (handled bool, cmd tea.Cmd) {
 		return false, nil
 	}
 	if k.Type == tea.KeyEsc {
+		if f.step == connectStepBrowser && f.loginID != "" && m.connectOps.LoginCancel != nil {
+			m.connectOps.LoginCancel(f.loginID)
+		}
 		m.connect = nil
 		m.input.Reset()
 		m.note("Connect cancelled.")
 		return true, nil
 	}
 	switch f.step {
+	case connectStepBrowser:
+		// A pasted redirect URL, for a browser on another machine.
+		if k.Type == tea.KeyEnter {
+			v := strings.TrimSpace(m.input.Value())
+			m.input.Reset()
+			if v != "" && f.loginID != "" && m.connectOps.LoginPaste != nil {
+				if err := m.connectOps.LoginPaste(f.loginID, v); err != nil {
+					m.note("✗ " + err.Error())
+				}
+			}
+			return true, nil
+		}
+		return false, nil
 	case connectStepKind:
 		switch {
 		case k.Type == tea.KeyUp:
@@ -194,6 +313,10 @@ func (m *Model) connectKey(k tea.KeyMsg) (handled bool, cmd tea.Cmd) {
 func (m *Model) connectPick(n int) tea.Cmd {
 	f := m.connect
 	f.kind = ConnectKinds[n]
+	if connectKindSignsIn(f.kind) {
+		m.input.Reset()
+		return m.connectLoginStart()
+	}
 	f.step = connectStepBase
 	if f.kind.ID == "custom" {
 		f.step = connectStepID
@@ -264,6 +387,14 @@ func (m *Model) connectDone(msg connectResultMsg) {
 			s += "\n  " + msg.res.Advice
 		}
 		m.note(s)
+	case msg.req.API == "chatgpt":
+		r := msg.res
+		s := fmt.Sprintf("✓ **ChatGPT plan** connected · %d models · tested %s → %q · your plan's allowance answers, no API key", r.Models, r.Tested, r.Answer)
+		if len(r.Sample) > 0 {
+			s += "\n  e.g. " + strings.Join(r.Sample, ", ")
+		}
+		s += "\n  /model <id> pins one of its models for this conversation; ChatGPT → Settings → Usage shows the weekly cap per app."
+		m.note(s)
 	default:
 		r := msg.res
 		s := fmt.Sprintf("✓ **%s** connected · %s API · %d models · tested %s → %q · kept in ~/.memdoor/providers.json", r.ID, r.API, r.Models, r.Tested, r.Answer)
@@ -327,6 +458,26 @@ func (m Model) renderConnect(inputStyle, helpStyle lipgloss.Style) string {
 		b.WriteString(m.input.View())
 	case connectStepProbing:
 		b.WriteString(head.Render("Probing " + f.base + " — its model list, then one call …"))
+		return inputStyle.Render(b.String())
+	case connectStepBrowser:
+		if f.loginURL == "" {
+			b.WriteString(head.Render("Sign in with ChatGPT — starting …"))
+			return inputStyle.Render(b.String())
+		}
+		b.WriteString(head.Render("Sign in with ChatGPT — approve in the browser") + "\n")
+		switch {
+		case f.opened:
+			b.WriteString(dim.Render("Your browser is opening. If it doesn't, open this link:") + "\n")
+		default:
+			b.WriteString(dim.Render("Open this link to approve:") + "\n")
+		}
+		b.WriteString(dim.Render("  "+f.loginURL) + "\n")
+		if f.copied {
+			b.WriteString(dim.Render("  (copied to the clipboard)") + "\n")
+		}
+		b.WriteString(dim.Render("Waiting (5 minutes). A browser on another machine: paste the page's address here and press enter.") + "\n")
+		b.WriteString(m.input.View())
+		b.WriteString("\n" + helpStyle.Render("esc cancel"))
 		return inputStyle.Render(b.String())
 	}
 	b.WriteString("\n" + helpStyle.Render("enter next · esc cancel"))

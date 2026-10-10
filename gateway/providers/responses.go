@@ -25,6 +25,13 @@ type responsesClient struct {
 	url        string // the full /v1/responses URL
 	model      string
 	httpClient *http.Client
+	// tokenSource, when set, is the bearer for each request instead of
+	// token: a ChatGPT plan's access token, refreshed before it expires
+	// (chatgpt.go).
+	tokenSource func(context.Context) (string, error)
+	// plan is ChatGPT plan usage: store:false on every request, and none
+	// of the fields the preview refuses (temperature, max_output_tokens …).
+	plan bool
 }
 
 // responsesURL is the endpoint under a gateway base: ".../ai" → ".../ai/v1/
@@ -56,6 +63,7 @@ type responsesRequest struct {
 	MaxOutputTokens int64           `json:"max_output_tokens,omitempty"`
 	Temperature     float64         `json:"temperature,omitempty"`
 	Stream          bool            `json:"stream"`
+	Store           *bool           `json:"store,omitempty"`
 }
 
 type responsesTool struct {
@@ -142,6 +150,21 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 	}
 	req := responsesRequest{Model: model, Instructions: systemText(params.System), Input: responsesInput(params.Messages),
 		MaxOutputTokens: params.MaxTokens, Temperature: params.Temperature, Stream: true}
+	if m.client.plan {
+		// developers.openai.com/siwc/token-sharing-open-source/preview-limitations:
+		// store false, stream true, and no temperature, max_output_tokens,
+		// top_p, truncation, metadata, user … on a plan's request.
+		noStore := false
+		req.Store, req.MaxOutputTokens, req.Temperature = &noStore, 0, 0
+	}
+	token := m.client.token
+	if m.client.tokenSource != nil {
+		t, err := m.client.tokenSource(ctx)
+		if err != nil {
+			return nil, err
+		}
+		token = t
+	}
 	toolNames := make([]string, 0, len(params.Tools))
 	for _, t := range params.Tools {
 		if t.OfTool == nil {
@@ -170,7 +193,7 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 			return nil, err
 		}
 		hr.Header.Set("Content-Type", "application/json")
-		hr.Header.Set("Authorization", "Bearer "+m.client.token)
+		hr.Header.Set("Authorization", "Bearer "+token)
 		SetAppHeaders(hr)
 		setVendorHeaders(hr.Header)
 		setAttributionHeaders(ctx, hr.Header)
@@ -192,7 +215,13 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		var rr responsesResponse
 		msg := truncate(string(raw), 200)
 		if json.Unmarshal(raw, &rr) == nil && rr.Error != nil {
+			if m.client.plan {
+				return nil, chatgptRefusal(resp.StatusCode, rr.Error.Code, rr.Error.Message)
+			}
 			msg = rr.Error.Code + ": " + rr.Error.Message
+		}
+		if m.client.plan {
+			return nil, chatgptRefusal(resp.StatusCode, "", msg)
 		}
 		return nil, fmt.Errorf("HTTP %d from the gateway: %s", resp.StatusCode, msg)
 	}

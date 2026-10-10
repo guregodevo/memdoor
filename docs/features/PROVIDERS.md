@@ -321,6 +321,37 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
   `/connect <id>`. `/model` lists the other connected providers and what is
   not connected. `TestProviderPickerThenAProvidersModels`.
 
+## Sign in with ChatGPT (2026-10-10)
+
+A ChatGPT Plus or Pro plan is a provider: `memdoor connect chatgpt` (or
+`/connect chatgpt` in the window) opens OpenAI's Sign in with ChatGPT in the
+browser, and the plan's allowance answers Memdoor's turns through the
+Responses API, no API key. OpenAI opened this to open-source, locally run apps
+at DevDay (2026-09-29); OpenCode, Pi, Kilo and Amp ship it. The pieces:
+
+- `pkg/chatgpt`: the OAuth flow (PKCE, a loopback listener on 127.0.0.1,
+  dynamic client registration on the first sign-in, the issued client id and
+  a per-install `ext_agent_host_id` kept), the ID token verified against
+  OpenAI's JWKS, the access token (an hour) renewed with the refresh token (30
+  days, rotated on use). The credential is encrypted in
+  `~/.memdoor/chatgpt-login.json` (0600); `memdoor connect --remove chatgpt`
+  signs out.
+- `gateway/providers/chatgpt.go`: the built-in provider `chatgpt`, connected
+  when a sign-in is on disk; its model list from `GET /v1/models` (the entries
+  marked for listing); the Responses client in plan mode: `store: false`,
+  `stream: true`, none of the fields the preview refuses (temperature,
+  max_output_tokens, …); refusals in the person's terms (the weekly allowance
+  used up, a disconnected sign-in).
+- `gateway/providers_chatgpt.go`: the browser step runs on the gateway, like
+  the MCP sign-in (`/api/providers/chatgpt`: login, login/wait, login/paste,
+  login/cancel, logout); on success the plan is probed the way `/connect`
+  probes a key.
+
+The decision model is off on a plan alone (no OpenRouter or TypeSafe key), as
+on any vendor key. A Claude subscription has no equivalent: Anthropic's terms
+forbid it outside Claude Code, and the company acted on it against OpenCode in
+March 2026.
+
 ## Next
 
 - Attribution as a field (user, team from the sign-in identity) rather

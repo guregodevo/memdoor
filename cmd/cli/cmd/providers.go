@@ -3,9 +3,13 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
+	"os/signal"
 	"strings"
+	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
@@ -233,6 +237,13 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if rm, _ := cmd.Flags().GetString("remove"); rm != "" {
 			var res map[string]any
+			if rm == "chatgpt" {
+				if err := NewClient().PostJSON("/api/providers/chatgpt", map[string]any{"action": "logout"}, &res); err != nil {
+					return err
+				}
+				fmt.Println("✓ signed out of ChatGPT")
+				return nil
+			}
 			if err := NewClient().DeleteJSON("/api/providers/connect?id="+rm, &res); err != nil {
 				return err
 			}
@@ -276,6 +287,9 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 			if pick == nil {
 				return fmt.Errorf("pick a number from the list")
 			}
+		}
+		if pick.API == "chatgpt" {
+			return chatgptSignIn(os.Stdout, os.Stdin)
 		}
 		id, _ := cmd.Flags().GetString("id")
 		if id == "" {
@@ -374,4 +388,146 @@ func init() {
 	connectCmd.Flags().String("model", "", "a model to test with (a gateway that lists none)")
 	connectCmd.Flags().String("remove", "", "forget a provider you added, by id")
 	rootCmd.AddCommand(providersCmd, connectCmd)
+}
+
+// ---- Sign in with ChatGPT (2026-10-10) --------------------------------------
+//
+// The browser step runs on the gateway (gateway/providers_chatgpt.go); the
+// shell opens the link and polls, as the MCP sign-in does (mcp.go).
+
+type chatgptLoginReply struct {
+	ID      string           `json:"id"`
+	AuthURL string           `json:"auth_url"`
+	Done    bool             `json:"done"`
+	Pending bool             `json:"pending"`
+	Error   string           `json:"error"`
+	Email   string           `json:"email"`
+	Result  ui.ConnectResult `json:"-"`
+}
+
+func chatgptPost(body map[string]any, out any) error {
+	return NewClient().PostJSON("/api/providers/chatgpt", body, out)
+}
+
+// chatgptLoginStart begins a sign-in: its id and the link.
+func chatgptLoginStart() (id, authURL string, err error) {
+	var out chatgptLoginReply
+	err = chatgptPost(map[string]any{"action": "login"}, &out)
+	return out.ID, out.AuthURL, err
+}
+
+// chatgptLoginWait waits up to 25 s: done with the probe's result, or not yet.
+func chatgptLoginWait(id string) (done bool, res ui.ConnectResult, err error) {
+	var out struct {
+		ui.ConnectResult
+		Done    bool   `json:"done"`
+		Pending bool   `json:"pending"`
+		Err     string `json:"error"`
+	}
+	if err := chatgptPost(map[string]any{"action": "login/wait", "id": id}, &out); err != nil {
+		return false, res, err
+	}
+	if out.Err != "" && !out.Done {
+		return false, res, fmt.Errorf("%s", out.Err)
+	}
+	res = out.ConnectResult
+	if out.Err != "" {
+		res.Error = out.Err
+	}
+	return out.Done, res, nil
+}
+
+func chatgptLoginPaste(id, value string) error {
+	return chatgptPost(map[string]any{"action": "login/paste", "id": id, "value": value}, nil)
+}
+
+func chatgptLoginCancel(id string) {
+	_ = chatgptPost(map[string]any{"action": "login/cancel", "id": id}, nil)
+}
+
+// tuiConnectLoginStart is the window's start of a browser sign-in.
+func tuiConnectLoginStart(kind string) (id, u string, opened, copied bool, err error) {
+	if kind != "chatgpt" {
+		return "", "", false, false, fmt.Errorf("no browser sign-in for %s", kind)
+	}
+	id, u, err = chatgptLoginStart()
+	if err != nil {
+		return "", "", false, false, err
+	}
+	opened = os.Getenv("MEMDOOR_NO_BROWSER") == "" && openBrowser(u) == nil
+	copied = clipboard.WriteAll(u) == nil
+	return id, u, opened, copied, nil
+}
+
+// chatgptSignIn runs the sign-in from the shell: the browser opens, the link
+// is printed and copied, a pasted redirect URL is accepted, Ctrl+C cancels.
+func chatgptSignIn(out io.Writer, in io.Reader) error {
+	id, authURL, err := chatgptLoginStart()
+	if err != nil {
+		return err
+	}
+	copied := clipboard.WriteAll(authURL) == nil
+	fmt.Fprintln(out, "\nSign in with ChatGPT")
+	if os.Getenv("MEMDOOR_NO_BROWSER") == "" && openBrowser(authURL) == nil {
+		fmt.Fprintln(out, "  Your browser is opening. If it doesn't, open this link:")
+	} else {
+		fmt.Fprintln(out, "  Open this link to approve:")
+	}
+	fmt.Fprintf(out, "  %s\n", authURL)
+	if copied {
+		fmt.Fprintln(out, "  (copied to the clipboard)")
+	}
+	fmt.Fprintln(out, "  Waiting for you to approve (5 minutes). If the browser is on another machine, paste the page's address here. Ctrl+C cancels.")
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	defer signal.Stop(stop)
+	if in != nil {
+		go func() {
+			sc := bufio.NewScanner(in)
+			for sc.Scan() {
+				if v := strings.TrimSpace(sc.Text()); v != "" {
+					if err := chatgptLoginPaste(id, v); err != nil {
+						fmt.Fprintln(out, "  ✗ "+err.Error())
+					}
+				}
+			}
+		}()
+	}
+	type result struct {
+		res ui.ConnectResult
+		err error
+	}
+	done := make(chan result, 1)
+	go func() {
+		deadline := time.Now().Add(6 * time.Minute)
+		for time.Now().Before(deadline) {
+			ok, res, err := chatgptLoginWait(id)
+			if err != nil || ok {
+				done <- result{res, err}
+				return
+			}
+		}
+		done <- result{err: fmt.Errorf("no sign-in within 6 minutes")}
+	}()
+	select {
+	case <-stop:
+		chatgptLoginCancel(id)
+		return fmt.Errorf("sign-in cancelled")
+	case r := <-done:
+		if r.err != nil {
+			return r.err
+		}
+		if !r.res.OK {
+			fmt.Fprintf(out, "✗ signed in, but the plan could not be used: %s\n", r.res.Error)
+			return fmt.Errorf("%s", r.res.Error)
+		}
+		fmt.Fprintf(out, "✓ ChatGPT plan connected · %d models · tested %s → %q\n", r.res.Models, r.res.Tested, r.res.Answer)
+		if len(r.res.Sample) > 0 {
+			fmt.Fprintf(out, "  e.g. %s\n", strings.Join(r.res.Sample, ", "))
+		}
+		fmt.Fprintln(out, "  Your plan's allowance answers Memdoor's turns, no API key. ChatGPT → Settings → Usage shows the weekly cap per app.")
+		fmt.Fprintln(out, "  memdoor tui — /model <id> pins one of its models; memdoor connect --remove chatgpt signs out.")
+		return nil
+	}
 }

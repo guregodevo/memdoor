@@ -458,6 +458,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	http.Handle("/api/models", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleModels))))
 	http.Handle("/api/providers", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleProviders))))
 	http.Handle("/api/providers/connect", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleProvidersConnect))))
+	http.Handle("/api/providers/chatgpt", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleProvidersChatGPT))))
 	http.Handle("/api/models/providers", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleModelProviders)))) // the catalogue /model-search reads (models_handler.go)
 	http.Handle("/api/models/check", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleModelCheck))))
 	http.Handle("/api/route", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleRoute))))                          // which rung answers a conversation, and a pin (route_handler.go)

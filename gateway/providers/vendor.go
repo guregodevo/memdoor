@@ -183,6 +183,8 @@ func newVendorClient(_ context.Context, re *RemoteEngine, model string) LLMClien
 		return newAnthropicClient(re.APIKey, re.Endpoint, model)
 	case VendorGateway:
 		return newResponsesClient(re.APIKey, re.Endpoint, model)
+	case VendorChatGPT:
+		return newChatGPTClient(model)
 	}
 	return &oaiClient{
 		apiKey:     re.APIKey,
