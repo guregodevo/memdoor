@@ -238,6 +238,8 @@ It opens with that title in the header and the last exchanges in view, on the sa
 
 ## Where to next
 
+- **[Headless, then attached](/docs/headless)** — runs that need no window, and coming back into one.
+- **[Boundaries](/docs/boundaries)** — what the agent may touch, as rules you can read.
 - **[Features](/docs/features)** — the complete overview.
 - **[Getting Started](/docs/getting-started)** — install, key, first turn.
 - **[How It Works](/docs/how-it-works)** — the architecture underneath.

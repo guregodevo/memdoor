@@ -53,3 +53,7 @@ agent with the command `memdoor acp`.
   editor sends plain prompts. Pin a model once in the window and it holds for
   new conversations.
 - Where prompts go does not change: [Where your data goes](/docs/security).
+
+## Next
+
+- **[Headless, then attached](/docs/headless)** — leave a run alone and come back into it live.

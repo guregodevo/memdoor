@@ -77,7 +77,9 @@ you added only when a model of its is pinned or its list is read.
 Memdoor's default is always-auto. `MEMDOOR_APPROVE=changes` (or the
 workspace setting `approve`) makes every command, file write and MCP tool
 call wait for the person's yes in the terminal; no answer in five minutes
-is a no. Reads never ask. `gateway/approval.go`.
+is a no. Reads never ask. `gateway/approval.go`. Rules that refuse a
+call outright (`memdoor guards`: never `.env`, never `git push`) are in
+[Boundaries](/docs/boundaries).
 
 ## What a company reviewer can check
 

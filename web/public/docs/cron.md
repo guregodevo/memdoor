@@ -46,3 +46,7 @@ Standard crontab, a leading seconds field, `@daily`, or `@every 90s`. A job
 you add runs in the agent's default directory and answers in its own
 session and the log — good for a summary or a triage, not for unattended
 code-writing.
+
+## Next
+
+- **[Headless, then attached](/docs/headless)** — leave a run alone and come back into it live.

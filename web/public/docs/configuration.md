@@ -39,7 +39,7 @@ Memdoor works without configuration. These are the levers when you need them.
 
 Per-workspace settings live in the database; `memdoor config show` prints the configuration, and an admin sets workspace settings through the gateway's workspace-settings API. The one worth knowing:
 
-**`tool_guards`** — regex rules per tool that block matching invocations. Use it to forbid a command shape or protect a path without taking the tool away from the agent.
+**`tool_guards`** — rules per tool that refuse a matching call: never `.env`, never `git push`, never `sudo`. Set with `memdoor guards add --tool bash --pattern '\bgit push\b' --message '…'`; the whole story is in [Boundaries](/docs/boundaries).
 
 **`approve`** (or `MEMDOOR_APPROVE=changes` in the environment, which wins) — approval mode, for a company that forbids "yolo" agents: before every command, every file write and every MCP tool call, the picker asks *"Run: go test ./... — allow?"* — Yes, Yes-for-this-session, or No. No ends the call with a result the agent acts on; no answer in five minutes is a no. Reads never ask. Off by default.
 

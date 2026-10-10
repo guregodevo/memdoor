@@ -24,6 +24,8 @@ cd your-project && memdoor tui
 - **[The TUI](/docs/tui)** — the screens, captured from a running session.
 - **[Remote control](/docs/remote)** — `/remote`: the same terminal, on your phone.
 - **[In your editor](/docs/editor)** — the coder in VS Code, Zed or JetBrains (`memdoor acp`).
+- **[Headless, then attached](/docs/headless)** — scheduled checks, workflows from CI, editor sessions: every run is a conversation you can come back into.
+- **[Boundaries](/docs/boundaries)** — what the agent may touch: writes in the project, `memdoor guards` rules, approval mode, gates.
 - **[Models](/docs/models)** — picking and pinning a model.
 - **[Agents and skills](/docs/agents-and-skills)** — who does the work, what tools they hold, how to extend them.
 

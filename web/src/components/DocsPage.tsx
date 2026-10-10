@@ -90,6 +90,8 @@ const docsStructure: DocEntry[] = [
       { title: 'Scheduled checks', path: 'cron' },
       { title: 'Workflows', path: 'workflows' },
       { title: 'No babysitting', path: 'no-babysitting' },
+      { title: 'Boundaries', path: 'boundaries' },
+      { title: 'Headless, then attached', path: 'headless' },
     ],
   },
   {

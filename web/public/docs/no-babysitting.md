@@ -75,3 +75,7 @@ you put in.
 
 Without a decision model, the receipts still show and nothing is judged:
 you are back to reading them yourself.
+
+## Next
+
+- **[Headless, then attached](/docs/headless)** — leave a run alone and come back into it live.

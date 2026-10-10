@@ -70,6 +70,22 @@ Edit a file and the next call uses it — no rebuild, no restart. A skill you dr
 
 **Agents write their own.** When an agent works out a procedure worth keeping, it can save it as a skill and use it next time. The files land in the same directories you edit by hand.
 
+## What it remembers
+
+The agent's notes are working memory for one conversation: what it worked
+out, which take was the good one. They end with the conversation. Something
+you want kept for every later conversation in the project, say so:
+
+```
+> keep this as a rule: run the tests with -race, and never add a dependency
+```
+
+It is written as a rule into the project's `AGENTS.md`, or into
+`.memdoor/AGENTS.md` (git-ignored) when the project has none, and read at
+every turn. A rule for every project goes in `~/.memdoor/workspace/AGENTS.md`,
+which every conversation reads. Memdoor does not write such files on its own
+after a turn: a rule is yours, said once.
+
 ## Next
 
 - **[The TUI](/docs/tui)** — `/agents`, `/skill:`, and the question picker, in screens.
