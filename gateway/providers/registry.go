@@ -291,7 +291,12 @@ func builtInProviders() []Provider {
 	}
 	out = append(out,
 		Provider{ID: "anthropic", Name: "Anthropic", API: APIAnthropic, Base: envOr("ANTHROPIC_BASE_URL", anthropicDefaultBase), Key: os.Getenv("ANTHROPIC_API_KEY"), KeySource: "env ANTHROPIC_API_KEY", Context: anthropicDefaultContext, BuiltIn: true},
-		Provider{ID: "openai", Name: "OpenAI", API: APIChat, Base: envOr("OPENAI_BASE_URL", openaiDefaultBase), Key: os.Getenv("OPENAI_API_KEY"), KeySource: "env OPENAI_API_KEY", Context: openaiDefaultContext, BuiltIn: true},
+		// OpenAI over the Responses API (2026-10-10): its chat endpoint refuses
+		// the gpt-6 models with tools and a reasoning effort ("Function
+		// tools with reasoning_effort are not supported for gpt-6-sol in
+		// /v1/chat/completions", live, three models in a row); Responses
+		// takes both. Same base, same key, same list endpoint.
+		Provider{ID: "openai", Name: "OpenAI", API: APIResponses, Base: envOr("OPENAI_BASE_URL", openaiDefaultBase), Key: os.Getenv("OPENAI_API_KEY"), KeySource: "env OPENAI_API_KEY", Context: openaiDefaultContext, BuiltIn: true},
 		chatgptProvider(),
 		Provider{ID: "gemini", Name: "Google Gemini", API: APIChat, Base: envOr("GEMINI_BASE_URL", googleDefaultBase), Key: os.Getenv("GEMINI_API_KEY"), KeySource: "env GEMINI_API_KEY", Context: googleDefaultContext, BuiltIn: true},
 		Provider{ID: "xai", Name: "xAI Grok", API: APIChat, Base: envOr("XAI_BASE_URL", xaiDefaultBase), Key: xaiKey(), KeySource: "env " + xaiKeyVar(), Context: xaiDefaultContext, BuiltIn: true},

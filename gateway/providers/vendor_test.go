@@ -52,8 +52,8 @@ func TestVendorEngineFromTheEnvironment(t *testing.T) {
 	if !ok || re.Vendor != VendorOpenAI || re.Endpoint != openaiDefaultBase || re.Model != "gpt-5" {
 		t.Fatalf("openai engine: %+v", re)
 	}
-	if c, isOAI := newVendorClient(context.Background(), &re, re.Model).(*oaiClient); !isOAI || c.attribute || c.provider != nil || c.baseURL != openaiDefaultBase {
-		t.Fatalf("an OpenAI key gets the plain OpenAI-shaped client, no routing policy, no attribution: %+v", c)
+	if c, isResponses := newVendorClient(context.Background(), &re, re.Model).(*responsesClient); !isResponses || c.plan || c.url != openaiDefaultBase+"/responses" {
+		t.Fatalf("an OpenAI key gets the Responses client on api.openai.com/v1/responses (its chat endpoint refuses gpt-6 with tools), not plan mode: %+v", c)
 	}
 
 	t.Setenv("OPENAI_API_KEY", "")

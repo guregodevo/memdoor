@@ -32,7 +32,7 @@ var ConnectKinds = []ConnectKind{
 	{"chatgpt", "ChatGPT plan (Plus/Pro)", "chatgpt", "https://api.openai.com/v1", "sign in with ChatGPT in the browser: your plan's allowance, no API key", false, ""},
 	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPEN_ROUTER_API_KEY"},
 	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY"},
-	{"openai", "OpenAI", "chat", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY"},
+	{"openai", "OpenAI", "responses", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY"},
 	{"gemini", "Google Gemini", "chat", "https://generativelanguage.googleapis.com/v1beta/openai", "an API key from Google AI Studio", false, "GEMINI_API_KEY"},
 	{"xai", "xAI Grok", "chat", "https://api.x.ai/v1", "an API key from console.x.ai", false, "XAI_API_KEY"},
 	{"baseten", "Baseten", "chat", "https://inference.baseten.co/v1", "an API key from app.baseten.co", false, "BASETEN_API_KEY"},

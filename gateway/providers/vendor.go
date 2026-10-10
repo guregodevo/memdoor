@@ -181,7 +181,9 @@ func newVendorClient(_ context.Context, re *RemoteEngine, model string) LLMClien
 	switch re.Vendor {
 	case VendorAnthropic:
 		return newAnthropicClient(re.APIKey, re.Endpoint, model)
-	case VendorGateway:
+	case VendorGateway, VendorOpenAI:
+		// OpenAI's own key goes over Responses too (registry.go, the openai
+		// provider): its chat endpoint refuses the gpt-6 models with tools.
 		return newResponsesClient(re.APIKey, re.Endpoint, model)
 	case VendorChatGPT:
 		return newChatGPTClient(model)
