@@ -202,8 +202,8 @@ export function CoderLandingPage() {
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />
               <p className="text-xs text-neutral-400">
-                Free. Needs an API key: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek… macOS (Apple Silicon),
-                Linux, Windows.
+                Free. Needs an API key: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek… A free OpenRouter account is
+                enough to try it. macOS (Apple Silicon), Linux, Windows.
               </p>
               <p className="text-xs text-neutral-400">
                 Memdoor ships itself with{' '}
@@ -382,6 +382,7 @@ export function CoderLandingPage() {
                 ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
                 ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account — or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …, or /connect inside'],
                 ['cd your-project && memdoor tui', 'the first run sets the machine up; the agent works where you launch it'],
+                ['/model nvidia/nemotron-3-super-120b-a12b:free', 'no money on the key yet: a free model, 50 requests a day; its hosts train on what they are sent, so a trial, not private code'],
                 ['/model', 'which model is answering, and what it lists for'],
               ].map(([cmd, note]) => (
                 <div key={cmd} className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3">

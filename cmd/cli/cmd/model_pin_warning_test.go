@@ -168,8 +168,15 @@ func TestPinWarningRepeatsTheHostWhenTheProbeNeverLanded(t *testing.T) {
 	if w := pinWarning("deepseek/deepseek-v4.1"); !strings.Contains(w, "not a valid model ID") || strings.Contains(w, "did not call a tool") {
 		t.Errorf("a dead id should say so in the host's words: %q", w)
 	}
-	if w := pinWarning("nvidia/nemotron-3.5-lightning:free"); !strings.Contains(w, "data policy") {
-		t.Errorf("a data policy refusal should say so: %q", w)
+	if w := pinWarning("nvidia/nemotron-3.5-lightning:free"); !strings.Contains(w, "data policy") || !strings.Contains(w, "train on what they are sent") {
+		t.Errorf("a data policy refusal should say so, and a :free pin says its hosts train: %q", w)
+	}
+	// A free model with no report still says its hosts train; a paid one with none says nothing.
+	if w := pinWarning("google/gemma-4-31b-it:free"); !strings.Contains(w, "train on what they are sent") {
+		t.Errorf("a :free pin without a report: %q", w)
+	}
+	if w := pinWarning("z-ai/glm-5.3"); w != "" {
+		t.Errorf("a paid model without a report says nothing: %q", w)
 	}
 	// A model that DID answer, just without a tool call, keeps the plain line.
 	if w := pinWarning("acme/chatty"); !strings.Contains(w, "did not call a tool") {

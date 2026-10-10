@@ -16,6 +16,10 @@ export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, G
 cd your-project && memdoor tui         # the first run sets the machine up
 ```
 
+No money on the key yet? A free OpenRouter account and `/model
+nvidia/nemotron-3-super-120b-a12b:free` run a real session: 50 requests a day,
+and the free hosts train on what they are sent, so a trial, not private code.
+
 <p align="center"><img src="web/public/og-image.png" alt="A release workflow waiting at its gate: vet and tests done in parallel, notes written, approve waiting for you" width="800"></p>
 
 Describe the steps and the coder writes them as a workflow, one YAML per step,
@@ -91,7 +95,9 @@ before every command and write, for machines whose policy requires it.
 Files, sessions and commands stay on your machine. What leaves is what the
 model reads, sent to the provider you connected; on OpenRouter every request
 carries `data_collection: deny` and hosts that train on paid inputs are kept out
-of the ladders. On a vendor key or a company gateway nothing else is contacted:
+of the ladders. The one exception is a model you pin whose id ends in `:free`:
+its hosts train on what they are sent, the request says so (`allow`), and the
+pin warns; use one for a trial, not on private code. On a vendor key or a company gateway nothing else is contacted:
 [`docs/SECURITY.md`](docs/SECURITY.md) lists every host the binary can name and
 a test fails the build on a new one.
 

@@ -95,11 +95,17 @@ func ByokEngine() (RemoteEngine, bool) {
 // the privacy and correctness floor for the person's own key, plus their
 // host preference when they set one with
 // `/model <id> [price|throughput|latency] [order a,b]`.
-func byokProviderPolicy(ctx context.Context) map[string]any {
+func byokProviderPolicy(ctx context.Context, model string) map[string]any {
 	p := map[string]any{
 		// Never a host that may train on what it is sent: the person's code
 		// goes through here. Sent per request, not left to an account toggle.
-		"data_collection": "deny",
+		// THE ONE EXCEPTION IS A FREE MODEL (Greg, 2026-10-10: "for free we
+		// allow data collection"): every `:free` endpoint on OpenRouter is
+		// served on the condition that it may train on what it is sent, and
+		// with deny they all answer "no endpoints match your data policy"
+		// (live, 16 of 16). A person who pins one has chosen a trial over
+		// privacy; the pin says so (cmd/cli/cmd/model_pin_warning.go).
+		"data_collection": dataCollectionFor(model),
 		// Only a host that supports every parameter sent (tools, tool_choice):
 		// one that silently drops them answers wrong.
 		"require_parameters": true,
@@ -111,6 +117,13 @@ func byokProviderPolicy(ctx context.Context) map[string]any {
 		// publish no precision stay in: leaving them out halved DeepSeek's
 		// hosts and quadrupled its cheapest price, with nothing against them.
 		"quantizations": byokQuantizations,
+	}
+	if IsFreeModel(model) {
+		// A free model is served as its host offers it: the only host of
+		// nvidia/nemotron-3.5-lightning:free is nvfp4, and the floor refused
+		// it ("No endpoints found for the request with quantization", live
+		// 2026-10-10). The pin notice says so.
+		delete(p, "quantizations")
 	}
 	sort, _ := ctx.Value(sharedctx.SortKey).(string)
 	order, _ := ctx.Value(sharedctx.OrderKey).(string)
@@ -132,6 +145,23 @@ func byokProviderPolicy(ctx context.Context) map[string]any {
 		}
 	}
 	return p
+}
+
+// IsFreeModel reports whether an OpenRouter model id is a free one: the
+// `:free` variants and the free-models router. Free endpoints train on what
+// they are sent; nothing else about them is different.
+func IsFreeModel(id string) bool {
+	id = strings.ToLower(strings.TrimSpace(id))
+	return strings.HasSuffix(id, ":free") || id == "openrouter/free"
+}
+
+// dataCollectionFor is the request's data policy: deny, except for a free
+// model, which exists only on hosts that train.
+func dataCollectionFor(model string) string {
+	if IsFreeModel(model) {
+		return "allow"
+	}
+	return "deny"
 }
 
 // byokQuantizations is OpenRouter's provider.quantizations allow list: fp8 and

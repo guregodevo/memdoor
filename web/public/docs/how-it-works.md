@@ -43,7 +43,8 @@ through memdoor.ai.
 Each agent has a ladder, cheapest rung first. The footer names the model and the rung, and `/model` pins
 any rung or any tool-capable model from the catalogue, ordering its hosts by
 price, throughput or latency. Every request carries `data_collection: deny` and
-`require_parameters`, so no host that might train on your code, or that would
+`require_parameters` (a pinned `:free` model is the one exception: its hosts
+train, the request says `allow`, the pin warns), so no host that might train on your code, or that would
 silently drop the tool schema, serves you. See **[Your key and the
 models](/docs/your-key)**.
 

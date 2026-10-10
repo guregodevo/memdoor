@@ -17,7 +17,7 @@ func newDirectOpenRouterClient(ctx context.Context, re *RemoteEngine, model stri
 		baseURL:    strings.TrimSuffix(strings.TrimRight(re.Endpoint, "/"), "/chat/completions"),
 		httpClient: oaiHTTPClient(),
 		model:      model,
-		provider:   byokProviderPolicy(ctx),
+		provider:   byokProviderPolicy(ctx, model),
 		attribute:  true,
 	}
 }

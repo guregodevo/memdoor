@@ -50,7 +50,9 @@ is added to your bill. The $10 is never for inference on your key; workflows are
 
 **Does my code leave my machine?** Your files, sessions, memory and the output of
 every command stay local. What leaves is the prompt and the excerpts a model must
-read, with `data_collection: deny` on every request and training hosts excluded.
+read, with `data_collection: deny` on every request and training hosts excluded
+(a model you pin whose id ends in `:free` is the exception: its hosts train, and
+the pin says so).
 Without an OpenRouter or decision key nothing is judged off-machine either.
 
 **Is there a token or call limit?** No cap on tool calls. The decision model ends

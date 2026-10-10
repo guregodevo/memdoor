@@ -22,6 +22,11 @@ iex`.
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
+No money on the key yet? A free OpenRouter account is enough to try it: in the
+window, `/model nvidia/nemotron-3-super-120b-a12b:free` pins a free model
+(50 requests a day; 1,000 once $10 has ever been bought). Free hosts train on
+what they are sent, and Memdoor says so at the pin: a trial, not private code.
+
 No key at hand? Skip it: type `/connect` inside the TUI and paste one. This
 is the whole account setup: your key, your bill, at the provider's list
 prices. Put the export in your shell profile so it is there next time.

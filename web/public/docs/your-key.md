@@ -63,7 +63,9 @@ listing.
 
 Every request carries `data_collection: deny` and `require_parameters`, so a
 host that might train on your code, or that silently drops the tool schema, does
-not serve you. Hosts known to train on paid inputs are excluded from the ladders
+not serve you. A model you pin whose id ends in `:free` is the exception: free
+endpoints exist only on hosts that train, so the request says `allow` and the
+pin warns; use one to try Memdoor, not on private code. Hosts known to train on paid inputs are excluded from the ladders
 outright.
 
 Your files, sessions, memory and the output of every command the agent runs

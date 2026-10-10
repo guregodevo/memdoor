@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"memdoor/gateway/providers"
 )
 
 // WARN AT THE MOMENT OF PINNING (roadmap SHOULD.md, "Work on the OpenRouter
@@ -26,6 +28,10 @@ import (
 // solid to say — no report, a probe that passed, or a gateway that will not
 // answer.
 
+// freeModelNotice is the line after a pin of a `:free` model: the one case
+// where a request leaves with data_collection allow.
+const freeModelNotice = "⚠ a free model: its hosts train on what they are sent and serve it as they choose (below fp8 too); Memdoor sends it with data_collection allow and no quantization floor. Fine for a trial, not for private code."
+
 // pinWarning is the one line to add after a pin, or "" when there is nothing to
 // warn about.
 func pinWarning(id string) string {
@@ -33,11 +39,18 @@ func pinWarning(id string) string {
 	if id == "" {
 		return ""
 	}
+	// A free model's hosts train on what they are sent; the request says
+	// allow for it (gateway/providers/byok.go). Said once, at the pin, after
+	// whatever the probe found.
+	free := ""
+	if providers.IsFreeModel(id) {
+		free = freeModelNotice
+	}
 	var res struct {
 		Checks map[string]modelCheckView `json:"checks"`
 	}
 	if err := NewClient().GetJSON("/api/models/check", &res); err != nil {
-		return "" // never probed here, or no gateway to ask: say nothing
+		return free // never probed here, or no gateway to ask: say nothing more
 	}
 	c, ok := res.Checks[id]
 	if !ok {
@@ -49,13 +62,13 @@ func pinWarning(id string) string {
 		}
 	}
 	if !ok {
-		return ""
+		return free
 	}
 	trouble := pinTrouble(c)
 	if trouble == "" {
-		return ""
+		return free
 	}
-	return fmt.Sprintf("⚠ %s %s. `memdoor model check %s` probes it again.", trouble, probedWhen(c.At), id)
+	return strings.TrimSpace(fmt.Sprintf("⚠ %s %s. `memdoor model check %s` probes it again. %s", trouble, probedWhen(c.At), id, free))
 }
 
 // pinTrouble is what the report says in the person's terms, worst first and one

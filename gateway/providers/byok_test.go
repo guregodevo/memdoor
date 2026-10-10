@@ -43,10 +43,35 @@ func TestByokEngineFromTheKey(t *testing.T) {
 	}
 }
 
+// A free model is the one exception to deny: its endpoints exist only on the
+// condition that they may train, so the request says allow for it and for
+// nothing else (Greg, 2026-10-10: "for free we allow data collection").
+func TestAFreeModelAllowsTrainingAndNothingElseDoes(t *testing.T) {
+	for _, id := range []string{"nvidia/nemotron-3.5-lightning:free", "Google/Gemma-4-31b-it:FREE", "openrouter/free"} {
+		if p := byokProviderPolicy(context.Background(), id); p["data_collection"] != "allow" {
+			t.Errorf("%s: a free model needs data_collection allow, got %v", id, p["data_collection"])
+		}
+		if !IsFreeModel(id) {
+			t.Errorf("%s is a free model", id)
+		}
+		if _, floored := byokProviderPolicy(context.Background(), id)["quantizations"]; floored {
+			t.Errorf("%s: a free model is served as its host offers it, no quantization floor", id)
+		}
+	}
+	for _, id := range []string{"z-ai/glm-5.3", "nvidia/nemotron-3.5-lightning", "", "freedom/free-thinker"} {
+		if p := byokProviderPolicy(context.Background(), id); p["data_collection"] != "deny" || p["quantizations"] == nil {
+			t.Errorf("%q: deny and the fp8 floor, got %v / %v", id, p["data_collection"], p["quantizations"])
+		}
+		if IsFreeModel(id) {
+			t.Errorf("%q is not a free model", id)
+		}
+	}
+}
+
 // The person's code must never reach a host that trains on it, and the
 // cheapest qualifying host is the default — their own ordering wins.
 func TestByokProviderPolicy(t *testing.T) {
-	p := byokProviderPolicy(context.Background())
+	p := byokProviderPolicy(context.Background(), "z-ai/glm-5.3")
 	if p["data_collection"] != "deny" {
 		t.Error("every BYOK request must say data_collection: deny")
 	}
@@ -63,15 +88,15 @@ func TestByokProviderPolicy(t *testing.T) {
 	}
 
 	ctx := context.WithValue(context.Background(), sharedctx.SortKey, "throughput")
-	if p := byokProviderPolicy(ctx); p["sort"] != "throughput" {
+	if p := byokProviderPolicy(ctx, "z-ai/glm-5.3"); p["sort"] != "throughput" {
 		t.Errorf("the person's sort must win, got %v", p["sort"])
 	}
 	ctx = context.WithValue(context.Background(), sharedctx.SortKey, "default")
-	if p := byokProviderPolicy(ctx); p["sort"] != nil {
+	if p := byokProviderPolicy(ctx, "z-ai/glm-5.3"); p["sort"] != nil {
 		t.Errorf("sort=default leaves the choice to OpenRouter, got %v", p["sort"])
 	}
 	ctx = context.WithValue(context.Background(), sharedctx.OrderKey, "baidu, morph")
-	p = byokProviderPolicy(ctx)
+	p = byokProviderPolicy(ctx, "z-ai/glm-5.3")
 	order, _ := p["order"].([]string)
 	if len(order) != 2 || order[0] != "baidu" || order[1] != "morph" {
 		t.Fatalf("a hand-written host order must travel as given: %v", p["order"])

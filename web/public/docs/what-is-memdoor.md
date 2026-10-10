@@ -61,7 +61,9 @@ in the catalogue with its real price, pins one for the conversation, and orders
 its hosts by price, throughput or latency.
 
 Every request says `data_collection: deny`, and hosts that train on paid inputs
-are excluded from the ladders.
+are excluded from the ladders. A model you pin whose id ends in `:free` is the
+exception: its hosts train on what they are sent, the request says `allow`, and
+the pin warns.
 
 ## Price
 

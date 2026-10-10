@@ -15,7 +15,7 @@ places, chosen by configuration, never mixed:
 |---|---|---|---|
 | **Your company's AI gateway** | `AI_GATEWAY_BASE_URL` + `AI_GATEWAY_TOKEN` (or any `*_AI_GATEWAY_TOKEN`: a personal or service-account token) + `MEMDOOR_MODEL` = the provider slug | `POST <base>/v1/responses` on that gateway (the OpenAI Responses shape; `AI_GATEWAY_API=chat` for chat/completions) | **Yes.** Nothing but the gateway. Comes before any vendor key. |
 | **Your company's vendor key** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY`, `BASETEN_API_KEY`, `GROQ_API_KEY` or `DEEPSEEK_API_KEY` (+ `*_BASE_URL` for a proxy in front) | That vendor, or the proxy in front of it | **Yes.** No OpenRouter, no memdoor.ai broker, no catalogue, no web search. `MEMDOOR_VENDOR_HEADERS` adds attribution headers to every request. |
-| Your own OpenRouter key | `OPEN_ROUTER_API_KEY` | OpenRouter, with `data_collection: deny` and hosts that train on inputs excluded | OpenRouter also serves the model catalogue and web search. |
+| Your own OpenRouter key | `OPEN_ROUTER_API_KEY` | OpenRouter, with `data_collection: deny` and hosts that train on inputs excluded; a pinned `:free` model is the exception (`allow`, warned at the pin) | OpenRouter also serves the model catalogue and web search. |
 | A provider you connected | `memdoor connect`, kept in `~/.memdoor/providers.json` | That provider | Used when no key above is set, or when you pin one of its models. |
 
 A Pro seat changes nothing about where prompts go: it never supplies a model

@@ -41,7 +41,8 @@ down as not working rather than shipped.
 ## 6. Privacy is a request header, not a promise
 
 Every request says `data_collection: deny`, and hosts that train on paid inputs
-are excluded from every ladder. Your files, sessions, memory and the output of
+are excluded from every ladder (a `:free` model you pin is the exception, and
+the pin says so). Your files, sessions, memory and the output of
 every command the agent runs stay on your machine. What leaves is what a model
 must read to answer — and with the decision model on, that is a fraction of what
 it would otherwise be. Turn decisions off and nothing is judged off-machine at
