@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"memdoor/pkg/secrets"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -62,7 +63,32 @@ const applyPatchIsATool = "apply_patch is a TOOL, not a shell command — bash c
 // after its "Output:" label, so the message is not always at a line start.
 var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)bash: (line \d+: )?apply_patch: command not found`)
 
+// A TOOL'S OUTPUT NEVER CARRIES A SECRET (live 2026-10-10): asked for a free
+// model, the coder ran `env | grep openrouter` and `cat
+// ~/.memdoor/credentials.json`, and the person's OpenRouter key and two
+// gateway tokens went to the model, the transcript on disk and the window.
+// The shapes /share already redacts (pkg/secrets RedactText) are redacted
+// here, once, for every tool, before the result reaches any of the three.
 func (ar *AgentRuntime) executeTool(ctx context.Context, toolUse *llm.ToolUseBlock, runID string, session *Session) (info ToolExecutionInfo, result llm.ContentBlockParamUnion) {
+	info, result = ar.executeToolUnredacted(ctx, toolUse, runID, session)
+	return redactToolResult(info, result)
+}
+
+// redactToolResult replaces every secret-shaped value in a tool's output and
+// error, and in the result block the model reads.
+func redactToolResult(info ToolExecutionInfo, result llm.ContentBlockParamUnion) (ToolExecutionInfo, llm.ContentBlockParamUnion) {
+	info.Output, info.Error = secrets.RedactText(info.Output), secrets.RedactText(info.Error)
+	if r := result.OfToolResult; r != nil {
+		for i := range r.Content {
+			if t := r.Content[i].OfText; t != nil {
+				t.Text = secrets.RedactText(t.Text)
+			}
+		}
+	}
+	return info, result
+}
+
+func (ar *AgentRuntime) executeToolUnredacted(ctx context.Context, toolUse *llm.ToolUseBlock, runID string, session *Session) (info ToolExecutionInfo, result llm.ContentBlockParamUnion) {
 	// Returning is progress: the turn backstop counts from here (sharedctx.WithIdleTimeout).
 	defer sharedctx.Progress(ctx)
 	// Stamp the tool's wall time on every return path. A call blocked before it

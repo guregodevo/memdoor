@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"memdoor/pkg/secrets"
 	"memdoor/tools"
 	"os/exec"
 	"sync"
@@ -154,7 +155,10 @@ func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chu
 			pending = nil
 			mu.Unlock()
 			if len(chunk) > 0 && emit != nil {
-				emit(string(chunk))
+				// What the window shows live is redacted like the result
+				// (agent_runtime_tools.go redactToolResult); a key split across
+				// two flushes is the one case this misses.
+				emit(secrets.RedactText(string(chunk)))
 			}
 		}
 		for {
