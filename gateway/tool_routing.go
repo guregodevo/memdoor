@@ -82,7 +82,11 @@ var builtinToolRouting = map[string]agentToolRouting{
 				// sessions_spawn (2026-10-05, Greg: "give the coder sessions_spawn"):
 				// a well-defined subtask runs in parallel in its own session and
 				// its result wakes this conversation.
-				Tools: []string{"grep", "jgrep", "jread", "glob", "todo_write", "todo_read", "ask_user_question", "workflow", "sessions_spawn"},
+				// cron (2026-10-11): "then build, test or run it" can take minutes.
+				// A change turn that launched three simulations had no cron and
+				// waited in `sleep 100` six times, a held turn of ten minutes
+				// (live, the Kelly turn). The schema costs less than one sleep.
+				Tools: []string{"grep", "jgrep", "jread", "glob", "todo_write", "todo_read", "ask_user_question", "workflow", "sessions_spawn", "cron"},
 			},
 			"answer": {
 				Description: "Find, explain or review code that already exists, without changing any file.",

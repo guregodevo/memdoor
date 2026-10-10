@@ -103,8 +103,8 @@ func TestToolRouterAppliesAndFailsOpen(t *testing.T) {
 	if !hasTool(allow, "workflow") {
 		t.Errorf("a change turn writes a DAG and runs it: the workflow tool belongs in it (live 2026-10-02, the coder fell back to bash): %v", allow)
 	}
-	if hasTool(allow, "cron") {
-		t.Errorf("a change turn pays for the cron schema it does not need: %v", allow)
+	if !hasTool(allow, "cron") {
+		t.Errorf("a change turn runs what it changed, and a run can take minutes: without cron it waits in `sleep` (live 2026-10-11, ten minutes of a held turn): %v", allow)
 	}
 	d.choice = "answer"
 	allow = r.route(ctx, "coder", "where is the subagent result turned into a message?")
