@@ -80,7 +80,8 @@ memdoor tui
 The agent works on the directory you launched from: its file tools stay inside
 it and its commands start there (not a sandbox: a shell command can still reach
 other folders). Type a task; watch the tool frames as it works.
-`Esc` interrupts, `ctrl+o` expands tool frames,
+`Esc` interrupts, `ctrl+f` opens the files panel (what this conversation
+touched, newest first), `ctrl+o` expands tool frames,
 `/model` shows which model answers and pins one, `/usage` shows what the
 workspace used this month, `/update` installs the published build. `memdoor resume` reopens
 a previous conversation.

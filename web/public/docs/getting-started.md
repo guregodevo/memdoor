@@ -59,7 +59,8 @@ It reads the file, writes the patch, runs the test, reads the output and fixes
 what it broke. Watch the footer: it names the model that answered and the rung
 of the ladder it came from.
 
-`Esc` interrupts a running turn. `ctrl+o` expands a tool frame to its full
+`Esc` interrupts a running turn. `ctrl+f` opens the files panel: what this
+conversation touched, newest first. `ctrl+o` expands a tool frame to its full
 output. `@` mentions a file or folder, and on macOS an image on the clipboard
 pastes in.
 
@@ -69,6 +70,7 @@ pastes in.
 |---|---|
 | `/model` | Which model is answering, the ladder, and how to pin one |
 | `/model-search <text>` | Find a tool-capable model with its real price, and pin it |
+| `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, with what happened to each; enter previews, `ctrl+d` shows the diff |
 | `/usage` | What this workspace used this month: turns, tokens, cost on your key |
 | `/remote` | Open this conversation on your phone, as the terminal itself |
 | `/update` | Install the published build and reopen this conversation on it |

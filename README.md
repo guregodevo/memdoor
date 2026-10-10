@@ -89,11 +89,12 @@ downloads.
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted (Pro) |
 | `/share` | A read-only link to the conversation, encrypted, secrets removed; `/unshare` deletes it |
+| `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, each with what happened to it; enter previews, `ctrl+d` diffs, `ctrl+e` opens in `$EDITOR`, tab puts `@path` in the prompt |
 | `/mcp` | Connect MCP servers from a URL, a command or a `.mcp.json` snippet |
 | `/help` | The rest |
 
-`Esc` interrupts a turn, `ctrl+o` expands tool frames, `Shift+Tab` sets the
-reasoning effort, `@path` mentions a file. `MEMDOOR_APPROVE=changes` asks
+`Esc` interrupts a turn, `ctrl+f` opens the files panel, `ctrl+o` expands tool
+frames, `Shift+Tab` sets the reasoning effort, `@path` mentions a file. `MEMDOOR_APPROVE=changes` asks
 before every command and write, for machines whose policy requires it.
 
 ## In your editor
