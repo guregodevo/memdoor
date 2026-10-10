@@ -1,6 +1,6 @@
 # Getting Started with Memdoor
 
-From zero to a first coding session in about five minutes. Everything in this guide runs in the terminal. The served
+From zero to a first coding session in about two minutes. Everything in this guide runs in the terminal. The served
 version of this page is [memdoor.ai/docs/getting-started](https://memdoor.ai/docs/getting-started)
 (source: [`web/public/docs/getting-started.md`](web/public/docs/getting-started.md)).
 
@@ -50,24 +50,14 @@ Other modes, first match wins: `MEMDOOR_PREFIX=/some/dir` (explicit location),
 install on `PATH` (upgraded in place). Re-running the installer upgrades; it
 stops a running gateway first and tells you to restart it.
 
-## 2. Setup — workspace, admin user, model (one shot)
+## 2. Your key
 
 ```bash
-memdoor setup
+export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
-Interactive onboarding: workspace name, admin email and password. Setup auto-starts the gateway in the background, creates the
-workspace and admin user, saves a session token (30 days). It downloads
-nothing: the agent runs on your provider key.
-
-For scripts/CI, pass everything as flags:
-
-```bash
-memdoor setup \
-  --workspace-name 'My Project' \
-  --admin-email you@example.com \
-  --admin-password 'choose-a-long-random-string'
-```
+Any provider's key works; `/connect` inside the window adds one too. Nothing
+is downloaded: every model runs on that key, at the provider's list price.
 
 ## 3. Start coding
 

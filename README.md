@@ -1,8 +1,29 @@
 <div align="center">
   <img src="web/public/memdoor-logo.png" alt="Memdoor" width="128" height="128">
   <h1>Memdoor</h1>
-  <p><strong>An AI coding agent in your terminal, on your own API key. Describe the steps; it runs them as a checked, resumable workflow.</strong></p>
+  <p><strong>A coding agent whose steps are done when their output exists.</strong></p>
+  <p>
+    <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue"></a>
+    <a href="https://github.com/guregodevo/memdoor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/guregodevo/memdoor/actions/workflows/ci.yml/badge.svg"></a>
+    <img alt="Go" src="https://img.shields.io/badge/Go-one%20static%20binary-00ADD8">
+    <img alt="Platforms" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-lightgrey">
+  </p>
 </div>
+
+```bash
+curl -fsSL https://memdoor.ai/install.sh | bash
+export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
+cd your-project && memdoor tui         # the first run sets the machine up
+```
+
+<p align="center"><img src="web/public/og-image.png" alt="A release workflow waiting at its gate: vet and tests done in parallel, notes written, approve waiting for you" width="800"></p>
+
+Describe the steps and the coder writes them as a workflow, one YAML per step,
+run as a graph. A step is done when its file exists or its command exits 0,
+never because the model says so. Independent steps run in parallel, a gate
+waits for your approval, a failed run resumes at the failed step. Free, on
+your own API key; built by one developer; Memdoor ships itself with
+[its own workflow](https://memdoor.ai/workflows).
 
 ---
 
@@ -31,8 +52,8 @@ run again, by hand or on your local cron
 rather than skills: [the write-up](https://guregodevo.github.io/2026/10/06/workflows-not-skills/).
 Worked examples, each run before it was added: [`examples/workflows/`](examples/workflows/).
 
-**[▶ Watch the review loop](https://memdoor.ai/workflows)** — a recorded
-session: findings verified by running, a gate, the fixes applied.
+A recorded session of the review loop (findings verified by running, a gate,
+the fixes applied) plays at [memdoor.ai/workflows](https://memdoor.ai/workflows).
 
 ## Install
 

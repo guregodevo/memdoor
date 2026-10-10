@@ -140,6 +140,16 @@ how the next person knows what they got.
    file and run again.
 6. Never stop a run the person did not ask you to stop. A run that is
    still going is not a problem; a run that failed reports why.
+7. **"Nightly", "every morning", "each Monday"** — Memdoor schedules it, in
+   bash from the project directory:
+
+       memdoor cron add --id <name> --schedule "0 6 * * *" --workflow <name> --partition today
+
+   Never launchd, crontab or a wrapper script: the gateway runs the
+   workflow on that schedule in this project, and the run shows in
+   `/workflow` like any other. Run it once with the tool first, so the
+   person sees it work before it runs unattended. (The `cron` tool is for
+   re-checking something a few times, not for a standing schedule.)
 
 The directory can be committed (a repo's `.memdoor/workflows/`), written
 for one run anywhere and passed to `run` as a path, or kept in the person's

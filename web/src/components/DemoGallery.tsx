@@ -43,41 +43,17 @@ const DEMOS = [
     note: 'the panel: runs, and a run\'s graph with every task\'s time',
   },
   {
-    title: 'Scheduled checks',
-    ask: 'Every 20 seconds, 3 times, check whether the build passes and tell me.',
-    cast: '/demo-cron.cast',
-    poster: 'npt:0:30',
-    note: 'the agent schedules its own re-check; ⏱ answers land in the window',
-  },
-  {
-    title: 'Models, at list price',
-    ask: '/model',
-    cast: '/demo-model.cast',
-    poster: 'npt:0:10',
-    note: 'each agent\'s ladder with real prices; pin a rung or any model',
-  },
-  {
-    title: 'MCP servers',
-    ask: '/mcp search github',
-    cast: '/demo-mcp.cast',
-    poster: 'npt:0:10',
-    note: 'a URL, a command line, a .mcp.json snippet, or the registry',
-  },
-  {
     title: 'Judged reads',
     ask: 'Where does a turn give up when the same tool keeps failing?',
     cast: '/demo.cast',
     poster: 'npt:0:12',
     note: 'jgrep kept 6 of 29 hunks, jread 4 of 41 sections · −49% tokens',
   },
-  {
-    title: 'On your phone',
-    ask: '/remote — the same terminal, sealed end to end, on a phone.',
-    cast: '/remote.cast',
-    poster: 'npt:0:14',
-    note: 'watch a turn, answer its question, start the next',
-  },
 ] as const;
+// The cron, /model, MCP and /remote takes (demo-cron, demo-model, demo-mcp,
+// remote.cast) left the landing on 2026-10-10: on a first visit they read as
+// "many features" when the page says one idea. They stay in web/public for
+// the docs and /features.
 
 function Card({ d }: { d: (typeof DEMOS)[number] }) {
   const host = useRef<HTMLDivElement>(null);

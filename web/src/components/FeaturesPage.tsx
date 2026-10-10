@@ -29,7 +29,7 @@ export const SHARED: { feature: string; detail: string; also: string }[] = [
   { feature: 'Sandbox around commands', detail: 'no, by choice: file tools stay in your project and commands start there', also: 'Claude Code, Codex CLI, Gemini CLI' },
 ];
 
-// Workflows: the hero's claim ("Don't build code. Build workflows."), listed
+// Workflows: the hero's claim (a step is done when its output exists), listed
 // here as facts of pkg/workflow + mario (docs/features/WORKFLOWS.md).
 export const WORKFLOWS: { feature: string; detail: string }[] = [
   { feature: 'Steps from a description', detail: 'the coder writes one YAML per step; independent steps run in parallel' },
@@ -107,7 +107,7 @@ export function FeaturesPage() {
             <code className="text-white">/remote view</code> gives a link that watches and cannot type.
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <a href="/#remote" className="font-semibold text-white underline underline-offset-4">
+            <a href="/docs/remote" className="font-semibold text-white underline underline-offset-4">
               See it on a phone
             </a>
             <a href="/docs/remote" className="text-neutral-300 underline underline-offset-4 hover:text-white">

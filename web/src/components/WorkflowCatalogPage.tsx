@@ -100,7 +100,7 @@ export function WorkflowCatalogPage() {
         <CoderHeader dark />
         <section className="mx-auto w-full max-w-6xl px-6 pb-14 pt-10 sm:px-12">
           <div className="mb-3 text-xs uppercase tracking-[0.2em] text-neutral-400">Workflows</div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Don't build code. Build workflows.</h1>
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Workflows that have run for real.</h1>
           <p className="max-w-2xl text-lg text-neutral-300">
             Each one below is a folder of task files that has run for real: a graph of steps, each done only when
             its proof holds, and a gate where a person decides.

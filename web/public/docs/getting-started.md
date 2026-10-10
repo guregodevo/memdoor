@@ -1,8 +1,9 @@
 # Getting Started
 
-From nothing to a coding agent working in your project, on your own OpenRouter
-key, in about two minutes. Everything here happens in a terminal, on an Apple Silicon Mac or Linux, one
-binary. A Windows build exists but has not been run yet.
+From nothing to a coding agent working in your project, on your own API key
+(OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, …), in about two minutes. Everything here happens in a
+terminal, on an Apple Silicon Mac, Linux or Windows, one binary. The three installers run on GitHub's
+runners on every change to them.
 
 ## Install
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RemoteDemo } from './RemoteDemo';
 import { HOME_META, setMeta } from '../meta';
 import { TerminalDemo } from './TerminalDemo';
 import { WorkflowDemo } from './WorkflowDemo';
@@ -13,10 +12,11 @@ import { DemoGallery } from './DemoGallery';
 // their own tokens. One claim, with the day's measured numbers behind it, and
 // one action: install it.
 //
-// Remote control has the one section that is not about the bill (Greg,
-// 2026-09-29: "we can also show it off in our landing page", "the /remote is a
-// killer feature"). Every other feature stays on /features. Remote control is
-// Pro since 2026-10-04 (Greg: "Remote should be pro only").
+// One idea on the page (2026-10-10 audit: five pitches on one page, the one
+// line outsiders repeated back buried in the second section). The hero says
+// the workflow rule; the numbers section says the saving with its caveat.
+// Remote control, MCP, the model picker and scheduled checks are on
+// /features and /pricing; Remote control is Pro since 2026-10-04.
 //
 // Copy pass 2026-10-05 (Greg: "review landing ai slop"): each fact once, plain
 // declaratives, no "X, not Y" refrains, no list-of-three cadence.
@@ -29,9 +29,11 @@ const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 
 // The day's paired runs (docs/features/DECIDE.md, 2026-09-27): same tasks, the
 // decision model off and on, alternating, on the cheapest rung.
+// The edit row first: it is the work a coder pays for (2026-10-10 audit: the
+// question row as the headline read as cherry-picked).
 const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
-  { work: 'A question about the codebase', off: '57,423', on: '29,458', saved: '−49%' },
   { work: 'An edit with a test, run green', off: '140,862', on: '103,775', saved: '−26%' },
+  { work: 'A question about the codebase', off: '57,423', on: '29,458', saved: '−49%' },
 ];
 
 // The hero's proof, each figure measured (docs/features/DECIDE.md): paired
@@ -42,44 +44,6 @@ const HERO_PROOF: { value: string; label: string }[] = [
   { value: 'Checked', label: 'a step is done when the file it names exists or its command passes' },
   { value: 'Gated', label: 'the run stops at a step only you can approve, with the diff in front of you' },
   { value: 'Resumable', label: 'a failed run starts again at the failed step' },
-];
-
-const MECHANISMS: { title: string; body: string }[] = [
-  {
-    title: 'It reads the hits that matter',
-    body: 'Search, file and log reads go through the decision model first; only the hits that count reach the coding model. A judged search returns a twelfth of what grep would (median over 59 searches).',
-  },
-  {
-    title: 'The toolbox is sized to the turn',
-    body: 'Tool schemas are resent on every call: 37% of an edit turn’s input when we measured. Only the tools the request needs are sent.',
-  },
-  {
-    title: 'It stops instead of looping',
-    body: 'No cap on tool calls. After each step the decision model judges whether the turn is still making progress; if not, it ends with what it has.',
-  },
-  {
-    title: 'You choose the model, at its real price',
-    body: 'Each agent starts on the cheapest rung of its ladder; the footer says which model answered. /model lists every model of your providers with its list price.',
-  },
-];
-
-// Each of these is a fact of the code: the link and its key
-// (cmd/cli/cmd/tui_remote.go), the relay that forwards what it cannot read
-// (gateway/remote_relay.go), the second TUI the page draws
-// (cmd/cli/cmd/tui_remote_tty.go).
-const REMOTE: { title: string; body: string }[] = [
-  {
-    title: 'One command',
-    body: '/remote prints a link and a QR code. /remote off revokes it.',
-  },
-  {
-    title: 'End-to-end encrypted',
-    body: 'The key is in the link after #, which browsers never send. The relay forwards frames it cannot read.',
-  },
-  {
-    title: 'Nothing to install',
-    body: 'A web page. No app, no open port.',
-  },
 ];
 
 const FAQ: { q: string; a: string }[] = [
@@ -163,12 +127,6 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
           Workflows
         </a>
         <a
-          href="/#remote"
-          className={`hidden sm:inline ${dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}`}
-        >
-          Remote
-        </a>
-        <a
           href="/pricing"
           className={dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}
         >
@@ -224,13 +182,14 @@ export function CoderLandingPage() {
         <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
           <div className="text-center lg:text-left">
             <div className="mb-4 text-xs uppercase tracking-[0.2em] text-neutral-400">
-              A coding agent in your terminal · your own key, any provider
+              Open-source coding agent for the terminal · your own API key · Apache 2.0
             </div>
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
-              Don't build code. Build workflows.
+              A coding agent whose steps are done when their output exists.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
-              Tell it the steps. It runs them, checks each one, and stops only when it needs you.
+              Describe the steps. It writes them as a workflow, runs them in parallel, waits at the gate for you,
+              and a step passes only when its file exists or its command exits 0.
             </p>
             <ul className="mx-auto mb-8 max-w-xl space-y-2 text-left text-sm text-neutral-300 lg:mx-0">
               {HERO_PROOF.map((p) => (
@@ -242,10 +201,20 @@ export function CoderLandingPage() {
             </ul>
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />
-              <p className="text-xs text-neutral-400">Free on your own key, any provider.</p>
-              <a href="#demos" className="text-xs text-neutral-300 underline underline-offset-4 hover:text-white">
-                Every demo on this page is a recording of a real session
-              </a>
+              <p className="text-xs text-neutral-400">
+                Free. Needs an API key: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek… macOS (Apple Silicon),
+                Linux, Windows.
+              </p>
+              <p className="text-xs text-neutral-400">
+                Built by one developer, Gregory Desvaux. Memdoor ships itself with{' '}
+                <a href="/workflows" className="text-neutral-300 underline underline-offset-4 hover:text-white">
+                  its own workflow
+                </a>
+                .{' '}
+                <a href="#demos" className="text-neutral-300 underline underline-offset-4 hover:text-white">
+                  Every demo on this page is a recording of a real session.
+                </a>
+              </p>
             </div>
           </div>
           <div className="w-full min-h-[520px]">
@@ -295,11 +264,17 @@ export function CoderLandingPage() {
             Measured on paired runs
           </div>
           <h2 className="mx-auto mb-3 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-            Half the input tokens on a question.
+            A quarter fewer input tokens on an edit. Half on a question.
           </h2>
-          <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
+          <p className="mx-auto mb-4 max-w-2xl text-center text-sm text-neutral-500">
             Ten pairs: the same task on the same model, decisions off and on. All twenty answers were right; the
             edits passed <code className="text-neutral-700">go test</code> and <code className="text-neutral-700">go vet</code>.
+          </p>
+          <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
+            A decision model judges every search hit, file section and log line before the coding model reads it (a
+            judged search returns a twelfth of what grep would), and a turn that stops making progress ends instead
+            of looping. It runs on your OpenRouter key or a TypeSafe decision key; on a vendor key alone it is off
+            and the agent works without the saving.
           </p>
           <div className="mx-auto max-w-3xl overflow-x-auto">
             <table className="w-full border-collapse text-sm">
@@ -324,7 +299,14 @@ export function CoderLandingPage() {
             </table>
           </div>
           <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-neutral-500">
-            Means over five pairs each. The harness that produced these rows is in the source tree.
+            Means over five pairs each. The method and the harness that produced these rows:{' '}
+            <a
+              href="https://github.com/guregodevo/memdoor/blob/main/docs/features/DECIDE.md"
+              className="underline underline-offset-4 hover:text-neutral-700"
+            >
+              docs/features/DECIDE.md
+            </a>
+            .
           </p>
           <div className="mx-auto mt-10 w-full max-w-3xl">
             <TerminalDemo />
@@ -349,52 +331,6 @@ export function CoderLandingPage() {
                 How workflows work
               </a>
             </p>
-          </div>
-        </section>
-
-        <section className="border-t border-neutral-100 bg-white">
-          <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
-            <div className="mb-10 text-center text-xs uppercase tracking-widest text-neutral-500">
-              Where the saving comes from
-            </div>
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-              {MECHANISMS.map((m) => (
-                <div key={m.title} className="rounded-2xl border border-neutral-200 bg-white p-6">
-                  <h3 className="mb-2 text-lg font-semibold text-neutral-900">{m.title}</h3>
-                  <p className="text-sm leading-relaxed text-neutral-500">{m.body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* REMOTE — the terminal, on a phone. The one section that is not about the bill. */}
-        <section id="remote" className="scroll-mt-4 border-t border-neutral-100 bg-neutral-950 text-white">
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 py-16 sm:px-12 lg:grid-cols-[1.2fr_1fr]">
-            <div>
-              <div className="mb-3 text-xs uppercase tracking-widest text-neutral-400">Remote control</div>
-              <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">The same terminal, on your phone.</h2>
-              <p className="mb-8 max-w-xl text-base leading-relaxed text-neutral-300">
-                Type <code className="rounded bg-neutral-800 px-1.5 py-0.5 text-sm text-white">/remote</code> and scan
-                the code. The page that opens is your terminal, drawn on your phone.
-              </p>
-              <div className="space-y-4">
-                {REMOTE.map((r) => (
-                  <div key={r.title} className="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
-                    <h3 className="mb-1 text-base font-semibold text-white">{r.title}</h3>
-                    <p className="text-sm leading-relaxed text-neutral-400">{r.body}</p>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-5 text-xs text-neutral-400">
-                Part of Pro: the memdoor.ai relay carries it. Sign in with{' '}
-                <code className="text-neutral-300">memdoor login you@example.com</code>.{' '}
-                <a href="/docs/remote" className="underline underline-offset-4 hover:text-neutral-300">
-                  How it works
-                </a>
-              </p>
-            </div>
-            <RemoteDemo />
           </div>
         </section>
 
@@ -493,7 +429,7 @@ export function CoderLandingPage() {
             Features
           </a>
           <span className="px-2">·</span>
-          <a href="/#remote" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
+          <a href="/docs/remote" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
             Remote control
           </a>
           <span className="px-2">·</span>

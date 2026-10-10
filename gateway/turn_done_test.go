@@ -301,6 +301,25 @@ func TestExitZeroOutputThatFailedIsAFailingCheck(t *testing.T) {
 	}
 }
 
+type stateRecorder struct{ state string }
+
+func (s *stateRecorder) Evaluate(_ context.Context, req decision.Request, _ decision.Options) decision.Result {
+	s.state = req.State
+	return decision.Result{Status: decision.StatusOK, Answers: map[string]decision.Answer{"failed": {Kind: decision.KindBoolean, ProbabilityTrue: 0.1}}}
+}
+
+// The judge reads the whole command, not its first line: what a run means to
+// test (an error path fed bad input on purpose) often comes after it.
+func TestExitZeroJudgeReadsTheWholeCommand(t *testing.T) {
+	exitZeroSeen = sync.Map{}
+	rec := &stateRecorder{}
+	v := &turnVerdict{svc: rec, read: settings(nil)}
+	v.exitZeroFailed(context.Background(), "python3 qant.py pnl\necho '=== error paths ==='\npython3 qant.py pnl --strategy nosuch; echo \"exit=$?\"", "exit=1")
+	if !strings.Contains(rec.state, "error paths") || !strings.Contains(rec.state, "--strategy nosuch") {
+		t.Fatalf("the judge saw only part of the command:\n%s", rec.state)
+	}
+}
+
 // The run view's receipt is the line a turn ends on.
 func TestReceiptOfTheTurnText(t *testing.T) {
 	if got := receiptOf("Done.\n\n✓ target SIGNALS.md exists · 1 file changed"); got != "✓ target SIGNALS.md exists · 1 file changed" {

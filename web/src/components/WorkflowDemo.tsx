@@ -13,7 +13,35 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // To re-record: a clean checkout, a 96x30 tmux pane running `memdoor tui`,
 // the sentence typed a key at a time, the pane sampled with capture-pane -e
 // into an asciinema v2 file until the run's ■ line.
+// The gate take plays first (2026-10-10 audit): a first visit to a coding
+// agent's page saw a CIFAR-10 training recipe and filed it under ML ops. The
+// poster is the frame before the cast loads, and the still for anyone who
+// prefers reduced motion.
 const TAKES = [
+  {
+    key: 'release',
+    label: 'A gate',
+    ask: 'Vet and tests in parallel, release notes from the last 8 commits, wait for my approval, announce.',
+    cast: '/workflow-release.cast',
+    poster: 'npt:0:31',
+    what: 'two at once → a merge → waits for you → goes on',
+  },
+  {
+    key: 'digest',
+    label: 'A chain',
+    ask: 'List the last 10 commits, summarize them in three bullets, have an agent write DIGEST.md.',
+    cast: '/workflow-digest.cast',
+    poster: 'npt:0:30',
+    what: 'command → llm → agent',
+  },
+  {
+    key: 'research',
+    label: 'A fan-out',
+    ask: 'Deep research on the top 5 Hacker News stories: read each article, summarize each.',
+    cast: '/workflow-hn.cast',
+    poster: 'npt:0:24',
+    what: 'one fetch → five readers at once → one merge',
+  },
   {
     // 2026-10-04: an ARTICLE as a workflow. article-to-workflow turned Karpathy's
     // "A Recipe for Training Neural Networks" into ten steps on CIFAR-10; this
@@ -22,28 +50,8 @@ const TAKES = [
     label: 'An article',
     ask: "Karpathy's “A Recipe for Training Neural Networks”, as a workflow: real data, the loss-at-init check, baselines, then a gate before any GPU spend.",
     cast: '/workflow-karpathy.cast',
+    poster: 'npt:0:40',
     what: 'resumed → eight steps proven, loss at init 2.3026 → waits for you before spending',
-  },
-  {
-    key: 'digest',
-    label: 'A chain',
-    ask: 'List the last 10 commits, summarize them in three bullets, have an agent write DIGEST.md.',
-    cast: '/workflow-digest.cast',
-    what: 'command → llm → agent',
-  },
-  {
-    key: 'release',
-    label: 'A gate',
-    ask: 'Vet and tests in parallel, release notes from the last 8 commits, wait for my approval, announce.',
-    cast: '/workflow-release.cast',
-    what: 'two at once → a merge → waits for you → goes on',
-  },
-  {
-    key: 'research',
-    label: 'A fan-out',
-    ask: 'Deep research on the top 5 Hacker News stories: read each article, summarize each.',
-    cast: '/workflow-hn.cast',
-    what: 'one fetch → five readers at once → one merge',
   },
 ] as const;
 
@@ -68,6 +76,7 @@ export function WorkflowDemo() {
         fit: 'width',
         controls: 'auto',
         theme: 'asciinema',
+        poster: take.poster,
       });
     });
     return () => {

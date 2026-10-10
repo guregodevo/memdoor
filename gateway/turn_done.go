@@ -548,11 +548,19 @@ func (v *turnVerdict) unfinished(ctx context.Context, agent, request, reply stri
 // Each output is judged once per process (exitZeroSeen).
 
 const (
+	// An error the command provokes on purpose is its expected result (live
+	// 2026-10-09: a run that fed an unknown strategy and printed "exit=1" to
+	// test the error path read FAIL under a turn whose checks all held).
 	exitZeroQuestion = "This shell command exited 0. Does its output show that something failed — an error, a failing test, a failed build or check — " +
-		"even though the exit status says success? (Output that only lists, prints or reads things, with no error, is not a failure.)"
+		"even though the exit status says success? (Output that only lists, prints or reads things, with no error, is not a failure. " +
+		"An error the command provokes on purpose — bad input fed to test how a program refuses it, its exit code then printed or expected — is the result it wanted, not a failure.)"
 	exitZeroFailAt  = 0.7
 	exitZeroTail    = 6000
 	exitZeroTimeout = 2500 * time.Millisecond
+	// exitZeroCommandMax is how much of the command the judge reads: all of
+	// it, short of a heredoc's body. What a command means to test often comes
+	// after its first line.
+	exitZeroCommandMax = 1200
 )
 
 var exitZeroSeen sync.Map // hash(command+output) → bool failed
@@ -601,7 +609,7 @@ func (v *turnVerdict) exitZeroFailed(ctx context.Context, command, output string
 	cctx, cancel := context.WithTimeout(ctx, exitZeroTimeout)
 	defer cancel()
 	res := v.svc.Evaluate(cctx, decision.Request{
-		State:     "Command: " + firstLine(command, 300) + "\n\nOutput:\n" + output,
+		State:     "Command: " + clipHead(command, exitZeroCommandMax) + "\n\nOutput:\n" + output,
 		Questions: map[string]decision.Question{"failed": q},
 	}, decision.Options{Purpose: "receipt-exit-zero", Timeout: exitZeroTimeout})
 	if !res.OK() {

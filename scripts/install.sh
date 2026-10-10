@@ -2,21 +2,19 @@
 # Memdoor CLI installer.
 # Usage: curl -fsSL https://memdoor.ai/install.sh | bash
 #
-# Frictionless install path:
-#   1. Download the right memdoor binary for OS+arch.
-#   2. Print one next-step line — `memdoor setup` — that does
-#      everything else (start gateway + register admin + pick an LLM
-#      provider).
+# What it does:
+#   1. Download the right memdoor binary for OS+arch, SHA-256 checked, to
+#      ~/.local/bin (no sudo), and put that directory on the shell's PATH.
+#   2. Print the two lines that follow — the key, then `memdoor tui`.
 #
-# Net frictionless flow from "I heard about this" to "the coder
-# editing my code":
+# From "I heard about this" to the coder editing my code:
 #
 #   curl -fsSL https://memdoor.ai/install.sh | bash   # drops the binary
-#   memdoor setup                                      # one prompt-driven onboarding
-#   memdoor connect                                    # paste a provider key
-#   cd <project> && memdoor workspace use <slug> && memdoor tui
+#   export OPEN_ROUTER_API_KEY=sk-or-...              # or ANTHROPIC_API_KEY, …; or /connect inside
+#   cd <project> && memdoor tui                       # the first run sets the machine up
 #
-# Two commands and the window. No second package manager invocation.
+# No setup command, no account, no admin password (2026-10-08): the first
+# `memdoor tui` starts the gateway and creates a local user on its own.
 
 set -eu
 
