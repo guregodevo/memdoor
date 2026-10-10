@@ -210,4 +210,25 @@ func TestAForcedCallIsRequiredOnTheResponsesRequest(t *testing.T) {
 	if bodies[1]["tool_choice"] != "required" {
 		t.Fatalf("a forced call says required: %v", bodies[1]["tool_choice"])
 	}
+	for _, tc := range []struct {
+		name  string
+		tools []llm.ToolUnionParam
+	}{
+		{name: "no tools"},
+		{name: "no usable tools", tools: []llm.ToolUnionParam{{}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			params.Tools = tc.tools
+			if _, err := c.Messages().New(llm.WithForcedToolCall(context.Background()), params); err != nil {
+				t.Fatal(err)
+			}
+			body := bodies[len(bodies)-1]
+			if _, there := body["tool_choice"]; there {
+				t.Fatalf("a forced request without usable tools omits tool_choice: %v", body["tool_choice"])
+			}
+			if _, there := body["tools"]; there {
+				t.Fatalf("a request without usable tools omits tools: %v", body["tools"])
+			}
+		})
+	}
 }

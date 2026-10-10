@@ -156,3 +156,22 @@ func TestABareIDThePlanAndTheOpenAIKeyListGoesToThePlan(t *testing.T) {
 		t.Fatalf("an id only the key lists stays on it, got %q %v", p.ID, ok)
 	}
 }
+
+// A plan refusal that arrives inside the stream (response.failed) reads
+// the same as one that arrives as a status: the allowance, and what to do.
+func TestAPlanRefusalInsideTheStreamSaysWhatToDo(t *testing.T) {
+	clearProviderEnv(t)
+	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	_ = chatgpt.NewStore(shared.MemdoorHome()).Save(&chatgpt.Credential{ClientID: "oaiapp_1", AccessToken: "plan-token", RefreshToken: "rt", ExpiresAt: time.Now().Add(time.Hour)})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		responsesSSE(w, `{"type":"response.failed","response":{"id":"r1","status":"failed","error":{"code":"subscription_sharing_usage_limit_exceeded","message":"The ChatGPT user has reached their Subscription Sharing usage limit."}}}`)
+	}))
+	defer srv.Close()
+	oldBase := chatgptBase
+	chatgptBase = srv.URL + "/v1"
+	t.Cleanup(func() { chatgptBase = oldBase })
+	_, err := newChatGPTClient("gpt-6-sol").Messages().New(context.Background(), llm.MessageNewParams{Model: "x", Messages: []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("hi"))}})
+	if err == nil || !strings.Contains(err.Error(), "allowance") || strings.Contains(err.Error(), "stream failed") {
+		t.Fatalf("a mid-stream allowance refusal is worded: %v", err)
+	}
+}

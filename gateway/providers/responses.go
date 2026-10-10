@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -253,6 +254,10 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 	} else {
 		rr, guarded, err = consumeResponsesStream(newIdleTimeoutReader(resp.Body, oaiStallAfter), llm.StreamCallbackFromContext(ctx), llm.StreamGuardFromContext(ctx))
 		if err != nil {
+			var sf *streamFailure
+			if m.client.plan && errors.As(err, &sf) {
+				return nil, chatgptRefusal(http.StatusOK, sf.code, sf.message)
+			}
 			return nil, err
 		}
 	}
@@ -291,6 +296,20 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		InputTokens: rr.Usage.InputTokens, OutputTokens: rr.Usage.OutputTokens, TotalTokens: rr.Usage.InputTokens + rr.Usage.OutputTokens,
 		ContentLen: text.Len(), ContentHead: head(text.String(), 200), ToolCalls: toolCalls, FirstTokenMs: float64(time.Since(start).Milliseconds())})
 	return out, nil
+}
+
+// streamFailure is a response.failed (or error) event: the stream opened
+// fine and the provider refused inside it. A ChatGPT plan's refusals arrive
+// this way (live 2026-10-10: subscription_sharing_usage_limit_exceeded mid
+// stream read as "the gateway's stream failed"), so the code travels for
+// chatgptRefusal to word.
+type streamFailure struct{ code, message string }
+
+func (e *streamFailure) Error() string {
+	if e.code == "" && e.message == "" {
+		return "the gateway's stream failed"
+	}
+	return "the gateway's stream failed: " + strings.TrimSpace(e.code+": "+e.message)
 }
 
 // consumeResponsesStream reads the Responses API's events: text deltas go
@@ -406,13 +425,13 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 			}
 		case "response.failed", "error":
 			if ev.Error != nil {
-				streamErr = fmt.Errorf("the gateway's stream failed: %s: %s", ev.Error.Code, ev.Error.Message)
+				streamErr = &streamFailure{code: ev.Error.Code, message: ev.Error.Message}
 			} else {
 				var rr responsesResponse
 				if json.Unmarshal(ev.Response, &rr) == nil && rr.Error != nil {
-					streamErr = fmt.Errorf("the gateway's stream failed: %s: %s", rr.Error.Code, rr.Error.Message)
+					streamErr = &streamFailure{code: rr.Error.Code, message: rr.Error.Message}
 				} else {
-					streamErr = fmt.Errorf("the gateway's stream failed")
+					streamErr = &streamFailure{}
 				}
 			}
 			return io.EOF
