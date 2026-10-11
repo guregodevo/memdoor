@@ -64,7 +64,7 @@ receipt and the exit code. The codes:
 | 0 | the turn ended and what it changed was checked, or nothing needed a check |
 | 1 | the gateway, the provider or the turn failed |
 | 2 | it ended unverified: a change with no check after it, or a failing check |
-| 3 | in a pipe, the agent asked a question nobody could answer and took the default; `--yes` answers the first option instead. At a terminal you answer it there. |
+| 3 | in a pipe, the agent asked a question nobody could answer and took the default; `--yes` answers the first option instead. At a terminal you answer it there. ||
 
 Each run is a conversation: its id is on stderr at the end, and `memdoor
 resume <id>` opens it in a window. `--conversation <id>` continues one.
@@ -192,8 +192,10 @@ unattended turn safe to leave. See [No babysitting](/docs/no-babysitting).
 
 ## If the gateway restarts
 
-Conversations and runs are on disk; a window reconnects and shows what it
-missed, and a workflow resumes from its last finished task.
+Conversations and runs are on disk. A window reconnects on its own; a turn
+that was mid-run may have finished while it was away, and its result is in
+the saved messages, not replayed. A workflow run that was cut off continues
+from its last finished task with `memdoor workflow resume <run-id>`.
 
 ## Next
 
