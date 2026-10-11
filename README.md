@@ -112,6 +112,20 @@ Each editor session is a conversation on your local gateway; a prompt is a
 turn in the editor's workspace folder, and the turn's text, tool calls and
 approvals show as the editor's own. The steps: [memdoor.ai/docs/editor](https://memdoor.ai/docs/editor).
 
+## From a script
+
+```bash
+memdoor run "make the retry wait configurable and add a test"     # a headless turn, no window
+git diff | memdoor run "review this diff; one line per finding"    # stdin is the input
+memdoor run --json "fix the failing test" | jq 'select(.event=="done")'
+memdoor workflow run release --wait                                 # progress on stderr, results on stdout
+```
+
+The exit code is the turn's receipt: 0 checked, 2 unverified or a failing check,
+3 a question nobody answered (`--yes` answers it), 1 an error. The gateway
+starts if none is running; every run is a conversation `memdoor resume` opens.
+[Headless, then attached](https://memdoor.ai/docs/headless).
+
 ## Where your data goes
 
 Files, sessions and commands stay on your machine. What leaves is what the

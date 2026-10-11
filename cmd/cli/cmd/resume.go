@@ -175,6 +175,10 @@ every one.`,
 			}
 			recs, pick = []sessionRecord{r}, 0
 		default:
+			if headless, _ := cmd.Flags().GetBool("headless"); headless {
+				printSessions(recs, all) // a pipe gets the list, never a question
+				return nil
+			}
 			printSessions(recs, all)
 			fmt.Print("\nResume which? (number or id, Enter to cancel): ")
 			line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -195,6 +199,11 @@ every one.`,
 		}
 
 		r := recs[pick]
+		if headless, _ := cmd.Flags().GetBool("headless"); headless {
+			follow, _ := cmd.Flags().GetBool("follow")
+			limit, _ := cmd.Flags().GetInt("limit")
+			return resumeHeadless(r, limit, follow)
+		}
 		fmt.Printf("Resuming %q (%s, %d turns)\n", r.Title, humanSince(r.UpdatedAt), r.Turns)
 		return runTUI(tuiOptions{
 			resumeChannel:   r.ChannelName,
@@ -306,6 +315,9 @@ var conversationsCmd = &cobra.Command{
 func init() {
 	resumeCmd.Flags().Bool("all", false, "Every conversation, not just this directory's")
 	resumeCmd.Flags().Bool("last", false, "Resume the most recent without asking")
+	resumeCmd.Flags().Bool("headless", false, "Print the conversation as text instead of opening a window (for a pipe)")
+	resumeCmd.Flags().Bool("follow", false, "With --headless: keep printing what a running turn does until it ends")
+	resumeCmd.Flags().Int("limit", 200, "With --headless: how many messages to print")
 	conversationsCmd.Flags().Bool("all", false, "Every conversation, not just this directory's")
 	rootCmd.AddCommand(resumeCmd)
 	rootCmd.AddCommand(conversationsCmd)

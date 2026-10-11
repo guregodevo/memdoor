@@ -222,12 +222,15 @@ func init() {
 	if v := strings.TrimSpace(os.Getenv("MEMDOOR_GATEWAY")); v != "" {
 		defaultGateway = v
 	}
-	rootCmd.PersistentFlags().StringVar(&gatewayAddr, "gateway", defaultGateway, "Gateway server address (or MEMDOOR_GATEWAY)")
+	rootCmd.PersistentFlags().StringVar(&gatewayAddr, "gateway", defaultGateway, "Gateway address (or MEMDOOR_GATEWAY): a URL, host:port, or a bare host or IP (http, port 18789)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
 	rootCmd.PersistentFlags().StringVarP(&workspaceSlug, "workspace", "w", "", "Workspace slug. Optional — overrides auto-discovery (env $MEMDOOR_WORKSPACE → .memdoor/workspace walked up from cwd → ~/.memdoor/config.json). Run 'memdoor workspace which' to see what would resolve.")
 	// Wired here (not on the rootCmd literal) to avoid an init cycle:
 	// the closure references rootCmd to detect the top-level subcommand.
-	rootCmd.PersistentPreRunE = requireWorkspaceSlug
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		gatewayAddr = canonicalGatewayAddr(gatewayAddr)
+		return requireWorkspaceSlug(cmd, args)
+	}
 	// After a command succeeds, print a consistent "what to do next" line
 	// (see suggest.go). Cobra runs PersistentPostRunE only on RunE success.
 	rootCmd.PersistentPostRunE = printNextStep

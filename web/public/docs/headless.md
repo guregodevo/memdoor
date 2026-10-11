@@ -23,13 +23,45 @@ is for, and it is coming.
   the project's workflow and prints the run; `memdoor workflow status
   <run-id>` shows every task's state, `history <name>` what earlier runs did.
   On a CI runner the whole job is the installer, the key in the environment
-  and that one command: it starts the gateway and sets the runner up itself.
+  and that one command with `--wait`: it starts the gateway, sets the runner
+  up itself, and exits with the run's outcome.
   See [Workflows](/docs/workflows).
 - **An editor session.** The coder in VS Code, Zed or JetBrains is a
   conversation on the same gateway. See [In your editor](/docs/editor).
 
 Each of these answers into a conversation; a check's answer also wakes the
 conversation that asked for it, so the agent acts on it without you.
+
+## A turn from a script
+
+`memdoor run` is one coder turn with no window: the prompt from the
+arguments or stdin, the answer on stdout, everything else on stderr, and an
+exit code that is the turn's receipt.
+
+```bash
+memdoor run "make the retry wait configurable and add a test"
+git diff | memdoor run "review this diff; one line per finding"
+memdoor run --json "fix the failing test" | jq -r 'select(.event=="done") | .receipt'
+```
+
+With both arguments and a pipe, what is piped in is the input the prompt is
+about. `--json` streams NDJSON events (`text`, `tool_start`, `tool_done`,
+`question`, `done`); the `done` event carries the conversation id, the
+receipt and the exit code. The codes:
+
+| Exit | Meaning |
+|---|---|
+| 0 | the turn ended and what it changed was checked, or nothing needed a check |
+| 1 | the gateway, the provider or the turn failed |
+| 2 | it ended unverified: a change with no check after it, or a failing check |
+| 3 | the agent asked a question; `--yes` answers the first option instead |
+
+Each run is a conversation: its id is on stderr at the end, and `memdoor
+resume <id>` opens it in a window. `--conversation <id>` continues one.
+
+`memdoor workflow run <name> --wait` is the same contract for a workflow:
+progress on stderr, the files the run produced on stdout, exit 0 done, 2
+failed, 1 stopped; a gate is reported and waited on.
 
 ## Coming back in
 
@@ -43,6 +75,18 @@ Recent conversations:
    3. f9697a1e  make the wait ceiling configurable           Oct 10 19:01   5h ago   ~/Dev/throttle
 $ memdoor resume 2
 ```
+
+`--headless` prints the conversation as text instead, for a pipe:
+
+```bash
+memdoor resume 41af4ac5 --headless | head -40
+memdoor resume --last --headless --follow     # and keep printing what the running turn does
+```
+
+Your lines start with `>`, the agent's are plain, a tool call is one `⏺`
+line. `--gateway` takes a bare host or IP as well as a URL, so the same
+commands reach a gateway on another machine: `memdoor --gateway
+192.168.1.10 resume --all --headless`.
 
 The window opens on that conversation, its saved messages in view and the
 same session underneath: your next line is the next turn of that run. If a

@@ -123,6 +123,10 @@ memdoor workspace use <slug>      # pin this directory to a workspace
 memdoor workspace which           # what would resolve here
 memdoor channels list|create
 memdoor messages -c <channel> [--include-threads]
+memdoor run "<prompt>" [--json] [--yes] [--dir <path>]   # a headless turn: answer on stdout, exit code = the receipt
+memdoor resume <id> --headless [--follow] | head          # the conversation as text, for a pipe
+git diff | memdoor run "review this"                    # stdin is the input the prompt is about
+memdoor workflow run <name> --wait                      # progress on stderr, results on stdout, exit = outcome
 memdoor agent -m "<text>" -c <channel> -a <agent>   # message an agent from a script
 memdoor agent list|show|add|update|delete
 ```
