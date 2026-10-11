@@ -51,7 +51,7 @@ const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
 const FREE: string[] = [
   'The terminal agent: reads, edits, runs the tests, fixes what it broke.',
   'Workflows: say the steps, the coder writes them as a graph with a proof per step and a gate for you. Run by hand or on your local cron.',
-  'Your own key at OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or a company gateway, paid to them at list price.',
+  'Your own key at OpenRouter, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, Anthropic or a company gateway, paid to them at list price; or a ChatGPT Plus/Pro plan with memdoor connect chatgpt.',
   'The decision model: judged reads, a toolbox sized to the turn, a stop instead of a cap. /usage shows what it kept out of your bill.',
   '/model: every model of your providers with its price; pin one.',
 ];
