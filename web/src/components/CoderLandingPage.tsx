@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HOME_META, setMeta } from '../meta';
-import { TerminalDemo } from './TerminalDemo';
 import { WorkflowDemo } from './WorkflowDemo';
 import { Cast } from './Cast';
 import { DemoGallery } from './DemoGallery';
