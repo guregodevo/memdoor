@@ -63,6 +63,30 @@ resume <id>` opens it in a window. `--conversation <id>` continues one.
 progress on stderr, the files the run produced on stdout, exit 0 done, 2
 failed, 1 stopped; a gate is reported and waited on.
 
+## A walk through the doors
+
+Every command below was run in this order on 11 October 2026, against a
+gateway that was not running when the first one started, in a scratch Go
+project whose `Add` returned `a - b`. The exit codes are the receipts.
+
+| Command | Exit | What it did |
+|---|---|---|
+| `echo calc.go \| memdoor run "which function does the file on stdin export? change nothing"` | 0 | started the gateway, read stdin as the input, answered on stdout |
+| `memdoor run --json "run go test ./... and report; change nothing"` | 2 | 15 events; `done` carried `⚠ nothing changed · ran: go test FAIL` |
+| `memdoor workflow run check --wait` (test still broken) | 2 | stderr `failed · 1/2 done`, the failing task named |
+| `memdoor run "fix Add in calc.go so TestAdd passes, then run go test ./..."` | 0 | `✓ checked: 1 file changed · go build PASS · go test PASS` |
+| `memdoor workflow run check --wait` (green) | 0 | stderr `done · 2/2 done` |
+| `memdoor resume --all --headless \| head -4` | 0 | the list, the pipe closed cleanly |
+| `memdoor resume --last --headless \| head -6` | 0 | your line with `>`, the answer, the receipt |
+| `memdoor --gateway 127.0.0.1:18799 providers` | 0 | a bare host:port reaches the gateway |
+| `memdoor guards add --tool bash --pattern '\bgit push\b'` then `memdoor run "commit and push"` | 0 | committed, the push "blocked by a workspace tool guard", said so |
+| `echo "" \| memdoor run "ask me whether the new file is a.go or b.go"` | 3 | `? Should the new empty file be named a.go or b.go? 1. a.go 2. b.go` on stderr |
+| `memdoor cron add --id t --schedule "*/30 * * * *" --agent coder --message "say ok"`, `list`, `remove` | 0 | added, listed once, removed |
+
+The second row is the one to read twice: nothing changed and the last run
+failed, so the pipeline sees 2. A failing test you did not touch is still a
+failing test.
+
 ## Coming back in
 
 ```
