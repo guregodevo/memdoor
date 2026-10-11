@@ -43,10 +43,13 @@ const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
 // runs, the same tasks with the decision model off and on.
 // The hero's three cards are what a workflow gives that a chat does not
 // (Greg, 2026-10-04: the hero "does not show off the powerfulness of workflow").
+// Outcomes, not properties (the YC-partner read, 2026-10-11: "Checked, Gated,
+// Resumable" describe an engine; a developer buys what happens on Tuesday).
+// Each row is something the binary does today, with its receipt in the docs.
 const HERO_PROOF: { value: string; label: string }[] = [
-  { value: 'Checked', label: 'a step is done when its file exists or its command exits 0, not when the model says so' },
-  { value: 'Gated', label: 'the run stops where only you can approve, with the diff in front of you' },
-  { value: 'Resumable', label: 'a failed run starts again at the failed step' },
+  { value: 'Proved', label: 'a step is done when its output exists or its check passes, never because the model says so' },
+  { value: 'Held', label: 'the run stops at the one step only you can approve, with the diff in front of you, and waits' },
+  { value: 'Resumed', label: 'a failed run restarts at the failed step, not from zero; a pipeline fails on the receipt, not on a crash' },
 ];
 
 const FAQ: { q: string; a: string }[] = [
@@ -195,8 +198,8 @@ export function CoderLandingPage() {
               Stop babysitting your coding agent.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
-              Say the steps once. Memdoor runs them as a workflow and comes back when it needs you. On your own API
-              key, free.
+              Say the steps once. It proves each one, stops where only you can decide, and comes back when it
+              needs you. Start it anywhere, open it anywhere: one gateway, every door. On your own API key, free.
             </p>
             <ul className="mx-auto mb-8 max-w-xl space-y-2 text-left text-sm text-neutral-300 lg:mx-0">
               {HERO_PROOF.map((p) => (
