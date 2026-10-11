@@ -27,17 +27,6 @@ import { DemoGallery } from './DemoGallery';
 
 const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 
-// The day's paired runs (docs/features/DECIDE.md, 2026-09-27): same tasks, the
-// decision model off and on, alternating, on the cheapest rung.
-// The cost table of 2026-10-10 (docs/features/DECIDE.md): 44 runs, decisions
-// off and on, alternating, 22/22 passed each way. Every row is shown, the
-// ones where nothing changed included: the saving is on reads with something
-// to judge, and the earlier "−26% on an edit" did not reproduce.
-const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
-  { work: 'A question about this codebase, 3 pairs', off: '54,661', on: '14,367', saved: '−74%' },
-  { work: 'An edit with a test, run green, 3 pairs', off: '64,274', on: '69,746', saved: '+9%' },
-  { work: 'Ten one-file fixes, test green, 10 pairs', off: '37,374', on: '41,621', saved: '+11%' },
-];
 
 // The hero's proof, each figure measured (docs/features/DECIDE.md): paired
 // runs, the same tasks with the decision model off and on.
@@ -51,6 +40,15 @@ const HERO_PROOF: { value: string; label: string }[] = [
   { value: 'Proved', label: 'a step is done when its output exists' },
   { value: 'Held', label: 'it waits where only you can approve' },
   { value: 'Resumed', label: 'a failed run restarts at the failed step' },
+];
+
+// The doors (docs/headless): each is a real command today.
+const DOORS: { name: string; how: string; href: string }[] = [
+  { name: 'The window', how: 'memdoor tui, where you launched it', href: '/docs/tui' },
+  { name: 'A shell or CI', how: 'memdoor run: the answer out, the exit code is the receipt', href: '/docs/headless' },
+  { name: 'Your editor', how: 'VS Code, Zed, JetBrains over ACP', href: '/docs/editor' },
+  { name: 'A schedule', how: 'cron for a turn or a whole workflow', href: '/docs/cron' },
+  { name: 'Your phone', how: '/remote: the terminal itself, end to end encrypted', href: '/docs/remote' },
 ];
 
 const FAQ: { q: string; a: string }[] = [
@@ -262,62 +260,41 @@ export function CoderLandingPage() {
           </div>
         </section>
 
-        {/* THE NUMBERS — the claim about the bill, measured. */}
+        {/* THE DOORS — one gateway, every door (Greg, 2026-10-11). */}
         <section className="border-t border-neutral-100 bg-neutral-50">
-        <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
-          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">
-            Measured on paired runs
+          <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
+            <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">One gateway, every door</div>
+            <h2 className="mx-auto mb-4 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+              Start it anywhere. Open it anywhere.
+            </h2>
+            <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
+              A run is a conversation on a gateway on your machine. Every door opens the same one.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              {DOORS.map((d) => (
+                <a
+                  key={d.name}
+                  href={d.href}
+                  className="rounded-2xl border border-neutral-200 bg-white p-5 transition hover:border-neutral-400"
+                >
+                  <div className="mb-1 font-semibold text-neutral-900">{d.name}</div>
+                  <p className="text-sm text-neutral-500">{d.how}</p>
+                </a>
+              ))}
+            </div>
+            <p className="mx-auto mt-10 max-w-2xl text-center text-xs text-neutral-500">
+              And the bill, measured on paired runs: a decision model judges what the coding model reads, 74% fewer
+              input tokens on a code question, no change where the task reads the same files either way, 22 of 22
+              passed each way. The rows and the harness:{' '}
+              <a
+                href="https://github.com/guregodevo/memdoor/blob/main/docs/features/DECIDE.md"
+                className="underline underline-offset-4 hover:text-neutral-700"
+              >
+                docs/features/DECIDE.md
+              </a>
+              .
+            </p>
           </div>
-          <h2 className="mx-auto mb-3 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-            Three quarters fewer input tokens on a code question. The same pass rate everywhere.
-          </h2>
-          <p className="mx-auto mb-4 max-w-2xl text-center text-sm text-neutral-500">
-            44 runs, decisions off and on, alternating: 22 of 22 passed each way (<code className="text-neutral-700">go test</code>{' '}
-            on the copy, never the model's word). Where there is something to judge, a search, the chat model reads a
-            quarter of it; where the task reads the same files either way, nothing changes.
-          </p>
-          <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
-            A decision model judges every search hit, file section and log line before the coding model reads it (a
-            judged search returns a twelfth of what grep would), and a turn that stops making progress ends instead
-            of looping. It runs on your OpenRouter key or a TypeSafe decision key; on a vendor key alone it is off
-            and the agent works without the saving.
-          </p>
-          <div className="mx-auto max-w-3xl overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wider text-neutral-500">
-                  <th className="py-3 pr-4 font-medium">The work</th>
-                  <th className="py-3 pr-4 text-right font-medium">Without</th>
-                  <th className="py-3 pr-4 text-right font-medium">With</th>
-                  <th className="py-3 text-right font-medium">Saved</th>
-                </tr>
-              </thead>
-              <tbody className="text-neutral-700">
-                {MEASURED.map((m) => (
-                  <tr key={m.work} className="border-b border-neutral-100">
-                    <td className="py-4 pr-4">{m.work}</td>
-                    <td className="py-4 pr-4 text-right tabular-nums text-neutral-500">{m.off}</td>
-                    <td className="py-4 pr-4 text-right tabular-nums font-semibold text-neutral-900">{m.on}</td>
-                    <td className={`py-4 text-right font-semibold ${m.saved.startsWith('−') ? 'text-emerald-700' : 'text-neutral-500'}`}>{m.saved}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-neutral-500">
-            Means over the pairs shown, measured 10 October 2026 on the first rung. The method, the rows and the harness:{' '}
-            <a
-              href="https://github.com/guregodevo/memdoor/blob/main/docs/features/DECIDE.md"
-              className="underline underline-offset-4 hover:text-neutral-700"
-            >
-              docs/features/DECIDE.md
-            </a>
-            .
-          </p>
-          <div className="mx-auto mt-10 w-full max-w-3xl">
-            <TerminalDemo />
-          </div>
-        </div>
         </section>
 
         {/* HOW — four mechanisms, no mystery. */}
@@ -386,9 +363,10 @@ export function CoderLandingPage() {
             <div className="space-y-3 font-mono text-[13px] sm:text-sm">
               {[
                 ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
-                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account — or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …, or /connect inside; on a ChatGPT Plus/Pro plan, skip this: /connect chatgpt signs in, no key'],
+                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account; or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …'],
+                ['memdoor connect chatgpt', 'no key: Sign in with ChatGPT, and your Plus/Pro plan answers'],
                 ['cd your-project && memdoor tui', 'the first run sets the machine up; the agent works where you launch it'],
-                ['/model nvidia/nemotron-3-super-120b-a12b:free', 'no money on the key yet: a free model, 50 requests a day; its hosts train on what they are sent, so a trial, not private code'],
+                ['/model nvidia/nemotron-3-super-120b-a12b:free', 'no money on the key yet: a free model, 50 requests a day; its hosts train on what they are sent'],
                 ['/model', 'which model is answering, and what it lists for'],
               ].map(([cmd, note]) => (
                 <div key={cmd} className="rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3">
