@@ -17,41 +17,43 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // agent's page saw a CIFAR-10 training recipe and filed it under ML ops. The
 // poster is the frame before the cast loads, and the still for anyone who
 // prefers reduced motion.
+// Four tabs, the four things it is (Greg, 2026-10-11: "Workflows / Headless /
+// Cost saving", "No babysitting? the top 4 features"). Each is a real session.
 const TAKES = [
   {
-    key: 'release',
-    label: 'A gate',
+    key: 'workflows',
+    label: 'Workflows',
     ask: 'Vet and tests in parallel, release notes from the last 8 commits, wait for my approval, announce.',
     cast: '/workflow-release.cast',
     poster: 'npt:0:31',
     what: 'two at once → a merge → waits for you → goes on',
   },
   {
-    key: 'digest',
-    label: 'A chain',
-    ask: 'List the last 10 commits, summarize them in three bullets, have an agent write DIGEST.md.',
-    cast: '/workflow-digest.cast',
-    poster: 'npt:0:30',
-    what: 'command → llm → agent',
+    key: 'nobabysitting',
+    label: 'No babysitting',
+    ask: 'Reproduce GitHub issue #3, fix it, write the PR, wait for my review.',
+    cast: '/review-loop.cast',
+    poster: 'npt:0:31',
+    what: 'failing test → fix → gate → your one comment → fixed → PR',
   },
   {
-    key: 'research',
-    label: 'A fan-out',
-    ask: 'Deep research on the top 5 Hacker News stories: read each article, summarize each.',
-    cast: '/workflow-hn.cast',
-    poster: 'npt:0:24',
-    what: 'one fetch → five readers at once → one merge',
+    // Recorded 2026-10-11: a plain shell, no window. The gateway starts on the
+    // first command; the exit code is the turn's receipt; resume prints the
+    // same conversation into a pipe.
+    key: 'headless',
+    label: 'Headless',
+    ask: 'git diff | memdoor run "review this diff" — then a fix, a workflow with --wait, and resume | head.',
+    cast: '/headless.cast',
+    poster: 'npt:0:20',
+    what: 'a shell → exit codes from the receipts → the same conversation, piped',
   },
   {
-    // 2026-10-04: an ARTICLE as a workflow. article-to-workflow turned Karpathy's
-    // "A Recipe for Training Neural Networks" into ten steps on CIFAR-10; this
-    // take is that workflow's own run, resumed after a stop, to its spending gate.
-    key: 'article',
-    label: 'An article',
-    ask: "Karpathy's “A Recipe for Training Neural Networks”, as a workflow: real data, the loss-at-init check, baselines, then a gate before any GPU spend.",
-    cast: '/workflow-karpathy.cast',
-    poster: 'npt:0:40',
-    what: 'resumed → eight steps proven, loss at init 2.3026 → waits for you before spending',
+    key: 'cost',
+    label: 'Cost saving',
+    ask: 'Where does a turn give up when the same tool keeps failing?',
+    cast: '/demo.cast',
+    poster: 'npt:0:12',
+    what: 'jgrep kept 6 of 29 hunks, jread 4 of 41 sections · −49% tokens on this turn',
   },
 ] as const;
 
