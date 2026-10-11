@@ -76,8 +76,8 @@ project whose `Add` returned `a - b`. The exit codes are the receipts.
 | `memdoor workflow run check --wait` (test still broken) | 2 | stderr `failed · 1/2 done`, the failing task named |
 | `memdoor run "fix Add in calc.go so TestAdd passes, then run go test ./..."` | 0 | `✓ checked: 1 file changed · go build PASS · go test PASS` |
 | `memdoor workflow run check --wait` (green) | 0 | stderr `done · 2/2 done` |
-| `memdoor resume --all --headless \| head -4` | 0 | the list, the pipe closed cleanly |
-| `memdoor resume --last --headless \| head -6` | 0 | your line with `>`, the answer, the receipt |
+| `memdoor resume --all \| head -4` | 0 | the list, the pipe closed cleanly |
+| `memdoor resume --last \| head -6` | 0 | your line with `>`, the answer, the receipt |
 | `memdoor --gateway 127.0.0.1:18799 providers` | 0 | a bare host:port reaches the gateway |
 | `memdoor guards add --tool bash --pattern '\bgit push\b'` then `memdoor run "commit and push"` | 0 | committed, the push "blocked by a workspace tool guard", said so |
 | `echo "" \| memdoor run "ask me whether the new file is a.go or b.go"` | 3 | `? Should the new empty file be named a.go or b.go? 1. a.go 2. b.go` on stderr |
@@ -131,17 +131,23 @@ Recent conversations:
 $ memdoor resume 2
 ```
 
-`--headless` prints the conversation as text instead, for a pipe:
+Into a pipe, the same command prints the conversation as text instead of
+opening a window; no flag, the Unix rule:
 
 ```bash
-memdoor resume 41af4ac5 --headless | head -40
-memdoor resume --last --headless --follow     # and keep printing what the running turn does
+memdoor resume 41af4ac5 | head -40
+memdoor resume --last --follow     # text, and keep printing what the running turn does
 ```
 
 Your lines start with `>`, the agent's are plain, a tool call is one `⏺`
 line. `--gateway` takes a bare host or IP as well as a URL, so the same
 commands reach a gateway on another machine: `memdoor --gateway
-192.168.1.10 resume --all --headless`.
+192.168.1.10 resume --all | head`.
+
+Which commands are headless: every one except the two that are a window.
+`memdoor run`, `workflow run`, `cron add`, `guards` and the rest are
+commands and nothing else, whatever they are connected to. `memdoor tui` is
+the window. `memdoor resume` is the window at a terminal and text in a pipe.
 
 The window opens on that conversation, its saved messages in view and the
 same session underneath: your next line is the next turn of that run. If a

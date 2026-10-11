@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 )
@@ -101,5 +102,30 @@ func TestHeadlessSinkJSON(t *testing.T) {
 	}
 	if plain.String() != "answer\n" {
 		t.Fatalf("plain stdout = %q", plain.String())
+	}
+}
+
+// Stdin is the input only when it is a pipe or a file; an open socket or a
+// terminal is never read, so `run "…"` cannot hang on one.
+func TestPromptFromArgsAndStdin(t *testing.T) {
+	r, w, _ := os.Pipe()
+	w.WriteString("diff --git a b\n")
+	w.Close()
+	got, err := promptFromArgsAndStdin([]string{"review", "this"}, r)
+	if err != nil || !strings.HasPrefix(got, "review this\n\nInput:\ndiff --git a b") {
+		t.Fatalf("args + pipe: %q %v", got, err)
+	}
+	r2, w2, _ := os.Pipe()
+	w2.WriteString("summarize the failing tests")
+	w2.Close()
+	if got, _ := promptFromArgsAndStdin(nil, r2); got != "summarize the failing tests" {
+		t.Fatalf("pipe alone is the prompt, got %q", got)
+	}
+	devnull, _ := os.Open(os.DevNull) // a character device: not read
+	if got, err := promptFromArgsAndStdin([]string{"hi"}, devnull); err != nil || got != "hi" {
+		t.Fatalf("a device on stdin is left alone: %q %v", got, err)
+	}
+	if _, err := promptFromArgsAndStdin(nil, devnull); err == nil {
+		t.Fatal("no args and no pipe is no prompt")
 	}
 }

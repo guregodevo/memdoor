@@ -32,6 +32,14 @@ var (
 // cron, secrets, rag, users, …) talks to a
 // workspace-scoped API and MUST receive an explicit workspace.
 var noWorkspaceTopLevels = map[string]bool{
+	// The headless doors set the machine up themselves (firstRunReady in
+	// their RunE): the gate must not fire first. Live 2026-10-11: on a GitHub
+	// runner that had never seen Memdoor, `memdoor run` died at this gate
+	// with "nothing is set up on this machine yet" before it could set it up.
+	"run":        true,
+	"workflow":   true,
+	"cron":       true,
+	"resume":     true,
 	"auth":       true,
 	"gateway":    true,
 	"doctor":     true,

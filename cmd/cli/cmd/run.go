@@ -321,11 +321,13 @@ func init() {
 
 // promptFromArgsAndStdin is the pipe contract: arguments are the prompt;
 // stdin alone is the prompt; both means stdin is the input the prompt is
-// about. A terminal on stdin is never read.
+// about. Stdin is read only when it is a pipe or a file: a terminal is
+// never read, and neither is a socket a harness keeps open — `run "…"`
+// hung on one, waiting for an EOF that never came (2026-10-11).
 func promptFromArgsAndStdin(args []string, stdin *os.File) (string, error) {
 	text := strings.TrimSpace(strings.Join(args, " "))
 	piped := ""
-	if fi, err := stdin.Stat(); err == nil && fi.Mode()&os.ModeCharDevice == 0 {
+	if stdinIsPipeOrFile(stdin) {
 		b, _ := io.ReadAll(io.LimitReader(stdin, 1<<20))
 		piped = strings.TrimSpace(string(b))
 	}
@@ -338,4 +340,12 @@ func promptFromArgsAndStdin(args []string, stdin *os.File) (string, error) {
 		return text, nil
 	}
 	return text + "\n\nInput:\n" + piped, nil
+}
+
+func stdinIsPipeOrFile(f *os.File) bool {
+	fi, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeNamedPipe != 0 || fi.Mode().IsRegular()
 }

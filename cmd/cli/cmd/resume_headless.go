@@ -17,10 +17,11 @@ import (
 	"memdoor/gateway/protocol"
 )
 
-// memdoor resume <id> --headless prints the conversation as text instead
-// of opening a window (Greg, 2026-10-11: "memdoor resume xxxx --headless |
-// head"): a pipe reads it, --follow keeps printing what a running turn does
-// until it ends. Your lines start with "> ", the agent's are plain, a tool
+// memdoor resume <id> into a pipe prints the conversation as text instead
+// of opening a window (Greg, 2026-10-11: "memdoor resume xxxx | head", then
+// "it s headless by default or you have to put --headless?" — the Unix
+// rule: a terminal gets the window, a pipe gets text, no flag); --follow
+// prints and keeps printing what a running turn does until it ends. Your lines start with "> ", the agent's are plain, a tool
 // call is one ⏺ line.
 
 // transcriptLine is one printed message.
@@ -152,4 +153,9 @@ func resumeHeadless(r sessionRecord, limit int, follow bool) error {
 	case <-ctx.Done():
 	}
 	return nil
+}
+
+func stdoutIsTerminal() bool {
+	fi, err := os.Stdout.Stat()
+	return err == nil && fi.Mode()&os.ModeCharDevice != 0
 }

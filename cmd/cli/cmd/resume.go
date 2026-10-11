@@ -175,7 +175,7 @@ every one.`,
 			}
 			recs, pick = []sessionRecord{r}, 0
 		default:
-			if headless, _ := cmd.Flags().GetBool("headless"); headless {
+			if !stdoutIsTerminal() {
 				printSessions(recs, all) // a pipe gets the list, never a question
 				return nil
 			}
@@ -199,8 +199,9 @@ every one.`,
 		}
 
 		r := recs[pick]
-		if headless, _ := cmd.Flags().GetBool("headless"); headless {
-			follow, _ := cmd.Flags().GetBool("follow")
+		// The Unix rule, no flag to remember (Greg, 2026-10-11): at a
+		// terminal the conversation is a window; into a pipe it is text.
+		if follow, _ := cmd.Flags().GetBool("follow"); follow || !stdoutIsTerminal() {
 			limit, _ := cmd.Flags().GetInt("limit")
 			return resumeHeadless(r, limit, follow)
 		}
@@ -315,9 +316,8 @@ var conversationsCmd = &cobra.Command{
 func init() {
 	resumeCmd.Flags().Bool("all", false, "Every conversation, not just this directory's")
 	resumeCmd.Flags().Bool("last", false, "Resume the most recent without asking")
-	resumeCmd.Flags().Bool("headless", false, "Print the conversation as text instead of opening a window (for a pipe)")
-	resumeCmd.Flags().Bool("follow", false, "With --headless: keep printing what a running turn does until it ends")
-	resumeCmd.Flags().Int("limit", 200, "With --headless: how many messages to print")
+	resumeCmd.Flags().Bool("follow", false, "Print the conversation as text and keep printing what a running turn does until it ends")
+	resumeCmd.Flags().Int("limit", 200, "Into a pipe: how many messages to print")
 	conversationsCmd.Flags().Bool("all", false, "Every conversation, not just this directory's")
 	rootCmd.AddCommand(resumeCmd)
 	rootCmd.AddCommand(conversationsCmd)
