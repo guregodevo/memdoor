@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -59,7 +61,9 @@ outcome, read from its receipt:
   0  ended, and what it changed was checked (or nothing needed a check)
   1  the gateway, the provider or the turn failed
   2  ended unverified: a change with no check after it, or a failing check
-  3  the agent asked a question; --yes answers the first option instead
+  3  the agent asked a question in a pipe, nobody could answer, the default
+     was taken; --yes answers the first option instead. At a terminal you
+     answer the question there and the code is the receipt's.
 
   memdoor run "make the retry wait configurable and add a test"
   echo "summarize the failing tests" | memdoor run --json
@@ -95,6 +99,12 @@ its id is printed at the end, and memdoor resume <id> opens it in a window.
 			}
 		}
 		sink := &headlessSink{out: os.Stdout, errOut: os.Stderr, json: runJSONFlag, yes: runYesFlag}
+		if stdinIsTerminal(os.Stdin) {
+			// A person at the terminal answers the agent's questions there
+			// (live 2026-10-11: an answer typed at a headless run went
+			// nowhere, the default was taken, and the run exited 3).
+			sink.answers = bufio.NewReader(os.Stdin)
+		}
 		err = runner.Run(ctx, conv, dir, text, sink)
 		code := sink.finish(conv, err)
 		if code != runExitOK {
@@ -109,6 +119,7 @@ its id is printed at the end, and memdoor resume <id> opens it in a window.
 type headlessSink struct {
 	out, errOut io.Writer
 	json, yes   bool
+	answers     *bufio.Reader // a terminal on stdin: questions are answered there
 
 	mu      sync.Mutex
 	tail    string // the last text, for the receipt
@@ -166,15 +177,16 @@ func (s *headlessSink) ToolDone(id string, output string, failed bool) {
 	s.event("tool_done", map[string]any{"id": id, "output": output, "failed": failed})
 }
 
-// Ask: with --yes the first option (Yes, for an approval); without it the
-// question is printed, left unanswered, and the run exits 3.
+// Ask: with --yes the first option (Yes, for an approval); at a terminal
+// the person answers on stderr's prompt (a number or the text, Enter for
+// the default); in a pipe with neither the question is printed, left to
+// its default, and the run exits 3.
 func (s *headlessSink) Ask(question string, options []string, approval string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	answerable := s.yes || s.answers != nil
 	if s.json {
-		s.event("question", map[string]any{"question": question, "options": options, "approval": approval, "answered": s.yes})
-	} else {
-		fmt.Fprintf(s.errOut, "? %s\n", question)
+		s.event("question", map[string]any{"question": question, "options": options, "approval": approval, "answered": answerable})
 	}
 	if s.yes {
 		if approval != "" {
@@ -185,8 +197,30 @@ func (s *headlessSink) Ask(question string, options []string, approval string) s
 		}
 		return ""
 	}
-	s.asked = true
-	return ""
+	fmt.Fprintf(s.errOut, "\n? %s\n", question)
+	for i, o := range options {
+		fmt.Fprintf(s.errOut, "  %d. %s\n", i+1, o)
+	}
+	if s.answers == nil {
+		s.asked = true
+		return ""
+	}
+	fmt.Fprint(s.errOut, "> ")
+	line, _ := s.answers.ReadString('\n')
+	return pickAnswer(strings.TrimSpace(line), options)
+}
+
+// pickAnswer: a number picks that option, text is the answer, "" the default.
+func pickAnswer(line string, options []string) string {
+	if n, err := strconv.Atoi(line); err == nil && n >= 1 && n <= len(options) {
+		return options[n-1]
+	}
+	return line
+}
+
+func stdinIsTerminal(f *os.File) bool {
+	fi, err := f.Stat()
+	return err == nil && fi.Mode()&os.ModeCharDevice != 0
 }
 
 // finish prints the end of the run and returns its exit code.

@@ -54,7 +54,7 @@ receipt and the exit code. The codes:
 | 0 | the turn ended and what it changed was checked, or nothing needed a check |
 | 1 | the gateway, the provider or the turn failed |
 | 2 | it ended unverified: a change with no check after it, or a failing check |
-| 3 | the agent asked a question; `--yes` answers the first option instead |
+| 3 | in a pipe, the agent asked a question nobody could answer and took the default; `--yes` answers the first option instead. At a terminal you answer it there. |
 
 Each run is a conversation: its id is on stderr at the end, and `memdoor
 resume <id>` opens it in a window. `--conversation <id>` continues one.

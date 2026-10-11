@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"strings"
@@ -72,11 +73,27 @@ func TestHeadlessSinkJSON(t *testing.T) {
 		t.Fatalf("events = %v", kinds)
 	}
 
-	// Without --yes a question is left to the runner's default and the run exits 3.
+	// At a terminal the person answers: a number picks an option, text is
+	// the answer, and the run does not exit 3.
+	tty := &headlessSink{out: &bytes.Buffer{}, errOut: &bytes.Buffer{}, answers: bufio.NewReader(strings.NewReader("2\nmain.go\n"))}
+	if got := tty.Ask("Which?", []string{"a", "b"}, ""); got != "b" {
+		t.Fatalf("a number picks the option, got %q", got)
+	}
+	if got := tty.Ask("Which file?", nil, ""); got != "main.go" {
+		t.Fatalf("text is the answer, got %q", got)
+	}
+	if tty.finish("c2", nil) != 0 {
+		t.Fatal("an answered question is not exit 3")
+	}
+
+	// In a pipe without --yes a question is left to the runner's default and the run exits 3.
 	var plain, perr bytes.Buffer
 	p := &headlessSink{out: &plain, errOut: &perr}
 	if got := p.Ask("Which?", []string{"a", "b"}, ""); got != "" {
 		t.Fatalf("no --yes: no answer, got %q", got)
+	}
+	if !strings.Contains(perr.String(), "1. a") {
+		t.Fatalf("the options are printed with the question: %q", perr.String())
 	}
 	p.Text("answer")
 	if code := p.finish("c1", nil); code != 3 || !strings.Contains(perr.String(), "? Which?") || !strings.Contains(perr.String(), "memdoor resume c1") {
