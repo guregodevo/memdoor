@@ -17,7 +17,10 @@ func TestHeadlessExitCodes(t *testing.T) {
 	}{
 		{"Done.\n✓ checked: 1 file changed · go test ./... PASS", false, 0},
 		{"Done.\n⚠ unverified: 2 files changed · no build, test or run after it", false, 2},
-		{"✓ checked: 1 file changed · go build ./... PASS · go test ./... FAIL", false, 2},
+		// Greg's first run (2026-10-11): failed twice on the way, then passed — the receipt says checked, so 0.
+		{"Done.\n✓ checked: 2 files changed · `go build calc.go` FAIL · `go test ./...` FAIL · `go mod init tmpcalc && go test ./...` PASS", false, 0},
+		{"⚠ nothing changed · ran: `go test ./...` FAIL · `go test ./...` PASS", false, 0},
+		{"⚠ nothing changed · ran: `go test ./...` PASS · `go vet ./...` FAIL", false, 2},
 		{"Here is the answer, no tools used.", false, 0},
 		{"Green.\n⚠ nothing changed · ran: `go test ./...` PASS", false, 0},
 		{"Red.\n⚠ nothing changed · ran: `go test ./...` FAIL", false, 2},

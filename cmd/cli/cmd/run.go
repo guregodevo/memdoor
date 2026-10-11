@@ -241,18 +241,40 @@ func receiptIn(text string) string {
 	return strings.TrimSpace(line)
 }
 
-// runExitCode: an error is 1, an unanswered question 3, an unverified
-// receipt or a failing check 2, anything else 0.
+// runExitCode: an error is 1, an unanswered question 3, and the receipt's
+// own verdict decides between 0 and 2. "✓ checked" is 0 whatever failed
+// on the way there — a receipt lists the turn's history, and a turn that
+// failed twice and then passed is a pass (live 2026-10-11: `go build` FAIL,
+// `go test` FAIL, then `go mod init && go test` PASS read as exit 2).
+// "⚠ unverified" and "⚠ failing after the change" are 2. "⚠ nothing
+// changed" ran things without changing anything: its LAST run decides.
 func runExitCode(err error, asked bool, receipt string) int {
 	switch {
 	case err != nil:
 		return runExitError
 	case asked:
 		return runExitAsked
-	case strings.HasPrefix(receipt, receiptUnverified), strings.HasPrefix(receipt, receiptFailing), strings.Contains(receipt, " FAIL"):
+	case strings.HasPrefix(receipt, receiptChecked):
+		return runExitOK
+	case strings.HasPrefix(receipt, receiptUnverified), strings.HasPrefix(receipt, receiptFailing):
+		return runExitUnverified
+	case strings.HasPrefix(receipt, receiptNoChange) && lastRunFailed(receipt):
 		return runExitUnverified
 	}
 	return runExitOK
+}
+
+// lastRunFailed reads the receipt's " · "-separated entries and reports
+// whether the last one with a verdict says FAIL.
+func lastRunFailed(receipt string) bool {
+	last := ""
+	for _, part := range strings.Split(receipt, " · ") {
+		part = strings.TrimSpace(part)
+		if strings.HasSuffix(part, " PASS") || strings.HasSuffix(part, " FAIL") {
+			last = part
+		}
+	}
+	return strings.HasSuffix(last, " FAIL")
 }
 
 func init() {
