@@ -4,13 +4,23 @@ Every run is a conversation on your gateway, whether a window was open or
 not. That is what lets you leave a run alone and come back into it live,
 instead of killing it and starting over.
 
+## The rule
+
+Every command is headless except the window. `memdoor tui` is the window.
+`memdoor resume` is the window at a terminal and text into a pipe, the Unix
+rule, no flag. `memdoor run`, `workflow run`, `cron add`, `guards` and the
+rest are commands and nothing else: a prompt or arguments in, text or events
+out, an exit code. Stdin is the input when it is a pipe or a file; a
+terminal is never read.
+
 Headless means it runs without a desktop app or an interface: the gateway is
 a background process on the machine the run belongs to (your laptop, a CI
-runner), and nothing else is needed. You never start it by hand: `memdoor tui`, `memdoor acp`, `memdoor workflow
-run`, `memdoor workflow resume` and `memdoor cron add` start one when none
-is running, and set the machine up the first time. A run with the laptop
-closed is not here yet; it is what the hosted workflow state on memdoor.ai
-is for, and it is coming.
+runner), and nothing else is needed. You never start it by hand: `memdoor
+run`, `workflow run`, `workflow resume`, `cron add`, `resume`, `tui` and
+`acp` start one when none is running, and set the machine up the first
+time (a home that has never seen Memdoor is one command away from its first
+answer). A run with the laptop closed is not here yet; it is what the hosted
+workflow state on memdoor.ai is for, and it is coming.
 
 ## Runs that need no window
 
@@ -114,9 +124,11 @@ jobs:
 
 The step fails when the review's last check fails (exit 2) or the workflow
 run does, which is the point: the run's outcome is the job's. `?ci=1` keeps
-the install out of the download count. The walk above, on a container that
-had never seen Memdoor, is this job's receipt; `memdoor run --json` piped
-into `jq` turns the review into an annotation if you want one.
+the install out of the download count. The receipt behind this job is the
+walk above and the same three commands on a home that had never seen
+Memdoor (set up, answered, exit codes as shown); it has not been run on
+GitHub's own runners yet. `memdoor run --json` piped into `jq` turns the
+review into an annotation if you want one.
 
 ## Coming back in
 
@@ -143,11 +155,6 @@ Your lines start with `>`, the agent's are plain, a tool call is one `⏺`
 line. `--gateway` takes a bare host or IP as well as a URL, so the same
 commands reach a gateway on another machine: `memdoor --gateway
 192.168.1.10 resume --all | head`.
-
-Which commands are headless: every one except the two that are a window.
-`memdoor run`, `workflow run`, `cron add`, `guards` and the rest are
-commands and nothing else, whatever they are connected to. `memdoor tui` is
-the window. `memdoor resume` is the window at a terminal and text in a pipe.
 
 The window opens on that conversation, its saved messages in view and the
 same session underneath: your next line is the next turn of that run. If a
