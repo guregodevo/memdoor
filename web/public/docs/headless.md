@@ -87,6 +87,37 @@ The second row is the one to read twice: nothing changed and the last run
 failed, so the pipeline sees 2. A failing test you did not touch is still a
 failing test.
 
+## In CI
+
+The job is the installer, the key, and the command, in one step so the
+gateway the first command starts is still there for the next. On GitHub:
+
+```yaml
+jobs:
+  memdoor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-go@v5          # whatever the project's checks need
+        with: { go-version: stable }
+      - name: Review the change and run the project's check workflow
+        env:
+          OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+        run: |
+          curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
+          export PATH="$HOME/.local/bin:$PATH"
+          git diff origin/${{ github.base_ref }}...HEAD \
+            | memdoor run "review this diff; one finding per line; change nothing"
+          memdoor workflow run check --wait
+```
+
+The step fails when the review's last check fails (exit 2) or the workflow
+run does, which is the point: the run's outcome is the job's. `?ci=1` keeps
+the install out of the download count. The walk above, on a container that
+had never seen Memdoor, is this job's receipt; `memdoor run --json` piped
+into `jq` turns the review into an annotation if you want one.
+
 ## Coming back in
 
 ```
