@@ -69,7 +69,7 @@ export function DownloadPage() {
         <div className="mb-3 text-xs uppercase tracking-widest text-neutral-400">Install</div>
         <h1 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">One binary, one line.</h1>
         <p className="mb-8 text-neutral-500">
-          Apple Silicon Macs and Linux; a Windows build exists but has not been run yet. Your files, sessions and notes stay on the machine you run it on.
+          macOS (Apple Silicon and Intel), Linux and Windows; the three installers run on GitHub's runners on every change to them. Your files, sessions and notes stay on the machine you run it on.
         </p>
 
         <div className="rounded-2xl border border-neutral-200 bg-neutral-950 p-5">

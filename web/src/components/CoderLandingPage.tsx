@@ -213,8 +213,7 @@ export function CoderLandingPage() {
               <InstallLine dark />
               <p className="text-xs text-neutral-400">
                 Free. Runs on an API key (OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek…) or on a ChatGPT Plus/Pro
-                plan with Sign in with ChatGPT, no key. A free OpenRouter account is enough to try it. macOS (Apple
-                Silicon), Linux, Windows.
+                plan with Sign in with ChatGPT, no key. A free OpenRouter account is enough to try it. macOS, Linux, Windows.
               </p>
               <p className="text-xs text-neutral-400">
                 Memdoor ships itself with{' '}

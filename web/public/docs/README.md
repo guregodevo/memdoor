@@ -44,8 +44,7 @@ cd your-project && memdoor tui
 ## Common questions
 
 **What do I need?** A terminal and a provider key (OpenRouter, Anthropic,
-OpenAI, Gemini, DeepSeek, …), on an Apple Silicon Mac or
-Linux: one binary. A Windows build exists but has not been run yet.
+OpenAI, Gemini, DeepSeek, …), on a Mac, Linux or Windows: one binary.
 
 **Do you resell me tokens?** No. You hold the account at your provider and pay
 their list price directly; nothing of your code passes through memdoor.ai and nothing

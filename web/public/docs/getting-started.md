@@ -2,7 +2,7 @@
 
 From nothing to a coding agent working in your project, on your own API key
 (OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, …), in about two minutes. Everything here happens in a
-terminal, on an Apple Silicon Mac, Linux or Windows, one binary. The three installers run on GitHub's
+terminal, on a Mac (Apple Silicon or Intel), Linux or Windows, one binary. The three installers run on GitHub's
 runners on every change to them.
 
 ## Install
