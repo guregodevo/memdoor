@@ -11,6 +11,7 @@ names the provider that answers.
 ```
 memdoor providers                 # each provider, connected or not, ● the one answering
 memdoor connect <kind>            # pick, paste the key unseen, probed, kept
+memdoor connect chatgpt           # no key: Sign in with ChatGPT, your Plus/Pro plan answers
 memdoor providers --models groq   # one provider's list: window · max out · $ per million
 memdoor providers --audit         # where every window came from, and which are guesses
 ```
@@ -36,15 +37,23 @@ the same coding turn on its fast model — a planted bug, a failing test,
 - One key for 380 tool-capable models; the ladder, `/model` with real
   prices and host ordering live here.
 
-## Anthropic
+## ChatGPT Plus or Pro — no key
 
-- **Key**: `ANTHROPIC_API_KEY` · base `https://api.anthropic.com`
-- **Its API states**: `max_input_tokens`, `max_tokens`, capabilities —
-  image input, thinking, effort levels — per model.
-- **Fast model**: `claude-haiku-4-5-20251001` (200k / 64k); Sonnet 5,
-  Opus 4.6 and Fable 5.1 are 1M / 128k.
-- A Claude subscription is not an API key; the key comes from
-  console.anthropic.com. Streams.
+- **Sign in**: `memdoor connect chatgpt`, or `/connect chatgpt` in the
+  window. The browser opens OpenAI's Sign in with ChatGPT; you approve;
+  the plan is probed like a key and kept, encrypted, in
+  `~/.memdoor/chatgpt-login.json`. `memdoor connect --remove chatgpt` signs
+  out.
+- **What answers**: the models your plan lists, over the Responses API, on
+  the plan's own allowance. OpenAI opened this to open-source, locally run
+  apps in September 2026. A plan is a provider like any other: `/model`
+  shows its models, a bare pin that both the plan and an OpenAI key list
+  goes to the plan, `openai:<id>` names the key.
+- **Limits**: a weekly allowance per app; when it is used up the window
+  says so and the turn ends there. The decision model needs an OpenRouter
+  or decision key of its own, so on a plan alone it is off.
+- A Claude subscription has no equivalent: Anthropic's terms forbid it
+  outside Claude Code, so Claude needs an API key (below).
 
 ## OpenAI
 
@@ -102,6 +111,16 @@ the same coding turn on its fast model — a planted bug, a failing test,
 - **Fast model**: `zai-org/GLM-5.3-Flash` ($0.15 / $0.50 per million);
   also DeepSeek V4, Kimi K3, Nemotron. Ids carry case — type them as
   listed.
+
+## Anthropic
+
+- **Key**: `ANTHROPIC_API_KEY` · base `https://api.anthropic.com`
+- **Its API states**: `max_input_tokens`, `max_tokens`, capabilities —
+  image input, thinking, effort levels — per model.
+- **Fast model**: `claude-haiku-4-5-20251001` (200k / 64k); Sonnet 5,
+  Opus 4.6 and Fable 5.1 are 1M / 128k.
+- A Claude subscription is not an API key; the key comes from
+  console.anthropic.com. Streams.
 
 ## Your company's AI gateway
 
