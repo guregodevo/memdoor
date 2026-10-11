@@ -1,8 +1,10 @@
 # Headless, then attached
 
-Every run is a conversation on your gateway, whether a window was open or
-not. That is what lets you leave a run alone and come back into it live,
-instead of killing it and starting over.
+One gateway, every door. Every run is a conversation on your gateway,
+whether a window was open or not: the window, the phone, the editor, a
+schedule, a workflow from a shell or CI, a spawned child, and `memdoor
+resume` into any of them. That is what lets you leave a run alone and come
+back into it live, instead of killing it and starting over.
 
 ## The rule
 
