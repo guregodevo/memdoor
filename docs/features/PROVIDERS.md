@@ -48,7 +48,7 @@ provider *and* tests it.
   answer across every connected provider.
 - **A pin lands on its provider**: `/model <id>` with an id another
   provider lists takes that provider's client for the conversation
-  (`providers/factory.go: GetClientFor`), the active provider winning a tie.
+  (`gateway/providers/factory.go: GetClientFor`), the active provider winning a tie.
 - **`memdoor connect`** (`gateway/providers_connect.go`,
   `cmd/cli/cmd/providers.go`): pick the kind — company AI gateway,
   Anthropic, OpenAI, Gemini, any OpenAI-compatible endpoint — base URL
@@ -116,7 +116,7 @@ provider *and* tests it.
   `TestRouteViewNamesTheProvider`.
 
 - **Streaming on the `anthropic` and `responses` wires**
-  (`providers/sse.go`, `consumeAnthropicStream`, `consumeResponsesStream`):
+  (`gateway/providers/sse.go`, `consumeAnthropicStream`, `consumeResponsesStream`):
   text deltas reach the window as they are written, tool-call JSON is
   assembled from its fragments, thinking is kept for display, the prose
   breaker (`llm.StreamGuard`) can stop a reply, a mid-stream error comes
@@ -182,7 +182,7 @@ provider *and* tests it.
 - **Each provider's own metadata API, behind one interface** (Greg:
   "check if each provider has an API that provides model metadata … add
   this in our provider interface, getModel"). `ModelReader`
-  (`providers/catalogue.go`): `ListModels` and `GetModel`, one reader per
+  (`gateway/providers/catalogue.go`): `ListModels` and `GetModel`, one reader per
   API read live with keys on 2026-10-02 — Anthropic `/v1/models`
   (`max_input_tokens`, `max_tokens`, capabilities: image, thinking,
   effort; a per-model endpoint), Groq (`context_window`,
@@ -253,7 +253,7 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
   providers, 94% known**, every window on seven of them from the provider
   itself.
 
-- **Attribution as a field** (`providers/attribution.go`): user, team,
+- **Attribution as a field** (`gateway/providers/attribution.go`): user, team,
   project, session as headers on every vendor and gateway request —
   `MEMDOOR_ATTRIBUTION="user=…;team=…"` from the company's preset,
   `MEMDOOR_ATTRIBUTION_HEADERS` for the gateway's names (default

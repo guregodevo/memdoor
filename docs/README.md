@@ -12,8 +12,8 @@ AI gateway, or one added with `memdoor connect`).
 Pro is remote control and the hosted workflow state on memdoor.ai. The CLI and TUI are the product; the web UI is login/admin.
 The coder uses the person's MCP servers ([features/MCP.md](features/MCP.md), 2026-10-01) and runs
 on any provider's key — the company's gateway, Anthropic, OpenAI, Gemini, Groq, xAI, DeepSeek,
-Baseten or OpenRouter ([features/PROVIDERS.md](features/PROVIDERS.md), 2026-10-02). The current direction is the epoch note at the
-top of [`roadmap/MUST.md`](roadmap/MUST.md); plans, pools and the
+Baseten or OpenRouter ([features/PROVIDERS.md](features/PROVIDERS.md), 2026-10-02). The current direction is the 2026-09-27
+direction note (blockquote) in [`roadmap/MUST.md`](roadmap/MUST.md); plans, pools and the
 catalogue are in `internal/PLANS_AND_CAPACITY.md` (removed 2026-10-03).
 
 ---
@@ -44,7 +44,7 @@ catalogue are in `internal/PLANS_AND_CAPACITY.md` (removed 2026-10-03).
 - **[Config System](architecture/CONFIG_SYSTEM_DESIGN.md)** — JSON5 + `$include` loader
 - **[Agent Sandbox Security](architecture/AGENT_SANDBOX_SECURITY.md)** — Tool-level isolation
 - **[Always-Valid Pattern](architecture/ALWAYS_VALID_PATTERN.md)** — Constructor factories that fail fast
-- **[ADRs](adr/)** — [0001 managed lane](adr/0001-managed-lane-architecture.md) · [0002 inference stays direct](adr/0002-inference-stays-direct.md) · [0003 supplier risk](adr/0003-supplier-risk-and-multi-provider.md)
+- **[ADRs](adr/)** — [0001 managed lane](adr/0001-managed-lane-architecture.md) · [0002 inference stays direct](adr/0002-inference-stays-direct.md) · [0003 supplier risk](adr/0003-supplier-risk-and-multi-provider.md) · [0004 rental](adr/0004-rental-is-a-domain-object-the-broker-owns.md) · [0005 the TUI is the product](adr/0005-the-tui-is-the-product.md) · [0006 clipping runtime](adr/0006-clipping-runtime-python-or-go.md) · [0007 brain lease](adr/0007-brain-lease.md) · [0008 one pool](adr/0008-one-pool-raft-broker.md) · [0009 the app is composition](adr/0009-the-app-is-composition.md) · [0010 serverless endpoints](adr/0010-the-pool-is-serverless-endpoints.md) · [0011 an API brain](adr/0011-an-api-brain-through-the-broker.md) · [0012 the only brain](adr/0012-the-api-brain-is-the-only-brain.md) · [0013 freemium](adr/0013-freemium-the-mark-is-the-price.md) · [0014 generated shots](adr/0014-generated-shots-through-the-broker.md) · [0015 Jev decisions](adr/0015-decisions-through-jev-on-openrouter.md) · [0016 a brain per agent](adr/0016-a-brain-per-agent.md) · [0017 one vendor path](adr/0017-one-vendor-path-openrouter-for-every-agent.md) · [0018 hue and luminance](adr/0018-hue-is-what-luminance-is-how-much.md) · [0019 workflow runs on mario](adr/0019-workflow-runs-on-mario.md)
 
 ### Operations
 
@@ -88,7 +88,7 @@ Feature-focused walkthroughs (`docs/features/`):
 - **[Channels & Threading](features/channels-and-threading.md)**
 - **[Decisions](features/DECIDE.md)** — Jev through OpenRouter: jgrep / jread / jlogs, per-turn tool routing, the message gate
 - **[Cron Jobs](features/cron-jobs.md)** — lightweight overview (reference: `reference/CRON.md`); the coder's own `cron` tool
-- **[Workflows](features/WORKFLOWS.md)** — a DAG of agent tasks from a sentence, on mario (Pro)
+- **[Workflows](features/WORKFLOWS.md)** — a DAG of agent tasks from a sentence, on mario (free; the hosted run state is Pro)
 - **[MCP servers](features/MCP.md)** — `/mcp`: the person's servers, OAuth, the registry
 - **[Providers](features/PROVIDERS.md)** — each provider with its own model list, `/connect`, the company gateway, attribution
 - **[Hooks](features/HOOKS.md)** — Memdoor's own hooks beside `tool_guards`
@@ -107,8 +107,8 @@ Feature-focused walkthroughs (`docs/features/`):
 ## Roadmap & Strategy
 
 - **[Roadmap](roadmap/ROADMAP.md)** — Vision and priorities
-- **[MUST / SHOULD / COULD](roadmap/MUST.md)** — Priority tiers; MUST.md opens with the 2026-09-27 epoch note
-- **[ADRs](adr/)** — managed lane, direct inference, supplier risk
+- **[MUST / SHOULD / COULD](roadmap/MUST.md)** — Priority tiers; MUST.md opens with a "What is left" list and carries the 2026-09-27 direction note below it
+- **[ADRs](adr/)** — 0001–0019; the index is above
 - **[Authentication Roadmap](roadmap/AUTHENTICATION.md)**
 
 ---

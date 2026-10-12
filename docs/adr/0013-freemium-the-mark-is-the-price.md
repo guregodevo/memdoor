@@ -27,7 +27,7 @@ cap is what keeps it so.
 
 - **Free** gets the good brain for **ten finished shorts a month**, every
   one carrying the mark, which reads as the address: memdoor.ai.
-- **A seat ($149/mo)** is unlimited and unmarked. Nothing else differs.
+- **A seat ($149/mo, a dead price — today Pro is $10/mo)** is unlimited and unmarked. Nothing else differs.
 - A finished short is a captioned clip or a stitched film (`tools.FilmMade`),
   never a cut, a tighten or a conversion on the way there. The gateway
   counts them and tells the broker on its next ask or beat; the broker

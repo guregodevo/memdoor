@@ -27,7 +27,7 @@ path (37fe96e4, 7ff51069).
   (`agent_models`).
 - **The provider is the per-model implementation** (`LLMClient`), built by
   `ClientFactory.GetClientFor(agent)` from the model map in
-  `providers/model_providers.go`, no default: omni → the brain client
+  `gateway/providers/registry.go` (then `providers/model_providers.go`), no default: omni → the brain client
   (Hermes tool protocol), DeepSeek → the OpenAI-compatible provider restored
   from before 37fe96e4 (native tool calls, OpenRouter's upstream hook),
   pointed at the broker. Token usage is logged and metered as before.

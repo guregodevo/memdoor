@@ -36,9 +36,9 @@ const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 // Each row is something the binary does today, with its receipt in the docs.
 // And short (Greg, 2026-10-11: "too much text, no one will read everything").
 const HERO_PROOF: { value: string; label: string }[] = [
-  { value: 'Proved', label: 'a step is done when its output exists' },
-  { value: 'Held', label: 'it waits where only you can approve' },
-  { value: 'Resumed', label: 'a failed run restarts at the failed step' },
+  { value: 'Any door', label: 'a window, a script, CI, a schedule, your editor, your phone' },
+  { value: 'Resumed', label: 'the run CI started is the one you open live' },
+  { value: 'Proved', label: 'the exit code is the receipt of its checks' },
 ];
 
 // The doors (docs/headless): each is a real command today.
@@ -196,8 +196,8 @@ export function CoderLandingPage() {
               Stop babysitting your coding agent.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
-              Say the steps once. It proves each one, stops where only you decide, and comes back when it needs
-              you.
+              Start a run from CI, a schedule or a shell, and finish it from your phone or a window: every run
+              is a conversation on your machine. It proves each step and stops where only you decide.
             </p>
             <ul className="mx-auto mb-8 max-w-xl space-y-2 text-left text-sm text-neutral-300 lg:mx-0">
               {HERO_PROOF.map((p) => (

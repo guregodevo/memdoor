@@ -37,7 +37,7 @@ no-cycle, no-deadlock and random-DAG tests on both repositories):
 What Memdoor has that mario does not: a bounded agent turn (the cron tool's
 discipline — a workdir, an agent, a count, a visible answer), a queue that
 serialises per session, and a window to watch it in. What mario has that
-Memdoor does not, and that the hooks research (`../internal/HOOKS_AND_CRON_2026_10.md`
+Memdoor does not, and that the hooks research (`../internal/HOOKS_AND_CRON_2026_10.md`, removed 2026-10-03
 §3) says every scheduled agent lacks: **a deterministic notion of done**.
 "A green status means the session started and exited without an
 infrastructure error. It does not mean the task succeeded." A target that

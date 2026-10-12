@@ -2053,7 +2053,7 @@ gateway, `MEMDOOR_MODEL_CONTEXT` for the window and `MEMDOOR_VENDOR_HEADERS`
 (`"Name: value; Name: value"`) for the gateway's cost-attribution tags. With
 one set, chat goes to that vendor and nothing else is contacted — no
 OpenRouter, no broker, no catalogue, no web search, decisions off unless the
-gateway holds its own decision key. `MEMDOOR_VENDOR=off` ignores them. **Attribution** (`providers/attribution.go`):
+gateway holds its own decision key. `MEMDOOR_VENDOR=off` ignores them. **Attribution** (`gateway/providers/attribution.go`):
 `MEMDOOR_ATTRIBUTION="user=…;team=…"` + `MEMDOOR_ATTRIBUTION_HEADERS="user=X-Email;…"`
 send the person's fields, the project's directory name and the session id as
 headers on every vendor/gateway request (default names `X-Memdoor-User/-Team/

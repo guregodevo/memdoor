@@ -8,7 +8,7 @@ Status: PROPOSED (2026-08-28) · Refines ADR 0001 · Affects `pkg/provision`,
 
 The rental subsystem is ~8,700 lines across eleven packages and files, and it
 is the least reliable part of the product. The 2026-08-26 receipts record seven
-hosts rented and **zero served**; `GPU_RENTAL_LEARNING.md` counts seventeen
+hosts rented and **zero served**; `GPU_RENTAL_LEARNING.md` (removed 2026-10-03) counts seventeen
 rental failures of which **thirteen were ours**, not the hardware's — only one
 ("a V100 cannot do FP8") was predictable from the provider's metadata.
 
@@ -43,14 +43,14 @@ representations disagreeing**:
   holds its slot, `act.Rent` stays 0, and the pool never replaces it. That is
   commit `a18ab75` verbatim: *"the waste mechanism works, the replacement does
   not… nine minutes later both were still sitting there billing, unreplaced."*
-- **The client kept talking to a corpse.** `DEEPSEEK_FAILURES.md` #12: the
+- **The client kept talking to a corpse.** `DEEPSEEK_FAILURES.md` (removed 2026-10-03) #12: the
   broker replaced an instance, the client's local target file no longer matched,
   and an 8×GPU rental at $1.11/hr became invisible to `--status` and unstoppable
   by `--down`. Representation (5) disagreed with (3).
 - **A healthy machine was destroyed at 14 minutes.** The reaper judged
   representation (1) — a Vast status message — while the operator watched the
   container log, and a registry timeout during a 24 GB pull read as a dead host
-  (fixed in `a15dc48`, but the shape recurs: `DEEPSEEK_FAILURES.md` #13 is the
+  (fixed in `a15dc48`, but the shape recurs: `DEEPSEEK_FAILURES.md` (removed 2026-10-03) #13 is the
   same bug and is still open).
 
 ### Two watchdogs, two authorities, one machine
@@ -159,7 +159,7 @@ Cardinalities, and why each is what it is:
 
 | relation | card. | why |
 |---|---|---|
-| `User` → `Workspace` | **N : 1** | a token IS a workspace binding; the device grant refuses to complete without one (`PLANS_AND_CAPACITY.md §3`). One workspace, N people — that is the only thing that varies between solo and enterprise. |
+| `User` → `Workspace` | **N : 1** | a token IS a workspace binding; the device grant refuses to complete without one (`PLANS_AND_CAPACITY.md`, removed 2026-10-03, §3). One workspace, N people — that is the only thing that varies between solo and enterprise. |
 | `Workspace` → `BillingTerm` | **1 : 1** | the workspace is the billing boundary, "never a seat". Today this is the bare `plan.Plan` string; it becomes an object because a term has more than a name (see below). |
 | `Workspace` → `Rental` | **1 : N** | a pool is several rentals for one workspace (`Spec.Min = 3` on enterprise). |
 | `Rental` → `Settlement` | **1 : 0..1** | exactly one money record, written at the terminal transition; none while alive. |

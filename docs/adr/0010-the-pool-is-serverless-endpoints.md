@@ -97,7 +97,7 @@ Consequences:
 
 ## Receipts
 
-`docs/internal/SERVERLESS_MATH.md` — the day's measurements, the cost
+`docs/internal/SERVERLESS_MATH.md` (removed 2026-10-03) — the day's measurements, the cost
 per film by pattern, the per-user unit economics (81 → 91 % gross
 margin), the market depth at each price cap, and the ten-user case.
 

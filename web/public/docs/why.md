@@ -1,6 +1,17 @@
 # Why Memdoor
 
-## 1. It is the agent you can leave alone
+## 1. One gateway, every door
+
+A run is a conversation on a gateway on your machine, and every door opens
+the same one: the terminal window, the phone, the editor, a schedule, a
+workflow from a shell or CI, a spawned child, and `memdoor resume` into any
+of them. `memdoor run` is one turn with no window, prompt in and answer out,
+and its exit code is the turn's receipt, so a pipeline fails on what the
+checks said rather than on whether a process survived. Other agents are a
+process in a terminal; the gateway is what lets you start a run in one place
+and pick it up in another. See [Headless, then attached](/docs/headless).
+
+## 2. It is the agent you can leave alone
 
 Say the steps once and Memdoor runs them as a workflow: a graph of tasks,
 each done when the file it names exists or its command exits 0, never
@@ -12,17 +23,6 @@ schedule, or from CI. Memdoor's own release is one of these workflows, and
 the first job an outsider gave it, a trading desk's nightly three-step, found
 a real engine bug on its first replay. Every plain turn ends on a receipt
 too: the files it changed, the checks it ran and what they returned.
-
-## 2. One gateway, every door
-
-A run is a conversation on a gateway on your machine, and every door opens
-the same one: the terminal window, the phone, the editor, a schedule, a
-workflow from a shell or CI, a spawned child, and `memdoor resume` into any
-of them. `memdoor run` is one turn with no window, prompt in and answer out,
-and its exit code is the turn's receipt, so a pipeline fails on what the
-checks said rather than on whether a process survived. Other agents are a
-process in a terminal; the gateway is what lets you start a run in one place
-and pick it up in another. See [Headless, then attached](/docs/headless).
 
 ## 3. It stops, instead of looping to a cap
 

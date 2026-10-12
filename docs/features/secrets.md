@@ -67,8 +67,8 @@ Full flag reference: [`reference/CLI.md#secrets`](../reference/CLI.md#secrets).
 
 ## Files
 
-- `cmd/cli/cmd/secrets.go` — CLI surface
-- `gateway/providers/workspace_secrets.go` — SecretRef resolution
+- `cmd/cli/cmd/secrets.go` — CLI surface (removed 2026-10-03, above)
+- `pkg/secrets/resolver.go` — SecretRef resolution
 - `pkg/repository/agent_secret.go` — agent-level keyring interface
 - `pkg/repository/sqlite/agent_secrets.go` — SQLite backend
 - `tools/secret_tool.go` — the `secret` tool exposed to agents

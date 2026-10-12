@@ -9,7 +9,10 @@
 > schema has no `Model` field; the model comes from a provider on the
 > person's own key (`/model` pins one). The multi-agent structure
 > (per-agent workspace, tool palette, sandbox scope) is
-> unchanged.
+> unchanged. The file paths named below (`cmd/cli/cmd/*`, `gateway/agents/*`,
+> `gateway/channels/*`, `gateway/workspace/*`) are the design's, not the
+> tree's: the command tree moved out of `cmd/cli` and those packages were
+> reorganized; treat the names as illustrative.
 
 This document outlines the design for implementing OpenClaw-style multi-agent support in Memdoor.
 

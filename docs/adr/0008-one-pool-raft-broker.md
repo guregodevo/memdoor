@@ -7,6 +7,12 @@ instance up… same machine, high availability, high consistency… seats per
 workspace, billing for 1 user first then Enterprise (contact us)… pick one
 good enough model, 27B, on demand only, no bid… let's trim our jobs."
 
+> **Superseded note (2026-10-04).** The pooling and seat model below is
+> retired — the hosted pool was removed and Memdoor runs on the person's own
+> key. The price in §4 ("**$149 per SEAT per month, unlimited use**") is dead
+> too: Pro is **$10/month** for remote control and the hosted workflow state
+> ([`PRICING.md`](../roadmap/PRICING.md)). Read this ADR as history.
+
 **AMENDED 2026-09-15 by ADR-0010.** The pooling intent stands — one
 shared pool for every workspace, seats as slots, no bids, one
 good-enough model, a dedicated pool as the enterprise tier. Only the

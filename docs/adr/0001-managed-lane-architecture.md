@@ -73,7 +73,7 @@ rental engine). `gateway/billingsvc` is transport only.
   billing boundary, which is what makes a plan change (free → solo by
   crediting, solo → enterprise by an operator's `POST /v1/plan`) a flag on
   the workspace, not a migration — everyone in the workspace moves with it,
-  never a seat (see docs/internal/PLANS_AND_CAPACITY.md; the team tier this
+  never a seat (see docs/internal/PLANS_AND_CAPACITY.md, removed 2026-10-03; the team tier this
   line once named was retired 2026-08-26).
 - **Overdraft is impossible**: balance check and debit happen in one
   sqlite transaction (`DebitIfSufficient`), proven under concurrency.

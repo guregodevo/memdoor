@@ -1,10 +1,17 @@
 # What is Memdoor
 
-**Memdoor is a coding agent in your terminal that runs on your own key, any provider's, and cuts what it spends.**
+**Memdoor is a coding agent on your own key, any provider's, with one gateway behind every door: start a run from a window, a script, CI, a schedule, your editor or your phone, and finish it from any of them.**
 
 `cd` into a project, run `memdoor tui`, and type what you want done. It reads
 your files, writes patches, runs the build, reads the errors and fixes what it
 broke. That part is table stakes.
+
+The window is one door. Every run is a conversation on a gateway on your
+machine: `memdoor run "<prompt>"` is a turn with no window, its exit code the
+receipt of its checks, so a script or a CI job can start one; `memdoor cron add`
+puts one on a schedule; the editor and the phone open the same gateway; and
+`memdoor resume <id>` opens any of those runs in a window, live, your next line
+its next turn. See [Headless, then attached](/docs/headless).
 
 The difference is a **decision model** in front of the model that writes your
 code. It answers typed questions — is this search hit relevant to the task, is

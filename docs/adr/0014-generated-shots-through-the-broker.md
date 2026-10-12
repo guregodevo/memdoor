@@ -36,7 +36,7 @@ footage exists for a beat, a shot can be generated.
 ## Consequences
 
 - A short movie is a shot list: N prompts → N shots → one `clip_stitch`
-  with narration and a bed (`skills/shortfilm.md`).
+  with narration and a bed (`skills/shortfilm.md`, moved out with the clipper, 2026-10-03).
 - Pricing per generated second is the vendor's and not yet in the
   seat's economics; the tally is the number to read before opening it to
   free workspaces or capping seats.

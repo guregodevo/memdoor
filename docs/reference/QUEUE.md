@@ -617,7 +617,7 @@ case <-time.After(180 * time.Second):
 - No limit on number of sessions (queued)
 
 **To increase throughput**:
-1. Increase worker pool sizes in `queue/lanes.go`
+1. Increase worker pool sizes in `gateway/queue/lanes.go`
 2. Add more global lanes
 3. Optimize job execution time
 

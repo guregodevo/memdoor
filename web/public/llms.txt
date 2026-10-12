@@ -1,10 +1,10 @@
 # Memdoor
 
-> An open-source AI coding agent in your terminal that runs on your own API key, with a decision model that cuts what it reads, and workflows: your steps run as a checked, resumable graph with a gate for you. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
+> One gateway, every door: an open-source AI coding agent on your own API key. Every run is a conversation on a gateway on your machine, started from a terminal window, `memdoor run` in a script or CI, a cron schedule, your editor or your phone, and opened live from any of them. Steps run as a checked, resumable graph with a gate for you; a decision model cuts what the model reads. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
 
 ## What it is
 
-Memdoor reads your files, writes patches, runs the build and fixes what it broke, in the directory you launch it from (`memdoor tui`). Every model call is on your own account: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or a company AI gateway (`memdoor connect`, or export the key). Memdoor adds nothing to the bill and your code does not pass through memdoor.ai.
+Memdoor reads your files, writes patches, runs the build and fixes what it broke, in the directory you launch it from (`memdoor tui`). The window is one door among several onto the same gateway: `memdoor run "<prompt>"` is one headless turn (prompt in, answer on stdout, exit code 0 checked / 2 unverified or a failing check / 3 it needed you), `memdoor workflow run <name> --wait` a workflow from a shell or CI, `memdoor cron add` a schedule, `memdoor acp` the editor, `/remote` the phone, and `memdoor resume <id>` opens any of those runs in a window, live, with the same session underneath. Guide: https://memdoor.ai/docs/headless Every model call is on your own account: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or a company AI gateway (`memdoor connect`, or export the key). Memdoor adds nothing to the bill and your code does not pass through memdoor.ai.
 
 A decision model (Jev, by TypeSafe — a hosted model, not a local one) sits in front of the chat model and answers typed questions with a calibrated probability in under half a second. The excerpts being judged go to it, through OpenRouter on your OpenRouter key or directly on a decision key (`memdoor connect typesafe`); on an Anthropic, OpenAI or Gemini key alone it is off and the agent works without the savings. Every host the binary can contact: https://memdoor.ai/docs/security. The harness acts on the answers:
 
@@ -13,7 +13,7 @@ A decision model (Jev, by TypeSafe — a hosted model, not a local one) sits in 
 - A stop instead of a cap: a turn that stops making progress ends with what it has.
 - `/model` pins any tool-capable model of a connected provider at its list price.
 
-Measured over 20 paired runs (same tasks, decisions off and on, alternating): 49% fewer input tokens on a question about the codebase, 26% fewer on an edit that had to compile and pass a test; all 20 answers right, every edit green under `go test` and `go vet`.
+Measured over 44 paired runs (same tasks, decisions off and on, alternating): 22 of 22 passed each way; a question about the codebase went from 54,661 to 14,367 input tokens (−74%, three pairs); tasks that read the same files either way (an edit with a test, ten one-file fixes) changed nothing, within ±11%. Table: https://github.com/guregodevo/memdoor/blob/main/docs/features/DECIDE.md
 
 ## Workflows
 
