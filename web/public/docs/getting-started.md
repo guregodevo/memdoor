@@ -80,6 +80,24 @@ From the shell: `memdoor resume` reopens a previous conversation, `memdoor model
 search <name>` browses the catalogue, and `memdoor meter` lists every turn
 with the model served and its tokens.
 
+## The other doors
+
+The window is one door onto the gateway the first run started. Every run is a
+conversation on it, and each of these opens the same one:
+
+```bash
+memdoor run "fix the failing test"        # one turn, no window; exit 0 checked, 2 unverified, 3 it needed you
+git diff | memdoor run "review this diff" # what is piped in is the input
+memdoor workflow run release --wait       # a workflow from a shell or CI; the exit code is the run's outcome
+memdoor cron add --id nightly --schedule "0 6 * * *" --agent coder --message "…"
+memdoor resume --last                     # the same run, in a window; into a pipe, as text
+```
+
+Your editor (VS Code, Zed, JetBrains) and the page `/remote` opens on your
+phone are two more. The run a CI job started is the one you open live and
+answer. [Headless, then attached](/docs/headless) walks through every door
+with the exit codes.
+
 ## The decision model
 
 The judged reads, the per-turn toolbox and the stop-instead-of-loop all come
@@ -90,6 +108,7 @@ neither, nothing is judged and every tool returns its unjudged output.
 
 ## Where to next
 
+- **[Headless, then attached](/docs/headless)** — one gateway, every door: scripts, CI, cron, resume.
 - **[Your key and the models](/docs/your-key)** — the ladder, pins, prices.
 - **[The TUI](/docs/tui)** — the screens and the keys.
 - **[Remote control](/docs/remote)** — the same terminal, on your phone.

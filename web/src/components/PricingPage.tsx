@@ -51,13 +51,14 @@ const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
 const FREE: string[] = [
   'The terminal agent: reads, edits, runs the tests, fixes what it broke.',
   'Workflows: say the steps, the coder writes them as a graph with a proof per step and a gate for you. Run by hand or on your local cron.',
+  'One gateway, every door: the window, memdoor run from a script or CI, a schedule, your editor; memdoor resume opens any run live.',
   'Your own key at OpenRouter, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, Anthropic or a company gateway, paid to them at list price; or a ChatGPT Plus/Pro plan with memdoor connect chatgpt.',
   'The decision model: judged reads, a toolbox sized to the turn, a stop instead of a cap. /usage shows what it kept out of your bill.',
   '/model: every model of your providers with its price; pin one.',
 ];
 
 const PRO: string[] = [
-  'Remote control: /remote opens the conversation on your phone, as the terminal itself, end-to-end encrypted.',
+  'The phone door: /remote opens the conversation on your phone, as the terminal itself, end-to-end encrypted, to watch a run and answer it.',
   'Workflow state on memdoor.ai, one table per workspace: a workflow can wait on what another produced, from any machine; history reads from anywhere.',
   'Coming: runs with your laptop closed.',
   'Still on your own key: the seat never buys inference.',
@@ -103,7 +104,7 @@ export function PricingPage() {
     setMeta({
       title: 'Pricing — Memdoor: the agent is free, Pro is $10 a month, Enterprise by invoice',
       description:
-        'The coding agent, the decision model and workflows are free on your own provider key. Pro, $10 a month: remote control from your phone and workflows across machines. Enterprise: the same served for your company with full support.',
+        'The coding agent, the decision model, workflows and every door onto your gateway (window, scripts, CI, cron, editor) are free on your own provider key. Pro, $10 a month: the phone door and workflow state across machines. Enterprise: the same served for your company with full support.',
       path: '/pricing',
     });
   }, []);
