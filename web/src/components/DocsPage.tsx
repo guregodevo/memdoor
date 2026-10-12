@@ -73,6 +73,7 @@ const docsStructure: DocEntry[] = [
     children: [
       { title: 'What is Memdoor', path: 'what-is-memdoor' },
       { title: 'Getting started', path: 'getting-started' },
+      { title: 'Headless, then attached', path: 'headless' },
       { title: 'Your key and the models', path: 'your-key' },
     ],
   },
@@ -91,7 +92,6 @@ const docsStructure: DocEntry[] = [
       { title: 'Workflows', path: 'workflows' },
       { title: 'No babysitting', path: 'no-babysitting' },
       { title: 'Boundaries', path: 'boundaries' },
-      { title: 'Headless, then attached', path: 'headless' },
     ],
   },
   {
