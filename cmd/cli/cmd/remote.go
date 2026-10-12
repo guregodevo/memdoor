@@ -21,8 +21,9 @@ import (
 // it to a phone, and the job waits there while the phone drives. The page
 // the phone opens is the TUI on that conversation, as /remote gives it.
 //
-// Stdout is the link and nothing else. The watch-only link, the QR code (at
-// a terminal) and the hold line go to stderr. `off` revokes the link.
+// Stdout is the link and nothing else. The watch-only link, the QR code and
+// the hold line go to stderr: a job's log shows the code, and a phone scans
+// it off the screen (Greg: "or the qr code"). `off` revokes the link.
 var remoteCmd = &cobra.Command{
 	Use:   "remote [id | off <id>]",
 	Short: "A link that opens a conversation on your phone; printed, then held until ctrl+c",
@@ -94,7 +95,7 @@ across holds: the same one opens the conversation again next time.`,
 			out = watch
 		}
 		fmt.Fprintln(os.Stdout, out)
-		fmt.Fprintln(os.Stderr, remoteHoldText(r, watch, view, stderrIsTerminal()))
+		fmt.Fprintln(os.Stderr, remoteHoldText(r, watch, view))
 		return holdRemote(cmd.Context())
 	},
 }
@@ -121,9 +122,9 @@ func remoteTarget(args []string, last bool) (sessionRecord, error) {
 }
 
 // remoteHoldText is what stderr says beside the link: the watch-only link
-// (unless that is the one printed), the QR code at a terminal, and that the
-// conversation is held.
-func remoteHoldText(r sessionRecord, watch string, view bool, terminal bool) string {
+// (unless that is the one printed), the QR code of the printed link, and
+// that the conversation is held.
+func remoteHoldText(r sessionRecord, watch string, view bool) string {
 	var b strings.Builder
 	title := strings.TrimSpace(r.Title)
 	if title == "" {
@@ -134,17 +135,14 @@ func remoteHoldText(r sessionRecord, watch string, view bool, terminal bool) str
 	} else {
 		fmt.Fprintf(&b, "on your phone · %q\nwatch only: %s\n", title, watch)
 	}
-	if terminal {
-		link := watch
-		if !view {
-			l, _, err := remoteLinkFor(r.ChannelID, false)
-			if err == nil {
-				link = l.url()
-			}
+	link := watch
+	if !view {
+		if l, _, err := remoteLinkFor(r.ChannelID, false); err == nil {
+			link = l.url()
 		}
-		b.WriteString(qrText(link))
-		b.WriteString("\n")
 	}
+	b.WriteString(qrText(link))
+	b.WriteString("\n")
 	b.WriteString("holding this conversation on the relay · ctrl+c ends it, the link stays")
 	return b.String()
 }
@@ -156,11 +154,6 @@ func holdRemote(ctx context.Context) error {
 	defer stop()
 	<-ctx.Done()
 	return nil
-}
-
-func stderrIsTerminal() bool {
-	fi, err := os.Stderr.Stat()
-	return err == nil && fi.Mode()&os.ModeCharDevice != 0
 }
 
 func init() {

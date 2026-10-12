@@ -132,7 +132,7 @@ jobs:
 ```
 
 To finish a CI run from your phone, add `memdoor remote --last` as the last
-line: the link is in the job's log and the job waits there, the gateway
+line: the link and its QR code are in the job's log and the job waits there, the gateway
 alive, until you are done or the job's timeout ends it (an account with Pro
 signed in on the runner: `MEMDOOR_BILLING_TOKEN`).
 

@@ -43,7 +43,8 @@ memdoor remote off <id>    # revoke
 
 The id is the one `memdoor run` and `memdoor resume` print. Stdout is the
 link and nothing else, so `memdoor remote --last | pbcopy` works; the
-watch-only link, the QR code (at a terminal) and the hold line go to stderr.
+watch-only link, the QR code and the hold line go to stderr, so a CI job's
+log shows a code your phone scans off the screen.
 The command stays up until `ctrl+c`, and the conversation stays on the relay
 while it does: a CI job that started a run with `memdoor run` can print the
 link and wait there while you drive from the phone. `ctrl+c` ends the hold,
