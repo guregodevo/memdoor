@@ -16,10 +16,15 @@ import (
 // memdoor remote <id> — the phone door with no window (Greg, 2026-10-12:
 // "there should be a remote command to return in stdout the link", "from a
 // resume id"). It prints the conversation's link on stdout, one line, and
-// then holds the conversation on the relay until ctrl+c or the pipeline
-// ends: a script or a CI job that started a run with `memdoor run` can hand
+// then holds the conversation on the relay until ctrl+c: a script or a CI
+// job that started a run with `memdoor run` can hand
 // it to a phone, and the job waits there while the phone drives. The page
 // the phone opens is the TUI on that conversation, as /remote gives it.
+//
+// The hold ends on ctrl+c (or a term signal), and on that alone: nothing
+// cancels the command's context on its own, so a closed pipeline leaves the
+// process holding (proved 2026-10-12: `memdoor remote --last | head -1` kept
+// running after the reader exited).
 //
 // Stdout is the link and nothing else. The watch-only link, the QR code and
 // the hold line go to stderr: a job's log shows the code, and a phone scans

@@ -6,7 +6,7 @@ The same terminal, on your phone. Type `/remote` in the TUI, scan the code, and
 the page that opens is the TUI itself — running on your computer, drawn on your
 phone.
 
-Part of Pro on the memdoor.ai relay. If you run your own gateway and point `MEMDOOR_REMOTE_URL` at it, it is yours and free.
+Part of Pro on the memdoor.ai relay. If you run your own relay and point `MEMDOOR_REMOTE_URL` at it, it is yours and free.
 
 ## Turn it on
 
@@ -108,8 +108,9 @@ The id is the one `memdoor run` and `memdoor resume` print; any unique
 prefix works. Stdout is the link and nothing else, so `memdoor remote --last
 | pbcopy` works; the title, the watch-only link, the QR code and the hold line
 go to stderr, so a job's log shows a code your phone scans off the screen.
-The command stays up until `ctrl+c`, and the conversation stays on the relay
-while it does. `ctrl+c` ends the hold, not the link: the same link opens the
+The command stays up until `ctrl+c` or the job's timeout, and nothing else
+ends it: a closed pipe does not. The conversation stays on the relay while it
+holds. Ending the hold does not revoke the link: the same link opens the
 conversation the next time, from the window or from the command.
 
 ```
@@ -127,7 +128,8 @@ holding this conversation on the relay · ctrl+c ends it, the link stays
 A job that started a run with `memdoor run` hands it to you with one more
 line: the link and its code are in the job's log and the job waits there,
 the gateway alive, until you are done or the job's timeout ends it. The
-runner needs the account signed in (`MEMDOOR_BILLING_TOKEN`, a Pro seat).
+runner needs the account's token in `MEMDOOR_BILLING_TOKEN`, a Pro seat; on
+your own machine `memdoor login` keeps it in `~/.memdoor/billing-token`.
 
 ```yaml
       - name: Review, then wait for me on the phone
