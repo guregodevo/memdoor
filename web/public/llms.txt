@@ -1,6 +1,6 @@
 # Memdoor
 
-> The headless-first coding agent, open source, on your own API key. One gateway, every door: Every run is a conversation on a gateway on your machine, started from a terminal window, `memdoor run` in a script or CI, a cron schedule, your editor or your phone, and opened live from any of them. Steps run as a checked, resumable graph with a gate for you; a decision model cuts what the model reads. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
+> The headless-first coding agent, open source, on your own API key. One gateway, every door: every run is a conversation on a gateway on your machine, started from a terminal window, `memdoor run` in a script or CI, a cron schedule, your editor or your phone, and opened live from any of them. Steps run as a checked, resumable graph with a gate for you; a decision model cuts what the model reads. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
 
 ## What it is
 
