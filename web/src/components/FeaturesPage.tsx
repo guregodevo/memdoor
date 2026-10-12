@@ -37,7 +37,7 @@ export const DOORS: { feature: string; detail: string }[] = [
   { feature: 'A shell or CI', detail: 'memdoor run "<prompt>" is one turn with no window; its exit code is the receipt of its checks. memdoor workflow run <name> --wait, the same for a workflow' },
   { feature: 'A schedule', detail: 'memdoor cron add runs a turn or a workflow on cron; the agent schedules its own re-checks' },
   { feature: 'Your editor', detail: 'VS Code, Zed and JetBrains over ACP, the same conversation' },
-  { feature: 'Your phone', detail: '/remote: the terminal itself on the phone, end-to-end encrypted, to watch a run and answer it' },
+  { feature: 'Your phone', detail: '/remote in a window, or memdoor remote <id> from a script: the terminal itself on the phone, end-to-end encrypted, to watch a run and answer it' },
   { feature: 'Another machine', detail: 'memdoor --gateway <host> reaches the gateway there, every command the same' },
 ];
 

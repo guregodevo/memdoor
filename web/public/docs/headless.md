@@ -40,6 +40,10 @@ workflow state on memdoor.ai is for, and it is coming.
   See [Workflows](/docs/workflows).
 - **An editor session.** The coder in VS Code, Zed or JetBrains is a
   conversation on the same gateway. See [In your editor](/docs/editor).
+- **The phone, from a script.** `memdoor remote <id>` prints the link
+  `/remote` would, on stdout, and holds the conversation on the relay until
+  `ctrl+c`: the run a script or a CI job started is on your phone while the
+  job waits. See [Remote control](/docs/remote).
 
 Each of these answers into a conversation; a check's answer also wakes the
 conversation that asked for it, so the agent acts on it without you.
@@ -96,6 +100,7 @@ project whose `Add` returned `a - b`. The exit codes are the receipts.
 | `memdoor guards add --tool bash --pattern '\bgit push\b'` then `memdoor run "commit and push"` | 0 | committed, the push "blocked by a workspace tool guard", said so |
 | `echo "" \| memdoor run "ask me whether the new file is a.go or b.go"` | 3 | `? Should the new empty file be named a.go or b.go? 1. a.go 2. b.go` on stderr |
 | `memdoor cron add --id t --schedule "*/30 * * * *" --agent coder --message "say ok"`, `list`, `remove` | 0 | added, listed once, removed |
+| `memdoor remote --last > link.txt` (12 October), then `memdoor join "$(cat link.txt)"` from another terminal | 0 | the link alone on stdout; the join showed the run's conversation and a turn typed there answered on the gateway; `/remote` in a window gave the same link; `remote off` revoked it |
 
 The second row is the one to read twice: nothing changed and the last run
 failed, so the pipeline sees 2. A failing test you did not touch is still a
@@ -125,6 +130,11 @@ jobs:
             | memdoor run "review this diff; one finding per line; change nothing"
           memdoor workflow run check --wait
 ```
+
+To finish a CI run from your phone, add `memdoor remote --last` as the last
+line: the link is in the job's log and the job waits there, the gateway
+alive, until you are done or the job's timeout ends it (an account with Pro
+signed in on the runner: `MEMDOOR_BILLING_TOKEN`).
 
 The step fails when the review's last check fails (exit 2) or the workflow
 run does, which is the point: the run's outcome is the job's. `?ci=1` keeps

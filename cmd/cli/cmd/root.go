@@ -40,6 +40,7 @@ var noWorkspaceTopLevels = map[string]bool{
 	"workflow":   true,
 	"cron":       true,
 	"resume":     true,
+	"remote":     true,
 	"auth":       true,
 	"gateway":    true,
 	"doctor":     true,

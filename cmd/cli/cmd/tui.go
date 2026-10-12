@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -80,9 +79,7 @@ var tuiCmd = &cobra.Command{
 func runTUI(opts tuiOptions) error {
 	{
 		_ = os.Setenv("MEMDOOR_GATEWAY", gatewayAddr)
-		wsAddr := strings.Replace(gatewayAddr, "http://", "ws://", 1)
-		wsAddr = strings.Replace(wsAddr, "https://", "wss://", 1)
-		wsAddr += "/ws"
+		wsAddr := wsURLOf(gatewayAddr)
 
 		// The /agents slash command calls tools.AgentsList, which resolves
 		// /api/agents via the tools package's gateway base URL — set it here so
@@ -182,116 +179,14 @@ func runTUI(opts tuiOptions) error {
 		}
 		// One page per agent (ui/pages.go): each page has its own channel
 		// and its own poster bound to it. The first page is the coder's.
-		posterFor := func(channelID, channelName string) func(agent, w, text, mode string) error {
-			return func(agent, w, text, mode string) error {
-				// Note the conversation before sending: the first turn names it, and
-				// every turn keeps it at the top of `memdoor resume`.
-				recordSession(sessionRecord{
-					ChannelID:   channelID,
-					ChannelName: channelName,
-					Title:       firstLine(text),
-					Workspace:   wsID,
-					Dir:         curDir(),
-				})
-				return c.PostExpectOK("/api/messages", map[string]interface{}{
-					"channel_id":      channelID,
-					"text":            "@" + agent + " " + text,
-					"workspace":       wsID,
-					"permission_mode": mode, // Claude-style plan/acceptEdits/default (empty = default)
-					"workdir":         curDir(),
-				})
-			}
-		}
-		plan := windowPlan() // once, for the input's hint (ui/suggest.go)
-		decisionsOff := !gatewayDecisionsOn(c)
+		posterFor := tuiPoster(c, wsID, curDir)
 		enableTmuxPassthrough() // make OSC 8 links clickable inside tmux
-		// Everything a page needs, at construction (ui.PageConfig): the ops
+		// Everything a page needs, at construction (tui_wiring.go): the ops
 		// close over the authed client; the route and status ops over the
-		// page's own channel and agent.
-		// The phone's TUI is one conversation: it opens no second page.
-		newPhonePage := func(string, int) (ui.Model, error) {
-			return ui.Model{}, errors.New("a second page is for the terminal on your computer")
-		}
-		pageConfig := func(agent, chID, chName string, page int) ui.PageConfig {
-			// Remote control (tui_remote.go): a phone's turn is posted exactly as
-			// a typed one, through this page's poster, in the TUI's always-auto
-			// mode; a conversation that already has a link picks its relay back up.
-			post := posterFor(chID, chName)
-			remote := remoteSession{
-				Gateway: gatewayAddr, Token: c.token, Workspace: wsID, ChannelID: chID,
-				Account: brokerToken(),
-				Post:    func(text string) error { return post(agent, wsID, text, "acceptEdits") },
-				History: func() []ui.Message { return fetchTranscript(c, chID, remoteHistoryLimit) },
-			}
-			cfg := ui.PageConfig{
-				GatewayAddr: wsAddr, Workspace: wsID, ChannelID: chID, Token: c.token, Plan: plan, DecisionsOff: decisionsOff,
-				Agent: agent, Poster: posterFor(chID, chName), Page: page, Paged: true,
-				Ops: ui.Ops{
-					// /model: list + pin the model this conversation runs on.
-					Usage:          tuiUsage,
-					Route:          tuiRoute(wsID, chID, agent),
-					ModelCatalog:   tuiModelCatalog,
-					ModelHosts:     tuiModelHosts,
-					ModelProviders: tuiModelProviders,
-					PinModel:       tuiPinModel(wsID, chID, agent),
-					Effort:         tuiEffort(wsID, chID, agent),
-					MCP:            tuiMCPOps(curDir),
-					Workflow:       tuiWorkflowOps(curDir, wsID, chID),
-					Connect:        ui.ConnectOps{Connect: tuiConnect, KeySource: providerKeySource, LoginStart: tuiConnectLoginStart, LoginWait: chatgptLoginWait, LoginPaste: chatgptLoginPaste, LoginCancel: chatgptLoginCancel},
-					Status: func() ui.Status {
-						st := tuiPageStatus(curDir(), wsID, chID, agent)
-						st.Update = tuiUpdateNotice()
-						return st
-					},
-					Update: tuiUpdate,
-					// /fresh and /clear: the gateway wipes the agent's memory of
-					// this conversation (gateway/session_fresh.go).
-					Fresh: func(agent string) error {
-						return c.PostExpectOK("/api/sessions/fresh", map[string]interface{}{
-							"workspace": wsID, "channel_id": chID, "agent": agent,
-						})
-					},
-					Handoff: func(agent string) (string, error) {
-						var r struct {
-							Handoff string `json:"handoff"`
-						}
-						if err := c.PostJSON("/api/sessions/handoff", map[string]interface{}{
-							"workspace": wsID, "channel_id": chID, "agent": agent,
-						}, &r); err != nil {
-							return "", err
-						}
-						return r.Handoff, nil
-					},
-					Compact: func(agent, focus string) (string, error) {
-						var r compactReply
-						if err := c.PostJSON("/api/sessions/compact", map[string]interface{}{
-							"workspace": wsID, "channel_id": chID, "agent": agent, "focus": focus,
-						}, &r); err != nil {
-							return "", err
-						}
-						return r.line(focus), nil
-					},
-				},
-			}
-			// The page's terminal view is this same TUI on this conversation,
-			// opened the way a resumed one is: a single page, its last
-			// exchanges in view (tui_remote_tty.go).
-			phone := cfg
-			phone.Page = 0
-			remote.TTY = func() tea.Model {
-				view := phone
-				view.Resume = ui.Resume{History: fetchTranscript(c, chID, 30)}
-				view.Ops.Remote = tuiRemote(remote)
-				return ui.NewApp(ui.NewPage(view), newPhonePage)
-			}
-			cfg.Ops.Remote = tuiRemote(remote)
-			cfg.Ops.Share = tuiShare(shareSession{
-				Account: brokerToken(), ChannelID: chID,
-				Transcript: func() []ui.Message { return fetchTranscript(c, chID, shareTranscriptLimit) },
-			})
-			resumeRemote(remote)
-			return cfg
-		}
+		// page's own channel and agent. The same wiring serves `memdoor
+		// remote`, the phone door with no window.
+		w := newTUIWiring(c, wsID, wsAddr, curDir, posterFor)
+		pageConfig := w.pageConfig
 		newPage := func(agent string, page int) (ui.Model, error) {
 			fresh := "tui-" + agent + "-" + time.Now().Format("0102-150405")
 			id, cerr := c.createChannel(fresh)

@@ -47,7 +47,7 @@ const DOORS: { name: string; how: string; href: string }[] = [
   { name: 'A shell or CI', how: 'memdoor run: the answer out, the exit code is the receipt', href: '/docs/headless' },
   { name: 'Your editor', how: 'VS Code, Zed, JetBrains over ACP', href: '/docs/editor' },
   { name: 'A schedule', how: 'cron for a turn or a whole workflow', href: '/docs/cron' },
-  { name: 'Your phone', how: '/remote: the terminal itself, end to end encrypted', href: '/docs/remote' },
+  { name: 'Your phone', how: '/remote, or memdoor remote <id> from a script: the terminal itself, end to end encrypted', href: '/docs/remote' },
 ];
 
 const FAQ: { q: string; a: string }[] = [

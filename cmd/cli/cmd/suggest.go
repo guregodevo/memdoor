@@ -42,8 +42,9 @@ var machineReadablePrefixes = []string{
 	"run",          // the headless turn: its stdout is the answer (2026-10-11)
 	"workflow run", // with --wait its stdout is what the run produced
 	"workflow resume",
-	"acp", // stdout is the JSON-RPC stream an editor reads (acp.go)
-	"tui", // interactive: whatever it printed last (a worktree's hand-back) is the last word
+	"remote", // its stdout is the link (2026-10-12)
+	"acp",    // stdout is the JSON-RPC stream an editor reads (acp.go)
+	"tui",    // interactive: whatever it printed last (a worktree's hand-back) is the last word
 	"auth token",
 	"auth whoami",
 	"workspace which",

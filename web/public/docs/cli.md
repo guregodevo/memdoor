@@ -106,6 +106,19 @@ memdoor sessions export           # sessions → JSONL
 
 `sessions` is not listed in `memdoor --help`; it runs when typed.
 
+## The phone door from a script
+
+```bash
+memdoor remote <id>        # the link on stdout; holds the conversation on the relay until ctrl+c
+memdoor remote --last      # this directory's most recent conversation
+memdoor remote --view <id> # the watch-only link
+memdoor remote off <id>    # revoke
+```
+
+What `/remote` does in the window, as a command: the id is the one `memdoor
+run` and `memdoor resume` print; stdout is the link alone. See
+[Remote control](/docs/remote).
+
 ## Joining from another terminal
 
 ```

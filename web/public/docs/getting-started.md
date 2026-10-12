@@ -91,6 +91,7 @@ git diff | memdoor run "review this diff" # what is piped in is the input
 memdoor workflow run release --wait       # a workflow from a shell or CI; the exit code is the run's outcome
 memdoor cron add --id nightly --schedule "0 6 * * *" --agent coder --message "…"
 memdoor resume --last                     # the same run, in a window; into a pipe, as text
+memdoor remote --last                     # the link /remote gives, on stdout; the run on your phone (Pro)
 ```
 
 Your editor (VS Code, Zed, JetBrains) and the page `/remote` opens on your

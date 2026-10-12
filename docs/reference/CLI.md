@@ -166,8 +166,8 @@ Error: no workspace resolved for "channels". Set one of:
 ## Command index
 
 <!-- cli-index:start -->
-Generated from the binary's `--help` by `make cli-index` (37 top-level commands).
-`memdoor --help` shows 29 of them; the others are hidden from it and run when typed:
+Generated from the binary's `--help` by `make cli-index` (39 top-level commands).
+`memdoor --help` shows 31 of them; the others are hidden from it and run when typed:
 `auth`, `billing`, `channels`, `chrome`, `cron`, `messages`, `sessions`, `users`. A command that appears here
 and nowhere else in this file is documented by its own `memdoor <command> --help`.
 
@@ -246,7 +246,9 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `providers` — A model's hosts: precision, context, uptime, cost band
   - `search` — Find a model in the catalogue
 - `providers` — Every provider this gateway knows — the company AI gateway, Anthropic,
+- `remote` — memdoor remote <id>        print the link on stdout and hold the conversation on the relay
 - `resume` — Resume a previous conversation.
+- `run` — Run one coder turn on this project with no window.
 - `savings` — What the decision model kept out of your model bill this month.
 - `tui` — Launch the Terminal UI
 - `uninstall` — Removes Memdoor and its running components:

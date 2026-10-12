@@ -31,6 +31,24 @@ Then, in the conversation you want to take with you:
 
 Scan the code with your phone, or open the link in any browser.
 
+The same, with no window, from a script (the phone door is a command like
+every other, 2026-10-12):
+
+```bash
+memdoor remote <id>        # the link on stdout, one line; then it holds the conversation on the relay
+memdoor remote --last      # this directory's most recent conversation
+memdoor remote --view <id> # the watch-only link instead
+memdoor remote off <id>    # revoke
+```
+
+The id is the one `memdoor run` and `memdoor resume` print. Stdout is the
+link and nothing else, so `memdoor remote --last | pbcopy` works; the
+watch-only link, the QR code (at a terminal) and the hold line go to stderr.
+The command stays up until `ctrl+c`, and the conversation stays on the relay
+while it does: a CI job that started a run with `memdoor run` can print the
+link and wait there while you drive from the phone. `ctrl+c` ends the hold,
+not the link; the same link opens the conversation the next time.
+
 ## What you can do from the page
 
 Everything you can do at the keyboard, because it is the same program:
