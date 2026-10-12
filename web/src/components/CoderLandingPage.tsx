@@ -193,11 +193,11 @@ export function CoderLandingPage() {
               Open-source coding agent for the terminal · your own API key · Apache 2.0
             </div>
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
-              Stop babysitting your coding agent.
+              The headless-first coding agent.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
-              Start a run from CI, a schedule or a shell, and finish it from your phone or a window: every run
-              is a conversation on your machine. It proves each step and stops where only you decide.
+              Start it from CI, a schedule or a shell. Finish it from your phone or a window. It proves each
+              step and stops where only you decide.
             </p>
             <ul className="mx-auto mb-8 max-w-xl space-y-2 text-left text-sm text-neutral-300 lg:mx-0">
               {HERO_PROOF.map((p) => (
