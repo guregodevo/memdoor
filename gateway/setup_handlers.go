@@ -215,23 +215,37 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 }
 
 // usernameFromEmail derives a username the user never has to think about:
-// the local part, extended with the domain's first label when it is too short,
-// and truncated to the 30 characters validation allows.
+// the local part with every character validation refuses collapsed to a dash
+// (first.last@ and user+tag@ are the common shapes), extended with the
+// domain's first label when it is too short, and truncated to the 30
+// characters validation allows.
 func usernameFromEmail(email string) string {
 	local, domain, _ := strings.Cut(email, "@")
-	name := local
+	name := usernameChars(local)
 	if len(name) < 3 {
 		if label, _, _ := strings.Cut(domain, "."); label != "" {
-			name = local + "-" + label
+			name = strings.Trim(name+"-"+usernameChars(label), "-")
 		}
 	}
 	for len(name) < 3 {
 		name += "0"
 	}
 	if len(name) > 30 {
-		name = name[:30]
+		name = strings.TrimRight(name[:30], "-")
+	}
+	for len(name) < 3 {
+		name += "0"
 	}
 	return name
+}
+
+var usernameStripRe = regexp.MustCompile(`[^A-Za-z0-9_-]+`)
+
+// usernameChars keeps what the username validator accepts (ASCII letters,
+// digits, hyphens, underscores); runs of anything else become one dash, and a
+// leading or trailing dash goes.
+func usernameChars(s string) string {
+	return strings.Trim(slugDashRe.ReplaceAllString(usernameStripRe.ReplaceAllString(s, "-"), "-"), "-")
 }
 
 // slugifyWorkspace turns a workspace's display name into its id: letters and
