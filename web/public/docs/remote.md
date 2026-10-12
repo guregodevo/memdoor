@@ -31,24 +31,8 @@ Then, in the conversation you want to take with you:
 
 Scan the code with your phone, or open the link in any browser.
 
-The same, with no window, from a script (the phone door is a command like
-every other, 2026-10-12):
-
-```bash
-memdoor remote <id>        # the link on stdout, one line; then it holds the conversation on the relay
-memdoor remote --last      # this directory's most recent conversation
-memdoor remote --view <id> # the watch-only link instead
-memdoor remote off <id>    # revoke
-```
-
-The id is the one `memdoor run` and `memdoor resume` print. Stdout is the
-link and nothing else, so `memdoor remote --last | pbcopy` works; the
-watch-only link, the QR code and the hold line go to stderr, so a CI job's
-log shows a code your phone scans off the screen.
-The command stays up until `ctrl+c`, and the conversation stays on the relay
-while it does: a CI job that started a run with `memdoor run` can print the
-link and wait there while you drive from the phone. `ctrl+c` ends the hold,
-not the link; the same link opens the conversation the next time.
+From a script, with no window, the same link comes from `memdoor remote`
+(below).
 
 ## What you can do from the page
 
@@ -108,6 +92,74 @@ your terminal at its size. The agent runs on the host's computer, in the
 host's folder. A watch-only link joins the same way and sends nothing.
 `Ctrl+]` leaves; every other key goes to the TUI.
 
+## From a script, no window
+
+The phone door is a command like every other door (2026-10-12): what
+`/remote` does in the window, headless, for the conversation a run printed.
+
+```bash
+memdoor remote <id>        # the link on stdout, one line; then it holds the conversation on the relay
+memdoor remote --last      # this directory's most recent conversation
+memdoor remote --view <id> # the watch-only link instead
+memdoor remote off <id>    # revoke
+```
+
+The id is the one `memdoor run` and `memdoor resume` print; any unique
+prefix works. Stdout is the link and nothing else, so `memdoor remote --last
+| pbcopy` works; the title, the watch-only link, the QR code and the hold line
+go to stderr, so a job's log shows a code your phone scans off the screen.
+The command stays up until `ctrl+c`, and the conversation stays on the relay
+while it does. `ctrl+c` ends the hold, not the link: the same link opens the
+conversation the next time, from the window or from the command.
+
+```
+$ memdoor remote --last
+https://memdoor.ai/r/6i3nQ7d8GL02TvGT#k=…
+on your phone · "fix the failing test"
+watch only: https://memdoor.ai/r/6i3nQ7d8GL02TvGT#v=…
+█▀▀▀▀▀█ ▄▀ ▄█▄ █▀▀▀▀▀█
+…
+holding this conversation on the relay · ctrl+c ends it, the link stays
+```
+
+### Finishing a CI run from your phone
+
+A job that started a run with `memdoor run` hands it to you with one more
+line: the link and its code are in the job's log and the job waits there,
+the gateway alive, until you are done or the job's timeout ends it. The
+runner needs the account signed in (`MEMDOOR_BILLING_TOKEN`, a Pro seat).
+
+```yaml
+      - name: Review, then wait for me on the phone
+        env:
+          OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+          MEMDOOR_BILLING_TOKEN: ${{ secrets.MEMDOOR_BILLING_TOKEN }}
+        timeout-minutes: 30
+        run: |
+          curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
+          export PATH="$HOME/.local/bin:$PATH"
+          git diff origin/${{ github.base_ref }}...HEAD \
+            | memdoor run "review this diff; one finding per line; change nothing"
+          memdoor remote --last
+```
+
+The run ends with the job: a run that outlives the runner is what the
+hosted workflow state is for, and it is coming.
+
+### The receipt
+
+Every step below ran on 12 October 2026 against a gateway on a scratch
+machine, in this order:
+
+| Step | What happened |
+|---|---|
+| `memdoor run "reply with the single word ok; change nothing"` | started the gateway, answered `ok`, printed the conversation id |
+| `memdoor remote --last > link.txt` | one line on stdout, the link; stderr the title, the watch-only link, the code, the hold line; the process stayed up |
+| `memdoor join "$(cat link.txt)"` from another terminal | the run's conversation, its `ok` in view |
+| a turn typed in that terminal | answered on the gateway (`pong`, the model named in the footer) |
+| `memdoor resume --last`, then `/remote` in the window | the same link, same id |
+| `memdoor remote off <id>` | "Remote control is off: the old link and its key no longer open this conversation." |
+
 ## Sharing a conversation
 
 `/share` is the other kind of link: not the live terminal but the conversation
@@ -150,6 +202,7 @@ runs commands on your computer. Treat it like a password:
 | `/remote` | Print the link and the QR code for this conversation, and the watch-only link |
 | `/remote view` | Print the watch-only link and its QR code |
 | `/remote off` | Revoke both links |
+| `memdoor remote <id>` | The link on stdout, from a script; holds the conversation on the relay until `ctrl+c` (`--last`, `--view`, `off <id>`) |
 | `memdoor join <link>` | Open a link in a terminal instead of a browser (`Ctrl+]` leaves) |
 | `memdoor login you@example.com` | Sign in, once per computer |
 
