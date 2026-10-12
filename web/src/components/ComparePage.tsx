@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { CoderHeader, InstallLine } from './CoderLandingPage';
-import { ONLY, SHARED, WORKFLOWS } from './FeaturesPage';
+import { DOORS, ONLY, SHARED, WORKFLOWS } from './FeaturesPage';
 import { setMeta } from '../meta';
 
 // /compare/<agent>: one page per coding agent people search against
@@ -24,7 +24,7 @@ export const RIVALS: Rival[] = [
     maker: 'Anthropic',
     what: 'Anthropic’s coding agent for the terminal, on Claude models through a Claude subscription or an Anthropic API key.',
     pick: 'You are on a Claude plan and want the agent built for those models, with a sandbox and a large ecosystem of hooks and integrations.',
-    pickMemdoor: 'You want the same kind of agent on any provider’s key (Anthropic’s included), open source, with workflows that have a target per step and a gate for you, and a decision model that cuts what the model reads.',
+    pickMemdoor: 'You want the same kind of agent on any provider’s key (Anthropic’s included), open source, with one gateway behind every door (a run started from CI or a schedule is the one you open live in a window or on your phone), workflows that have a target per step and a gate for you, and a decision model that cuts what the model reads.',
   },
   {
     slug: 'codex-cli',
@@ -32,7 +32,7 @@ export const RIVALS: Rival[] = [
     maker: 'OpenAI',
     what: 'OpenAI’s open-source coding agent for the terminal, on OpenAI models, with a sandbox around commands.',
     pick: 'You are on OpenAI models and want OpenAI’s own agent, sandboxed, with approval modes.',
-    pickMemdoor: 'You want one agent across providers, workflows run as a graph with proof per step, and a decision model in front of the chat model.',
+    pickMemdoor: 'You want one agent across providers and one gateway behind every door (CI, a schedule, the editor, the phone, the window), workflows run as a graph with proof per step, and a decision model in front of the chat model.',
   },
   {
     slug: 'gemini-cli',
@@ -40,7 +40,7 @@ export const RIVALS: Rival[] = [
     maker: 'Google',
     what: 'Google’s open-source coding agent for the terminal, on Gemini models, with a sandbox around commands.',
     pick: 'You are on Gemini and want Google’s agent with its sandbox and free tier.',
-    pickMemdoor: 'You want Gemini (or any other model) inside workflows with targets, gates and resume, and judged reads on your key.',
+    pickMemdoor: 'You want Gemini (or any other model) inside workflows with targets, gates and resume, a run you start from CI and finish from your phone, and judged reads on your key.',
   },
   {
     slug: 'aider',
@@ -48,7 +48,7 @@ export const RIVALS: Rival[] = [
     maker: 'open source',
     what: 'A git-centred pair programmer in the terminal that works with many models; edits land as commits.',
     pick: 'You want a mature, git-first editing loop and a large community.',
-    pickMemdoor: 'You want multi-step work run as a workflow (parallel steps, a gate, resume), remote control from a phone, and the decision model’s savings.',
+    pickMemdoor: 'You want multi-step work run as a workflow (parallel steps, a gate, resume), one gateway behind every door (start a run from CI, finish it from your phone), and the decision model’s savings.',
   },
   {
     slug: 'pi',
@@ -56,7 +56,7 @@ export const RIVALS: Rival[] = [
     maker: 'open source',
     what: 'A deliberately small coding agent: a short loop, a few tools, extensions for the rest.',
     pick: 'You want the smallest possible agent and will write the orchestration around it yourself.',
-    pickMemdoor: 'You want the orchestration built in: workflows with proof per step, gates, schedules, and a decision model, without assembling them.',
+    pickMemdoor: 'You want the orchestration built in: workflows with proof per step, gates, schedules, one gateway behind every door, and a decision model, without assembling them.',
   },
 ];
 
@@ -70,7 +70,7 @@ export function ComparePage({ slug }: { slug: string }) {
     if (!rival) return;
     setMeta({
       title: `Memdoor vs ${rival.name}: an open-source alternative on your own API key`,
-      description: `${rival.name} and Memdoor side by side: the features both document, what only Memdoor has (workflows with a target per step, a decision model), and when to pick each.`,
+      description: `${rival.name} and Memdoor side by side: the features both document, what only Memdoor has (one gateway behind every door, workflows with a target per step, a decision model), and when to pick each.`,
       path: `/compare/${rival.slug}`,
     });
   }, [rival]);
@@ -113,6 +113,19 @@ export function ComparePage({ slug }: { slug: string }) {
             <h2 className="mb-2 text-lg font-semibold text-neutral-900">Pick Memdoor when</h2>
             <p className="text-sm leading-relaxed text-neutral-600">{rival.pickMemdoor}</p>
           </div>
+        </div>
+
+        <h2 className="mb-2 text-center text-2xl font-bold tracking-tight text-neutral-900">One gateway, every door</h2>
+        <p className="mx-auto mb-6 max-w-2xl text-center text-sm text-neutral-500">
+          In Memdoor a run is a conversation on a gateway on your machine: start it from any door, finish it from any other.
+        </p>
+        <div className="mx-auto mb-16 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {DOORS.map((r) => (
+            <div key={r.feature} className="rounded-2xl border-2 border-neutral-900 bg-white p-5">
+              <div className="mb-1 font-semibold text-neutral-900">{r.feature}</div>
+              <p className="text-sm leading-relaxed text-neutral-500">{r.detail}</p>
+            </div>
+          ))}
         </div>
 
         <h2 className="mb-6 text-center text-2xl font-bold tracking-tight text-neutral-900">Only in Memdoor</h2>

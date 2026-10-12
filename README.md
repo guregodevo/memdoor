@@ -27,12 +27,18 @@ and the free hosts train on what they are sent, so a trial, not private code.
 
 <p align="center"><img src="web/public/og-image.png" alt="A release workflow waiting at its gate: vet and tests done in parallel, notes written, approve waiting for you" width="800"></p>
 
-Describe the steps and the coder writes them as a workflow, one YAML per step,
-run as a graph. A step is done when its file exists or its command exits 0,
-never because the model says so. Independent steps run in parallel, a gate
-waits for your approval, a failed run resumes at the failed step. Free, on
-your own API key. Memdoor ships itself with
-[its own workflow](https://memdoor.ai/workflows).
+Every run is a conversation on a gateway on your machine, whatever door it
+came in by: a terminal window, `memdoor run` from a script or CI, a cron
+schedule, your editor, or the page on your phone. The run a CI job started is
+the one you open with `memdoor resume <id>`, watch live, and answer. One
+gateway, every door ([the walk through them, with exit
+codes](https://memdoor.ai/docs/headless)).
+
+```bash
+memdoor run "fix the failing test"        # one turn, no window; the exit code is the receipt of its checks
+memdoor workflow run release --wait       # a workflow from a shell or CI, exit code the run's outcome
+memdoor resume --last                     # the same run, in a window
+```
 
 ---
 
@@ -40,7 +46,7 @@ your own API key. Memdoor ships itself with
 it broke, in the directory you launch it from. Every model call goes from your
 machine to the provider you connected, on your account, at their list price.
 
-Two things set it apart.
+Two more things set it apart.
 
 **A decision model in front of the chat model.** Jev (TypeSafe) answers a
 typed question such as *is this hit relevant to the task?* with a calibrated
@@ -54,9 +60,9 @@ a test and ten one-file fixes read the same files either way (within ±11%)
 
 **Workflows.** Say the steps and the coder writes them as task files, one YAML
 per step, run as a graph by [`mario`](https://github.com/guregodevo/mario).
-Independent steps run in parallel; a step is done when its file exists or its
-command exits 0; a gate waits for your approval; a failed run resumes at the
-failed step. The files live in your repo, so a workflow is kept, shared and
+Independent steps run in parallel; a step is done when its check passes, never
+because the model says so; a gate waits for your approval with the diff in
+front of you; a failed run resumes at the failed step. The files live in your repo, so a workflow is kept, shared and
 run again, by hand or on your local cron
 ([`docs/features/WORKFLOWS.md`](docs/features/WORKFLOWS.md)). Why workflows
 rather than skills: [the write-up](https://guregodevo.github.io/2026/10/06/workflows-not-skills/).

@@ -16,7 +16,7 @@ export const SHARED: { feature: string; detail: string; also: string }[] = [
   { feature: 'Your own key, any model', detail: 'OpenRouter’s catalogue, or Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq and xAI on their own keys (memdoor connect); /model shows list prices', also: 'Codex CLI, Cline, Goose, Aider, OpenCode' },
   { feature: 'Work in a git worktree', detail: 'memdoor tui --worktree, your checkout untouched', also: 'Codex CLI' },
   { feature: 'Screenshots as input', detail: 'paste an image (macOS); @ mentions a file or folder', also: 'Codex CLI, Gemini CLI, Aider' },
-  { feature: 'Scripts and CI', detail: 'memdoor agent --message, no window needed', also: 'Claude Code, Codex CLI, Gemini CLI, Cline, Goose, Cursor CLI' },
+  { feature: 'Scripts and CI', detail: 'memdoor run "<prompt>": the answer on stdout, the exit code the receipt of its checks (0 checked, 2 unverified, 3 it needed you); git diff | memdoor run reviews a diff', also: 'Claude Code, Codex CLI, Gemini CLI, Cline, Goose, Cursor CLI' },
   { feature: 'Memory across sessions', detail: 'per-project notes it reads first and appends to', also: 'Claude Code, Codex CLI' },
   { feature: 'Skills', detail: 'load a procedure by name, or save your own', also: 'Claude Code, Amp' },
   { feature: 'Searches the web', detail: 'web_search answers with sources, on your own OpenRouter key', also: 'Claude Code, Codex CLI, Gemini CLI, omp' },
@@ -27,6 +27,18 @@ export const SHARED: { feature: string; detail: string; also: string }[] = [
   { feature: 'Scheduled checks', detail: 'the agent schedules its own re-check ("every 20s, 6 times: is CI green?") and answers into the window that asked', also: '' },
   { feature: 'Approval before changes', detail: 'MEMDOOR_APPROVE=changes asks before a command, a write or an MCP tool runs', also: 'Claude Code, Codex CLI, Gemini CLI' },
   { feature: 'Sandbox around commands', detail: 'no, by choice: file tools stay in your project and commands start there', also: 'Claude Code, Codex CLI, Gemini CLI' },
+];
+
+// THE DOORS (Greg, 2026-10-12: "one gateway, every door" on every page): every
+// run is a conversation on a gateway on your machine, and each surface is a
+// door onto the same one (docs/headless.md).
+export const DOORS: { feature: string; detail: string }[] = [
+  { feature: 'The window', detail: 'memdoor tui; memdoor resume <id> opens any run below in a window, live, your next line its next turn' },
+  { feature: 'A shell or CI', detail: 'memdoor run "<prompt>" is one turn with no window; its exit code is the receipt of its checks. memdoor workflow run <name> --wait, the same for a workflow' },
+  { feature: 'A schedule', detail: 'memdoor cron add runs a turn or a workflow on cron; the agent schedules its own re-checks' },
+  { feature: 'Your editor', detail: 'VS Code, Zed and JetBrains over ACP, the same conversation' },
+  { feature: 'Your phone', detail: '/remote: the terminal itself on the phone, end-to-end encrypted, to watch a run and answer it' },
+  { feature: 'Another machine', detail: 'memdoor --gateway <host> reaches the gateway there, every command the same' },
 ];
 
 // Workflows: the hero's claim (a step is done when its output exists), listed
@@ -54,9 +66,9 @@ export const ONLY: { feature: string; detail: string }[] = [
 export function FeaturesPage() {
   useEffect(() => {
     setMeta({
-      title: 'Features — Memdoor: workflows, judged reads, every coding-agent table stake',
+      title: 'Features — Memdoor: one gateway every door, workflows, judged reads',
       description:
-        'What Memdoor does: workflows with a proof per step and a gate, a decision model that cuts what the agent reads, and every feature the other coding agents document, with who else has it.',
+        'What Memdoor does: one gateway behind every door (a window, a shell or CI, a schedule, your editor, your phone), workflows with a proof per step and a gate, a decision model that cuts what the agent reads, and every feature the other coding agents document, with who else has it.',
       path: '/features',
     });
   }, []);
@@ -68,7 +80,23 @@ export function FeaturesPage() {
           Features
         </h1>
         <p className="mx-auto mb-14 max-w-2xl text-center text-base text-neutral-500">
-          Workflows, what makes it cheaper, and what every coding agent does, with who else does it.
+          Every door onto one gateway, workflows, what makes it cheaper, and what every coding agent does, with who else does it.
+        </p>
+
+        <h2 className="mb-2 text-center text-2xl font-bold tracking-tight text-neutral-900">One gateway, every door</h2>
+        <p className="mx-auto mb-6 max-w-2xl text-center text-sm text-neutral-500">
+          A run is a conversation on a gateway on your machine. Start it from any door and finish it from any other.
+        </p>
+        <div className="mx-auto mb-4 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {DOORS.map((r) => (
+            <div key={r.feature} className="rounded-2xl border-2 border-neutral-900 bg-white p-5">
+              <div className="mb-1 font-semibold text-neutral-900">{r.feature}</div>
+              <p className="text-sm leading-relaxed text-neutral-500">{r.detail}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mx-auto mb-16 max-w-2xl text-center text-sm text-neutral-500">
+          <a href="/docs/headless" className="text-neutral-900 underline underline-offset-4">Headless, then attached</a>: the walk through the doors, with exit codes
         </p>
 
         <h2 className="mb-6 text-center text-2xl font-bold tracking-tight text-neutral-900">Workflows</h2>
