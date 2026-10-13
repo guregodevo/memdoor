@@ -190,7 +190,7 @@ export function CoderLandingPage() {
         <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
           <div className="text-center lg:text-left">
             <div className="mb-4 text-xs uppercase tracking-[0.2em] text-neutral-400">
-              One gateway, every door · open source · your own API key · Apache 2.0
+              <a href="/docs/gateway" className="underline decoration-neutral-600 underline-offset-4 hover:text-white">One gateway, every door</a> · open source · your own API key · Apache 2.0
             </div>
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
               The headless coding agent.

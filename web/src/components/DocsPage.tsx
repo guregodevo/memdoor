@@ -74,6 +74,7 @@ const docsStructure: DocEntry[] = [
       { title: 'What is Memdoor', path: 'what-is-memdoor' },
       { title: 'Getting started', path: 'getting-started' },
       { title: 'Headless, then attached', path: 'headless' },
+      { title: 'The gateway', path: 'gateway' },
       { title: 'Your key and the models', path: 'your-key' },
     ],
   },

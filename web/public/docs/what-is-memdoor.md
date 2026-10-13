@@ -11,7 +11,7 @@ machine: `memdoor run "<prompt>"` is a turn with no window, its exit code the
 receipt of its checks, so a script or a CI job can start one; `memdoor cron add`
 puts one on a schedule; the editor and the phone open the same gateway; and
 `memdoor resume <id>` opens any of those runs in a window, live, your next line
-its next turn. See [Headless, then attached](/docs/headless).
+its next turn. See [Headless, then attached](/docs/headless) and [The gateway](/docs/gateway).
 
 The difference is a **decision model** in front of the model that writes your
 code. It answers typed questions — is this search hit relevant to the task, is

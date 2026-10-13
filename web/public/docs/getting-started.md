@@ -110,6 +110,7 @@ neither, nothing is judged and every tool returns its unjudged output.
 ## Where to next
 
 - **[Headless, then attached](/docs/headless)** — one gateway, every door: scripts, CI, cron, resume.
+- **[The gateway](/docs/gateway)** — the process on your machine every door opens onto.
 - **[Your key and the models](/docs/your-key)** — the ladder, pins, prices.
 - **[The TUI](/docs/tui)** — the screens and the keys.
 - **[Remote control](/docs/remote)** — the same terminal, on your phone.

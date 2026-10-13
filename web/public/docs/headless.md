@@ -213,5 +213,6 @@ from its last finished task with `memdoor workflow resume <run-id>`.
 
 ## Next
 
+- **[The gateway](/docs/gateway)** — the process every door opens onto.
 - **[Scheduled checks](/docs/cron)** · **[Workflows](/docs/workflows)** · **[In your editor](/docs/editor)**
 - **[Boundaries](/docs/boundaries)** — what a run may touch while you are away.
