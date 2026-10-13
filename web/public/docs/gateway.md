@@ -58,9 +58,16 @@ last finished task with `memdoor workflow resume <run-id>`.
 
 ## Another machine
 
-Every command takes `--gateway` (or `MEMDOOR_GATEWAY`): a URL, a host:port,
-or a bare host, so `memdoor --gateway 192.168.1.10 resume --all` lists the
-conversations on that machine's gateway. A gateway listens on localhost
+Every command takes `--gateway`: a URL, a host:port, or a bare host.
+
+```bash
+memdoor --gateway 192.168.1.10 resume --last      # the window, on that machine's last run
+memdoor --gateway 192.168.1.10 run "run the tests" # a headless turn there, in its project
+export MEMDOOR_GATEWAY=http://192.168.1.10:18789   # every command from now on
+```
+
+The run happens on that machine, in that machine's project, on that
+gateway's key; your terminal is the door. A gateway listens on localhost
 unless started with `--host`; a gateway you open to your network is yours
 to keep behind it.
 
