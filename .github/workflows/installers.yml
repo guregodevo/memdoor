@@ -102,6 +102,7 @@ jobs:
           Check 0 @('conversations')
           Check 1 @('resume','--last')
           Check 1 @('remote','--last')
+          exit 0   # the runner would otherwise fail the step on the last command's expected 1
       - name: Stop the gateway
         shell: pwsh
         if: always()
