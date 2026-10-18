@@ -42,8 +42,9 @@ workflow state on memdoor.ai is for, and it is coming.
   conversation on the same gateway. See [In your editor](/docs/editor).
 - **The phone, from a script.** `memdoor remote <id>` prints the link
   `/remote` would, on stdout, and holds the conversation on the relay until
-  `ctrl+c`: the run a script or a CI job started is on your phone while the
-  job waits. See [Remote control](/docs/remote).
+  `ctrl+c` — nothing else ends it, a closed pipe included, so a CI step needs
+  its `timeout-minutes`: the run a script or a CI job started is on your
+  phone while the job waits. See [Remote control](/docs/remote).
 
 Each of these answers into a conversation; a check's answer also wakes the
 conversation that asked for it, so the agent acts on it without you.
@@ -134,7 +135,8 @@ jobs:
 To finish a CI run from your phone, add `memdoor remote --last` as the last
 line: the link and its QR code are in the job's log and the job waits there, the gateway
 alive, until you are done or the job's timeout ends it (an account with Pro
-signed in on the runner: `MEMDOOR_BILLING_TOKEN`).
+signed in on the runner: the token in `MEMDOOR_BILLING_TOKEN`, or in
+`~/.memdoor/billing-token` when `memdoor login` wrote it there).
 
 The step fails when the review's last check fails (exit 2) or the workflow
 run does, which is the point: the run's outcome is the job's. `?ci=1` keeps

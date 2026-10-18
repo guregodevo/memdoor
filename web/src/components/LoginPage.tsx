@@ -126,8 +126,8 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
             </div>
           )}
 
-          {/* Tab Switcher — show Register tab for invite signups */}
-          {!callback && inviteToken && (
+          {/* Tab Switcher — anyone can sign up */}
+          {!callback && (
             <div className="flex mb-6 bg-neutral-100 rounded-xl p-1">
               <button
                 onClick={() => setIsLogin(true)}

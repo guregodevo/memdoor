@@ -18,6 +18,10 @@ import (
 // gateway restart, which is fine for an abuse-prevention layer.
 var loginRateLimiter = ratelimit.NewPerClientLimiter(10, 1*time.Minute)
 
+// Anyone can sign up (Greg, 2026-10-18: "no invite gate please", "anyone can
+// signup"); the limiter is what stands between the form and a script.
+var registerRateLimiter = ratelimit.NewPerClientLimiter(5, 10*time.Minute)
+
 // forgotPasswordRateLimiter throttles POST /api/auth/forgot-password by
 // client IP to prevent password-reset-email flooding / enumeration.
 var forgotPasswordRateLimiter = ratelimit.NewPerClientLimiter(5, 1*time.Hour)
@@ -67,20 +71,21 @@ func (a *AuthGatewayAdapter) HandleRegister(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if ip := guestClientIP(r); !registerRateLimiter.Allow(ip) {
+		http.Error(w, `{"error":"too many sign-ups from here, slow down"}`, http.StatusTooManyRequests)
+		return
+	}
+
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "Invalid request: %s"}`, err.Error()), http.StatusBadRequest)
 		return
 	}
 
-	// Enforce invite-only registration. The campaign signup bypass was
-	// removed 2026-04-11 along with the rest of the campaign system.
-	if a.db != nil {
-		if req.InviteToken == "" {
-			http.Error(w, `{"error": "Registration requires an invite. Please ask an admin for an invite link."}`, http.StatusForbidden)
-			return
-		}
-		// Validate invite token
+	// Registration is open. An invite link still works: when a token comes
+	// with the request it is checked and spent, so an invite stays bound to
+	// the address it was sent to.
+	if a.db != nil && req.InviteToken != "" {
 		var inviteEmail string
 		var expiresAt time.Time
 		var usedAt sql.NullTime

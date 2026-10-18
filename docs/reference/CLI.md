@@ -342,7 +342,7 @@ When you start the gateway without an existing database, Memdoor auto-creates th
 - Admin user account (the email/password you entered)
 - SQLite database (auto-created on first start)
 
-**Adding users**: Registration is invite-only. As admin, go to Admin Panel and send invites by email. Invited users get a link with a token to register.
+**Adding users**: anyone can sign up on the sign-in page (Register tab) and joins this gateway's workspace; an admin can still send an invite link from the Admin Panel, which binds the sign-up to that email.
 
 **API endpoints** (used by the wizard):
 | Endpoint | Method | Auth | Description |
