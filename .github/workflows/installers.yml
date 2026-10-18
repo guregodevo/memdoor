@@ -35,6 +35,24 @@ jobs:
           for i in $(seq 1 40); do curl -sf http://127.0.0.1:18789/api/status >/dev/null && break; sleep 1; done
           curl -sf http://127.0.0.1:18789/api/status
           memdoor setup --non-interactive --admin-email ci@example.test --admin-password ci-first-run-2026 --workspace-name ci
+      # The first commands a person types after the install, with no key:
+      # each answers in words (no panic, no "not supported"), and the ones
+      # that have nothing yet say so with exit 1, as on the author's machine.
+      - name: First commands, no key
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          mkdir -p "$HOME/proj" && cd "$HOME/proj"
+          check() { want=$1; shift; out=$("$@" 2>&1); rc=$?; echo "--- $* -> exit $rc"; echo "$out" | head -5
+            case "$out" in *panic*|*"not supported"*) echo "FAIL: crashed"; exit 1;; esac
+            [ "$rc" = "$want" ] || { echo "FAIL: exit $rc, want $want"; exit 1; }; }
+          check 0 memdoor doctor
+          check 0 memdoor providers
+          check 0 memdoor workflow list
+          check 0 memdoor cron list
+          check 0 memdoor conversations
+          check 1 memdoor resume --last
+          check 1 memdoor remote --last
+          check 1 memdoor run "reply with ok"
 
   windows:
     runs-on: windows-latest
@@ -55,4 +73,29 @@ jobs:
           if (-not $ok) { Get-Content gw.log, gw.err; throw "gateway did not answer" }
           (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:18789/api/status).Content
           & $bin setup --non-interactive --admin-email ci@example.test --admin-password ci-first-run-2026 --workspace-name ci
-          Stop-Process -Id $gw.Id
+      - name: First commands, no key (a new shell finds memdoor on PATH)
+        shell: pwsh
+        run: |
+          $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+          if ($userPath -notlike "*Memdoor\bin*") { throw "installer did not put Memdoor\bin on the user PATH" }
+          $env:Path = "$env:Path;" + (Join-Path $env:LOCALAPPDATA 'Memdoor\bin')
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\proj" | Out-Null
+          Set-Location "$env:USERPROFILE\proj"
+          function Check($want, [string[]]$cmd) {
+            $out = & memdoor @cmd 2>&1 | Out-String; $rc = $LASTEXITCODE
+            Write-Host "--- memdoor $cmd -> exit $rc"; Write-Host ($out.Substring(0, [Math]::Min(400, $out.Length)))
+            if ($out -match 'panic|not supported') { throw "crashed: memdoor $cmd" }
+            if ($rc -ne $want) { throw "memdoor $cmd exit $rc, want $want" }
+          }
+          Check 0 @('doctor')
+          Check 0 @('providers')
+          Check 0 @('workflow','list')
+          Check 0 @('cron','list')
+          Check 0 @('conversations')
+          Check 1 @('resume','--last')
+          Check 1 @('remote','--last')
+          Check 1 @('run','reply with ok')
+      - name: Stop the gateway
+        shell: pwsh
+        if: always()
+        run: Get-Process memdoor -ErrorAction SilentlyContinue | Stop-Process -Force
