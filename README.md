@@ -80,7 +80,8 @@ cd your-project && memdoor tui         # the first run sets the machine up
 ```
 
 macOS (Apple Silicon), Linux (amd64, arm64; static), Windows
-(`irm https://memdoor.ai/install.ps1 | iex`). One binary, installed to
+(`irm https://memdoor.ai/install.ps1 | iex`; the agent runs commands in
+Git Bash when it is installed, otherwise PowerShell). One binary, installed to
 `~/.local/bin`, no sudo, no Docker, no Python. The installer
 ([`scripts/install.sh`](scripts/install.sh)) verifies the SHA-256 of what it
 downloads.

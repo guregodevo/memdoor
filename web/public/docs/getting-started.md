@@ -14,7 +14,8 @@ curl -fsSL https://memdoor.ai/install.sh | bash
 One binary at `~/.local/bin/memdoor`, no sudo, no Docker, no Python. The
 installer verifies the download against the published SHA-256 and refuses to
 install if it does not match. On Windows: `irm https://memdoor.ai/install.ps1 |
-iex`.
+iex`; the agent runs its commands in Git Bash when it is installed, otherwise
+in PowerShell, and it is told which.
 
 ## Your key
 

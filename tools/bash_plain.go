@@ -1,8 +1,11 @@
 package tools
 
 import (
+	"context"
+
 	"errors"
 	"fmt"
+	"memdoor/pkg/shell"
 	"os"
 	"os/exec"
 	"strings"
@@ -49,7 +52,7 @@ func plainEnv() []string {
 // the finds outlived it by over an hour.
 func runPlainBash(command, dir string) (string, error) {
 	timeout := BashTimeout()
-	cmd := exec.Command("bash", "-c", command)
+	cmd := shell.Command(context.Background(), command)
 	cmd.Dir = dir
 	cmd.Env = plainEnv()
 	var buf strings.Builder

@@ -87,7 +87,7 @@ func versionNumbers(v string) ([3]int, bool) {
 // output captured, and says what was installed.
 func tuiUpdate() (string, error) {
 	var out bytes.Buffer
-	c := exec.Command("bash", "-c", "curl -fsSL "+installScriptURL+" | bash")
+	c := installerCommand()
 	c.Stdout, c.Stderr = &out, &out
 	c.Env = append(os.Environ(), "MEMDOOR_NONINTERACTIVE=1")
 	if err := c.Run(); err != nil {

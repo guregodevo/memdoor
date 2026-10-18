@@ -10,6 +10,7 @@ import (
 
 	"memdoor/gateway/config"
 	"memdoor/gateway/skills"
+	"memdoor/pkg/shell"
 	"memdoor/tools"
 )
 
@@ -366,17 +367,20 @@ func (spb *SystemPromptBuilder) buildRuntimeSection() string {
 Host: %s
 OS: %s
 Architecture: %s
+Shell: %s
 Go Version: %s
 Model: %s
 Agent: %s
 
-This information may be helpful for debugging or system-specific operations.`,
+This information may be helpful for debugging or system-specific operations.%s`,
 		hostname,
 		runtime.GOOS,
 		runtime.GOARCH,
+		shell.Name(),
 		runtime.Version(),
 		spb.model,
 		spb.agentConfig.ID,
+		shellHint(),
 	)
 }
 
@@ -411,4 +415,12 @@ func (spb *SystemPromptBuilder) buildIdentityOnly() string {
 		name = spb.agentConfig.ID
 	}
 	return fmt.Sprintf("You are agent '%s' running on %s.", name, runtime.GOOS)
+}
+
+// shellHint is the line the model gets when its bash tool is not bash.
+func shellHint() string {
+	if h := shell.Hint(); h != "" {
+		return "\n\n" + h
+	}
+	return ""
 }

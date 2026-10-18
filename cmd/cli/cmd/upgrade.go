@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -32,6 +33,27 @@ var versionEndpoint = "https://memdoor.ai/dl/VERSION"
 // to. Same script handles fresh-install and upgrade-in-place (see
 // scripts/install.sh, the "Upgrade-in-place" block).
 var installScriptURL = "https://memdoor.ai/install.sh"
+
+// installScriptURLWindows is the PowerShell installer the Windows binary
+// hands itself to on upgrade.
+var installScriptURLWindows = "https://memdoor.ai/install.ps1"
+
+// installerLine is the one-liner the installer runs as on this machine.
+func installerLine() string {
+	if runtime.GOOS == "windows" {
+		return "irm " + installScriptURLWindows + " | iex"
+	}
+	return "curl -fsSL " + installScriptURL + " | bash"
+}
+
+// installerCommand is that line in the shell it belongs to: PowerShell on
+// Windows, bash elsewhere.
+func installerCommand() *exec.Cmd {
+	if runtime.GOOS == "windows" {
+		return exec.Command("powershell", "-NoProfile", "-Command", installerLine())
+	}
+	return exec.Command("bash", "-c", installerLine())
+}
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
@@ -108,9 +130,8 @@ Flags:
 		// install.sh owns every post-swap step, so every install path heals
 		// the same way, including `curl|bash install.sh` users who never
 		// invoke `memdoor upgrade`.
-		fmt.Println("→ Running installer (curl -fsSL " + installScriptURL + " | bash)…")
-		pipe := fmt.Sprintf("curl -fsSL %s | bash", installScriptURL)
-		c := exec.Command("bash", "-c", pipe)
+		fmt.Println("→ Running installer (" + installerLine() + ")…")
+		c := installerCommand()
 		c.Stdout = os.Stdout
 		c.Stderr = os.Stderr
 		c.Stdin = os.Stdin

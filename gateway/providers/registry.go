@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"memdoor/pkg/shared"
+	"memdoor/pkg/shell"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -173,7 +173,7 @@ func resolveKey(raw string) (string, string) {
 	case raw == "":
 		return "", ""
 	case strings.HasPrefix(raw, "!"):
-		out, err := exec.Command("sh", "-c", raw[1:]).Output()
+		out, err := shell.Command(context.Background(), raw[1:]).Output()
 		if err != nil {
 			return "", "command failed"
 		}

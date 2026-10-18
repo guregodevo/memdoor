@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memdoor/pkg/secrets"
+	"memdoor/pkg/shell"
 	"memdoor/tools"
 	"os/exec"
 	"sync"
@@ -128,7 +129,9 @@ func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chu
 		return len(p), nil
 	}}
 
-	cmd := exec.CommandContext(cctx, "bash", "-c", command)
+	// The shell is the machine's (pkg/shell): bash where there is one,
+	// PowerShell on a Windows without it.
+	cmd := shell.Command(cctx, command)
 	// The workdir comes from the harness, not from a cd inside the command.
 	cmd.Dir = cwd
 	// The cap kills the whole process group, not only bash. Killing bash

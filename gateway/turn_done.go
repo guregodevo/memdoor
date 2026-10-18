@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"memdoor/pkg/shell"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -94,7 +94,7 @@ func doneWhen(ctx context.Context, workdir, target string) (label string, ok, de
 		}
 		cctx, cancel := context.WithTimeout(ctx, doneWhenCommand)
 		defer cancel()
-		c := exec.CommandContext(cctx, "sh", "-c", cmd)
+		c := shell.Command(cctx, cmd)
 		c.Dir = workdir
 		return "target `" + firstLine(cmd, 60) + "`", c.Run() == nil, true
 	}

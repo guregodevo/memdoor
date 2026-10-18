@@ -61,7 +61,9 @@ const applyPatchIsATool = "apply_patch is a TOOL, not a shell command — bash c
 // shellRanApplyPatch matches bash's own "command not found" for apply_patch,
 // wherever it sits in the result: the formatter puts the first output line
 // after its "Output:" label, so the message is not always at a line start.
-var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)bash: (line \d+: )?apply_patch: command not found`)
+// The shell names itself as it was invoked: "bash", "/bin/bash" or Git for
+// Windows' full path, so a path before the name is allowed.
+var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)(?:\S*[\\/])?bash(?:\.exe)?: (line \d+: )?apply_patch: command not found`)
 
 // A TOOL'S OUTPUT NEVER CARRIES A SECRET (live 2026-10-10): asked for a free
 // model, the coder ran `env | grep openrouter` and `cat

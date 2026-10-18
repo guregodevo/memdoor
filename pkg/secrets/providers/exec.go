@@ -3,7 +3,8 @@ package providers
 import (
 	"context"
 	"fmt"
-	"os/exec"
+
+	"memdoor/pkg/shell"
 	"strings"
 )
 
@@ -16,7 +17,7 @@ func NewExecProvider() *execProvider {
 func (p *execProvider) Name() string { return "exec" }
 
 func (p *execProvider) Get(ctx context.Context, id string) (string, error) {
-	cmd := exec.CommandContext(ctx, "sh", "-c", id)
+	cmd := shell.Command(ctx, id)
 	out, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to execute secret command %q: %w", id, err)
