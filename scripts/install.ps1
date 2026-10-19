@@ -69,8 +69,21 @@ if ($actual -ne $expected) {
 Write-Host "  ok ($($expected.Substring(0,16))...)"
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-# Replacing a RUNNING exe fails on Windows, unlike Unix. Say which process to
-# close rather than leaving a locked-file error to interpret.
+# Replacing a RUNNING exe fails on Windows, unlike Unix, and `memdoor upgrade`
+# is that exe running this script. A running exe can be RENAMED: the one in
+# place moves aside, the new one takes its name, and the next install sweeps
+# the copies set aside (one may still be running; it is left for the one after).
+Get-ChildItem -Path $InstallDir -Filter 'memdoor.old-*.exe' -ErrorAction SilentlyContinue |
+    Remove-Item -Force -ErrorAction SilentlyContinue
+if (Test-Path $Target) {
+    $aside = Join-Path $InstallDir "memdoor.old-$([guid]::NewGuid().ToString('N').Substring(0, 8)).exe"
+    try {
+        Move-Item -Path $Target -Destination $aside -Force
+    } catch {
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        Fail "could not move $Target aside — close any running memdoor and try again.`n  $($_.Exception.Message)"
+    }
+}
 try {
     Move-Item -Path $tmp -Destination $Target -Force
 } catch {

@@ -3,9 +3,9 @@ package providers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"memdoor/pkg/shell"
-	"strings"
 )
 
 type execProvider struct{}

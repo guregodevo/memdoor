@@ -103,6 +103,14 @@ jobs:
           Check 1 @('resume','--last')
           Check 1 @('remote','--last')
           exit 0   # the runner would otherwise fail the step on the last command's expected 1
+      - name: Install again over the running exe (what memdoor upgrade does)
+        shell: pwsh
+        run: |
+          if (-not (Get-Process memdoor -ErrorAction SilentlyContinue)) { throw "no memdoor running; the step proves nothing" }
+          $env:MEMDOOR_CI = '1'; irm 'https://memdoor.ai/install.ps1?ci=1' | iex
+          $bin = Join-Path $env:LOCALAPPDATA 'Memdoor\bin\memdoor.exe'
+          & $bin --version
+          Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Memdoor\bin')
       - name: Stop the gateway
         shell: pwsh
         if: always()
