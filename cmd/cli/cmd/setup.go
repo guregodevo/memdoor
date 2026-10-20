@@ -35,7 +35,7 @@ first admin user in one go.
 
 Phase 1 (always, no gateway required): create the on-disk workspace
 directory tree, default config, bootstrap files
-(AGENTS.md / SOUL.md / TOOLS.md), and 'git init' the workspace dir.
+(AGENTS.md / SOUL.md / TOOLS.md).
 
 Phase 2 (needs a gateway — setup auto-starts one if it isn't already
 running): register the first admin user via the public /api/setup
@@ -212,14 +212,6 @@ func setupLocalDirs(setupWorkspace string) (string, error) {
 			}
 		}
 		fmt.Println("  Created bootstrap files")
-	}
-
-	// Initialize git repo in workspace
-	if _, err := os.Stat(filepath.Join(setupWorkspace, ".git")); os.IsNotExist(err) {
-		// Quiet, and on main: git's "hint: Using 'master'…" advice filled
-		// the first-run screen on a Mac (2026-10-20).
-		_ = exec.Command("git", "-c", "init.defaultBranch=main", "init", "-q", setupWorkspace).Run()
-		fmt.Println("  Initialized git repository")
 	}
 
 	fmt.Println("\n  Workspace ready at: " + setupWorkspace)

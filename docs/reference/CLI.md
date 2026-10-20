@@ -376,7 +376,6 @@ memdoor setup [flags]
 - Creates the workspace directory structure (`data/`, `logs/`, `cron/`, `emails/`, `memory/`, `skills/`)
 - Writes a default `config.json` (JSON5 format) if none exists
 - Creates bootstrap files in the workspace: `AGENTS.md`, `SOUL.md`, `TOOLS.md`
-- Initializes a git repository inside the workspace
 
 *Phase 2 — admin registration (requires gateway running):*
 - Calls the public `/api/setup` endpoint to create the workspace row and the first admin user — atomically, in one handler
