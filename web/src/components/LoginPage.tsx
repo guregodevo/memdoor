@@ -261,19 +261,15 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
           {/* Footer */}
           <div className="mt-6 text-center text-sm text-gray-500">
             {isLogin ? (
-              inviteToken ? (
-                <>
-                  {t('auth.noAccount')}{' '}
-                  <button
-                    onClick={() => setIsLogin(false)}
-                    className="text-neutral-900 font-medium underline hover:text-neutral-600 transition-colors"
-                  >
-                    {t('auth.register')}
-                  </button>
-                </>
-              ) : (
-                <span className="text-xs text-neutral-500">Registration is invite-only.</span>
-              )
+              <>
+                {t('auth.noAccount')}{' '}
+                <button
+                  onClick={() => setIsLogin(false)}
+                  className="text-neutral-900 font-medium underline hover:text-neutral-600 transition-colors"
+                >
+                  {t('auth.register')}
+                </button>
+              </>
             ) : (
               <>
                 {t('auth.hasAccount')}{' '}
