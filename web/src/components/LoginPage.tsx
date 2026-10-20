@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { getApiUrl } from '../config';
 import LanguageSwitcher from './LanguageSwitcher';
 
 interface LoginPageProps {
@@ -20,6 +21,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
   const [callback, setCallback] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState<string | null>(null);
+  const [signInWith, setSignInWith] = useState<string[]>([]);
   const [inviteValidating, setInviteValidating] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
 
@@ -31,6 +33,36 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
     if (callbackUrl) {
       setCallback(callbackUrl);
     }
+
+    // Back from Google or GitHub: the session token rides in the fragment,
+    // which no server or log saw. Keep it, drop it from the bar, go on.
+    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const socialToken = fragment.get('token');
+    if (socialToken) {
+      localStorage.setItem('auth_token', socialToken);
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      if (callbackUrl && sameOrigin(callbackUrl)) {
+        window.location.href = withToken(callbackUrl, socialToken);
+      } else {
+        window.location.href = '/';
+      }
+      return;
+    }
+    const socialError = params.get('error');
+    if (socialError) {
+      const provider = socialError.startsWith('github') ? 'GitHub' : 'Google';
+      setError(
+        socialError.endsWith('_denied') ? `${provider} sign-in was cancelled.` :
+        socialError.endsWith('_unverified') ? `${provider} has no verified email for this account. Register with your email instead.` :
+        `${provider} sign-in failed. Try again, or register with your email.`,
+      );
+    }
+
+    // Which buttons this gateway offers (its GOOGLE_/GITHUB_ client set up).
+    fetch(getApiUrl('/api/setup/status'))
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (data && Array.isArray(data.sign_in_with)) setSignInWith(data.sign_in_with); })
+      .catch(() => {});
 
     // Handle invite links: ?invite=TOKEN&channel=general
     const invite = params.get('invite');
@@ -123,6 +155,29 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
           {inviteError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
               {inviteError}
+            </div>
+          )}
+
+          {/* Sign in with Google / GitHub: one click, the account on first sight */}
+          {signInWith.length > 0 && (
+            <div className="mb-6">
+              <div className="space-y-2">
+                {signInWith.map(provider => (
+                  <a
+                    key={provider}
+                    href={getApiUrl(`/api/auth/${provider}`) + (callback ? `?callback=${encodeURIComponent(callback)}` : '')}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border border-neutral-300 rounded-xl text-sm font-medium text-neutral-900 hover:bg-neutral-50 transition-colors"
+                  >
+                    {provider === 'google' ? <GoogleMark /> : <GitHubMark />}
+                    Continue with {provider === 'google' ? 'Google' : 'GitHub'}
+                  </a>
+                ))}
+              </div>
+              <div className="flex items-center gap-3 mt-6">
+                <div className="flex-1 h-px bg-neutral-200" />
+                <span className="text-xs text-neutral-400">or with your email</span>
+                <div className="flex-1 h-px bg-neutral-200" />
+              </div>
             </div>
           )}
 
@@ -301,3 +356,37 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
     </div>
   );
 }
+
+// A callback is honoured only on this origin (no open redirect).
+function sameOrigin(callback: string): boolean {
+  try {
+    return new URL(callback, window.location.origin).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+function withToken(callback: string, token: string): string {
+  const u = new URL(callback, window.location.origin);
+  return `${u.pathname}${u.search ? u.search + '&' : '?'}token=${encodeURIComponent(token)}`;
+}
+
+function GoogleMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z" />
+      <path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z" />
+      <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z" />
+    </svg>
+  );
+}
+
+function GitHubMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  );
+}
+

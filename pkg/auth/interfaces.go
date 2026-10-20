@@ -12,6 +12,9 @@ type Service interface {
 	// User management
 	Register(ctx context.Context, email, username, password, name string) (*User, error)
 	Login(ctx context.Context, email, password string) (*User, string, error)
+	// LoginVerifiedEmail signs in an address an identity provider (Google,
+	// GitHub) has vouched for, creating the account on first sight.
+	LoginVerifiedEmail(ctx context.Context, email, name string) (*User, string, error)
 	VerifyToken(ctx context.Context, token string) (*User, error)
 	GetUserByID(ctx context.Context, userID string) (*User, error)
 

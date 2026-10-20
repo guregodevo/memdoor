@@ -553,6 +553,7 @@ func NewServer(port int, apiKey string, verbose bool) (*Server, error) {
 
 		// Create gateway adapter for HTTP handlers
 		server.authAdapter = NewAuthGatewayAdapter(authService)
+		server.authAdapter.SetSocial(newSocialSignIn(baseURL, os.Getenv))
 		authLog.Info("Authentication service initialized (DDD architecture)",
 			slog.String("base_url", baseURL),
 			slog.String("pattern", "interface-based"))

@@ -67,6 +67,7 @@ func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 		"initialized":    userCount > 0,
 		"workspace_name": workspaceName,
 		"workspace_slug": workspaceSlug,
+		"sign_in_with":   s.authAdapter.SocialProviders(), // the buttons the sign-in page offers
 	})
 }
 

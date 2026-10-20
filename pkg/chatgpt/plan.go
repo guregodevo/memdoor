@@ -18,18 +18,16 @@ package chatgpt
 
 import (
 	"context"
-	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
+
+	"memdoor/pkg/oidc"
+
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"math/big"
 	"net"
 	"net/http"
 	"net/url"
@@ -551,173 +549,15 @@ func (s *Source) refresh(ctx context.Context, c *Credential) (*Credential, error
 
 // ---- the ID token ---------------------------------------------------------
 
-type idClaims struct {
-	Issuer   string `json:"iss"`
-	Subject  string `json:"sub"`
-	Audience any    `json:"aud"`
-	Expires  int64  `json:"exp"`
-	Nonce    string `json:"nonce"`
-	Email    string `json:"email"`
-}
+// idClaims is what the ID token says; the check itself is pkg/oidc's, shared
+// with Sign in with Google.
+type idClaims = oidc.Claims
 
 // verifyIDToken checks the ID token's signature against the issuer's JWKS,
 // then its issuer, audience (the issued client id), expiry and the nonce
 // of this attempt, as OpenAI's docs require.
 func verifyIDToken(ctx context.Context, hc *http.Client, ep Endpoints, token, clientID, nonce string) (*idClaims, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return nil, errors.New("not a JWT")
-	}
-	var header struct {
-		Alg string `json:"alg"`
-		Kid string `json:"kid"`
-	}
-	hb, err := base64.RawURLEncoding.DecodeString(parts[0])
-	if err != nil || json.Unmarshal(hb, &header) != nil {
-		return nil, errors.New("unreadable header")
-	}
-	pb, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, errors.New("unreadable claims")
-	}
-	var claims idClaims
-	if err := json.Unmarshal(pb, &claims); err != nil {
-		return nil, errors.New("unreadable claims")
-	}
-	sig, err := base64.RawURLEncoding.DecodeString(parts[2])
-	if err != nil {
-		return nil, errors.New("unreadable signature")
-	}
-	keys, err := fetchJWKS(ctx, hc, ep.JWKS)
-	if err != nil {
-		return nil, err
-	}
-	signed := []byte(parts[0] + "." + parts[1])
-	sum := sha256.Sum256(signed)
-	verified := false
-	for _, k := range keys {
-		if header.Kid != "" && k.Kid != "" && k.Kid != header.Kid {
-			continue
-		}
-		switch {
-		case header.Alg == "RS256" && k.Kty == "RSA":
-			if pub, err := k.rsa(); err == nil && rsa.VerifyPKCS1v15(pub, crypto.SHA256, sum[:], sig) == nil {
-				verified = true
-			}
-		case header.Alg == "ES256" && k.Kty == "EC":
-			if pub, err := k.ecdsa(); err == nil && len(sig) == 64 {
-				r := new(big.Int).SetBytes(sig[:32])
-				s := new(big.Int).SetBytes(sig[32:])
-				if ecdsa.Verify(pub, sum[:], r, s) {
-					verified = true
-				}
-			}
-		}
-		if verified {
-			break
-		}
-	}
-	if !verified {
-		return nil, fmt.Errorf("signature (%s) matched no key of %s", header.Alg, ep.JWKS)
-	}
-	if claims.Issuer != ep.Issuer {
-		return nil, fmt.Errorf("issuer %q, want %q", claims.Issuer, ep.Issuer)
-	}
-	if !audienceHas(claims.Audience, clientID) {
-		return nil, fmt.Errorf("audience %v is not this client", claims.Audience)
-	}
-	if claims.Expires > 0 && time.Now().Unix() >= claims.Expires {
-		return nil, errors.New("expired")
-	}
-	if claims.Nonce != nonce {
-		return nil, errors.New("nonce mismatch")
-	}
-	return &claims, nil
-}
-
-func audienceHas(aud any, clientID string) bool {
-	switch a := aud.(type) {
-	case string:
-		return a == clientID
-	case []any:
-		for _, v := range a {
-			if s, ok := v.(string); ok && s == clientID {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-type jwk struct {
-	Kty string `json:"kty"`
-	Kid string `json:"kid"`
-	N   string `json:"n"`
-	E   string `json:"e"`
-	Crv string `json:"crv"`
-	X   string `json:"x"`
-	Y   string `json:"y"`
-}
-
-func (k jwk) rsa() (*rsa.PublicKey, error) {
-	n, err := base64.RawURLEncoding.DecodeString(k.N)
-	if err != nil {
-		return nil, err
-	}
-	e, err := base64.RawURLEncoding.DecodeString(k.E)
-	if err != nil {
-		return nil, err
-	}
-	return &rsa.PublicKey{N: new(big.Int).SetBytes(n), E: int(new(big.Int).SetBytes(e).Int64())}, nil
-}
-
-func (k jwk) ecdsa() (*ecdsa.PublicKey, error) {
-	if k.Crv != "P-256" {
-		return nil, fmt.Errorf("curve %s", k.Crv)
-	}
-	x, err := base64.RawURLEncoding.DecodeString(k.X)
-	if err != nil {
-		return nil, err
-	}
-	y, err := base64.RawURLEncoding.DecodeString(k.Y)
-	if err != nil {
-		return nil, err
-	}
-	return &ecdsa.PublicKey{Curve: elliptic.P256(), X: new(big.Int).SetBytes(x), Y: new(big.Int).SetBytes(y)}, nil
-}
-
-var jwksCache = struct {
-	sync.Mutex
-	at   map[string]time.Time
-	keys map[string][]jwk
-}{at: map[string]time.Time{}, keys: map[string][]jwk{}}
-
-func fetchJWKS(ctx context.Context, hc *http.Client, u string) ([]jwk, error) {
-	jwksCache.Lock()
-	if keys, ok := jwksCache.keys[u]; ok && time.Since(jwksCache.at[u]) < time.Hour {
-		jwksCache.Unlock()
-		return keys, nil
-	}
-	jwksCache.Unlock()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := hc.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("the signing keys could not be read: %w", err)
-	}
-	defer resp.Body.Close()
-	var doc struct {
-		Keys []jwk `json:"keys"`
-	}
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&doc); err != nil {
-		return nil, fmt.Errorf("the signing keys could not be read: %w", err)
-	}
-	jwksCache.Lock()
-	jwksCache.at[u], jwksCache.keys[u] = time.Now(), doc.Keys
-	jwksCache.Unlock()
-	return doc.Keys, nil
+	return oidc.VerifyIDToken(ctx, hc, ep.Issuer, ep.JWKS, token, clientID, nonce)
 }
 
 // ---- small helpers --------------------------------------------------------

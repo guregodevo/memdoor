@@ -30,7 +30,8 @@ var forgotPasswordRateLimiter = ratelimit.NewPerClientLimiter(5, 1*time.Hour)
 // Pattern: Adapter pattern to bridge domain service to HTTP layer
 type AuthGatewayAdapter struct {
 	service auth.Service
-	db      *sql.DB // For invite token validation
+	db      *sql.DB       // For invite token validation
+	social  *socialSignIn // Sign in with Google / GitHub; nil = no button
 }
 
 // NewAuthGatewayAdapter creates a new auth gateway adapter

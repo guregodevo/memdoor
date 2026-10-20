@@ -342,7 +342,7 @@ When you start the gateway without an existing database, Memdoor auto-creates th
 - Admin user account (the email/password you entered)
 - SQLite database (auto-created on first start)
 
-**Adding users**: anyone can sign up on the sign-in page (Register tab) and joins this gateway's workspace; an admin can still send an invite link from the Admin Panel, which binds the sign-up to that email.
+**Adding users**: anyone can sign up on the sign-in page (Register tab, or Continue with Google / GitHub when the gateway has `GOOGLE_CLIENT_ID`+`GOOGLE_CLIENT_SECRET` / `GITHUB_CLIENT_ID`+`GITHUB_CLIENT_SECRET` set: the provider's verified e-mail is the account, made on first sign-in) and joins this gateway's workspace; an admin can still send an invite link from the Admin Panel, which binds the sign-up to that email.
 
 **API endpoints** (used by the wizard):
 | Endpoint | Method | Auth | Description |

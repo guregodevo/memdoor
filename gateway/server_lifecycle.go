@@ -493,6 +493,10 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 		http.Handle("/api/auth/forgot-password", addCORS(http.HandlerFunc(server.authAdapter.HandleForgotPassword)))         // Password reset request
 		http.Handle("/api/auth/reset-password", addCORS(http.HandlerFunc(server.authAdapter.HandleResetPassword)))           // Password reset
 		http.Handle("/api/auth/change-password", addCORS(http.HandlerFunc(server.authAdapter.HandleChangePassword)))         // Self-service password change (authenticated via Bearer token)
+		for _, p := range server.authAdapter.SocialProviders() {
+			http.Handle("/api/auth/"+p, http.HandlerFunc(server.authAdapter.HandleSocialStart))                // Sign in with Google / GitHub: to the provider
+			http.Handle("/api/auth/"+p+"/callback", http.HandlerFunc(server.authAdapter.HandleSocialCallback)) // ...and back, signed in
+		}
 	}
 	http.Handle("/api/invite/validate", addCORS(http.HandlerFunc(server.handleValidateInvite))) // Validate invite token (public)
 	// The landing page's seat request: public POST, rate-limited, stored in

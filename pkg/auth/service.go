@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"memdoor/pkg/domain"
@@ -164,31 +165,142 @@ func (s *service) Login(ctx context.Context, email, password string) (*User, str
 		return nil, "", fmt.Errorf("invalid email or password")
 	}
 
-	// Generate session token
+	token, err := s.openSession(ctx, user)
+	if err != nil {
+		return nil, "", err
+	}
+	return user, token, nil
+}
+
+// openSession is a signed-in user's new session: the token the caller
+// keeps, its hash stored.
+func (s *service) openSession(ctx context.Context, user *User) (string, error) {
 	token, err := s.tokenGenerator.GenerateToken()
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to generate token: %w", err)
+		return "", fmt.Errorf("failed to generate token: %w", err)
 	}
-
-	// Create session
 	session := &Session{
 		UserID:      user.ID,
 		WorkspaceID: user.WorkspaceID,
 		ExpiresAt:   time.Now().Add(SessionTTL),
 		CreatedAt:   time.Now(),
 	}
-
-	tokenHash := s.tokenGenerator.HashToken(token)
-	if err := s.repo.CreateSession(ctx, session, tokenHash); err != nil {
-		return nil, "", fmt.Errorf("failed to create session: %w", err)
+	if err := s.repo.CreateSession(ctx, session, s.tokenGenerator.HashToken(token)); err != nil {
+		return "", fmt.Errorf("failed to create session: %w", err)
 	}
+	_ = s.repo.UpdateLastLogin(ctx, user.ID)
+	return token, nil
+}
 
-	// Update last login time
-	if err := s.repo.UpdateLastLogin(ctx, user.ID); err != nil {
-		// Log warning but don't fail login
+// LoginVerifiedEmail is Sign in with Google or GitHub: the provider has
+// checked that the person owns the address, so a known address signs in
+// (and counts as verified from now on) and a new one gets an account, no
+// password typed. The account still has one, random and unknown, so
+// "forgot password" sets a usable one later.
+func (s *service) LoginVerifiedEmail(ctx context.Context, email, name string) (*User, string, error) {
+	email = strings.TrimSpace(email)
+	if email == "" || !strings.Contains(email, "@") {
+		return nil, "", fmt.Errorf("the sign-in carried no email address")
 	}
-
+	user, _, err := s.repo.GetUserByEmail(ctx, email)
+	switch {
+	case err == nil:
+		if !user.EmailVerified {
+			if err := s.repo.MarkEmailVerified(ctx, user.ID); err == nil {
+				user.EmailVerified = true
+			}
+		}
+	default:
+		user, err = s.createVerifiedUser(ctx, email, name)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	token, err := s.openSession(ctx, user)
+	if err != nil {
+		return nil, "", err
+	}
 	return user, token, nil
+}
+
+func (s *service) createVerifiedUser(ctx context.Context, email, name string) (*User, error) {
+	password, err := s.tokenGenerator.GenerateToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate a password: %w", err)
+	}
+	passwordHash, err := s.tokenGenerator.HashPassword(password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+	username := s.freeUsername(ctx, usernameFromEmail(email))
+	if strings.TrimSpace(name) == "" {
+		name = username
+	}
+	workspaceID := s.workspaceID
+	if workspaceID == "" {
+		workspaceID = domain.DefaultWorkspaceID
+	}
+	now := time.Now()
+	user := &User{
+		BaseUser: domain.BaseUser{
+			ID:            fmt.Sprintf("human:%s", generateUUID()),
+			Email:         email,
+			Username:      username,
+			Name:          strings.TrimSpace(name),
+			EmailVerified: true,
+			Timestamps:    domain.Timestamps{CreatedAt: now, UpdatedAt: now},
+		},
+		WorkspaceID: workspaceID,
+	}
+	if err := s.repo.CreateUser(ctx, user, passwordHash); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+	return user, nil
+}
+
+// usernameFromEmail is the address's local part in the username alphabet
+// (letters, digits, - and _; 3 to 30 characters).
+func usernameFromEmail(email string) string {
+	local := email
+	if i := strings.Index(email, "@"); i >= 0 {
+		local = email[:i]
+	}
+	var b strings.Builder
+	for _, ch := range strings.ToLower(local) {
+		switch {
+		case ch >= 'a' && ch <= 'z', ch >= '0' && ch <= '9', ch == '-', ch == '_':
+			b.WriteRune(ch)
+		case ch == '.', ch == '+':
+			b.WriteRune('-')
+		}
+	}
+	u := strings.Trim(b.String(), "-_")
+	if len(u) < 3 {
+		u = "user-" + u
+		u = strings.TrimRight(u, "-")
+	}
+	if len(u) > 30 {
+		u = u[:30]
+	}
+	return u
+}
+
+// freeUsername is want, or want with a short suffix when it is taken.
+func (s *service) freeUsername(ctx context.Context, want string) string {
+	if _, err := s.repo.GetUserByUsername(ctx, want); err != nil {
+		return want
+	}
+	base := want
+	if len(base) > 25 {
+		base = base[:25]
+	}
+	for i := 0; i < 20; i++ {
+		candidate := base + "-" + generateUUID()[:4]
+		if _, err := s.repo.GetUserByUsername(ctx, candidate); err != nil {
+			return candidate
+		}
+	}
+	return base + "-" + generateUUID()[:8]
 }
 
 // VerifyToken checks if a token is valid and returns the user
