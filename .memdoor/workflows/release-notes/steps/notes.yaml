@@ -4,7 +4,7 @@ prompt: |
 
   What changed, from git:
 
-  1. The release before this one: `git tag --list 'v*-wiki' --sort=-v:refname | grep -A1 -x '{{.partition}}' | tail -1` is the tag listed immediately after {{.partition}} there — the newest release older than it. When that prints nothing, {{.partition}} is the first release: read the whole history instead.
+  1. The release before this one: `git tag --list 'v[0-9]*' --sort=-v:refname | grep -A1 -x '{{.partition}}' | tail -1` is the tag listed immediately after {{.partition}} there — the newest release older than it. When that prints nothing, {{.partition}} is the first release: read the whole history instead.
   2. Every commit between them: `git log --format='%h %s%n%b' <prev>..{{.partition}}` — read the messages to the end, and `git show <hash>` for any commit whose message does not say what a user would notice.
   3. The date of the tag: `git log -1 --format=%cs {{.partition}}` (today's date if it does not resolve).
 

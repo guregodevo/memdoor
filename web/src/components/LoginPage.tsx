@@ -18,6 +18,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [callback, setCallback] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState<string | null>(null);
@@ -44,9 +45,15 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
       if (callbackUrl && sameOrigin(callbackUrl)) {
         window.location.href = withToken(callbackUrl, socialToken);
       } else {
-        window.location.href = '/';
+        window.location.href = '/welcome';
       }
       return;
+    }
+    // Back from the welcome page's sign-out: say so, the same way a sign-in
+    // is confirmed (Greg, 2026-10-20: "logout too?").
+    if (params.get('signed_out') !== null) {
+      setNotice("You're signed out. Sign in again whenever you like.");
+      window.history.replaceState(null, '', window.location.pathname);
     }
     const socialError = params.get('error');
     if (socialError) {
@@ -124,6 +131,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
       }
 
       onSuccess?.();
+      navigate('/welcome');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
@@ -155,6 +163,12 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
           {inviteError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
               {inviteError}
+            </div>
+          )}
+
+          {notice && (
+            <div className="mb-6 p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700">
+              {notice}
             </div>
           )}
 

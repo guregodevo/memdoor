@@ -7,6 +7,7 @@ import { SetupPage } from './components/SetupPage';
 import { VerifyEmailPage } from './components/VerifyEmailPage';
 import { TopupResultPage } from './components/TopupResultPage';
 import { DownloadPage } from './components/DownloadPage';
+import { WelcomePage } from './components/WelcomePage';
 import { ForgotPasswordPage } from './components/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { CoderLandingPage } from './components/CoderLandingPage';
@@ -164,6 +165,11 @@ function App() {
   // Show login page if not authenticated (auth-only paths land here)
   if (!isAuthenticated) {
     return <LoginPage />;
+  }
+
+  // Where a sign-in lands: who you are, your workspace, the next steps.
+  if (location.pathname === '/welcome') {
+    return <WelcomePage />;
   }
 
   // THE SITE IS A STOREFRONT. The product is one binary in a terminal, so

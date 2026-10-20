@@ -13,10 +13,10 @@ import { CoderHeader } from './CoderLandingPage';
 // ad-hoc signed, and macOS refuses to open one — "Memdoor Not Opened", Move to
 // Trash or Done. A link in an old email lands on the install line instead.
 
-const INSTALL_UNIX = 'curl -fsSL https://memdoor.ai/install.sh | bash';
+export const INSTALL_UNIX = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 const INSTALL_WINDOWS = 'irm https://memdoor.ai/install.ps1 | iex';
 
-const STEPS: { title: string; body: React.ReactNode }[] = [
+export const STEPS: { title: string; body: React.ReactNode }[] = [
   {
     title: 'Install it',
     body: (
@@ -72,32 +72,8 @@ export function DownloadPage() {
           macOS (Apple Silicon and Intel), Linux and Windows; the three installers run on GitHub's runners on every change to them. Your files, sessions and notes stay on the machine you run it on.
         </p>
 
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-950 p-5">
-          <pre className="overflow-x-auto text-[13px] leading-relaxed text-neutral-100">
-            <code>
-              {INSTALL_UNIX}
-              {'\n'}export OPEN_ROUTER_API_KEY=sk-or-…   # or any provider's key, or: memdoor connect
-              {'\n'}cd your-project &amp;&amp; memdoor tui
-            </code>
-          </pre>
-        </div>
-        <p className="mt-3 text-xs text-neutral-400">
-          Windows PowerShell: <code className="text-neutral-600">{INSTALL_WINDOWS}</code>
-        </p>
-
-        <ol className="mt-12 space-y-6">
-          {STEPS.map((s, i) => (
-            <li key={s.title} className="flex gap-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white">
-                {i + 1}
-              </span>
-              <div>
-                <div className="font-semibold text-neutral-900">{s.title}</div>
-                <p className="text-sm leading-relaxed text-neutral-500">{s.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
+        <InstallBlock />
+        <StepList steps={STEPS} />
 
         <p className="mt-12 text-xs text-neutral-400">
           Stuck?{' '}
@@ -109,5 +85,45 @@ export function DownloadPage() {
         </p>
       </main>
     </div>
+  );
+}
+
+// InstallBlock is the install line and the two commands after it, shared
+// with the welcome page.
+export function InstallBlock() {
+  return (
+    <>
+      <div className="rounded-2xl border border-neutral-200 bg-neutral-950 p-5">
+        <pre className="overflow-x-auto text-[13px] leading-relaxed text-neutral-100">
+          <code>
+            {INSTALL_UNIX}
+            {'\n'}export OPEN_ROUTER_API_KEY=sk-or-…   # or any provider's key, or: memdoor connect
+            {'\n'}cd your-project &amp;&amp; memdoor tui
+          </code>
+        </pre>
+      </div>
+      <p className="mt-3 text-xs text-neutral-400">
+        Windows PowerShell: <code className="text-neutral-600">{INSTALL_WINDOWS}</code>
+      </p>
+    </>
+  );
+}
+
+// StepList numbers the steps given, the download page's or a slice of them.
+export function StepList({ steps }: { steps: typeof STEPS }) {
+  return (
+    <ol className="mt-12 space-y-6">
+      {steps.map((s, i) => (
+        <li key={s.title} className="flex gap-4">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white">
+            {i + 1}
+          </span>
+          <div>
+            <div className="font-semibold text-neutral-900">{s.title}</div>
+            <p className="text-sm leading-relaxed text-neutral-500">{s.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }

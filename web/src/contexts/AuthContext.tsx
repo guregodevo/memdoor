@@ -8,6 +8,7 @@ interface User {
   avatar_url?: string;
   role?: string;
   email_verified?: boolean;
+  workspace_id?: string;
 }
 
 interface AuthContextType {

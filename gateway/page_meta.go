@@ -18,7 +18,10 @@ import (
 
 const siteURL = "https://memdoor.ai"
 
-type pageMeta struct{ Title, Description, Path string }
+type pageMeta struct {
+	Title, Description, Path string
+	NoIndex                  bool // an account page: its own head, kept out of the index
+}
 
 var homeMeta = pageMeta{
 	Title:       "Memdoor — AI coding agent in your terminal, on your own API key",
@@ -39,6 +42,20 @@ var routeMetas = map[string]pageMeta{
 		Title:       "Workflows — a catalog of agent workflows that have run, each with its real session",
 		Description: "Every entry is a workflow that exists as task files and has run: ship, review, tui-check, issue-to-pr, release-check, digest, karpathy-recipe. A graph of steps with a proof per step and a gate where a person decides, recorded live.",
 	},
+	"/download": {
+		Title:       "Install Memdoor — one binary for macOS, Linux and Windows",
+		Description: "curl -fsSL https://memdoor.ai/install.sh | bash puts one binary in ~/.local/bin, no Docker, no Python, no sudo. Point it at your own provider key and run memdoor tui in a project.",
+	},
+	// The account pages carry their own head so a crawler that follows the
+	// header's Sign in link does not file a copy of the home, and a noindex
+	// so none of them is listed (2026-10-20: /login and /welcome were served
+	// with the home's title and canonical).
+	"/login":           {Title: "Sign in — Memdoor", Description: "Sign in to your Memdoor account.", NoIndex: true},
+	"/welcome":         {Title: "Signed in — Memdoor", Description: "Your account and the next steps.", NoIndex: true},
+	"/forgot-password": {Title: "Forgot password — Memdoor", Description: "Reset your Memdoor password.", NoIndex: true},
+	"/reset-password":  {Title: "Reset password — Memdoor", Description: "Choose a new Memdoor password.", NoIndex: true},
+	"/verify-email":    {Title: "Verify your email — Memdoor", Description: "Confirm your Memdoor account's email.", NoIndex: true},
+	"/setup":           {Title: "Set up this gateway — Memdoor", Description: "First-run setup of a Memdoor gateway.", NoIndex: true},
 }
 
 var compareRivals = map[string]string{
@@ -153,6 +170,9 @@ func renderIndex(index []byte, m pageMeta) []byte {
 	t, d := html.EscapeString(m.Title), html.EscapeString(m.Description)
 	s := string(index)
 	s = reTitle.ReplaceAllLiteralString(s, "<title>"+t+"</title>")
+	if m.NoIndex {
+		s = strings.Replace(s, "</title>", `</title><meta name="robots" content="noindex" />`, 1)
+	}
 	s = reDescription.ReplaceAllString(s, "${1}"+d+"${2}")
 	s = reOGTitle.ReplaceAllString(s, "${1}"+t+"${2}")
 	s = reOGDesc.ReplaceAllString(s, "${1}"+d+"${2}")

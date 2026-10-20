@@ -43,6 +43,16 @@ func TestEveryRouteCarriesItsOwnHead(t *testing.T) {
 	if !strings.Contains(cmp, "<title>Memdoor vs pi: an open-source alternative on your own API key</title>") {
 		t.Fatal("a comparison page names its rival")
 	}
+	download := string(r.For("/download"))
+	if !strings.Contains(download, "<title>Install Memdoor") || !strings.Contains(download, `<link rel="canonical" href="https://memdoor.ai/download" />`) || strings.Contains(download, "noindex") {
+		t.Fatal("/download has its own head, indexed")
+	}
+	for _, p := range []string{"/login", "/welcome", "/forgot-password"} {
+		page := string(r.For(p))
+		if !strings.Contains(page, `<meta name="robots" content="noindex" />`) || !strings.Contains(page, `<link rel="canonical" href="https://memdoor.ai`+p+`" />`) || strings.Contains(page, "Home description") {
+			t.Fatalf("%s is an account page: its own head, noindex", p)
+		}
+	}
 	if string(r.For("/no-such-route")) != sampleIndex {
 		t.Fatal("an unknown route gets the home head (the catch-all answers 404 for it anyway)")
 	}

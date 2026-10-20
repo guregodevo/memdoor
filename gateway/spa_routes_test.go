@@ -3,7 +3,7 @@ package gateway
 import "testing"
 
 func TestUnknownPathsAreNotRoutes(t *testing.T) {
-	for _, p := range []string{"/", "/pricing", "/features", "/workflows", "/docs", "/docs/security", "/compare/claude-code", "/r/abc", "/s/xyz", "/pro/checkout", "/topup", "/login", "/download/"} {
+	for _, p := range []string{"/", "/pricing", "/features", "/workflows", "/docs", "/docs/security", "/compare/claude-code", "/r/abc", "/s/xyz", "/pro/checkout", "/topup", "/login", "/download/", "/welcome"} {
 		if !isSPARoute(p) {
 			t.Errorf("%s is a route of the app", p)
 		}

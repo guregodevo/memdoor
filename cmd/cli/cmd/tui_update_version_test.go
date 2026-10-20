@@ -14,6 +14,11 @@ func TestVersionNewer(t *testing.T) {
 		{"v1.330.0-wiki", "v1.331.0-wiki", false},
 		{"v2.0.0", "v1.999.9", true},
 		{"v1.330.0-wiki", "v1.330.0-wiki", false},
+		// The suffix is gone from new tags (2026-10-20); a machine on the last
+		// -wiki build is told about the first plain one, and never the reverse.
+		{"v1.601.0", "v1.600.0-wiki", true},
+		{"v1.600.0-wiki", "v1.601.0", false},
+		{"v1.601.0", "v1.601.0-3-gabc1234", false},
 	} {
 		if got := versionNewer(c.remote, c.local); got != c.want {
 			t.Errorf("versionNewer(%q, %q) = %v, want %v", c.remote, c.local, got, c.want)

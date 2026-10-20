@@ -8,7 +8,7 @@ import "strings"
 var spaRoutes = map[string]bool{
 	"/": true, "/devs": true, "/docs": true, "/download": true, "/features": true,
 	"/forgot-password": true, "/login": true, "/pricing": true, "/reset-password": true,
-	"/setup": true, "/verify-email": true, "/workflows": true,
+	"/setup": true, "/verify-email": true, "/welcome": true, "/workflows": true,
 	"/extension": true, "/extension/install": true, "/extension/connect": true,
 	"/compare/claude-code": true, "/compare/codex-cli": true, "/compare/gemini-cli": true, "/compare/aider": true, "/compare/pi": true,
 }
