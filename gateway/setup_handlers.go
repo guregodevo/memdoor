@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"memdoor/pkg/auth"
 	"net/http"
 	"regexp"
 	"strings"
@@ -127,7 +128,9 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 	// must be 3-30 characters" — a field nobody typed (onboarding walk with
 	// s@example.com, 2026-09-27). Borrow from the domain, and cap at 30.
 	if req.Username == "" {
-		req.Username = usernameFromEmail(req.Email)
+		// The address's local part in the username alphabet: "first.last"
+		// on a Mac is first-last (the dot failed the first run, 2026-10-20).
+		req.Username = auth.UsernameFromEmail(req.Email)
 	}
 
 	// Default language
@@ -219,26 +222,6 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		"token":          token,
 		"workspace_slug": workspaceID,
 	})
-}
-
-// usernameFromEmail derives a username the user never has to think about:
-// the local part, extended with the domain's first label when it is too short,
-// and truncated to the 30 characters validation allows.
-func usernameFromEmail(email string) string {
-	local, domain, _ := strings.Cut(email, "@")
-	name := local
-	if len(name) < 3 {
-		if label, _, _ := strings.Cut(domain, "."); label != "" {
-			name = local + "-" + label
-		}
-	}
-	for len(name) < 3 {
-		name += "0"
-	}
-	if len(name) > 30 {
-		name = name[:30]
-	}
-	return name
 }
 
 // slugifyWorkspace turns a workspace's display name into its id: letters and

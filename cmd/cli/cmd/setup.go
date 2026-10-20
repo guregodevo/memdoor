@@ -216,10 +216,9 @@ func setupLocalDirs(setupWorkspace string) (string, error) {
 
 	// Initialize git repo in workspace
 	if _, err := os.Stat(filepath.Join(setupWorkspace, ".git")); os.IsNotExist(err) {
-		gitCmd := exec.Command("git", "init", setupWorkspace)
-		gitCmd.Stdout = os.Stdout
-		gitCmd.Stderr = os.Stderr
-		_ = gitCmd.Run()
+		// Quiet, and on main: git's "hint: Using 'master'…" advice filled
+		// the first-run screen on a Mac (2026-10-20).
+		_ = exec.Command("git", "-c", "init.defaultBranch=main", "init", "-q", setupWorkspace).Run()
 		fmt.Println("  Initialized git repository")
 	}
 
