@@ -17,13 +17,22 @@ import (
 type socialFake struct {
 	auth.Service
 	signedIn []string
+	known    map[string]bool // addresses that already have an account
 }
 
-func (f *socialFake) LoginVerifiedEmail(_ context.Context, email, name string) (*auth.User, string, error) {
+func (f *socialFake) LoginVerifiedEmail(ctx context.Context, email, name string, workspaceFor auth.WorkspaceFor) (*auth.User, string, bool, error) {
 	f.signedIn = append(f.signedIn, email)
 	u := &auth.User{}
 	u.ID, u.Email, u.Name = "human:"+email, email, name
-	return u, "session-for-" + email, nil
+	created := !f.known[email]
+	if created && workspaceFor != nil {
+		ws, err := workspaceFor(ctx, "dev")
+		if err != nil {
+			return nil, "", false, err
+		}
+		u.WorkspaceID = ws
+	}
+	return u, "session-for-" + email, created, nil
 }
 
 // fakeProvider answers the identity a test wants.

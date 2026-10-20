@@ -10,11 +10,15 @@ import (
 // This allows different implementations (SQLite, PostgreSQL, etc.)
 type Service interface {
 	// User management
-	Register(ctx context.Context, email, username, password, name string) (*User, error)
+	// Register makes the account in workspaceID (the caller made or chose
+	// the workspace: a sign-up's own, an invite's, the setup's).
+	Register(ctx context.Context, email, username, password, name, workspaceID string) (*User, error)
 	Login(ctx context.Context, email, password string) (*User, string, error)
 	// LoginVerifiedEmail signs in an address an identity provider (Google,
-	// GitHub) has vouched for, creating the account on first sight.
-	LoginVerifiedEmail(ctx context.Context, email, name string) (*User, string, error)
+	// GitHub) has vouched for. On first sight it asks workspaceFor for the
+	// workspace the new account lives in, makes the account and reports
+	// created=true so the caller can seed that workspace.
+	LoginVerifiedEmail(ctx context.Context, email, name string, workspaceFor WorkspaceFor) (user *User, token string, created bool, err error)
 	VerifyToken(ctx context.Context, token string) (*User, error)
 	GetUserByID(ctx context.Context, userID string) (*User, error)
 
@@ -71,6 +75,11 @@ type Repository interface {
 	// User existence check
 	EmailExists(ctx context.Context, email string) (bool, error)
 }
+
+// WorkspaceFor is asked, on a first sign-in through a provider, for the
+// workspace id a new account should live in; username is the one the
+// account will carry, a fair slug for a personal workspace.
+type WorkspaceFor func(ctx context.Context, username string) (workspaceID string, err error)
 
 // EmailService defines the email sending interface
 // Pattern: Interface for external service abstraction

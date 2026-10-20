@@ -65,21 +65,26 @@ func TestLoginVerifiedEmailMakesTheAccountOnFirstSightAndSignsInAfter(t *testing
 	repo := newMemRepo()
 	s := NewService(repo, nil, NewTokenGenerator(), quietLogger{}, "https://memdoor.ai", "ws-1")
 
-	u, token, err := s.LoginVerifiedEmail(context.Background(), "Jane.Doe+dev@example.com", "Jane Doe")
+	var asked string
+	workspaceFor := func(_ context.Context, username string) (string, error) {
+		asked = username
+		return "ws-" + username, nil
+	}
+	u, token, _, err := s.LoginVerifiedEmail(context.Background(), "Jane.Doe+dev@example.com", "Jane Doe", workspaceFor)
 	if err != nil || token == "" {
 		t.Fatalf("first sight: %v %q", err, token)
 	}
-	if !u.EmailVerified || u.Username != "jane-doe-dev" || u.Name != "Jane Doe" || u.WorkspaceID != "ws-1" {
+	if !u.EmailVerified || u.Username != "jane-doe-dev" || u.Name != "Jane Doe" || u.WorkspaceID != "ws-jane-doe-dev" || asked != "jane-doe-dev" {
 		t.Fatalf("the new account: %+v", u.BaseUser)
 	}
-	again, token2, err := s.LoginVerifiedEmail(context.Background(), "Jane.Doe+dev@example.com", "")
-	if err != nil || token2 == "" || again.ID != u.ID || len(repo.users) != 1 {
+	again, token2, created, err := s.LoginVerifiedEmail(context.Background(), "Jane.Doe+dev@example.com", "", workspaceFor)
+	if err != nil || token2 == "" || created || again.ID != u.ID || len(repo.users) != 1 {
 		t.Fatalf("second time signs the same account in: %v %+v", err, again)
 	}
 	if repo.sessions != 2 {
 		t.Fatalf("two sessions, got %d", repo.sessions)
 	}
-	if _, _, err := s.LoginVerifiedEmail(context.Background(), "no-at-sign", ""); err == nil {
+	if _, _, _, err := s.LoginVerifiedEmail(context.Background(), "no-at-sign", "", nil); err == nil {
 		t.Fatal("no address, no account")
 	}
 }
@@ -89,8 +94,8 @@ func TestLoginVerifiedEmailVerifiesAKnownUnverifiedAccount(t *testing.T) {
 	existing := &User{BaseUser: domain.BaseUser{ID: "human:1", Email: "a@example.com", Username: "a", EmailVerified: false}}
 	repo.users[existing.Email] = existing
 	s := NewService(repo, nil, NewTokenGenerator(), quietLogger{}, "", "")
-	u, _, err := s.LoginVerifiedEmail(context.Background(), "a@example.com", "A")
-	if err != nil || !u.EmailVerified || !repo.verified["human:1"] || len(repo.users) != 1 {
+	u, _, created, err := s.LoginVerifiedEmail(context.Background(), "a@example.com", "A", nil)
+	if err != nil || created || !u.EmailVerified || !repo.verified["human:1"] || len(repo.users) != 1 {
 		t.Fatalf("the provider's word verifies the address: %v %+v %v", err, u, repo.verified)
 	}
 }

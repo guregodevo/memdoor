@@ -51,7 +51,7 @@ func NewService(repo Repository, emailService EmailService, tokenGen TokenGenera
 }
 
 // Register creates a new user account
-func (s *service) Register(ctx context.Context, email, username, password, name string) (*User, error) {
+func (s *service) Register(ctx context.Context, email, username, password, name, workspaceID string) (*User, error) {
 	// Validate inputs
 	if email == "" {
 		return nil, fmt.Errorf("email is required")
@@ -105,15 +105,13 @@ func (s *service) Register(ctx context.Context, email, username, password, name 
 	// Create user
 	now := time.Now()
 
-	// Use server's workspace_id from config, fallback to default if not set
-	workspaceID := s.workspaceID
 	if workspaceID == "" {
-		s.logger.Warn("service.workspaceID is empty, using default",
+		workspaceID = s.workspaceID
+	}
+	if workspaceID == "" {
+		s.logger.Warn("no workspace for the new account, using default",
 			"default", domain.DefaultWorkspaceID)
 		workspaceID = domain.DefaultWorkspaceID
-	} else {
-		s.logger.Debug("Using workspace_id from config",
-			"workspace_id", workspaceID)
 	}
 
 	user := &User{
@@ -197,11 +195,12 @@ func (s *service) openSession(ctx context.Context, user *User) (string, error) {
 // (and counts as verified from now on) and a new one gets an account, no
 // password typed. The account still has one, random and unknown, so
 // "forgot password" sets a usable one later.
-func (s *service) LoginVerifiedEmail(ctx context.Context, email, name string) (*User, string, error) {
+func (s *service) LoginVerifiedEmail(ctx context.Context, email, name string, workspaceFor WorkspaceFor) (*User, string, bool, error) {
 	email = strings.TrimSpace(email)
 	if email == "" || !strings.Contains(email, "@") {
-		return nil, "", fmt.Errorf("the sign-in carried no email address")
+		return nil, "", false, fmt.Errorf("the sign-in carried no email address")
 	}
+	created := false
 	user, _, err := s.repo.GetUserByEmail(ctx, email)
 	switch {
 	case err == nil:
@@ -211,19 +210,20 @@ func (s *service) LoginVerifiedEmail(ctx context.Context, email, name string) (*
 			}
 		}
 	default:
-		user, err = s.createVerifiedUser(ctx, email, name)
+		user, err = s.createVerifiedUser(ctx, email, name, workspaceFor)
 		if err != nil {
-			return nil, "", err
+			return nil, "", false, err
 		}
+		created = true
 	}
 	token, err := s.openSession(ctx, user)
 	if err != nil {
-		return nil, "", err
+		return nil, "", false, err
 	}
-	return user, token, nil
+	return user, token, created, nil
 }
 
-func (s *service) createVerifiedUser(ctx context.Context, email, name string) (*User, error) {
+func (s *service) createVerifiedUser(ctx context.Context, email, name string, workspaceFor WorkspaceFor) (*User, error) {
 	password, err := s.tokenGenerator.GenerateToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate a password: %w", err)
@@ -236,7 +236,15 @@ func (s *service) createVerifiedUser(ctx context.Context, email, name string) (*
 	if strings.TrimSpace(name) == "" {
 		name = username
 	}
-	workspaceID := s.workspaceID
+	workspaceID := ""
+	if workspaceFor != nil {
+		if workspaceID, err = workspaceFor(ctx, username); err != nil {
+			return nil, fmt.Errorf("no workspace for the new account: %w", err)
+		}
+	}
+	if workspaceID == "" {
+		workspaceID = s.workspaceID
+	}
 	if workspaceID == "" {
 		workspaceID = domain.DefaultWorkspaceID
 	}

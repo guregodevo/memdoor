@@ -277,7 +277,7 @@ func TestRegister_Validation(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			if _, err := svc.Register(ctx, c.email, c.username, c.pass, c.dnName); err == nil {
+			if _, err := svc.Register(ctx, c.email, c.username, c.pass, c.dnName, ""); err == nil {
 				t.Errorf("expected validation error, got nil")
 			}
 		})
@@ -288,7 +288,7 @@ func TestRegister_HashesPasswordAndRejectsDuplicates(t *testing.T) {
 	repo, svc := newTestService()
 	ctx := context.Background()
 
-	u, err := svc.Register(ctx, "alice@example.test", "alice", "password1", "Alice")
+	u, err := svc.Register(ctx, "alice@example.test", "alice", "password1", "Alice", "")
 	if err != nil {
 		t.Fatalf("Register: %v", err)
 	}
@@ -306,11 +306,11 @@ func TestRegister_HashesPasswordAndRejectsDuplicates(t *testing.T) {
 	}
 
 	// Duplicate email rejected.
-	if _, err := svc.Register(ctx, "alice@example.test", "alice2", "password1", "Alice"); err == nil {
+	if _, err := svc.Register(ctx, "alice@example.test", "alice2", "password1", "Alice", ""); err == nil {
 		t.Error("expected duplicate-email rejection")
 	}
 	// Duplicate username rejected.
-	if _, err := svc.Register(ctx, "other@example.test", "alice", "password1", "Alice"); err == nil {
+	if _, err := svc.Register(ctx, "other@example.test", "alice", "password1", "Alice", ""); err == nil {
 		t.Error("expected duplicate-username rejection")
 	}
 }
@@ -320,7 +320,7 @@ func TestRegister_HashesPasswordAndRejectsDuplicates(t *testing.T) {
 func TestLogin_And_VerifyToken(t *testing.T) {
 	repo, svc := newTestService()
 	ctx := context.Background()
-	if _, err := svc.Register(ctx, "bob@example.test", "bob", "password1", "Bob"); err != nil {
+	if _, err := svc.Register(ctx, "bob@example.test", "bob", "password1", "Bob", ""); err != nil {
 		t.Fatalf("Register: %v", err)
 	}
 
@@ -399,7 +399,7 @@ func TestSendPasswordReset_DoesNotLeakAccountExistence(t *testing.T) {
 func TestResetPassword(t *testing.T) {
 	repo, svc := newTestService()
 	ctx := context.Background()
-	u, _ := svc.Register(ctx, "carol@example.test", "carol", "password1", "Carol")
+	u, _ := svc.Register(ctx, "carol@example.test", "carol", "password1", "Carol", "")
 
 	seed := func(exp time.Time, used bool) string {
 		tok := "reset-token"
@@ -453,7 +453,7 @@ func TestResetPassword(t *testing.T) {
 func TestChangePassword(t *testing.T) {
 	repo, svc := newTestService()
 	ctx := context.Background()
-	u, _ := svc.Register(ctx, "dave@example.test", "dave", "password1", "Dave")
+	u, _ := svc.Register(ctx, "dave@example.test", "dave", "password1", "Dave", "")
 
 	t.Run("short new password rejected", func(t *testing.T) {
 		if err := svc.ChangePassword(ctx, u.ID, "password1", "short"); err == nil {
@@ -502,7 +502,7 @@ func TestChangePassword(t *testing.T) {
 func TestAdminSetPassword(t *testing.T) {
 	repo, svc := newTestService()
 	ctx := context.Background()
-	u, _ := svc.Register(ctx, "erin@example.test", "erin", "password1", "Erin")
+	u, _ := svc.Register(ctx, "erin@example.test", "erin", "password1", "Erin", "")
 
 	t.Run("short password rejected", func(t *testing.T) {
 		if err := svc.AdminSetPassword(ctx, u.ID, "short"); err == nil {
@@ -541,7 +541,7 @@ func TestAdminSetPassword(t *testing.T) {
 func TestVerifyEmail(t *testing.T) {
 	repo, svc := newTestService()
 	ctx := context.Background()
-	u, _ := svc.Register(ctx, "dave@example.test", "dave", "password1", "Dave")
+	u, _ := svc.Register(ctx, "dave@example.test", "dave", "password1", "Dave", "")
 
 	// Verification tokens are stored/looked up by hash (the raw token only
 	// leaves in the email), so seed and assert under the hashed key.

@@ -29,9 +29,10 @@ var forgotPasswordRateLimiter = ratelimit.NewPerClientLimiter(5, 1*time.Hour)
 // AuthGatewayAdapter adapts pkg/auth.Service for gateway HTTP handlers
 // Pattern: Adapter pattern to bridge domain service to HTTP layer
 type AuthGatewayAdapter struct {
-	service auth.Service
-	db      *sql.DB       // For invite token validation
-	social  *socialSignIn // Sign in with Google / GitHub; nil = no button
+	service    auth.Service
+	db         *sql.DB        // For invite token validation
+	social     *socialSignIn  // Sign in with Google / GitHub; nil = no button
+	workspaces workspaceMaker // every sign-up gets a workspace of its own
 }
 
 // NewAuthGatewayAdapter creates a new auth gateway adapter
@@ -51,6 +52,8 @@ type RegisterRequest struct {
 	Password    string `json:"password"`
 	Name        string `json:"name"`
 	InviteToken string `json:"invite_token"`
+	// WorkspaceName names the sign-up's own workspace; empty = "<name>'s workspace".
+	WorkspaceName string `json:"workspace_name"`
 }
 
 // LoginRequest is the request body for user login
@@ -86,14 +89,17 @@ func (a *AuthGatewayAdapter) HandleRegister(w http.ResponseWriter, r *http.Reque
 	// Registration is open. An invite link still works: when a token comes
 	// with the request it is checked and spent, so an invite stays bound to
 	// the address it was sent to.
+	// Where the account lives: the inviter's workspace, else one of the
+	// person's own, made now (like Slack; a solo person names nothing).
+	workspaceID, ownWorkspace := "", ""
 	if a.db != nil && req.InviteToken != "" {
 		var inviteEmail string
 		var expiresAt time.Time
 		var usedAt sql.NullTime
 		err := a.db.QueryRowContext(r.Context(),
-			`SELECT email, expires_at, used_at FROM invites WHERE token = ?`,
+			`SELECT email, workspace_id, expires_at, used_at FROM invites WHERE token = ?`,
 			req.InviteToken,
-		).Scan(&inviteEmail, &expiresAt, &usedAt)
+		).Scan(&inviteEmail, &workspaceID, &expiresAt, &usedAt)
 
 		if err == sql.ErrNoRows {
 			http.Error(w, `{"error": "Invalid invite token"}`, http.StatusForbidden)
@@ -118,10 +124,26 @@ func (a *AuthGatewayAdapter) HandleRegister(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	_, err := a.service.Register(r.Context(), req.Email, req.Username, req.Password, req.Name)
+	if workspaceID == "" {
+		ownWorkspace = strings.TrimSpace(req.WorkspaceName)
+		if ownWorkspace == "" {
+			ownWorkspace = personalWorkspaceName(req.Name, req.Username)
+		}
+		slug, err := a.workspaceForSignUp(r.Context(), ownWorkspace, firstNonEmpty(req.WorkspaceName, req.Username, req.Name))
+		if err != nil {
+			http.Error(w, `{"error": "could not make your workspace, try again"}`, http.StatusInternalServerError)
+			return
+		}
+		workspaceID = slug
+	}
+
+	user, err := a.service.Register(r.Context(), req.Email, req.Username, req.Password, req.Name, workspaceID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusBadRequest)
 		return
+	}
+	if ownWorkspace != "" {
+		a.seedIfOwn(r.Context(), workspaceID, ownWorkspace, user.ID)
 	}
 
 	// Mark invite as used
@@ -451,4 +473,13 @@ func guestClientIP(r *http.Request) string {
 		return addr[:colon]
 	}
 	return addr
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }

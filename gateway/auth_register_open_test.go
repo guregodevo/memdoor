@@ -16,12 +16,14 @@ import (
 type registerFake struct {
 	auth.Service
 	registered []string
+	workspaces []string
 }
 
-func (f *registerFake) Register(_ context.Context, email, username, _, name string) (*auth.User, error) {
+func (f *registerFake) Register(_ context.Context, email, username, _, name, workspaceID string) (*auth.User, error) {
 	f.registered = append(f.registered, email)
+	f.workspaces = append(f.workspaces, workspaceID)
 	u := &auth.User{}
-	u.Email, u.Username, u.Name = email, username, name
+	u.ID, u.Email, u.Username, u.Name, u.WorkspaceID = "human:"+email, email, username, name, workspaceID
 	return u, nil
 }
 

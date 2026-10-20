@@ -52,6 +52,9 @@ func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 	// what every workspace-scoped route keys on — slugifying the display
 	// name client-side produces the wrong result for names that aren't a
 	// straight word.
+	// Only the workspace the request names: this endpoint is public, and
+	// the first workspace of a gateway with many is nobody's business
+	// (memdoor.ai answered its owner's, 2026-10-20: "No hacker news").
 	wsSlug := ""
 	if execCtx := shared.GetExecutionContext(r.Context()); execCtx != nil {
 		wsSlug = execCtx.WorkspaceSlug
@@ -59,8 +62,6 @@ func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 	var workspaceName, workspaceSlug string
 	if wsSlug != "" {
 		_ = db.QueryRowContext(r.Context(), `SELECT name, slug FROM workspaces WHERE slug = ?`, wsSlug).Scan(&workspaceName, &workspaceSlug)
-	} else {
-		_ = db.QueryRowContext(r.Context(), `SELECT name, slug FROM workspaces ORDER BY created_at ASC LIMIT 1`).Scan(&workspaceName, &workspaceSlug)
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -160,7 +161,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Register the user
-	_, registerErr := s.authAdapter.service.Register(r.Context(), req.Email, req.Username, req.Password, req.Username)
+	_, registerErr := s.authAdapter.service.Register(r.Context(), req.Email, req.Username, req.Password, req.Username, workspaceID)
 	if registerErr != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, registerErr.Error()), http.StatusBadRequest)
 		return

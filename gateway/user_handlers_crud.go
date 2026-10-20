@@ -277,7 +277,12 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		req.Name = req.Username
 	}
 
-	user, err := s.authAdapter.service.Register(ctx, req.Email, req.Username, req.Password, req.Name)
+	// An admin's new user joins the admin's workspace.
+	workspaceID := ""
+	if actor, err := s.authAdapter.service.GetUserByID(ctx, string(actorID)); err == nil {
+		workspaceID = actor.WorkspaceID
+	}
+	user, err := s.authAdapter.service.Register(ctx, req.Email, req.Username, req.Password, req.Name, workspaceID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusBadRequest)
 		return

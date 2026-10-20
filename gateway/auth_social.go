@@ -193,13 +193,22 @@ func (a *AuthGatewayAdapter) HandleSocialCallback(w http.ResponseWriter, r *http
 		http.Redirect(w, r, "/login?error="+p.name()+"_unverified", http.StatusFound)
 		return
 	}
-	user, token, err := a.service.LoginVerifiedEmail(r.Context(), id.Email, id.Name)
+	// A first sign-in gets a workspace of its own, named after the person.
+	wsName := ""
+	workspaceFor := func(ctx context.Context, username string) (string, error) {
+		wsName = personalWorkspaceName(id.Name, username)
+		return a.workspaceForSignUp(ctx, wsName, username)
+	}
+	user, token, created, err := a.service.LoginVerifiedEmail(r.Context(), id.Email, id.Name, workspaceFor)
 	if err != nil {
 		logs.New("Auth").Warn("social sign-in refused", "provider", p.name(), "error", err.Error())
 		http.Redirect(w, r, "/login?error="+p.name()+"_failed", http.StatusFound)
 		return
 	}
-	logs.New("Auth").Info("signed in with "+p.name(), "user", user.ID)
+	if created {
+		a.seedIfOwn(r.Context(), user.WorkspaceID, wsName, user.ID)
+	}
+	logs.New("Auth").Info("signed in with "+p.name(), "user", user.ID, "created", created)
 	target := "/login"
 	if attempt.callback != "" {
 		target += "?callback=" + url.QueryEscape(attempt.callback)

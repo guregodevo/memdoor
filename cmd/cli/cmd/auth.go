@@ -3,9 +3,13 @@ package cmd
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"time"
+
+	"memdoor/gateway/config"
 
 	"github.com/spf13/cobra"
 )
@@ -73,16 +77,16 @@ var (
 
 var authRegisterCmd = &cobra.Command{
 	Use:   "register",
-	Short: "Register a new account using an invite token",
+	Short: "Register a new account (it gets a workspace of its own; an invite token joins that workspace)",
 	Long: `Self-register a new account from the CLI.
 
-Memdoor uses invite-only public registration. Get an invite token
-from a workspace admin (the admin can run 'memdoor invite send
---email ...' or use the web UI invite flow), then register with
-that token via this command.
+The account gets a workspace of its own ("<name>'s workspace"), with
+you as its admin and the coding team in it, and this machine is
+pinned to it. With an invite token from a workspace admin ('memdoor
+invite send --email ...') the account joins that workspace instead.
 
-If you ARE the admin, use 'memdoor users create' instead — it
-provisions accounts directly without needing an invite token.
+If you ARE the admin, 'memdoor users create' provisions accounts in
+your workspace directly.
 
 Username defaults to the part of the email before '@'. Display name
 defaults to the username. On success, you are auto-logged-in and
@@ -100,9 +104,10 @@ the credentials are saved for subsequent CLI commands.
 		var result struct {
 			Token string `json:"token"`
 			User  struct {
-				Email string `json:"email"`
-				Name  string `json:"name"`
-				Role  string `json:"role"`
+				Email       string `json:"email"`
+				Name        string `json:"name"`
+				Role        string `json:"role"`
+				WorkspaceID string `json:"workspace_id"`
 			} `json:"user"`
 		}
 		if err := c.PostJSON("/api/auth/register", body, &result); err != nil {
@@ -117,8 +122,33 @@ the credentials are saved for subsequent CLI commands.
 		}
 		fmt.Printf("Registered and logged in as: %s (%s)\n", result.User.Email, result.User.Name)
 		fmt.Printf("Role: %s\n", result.User.Role)
+		if result.User.WorkspaceID != "" {
+			pinWorkspace(result.User.WorkspaceID)
+			fmt.Printf("Workspace: %s (this machine now uses it)\n", result.User.WorkspaceID)
+		}
 		return nil
 	},
+}
+
+// pinWorkspace makes slug this machine's workspace (~/.memdoor/config.json),
+// as `memdoor setup` does for the one it makes: the next `memdoor tui` and
+// `memdoor workspace list` know it.
+func pinWorkspace(slug string) {
+	if slug == "" {
+		return
+	}
+	path, err := config.ResolveConfigPath()
+	if err != nil || path == "" {
+		home, _ := os.UserHomeDir()
+		path = filepath.Join(home, ".memdoor", "config.json")
+	}
+	cfg, err := config.LoadConfigFromFile(path)
+	if err != nil {
+		cfg = config.DefaultConfig()
+	}
+	cfg.WorkspaceID = slug
+	_ = os.MkdirAll(filepath.Dir(path), 0o755)
+	_ = config.SaveConfigToFile(cfg, path)
 }
 
 var authWhoamiCmd = &cobra.Command{
@@ -261,7 +291,6 @@ func init() {
 	authRegisterCmd.Flags().StringVar(&registerInviteToken, "invite-token", "", "Invite token from a workspace admin")
 	_ = authRegisterCmd.MarkFlagRequired("email")
 	_ = authRegisterCmd.MarkFlagRequired("password")
-	_ = authRegisterCmd.MarkFlagRequired("invite-token")
 
 	authChangePasswordCmd.Flags().StringVar(&changePasswordOld, "old", "", "Current password")
 	authChangePasswordCmd.Flags().StringVar(&changePasswordNew, "new", "", "New password (min 8 chars)")
