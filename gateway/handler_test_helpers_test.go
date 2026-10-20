@@ -211,14 +211,14 @@ func (m *mockChannelRepo) GetByID(_ context.Context, id uuid.UUID) (*domain.Chan
 	return nil, fmt.Errorf("channel not found")
 }
 
-func (m *mockChannelRepo) GetByName(_ context.Context, name string) (*domain.Channel, error) {
+func (m *mockChannelRepo) GetByName(_ context.Context, workspaceID, name string) (*domain.Channel, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, ch := range m.channels {
-		if ch.Name == name {
+		if ch.Name == name && (workspaceID == "" || ch.WorkspaceID == workspaceID) {
 			return ch, nil
 		}
 	}
@@ -236,7 +236,7 @@ func (m *mockChannelRepo) List(_ context.Context, _ shared.OffsetPage) ([]*domai
 	return result, nil
 }
 
-func (m *mockChannelRepo) ListActive(_ context.Context, _ shared.OffsetPage) ([]*domain.Channel, error) {
+func (m *mockChannelRepo) ListActive(_ context.Context, workspaceID string, _ shared.OffsetPage) ([]*domain.Channel, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -244,7 +244,7 @@ func (m *mockChannelRepo) ListActive(_ context.Context, _ shared.OffsetPage) ([]
 	defer m.mu.Unlock()
 	var result []*domain.Channel
 	for _, ch := range m.channels {
-		if !ch.IsArchived() {
+		if !ch.IsArchived() && (workspaceID == "" || ch.WorkspaceID == workspaceID) {
 			result = append(result, ch)
 		}
 	}
@@ -280,7 +280,7 @@ func (m *mockChannelRepo) Delete(_ context.Context, _ uuid.UUID) error {
 // that don't exercise the workspace-slug-resolution path get a
 // stub-empty result, which matches the production behaviour for a
 // not-yet-resolved workspace.
-func (m *mockChannelRepo) GetWorkspaceSlug(_ context.Context, _ uuid.UUID) (string, error) {
+func (m *mockChannelRepo) GetWorkspaceSlug(_ context.Context, _ string) (string, error) {
 	if m.err != nil {
 		return "", m.err
 	}

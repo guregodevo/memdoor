@@ -17,7 +17,7 @@ type BuddyEntity interface {
 	// Identity
 	GetID() uuid.UUID
 	GetName() string
-	GetWorkspaceID() uuid.UUID
+	GetWorkspaceID() string
 
 	// Predicate Evaluation (Fluent Interface)
 	Is(predicate Predicate[BuddyEntity]) bool
@@ -62,7 +62,7 @@ func (b *Buddy) GetName() string {
 }
 
 // GetWorkspaceID returns the buddy's workspace ID
-func (b *Buddy) GetWorkspaceID() uuid.UUID {
+func (b *Buddy) GetWorkspaceID() string {
 	return b.WorkspaceID
 }
 

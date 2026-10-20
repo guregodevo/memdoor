@@ -43,9 +43,12 @@ type UserRepository interface {
 type ChannelRepository interface {
 	Create(ctx context.Context, channel *domain.Channel) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Channel, error)
-	GetByName(ctx context.Context, name string) (*domain.Channel, error)
+	// GetByName and ListActive are scoped to a workspace (the signed-in
+	// user's, from the auth middleware); "" is the whole gateway, for the
+	// gateway's own callers only.
+	GetByName(ctx context.Context, workspaceID, name string) (*domain.Channel, error)
 	List(ctx context.Context, page shared.OffsetPage) ([]*domain.Channel, error)
-	ListActive(ctx context.Context, page shared.OffsetPage) ([]*domain.Channel, error) // Exclude archived
+	ListActive(ctx context.Context, workspaceID string, page shared.OffsetPage) ([]*domain.Channel, error) // Exclude archived
 	Update(ctx context.Context, channel *domain.Channel) error
 	Archive(ctx context.Context, id uuid.UUID) error
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -56,7 +59,7 @@ type ChannelRepository interface {
 	// fallback shared.MustNewExecutionContext only takes (actorID, workspaceID)
 	// without a slug). Bug parked in SHOULD.md from 2026-05-01, fixed
 	// 2026-05-02.
-	GetWorkspaceSlug(ctx context.Context, workspaceID uuid.UUID) (string, error)
+	GetWorkspaceSlug(ctx context.Context, workspaceID string) (string, error)
 }
 
 // BuddyRepository manages AI agents (buddies)

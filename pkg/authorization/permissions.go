@@ -121,6 +121,9 @@ func NewService(membershipRepo channel.MembershipRepository, channelRepo reposit
 
 // CanAccessChannel checks if an actor can access a channel with a specific permission
 func (s *Service) CanAccessChannel(ctx context.Context, actorID shared.ActorID, channelID channel.ChannelID, perm Permission) (bool, error) {
+	if outside, err := s.outsideActorsWorkspace(ctx, actorID, channelID); err != nil || outside {
+		return false, err
+	}
 	// Check if actor is a member
 	isMember, err := s.membershipRepo.IsMember(ctx, channelID, actorID)
 	if err != nil {
@@ -143,10 +146,40 @@ func (s *Service) CanAccessChannel(ctx context.Context, actorID shared.ActorID, 
 	return role.HasPermission(perm), nil
 }
 
+// outsideActorsWorkspace says whether the channel belongs to another
+// workspace than the one the request acts in. The auth middleware pins
+// that workspace from the signed-in user's row (one user, one workspace:
+// Greg, 2026-10-20, after a fresh sign-up on memdoor.ai read another
+// account's conversation), so a person never reaches a channel of another
+// workspace, member or not, public or not. Agents and the gateway's own
+// callers carry no user workspace and pass; a channel from before channels
+// were scoped (no workspace on the row) passes too.
+func (s *Service) outsideActorsWorkspace(ctx context.Context, actorID shared.ActorID, channelID channel.ChannelID) (bool, error) {
+	if !actorID.IsHuman() {
+		return false, nil
+	}
+	execCtx := shared.GetExecutionContext(ctx)
+	if execCtx == nil || execCtx.WorkspaceID == "" || execCtx.WorkspaceID == "default" {
+		return false, nil
+	}
+	channelUUID, err := uuid.Parse(string(channelID))
+	if err != nil {
+		return true, fmt.Errorf("invalid channel ID: %w", err)
+	}
+	ch, err := s.channelRepo.GetByID(ctx, channelUUID)
+	if err != nil {
+		return true, fmt.Errorf("failed to get channel: %w", err)
+	}
+	return ch.WorkspaceID != "" && ch.WorkspaceID != execCtx.WorkspaceID, nil
+}
+
 // CanReadChannel checks if actor can read channel
-// For public channels, anyone can read even without membership (browse/discover)
+// For public channels, anyone IN THE WORKSPACE can read even without membership (browse/discover)
 // For private channels, must be a member
 func (s *Service) CanReadChannel(ctx context.Context, actorID shared.ActorID, channelID channel.ChannelID) (bool, error) {
+	if outside, err := s.outsideActorsWorkspace(ctx, actorID, channelID); err != nil || outside {
+		return false, err
+	}
 	// First check if they're a member
 	allowed, err := s.CanAccessChannel(ctx, actorID, channelID, PermissionReadChannel)
 	if err != nil {

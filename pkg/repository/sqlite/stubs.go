@@ -390,7 +390,7 @@ func (r *ChannelRepository) Create(ctx context.Context, channel *domain.Channel)
 
 	_, err := r.db.ExecContext(ctx, query,
 		channel.ID.String(),
-		channel.WorkspaceID.String(),
+		channel.WorkspaceID,
 		channel.Name,
 		channel.Description,
 		channel.IsPrivate,
@@ -436,7 +436,7 @@ func (r *ChannelRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 
 	// Parse UUIDs
 	channel.ID, _ = uuid.Parse(idStr)
-	channel.WorkspaceID, _ = uuid.Parse(workspaceIDStr)
+	channel.WorkspaceID = workspaceIDStr
 
 	// Handle nullable fields
 	if description.Valid {
@@ -453,28 +453,30 @@ func (r *ChannelRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 // returning the UUID string if no row matches (matches the
 // gateway/agent_handlers.go non-A2A path's behavior, so both paths fail
 // the same way instead of one silently breaking).
-func (r *ChannelRepository) GetWorkspaceSlug(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+func (r *ChannelRepository) GetWorkspaceSlug(ctx context.Context, workspaceID string) (string, error) {
 	var slug string
 	err := r.db.QueryRowContext(ctx,
 		`SELECT slug FROM workspaces WHERE id = ?`,
-		workspaceID.String(),
+		workspaceID,
 	).Scan(&slug)
 	if err == sql.ErrNoRows {
-		return workspaceID.String(), nil
+		return workspaceID, nil
 	}
 	if err != nil {
 		return "", fmt.Errorf("query workspace slug: %w", err)
 	}
 	if slug == "" {
-		return workspaceID.String(), nil
+		return workspaceID, nil
 	}
 	return slug, nil
 }
 
-func (r *ChannelRepository) GetByName(ctx context.Context, name string) (*domain.Channel, error) {
+// GetByName finds the channel of that name in a workspace; workspaceID ""
+// (an internal caller) looks across the gateway.
+func (r *ChannelRepository) GetByName(ctx context.Context, workspaceID, name string) (*domain.Channel, error) {
 	query := `SELECT id, workspace_id, name, description, is_private, created_at, updated_at, archived_at
-		FROM channels WHERE name = ? LIMIT 1`
-	row := r.db.QueryRowContext(ctx, query, name)
+		FROM channels WHERE name = ? AND (? = '' OR workspace_id = ?) LIMIT 1`
+	row := r.db.QueryRowContext(ctx, query, name, workspaceID, workspaceID)
 	var ch domain.Channel
 	var desc sql.NullString
 	var archivedAt sql.NullTime
@@ -489,24 +491,26 @@ func (r *ChannelRepository) GetByName(ctx context.Context, name string) (*domain
 	if archivedAt.Valid {
 		ch.ArchivedAt = &archivedAt.Time
 	}
-	ch.WorkspaceID, _ = uuid.Parse(wsID)
+	ch.WorkspaceID = wsID
 	return &ch, nil
 }
 
 func (r *ChannelRepository) List(ctx context.Context, page shared.OffsetPage) ([]*domain.Channel, error) {
-	return r.ListActive(ctx, page)
+	return r.ListActive(ctx, "", page)
 }
 
-func (r *ChannelRepository) ListActive(ctx context.Context, page shared.OffsetPage) ([]*domain.Channel, error) {
+// ListActive is a workspace's channels; workspaceID "" (an internal caller)
+// lists the gateway's.
+func (r *ChannelRepository) ListActive(ctx context.Context, workspaceID string, page shared.OffsetPage) ([]*domain.Channel, error) {
 	query := `
 		SELECT id, workspace_id, name, description, is_private, created_at, updated_at, archived_at
 		FROM channels
-		WHERE archived_at IS NULL
+		WHERE archived_at IS NULL AND (? = '' OR workspace_id = ?)
 		ORDER BY created_at DESC, name ASC
 		LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, page.Limit, page.Offset)
+	rows, err := r.db.QueryContext(ctx, query, workspaceID, workspaceID, page.Limit, page.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("query active channels: %w", err)
 	}
@@ -535,7 +539,7 @@ func (r *ChannelRepository) ListActive(ctx context.Context, page shared.OffsetPa
 
 		// Parse UUIDs
 		channel.ID, _ = uuid.Parse(idStr)
-		channel.WorkspaceID, _ = uuid.Parse(workspaceIDStr)
+		channel.WorkspaceID = workspaceIDStr
 
 		// Handle nullable fields
 		if description.Valid {

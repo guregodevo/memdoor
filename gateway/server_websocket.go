@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"memdoor/pkg/channel"
 	"memdoor/pkg/shared"
 	"net"
 	"net/http"
@@ -141,6 +142,18 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// explicit ?session=<key>. Falls back to a default.
 	sessionID := r.URL.Query().Get("session")
 	if channelID := r.URL.Query().Get("channel"); channelID != "" {
+		if !s.wsMayFollowChannel(r.Context(), actor, channelID) {
+			// A person follows the channels of their own workspace and no
+			// other (one user, one workspace, 2026-10-20); the socket would
+			// otherwise stream another account's conversation to anyone
+			// who knew the channel id.
+			s.clientsMu.Lock()
+			delete(s.clients, reserveID)
+			s.clientsMu.Unlock()
+			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "not your channel"), time.Now().Add(time.Second))
+			conn.Close()
+			return
+		}
 		sessionID = shared.NewChannelSessionID(scope, channelID)
 	}
 	if sessionID == "" {
@@ -606,4 +619,23 @@ func leadingMention(text string) (name, rest string, ok bool) {
 		return "", "", false
 	}
 	return strings.ToLower(t[1 : i+1]), strings.TrimSpace(t[i+1:]), true
+}
+
+// wsMayFollowChannel is the socket's channel check: a signed-in person may
+// follow a channel only in their own workspace, through the same rule the
+// REST reads use (authorization.CanReadChannel under the user's workspace,
+// which the auth middleware would have pinned on a REST request). The local
+// listener and the gateway's own callers pass as before.
+func (s *Server) wsMayFollowChannel(ctx context.Context, actor, channelID string) bool {
+	actorID := shared.ActorID(actor)
+	if !actorID.IsHuman() || s.authzService == nil || s.authAdapter == nil {
+		return true
+	}
+	user, err := s.authAdapter.service.GetUserByID(ctx, actor)
+	if err != nil || user == nil {
+		return false
+	}
+	ctx = shared.WithExecutionContext(ctx, &shared.ExecutionContext{ActorID: actorID, WorkspaceID: user.WorkspaceID})
+	ok, err := s.authzService.CanReadChannel(ctx, actorID, channel.ChannelID(channelID))
+	return err == nil && ok
 }

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -31,7 +32,10 @@ func (cs *ChatServer) handleRooms(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		allChannels, err := cs.channelRepo.ListActive(r.Context(), shared.AllPages())
+		// The signed-in user's workspace, pinned by the auth middleware: a
+		// person lists the channels of their workspace and no other (Greg,
+		// 2026-10-20: "one user one workspace").
+		allChannels, err := cs.channelRepo.ListActive(r.Context(), requestWorkspace(r.Context()), shared.AllPages())
 		if err != nil {
 			getChatLogger().Info("Failed to list channels", slog.String("error", err.Error()))
 			http.Error(w, fmt.Sprintf("Failed to list channels: %v", err), http.StatusInternalServerError)
@@ -152,7 +156,7 @@ func (cs *ChatServer) handleRooms(w http.ResponseWriter, r *http.Request) {
 			Description: req.Description,
 			IsPrivate:   isPrivate,
 			WorkspaceScoped: domain.WorkspaceScoped{
-				WorkspaceID: uuid.Nil, // SQLite doesn't use workspaces
+				WorkspaceID: requestWorkspace(r.Context()),
 			},
 			Timestamps: domain.Timestamps{
 				CreatedAt: now,
@@ -961,7 +965,7 @@ func (cs *ChatServer) handleCreateDM(w http.ResponseWriter, r *http.Request) {
 	getChatLogger().Info("DM name", slog.String("dm_name", dmName))
 
 	// Check if DM already exists by name
-	existingDM, err := cs.channelRepo.GetByName(r.Context(), dmName)
+	existingDM, err := cs.channelRepo.GetByName(r.Context(), requestWorkspace(r.Context()), dmName)
 	if err == nil && existingDM != nil {
 		channelDTO := dto.ToChannelDTO(existingDM)
 		json.NewEncoder(w).Encode(channelDTO)
@@ -976,7 +980,7 @@ func (cs *ChatServer) handleCreateDM(w http.ResponseWriter, r *http.Request) {
 		Description: nil, // No description for DMs
 		IsPrivate:   true,
 		WorkspaceScoped: domain.WorkspaceScoped{
-			WorkspaceID: uuid.Nil,
+			WorkspaceID: requestWorkspace(r.Context()),
 		},
 		Timestamps: domain.Timestamps{
 			CreatedAt: now,
@@ -989,7 +993,7 @@ func (cs *ChatServer) handleCreateDM(w http.ResponseWriter, r *http.Request) {
 
 	if err := cs.channelRepo.Create(r.Context(), dmChannel); err != nil {
 		// Duplicate — race condition. Retry lookup.
-		if existing, retryErr := cs.channelRepo.GetByName(r.Context(), dmName); retryErr == nil && existing != nil {
+		if existing, retryErr := cs.channelRepo.GetByName(r.Context(), requestWorkspace(r.Context()), dmName); retryErr == nil && existing != nil {
 			channelDTO := dto.ToChannelDTO(existing)
 			json.NewEncoder(w).Encode(channelDTO)
 			return
@@ -1046,4 +1050,16 @@ func (cs *ChatServer) handleCreateDM(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(channelDTO)
+}
+
+// requestWorkspace is the workspace the request acts in: the signed-in
+// user's, set by the auth middleware from the user's row (one user, one
+// workspace), never the slug in the URL. A gateway-internal caller has none
+// and sees the whole gateway.
+func requestWorkspace(ctx context.Context) string {
+	execCtx := shared.GetExecutionContext(ctx)
+	if execCtx == nil || execCtx.WorkspaceID == "default" {
+		return ""
+	}
+	return execCtx.WorkspaceID
 }

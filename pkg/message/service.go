@@ -70,7 +70,7 @@ type ChannelRepository interface {
 	// GetWorkspaceSlug — see pkg/repository/interfaces.go for the full
 	// rationale. Used to backfill SandboxContext.WorkspaceSlug on the A2A
 	// path where ExecutionContext arrives without a slug.
-	GetWorkspaceSlug(ctx context.Context, workspaceID uuid.UUID) (string, error)
+	GetWorkspaceSlug(ctx context.Context, workspaceID string) (string, error)
 }
 
 // MessageBroadcaster is a callback for broadcasting messages to connected clients
@@ -753,7 +753,7 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 		logger.Warn("ExecutionContext not found in context, using channel fallback")
 		execCtx = shared.MustNewExecutionContext(
 			shared.NewHumanActorID("00000000-0000-0000-0000-000000000010"), // Default CLI user
-			ch.WorkspaceID.String(),
+			ch.WorkspaceID,
 		)
 		logger.Info("Created default ExecutionContext from channel",
 			slog.String("workspace_id", execCtx.WorkspaceID))
@@ -773,12 +773,12 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 		slug, slugErr := s.channelRepo.GetWorkspaceSlug(ctx, ch.WorkspaceID)
 		if slugErr != nil {
 			logger.Warn("Failed to resolve workspace slug for A2A backfill",
-				slog.String("workspace_id", ch.WorkspaceID.String()),
+				slog.String("workspace_id", ch.WorkspaceID),
 				slog.String("error", slugErr.Error()))
 		} else {
 			execCtx.WorkspaceSlug = strings.TrimSpace(slug)
 			logger.Info("Backfilled empty WorkspaceSlug from channel's workspace",
-				slog.String("workspace_id", ch.WorkspaceID.String()),
+				slog.String("workspace_id", ch.WorkspaceID),
 				slog.String("workspace_slug", execCtx.WorkspaceSlug))
 		}
 	}
@@ -850,7 +850,7 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 	// Pattern: Same as gateway/chat_server.go:executeAgentMention
 	// Note: Use channel's WorkspaceID (UUID) for sandbox isolation, not session's workspace_id (string)
 	sandboxCtx := sandbox.SandboxContext{
-		WorkspaceID:      ch.WorkspaceID,        // Use channel's UUID-based workspace_id
+		WorkspaceID:      ch.WorkspaceID,        // the channel's workspace
 		WorkspaceSlug:    execCtx.WorkspaceSlug, // resolved per-request
 		ChannelID:        channelUUID,
 		InitiatingUserID: parseUserIDOrDefault(execCtx.ActorID.ID()),

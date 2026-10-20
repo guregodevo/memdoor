@@ -16,7 +16,7 @@ type ChannelEntity interface {
 	// Identity
 	GetID() uuid.UUID
 	GetName() string
-	GetWorkspaceID() uuid.UUID
+	GetWorkspaceID() string
 
 	// Predicate Evaluation (Fluent Interface)
 	Is(predicate Predicate[ChannelEntity]) bool
@@ -36,7 +36,7 @@ type ChannelEntity interface {
 	IsPublicChannel() bool
 	IsArchivedState() bool
 	GetDescription() *string
-	BelongsToWorkspace(workspaceID uuid.UUID) bool
+	BelongsToWorkspace(workspaceID string) bool
 
 	// Timestamps
 	GetCreatedAt() time.Time
@@ -63,7 +63,7 @@ func (c *Channel) GetName() string {
 }
 
 // GetWorkspaceID returns the channel's workspace ID
-func (c *Channel) GetWorkspaceID() uuid.UUID {
+func (c *Channel) GetWorkspaceID() string {
 	return c.WorkspaceID
 }
 

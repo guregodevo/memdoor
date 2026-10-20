@@ -536,7 +536,7 @@ func (cs *ChatServer) handleCreateAgent(w http.ResponseWriter, r *http.Request) 
 		AdminOnly:       true,                                                   // New agents are admin-only by default
 		CreatedBy:       uuid.MustParse("00000000-0000-0000-0000-000000000002"), // Default system user
 		WorkspaceScoped: domain.WorkspaceScoped{
-			WorkspaceID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), // Default workspace
+			WorkspaceID: domain.DefaultWorkspaceID,
 		},
 	}
 

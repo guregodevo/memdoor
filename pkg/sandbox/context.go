@@ -9,7 +9,7 @@ import (
 // SandboxContext contains all security context for agent execution
 type SandboxContext struct {
 	// Tenant isolation
-	WorkspaceID   uuid.UUID // Which company (e.g., Acme Corp)
+	WorkspaceID   string    // Which company (e.g., Acme Corp): the workspaces row id
 	WorkspaceSlug string    // workspace slug (e.g. "memdoor")
 	ChannelID     uuid.UUID // Which Slack channel (e.g., #engineering)
 
@@ -40,7 +40,7 @@ func (ctx SandboxContext) GetSandboxPath() string {
 
 // Validate checks if the context is valid
 func (ctx SandboxContext) Validate() error {
-	if ctx.WorkspaceID == uuid.Nil {
+	if ctx.WorkspaceID == "" {
 		return fmt.Errorf("workspace_id is required")
 	}
 	if ctx.ChannelID == uuid.Nil {

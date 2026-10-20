@@ -14,7 +14,7 @@ import (
 var (
 	testUser  = uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	testChan  = uuid.MustParse("22222222-2222-2222-2222-222222222222")
-	testWksID = uuid.MustParse("33333333-3333-3333-3333-333333333333")
+	testWksID = "33333333-3333-3333-3333-333333333333"
 )
 
 func ctxWithScope(scope SandboxScope) SandboxContext {
@@ -30,7 +30,7 @@ func ctxWithScope(scope SandboxScope) SandboxContext {
 func TestCanAccessPath_ScopeBoundaries(t *testing.T) {
 	userP := "/user/" + testUser.String() + "/notes.txt"
 	chanP := "/channel/" + testChan.String() + "/shared.txt"
-	wksP := "/workspace/" + testWksID.String() + "/policy.txt"
+	wksP := "/workspace/" + testWksID + "/policy.txt"
 	otherUserP := "/user/" + uuid.New().String() + "/secret.txt"
 
 	cases := []struct {
@@ -100,7 +100,7 @@ func TestNormalizePath(t *testing.T) {
 	}{
 		{ScopeUser, "notes.txt", "/user/" + testUser.String() + "/notes.txt"},
 		{ScopeChannel, "shared.txt", "/channel/" + testChan.String() + "/shared.txt"},
-		{ScopeWorkspace, "policy.txt", "/workspace/" + testWksID.String() + "/policy.txt"},
+		{ScopeWorkspace, "policy.txt", "/workspace/" + testWksID + "/policy.txt"},
 		{ScopeUser, "/user/x/already-virtual.txt", "/user/x/already-virtual.txt"},
 	}
 	for _, tc := range cases {

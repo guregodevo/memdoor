@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"memdoor/pkg/domain"
+
 	"memdoor/pkg/channel"
 	"memdoor/pkg/filestore"
 	"memdoor/pkg/message"
@@ -164,13 +166,14 @@ func initSchema(db *sql.DB) error {
 	-- Channels table (conversation spaces)
 	CREATE TABLE IF NOT EXISTS channels (
 		id TEXT PRIMARY KEY,
-		workspace_id TEXT NOT NULL, -- Always set, but not used for filtering in SQLite
-		name TEXT UNIQUE NOT NULL,
+		workspace_id TEXT NOT NULL, -- the workspace the channel belongs to; every read is scoped by it (2026-10-20)
+		name TEXT NOT NULL,
 		description TEXT,
 		is_private INTEGER DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		archived_at DATETIME
+		archived_at DATETIME,
+		UNIQUE (workspace_id, name)
 	);
 
 	-- Channel memberships table
@@ -513,6 +516,9 @@ func initSchema(db *sql.DB) error {
 
 // runMigrations applies schema migrations to existing databases
 func runMigrations(db *sql.DB) error {
+	if err := scopeChannelsByWorkspace(db); err != nil {
+		return err
+	}
 	// Migration: a cron job an AGENT scheduled carries where to work, where to
 	// answer, and its bounds. Older rows have none of it and behave as before.
 	for _, stmt := range []string{
@@ -864,4 +870,57 @@ func runMigrations(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+// scopeChannelsByWorkspace (2026-10-20): a channel name was unique across the
+// gateway and no read looked at workspace_id, so every account on
+// memdoor.ai shared one set of channels. Now the name is unique per
+// workspace and every read is scoped. A row from before (written with no
+// workspace: the nil UUID or nothing) goes to the workspace of its first
+// human member — the person who made it, or the admin the setup seeded
+// #general with — and, with no human member, to the legacy default
+// workspace.
+func scopeChannelsByWorkspace(db *sql.DB) error {
+	var ddl string
+	if err := db.QueryRow(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'channels'`).Scan(&ddl); err != nil {
+		return nil // no table yet: the schema above makes it right
+	}
+	if _, err := db.Exec(`UPDATE channels SET workspace_id = COALESCE(
+			(SELECT u.workspace_id FROM channel_memberships m JOIN users u ON u.id = m.actor_id
+			 WHERE m.channel_id = channels.id AND u.workspace_id != '' ORDER BY m.joined_at ASC LIMIT 1),
+			?)
+		WHERE workspace_id IN ('', '00000000-0000-0000-0000-000000000000', 'default')`,
+		domain.DefaultWorkspaceID); err != nil {
+		return fmt.Errorf("channels: legacy workspace: %w", err)
+	}
+	if !strings.Contains(ddl, "name TEXT UNIQUE") {
+		return nil
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, stmt := range []string{
+		`CREATE TABLE channels_scoped (
+			id TEXT PRIMARY KEY,
+			workspace_id TEXT NOT NULL,
+			name TEXT NOT NULL,
+			description TEXT,
+			is_private INTEGER DEFAULT 0,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			archived_at DATETIME,
+			UNIQUE (workspace_id, name)
+		)`,
+		`INSERT INTO channels_scoped (id, workspace_id, name, description, is_private, created_at, updated_at, archived_at)
+			SELECT id, workspace_id, name, description, is_private, created_at, updated_at, archived_at FROM channels`,
+		`DROP TABLE channels`,
+		`ALTER TABLE channels_scoped RENAME TO channels`,
+	} {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("channels: unique per workspace: %w", err)
+		}
+	}
+	return tx.Commit()
 }

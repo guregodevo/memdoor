@@ -16,7 +16,7 @@ type MessageEntity interface {
 	// Identity
 	GetID() int64
 	GetChannelID() uuid.UUID
-	GetWorkspaceID() uuid.UUID
+	GetWorkspaceID() string
 
 	// Predicate Evaluation (Fluent Interface)
 	Is(predicate Predicate[MessageEntity]) bool

@@ -66,7 +66,7 @@ func (r *BuddyRepository) Create(ctx context.Context, buddy *domain.Buddy) error
 	now := time.Now()
 	_, err = r.db.ExecContext(ctx, query,
 		buddy.ID.String(),
-		buddy.WorkspaceID.String(),
+		buddy.WorkspaceID,
 		buddy.Name,
 		buddy.AvatarEmoji,
 		buddy.Icon,
@@ -150,7 +150,7 @@ func (r *BuddyRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Bu
 
 	// Parse UUIDs
 	buddy.ID, _ = uuid.Parse(idStr)
-	buddy.WorkspaceID, _ = uuid.Parse(workspaceIDStr)
+	buddy.WorkspaceID = workspaceIDStr
 	buddy.CreatedBy, _ = uuid.Parse(createdByStr)
 
 	// Parse nullable strings
@@ -249,7 +249,7 @@ func (r *BuddyRepository) GetByName(ctx context.Context, name string) (*domain.B
 
 	// Parse UUIDs
 	buddy.ID, _ = uuid.Parse(idStr)
-	buddy.WorkspaceID, _ = uuid.Parse(workspaceIDStr)
+	buddy.WorkspaceID = workspaceIDStr
 	buddy.CreatedBy, _ = uuid.Parse(createdByStr)
 
 	// Parse nullable strings
@@ -360,7 +360,7 @@ func (r *BuddyRepository) GetByNames(ctx context.Context, names []string) ([]*do
 
 		// Parse UUIDs
 		buddy.ID, _ = uuid.Parse(idStr)
-		buddy.WorkspaceID, _ = uuid.Parse(workspaceIDStr)
+		buddy.WorkspaceID = workspaceIDStr
 		buddy.CreatedBy, _ = uuid.Parse(createdByStr)
 
 		// Parse nullable strings
@@ -456,7 +456,7 @@ func (r *BuddyRepository) List(ctx context.Context, page shared.OffsetPage) ([]*
 
 		// Parse UUIDs
 		buddy.ID, _ = uuid.Parse(idStr)
-		buddy.WorkspaceID, _ = uuid.Parse(workspaceIDStr)
+		buddy.WorkspaceID = workspaceIDStr
 		buddy.CreatedBy, _ = uuid.Parse(createdByStr)
 
 		// Parse nullable strings
@@ -552,7 +552,7 @@ func (r *BuddyRepository) ListActive(ctx context.Context, page shared.OffsetPage
 
 		// Parse UUIDs
 		buddy.ID, _ = uuid.Parse(idStr)
-		buddy.WorkspaceID, _ = uuid.Parse(workspaceIDStr)
+		buddy.WorkspaceID = workspaceIDStr
 		buddy.CreatedBy, _ = uuid.Parse(createdByStr)
 
 		// Parse nullable strings

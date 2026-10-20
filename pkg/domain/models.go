@@ -51,22 +51,22 @@ type SoftDeletable struct {
 
 // WorkspaceScoped represents entities that belong to a workspace (multi-tenancy)
 type WorkspaceScoped struct {
-	WorkspaceID uuid.UUID `json:"workspace_id"`
+	WorkspaceID string `json:"workspace_id"` // the workspaces row id (a slug on every install since 2026-06; the legacy default UUID before)
 }
 
 // BelongsToWorkspace is a DDD Specification/Predicate pattern
 // Usage: if channel.BelongsToWorkspace(userWorkspaceID) { ... }
-func (w WorkspaceScoped) BelongsToWorkspace(workspaceID uuid.UUID) bool {
+func (w WorkspaceScoped) BelongsToWorkspace(workspaceID string) bool {
 	return w.WorkspaceID == workspaceID
 }
 
 // IsInDefaultWorkspace checks if entity belongs to the default/nil workspace (SQLite mode)
 func (w WorkspaceScoped) IsInDefaultWorkspace() bool {
-	return w.WorkspaceID == uuid.Nil
+	return w.WorkspaceID == "" || w.WorkspaceID == uuid.Nil.String()
 }
 
 // SetWorkspace assigns the entity to a workspace
-func (w *WorkspaceScoped) SetWorkspace(workspaceID uuid.UUID) {
+func (w *WorkspaceScoped) SetWorkspace(workspaceID string) {
 	w.WorkspaceID = workspaceID
 }
 
