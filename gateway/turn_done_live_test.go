@@ -30,7 +30,7 @@ func TestTurnDoneMeasuredOnJev(t *testing.T) {
 			"Created `hello.txt` (3 bytes) and confirmed via `ls -la` that it exists in the working directory. Confirmed: `hello.txt` contains exactly \"hi\".",
 			[]ToolExecutionInfo{
 				{Name: "write_file", Input: `{"path":"hello.txt","content":"hi\n"}`, Output: "ok"},
-				{Name: "bash", Input: `{"command":"ls -la hello.txt && cat hello.txt"}`, Output: "-rw-r--r--@ 1 gregoryd  wheel  3 Oct  5 00:12 hello.txt\nhi\n"},
+				{Name: "bash", Input: `{"command":"ls -la hello.txt && cat hello.txt"}`, Output: "-rw-r--r--@ 1 dev  wheel  3 Oct  5 00:12 hello.txt\nhi\n"},
 			}, false},
 		{"a check that found nothing yet is done",
 			"Does a file named READY exist in this directory? Check with: test -f READY. If it does NOT exist, answer exactly HEARTBEAT_OK. If it exists, say: READY is here.",
