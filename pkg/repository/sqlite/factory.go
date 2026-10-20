@@ -193,7 +193,7 @@ func initSchema(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS buddies (
 		id TEXT PRIMARY KEY,
 		workspace_id TEXT NOT NULL,
-		name TEXT UNIQUE NOT NULL,
+		name TEXT NOT NULL, -- unique per workspace (2026-10-20): every workspace has its own chief, coder, …
 		avatar_emoji TEXT DEFAULT '🤖',
 		icon TEXT DEFAULT 'octopus', -- Animal mascot icon
 		description TEXT,
@@ -209,7 +209,8 @@ func initSchema(db *sql.DB) error {
 		created_by TEXT NOT NULL,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY (created_by) REFERENCES users(id)
+		FOREIGN KEY (created_by) REFERENCES users(id),
+		UNIQUE (workspace_id, name)
 	);
 
 	-- Messages table (matches pkg/message domain model)
@@ -517,6 +518,12 @@ func initSchema(db *sql.DB) error {
 // runMigrations applies schema migrations to existing databases
 func runMigrations(db *sql.DB) error {
 	if err := scopeChannelsByWorkspace(db); err != nil {
+		return err
+	}
+	if err := scopeBuddiesByWorkspace(db); err != nil {
+		return err
+	}
+	if err := repairOrphanWorkspaceIDs(db); err != nil {
 		return err
 	}
 	// Migration: a cron job an AGENT scheduled carries where to work, where to
@@ -923,4 +930,64 @@ func scopeChannelsByWorkspace(db *sql.DB) error {
 		}
 	}
 	return tx.Commit()
+}
+
+// scopeBuddiesByWorkspace (2026-10-20): like channels, an agent's name was
+// unique across the gateway, so the per-workspace seed of chief, coder, …
+// silently failed and every account used the first workspace's. The name is
+// unique per workspace now; a row with no workspace goes to the legacy
+// default. The table is rebuilt from its own stored DDL (the ALTERed columns
+// included), ids kept, so the memories that reference them still do.
+func scopeBuddiesByWorkspace(db *sql.DB) error {
+	var ddl string
+	if err := db.QueryRow(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'buddies'`).Scan(&ddl); err != nil {
+		return nil
+	}
+	if _, err := db.Exec(`UPDATE buddies SET workspace_id = ? WHERE workspace_id IN ('', '00000000-0000-0000-0000-000000000000', 'default')`,
+		domain.DefaultWorkspaceID); err != nil {
+		return fmt.Errorf("buddies: legacy workspace: %w", err)
+	}
+	if !strings.Contains(ddl, "name TEXT UNIQUE") {
+		return nil
+	}
+	scoped := strings.Replace(ddl, "name TEXT UNIQUE NOT NULL", "name TEXT NOT NULL", 1)
+	scoped = strings.Replace(scoped, "CREATE TABLE buddies", "CREATE TABLE buddies_scoped", 1)
+	close := strings.LastIndex(scoped, ")")
+	scoped = scoped[:close] + ",\n\t\tUNIQUE (workspace_id, name)\n\t)"
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, stmt := range []string{
+		scoped,
+		`INSERT INTO buddies_scoped SELECT * FROM buddies`,
+		`DROP TABLE buddies`,
+		`ALTER TABLE buddies_scoped RENAME TO buddies`,
+	} {
+		if _, err := tx.Exec(stmt); err != nil {
+			return fmt.Errorf("buddies: unique per workspace: %w", err)
+		}
+	}
+	return tx.Commit()
+}
+
+// repairOrphanWorkspaceIDs (2026-10-20): one user, one workspace means every
+// user, channel and agent points at a workspaces row. Installs from before
+// workspace ids were slugs carry the legacy default UUID on users (the
+// column's default when it was added) while the setup wrote the real
+// workspace on what it seeded; such orphans go to the gateway's oldest
+// workspace, the one the setup made. A gateway with no workspace row yet
+// (before its setup) is left alone.
+func repairOrphanWorkspaceIDs(db *sql.DB) error {
+	var oldest string
+	if err := db.QueryRow(`SELECT id FROM workspaces ORDER BY created_at ASC, rowid ASC LIMIT 1`).Scan(&oldest); err != nil {
+		return nil
+	}
+	for _, table := range []string{"users", "channels", "buddies"} {
+		if _, err := db.Exec(`UPDATE `+table+` SET workspace_id = ? WHERE workspace_id NOT IN (SELECT id FROM workspaces)`, oldest); err != nil {
+			return fmt.Errorf("%s: orphan workspace: %w", table, err)
+		}
+	}
+	return nil
 }

@@ -22,10 +22,11 @@ type SessionMetadata struct {
 // =============================================================================
 
 var SessionsListDefinition = ToolDefinition{
-	Name:        "sessions_list",
-	Description: "List all active sessions with metadata (session_key, kind, created_at, updated_at, message_count).",
-	InputSchema: SessionsListInputSchema,
-	Function:    SessionsList,
+	Name:                "sessions_list",
+	Description:         "List all active sessions with metadata (session_key, kind, created_at, updated_at, message_count).",
+	InputSchema:         SessionsListInputSchema,
+	Function:            SessionsList,
+	FunctionWithContext: inWorkspace(sessionsListIn),
 }
 
 type SessionsListInput struct {
@@ -34,7 +35,10 @@ type SessionsListInput struct {
 
 var SessionsListInputSchema = GenerateSchema[SessionsListInput]()
 
-func SessionsList(input json.RawMessage) (string, error) {
+func SessionsList(input json.RawMessage) (string, error) { return sessionsListIn(input, "") }
+
+// sessionsListIn is SessionsList scoped to a workspace (the run's, from the sandbox context).
+func sessionsListIn(input json.RawMessage, workspace string) (string, error) {
 	var params SessionsListInput
 	if err := json.Unmarshal(input, &params); err != nil {
 		return "", fmt.Errorf("failed to parse input: %w", err)
@@ -43,7 +47,7 @@ func SessionsList(input json.RawMessage) (string, error) {
 	log := logs.New("Agent")
 	log.Info("Listing sessions", slog.Any("kinds", params.Kinds))
 
-	resp, err := agentsAPICall("GET", apiURL("/sessions"), nil)
+	resp, err := agentsAPICall(workspace, "GET", apiURL("/sessions"), nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to list sessions: %w", err)
 	}
@@ -89,10 +93,11 @@ func SessionsList(input json.RawMessage) (string, error) {
 // =============================================================================
 
 var SessionStatusDefinition = ToolDefinition{
-	Name:        "session_status",
-	Description: "Get detailed status for a specific session including metadata and message count.",
-	InputSchema: SessionStatusInputSchema,
-	Function:    SessionStatus,
+	Name:                "session_status",
+	Description:         "Get detailed status for a specific session including metadata and message count.",
+	InputSchema:         SessionStatusInputSchema,
+	Function:            SessionStatus,
+	FunctionWithContext: inWorkspace(sessionStatusIn),
 }
 
 type SessionStatusInput struct {
@@ -101,7 +106,10 @@ type SessionStatusInput struct {
 
 var SessionStatusInputSchema = GenerateSchema[SessionStatusInput]()
 
-func SessionStatus(input json.RawMessage) (string, error) {
+func SessionStatus(input json.RawMessage) (string, error) { return sessionStatusIn(input, "") }
+
+// sessionStatusIn is SessionStatus scoped to a workspace (the run's, from the sandbox context).
+func sessionStatusIn(input json.RawMessage, workspace string) (string, error) {
 	var params SessionStatusInput
 	if err := json.Unmarshal(input, &params); err != nil {
 		return "", fmt.Errorf("failed to parse input: %w", err)
@@ -115,7 +123,7 @@ func SessionStatus(input json.RawMessage) (string, error) {
 	log.Info("Getting status for session", slog.String("session_key", params.SessionKey))
 
 	url := fmt.Sprintf("%s/detail?id=%s", apiURL("/sessions"), params.SessionKey)
-	return agentsAPICall("GET", url, nil)
+	return agentsAPICall(workspace, "GET", url, nil)
 }
 
 // =============================================================================
@@ -123,10 +131,11 @@ func SessionStatus(input json.RawMessage) (string, error) {
 // =============================================================================
 
 var SessionsHistoryDefinition = ToolDefinition{
-	Name:        "sessions_history",
-	Description: "Fetch message history for a session. Returns recent messages with role, content, and timestamp.",
-	InputSchema: SessionsHistoryInputSchema,
-	Function:    SessionsHistory,
+	Name:                "sessions_history",
+	Description:         "Fetch message history for a session. Returns recent messages with role, content, and timestamp.",
+	InputSchema:         SessionsHistoryInputSchema,
+	Function:            SessionsHistory,
+	FunctionWithContext: inWorkspace(sessionsHistoryIn),
 }
 
 type SessionsHistoryInput struct {
@@ -137,7 +146,10 @@ type SessionsHistoryInput struct {
 
 var SessionsHistoryInputSchema = GenerateSchema[SessionsHistoryInput]()
 
-func SessionsHistory(input json.RawMessage) (string, error) {
+func SessionsHistory(input json.RawMessage) (string, error) { return sessionsHistoryIn(input, "") }
+
+// sessionsHistoryIn is SessionsHistory scoped to a workspace (the run's, from the sandbox context).
+func sessionsHistoryIn(input json.RawMessage, workspace string) (string, error) {
 	var params SessionsHistoryInput
 	if err := json.Unmarshal(input, &params); err != nil {
 		return "", fmt.Errorf("failed to parse input: %w", err)
@@ -161,5 +173,5 @@ func SessionsHistory(input json.RawMessage) (string, error) {
 		url += "&include_tools=true"
 	}
 
-	return agentsAPICall("GET", url, nil)
+	return agentsAPICall(workspace, "GET", url, nil)
 }

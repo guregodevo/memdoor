@@ -68,13 +68,16 @@ type ChannelRepository interface {
 type BuddyRepository interface {
 	Create(ctx context.Context, buddy *domain.Buddy) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Buddy, error)
-	GetByName(ctx context.Context, name string) (*domain.Buddy, error)
-	GetByNames(ctx context.Context, names []string) ([]*domain.Buddy, error) // Batch load by names
-	List(ctx context.Context, page shared.OffsetPage) ([]*domain.Buddy, error)
-	ListActive(ctx context.Context, page shared.OffsetPage) ([]*domain.Buddy, error) // Only active buddies
+	// Reads by name and lists are scoped to a workspace (every workspace
+	// has its own chief, coder, …); "" is the whole gateway, for the
+	// gateway's own callers only.
+	GetByName(ctx context.Context, workspaceID, name string) (*domain.Buddy, error)
+	GetByNames(ctx context.Context, workspaceID string, names []string) ([]*domain.Buddy, error) // Batch load by names
+	List(ctx context.Context, workspaceID string, page shared.OffsetPage) ([]*domain.Buddy, error)
+	ListActive(ctx context.Context, workspaceID string, page shared.OffsetPage) ([]*domain.Buddy, error) // Only active buddies
 	Update(ctx context.Context, buddy *domain.Buddy) error
 	Delete(ctx context.Context, id uuid.UUID) error
-	DeleteByName(ctx context.Context, name string) error // Fallback for stale-id state — see SQLite impl notes
+	DeleteByName(ctx context.Context, workspaceID, name string) error // Fallback for stale-id state — see SQLite impl notes
 }
 
 // MessageRepository manages chat messages

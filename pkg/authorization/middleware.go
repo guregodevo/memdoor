@@ -71,9 +71,17 @@ func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 		// Internal service calls (tools running inside the gateway process)
 		// Trust X-Internal-Service header only from loopback addresses
 		if r.Header.Get("X-Internal-Service") != "" && isLoopback(r.RemoteAddr) {
+			// A tool call from inside the gateway names the run's workspace
+			// (X-Forwarded-Workspace, set by tools.agentsAPICall) and is
+			// scoped to it like a user's request; without one it sees the
+			// whole gateway, as before.
+			workspace := strings.TrimSpace(r.Header.Get("X-Forwarded-Workspace"))
+			if workspace == "" {
+				workspace = "default"
+			}
 			execCtx := &shared.ExecutionContext{
 				ActorID:     "system:internal",
-				WorkspaceID: "default",
+				WorkspaceID: workspace,
 				UserEmail:   "internal@system",
 			}
 			ctx := shared.WithExecutionContext(r.Context(), execCtx)

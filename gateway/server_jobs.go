@@ -150,7 +150,7 @@ func (s *Server) executeAgentJob(ctx context.Context, job *queue.AgentJob) error
 	// session key) so a subagent run matches a direct run. Mirrors the WS path.
 	if ctx.Value(sharedctx.BuddyToolsKey) == nil {
 		if agentID := agentIDFromSessionKey(job.SessionKey); agentID != "" && s.repoFactory != nil {
-			if buddy, err := s.repoFactory.Buddies().GetByName(context.Background(), agentID); err == nil && buddy != nil {
+			if buddy, err := s.repoFactory.Buddies().GetByName(context.Background(), shared.ParseSessionID(job.SessionKey).WorkspaceID, agentID); err == nil && buddy != nil {
 				if len(buddy.Tools) > 0 {
 					ctx = context.WithValue(ctx, sharedctx.BuddyToolsKey, append([]string(nil), buddy.Tools...))
 				}
@@ -362,7 +362,7 @@ func (s *Server) executeCronJob(ctx context.Context, job *config.CronJob, agentI
 			if name == "" {
 				continue
 			}
-			if buddy, err := s.repoFactory.Buddies().GetByName(ctx, name); err == nil && buddy != nil {
+			if buddy, err := s.repoFactory.Buddies().GetByName(ctx, shared.ParseSessionID(job.SessionKey).WorkspaceID, name); err == nil && buddy != nil {
 				agentID, buddyTools = name, append([]string(nil), buddy.Tools...)
 				break
 			}
@@ -502,7 +502,8 @@ func (s *Server) wakeConversation(ctx context.Context, sessionKey, agentID, text
 	var agentTools []string
 	var agentPrompt string
 	if s.repoFactory != nil && agentID != "" {
-		if buddy, err := s.repoFactory.Buddies().GetByName(context.Background(), agentID); err == nil && buddy != nil {
+		// The conversation's workspace is in its session key.
+		if buddy, err := s.repoFactory.Buddies().GetByName(context.Background(), shared.ParseSessionID(sessionKey).WorkspaceID, agentID); err == nil && buddy != nil {
 			agentTools = buddy.Tools
 			if buddy.SystemPrompt != nil {
 				agentPrompt = *buddy.SystemPrompt

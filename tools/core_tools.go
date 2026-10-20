@@ -1015,12 +1015,16 @@ Examples:
   {"action": "get", "name": "writer"}
   {"action": "create", "name": "monitor", "emoji": "🔍", "tools": ["bash", "read_file", "memory"], "scope": "workspace"}
   {"action": "update", "name": "writer", "learning_enabled": true}`,
-	InputSchema: AgentsListInputSchema,
-	Function:    AgentsList,
+	InputSchema:         AgentsListInputSchema,
+	Function:            AgentsList,
+	FunctionWithContext: inWorkspace(agentsListIn),
 }
 
 // AgentsList manages agents via the gateway API
-func AgentsList(input json.RawMessage) (string, error) {
+func AgentsList(input json.RawMessage) (string, error) { return agentsListIn(input, "") }
+
+// agentsListIn is AgentsList scoped to a workspace (the run's, from the sandbox context).
+func agentsListIn(input json.RawMessage, workspace string) (string, error) {
 	var params AgentsListInput
 	if err := json.Unmarshal(input, &params); err != nil {
 		return "", fmt.Errorf("failed to parse input: %w", err)
@@ -1033,12 +1037,12 @@ func AgentsList(input json.RawMessage) (string, error) {
 
 	switch action {
 	case "list":
-		return agentsAPICall("GET", apiURL("/api/agents"), nil)
+		return agentsAPICall(workspace, "GET", apiURL("/api/agents"), nil)
 	case "get":
 		if params.Name == "" {
 			return "", fmt.Errorf("name is required for get action")
 		}
-		return agentsAPICall("GET", apiURL("/api/agents")+"/"+params.Name, nil)
+		return agentsAPICall(workspace, "GET", apiURL("/api/agents")+"/"+params.Name, nil)
 	case "create":
 		if params.Name == "" {
 			return "", fmt.Errorf("name is required for create action")
@@ -1053,7 +1057,7 @@ func AgentsList(input json.RawMessage) (string, error) {
 		if params.Scope != "" {
 			body["sandbox_scope"] = params.Scope
 		}
-		return agentsAPICall("POST", apiURL("/api/agents"), body)
+		return agentsAPICall(workspace, "POST", apiURL("/api/agents"), body)
 	case "update":
 		if params.Name == "" {
 			return "", fmt.Errorf("name is required for update action")
@@ -1071,14 +1075,14 @@ func AgentsList(input json.RawMessage) (string, error) {
 		if len(body) == 0 {
 			return "", fmt.Errorf("no fields to update")
 		}
-		return agentsAPICall("PUT", apiURL("/api/agents")+"/"+params.Name, body)
+		return agentsAPICall(workspace, "PUT", apiURL("/api/agents")+"/"+params.Name, body)
 	default:
 		return "", fmt.Errorf("unknown action: %s (use list, get, create, update)", action)
 	}
 }
 
 // agentsAPICall makes an HTTP request to the gateway agents API
-func agentsAPICall(method, url string, body map[string]any) (string, error) {
+func agentsAPICall(workspace, method, url string, body map[string]any) (string, error) {
 	var reqBody io.Reader
 	if body != nil {
 		bodyJSON, err := json.Marshal(body)
@@ -1094,6 +1098,12 @@ func agentsAPICall(method, url string, body map[string]any) (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Internal-Service", "agents")
+	// The run's workspace: the gateway scopes the call to it like a user's
+	// (one user, one workspace; without it an agent's channel tool listed
+	// every workspace's channels, 2026-10-20).
+	if workspace != "" {
+		req.Header.Set("X-Forwarded-Workspace", workspace)
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -1160,12 +1170,16 @@ Examples:
   {"action": "create", "name": "project-alpha", "type": "private", "description": "Alpha project discussion", "owner_id": "human:uuid"}
   {"action": "add_member", "channel_id": "uuid", "actor_id": "agent:writer", "role": "member"}
   {"action": "send_message", "channel_id": "uuid", "text": "Daily standup: all systems green."}`,
-	InputSchema: ChannelsInputSchema,
-	Function:    Channels,
+	InputSchema:         ChannelsInputSchema,
+	Function:            Channels,
+	FunctionWithContext: inWorkspace(channelsIn),
 }
 
 // Channels implements the channels tool
-func Channels(input json.RawMessage) (string, error) {
+func Channels(input json.RawMessage) (string, error) { return channelsIn(input, "") }
+
+// channelsIn is Channels scoped to a workspace (the run's, from the sandbox context).
+func channelsIn(input json.RawMessage, workspace string) (string, error) {
 	var params ChannelsInput
 	if err := json.Unmarshal(input, &params); err != nil {
 		return "", fmt.Errorf("failed to parse input: %w", err)
@@ -1177,7 +1191,7 @@ func Channels(input json.RawMessage) (string, error) {
 
 	switch params.Action {
 	case "list":
-		return agentsAPICall("GET", apiURL("/api/channels"), nil)
+		return agentsAPICall(workspace, "GET", apiURL("/api/channels"), nil)
 
 	case "create":
 		if params.Name == "" {
@@ -1198,13 +1212,13 @@ func Channels(input json.RawMessage) (string, error) {
 		if params.Description != "" {
 			body["description"] = params.Description
 		}
-		return agentsAPICall("POST", apiURL("/api/channels"), body)
+		return agentsAPICall(workspace, "POST", apiURL("/api/channels"), body)
 
 	case "get":
 		if params.ChannelID == "" {
 			return "", fmt.Errorf("channel_id is required for get action")
 		}
-		return agentsAPICall("GET", apiURL("/api/channels")+"/"+params.ChannelID, nil)
+		return agentsAPICall(workspace, "GET", apiURL("/api/channels")+"/"+params.ChannelID, nil)
 
 	case "add_member":
 		if params.ChannelID == "" {
@@ -1222,13 +1236,13 @@ func Channels(input json.RawMessage) (string, error) {
 			"actor_id":   params.ActorID,
 			"role":       role,
 		}
-		return agentsAPICall("POST", apiURL("/api/channels")+"/members", body)
+		return agentsAPICall(workspace, "POST", apiURL("/api/channels")+"/members", body)
 
 	case "list_members":
 		if params.ChannelID == "" {
 			return "", fmt.Errorf("channel_id is required for list_members action")
 		}
-		return agentsAPICall("GET", apiURL("/api/channels")+"/"+params.ChannelID+"/members", nil)
+		return agentsAPICall(workspace, "GET", apiURL("/api/channels")+"/"+params.ChannelID+"/members", nil)
 
 	case "send_message":
 		if params.ChannelID == "" {
@@ -1244,7 +1258,7 @@ func Channels(input json.RawMessage) (string, error) {
 		if params.SenderID != "" {
 			body["sender_id"] = params.SenderID
 		}
-		return agentsAPICall("POST", apiURL("/api/messages"), body)
+		return agentsAPICall(workspace, "POST", apiURL("/api/messages"), body)
 
 	default:
 		return "", fmt.Errorf("unknown action: %s (use list, create, get, add_member, list_members, send_message)", params.Action)
@@ -1278,12 +1292,16 @@ PARAMETERS:
 
 EXAMPLE:
   send_invite(email="alice@example.com", channel_name="engineering", message="Join us to collaborate with AI agents!")`,
-	InputSchema: SendInviteInputSchema,
-	Function:    SendInvite,
+	InputSchema:         SendInviteInputSchema,
+	Function:            SendInvite,
+	FunctionWithContext: inWorkspace(sendInviteIn),
 }
 
 // SendInvite implements the send_invite tool
-func SendInvite(input json.RawMessage) (string, error) {
+func SendInvite(input json.RawMessage) (string, error) { return sendInviteIn(input, "") }
+
+// sendInviteIn is SendInvite scoped to a workspace (the run's, from the sandbox context).
+func sendInviteIn(input json.RawMessage, workspace string) (string, error) {
 	var params SendInviteInput
 	if err := json.Unmarshal(input, &params); err != nil {
 		return "", fmt.Errorf("invalid input: %w", err)
@@ -1305,7 +1323,7 @@ func SendInvite(input json.RawMessage) (string, error) {
 	if params.InviterName != "" {
 		body["inviter_name"] = params.InviterName
 	}
-	return agentsAPICall("POST", inviteAPIBase, body)
+	return agentsAPICall(workspace, "POST", inviteAPIBase, body)
 }
 
 // ===============================================
@@ -1336,12 +1354,16 @@ PARAMETERS:
 EXAMPLES:
   send_email(to="alice@example.com", subject="Meeting notes", body="Here are the notes from today...")
   send_email(to="team@company.com", subject="Weekly Report", body="<h1>Report</h1><p>...</p>", is_html=true)`,
-	InputSchema: SendEmailInputSchema,
-	Function:    SendEmail,
+	InputSchema:         SendEmailInputSchema,
+	Function:            SendEmail,
+	FunctionWithContext: inWorkspace(sendEmailIn),
 }
 
 // SendEmail implements the send_email tool
-func SendEmail(input json.RawMessage) (string, error) {
+func SendEmail(input json.RawMessage) (string, error) { return sendEmailIn(input, "") }
+
+// sendEmailIn is SendEmail scoped to a workspace (the run's, from the sandbox context).
+func sendEmailIn(input json.RawMessage, workspace string) (string, error) {
 	var params SendEmailInput
 	if err := json.Unmarshal(input, &params); err != nil {
 		return "", fmt.Errorf("invalid input: %w", err)
@@ -1363,7 +1385,7 @@ func SendEmail(input json.RawMessage) (string, error) {
 		"body":    params.Body,
 		"is_html": params.IsHTML,
 	}
-	return agentsAPICall("POST", emailAPIBase, body)
+	return agentsAPICall(workspace, "POST", emailAPIBase, body)
 }
 
 // ===============================================
@@ -1422,4 +1444,17 @@ func Gateway(input json.RawMessage) (string, error) {
 	}
 
 	return string(outputJSON), nil
+}
+
+// inWorkspace adapts a workspace-scoped tool function to the context-aware
+// tool signature: the run's workspace comes from its sandbox context, so a
+// call into the gateway's own API is scoped like the person's would be.
+func inWorkspace(fn func(json.RawMessage, string) (string, error)) func(json.RawMessage, interface{}) (string, error) {
+	return func(input json.RawMessage, ctx interface{}) (string, error) {
+		workspace := ""
+		if sctx, ok := ctx.(sandbox.SandboxContext); ok {
+			workspace = sctx.WorkspaceID
+		}
+		return fn(input, workspace)
+	}
 }

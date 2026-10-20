@@ -390,7 +390,9 @@ func NewServer(port int, apiKey string, verbose bool) (*Server, error) {
 			if server.repoFactory == nil || agentID == "" {
 				return nil, ""
 			}
-			buddy, err := server.repoFactory.Buddies().GetByName(context.Background(), agentID)
+			// No workspace at spawn time: the first agent of that name (the
+			// seeded palettes are the same in every workspace).
+			buddy, err := server.repoFactory.Buddies().GetByName(context.Background(), "", agentID)
 			if err != nil || buddy == nil {
 				return nil, ""
 			}

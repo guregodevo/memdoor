@@ -509,12 +509,12 @@ func (s *Server) handleMessage(c *Client, msg *Message) {
 		// Unknown names fall through to the coder rather than failing a turn.
 		agentName := "coder"
 		if name, rest, ok := leadingMention(text); ok {
-			if b, err := s.repoFactory.Buddies().GetByName(context.Background(), name); err == nil && b != nil {
+			if b, err := s.repoFactory.Buddies().GetByName(context.Background(), strings.TrimSpace(c.Scope), name); err == nil && b != nil {
 				agentName, text = name, rest
 			}
 		}
 		extraPrompt := ""
-		if buddy, err := s.repoFactory.Buddies().GetByName(context.Background(), agentName); err == nil && buddy != nil {
+		if buddy, err := s.repoFactory.Buddies().GetByName(context.Background(), strings.TrimSpace(c.Scope), agentName); err == nil && buddy != nil {
 			if len(buddy.Tools) > 0 {
 				jobCtx = context.WithValue(jobCtx, sharedctx.BuddyToolsKey, append([]string(nil), buddy.Tools...))
 			}

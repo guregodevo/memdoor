@@ -228,7 +228,7 @@ func (r *workflowRunner) Run(ctx context.Context, t workflow.TaskRun) (string, e
 	}
 	var buddyTools []string
 	if r.s.repoFactory != nil {
-		if buddy, err := r.s.repoFactory.Buddies().GetByName(ctx, agentID); err == nil && buddy != nil {
+		if buddy, err := r.s.repoFactory.Buddies().GetByName(ctx, r.run.Workspace, agentID); err == nil && buddy != nil {
 			buddyTools = append([]string(nil), buddy.Tools...)
 		}
 	}

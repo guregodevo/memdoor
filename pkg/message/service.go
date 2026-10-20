@@ -61,7 +61,7 @@ func min(a, b int) int {
 // BuddyRepository defines the minimal interface needed for looking up agent sandbox scopes
 // This avoids circular dependency with pkg/repository
 type BuddyRepository interface {
-	GetByName(ctx context.Context, name string) (*domain.Buddy, error)
+	GetByName(ctx context.Context, workspaceID, name string) (*domain.Buddy, error)
 }
 
 // ChannelRepository defines the minimal interface needed for fetching channel workspace IDs
@@ -216,7 +216,7 @@ func (s *Service) resolveMentions(ctx context.Context, text string) []Mention {
 		var displayName string
 
 		// Try agent/buddy first
-		buddy, err := s.buddyRepo.GetByName(ctx, name)
+		buddy, err := s.buddyRepo.GetByName(ctx, shared.WorkspaceFromContext(ctx), name)
 		if err == nil && buddy != nil {
 			actorID = shared.ActorID(fmt.Sprintf("agent:%s", buddy.Name))
 			displayName = buddy.Name
@@ -831,7 +831,7 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 		slog.String("agent_name", agentName),
 		slog.String("channel_id", userMsg.ChannelID))
 
-	buddy, err := s.buddyRepo.GetByName(ctx, agentName)
+	buddy, err := s.buddyRepo.GetByName(ctx, shared.WorkspaceFromContext(ctx), agentName)
 	if err != nil {
 		logger.Error("Failed to look up buddy for agent",
 			slog.String("agent_id", agentID.String()),

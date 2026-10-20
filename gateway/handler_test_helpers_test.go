@@ -75,21 +75,21 @@ func (m *mockBuddyRepo) GetByID(_ context.Context, id uuid.UUID) (*domain.Buddy,
 	return nil, fmt.Errorf("buddy not found")
 }
 
-func (m *mockBuddyRepo) GetByName(_ context.Context, name string) (*domain.Buddy, error) {
+func (m *mockBuddyRepo) GetByName(_ context.Context, workspaceID, name string) (*domain.Buddy, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for _, b := range m.buddies {
-		if b.Name == name {
+		if b.Name == name && inWorkspaceOf(workspaceID, b) {
 			return b, nil
 		}
 	}
 	return nil, fmt.Errorf("buddy not found: %s", name)
 }
 
-func (m *mockBuddyRepo) GetByNames(_ context.Context, names []string) ([]*domain.Buddy, error) {
+func (m *mockBuddyRepo) GetByNames(_ context.Context, workspaceID string, names []string) ([]*domain.Buddy, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -101,25 +101,34 @@ func (m *mockBuddyRepo) GetByNames(_ context.Context, names []string) ([]*domain
 	}
 	var result []*domain.Buddy
 	for _, b := range m.buddies {
-		if nameSet[b.Name] {
+		if nameSet[b.Name] && inWorkspaceOf(workspaceID, b) {
 			result = append(result, b)
 		}
 	}
 	return result, nil
 }
 
-func (m *mockBuddyRepo) List(_ context.Context, _ shared.OffsetPage) ([]*domain.Buddy, error) {
+func (m *mockBuddyRepo) List(_ context.Context, workspaceID string, _ shared.OffsetPage) ([]*domain.Buddy, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	result := make([]*domain.Buddy, len(m.buddies))
-	copy(result, m.buddies)
+	result := make([]*domain.Buddy, 0, len(m.buddies))
+	for _, b := range m.buddies {
+		if inWorkspaceOf(workspaceID, b) {
+			result = append(result, b)
+		}
+	}
 	return result, nil
 }
 
-func (m *mockBuddyRepo) ListActive(_ context.Context, _ shared.OffsetPage) ([]*domain.Buddy, error) {
+// inWorkspaceOf is the repository's scope rule: "" is every workspace.
+func inWorkspaceOf(workspaceID string, b *domain.Buddy) bool {
+	return workspaceID == "" || b.WorkspaceID == workspaceID
+}
+
+func (m *mockBuddyRepo) ListActive(_ context.Context, workspaceID string, _ shared.OffsetPage) ([]*domain.Buddy, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -127,7 +136,7 @@ func (m *mockBuddyRepo) ListActive(_ context.Context, _ shared.OffsetPage) ([]*d
 	defer m.mu.Unlock()
 	var result []*domain.Buddy
 	for _, b := range m.buddies {
-		if b.IsActive {
+		if b.IsActive && inWorkspaceOf(workspaceID, b) {
 			result = append(result, b)
 		}
 	}
@@ -149,14 +158,14 @@ func (m *mockBuddyRepo) Update(_ context.Context, buddy *domain.Buddy) error {
 	return fmt.Errorf("buddy not found")
 }
 
-func (m *mockBuddyRepo) DeleteByName(_ context.Context, name string) error {
+func (m *mockBuddyRepo) DeleteByName(_ context.Context, workspaceID, name string) error {
 	if m.err != nil {
 		return m.err
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	for i, b := range m.buddies {
-		if b != nil && b.Name == name {
+		if b != nil && b.Name == name && inWorkspaceOf(workspaceID, b) {
 			m.buddies = append(m.buddies[:i], m.buddies[i+1:]...)
 			return nil
 		}

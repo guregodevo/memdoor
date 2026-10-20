@@ -198,14 +198,16 @@ func (r *BuddyRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Bu
 }
 
 // GetByName retrieves a buddy by name
-func (r *BuddyRepository) GetByName(ctx context.Context, name string) (*domain.Buddy, error) {
+func (r *BuddyRepository) GetByName(ctx context.Context, workspaceID, name string) (*domain.Buddy, error) {
 	query := `
 		SELECT id, workspace_id, name, avatar_emoji, COALESCE(avatar_url, ''), icon, description, personality, system_prompt,
 			   execution_type, remote_config,
 			   temperature, max_tokens, skills, tools, sandbox_scope, learning_enabled,
 			   is_active, admin_only, created_by, created_at, updated_at
 		FROM buddies
-		WHERE name = ?
+		WHERE name = ? AND (? = '' OR workspace_id = ?)
+		ORDER BY created_at ASC
+		LIMIT 1
 	`
 
 	var buddy domain.Buddy
@@ -216,7 +218,7 @@ func (r *BuddyRepository) GetByName(ctx context.Context, name string) (*domain.B
 	var icon sql.NullString
 	var idStr, workspaceIDStr, createdByStr string
 
-	err := r.db.QueryRowContext(ctx, query, name).Scan(
+	err := r.db.QueryRowContext(ctx, query, name, workspaceID, workspaceID).Scan(
 		&idStr,
 		&workspaceIDStr,
 		&buddy.Name,
@@ -297,7 +299,7 @@ func (r *BuddyRepository) GetByName(ctx context.Context, name string) (*domain.B
 }
 
 // GetByNames retrieves multiple buddies by their names in a single query (batch loading)
-func (r *BuddyRepository) GetByNames(ctx context.Context, names []string) ([]*domain.Buddy, error) {
+func (r *BuddyRepository) GetByNames(ctx context.Context, workspaceID string, names []string) ([]*domain.Buddy, error) {
 	if len(names) == 0 {
 		return []*domain.Buddy{}, nil
 	}
@@ -315,8 +317,9 @@ func (r *BuddyRepository) GetByNames(ctx context.Context, names []string) ([]*do
 			   temperature, max_tokens, skills, tools, sandbox_scope,
 			   is_active, admin_only, created_by, created_at, updated_at
 		FROM buddies
-		WHERE name IN (%s)
-	`, fmt.Sprintf("%s", fmt.Sprintf("%s", strings.Join(placeholders, ","))))
+		WHERE name IN (%s) AND (? = '' OR workspace_id = ?)
+	`, strings.Join(placeholders, ","))
+	args = append(args, workspaceID, workspaceID)
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -402,19 +405,19 @@ func (r *BuddyRepository) GetByNames(ctx context.Context, names []string) ([]*do
 	return buddies, nil
 }
 
-// List retrieves all buddies
-// NOTE: In SQLite, returns ALL buddies (no workspace filtering)
-func (r *BuddyRepository) List(ctx context.Context, page shared.OffsetPage) ([]*domain.Buddy, error) {
+// List retrieves a workspace's buddies ("" = every workspace).
+func (r *BuddyRepository) List(ctx context.Context, workspaceID string, page shared.OffsetPage) ([]*domain.Buddy, error) {
 	query := `
 		SELECT id, workspace_id, name, avatar_emoji, COALESCE(avatar_url, ''), icon, description, personality, system_prompt,
 			   temperature, max_tokens, skills, tools, sandbox_scope,
 			   is_active, admin_only, created_by, created_at, updated_at
 		FROM buddies
+		WHERE (? = '' OR workspace_id = ?)
 		ORDER BY name ASC
 		LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, page.Limit, page.Offset)
+	rows, err := r.db.QueryContext(ctx, query, workspaceID, workspaceID, page.Limit, page.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("query buddies: %w", err)
 	}
@@ -498,19 +501,19 @@ func (r *BuddyRepository) List(ctx context.Context, page shared.OffsetPage) ([]*
 	return buddies, nil
 }
 
-// ListActive retrieves all active buddies
-func (r *BuddyRepository) ListActive(ctx context.Context, page shared.OffsetPage) ([]*domain.Buddy, error) {
+// ListActive retrieves a workspace's active buddies ("" = every workspace).
+func (r *BuddyRepository) ListActive(ctx context.Context, workspaceID string, page shared.OffsetPage) ([]*domain.Buddy, error) {
 	query := `
 		SELECT id, workspace_id, name, avatar_emoji, COALESCE(avatar_url, ''), icon, description, personality, system_prompt,
 			   temperature, max_tokens, skills, tools, sandbox_scope,
 			   is_active, admin_only, created_by, created_at, updated_at
 		FROM buddies
-		WHERE is_active = 1
+		WHERE is_active = 1 AND (? = '' OR workspace_id = ?)
 		ORDER BY name ASC
 		LIMIT ? OFFSET ?
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, page.Limit, page.Offset)
+	rows, err := r.db.QueryContext(ctx, query, workspaceID, workspaceID, page.Limit, page.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("query active buddies: %w", err)
 	}
@@ -699,10 +702,10 @@ func (r *BuddyRepository) Delete(ctx context.Context, id uuid.UUID) error {
 // handlers that already know the name (e.g. /api/agents/{name}).
 //
 // Returns NotFoundError when no row matches the name.
-func (r *BuddyRepository) DeleteByName(ctx context.Context, name string) error {
-	query := `DELETE FROM buddies WHERE name = ?`
+func (r *BuddyRepository) DeleteByName(ctx context.Context, workspaceID, name string) error {
+	query := `DELETE FROM buddies WHERE name = ? AND (? = '' OR workspace_id = ?)`
 
-	result, err := r.db.ExecContext(ctx, query, name)
+	result, err := r.db.ExecContext(ctx, query, name, workspaceID, workspaceID)
 	if err != nil {
 		return fmt.Errorf("delete buddy by name: %w", err)
 	}

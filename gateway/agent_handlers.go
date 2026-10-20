@@ -46,7 +46,7 @@ func (cs *ChatServer) handleAgents(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		buddies, err := cs.buddyRepo.List(ctx, shared.AllPages())
+		buddies, err := cs.buddyRepo.List(ctx, requestWorkspace(ctx), shared.AllPages())
 		if err != nil {
 			getChatLogger().Info("Failed to list agents from repository",
 				slog.String("error", err.Error()),
@@ -134,7 +134,7 @@ func (cs *ChatServer) handleAgentByName(w http.ResponseWriter, r *http.Request, 
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
 
-	buddy, err := cs.buddyRepo.GetByName(ctx, agentName)
+	buddy, err := cs.buddyRepo.GetByName(ctx, requestWorkspace(ctx), agentName)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Agent not found: %s", agentName), http.StatusNotFound)
 		return
@@ -248,7 +248,7 @@ func (cs *ChatServer) handleAgentByName(w http.ResponseWriter, r *http.Request, 
 		// stale-id-state bug). Deleting by name uses the column the
 		// caller already identified the row by and avoids the round
 		// trip entirely.
-		if err := cs.buddyRepo.DeleteByName(ctx, buddy.Name); err != nil {
+		if err := cs.buddyRepo.DeleteByName(ctx, requestWorkspace(ctx), buddy.Name); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to delete agent: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -536,7 +536,7 @@ func (cs *ChatServer) handleCreateAgent(w http.ResponseWriter, r *http.Request) 
 		AdminOnly:       true,                                                   // New agents are admin-only by default
 		CreatedBy:       uuid.MustParse("00000000-0000-0000-0000-000000000002"), // Default system user
 		WorkspaceScoped: domain.WorkspaceScoped{
-			WorkspaceID: domain.DefaultWorkspaceID,
+			WorkspaceID: firstNonEmpty(requestWorkspace(ctx), domain.DefaultWorkspaceID), // the maker's workspace
 		},
 	}
 

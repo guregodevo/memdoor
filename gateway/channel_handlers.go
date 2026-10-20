@@ -438,7 +438,7 @@ func (cs *ChatServer) handleGetRoomMembers(w http.ResponseWriter, r *http.Reques
 
 		// BATCH LOAD: Single query for all agents (performance optimization)
 		if len(agentNames) > 0 {
-			buddies, err := cs.buddyRepo.GetByNames(r.Context(), agentNames)
+			buddies, err := cs.buddyRepo.GetByNames(r.Context(), requestWorkspace(r.Context()), agentNames)
 			if err != nil {
 				getChatLogger().Info("Failed to batch load agents", slog.String("error", err.Error()))
 			} else {
@@ -1056,10 +1056,4 @@ func (cs *ChatServer) handleCreateDM(w http.ResponseWriter, r *http.Request) {
 // user's, set by the auth middleware from the user's row (one user, one
 // workspace), never the slug in the URL. A gateway-internal caller has none
 // and sees the whole gateway.
-func requestWorkspace(ctx context.Context) string {
-	execCtx := shared.GetExecutionContext(ctx)
-	if execCtx == nil || execCtx.WorkspaceID == "default" {
-		return ""
-	}
-	return execCtx.WorkspaceID
-}
+func requestWorkspace(ctx context.Context) string { return shared.WorkspaceFromContext(ctx) }

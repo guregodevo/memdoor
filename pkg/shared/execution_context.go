@@ -194,3 +194,16 @@ func FromContextValues(ctx context.Context) *ExecutionContext {
 
 	return execCtx
 }
+
+// WorkspaceFromContext is the workspace the request acts in: the signed-in
+// user's, pinned by the auth middleware from the user's row (one user, one
+// workspace), or the one a gateway-internal call named. "" means the whole
+// gateway, for the gateway's own callers only; the internal sentinel
+// "default" counts as that.
+func WorkspaceFromContext(ctx context.Context) string {
+	ec := GetExecutionContext(ctx)
+	if ec == nil || ec.WorkspaceID == "default" {
+		return ""
+	}
+	return ec.WorkspaceID
+}

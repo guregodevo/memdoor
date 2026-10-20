@@ -458,6 +458,9 @@ func (s *Server) ensureDefaultAgents(ctx context.Context, db *sql.DB) {
 		workspaceIDs = []string{domain.DefaultWorkspaceID}
 	}
 	for _, wsID := range workspaceIDs {
+		var owner, name string
+		_ = db.QueryRowContext(ctx, `SELECT COALESCE(owner_id, ''), COALESCE(name, '') FROM workspaces WHERE id = ?`, wsID).Scan(&owner, &name)
+		s.seedChiefAgent(ctx, db, wsID, owner, name)
 		s.seedCoderAgent(ctx, db, wsID)
 		s.seedNarratorAgent(ctx, db, wsID)
 		s.seedPlannerAgent(ctx, db, wsID)
