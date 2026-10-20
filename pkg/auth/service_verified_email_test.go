@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"memdoor/pkg/domain"
 )
@@ -28,6 +29,11 @@ func (r *memRepo) GetUserByEmail(_ context.Context, email string) (*User, string
 	return nil, "", errors.New("not found")
 }
 
+func (r *memRepo) EmailExists(_ context.Context, email string) (bool, error) {
+	_, ok := r.users[email]
+	return ok, nil
+}
+
 func (r *memRepo) GetUserByUsername(_ context.Context, username string) (*User, error) {
 	for _, u := range r.users {
 		if u.Username == username {
@@ -49,6 +55,10 @@ func (r *memRepo) MarkEmailVerified(_ context.Context, id string) error {
 
 func (r *memRepo) CreateSession(_ context.Context, _ *Session, _ string) error {
 	r.sessions++
+	return nil
+}
+
+func (r *memRepo) CreateVerificationToken(_ context.Context, _, _ string, _ time.Time) error {
 	return nil
 }
 
@@ -109,7 +119,7 @@ func TestUsernameFromEmailAndCollisions(t *testing.T) {
 		"averyveryverylongaddressthatgoesonandon@example.com": "averyveryverylongaddressthatgo",
 	}
 	for in, want := range cases {
-		if got := usernameFromEmail(in); got != want {
+		if got := UsernameFromEmail(in); got != want {
 			t.Errorf("%s: got %q want %q", in, got, want)
 		}
 	}
@@ -119,5 +129,27 @@ func TestUsernameFromEmailAndCollisions(t *testing.T) {
 	got := s.freeUsername(context.Background(), "john")
 	if got == "john" || !strings.HasPrefix(got, "john-") || len(got) != len("john-")+4 {
 		t.Fatalf("a taken name gets a short suffix: %q", got)
+	}
+}
+
+// A sign-up with an email and a password and nothing else gets a username
+// from the address and that username as its name (what the CLI's --help
+// promised and the service refused, 2026-10-20).
+func TestRegisterDerivesUsernameAndNameFromTheEmail(t *testing.T) {
+	repo := newMemRepo()
+	s := NewService(repo, nil, NewTokenGenerator(), quietLogger{}, "", "ws-1")
+	u, err := s.Register(context.Background(), "Bob.Builder@example.com", "", "longenough1", "", "ws-bob")
+	if err != nil || u.Username != "bob-builder" || u.Name != "bob-builder" || u.WorkspaceID != "ws-bob" {
+		t.Fatalf("derived: %v %+v", err, u)
+	}
+	again, err := s.Register(context.Background(), "bob.builder@other.example", "", "longenough1", "", "ws-2")
+	if err != nil || again.Username == "bob-builder" || !strings.HasPrefix(again.Username, "bob-builder-") {
+		t.Fatalf("a taken username is made free: %v %+v", err, again)
+	}
+	if _, err := s.Register(context.Background(), "x@example.com", "taken", "longenough1", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Register(context.Background(), "y@example.com", "taken", "longenough1", "", ""); err == nil {
+		t.Fatal("a username asked for by name is not taken from someone else")
 	}
 }

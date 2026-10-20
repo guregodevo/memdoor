@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -52,9 +53,11 @@ func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 	// what every workspace-scoped route keys on — slugifying the display
 	// name client-side produces the wrong result for names that aren't a
 	// straight word.
-	// Only the workspace the request names: this endpoint is public, and
-	// the first workspace of a gateway with many is nobody's business
-	// (memdoor.ai answered its owner's, 2026-10-20: "No hacker news").
+	// The workspace the request names, else the gateway's only one (a
+	// machine's own gateway: memdoor login and the TUI's first run pin it
+	// from here). A gateway with several names none: this endpoint is
+	// public, and the first workspace of memdoor.ai is nobody's business
+	// (it answered its owner's to anyone, 2026-10-20: "No hacker news").
 	wsSlug := ""
 	if execCtx := shared.GetExecutionContext(r.Context()); execCtx != nil {
 		wsSlug = execCtx.WorkspaceSlug
@@ -62,6 +65,8 @@ func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 	var workspaceName, workspaceSlug string
 	if wsSlug != "" {
 		_ = db.QueryRowContext(r.Context(), `SELECT name, slug FROM workspaces WHERE slug = ?`, wsSlug).Scan(&workspaceName, &workspaceSlug)
+	} else {
+		workspaceName, workspaceSlug = soleWorkspaceRow(r.Context(), db)
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -254,4 +259,15 @@ func slugifyWorkspace(s string) string {
 		s = "untitled"
 	}
 	return strings.ToLower(s)
+}
+
+// soleWorkspaceRow is the gateway's one workspace when it has exactly one,
+// else nothing.
+func soleWorkspaceRow(ctx context.Context, db *sql.DB) (name, slug string) {
+	var n int
+	if err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM workspaces`).Scan(&n); err != nil || n != 1 {
+		return "", ""
+	}
+	_ = db.QueryRowContext(ctx, `SELECT name, slug FROM workspaces LIMIT 1`).Scan(&name, &slug)
+	return name, slug
 }

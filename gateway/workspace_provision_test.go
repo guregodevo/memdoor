@@ -11,13 +11,18 @@ import (
 
 // makerFake records the workspaces the sign-up handlers ask for.
 type makerFake struct {
-	made   []string // "name|hint"
-	seeded []string // "slug|name|owner"
+	made    []string // "name|hint"
+	seeded  []string // "slug|name|owner"
+	dropped []string
 }
 
 func (m *makerFake) NewWorkspace(_ context.Context, name, hint string) (string, error) {
 	m.made = append(m.made, name+"|"+hint)
 	return "ws-" + hint, nil
+}
+
+func (m *makerFake) DropWorkspace(_ context.Context, slug string) {
+	m.dropped = append(m.dropped, slug)
 }
 
 func (m *makerFake) SeedWorkspace(_ context.Context, slug, name, owner string) {
@@ -51,10 +56,17 @@ func TestASignUpGetsItsOwnWorkspace(t *testing.T) {
 		t.Fatal("signed in")
 	}
 
+	// Email and password alone: the workspace is named after the address.
+	rec = postRegister(a, "198.51.100.33:1",
+		`{"email":"Sam.Lee@example.com","password":"longenough1"}`)
+	if rec.Code != http.StatusOK || maker.made[1] != "sam-lee's workspace|sam-lee" {
+		t.Fatalf("from the address alone: %d %v", rec.Code, maker.made)
+	}
+
 	// A name for the workspace is taken when given (the enterprise form).
 	rec = postRegister(a, "198.51.100.31:1",
 		`{"email":"ops@acme.example","username":"ops","password":"longenough1","name":"Ops","workspace_name":"Acme Corp"}`)
-	if rec.Code != http.StatusOK || maker.made[1] != "Acme Corp|Acme Corp" || fake.workspaces[1] != "ws-Acme Corp" {
+	if rec.Code != http.StatusOK || maker.made[2] != "Acme Corp|Acme Corp" || fake.workspaces[2] != "ws-Acme Corp" {
 		t.Fatalf("a named workspace: %d %v %v", rec.Code, maker.made, fake.workspaces)
 	}
 }
@@ -79,6 +91,23 @@ func TestAProviderSignUpGetsItsOwnWorkspace(t *testing.T) {
 	_ = get(a, a.HandleSocialCallback, "/api/auth/google/callback?code=c&state="+state, "198.51.100.40:1")
 	if len(maker.made) != 1 || len(maker.seeded) != 1 {
 		t.Fatalf("a known account gets no new workspace: made %v seeded %v", maker.made, maker.seeded)
+	}
+}
+
+// A sign-up the service refuses (the address already registered) leaves no
+// workspace behind; the one that then succeeds keeps the plain slug.
+func TestAFailedSignUpLeavesNoWorkspace(t *testing.T) {
+	fake := &registerFake{refuse: "email already registered"}
+	maker := &makerFake{}
+	a := NewAuthGatewayAdapter(fake)
+	a.SetWorkspaces(maker)
+	rec := postRegister(a, "198.51.100.32:1",
+		`{"email":"jane@example.com","username":"jane","password":"longenough1","name":"Jane Doe"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("refused sign-up: %d %s", rec.Code, rec.Body.String())
+	}
+	if len(maker.made) != 1 || len(maker.dropped) != 1 || maker.dropped[0] != "ws-jane" || len(maker.seeded) != 0 {
+		t.Fatalf("made %v dropped %v seeded %v", maker.made, maker.dropped, maker.seeded)
 	}
 }
 

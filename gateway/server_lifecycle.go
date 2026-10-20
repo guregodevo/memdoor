@@ -156,7 +156,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// Wire get_secret tool into agent runtime
 	server.agent.WireSecretTool(agentSecretRepo)
 
-	// Wire DB to auth adapter for invite-only registration
+	// Wire DB to auth adapter: invite tokens are checked and spent there
 	if server.authAdapter != nil {
 		if db, ok := server.repoFactory.DB().(*sql.DB); ok && db != nil {
 			server.authAdapter.SetDB(db)

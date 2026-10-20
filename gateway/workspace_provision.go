@@ -20,6 +20,11 @@ import (
 type workspaceMaker interface {
 	NewWorkspace(ctx context.Context, name, slugHint string) (slug string, err error)
 	SeedWorkspace(ctx context.Context, slug, name, ownerUserID string)
+	// DropWorkspace takes back a row NewWorkspace made for a sign-up that
+	// then failed (an address already registered, a weak password): without
+	// it every failed attempt would leave an empty "jane's workspace" and
+	// the one that succeeds would be jane-2.
+	DropWorkspace(ctx context.Context, slug string)
 }
 
 // SetWorkspaces gives the adapter the server that makes workspaces.
@@ -84,6 +89,17 @@ func newWorkspaceRow(ctx context.Context, db *sql.DB, name, slugHint string) (st
 	return slug, nil
 }
 
+// DropWorkspace deletes a workspace nobody owns yet.
+func (s *Server) DropWorkspace(ctx context.Context, slug string) {
+	db, ok := s.repoFactory.DB().(*sql.DB)
+	if !ok || db == nil || slug == "" {
+		return
+	}
+	if _, err := db.ExecContext(ctx, `DELETE FROM workspaces WHERE id = ? AND owner_id = ''`, slug); err != nil {
+		s.log.Warn("workspace of a failed sign-up not dropped", slog.String("workspace", slug), slog.String("error", err.Error()))
+	}
+}
+
 // SeedWorkspace makes ownerUserID the admin of slug and gives the workspace
 // what the setup gives a new one: #general, the chief and the coding team.
 func (s *Server) SeedWorkspace(ctx context.Context, slug, name, ownerUserID string) {
@@ -115,6 +131,13 @@ func (a *AuthGatewayAdapter) workspaceForSignUp(ctx context.Context, name, slugH
 		return "", nil
 	}
 	return a.workspaces.NewWorkspace(ctx, name, slugHint)
+}
+
+func (a *AuthGatewayAdapter) dropIfOwn(ctx context.Context, slug string) {
+	if a.workspaces == nil || slug == "" {
+		return
+	}
+	a.workspaces.DropWorkspace(ctx, slug)
 }
 
 func (a *AuthGatewayAdapter) seedIfOwn(ctx context.Context, slug, name, ownerUserID string) {

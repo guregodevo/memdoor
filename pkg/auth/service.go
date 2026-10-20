@@ -56,14 +56,17 @@ func (s *service) Register(ctx context.Context, email, username, password, name,
 	if email == "" {
 		return nil, fmt.Errorf("email is required")
 	}
-	if username == "" {
-		return nil, fmt.Errorf("username is required")
-	}
 	if password == "" {
 		return nil, fmt.Errorf("password is required")
 	}
+	// A sign-up types an email and a password; the username is the
+	// address's local part (made free) and the name the username unless
+	// they say otherwise (the web form, the CLI and the providers agree).
+	if username == "" {
+		username = s.freeUsername(ctx, UsernameFromEmail(email))
+	}
 	if name == "" {
-		return nil, fmt.Errorf("name is required")
+		name = username
 	}
 	if len(password) < 8 {
 		return nil, fmt.Errorf("password must be at least 8 characters")
@@ -232,7 +235,7 @@ func (s *service) createVerifiedUser(ctx context.Context, email, name string, wo
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
-	username := s.freeUsername(ctx, usernameFromEmail(email))
+	username := s.freeUsername(ctx, UsernameFromEmail(email))
 	if strings.TrimSpace(name) == "" {
 		name = username
 	}
@@ -266,9 +269,9 @@ func (s *service) createVerifiedUser(ctx context.Context, email, name string, wo
 	return user, nil
 }
 
-// usernameFromEmail is the address's local part in the username alphabet
+// UsernameFromEmail is the address's local part in the username alphabet
 // (letters, digits, - and _; 3 to 30 characters).
-func usernameFromEmail(email string) string {
+func UsernameFromEmail(email string) string {
 	local := email
 	if i := strings.Index(email, "@"); i >= 0 {
 		local = email[:i]

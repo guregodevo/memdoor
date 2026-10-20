@@ -221,8 +221,8 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleCreateUser handles POST /api/admin/users — admin-provisioned user
-// creation. Bypasses the invite-only gate on /api/auth/register because the
-// caller is already an authenticated admin. Optional `admin: true` promotes
+// creation: the account joins the admin's workspace, no workspace of its own
+// (a sign-up on /api/auth/register gets one). Optional `admin: true` promotes
 // the new user to workspace admin in the same call. The new account is
 // marked email_verified=true since the admin is vouching for it.
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {

@@ -125,11 +125,14 @@ func (a *AuthGatewayAdapter) HandleRegister(w http.ResponseWriter, r *http.Reque
 	}
 
 	if workspaceID == "" {
+		// The username the service will give when none is typed, for the
+		// workspace's name and slug (jane@… → "jane's workspace", jane).
+		username := firstNonEmpty(req.Username, auth.UsernameFromEmail(req.Email))
 		ownWorkspace = strings.TrimSpace(req.WorkspaceName)
 		if ownWorkspace == "" {
-			ownWorkspace = personalWorkspaceName(req.Name, req.Username)
+			ownWorkspace = personalWorkspaceName(req.Name, username)
 		}
-		slug, err := a.workspaceForSignUp(r.Context(), ownWorkspace, firstNonEmpty(req.WorkspaceName, req.Username, req.Name))
+		slug, err := a.workspaceForSignUp(r.Context(), ownWorkspace, firstNonEmpty(req.WorkspaceName, username))
 		if err != nil {
 			http.Error(w, `{"error": "could not make your workspace, try again"}`, http.StatusInternalServerError)
 			return
@@ -139,6 +142,9 @@ func (a *AuthGatewayAdapter) HandleRegister(w http.ResponseWriter, r *http.Reque
 
 	user, err := a.service.Register(r.Context(), req.Email, req.Username, req.Password, req.Name, workspaceID)
 	if err != nil {
+		if ownWorkspace != "" {
+			a.dropIfOwn(r.Context(), workspaceID)
+		}
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusBadRequest)
 		return
 	}

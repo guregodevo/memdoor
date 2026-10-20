@@ -268,9 +268,7 @@ func TestRegister_Validation(t *testing.T) {
 		email, username, pass, dnName string
 	}{
 		{"missing email", "", "alice", "password1", "Alice"},
-		{"missing username", "a@b.c", "", "password1", "Alice"},
 		{"missing password", "a@b.c", "alice", "", "Alice"},
-		{"missing name", "a@b.c", "alice", "password1", ""},
 		{"short password", "a@b.c", "alice", "short", "Alice"},
 		{"username too short", "a@b.c", "ab", "password1", "Alice"},
 		{"username bad chars", "a@b.c", "alice!", "password1", "Alice"},

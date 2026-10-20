@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,9 +18,13 @@ type registerFake struct {
 	auth.Service
 	registered []string
 	workspaces []string
+	refuse     string // when set, every Register fails with it
 }
 
 func (f *registerFake) Register(_ context.Context, email, username, _, name, workspaceID string) (*auth.User, error) {
+	if f.refuse != "" {
+		return nil, errors.New(f.refuse)
+	}
 	f.registered = append(f.registered, email)
 	f.workspaces = append(f.workspaces, workspaceID)
 	u := &auth.User{}
