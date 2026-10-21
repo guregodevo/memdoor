@@ -28,20 +28,6 @@ import { DemoGallery } from './DemoGallery';
 const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 
 
-// The hero's proof, each figure measured (docs/features/DECIDE.md): paired
-// runs, the same tasks with the decision model off and on.
-// The hero's three cards are what a workflow gives that a chat does not
-// (Greg, 2026-10-04: the hero "does not show off the powerfulness of workflow").
-// Outcomes, not properties (the YC-partner read, 2026-10-11: "Checked, Gated,
-// Resumable" describe an engine; a developer buys what happens on Tuesday).
-// Each row is something the binary does today, with its receipt in the docs.
-// And short (Greg, 2026-10-11: "too much text, no one will read everything").
-const HERO_PROOF: { value: string; label: string }[] = [
-  { value: 'Any door', label: 'a window, a script, CI, a schedule, your editor, your phone' },
-  { value: 'Resumed', label: 'the run CI started is the one you open live' },
-  { value: 'Proved', label: 'the exit code is the receipt of its checks' },
-];
-
 // The doors (docs/headless): each is a real command today.
 const DOORS: { name: string; how: string; href: string }[] = [
   { name: 'The window', how: 'memdoor tui, where you launched it', href: '/docs/tui' },
@@ -192,6 +178,25 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
   );
 }
 
+// The hero's adjective turns (Greg, 2026-10-21: "durable / repeatable /
+// headless can be displayed synchronously"); a reader who asked for less
+// motion sees the first word and nothing moves.
+const HERO_WORDS = ['durable', 'repeatable', 'headless'];
+
+function RotatingWord({ words }: { words: string[] }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t = window.setInterval(() => setI((n) => (n + 1) % words.length), 2400);
+    return () => window.clearInterval(t);
+  }, [words.length]);
+  return (
+    <span key={words[i]} className="inline-block" style={{ animation: 'fadeInUp 0.45s ease-out' }}>
+      {words[i]}
+    </span>
+  );
+}
+
 export function CoderLandingPage() {
   useEffect(() => {
     setMeta({ ...HOME_META, path: '/' });
@@ -213,24 +218,14 @@ export function CoderLandingPage() {
         <CoderHeader dark />
         <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
           <div className="text-center lg:text-left">
-            <div className="mb-4 text-xs uppercase tracking-[0.2em] text-neutral-400">
-              <a href="/docs/gateway" className="underline decoration-neutral-600 underline-offset-4 hover:text-white">One gateway, every door</a> · open source · your own API key · Apache 2.0
-            </div>
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
-              The headless coding agent.
+              The coding agent for <RotatingWord words={HERO_WORDS} />{' '}
+              <span className="text-emerald-400">workflows</span>.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
               Start it from CI, a schedule or a shell. Finish it from your phone or a window. It proves each
               step and stops where only you decide.
             </p>
-            <ul className="mx-auto mb-8 max-w-xl space-y-2 text-left text-sm text-neutral-300 lg:mx-0">
-              {HERO_PROOF.map((p) => (
-                <li key={p.value} className="flex gap-3">
-                  <span className="w-20 shrink-0 font-semibold text-white">{p.value}</span>
-                  <span>{p.label}</span>
-                </li>
-              ))}
-            </ul>
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />
               <p className="text-xs text-neutral-400">

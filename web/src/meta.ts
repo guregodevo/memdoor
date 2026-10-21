@@ -6,9 +6,9 @@
 const SITE = 'https://memdoor.ai';
 
 export const HOME_META = {
-  title: 'Memdoor — AI coding agent in your terminal, on your own API key',
+  title: 'Memdoor — The coding agent for durable workflows',
   description:
-    'A coding agent for the terminal on your own API key (OpenRouter, Anthropic, OpenAI…). Describe the steps; it runs them as a checked, resumable workflow. Free.',
+    'The coding agent for durable workflows, open source, on your own API key: start a run from CI, a schedule or a shell; finish it from your phone or a window. One gateway, every door. Steps proved, gates, resume. Free.',
 };
 
 function setTag(selector: string, attr: string, value: string, create: () => HTMLElement) {

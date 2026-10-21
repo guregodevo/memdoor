@@ -39,7 +39,7 @@ var routeMetas = map[string]pageMeta{
 		Description: "What Memdoor does: workflows with a proof per step and a gate, a decision model that cuts what the agent reads, and every feature the other coding agents document, with who else has it.",
 	},
 	"/workflows": {
-		Title:       "Workflows — a catalog of agent workflows that have run, each with its real session",
+		Title:       "Durable steps orchestration — Memdoor workflows",
 		Description: "Every entry is a workflow that exists as task files and has run: ship, review, tui-check, issue-to-pr, release-check, digest, karpathy-recipe. A graph of steps with a proof per step and a gate where a person decides, recorded live.",
 	},
 	"/download": {

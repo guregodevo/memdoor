@@ -45,7 +45,7 @@ const TAKES = [
     ask: 'git diff | memdoor run "review this diff" — then a fix, a workflow with --wait, and resume | head.',
     cast: '/headless.cast',
     poster: 'npt:0:20',
-    what: 'a shell → exit codes from the receipts → the same conversation, piped',
+    what: '',
   },
   {
     key: 'cost',
@@ -111,7 +111,7 @@ export function WorkflowDemo() {
         <span className="italic">“{take.ask}”</span>
       </p>
       <div ref={host} className="overflow-hidden rounded-xl border border-neutral-700 shadow-lg" />
-      <p className="mt-2 text-center text-xs text-neutral-400">{take.what}</p>
+      {take.what && <p className="mt-2 text-center text-xs text-neutral-400">{take.what}</p>}
     </div>
   );
 }
