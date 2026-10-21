@@ -22,9 +22,11 @@ export const STEPS: { title: string; body: React.ReactNode }[] = [
     body: (
       <>
         One binary, no Docker, no Python; it runs a small gateway in the background. It lands in{' '}
-        <code className="text-neutral-700">~/.local/bin/memdoor</code> and needs no sudo. Read the script first if you
-        like: <a href="/install.sh" className="text-neutral-600 underline underline-offset-4">/install.sh</a> is plain
-        shell and checks a SHA-256 before it installs anything.
+        <code className="text-neutral-700">~/.local/bin/memdoor</code> (on Windows,{' '}
+        <code className="text-neutral-700">%LOCALAPPDATA%\Memdoor\bin</code>) and needs no sudo or admin rights. Read the
+        script first if you like: <a href="/install.sh" className="text-neutral-600 underline underline-offset-4">/install.sh</a>{' '}
+        and <a href="/install.ps1" className="text-neutral-600 underline underline-offset-4">/install.ps1</a> are plain
+        scripts that check a SHA-256 before they install anything.
       </>
     ),
   },
@@ -93,6 +95,7 @@ export function DownloadPage() {
 export function InstallBlock() {
   return (
     <>
+      <div className="mb-1 text-xs uppercase tracking-widest text-neutral-400">macOS and Linux</div>
       <div className="rounded-2xl border border-neutral-200 bg-neutral-950 p-5">
         <pre className="overflow-x-auto text-[13px] leading-relaxed text-neutral-100">
           <code>
@@ -102,8 +105,18 @@ export function InstallBlock() {
           </code>
         </pre>
       </div>
+      <div className="mb-1 mt-4 text-xs uppercase tracking-widest text-neutral-400">Windows (PowerShell)</div>
+      <div className="rounded-2xl border border-neutral-200 bg-neutral-950 p-5">
+        <pre className="overflow-x-auto text-[13px] leading-relaxed text-neutral-100">
+          <code>
+            {INSTALL_WINDOWS}
+            {'\n'}$env:OPEN_ROUTER_API_KEY = "sk-or-…"   # or any provider's key, or: memdoor connect
+            {'\n'}cd your-project; memdoor tui
+          </code>
+        </pre>
+      </div>
       <p className="mt-3 text-xs text-neutral-400">
-        Windows PowerShell: <code className="text-neutral-600">{INSTALL_WINDOWS}</code>
+        Both scripts are plain text, download one binary from /dl and check it against the published SHA-256 before anything runs. No admin rights.
       </p>
     </>
   );
