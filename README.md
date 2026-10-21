@@ -4,7 +4,7 @@
   <p><strong>The coding agent for durable workflows: repeatable, headless, on your own key. Start it from CI, finish it from your phone; each step done when its output exists, not when the model says so.</strong></p>
   <p>
     <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue"></a>
-    <a href="https://github.com/guregodevo/memdoor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/guregodevo/memdoor/actions/workflows/ci.yml/badge.svg"></a>
+    <a href="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml"><img alt="CI" src="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml/badge.svg"></a>
     <img alt="Go" src="https://img.shields.io/badge/Go-one%20static%20binary-00ADD8">
     <img alt="Platforms" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-lightgrey">
   </p>
