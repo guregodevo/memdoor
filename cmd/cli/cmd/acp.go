@@ -40,7 +40,6 @@ machine up like memdoor tui does.`,
 			return err
 		}
 		c := NewClient()
-		handShellKeyToGateway(c)
 		if workspaceSlug == "" {
 			if slug, _, ok := resolveWorkspaceSlug(); ok {
 				workspaceSlug = slug

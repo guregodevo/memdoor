@@ -55,7 +55,6 @@ across holds: the same one opens the conversation again next time.`,
 			return err
 		}
 		c := NewClient()
-		handShellKeyToGateway(c)
 		wsID := strings.TrimSpace(r.Workspace)
 		if wsID == "" {
 			wsID = strings.TrimSpace(workspaceSlug)

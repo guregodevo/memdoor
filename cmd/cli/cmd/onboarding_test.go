@@ -48,7 +48,8 @@ func TestSetupNextStepsDoNotSellTheOldProduct(t *testing.T) {
 // Negative: a first run is not an expired session. Someone who has just
 // installed this and typed `memdoor tui` used to be told to run
 // `memdoor auth login-direct --email … --password …`, for an account they do
-// not have, instead of `memdoor setup`.
+// not have, instead of the first run (which sets the machine up itself,
+// 2026-10-08; it was `memdoor setup` before).
 func TestFirstRunPointsAtSetup(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	err := sessionProblem()
@@ -56,8 +57,8 @@ func TestFirstRunPointsAtSetup(t *testing.T) {
 		t.Fatal("a machine with no credentials must report a problem")
 	}
 	msg := err.Error()
-	if !strings.Contains(msg, "memdoor setup") {
-		t.Errorf("the first run must be sent to setup: %q", msg)
+	if !strings.Contains(msg, "memdoor tui") || strings.Contains(msg, "memdoor setup") {
+		t.Errorf("the first run must be sent to the first run, not a setup command: %q", msg)
 	}
 	if strings.Contains(msg, "login-direct") {
 		t.Errorf("a stranger has no account to log in to: %q", msg)

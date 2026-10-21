@@ -52,10 +52,33 @@ func localGatewayPort() (string, bool) {
 // gateway, a workspace and a session, without a question: the local user is
 // generated (~/.memdoor/local-login, the same file the Pro sign-in writes).
 // A machine that HAS been set up keeps its own messages: a gateway whose
-// first user exists is never taken over from here.
+// first user exists is never taken over from here. Then a key this shell
+// holds reaches the gateway Memdoor started without it, at EVERY door: a
+// first keyless `memdoor run`, then `export KEY` and `memdoor run` again,
+// said "no model yet" a second time while the window would have worked
+// (found 2026-10-21, the negative-path pass on Show HN day).
 func firstRunReady() error {
-	if _, local := localGatewayPort(); local {
+	if err := machineReady(); err != nil {
+		return err
+	}
+	handShellKeyToGateway(NewClient())
+	return nil
+}
+
+func machineReady() error {
+	if port, local := localGatewayPort(); local {
+		// Something else on the port (a dev server, a stale process)
+		// answers HTTP but not as a gateway: said at once, before a start
+		// that cannot bind and a 15 s wait that ended in that program's
+		// HTML error page.
+		taken := fmt.Errorf("port %s is taken by something that is not a Memdoor gateway: stop it, or run with MEMDOOR_PORT=<another port>", port)
+		if !gatewayReachable() && portAnswers(port) {
+			return taken
+		}
 		ensureGatewayRunning()
+		if !gatewayReachable() && portAnswers(port) {
+			return taken
+		}
 	}
 	if sessionProblem() == nil {
 		return nil

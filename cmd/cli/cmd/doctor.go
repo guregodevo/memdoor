@@ -27,9 +27,8 @@ var doctorCmd = &cobra.Command{
 		if nothingSetUpYet() {
 			fmt.Println("Nothing is set up on this machine yet — which is what a fresh install looks like.")
 			fmt.Println()
-			fmt.Println("  memdoor setup                          once, here")
 			fmt.Println("  export OPEN_ROUTER_API_KEY=sk-or-...   your key, your bill (or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect)")
-			fmt.Println("  cd <your-project> && memdoor tui       start working")
+			fmt.Println("  cd <your-project> && memdoor tui       the first run sets this machine up")
 			fmt.Println()
 			fmt.Println("Workflows run free here; schedule one with `memdoor cron add --workflow <name>`.")
 			return nil
@@ -136,11 +135,17 @@ var doctorCmd = &cobra.Command{
 		// Check gateway connectivity
 		fmt.Println("Gateway")
 		c := NewClient()
-		if resp, err := c.Get("/health"); err != nil {
-			fmt.Println("  X Gateway not reachable")
+		var st struct {
+			Version string `json:"version"`
+		}
+		if err := c.GetJSON("/api/status", &st); err != nil {
+			if port, local := localGatewayPort(); local && portAnswers(port) {
+				fmt.Printf("  X Port %s is taken by something that is not a Memdoor gateway\n", port)
+			} else {
+				fmt.Println("  X Gateway not reachable")
+			}
 		} else {
-			resp.Body.Close()
-			fmt.Println("  OK Gateway is running")
+			fmt.Printf("  OK Gateway is running (%s)\n", st.Version)
 		}
 		fmt.Println()
 

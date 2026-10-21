@@ -338,7 +338,7 @@ func sessionProblem() error {
 		// Someone who has just installed this and typed `memdoor tui` was told
 		// to run `memdoor auth login-direct --email … --password …`, a command
 		// they have no account for and which is not the documented first step.
-		return fmt.Errorf("this machine is not set up yet: run 'memdoor setup' once (it makes the workspace and this machine's user), then 'memdoor tui' in a project")
+		return fmt.Errorf("this machine is not set up yet: 'cd <your-project> && memdoor tui' (or memdoor run) sets it up on its first run; if that just failed, the home directory may not be writable")
 	}
 	if !creds.ExpiresAt.IsZero() && time.Now().After(creds.ExpiresAt) {
 		return fmt.Errorf("your session on %s expired %s ago (%s): run 'memdoor auth login-direct --email %s --password <pass>'",
