@@ -40,8 +40,41 @@ func TestAgentsAreScopedByWorkspaceAndOrphansJoinTheOldestWorkspace(t *testing.T
 	if err := scopeBuddiesByWorkspace(db); err != nil {
 		t.Fatal(err)
 	}
+	// Seeded before the first workspace existed AND again by the setup in
+	// it (the fresh-install sequence of 2026-10-21): the orphan twin is
+	// dropped; moving it would trip UNIQUE (workspace_id, name) and the
+	// gateway would never boot again.
+	for _, stmt := range []string{
+		`INSERT INTO buddies (id, workspace_id, name, created_by) VALUES ('44444444-4444-4444-4444-444444444444', 'hackernews', 'runner', 'system')`,
+		`INSERT INTO buddies (id, workspace_id, name, created_by) VALUES ('55555555-5555-5555-5555-555555555555', 'default', 'runner', 'system')`,
+		`INSERT INTO channels VALUES ('66666666-6666-6666-6666-666666666666', 'hackernews', 'test')`,
+		`INSERT INTO channels VALUES ('77777777-7777-7777-7777-777777777777', 'default', 'test')`,
+	} {
+		if _, err := db.Exec(stmt); err != nil {
+			t.Fatal(stmt, err)
+		}
+	}
 	if err := repairOrphanWorkspaceIDs(db); err != nil {
 		t.Fatal(err)
+	}
+	if err := repairOrphanWorkspaceIDs(db); err != nil {
+		t.Fatalf("a second boot: %v", err)
+	}
+	for _, q := range []string{`SELECT id FROM buddies WHERE name = 'runner'`, `SELECT id FROM channels WHERE name = 'test'`} {
+		rows, err := db.Query(q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var ids []string
+		for rows.Next() {
+			var id string
+			_ = rows.Scan(&id)
+			ids = append(ids, id)
+		}
+		rows.Close()
+		if len(ids) != 1 || !(ids[0] == "44444444-4444-4444-4444-444444444444" || ids[0] == "66666666-6666-6666-6666-666666666666") {
+			t.Fatalf("%s: the workspace's own row stays, the orphan twin goes: %v", q, ids)
+		}
 	}
 	if err := scopeBuddiesByWorkspace(db); err != nil {
 		t.Fatalf("a second run is a no-op: %v", err)

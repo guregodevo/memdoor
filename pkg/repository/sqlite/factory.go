@@ -985,6 +985,18 @@ func repairOrphanWorkspaceIDs(db *sql.DB) error {
 		return nil
 	}
 	for _, table := range []string{"users", "channels", "buddies"} {
+		if table != "users" {
+			// A channel or agent seeded before the first workspace existed
+			// (general, chief, coder…) is duplicated by the one the setup
+			// seeded in that workspace: the orphan is dropped, not moved, or
+			// the move trips UNIQUE (workspace_id, name) and the gateway
+			// never boots (every second start of a fresh install died,
+			// 2026-10-20 12:22 → 2026-10-21, the installers workflow red).
+			if _, err := db.Exec(`DELETE FROM `+table+` WHERE workspace_id NOT IN (SELECT id FROM workspaces)
+				AND name IN (SELECT name FROM `+table+` WHERE workspace_id = ?)`, oldest); err != nil {
+				return fmt.Errorf("%s: orphan duplicate: %w", table, err)
+			}
+		}
 		if _, err := db.Exec(`UPDATE `+table+` SET workspace_id = ? WHERE workspace_id NOT IN (SELECT id FROM workspaces)`, oldest); err != nil {
 			return fmt.Errorf("%s: orphan workspace: %w", table, err)
 		}

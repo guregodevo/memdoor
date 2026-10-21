@@ -8,7 +8,6 @@ import (
 
 	"time"
 
-	"memdoor/pkg/domain"
 
 	"github.com/google/uuid"
 )
@@ -439,9 +438,8 @@ Never write code yourself. Never reply REPLY_SKIP.`
 // handleSetup; existing installs backfill on next boot.
 //
 // Iterates active workspaces so multi-workspace installs get the coding
-// agents (coder, narrator, planner, verifier, runner) in each. Falls back to domain.DefaultWorkspaceID
-// when no workspace rows exist yet (pre-setup boot) so the legacy
-// single-tenant orphan-row path keeps working until setup runs.
+// agents (coder, narrator, planner, verifier, runner) in each; a gateway
+// with no workspace row yet seeds nothing until its setup makes one.
 func (s *Server) ensureDefaultAgents(ctx context.Context, db *sql.DB) {
 	s.log.Info("Ensuring the default agents exist")
 	// Collect workspace IDs first, then iterate. SQLite is configured
@@ -450,13 +448,11 @@ func (s *Server) ensureDefaultAgents(ctx context.Context, db *sql.DB) {
 	// inside the loop deadlocks the only connection. Drain the cursor
 	// into a slice and seed against that — same outcome, no
 	// connection contention.
+	// No workspace yet (a boot before the first setup or sign-up) seeds
+	// nothing: the setup seeds the workspace it makes, and agents seeded
+	// under a sentinel first were orphans the next boot had to merge (and
+	// tripped over, 2026-10-21).
 	workspaceIDs := collectActiveWorkspaceIDs(ctx, db)
-	if len(workspaceIDs) == 0 {
-		// Pre-setup boot: no workspace rows yet. Fall back to the
-		// legacy sentinel so the seed still runs once; first setup
-		// then attaches the agents to the real workspace.
-		workspaceIDs = []string{domain.DefaultWorkspaceID}
-	}
 	for _, wsID := range workspaceIDs {
 		var owner, name string
 		_ = db.QueryRowContext(ctx, `SELECT COALESCE(owner_id, ''), COALESCE(name, '') FROM workspaces WHERE id = ?`, wsID).Scan(&owner, &name)
