@@ -127,6 +127,10 @@ func docMetaFromMarkdown(md, p string) pageMeta {
 	}
 	para = strings.NewReplacer("`", "", "*", "", "_", "").Replace(para)
 	para = mdLink.ReplaceAllString(para, "$1")
+	title := h1 + " — Memdoor docs"
+	if h1 == "Memdoor docs" {
+		title = h1
+	}
 	if len(para) > 160 {
 		cut := para[:160]
 		end := strings.LastIndex(cut, ". ")
@@ -145,7 +149,7 @@ func docMetaFromMarkdown(md, p string) pageMeta {
 	if para == "" {
 		para = homeMeta.Description
 	}
-	return pageMeta{Title: h1 + " — Memdoor docs", Description: para, Path: p}
+	return pageMeta{Title: title, Description: para, Path: p}
 }
 
 var (

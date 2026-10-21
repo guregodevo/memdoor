@@ -35,7 +35,7 @@ In the window, /model shows this conversation's model and pins one:
 			return err
 		}
 		if len(st.AgentLadders) == 0 && len(st.AgentModels) == 0 {
-			fmt.Println("No brain is serving yet.")
+			fmt.Println(brainGate("none"))
 			return nil
 		}
 		// Every agent either side knows about: a BYOK gateway resolves the

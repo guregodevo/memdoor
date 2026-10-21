@@ -237,7 +237,7 @@ func noWorkspaceErrorMessage(topName string) error {
 			slugs[0], topName, slugs[0], strings.Join(slugs, ", "))
 	}
 	return fmt.Errorf(
-		"nothing is set up on this machine yet — `memdoor setup` makes the first workspace.\n"+
+		"nothing is set up on this machine yet — `cd <your-project> && memdoor tui` sets it up on its first run (so does memdoor run).\n"+
 			"  already have one elsewhere? memdoor workspace use <slug>, or memdoor -w <slug> %s ...",
 		topName)
 }

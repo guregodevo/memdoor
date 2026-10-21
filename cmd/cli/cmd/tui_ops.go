@@ -125,7 +125,7 @@ func readBrain(c *Client) brainRead {
 func brainGate(state string) string {
 	switch state {
 	case "none":
-		return "no model yet — type /connect and paste a provider's key (or /connect chatgpt: a ChatGPT Plus/Pro plan, no key), or quit, export OPEN_ROUTER_API_KEY=… (or ANTHROPIC_API_KEY, …) and run memdoor tui again — every model runs on your own key or plan"
+		return "no model yet — connect one: memdoor connect <provider> pastes a key (memdoor providers lists them; memdoor connect chatgpt uses a ChatGPT Plus/Pro plan, no key), or export OPEN_ROUTER_API_KEY=… (or ANTHROPIC_API_KEY, …) and start again; inside the TUI, /connect does the same — every model runs on your own key or plan"
 	}
 	return ""
 }

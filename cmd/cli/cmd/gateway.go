@@ -31,6 +31,7 @@ var (
 var gatewayCmd = &cobra.Command{
 	Use:   "gateway",
 	Short: "Start the gateway server",
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Pre-bind probe: if another memdoor gateway is already serving
 		// on this host:port and healthy, the install / boot script
@@ -46,7 +47,7 @@ var gatewayCmd = &cobra.Command{
 				fmt.Println(info)
 			}
 			fmt.Println("  Check it with:  memdoor health")
-			fmt.Println("  Stop it with:   kill $(lsof -ti:18789)")
+			fmt.Printf("  Stop it with:   kill $(lsof -ti:%d)\n", gatewayPort)
 			return nil
 		}
 		keepCrashOutput()

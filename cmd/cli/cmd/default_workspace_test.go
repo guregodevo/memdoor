@@ -54,8 +54,10 @@ func TestSeveralWorkspacesNameThemselves(t *testing.T) {
 	}
 }
 
-// And on a machine where nothing has happened yet, the answer is setup — not a
-// lecture about flags, env vars and config keys.
+// And on a machine where nothing has happened yet, the answer is the first
+// run (install.sh and the README promise no setup command, 2026-10-08; a
+// visitor who ran `memdoor providers` first was sent to one, 2026-10-21) —
+// not a lecture about flags, env vars and config keys.
 func TestFreshMachineIsToldToSetUp(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -64,7 +66,7 @@ func TestFreshMachineIsToldToSetUp(t *testing.T) {
 		t.Fatal("an empty machine has no default workspace")
 	}
 	msg := noWorkspaceErrorMessage("agent").Error()
-	if !strings.Contains(msg, "memdoor setup") {
+	if !strings.Contains(msg, "memdoor tui") || strings.Contains(msg, "memdoor setup") {
 		t.Errorf("a fresh machine is told to set up: %s", msg)
 	}
 	if strings.Contains(msg, "config: set workspace_id") {

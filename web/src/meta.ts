@@ -62,5 +62,6 @@ export function docMeta(markdown: string, path: string) {
     const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('; '));
     para = (end > 60 ? cut.slice(0, end + 1) : cut.replace(/\s+\S*$/, '') + '…').trim();
   }
-  return { title: `${h1} — Memdoor docs`, description: para || HOME_META.description, path: `/docs/${path}` };
+  const title = h1 === 'Memdoor docs' ? h1 : `${h1} — Memdoor docs`;
+  return { title, description: para || HOME_META.description, path: `/docs/${path}` };
 }

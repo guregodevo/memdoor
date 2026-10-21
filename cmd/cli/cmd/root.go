@@ -84,8 +84,7 @@ and it builds the workflow.
 
 Quick start:
   export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect
-  memdoor setup                          # once on this machine
-  cd <your-project> && memdoor workspace use <slug> && memdoor tui
+  cd <your-project> && memdoor tui       # the first run sets this machine up
 
 Subscribed to Pro? memdoor login you@example.com — a six-digit code
 arrives there, and remote control (/remote) is on.

@@ -1,4 +1,4 @@
-.PHONY: up build web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose cowork start stop stop-gateway deploy setup quickstart all skills-sync
+.PHONY: up build web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose cowork start stop stop-gateway deploy setup quickstart all skills-sync indexnow
 
 # Ports
 GATEWAY_PORT ?= 18789
@@ -80,6 +80,13 @@ oss-tree:
 # pushed (scripts/oss-publish.sh). Private commit messages never travel.
 oss-publish:
 	@./scripts/oss-publish.sh
+
+# indexnow tells Bing, DuckDuckGo, Yandex and the other IndexNow engines that
+# the sitemap's pages changed (scripts/indexnow.sh). Run after a deploy that
+# changed what pages say. Google is not among them: resubmit the sitemap in
+# Search Console and request indexing there.
+indexnow:
+	@./scripts/indexnow.sh
 
 # github-protect sets the repository's rules on GitHub: squash-only, main behind
 # a PR that CI passed and the code owner approved, no force push, fork PR runs
