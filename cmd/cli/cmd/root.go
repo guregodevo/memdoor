@@ -37,7 +37,6 @@ var noWorkspaceTopLevels = map[string]bool{
 	// their RunE): the gate must not fire first. Live 2026-10-11: on a GitHub
 	// runner that had never seen Memdoor, `memdoor run` died at this gate
 	// with "nothing is set up on this machine yet" before it could set it up.
-	"memdoor":    true, // the bare name: the window, like `tui`
 	"run":        true,
 	"workflow":   true,
 	"cron":       true,
@@ -183,6 +182,16 @@ func requireWorkspaceSlug(cmd *cobra.Command, _ []string) error {
 		top = top.Parent()
 	}
 	if top == rootCmd {
+		// The bare name is the window: it resolves the workspace exactly as
+		// `tui` does (pinned, env, the only one), and a machine with none is
+		// the window's own first run. Without this, `memdoor` at a terminal
+		// opened nothing and said "no workspace resolved" (2026-10-21).
+		if slug, source, ok := resolveWorkspaceSlug(); ok {
+			workspaceSlug = slug
+			logResolvedWorkspace(slug, source)
+		} else if only, single := soleWorkspace(); single {
+			workspaceSlug = only
+		}
 		return nil
 	}
 	if noWorkspaceTopLevels[top.Name()] {

@@ -323,6 +323,6 @@ fi
 MD="memdoor"
 [ "$ON_PATH" = "0" ] && MD="$DEST"
 echo "  export OPEN_ROUTER_API_KEY=sk-or-...   # your key (or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or /connect inside)"
-echo "  cd <your-project> && $MD tui"
+echo "  cd <your-project> && $MD"
 echo
 echo "Pro (remote control)? memdoor login you@example.com"
