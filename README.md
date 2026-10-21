@@ -1,10 +1,12 @@
 <div align="center">
   <img src="web/public/memdoor-logo.png" alt="Memdoor" width="128" height="128">
   <h1>Memdoor</h1>
-  <p><strong>The coding agent for durable workflows: repeatable, headless, on your own key. Start it from CI, finish it from your phone; each step done when its output exists, not when the model says so.</strong></p>
+  <p><strong>The coding agent for durable workflows.</strong><br>Repeatable, headless, open source, on your own key.</p>
+  <p>Start it from CI, a schedule or a shell. Finish it from your phone or a window. It proves each step and stops where only you decide.</p>
   <p>
     <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue"></a>
     <a href="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml"><img alt="CI" src="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml/badge.svg"></a>
+    <a href="https://github.com/guregodevo/memdoor/actions/workflows/installers.yml"><img alt="Installers" src="https://github.com/guregodevo/memdoor/actions/workflows/installers.yml/badge.svg"></a>
     <img alt="Go" src="https://img.shields.io/badge/Go-one%20static%20binary-00ADD8">
     <img alt="Platforms" src="https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-lightgrey">
   </p>
@@ -25,7 +27,7 @@ No money on a key yet? A free OpenRouter account and `/model
 nvidia/nemotron-3-super-120b-a12b:free` run a real session: 50 requests a day,
 and the free hosts train on what they are sent, so a trial, not private code.
 
-<p align="center"><img src="web/public/og-image.png" alt="A release workflow waiting at its gate: vet and tests done in parallel, notes written, approve waiting for you" width="800"></p>
+<p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
 
 Every run is a conversation on a gateway on your machine, whatever door it
 came in by: a terminal window, `memdoor run` from a script or CI, a cron
@@ -79,7 +81,7 @@ export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, G
 cd your-project && memdoor             # the first run sets the machine up
 ```
 
-macOS (Apple Silicon), Linux (amd64, arm64; static), Windows
+macOS (Apple Silicon and Intel), Linux (amd64, arm64; static), Windows
 (`irm https://memdoor.ai/install.ps1 | iex`; the agent runs commands in
 Git Bash when it is installed, otherwise PowerShell). One binary, installed to
 `~/.local/bin`, no sudo, no Docker, no Python. The installer
@@ -130,7 +132,7 @@ memdoor remote --last                                               # the link /
 ```
 
 The exit code is the turn's receipt: 0 checked, 2 unverified or a failing check,
-3 a question nobody answered (`--yes` answers it), 1 an error. The gateway
+3 a question nobody answered (`--yes` answers it), 1 an error, 130 interrupted. The gateway
 starts if none is running; every run is a conversation `memdoor resume` opens.
 [Headless, then attached](https://memdoor.ai/docs/headless).
 

@@ -23,7 +23,7 @@ prompt: |
   Anything promising the opposite, or naming one of those removed designs, is stale.
 
   WHAT TO READ — read the actual file before you claim anything about it:
-  - `README.md`, `GETTING_STARTED.md`, `CONTRIBUTING.md`, `AGENTS.md`, `MEMO.md`,
+  - `README.md`, `GETTING_STARTED.md`, `CONTRIBUTING.md`, `AGENTS.md`,
     and every `docs/**/*.md`;
   - the published site: `web/public/docs/**`, `llms.txt`, `web/index.html`, and
     the user-visible strings in `web/src/**` (marketing copy, pricing, the i18n
