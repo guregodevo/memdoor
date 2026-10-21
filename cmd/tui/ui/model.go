@@ -279,7 +279,7 @@ func loadSlashCommands(agent string) []string {
 		"/copy",         // copy the last interaction to the clipboard
 		"/clear",
 		"/new",
-		"/exit",
+		"/exit", "/quit", // the same door, both names people type
 	)
 
 	// Load custom commands — .agents/commands/ first, legacy .claude/commands/

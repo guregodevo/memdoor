@@ -23,6 +23,16 @@ import (
 // Returns (expandedText, handled) where:
 // - handled=true means command was executed locally (don't send to gateway)
 // - handled=false means command was expanded from a .agents/commands/ file (send expanded text to gateway)
+// isQuitCommand: /exit and /quit close the window (a visitor typed /quit and
+// got a hint for /usage, 2026-10-21); the gateway and the conversation stay.
+func isQuitCommand(text string) bool {
+	switch strings.TrimSpace(text) {
+	case "/exit", "/quit":
+		return true
+	}
+	return false
+}
+
 func (m *Model) handleSlashCommand(text string) (string, bool) {
 	// Parse command and arguments
 	parts := strings.Fields(text)
@@ -59,7 +69,7 @@ func (m *Model) handleSlashCommand(text string) (string, bool) {
 - /clear - Wipe the agent's memory of this conversation: its next turn starts from nothing
 - /fresh [request] - A clean session: the agent forgets this conversation (the screen stays); with a request, sends it
 - /new - Start a new session (requires restart)
-- /exit - Exit the TUI (same as Ctrl+C or Esc)
+- /exit or /quit - Close this window (ctrl+c does too); the gateway and the conversation stay
 - /help - Show this help message
 - /skill:<name> [args] - Run a named skill as the turn's task (tab-complete lists them)
 - /mcp - The MCP servers the coder can use: add one, sign in, see their state (/mcp add, login, test, on, off, remove, trust)
@@ -205,7 +215,7 @@ Your current session history is preserved on disk.`
 			Content: "Session directory is now " + now + " — the agent's next turn works there.", Timestamp: time.Now()})
 		return "", true
 
-	case "/exit":
+	case "/exit", "/quit":
 		exitText := `Goodbye! Your session has been saved.`
 
 		// Add exit message as assistant response

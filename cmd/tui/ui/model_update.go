@@ -181,7 +181,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.gotoBottom()
 
 						// Special handling for /exit command - trigger quit
-						if strings.TrimSpace(selected) == "/exit" {
+						if isQuitCommand(selected) {
 							return m, tea.Quit
 						}
 					} else {
@@ -508,7 +508,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.gotoBottom()
 
 						// Special handling for /exit command - trigger quit
-						if strings.TrimSpace(originalText) == "/exit" {
+						if isQuitCommand(originalText) {
 							return m, tea.Quit
 						}
 						return m, nil
