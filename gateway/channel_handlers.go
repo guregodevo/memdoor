@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -365,6 +366,10 @@ func (cs *ChatServer) handleGetRoomMembers(w http.ResponseWriter, r *http.Reques
 	}
 	if cs.authzService != nil {
 		canRead, err := cs.authzService.CanReadChannel(r.Context(), actorID, channel.ChannelID(channelID))
+		if errors.Is(err, authorization.ErrNoSuchChannel) {
+			http.Error(w, `{"error": "no such conversation"}`, http.StatusNotFound)
+			return
+		}
 		if err != nil {
 			http.Error(w, `{"error": "Failed to check permissions"}`, http.StatusInternalServerError)
 			return
@@ -536,6 +541,10 @@ func (cs *ChatServer) handleGetRoomMessages(w http.ResponseWriter, r *http.Reque
 	// Check if user has read permission (is a member)
 	if cs.authzService != nil {
 		canRead, err := cs.authzService.CanReadChannel(r.Context(), actorID, channel.ChannelID(channelID))
+		if errors.Is(err, authorization.ErrNoSuchChannel) {
+			http.Error(w, `{"error": "no such conversation"}`, http.StatusNotFound)
+			return
+		}
 		if err != nil {
 			getChatLogger().Error("Failed to check read permission",
 				slog.String("actor_id", actorID.String()),

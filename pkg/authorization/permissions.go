@@ -2,6 +2,7 @@ package authorization
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"memdoor/pkg/auth"
@@ -154,6 +155,11 @@ func (s *Service) CanAccessChannel(ctx context.Context, actorID shared.ActorID, 
 // workspace, member or not, public or not. Agents and the gateway's own
 // callers carry no user workspace and pass; a channel from before channels
 // were scoped (no workspace on the row) passes too.
+// ErrNoSuchChannel is the check's answer for an id that names no channel (a
+// typo in --conversation, a deleted one): the handlers say so with a 404,
+// not "Failed to check permissions" with a 500 (2026-10-21).
+var ErrNoSuchChannel = errors.New("no such conversation")
+
 func (s *Service) outsideActorsWorkspace(ctx context.Context, actorID shared.ActorID, channelID channel.ChannelID) (bool, error) {
 	if !actorID.IsHuman() {
 		return false, nil
@@ -164,11 +170,11 @@ func (s *Service) outsideActorsWorkspace(ctx context.Context, actorID shared.Act
 	}
 	channelUUID, err := uuid.Parse(string(channelID))
 	if err != nil {
-		return true, fmt.Errorf("invalid channel ID: %w", err)
+		return true, fmt.Errorf("%w: %s", ErrNoSuchChannel, channelID)
 	}
 	ch, err := s.channelRepo.GetByID(ctx, channelUUID)
 	if err != nil {
-		return true, fmt.Errorf("failed to get channel: %w", err)
+		return true, fmt.Errorf("%w: %s", ErrNoSuchChannel, channelID)
 	}
 	return ch.WorkspaceID != "" && ch.WorkspaceID != execCtx.WorkspaceID, nil
 }

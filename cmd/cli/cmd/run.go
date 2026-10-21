@@ -35,10 +35,11 @@ var (
 
 // Exit codes: the pipeline's contract.
 const (
-	runExitOK         = 0 // the turn ended; what it changed was checked, or nothing needed a check
-	runExitError      = 1 // the gateway, the provider or the turn failed
-	runExitUnverified = 2 // the turn ended with an unverified change or a failing check
-	runExitAsked      = 3 // the agent asked a question nobody was there to answer (see --yes)
+	runExitOK         = 0   // the turn ended; what it changed was checked, or nothing needed a check
+	runExitError      = 1   // the gateway, the provider or the turn failed
+	runExitUnverified = 2   // the turn ended with an unverified change or a failing check
+	runExitAsked      = 3   // the agent asked a question nobody was there to answer (see --yes)
+	runExitInterrupt  = 130 // ctrl-c or SIGTERM ended it; the conversation keeps what ran
 )
 
 var headlessRunCmd = &cobra.Command{
@@ -239,8 +240,14 @@ func (s *headlessSink) finish(conversation string, err error) int {
 	if s.wrote {
 		fmt.Fprintln(s.out)
 	}
-	if err != nil {
+	switch {
+	case code == runExitInterrupt:
+		fmt.Fprintln(s.errOut, "interrupted")
+	case err != nil:
 		fmt.Fprintln(s.errOut, "error: "+err.Error())
+		if strings.Contains(err.Error(), "no such conversation") {
+			return code
+		}
 	}
 	fmt.Fprintf(s.errOut, "conversation %s · memdoor resume %s\n", conversation, conversation)
 	return code
@@ -284,6 +291,8 @@ func receiptIn(text string) string {
 // changed" ran things without changing anything: its LAST run decides.
 func runExitCode(err error, asked bool, receipt string) int {
 	switch {
+	case errors.Is(err, context.Canceled):
+		return runExitInterrupt
 	case err != nil:
 		return runExitError
 	case asked:

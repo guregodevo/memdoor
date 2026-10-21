@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -352,6 +353,18 @@ func ensureLocalEngine(email, workspace string) (bool, string) {
 		password := randomPassword()
 		slug, err := registerAdminViaSetup(email, password, workspace)
 		if err != nil {
+			// Two first runs at once (parallel steps on a fresh machine,
+			// 2026-10-21): the other one registered this machine's user a
+			// moment ago and is writing the login; wait for it and sign in
+			// with it instead of failing on its unique constraint.
+			for i := 0; i < 20; i++ {
+				time.Sleep(250 * time.Millisecond)
+				if localSessionFor(email) == nil {
+					_ = c.GetJSON("/api/setup/status", &status)
+					persistWorkspaceSlug(configPath, status.WorkspaceSlug)
+					return true, ""
+				}
+			}
 			return false, err.Error()
 		}
 		rec, _ := json.Marshal(localLogin{Email: email, Password: password})

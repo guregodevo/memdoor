@@ -72,6 +72,7 @@ receipt and the exit code. The codes:
 | 1 | the gateway, the provider or the turn failed |
 | 2 | it ended unverified: a change with no check after it, or a failing check |
 | 3 | in a pipe, the agent asked a question nobody could answer and took the default; `--yes` answers the first option instead. At a terminal you answer it there. |
+| 130 | ctrl-c or a TERM signal ended it; the conversation keeps what ran, `memdoor resume <id>` continues it |
 
 ![A turn from a script: the answer on stdout, the exit code, then the same run opened in a window](/headless.cast)
 

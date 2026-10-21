@@ -2,8 +2,10 @@ package gateway
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
+	"memdoor/pkg/authorization"
 	"net/http"
 	"strconv"
 	"strings"
@@ -86,6 +88,10 @@ func (cs *ChatServer) handleGetSingleMessage(w http.ResponseWriter, r *http.Requ
 	// AUTHORIZATION: Verify user can read the message's channel
 	if cs.authzService != nil {
 		canRead, err := cs.authzService.CanReadChannel(r.Context(), actorID, channel.ChannelID(msg.ChannelID))
+		if errors.Is(err, authorization.ErrNoSuchChannel) {
+			http.Error(w, `{"error": "no such conversation"}`, http.StatusNotFound)
+			return
+		}
 		if err != nil {
 			http.Error(w, `{"error": "Failed to check permissions"}`, http.StatusInternalServerError)
 			return
@@ -219,6 +225,10 @@ func (cs *ChatServer) handleMessages(w http.ResponseWriter, r *http.Request) {
 		// Skip for system:internal (trusted agent tools — even when sender_id overrides authorID)
 		if cs.authzService != nil && !isInternalService && authorID != "system:internal" {
 			canWrite, err := cs.authzService.CanWriteToChannel(r.Context(), authorID, channel.ChannelID(req.ChannelID))
+			if errors.Is(err, authorization.ErrNoSuchChannel) {
+				http.Error(w, `{"error": "no such conversation: `+req.ChannelID+`"}`, http.StatusNotFound)
+				return
+			}
 			if err != nil {
 				getChatLogger().Error("Failed to check write permission",
 					slog.String("actor_id", authorID.String()),
