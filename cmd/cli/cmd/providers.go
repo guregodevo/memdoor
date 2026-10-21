@@ -301,7 +301,14 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 		}
 		base, _ := cmd.Flags().GetString("base")
 		if base == "" {
-			base = ask("Base URL", pick.Base)
+			// `echo $KEY | memdoor connect anthropic`: the piped line is the
+			// key, and the kind's base stands (asked for, the key was read
+			// as the base URL and refused, 2026-10-21).
+			if !term.IsTerminal(int(os.Stdin.Fd())) && pick.Base != "" {
+				base = pick.Base
+			} else {
+				base = ask("Base URL", pick.Base)
+			}
 		}
 		key, _ := cmd.Flags().GetString("key")
 		if key == "" {

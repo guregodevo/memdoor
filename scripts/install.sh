@@ -216,8 +216,13 @@ verify_download() {
 TMP_DEST=$(mktemp /tmp/memdoor.XXXXXX)
 case "$INSTALL_MODE" in
     user|prefix|existing)
-        # No sudo — write to a user-writable directory.
-        mkdir -p "$DEST_DIR"
+        # No sudo — write to a user-writable directory. Said in words when
+        # it is not one, before the download, not as mkdir's own error after.
+        if ! mkdir -p "$DEST_DIR" 2>/dev/null || [ ! -w "$DEST_DIR" ]; then
+            echo "ERROR: cannot write to $DEST_DIR." >&2
+            echo "  Pick a directory you own: MEMDOOR_PREFIX=\$HOME/bin curl -fsSL https://memdoor.ai/install.sh | bash" >&2
+            exit 1
+        fi
         curl -fL --progress-bar "$URL" -o "$TMP_DEST"
         verify_download "$TMP_DEST"
         chmod +x "$TMP_DEST"
