@@ -380,7 +380,7 @@ func nextStepsText(slug string) string {
 Next steps:
   export OPEN_ROUTER_API_KEY=sk-or-...   your key, your bill, at list price (or any provider's key; or memdoor connect)
   cd <your-project> && memdoor workspace use %s
-  memdoor tui                            it reads, patches and tests in there
+  memdoor                                it reads, patches and tests in there
 
   /model what answers · /usage what it saved · /remote this on your phone.
   The decision model judges on the same key. Workflows run free here, schedules too: memdoor cron add --workflow <name>.

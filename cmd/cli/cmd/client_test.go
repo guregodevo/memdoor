@@ -88,7 +88,7 @@ func TestExpiredSessionIsNamedNotTheChannel(t *testing.T) {
 	// No credentials at all is a FIRST RUN, and the first run itself is the
 	// answer (onboarding walk 2026-09-27; no setup command since 2026-10-08);
 	// an expired session is the case this test is about.
-	if err := sessionProblem(); err == nil || !strings.Contains(err.Error(), "memdoor tui") {
+	if err := sessionProblem(); err == nil || !strings.Contains(err.Error(), "&& memdoor") {
 		t.Fatalf("no credentials at all: want the setup instruction, got %v", err)
 	}
 	write := func(exp time.Time) {

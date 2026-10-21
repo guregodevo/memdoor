@@ -163,7 +163,7 @@ var accountLoginCmd = &cobra.Command{
 		if !ready {
 			fmt.Printf("⚠ %s\n", note)
 		}
-		fmt.Println("  Next: cd <your-project> && memdoor tui")
+		fmt.Println("  Next: cd <your-project> && memdoor")
 		return nil
 	},
 }

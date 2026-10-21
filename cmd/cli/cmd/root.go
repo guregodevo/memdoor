@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"golang.org/x/term"
 	"os"
 	"strings"
 
@@ -36,6 +37,7 @@ var noWorkspaceTopLevels = map[string]bool{
 	// their RunE): the gate must not fire first. Live 2026-10-11: on a GitHub
 	// runner that had never seen Memdoor, `memdoor run` died at this gate
 	// with "nothing is set up on this machine yet" before it could set it up.
+	"memdoor":    true, // the bare name: the window, like `tui`
 	"run":        true,
 	"workflow":   true,
 	"cron":       true,
@@ -84,7 +86,7 @@ and it builds the workflow.
 
 Quick start:
   export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect
-  cd <your-project> && memdoor tui       # the first run sets this machine up
+  cd <your-project> && memdoor           # the first run sets this machine up (memdoor tui: the same window)
 
 Subscribed to Pro? memdoor login you@example.com — a six-digit code
 arrives there, and remote control (/remote) is on.
@@ -96,11 +98,27 @@ used and saved, /remote opens the conversation on your phone.`,
 	// errors ("not authenticated", "no LLM key") print just the
 	// message instead of pages of usage noise.
 	SilenceUsage: true,
+	// THE BARE NAME IS THE WINDOW (Greg, 2026-10-21: "Why not memdoor
+	// directly?"): like claude, codex, aider and pi, `memdoor` at a terminal
+	// opens the window in the current directory; `memdoor tui` stays. In a
+	// pipe or CI there is no window to open, so the help is printed and
+	// `memdoor run` is the door.
+	// (Wired in init below: naming runTUI here is an initialization cycle.)
+	Args: cobra.NoArgs,
 	// SilenceErrors stops cobra from printing the "Error: …" line
 	// itself; Execute() below prints the error exactly once with our
 	// own format. Without this, missing-flag errors and similar were
 	// printed twice.
 	SilenceErrors: true,
+}
+
+func init() {
+	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
+			return runTUI(tuiOptions{})
+		}
+		return cmd.Help()
+	}
 }
 
 func Execute() {

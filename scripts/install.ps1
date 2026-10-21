@@ -108,6 +108,6 @@ Write-Host "Installed to $Target" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next:"
 Write-Host "  memdoor connect                your provider's key (or set OPEN_ROUTER_API_KEY)"
-Write-Host "  memdoor tui                    put it to work"
+Write-Host "  memdoor                        put it to work"
 Write-Host ""
 Write-Host "Models run on your own provider key."

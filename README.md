@@ -13,7 +13,7 @@
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
-cd your-project && memdoor tui         # the first run sets the machine up
+cd your-project && memdoor             # the first run sets the machine up
 ```
 
 On a ChatGPT Plus or Pro plan? Skip the key: `memdoor connect chatgpt` (or
@@ -42,7 +42,7 @@ memdoor resume --last                     # the same run, in a window
 
 ---
 
-`memdoor tui` reads your files, writes patches, runs the build and fixes what
+`memdoor` reads your files, writes patches, runs the build and fixes what
 it broke, in the directory you launch it from. Every model call goes from your
 machine to the provider you connected, on your account, at their list price.
 
@@ -76,7 +76,7 @@ the fixes applied) plays at [memdoor.ai/workflows](https://memdoor.ai/workflows)
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, … or /connect inside
-cd your-project && memdoor tui         # the first run sets the machine up
+cd your-project && memdoor             # the first run sets the machine up
 ```
 
 macOS (Apple Silicon), Linux (amd64, arm64; static), Windows

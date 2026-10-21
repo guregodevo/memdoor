@@ -45,7 +45,7 @@ export const STEPS: { title: string; body: React.ReactNode }[] = [
     title: 'Work in a project',
     body: (
       <>
-        <code className="text-neutral-700">cd your-project &amp;&amp; memdoor tui</code>. It reads, patches, builds and
+        <code className="text-neutral-700">cd your-project &amp;&amp; memdoor</code>. It reads, patches, builds and
         tests in that directory. <code className="text-neutral-700">/model</code> is which model answers and what it
         lists for.
       </>
@@ -101,7 +101,7 @@ export function InstallBlock() {
           <code>
             {INSTALL_UNIX}
             {'\n'}export OPEN_ROUTER_API_KEY=sk-or-…   # or any provider's key, or: memdoor connect
-            {'\n'}cd your-project &amp;&amp; memdoor tui
+            {'\n'}cd your-project &amp;&amp; memdoor
           </code>
         </pre>
       </div>
@@ -111,7 +111,7 @@ export function InstallBlock() {
           <code>
             {INSTALL_WINDOWS}
             {'\n'}$env:OPEN_ROUTER_API_KEY = "sk-or-…"   # or any provider's key, or: memdoor connect
-            {'\n'}cd your-project; memdoor tui
+            {'\n'}cd your-project; memdoor
           </code>
         </pre>
       </div>

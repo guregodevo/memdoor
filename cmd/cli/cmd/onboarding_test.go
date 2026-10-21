@@ -14,7 +14,7 @@ func TestSetupNextStepsSayWhatToTypeNext(t *testing.T) {
 	out := nextStepsText("stranger")
 	for _, want := range []string{
 		"OPEN_ROUTER_API_KEY",    // their key, their bill
-		"memdoor tui",            // the one command that starts the work
+		"&& memdoor",             // the one command that starts the work
 		"workspace use stranger", // what makes it work in a project directory
 		"/model",                 // which model answers
 		"/usage",                 // what it saved
@@ -57,7 +57,7 @@ func TestFirstRunPointsAtSetup(t *testing.T) {
 		t.Fatal("a machine with no credentials must report a problem")
 	}
 	msg := err.Error()
-	if !strings.Contains(msg, "memdoor tui") || strings.Contains(msg, "memdoor setup") {
+	if !strings.Contains(msg, "&& memdoor") || strings.Contains(msg, "memdoor setup") {
 		t.Errorf("the first run must be sent to the first run, not a setup command: %q", msg)
 	}
 	if strings.Contains(msg, "login-direct") {

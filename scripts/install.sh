@@ -5,16 +5,16 @@
 # What it does:
 #   1. Download the right memdoor binary for OS+arch, SHA-256 checked, to
 #      ~/.local/bin (no sudo), and put that directory on the shell's PATH.
-#   2. Print the two lines that follow — the key, then `memdoor tui`.
+#   2. Print the two lines that follow — the key, then `memdoor`.
 #
 # From "I heard about this" to the coder editing my code:
 #
 #   curl -fsSL https://memdoor.ai/install.sh | bash   # drops the binary
 #   export OPEN_ROUTER_API_KEY=sk-or-...              # or ANTHROPIC_API_KEY, …; or /connect inside
-#   cd <project> && memdoor tui                       # the first run sets the machine up
+#   cd <project> && memdoor                           # the first run sets the machine up
 #
 # No setup command, no account, no admin password (2026-10-08): the first
-# `memdoor tui` starts the gateway and creates a local user on its own.
+# `memdoor` starts the gateway and creates a local user on its own.
 
 set -eu
 

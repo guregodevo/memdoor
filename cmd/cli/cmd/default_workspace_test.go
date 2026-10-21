@@ -66,7 +66,7 @@ func TestFreshMachineIsToldToSetUp(t *testing.T) {
 		t.Fatal("an empty machine has no default workspace")
 	}
 	msg := noWorkspaceErrorMessage("agent").Error()
-	if !strings.Contains(msg, "memdoor tui") || strings.Contains(msg, "memdoor setup") {
+	if !strings.Contains(msg, "&& memdoor") || strings.Contains(msg, "memdoor setup") {
 		t.Errorf("a fresh machine is told to set up: %s", msg)
 	}
 	if strings.Contains(msg, "config: set workspace_id") {
