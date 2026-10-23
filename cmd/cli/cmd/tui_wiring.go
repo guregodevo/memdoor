@@ -51,6 +51,7 @@ func (w *tuiWiring) remoteFor(agent, chID, chName string) remoteSession {
 	c, wsID := w.c, w.wsID
 	remote := remoteSession{
 		Gateway: gatewayAddr, Token: c.token, Workspace: wsID, ChannelID: chID,
+		ChannelName: chName, Dir: w.curDir,
 		Account: brokerToken(),
 		Post:    func(text string) error { return post(agent, wsID, text, "acceptEdits") },
 		History: func() []ui.Message { return fetchTranscript(c, chID, remoteHistoryLimit) },

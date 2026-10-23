@@ -104,10 +104,13 @@ grep -r "duplicate_code" .    # Search before coding
 # Events, Logger); the gateway reads Execution.Status() from mario's repository and keeps
 # no task state. Missing/wrong behaviour → change mario, never add state or logic here.
 
-# Remote control (2026-09-28) — docs/features/REMOTE.md
-# /remote in the TUI -> https://memdoor.ai/r/<id>#k=<key>; the page IS the TUI
-# (a second program on the same conversation, xterm.js on the phone), sealed
-# end to end. The relay is on memdoor.ai and takes the ACCOUNT token.
+# Remote control (2026-09-28, the gateway holds the link 2026-10-23) — docs/features/REMOTE.md
+# /remote in the TUI -> http://<gateway's address>:18789/r/<id>#k=<key> (memdoor.ai only
+# for a gateway kept to localhost); the page IS the TUI (a second program on the same
+# conversation, xterm.js on the phone), sealed end to end. THE GATEWAY'S OWN PROCESS HOSTS
+# THAT PROGRAM (gateway/remote_host.go + cmd/cli/cmd/remote_host.go, /api/remote/<channel>,
+# ~/.memdoor/remote-hosted.json): the window hands the link over and may close; a restart
+# revives every link. The memdoor.ai relay takes the ACCOUNT token.
 # A new websocket path needs its own nginx location in scripts/deploy.sh.
 # MEMDOOR_REMOTE_URL=http://localhost:18789 tests it against a local gateway.
 

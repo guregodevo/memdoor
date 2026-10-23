@@ -185,6 +185,11 @@ type remoteSession struct {
 	Token     string
 	Workspace string
 	ChannelID string
+	// ChannelName and Dir: what a phone's turn is posted with (the
+	// conversation's name for the index, the project it runs in), for the
+	// gateway that hosts the link (remote_host.go).
+	ChannelName string
+	Dir         func() string
 	// Account is the memdoor.ai account token: the relay host's credential
 	// for /api/relay, distinct from the local gateway's.
 	Account string
@@ -291,8 +296,12 @@ func tuiRemote(unresolved remoteSession) func(arg string) (string, error) {
 		// Settled on every call: a gateway restarted on the network since
 		// the last /remote moves the link onto itself.
 		s := unresolved.resolved()
+		if remoteHostedHere {
+			return "Remote control is on: this is the phone's own view of the conversation, hosted by the gateway.", nil
+		}
 		if strings.TrimSpace(arg) == "off" {
 			stopRemote(s.ChannelID)
+			unhostRemoteOnGateway(s)
 			_, had, err := remoteLinkFor(s.ChannelID, true)
 			if err != nil {
 				return "", err
@@ -313,11 +322,20 @@ func tuiRemote(unresolved remoteSession) func(arg string) (string, error) {
 				return "", errRemoteIsPro
 			}
 		}
-		l, existing, err := remoteLinkFor(s.ChannelID, false)
-		if err != nil {
-			return "", err
+		// The link the gateway already hosts, from any window; else this
+		// machine's, made now if needed, and handed to the gateway. A
+		// gateway that cannot host it leaves the relay to this window.
+		l, existing := s.hostedLink()
+		if !existing {
+			var err error
+			if l, existing, err = remoteLinkFor(s.ChannelID, false); err != nil {
+				return "", err
+			}
 		}
-		startRemote(s, l)
+		held := hostRemoteOnGateway(s, l)
+		if !held {
+			startRemote(s, l)
+		}
 		base := s.relayBase()
 		view, err := l.viewURL(base)
 		if err != nil {
@@ -342,6 +360,9 @@ func tuiRemote(unresolved remoteSession) func(arg string) (string, error) {
 		} else if s.RelayWhy != "" {
 			why = "\n\nThrough memdoor.ai: " + s.RelayWhy + "."
 		}
+		if held {
+			why += "\n\nYour gateway holds this link: it works with this window closed, and comes back when the gateway restarts."
+		}
 		return fmt.Sprintf("%s\n\n%s\n\n%s\n\nWatch only (sees, cannot type): %s\n\n"+
 			"The key after # never leaves your devices; %s. "+
 			"/remote off revokes both links.%s", lead, l.url(base), qrText(l.url(base)), view, carrier, why), nil
@@ -352,8 +373,16 @@ func tuiRemote(unresolved remoteSession) func(arg string) (string, error) {
 // link (a resumed conversation, a relaunched TUI): the link on the phone
 // keeps working without typing /remote again.
 func resumeRemote(s remoteSession) {
+	if remoteHostedHere {
+		return
+	}
+	if _, hosted := s.hostedLink(); hosted {
+		return // the gateway holds it; this window is only a window
+	}
 	if l, ok := loadRemoteLinks()[s.ChannelID]; ok {
-		startRemote(s.resolved(), l)
+		if !hostRemoteOnGateway(s.resolved(), l) {
+			startRemote(s.resolved(), l)
+		}
 	}
 }
 
@@ -604,7 +633,7 @@ func (r *remoteRelay) run() {
 	defer feed.Close()
 	for {
 		err := r.attach(feed)
-		if err == nil || errors.Is(err, errRemoteIsPro) {
+		if err == nil || errors.Is(err, errRemoteIsPro) || errors.Is(err, errRemoteSessionGone) {
 			// A plan refusal does not change in five seconds: stop, rather
 			// than ask billing every five seconds for nothing (review,
 			// 2026-10-04).
@@ -675,6 +704,10 @@ func (r *remoteRelay) attach(feed *client.Client) error {
 		if resp != nil && resp.StatusCode == http.StatusPaymentRequired {
 			io.Copy(io.Discard, io.LimitReader(resp.Body, 512))
 			return errRemoteIsPro
+		}
+		if resp != nil && resp.StatusCode == http.StatusUnauthorized {
+			io.Copy(io.Discard, io.LimitReader(resp.Body, 512))
+			return errRemoteSessionGone
 		}
 		return err
 	}
@@ -822,6 +855,11 @@ func remoteWSURL(base string) (string, error) {
 // errRemoteIsPro is what a free account hears about remote control on the
 // hosted relay — the same sentence the relay answers with (gateway
 // remote_relay_auth.go).
+// errRemoteSessionGone: the relay refused the terminal's token; retrying
+// every five seconds would not change that (a hosted link whose session
+// expired: /remote in a window hands over a fresh one).
+var errRemoteSessionGone = errors.New("the relay refused this session: /remote again from a window")
+
 var errRemoteIsPro = errors.New("remote control is a Pro feature on memdoor.ai: memdoor account subscribe, then /remote again")
 
 // remoteNeedsPro reports whether the signed-in account is on the free plan.

@@ -240,9 +240,9 @@ The TUI reconnects on its own and sends anything you typed while it was away. A 
 ## From your phone
 
 `/remote` prints a link and a QR code. The page it opens on your phone is this
-same TUI, running on your computer: watch a turn, answer its question, stop it,
-start the next one. On your own gateway it is free; only the memdoor.ai
-relay, for a gateway kept to localhost, is Pro.
+same TUI, run by your gateway: watch a turn, answer its question, stop it,
+start the next one, with this window closed if you like. On your own gateway
+it is free; only the memdoor.ai relay, for a gateway kept to localhost, is Pro.
 
 → **[Remote control](/docs/remote)**
 

@@ -36,11 +36,33 @@ both paths against the Go vectors.
 | Part | Where | What it does |
 |---|---|---|
 | The link, the key, the terminal side | `cmd/cli/cmd/tui_remote.go` | `/remote` creates `{id, key}` per conversation (`~/.memdoor/`, mode 0600), dials the relay, seals and opens frames |
+| The gateway hosts the link | `gateway/remote_host.go`, `cmd/cli/cmd/remote_host.go` | `PUT/GET/DELETE /api/remote/<channel>`: a window hands its link (id, key, its session token, where the link lives) to the gateway; the gateway's own process runs the terminal side with the same wiring, keeps the links in `~/.memdoor/remote-hosted.json` (0600) and revives them at start. A gateway without a host (404) leaves the relay to the window |
 | The phone's TUI | `cmd/cli/cmd/tui_remote_tty.go` | asked by the page, runs a second bubbletea program on the same conversation, at the page's size; keys in, screen out |
 | The relay | `gateway/remote_relay.go` | pairs one terminal with one browser per id and forwards frames verbatim |
 | Who may attach a terminal | `gateway/remote_relay_auth.go` | a gateway token, or a memdoor.ai account token checked with billing's `GET /v1/me` |
 | The page | `web/src/components/RemotePage.tsx`, `RemoteTerminal.tsx` | the terminal view (default) and the chat view |
 | The page's crypto and transcript | `web/src/remoteCrypto.ts`, `remoteTranscript.ts` | WebCrypto derive/seal/open; folding events into chat lines |
+
+## The gateway holds the link (2026-10-23)
+
+Until the command review the terminal side lived in the process that typed
+`/remote` (the window, `memdoor remote`), so a link died with it: closing
+the window on a box closed the phone's door. Now `tuiRemote` asks the
+gateway's `/api/remote/<channel>` first (`hostedLink`: the link it already
+holds, from any window), hands it a new one (`hostRemoteOnGateway`, the
+`RemoteHostSpec`), and runs its own relay only when the gateway cannot host
+(an older gateway, 404). The host (`gatewayRemoteHost`, registered by
+`memdoor gateway` through `gateway.SetRemoteHost` before `Start`: the cmd
+package's half of the gateway's duck-typed `RemoteHost`) builds the same
+`remoteSession` a window builds, with a client on the spec's token, and
+calls `startRemote`. `resumeRemote` in a relaunched window checks the gateway
+before starting anything. In the gateway's process `remoteHostedHere` is
+set: the phone's own `/remote` turns nothing on, the host never hands a link
+to itself. A relay that answers 401 (`errRemoteSessionGone`) stops the loop
+instead of retrying every five seconds. Receipt (scratch gateway on
+0.0.0.0:18799, 2026-10-23): window closed, `memdoor join <link>` drove a
+turn; gateway restarted, the same link drove another; `/remote off` made the
+gateway forget it and `join` said nothing serves it.
 
 ## Two hosts
 

@@ -86,6 +86,13 @@ plain HTTP, so it belongs on a network you trust, or behind ssh, Tailscale or
 a reverse proxy. `MEMDOOR_HOST=localhost` (or `--host localhost`) keeps it to
 this machine, and a company preset can set that.
 
+For a `/remote` link the gateway's own process is the terminal end of the
+relay (since 2026-10-23), so the link outlives the window that made it. What
+that takes is kept in `~/.memdoor/remote-hosted.json` on the gateway's
+machine, mode 0600, and nowhere else: the link's id and key, the gateway
+session token of the person who turned it on (the gateway follows and posts
+as them), and where the link lives. `/remote off` deletes the entry.
+
 ## No "yolo" mode
 
 Memdoor's default is always-auto. `MEMDOOR_APPROVE=changes` (or the

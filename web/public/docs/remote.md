@@ -39,6 +39,14 @@ Then, in the conversation you want to take with you:
 
 Scan the code with your phone, or open the link in any browser.
 
+Your gateway holds the link. Once `/remote` is on, the gateway's own process
+is the terminal end of the relay, not the window: close the window, put the
+laptop to sleep when the gateway is on a box, the link still opens the
+conversation and a gate is still answered from the phone. A gateway restart
+brings every link back. The same link comes from any window on the
+conversation, on any machine, and from `memdoor remote` (below); `/remote
+off` revokes it everywhere.
+
 From a script, with no window, the same link comes from `memdoor remote`
 (below).
 
@@ -118,9 +126,11 @@ prefix works. Stdout is the link and nothing else, so `memdoor remote --last
 | pbcopy` works; the title, the watch-only link, the QR code and the hold line
 go to stderr, so a job's log shows a code your phone scans off the screen.
 The command stays up until `ctrl+c` or the job's timeout, and nothing else
-ends it: a closed pipe does not. The conversation stays on the relay while it
-holds. Ending the hold does not revoke the link: the same link opens the
-conversation the next time, from the window or from the command.
+ends it: a closed pipe does not. The gateway holds the link, so the hold is
+for the job that started the run: it waits there for you. On a laptop,
+`ctrl+c` right away is fine. Ending the hold does not revoke the link: the
+same link opens the conversation the next time, from the window or from the
+command.
 
 ```
 $ memdoor remote --last

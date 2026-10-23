@@ -85,6 +85,9 @@ var gatewayCmd = &cobra.Command{
 			fmt.Printf("  also on this network, for your phone: %s\n", networkURLs(gatewayHost, gatewayPort))
 			fmt.Printf("  plain HTTP, every door token-gated: trust that network, or MEMDOOR_HOST=localhost keeps it to this machine\n")
 		}
+		// This process hosts the phone's links (remote_host.go): a window
+		// hands /remote over, and the link outlives the window.
+		gateway.SetRemoteHost(newGatewayRemoteHost(gatewayHost, gatewayPort))
 		err := gateway.Start(ctx, gatewayHost, gatewayPort, "", verbose)
 		// Mid-flight EADDRINUSE: rare (probe above is the common case)
 		// but possible if a stale gateway started between the probe

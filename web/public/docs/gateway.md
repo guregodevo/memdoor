@@ -112,8 +112,12 @@ box's plain http. Through the ssh door the link is on the box's name, with
 the gateway's port. A gateway kept to localhost has no door for a phone,
 and `/remote` then goes through memdoor.ai and says so.
 
-What is not there yet: a gate answered from the phone when no window is open
-on the box, and an image pasted into a window whose project is elsewhere.
+Once a window turned `/remote` on, the gateway holds the link: close the
+window, the phone still opens the conversation and answers its gate, and a
+restart of the gateway brings the link back.
+
+What is not there yet: an image pasted into a window whose project is
+elsewhere.
 
 ## What is on it
 
