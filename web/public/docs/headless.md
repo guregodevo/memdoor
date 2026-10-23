@@ -21,8 +21,9 @@ runner), and nothing else is needed. You never start it by hand: `memdoor
 run`, `workflow run`, `workflow resume`, `cron add`, `resume`, `tui` and
 `acp` start one when none is running, and set the machine up the first
 time (a home that has never seen Memdoor is one command away from its first
-answer). A run with the laptop closed is not here yet; it is what the hosted
-workflow state on memdoor.ai is for, and it is coming.
+answer). A run with the laptop closed runs on [a box that stays
+on](/docs/gateway): `memdoor gateway install` there, and your laptop, ssh and
+your phone are doors onto it. A box that memdoor.ai runs for you is coming.
 
 ## Runs that need no window
 

@@ -346,7 +346,8 @@ free stays local — and an account it never named cannot start a run until it
 does once. The tasks
 still run on your gateway, on your key; only the state travels. Free keeps
 the project's `.memdoor/runs.db`, complete for anything self-contained.
-Still to come: runs with the laptop closed (an executor on the hosted side).
+Runs with the laptop closed are a gateway on a box that stays on (`memdoor
+gateway install`, 2026-10-23); still to come, a box memdoor.ai runs for you.
 `MEMDOOR_STATE_URL` points a gateway at another store, loopback or memdoor.ai only.
 
 ## Review of the run table (2026-10-03)

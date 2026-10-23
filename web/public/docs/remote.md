@@ -153,8 +153,8 @@ your own machine `memdoor login` keeps it in `~/.memdoor/billing-token`.
           memdoor remote --last
 ```
 
-The run ends with the job: a run that outlives the runner is what the
-hosted workflow state is for, and it is coming.
+The run ends with the job; a run that must outlive it belongs on [a box
+that stays on](/docs/gateway).
 
 ### The receipt
 
@@ -192,9 +192,10 @@ the conversation. It needs the same sign-in as `/remote`.
 ## What travels, and who can read it
 
 Your files stay on your computer. What travels is the screen and your
-keystrokes, through a relay on memdoor.ai, end-to-end encrypted: the key is only
-in the link, after the `#` — the part of a link a browser never sends to a
-server. The relay forwards what it has no key for.
+keystrokes, through your gateway, or through the memdoor.ai relay when the
+gateway is kept to localhost, end-to-end encrypted: the key is only in the
+link, after the `#` — the part of a link a browser never sends to a server.
+The relay forwards what it has no key for.
 
 ## The link is the key
 

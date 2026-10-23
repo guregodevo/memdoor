@@ -134,7 +134,9 @@ func Execute() {
 	// and tag each one with its GroupID for the --help layout.
 	assignCommandGroups()
 	hideNonCodingCommands()
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	closeSSHDoor() // the tunnel ends with the command, on every path that returns here
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

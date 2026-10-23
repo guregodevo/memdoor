@@ -94,10 +94,13 @@ Workflows are free too: graphs of agent tasks you keep as files, each step
 proven, gated on your approval where you say so, run by hand or on a schedule
 with your local cron (`memdoor cron add --workflow <name>`).
 
-**Pro is $10 a month:** remote control from your phone through the
-memdoor.ai relay, and every workflow run's state kept on memdoor.ai, one
-table per workspace, so a workflow can wait on what another produced, from
-any machine; coming, runs with your laptop closed. The models always run
+**Every door onto your own gateway is free:** the window on a laptop, ssh,
+your phone on the gateway's own address, and runs with the laptop closed
+on [a box that stays on](/docs/gateway). **Pro is $10 a month** for what
+memdoor.ai hosts for you: the relay for a gateway kept to localhost, and
+every workflow run's state kept on memdoor.ai, one table per workspace, so
+a workflow can wait on what another produced, from any machine; next, a box
+that memdoor.ai runs for you. The models always run
 on your own key — a seat never supplies one. Subscribe at
 [memdoor.ai/pricing](https://memdoor.ai/pricing), or run `memdoor account
 subscribe`; cancel any month.

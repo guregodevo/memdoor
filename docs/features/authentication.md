@@ -4,7 +4,8 @@ Two identities, one command.
 
 - **memdoor.ai** is the account that holds the Pro seat: remote control
   through the memdoor.ai relay, and every workflow run's state kept on memdoor.ai
-  (runs with the laptop closed are coming). A seat never
+  (runs with the laptop closed are a gateway on a box of your own, free since
+  2026-10-23; a box memdoor.ai runs for you is coming). A seat never
   supplies a model key: inference is always on the person's own. Workflows need no account. `memdoor login you@example.com` emails a six-digit code;
   typing it is the sign-in. The token is kept in `~/.memdoor/billing-token` (0600).
 - **This Mac** is the user your own gateway knows you as. The window and every

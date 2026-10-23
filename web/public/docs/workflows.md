@@ -9,7 +9,8 @@ schedule with your local cron: `memdoor cron add --id nightly --schedule
 every morning, once a day. Pro keeps every run's state on memdoor.ai, one
 table per workspace: every project and every person on the workspace share
 it, so a workflow can wait on a task another workflow produced, from any
-machine. Coming: runs with your laptop closed ([pricing](/pricing)).
+machine. Runs with your laptop closed: `memdoor gateway install` on [a box
+that stays on](/docs/gateway).
 
 ```
 I want a digest workflow: list the last 10 commits, then summarize them in
