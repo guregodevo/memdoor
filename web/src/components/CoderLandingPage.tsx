@@ -179,25 +179,6 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
   );
 }
 
-// The hero's adjective turns (Greg, 2026-10-21: "durable / repeatable /
-// headless can be displayed synchronously"); a reader who asked for less
-// motion sees the first word and nothing moves.
-const HERO_WORDS = ['durable', 'repeatable', 'headless'];
-
-function RotatingWord({ words }: { words: string[] }) {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const t = window.setInterval(() => setI((n) => (n + 1) % words.length), 2400);
-    return () => window.clearInterval(t);
-  }, [words.length]);
-  return (
-    <span key={words[i]} className="inline-block" style={{ animation: 'fadeInUp 0.45s ease-out' }}>
-      {words[i]}
-    </span>
-  );
-}
-
 export function CoderLandingPage() {
   useEffect(() => {
     setMeta({ ...HOME_META, path: '/' });
@@ -220,8 +201,7 @@ export function CoderLandingPage() {
         <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
           <div className="text-center lg:text-left">
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
-              The coding agent for <RotatingWord words={HERO_WORDS} />{' '}
-              <span className="text-emerald-400">workflows</span>.
+              Your daemon. Agents on <span className="text-emerald-400">every door</span>.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
               Start it from CI, a schedule or a shell. Finish it from your phone or a window. It proves each
