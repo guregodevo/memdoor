@@ -16,7 +16,8 @@ import { DemoGallery } from './DemoGallery';
 // line outsiders repeated back buried in the second section). The hero says
 // the workflow rule; the numbers section says the saving with its caveat.
 // Remote control, MCP, the model picker and scheduled checks are on
-// /features and /pricing; Remote control is Pro since 2026-10-04.
+// /features and /pricing; remote control is free on your own daemon since
+// 2026-10-23, the memdoor.ai relay (a daemon kept to localhost) is Pro.
 //
 // Copy pass 2026-10-05 (Greg: "review landing ai slop"): each fact once, plain
 // declaratives, no "X, not Y" refrains, no list-of-three cadence.
@@ -44,7 +45,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Can I follow a turn from my phone?',
-    a: 'Yes, with Pro: /remote. The page is your terminal, end-to-end encrypted.',
+    a: 'Yes: /remote prints a link on your daemon, and the page is your terminal, end-to-end encrypted. No account; the memdoor.ai relay is only for a daemon kept to localhost.',
   },
   {
     q: 'What is the decision model?',
@@ -60,7 +61,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Is it free?',
-    a: 'The agent, the decision model and workflows are free on your own key. Pro, $10 a month, is remote control and workflow state on memdoor.ai; it never buys inference.',
+    a: 'The agent, the decision model, workflows and every door onto your daemon, your phone included, are free on your own key. Pro, $10 a month, is what memdoor.ai hosts: workflow state across machines and the relay; it never buys inference.',
   },
   {
     q: 'Can I use my ChatGPT subscription?',
@@ -348,7 +349,8 @@ export function CoderLandingPage() {
               <div className="mb-4 text-3xl font-bold text-neutral-900">Your own key</div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
                 The agent, the decision model and workflows, on your own account at OpenRouter, OpenAI, Gemini,
-                DeepSeek, Baseten, Groq, xAI or Anthropic. Memdoor adds nothing to the bill.
+                DeepSeek, Baseten, Groq, xAI or Anthropic. One daemon, every door, on your laptop or a box that
+                stays on. Memdoor adds nothing to the bill.
               </p>
               <InstallLine />
             </div>
