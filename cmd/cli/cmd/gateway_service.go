@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"memdoor/gateway"
 	"memdoor/pkg/shared"
 )
 
@@ -245,8 +246,8 @@ func installService(port int, host string, print bool) error {
 	fmt.Println("Next:")
 	fmt.Println("  memdoor connect <provider>      # a key kept on disk reaches the service (a shell export does not)")
 	fmt.Println("  memdoor gateway status          # is it up, and who manages it")
-	if host != "localhost" && host != "127.0.0.1" {
-		fmt.Printf("  memdoor --gateway %s:%d run \"…\"   # from another machine; keep this box behind ssh, Tailscale or a proxy\n", host, port)
+	if addrs := gateway.ListenAddresses(host); len(addrs) > 0 {
+		fmt.Printf("  memdoor --gateway %s:%d run \"…\"   # from another machine; keep this box behind ssh, Tailscale or a proxy\n", addrs[0], port)
 	}
 	return nil
 }

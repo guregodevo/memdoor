@@ -136,9 +136,12 @@ jobs:
 
 To finish a CI run from your phone, add `memdoor remote --last` as the last
 line: the link and its QR code are in the job's log and the job waits there, the gateway
-alive, until you are done or the job's timeout ends it (an account with Pro
-signed in on the runner: the token in `MEMDOOR_BILLING_TOKEN`, or in
-`~/.memdoor/billing-token` when `memdoor login` wrote it there).
+alive, until you are done or the job's timeout ends it. A runner's own address
+is no door for a phone, so the job keeps its gateway to localhost
+(`MEMDOOR_HOST: localhost` in the step's env) and the link goes through the
+memdoor.ai relay: an account with Pro signed in on the runner, the token in
+`MEMDOOR_BILLING_TOKEN` (or in `~/.memdoor/billing-token` when `memdoor
+login` wrote it there).
 
 The step fails when the review's last check fails (exit 2) or the workflow
 run does, which is the point: the run's outcome is the job's. `?ci=1` keeps

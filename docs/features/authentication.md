@@ -2,8 +2,8 @@
 
 Two identities, one command.
 
-- **memdoor.ai** is the account that holds the Pro seat: remote control
-  through the memdoor.ai relay, and every workflow run's state kept on memdoor.ai
+- **memdoor.ai** is the account that holds the Pro seat: the memdoor.ai relay
+  behind `/remote` for a gateway kept to localhost, and every workflow run's state kept on memdoor.ai
   (runs with the laptop closed are a gateway on a box of your own, free since
   2026-10-23; a box memdoor.ai runs for you is coming). A seat never
   supplies a model key: inference is always on the person's own. Workflows need no account. `memdoor login you@example.com` emails a six-digit code;

@@ -181,8 +181,8 @@ is awake. A key kept by ` + "`memdoor connect`" + ` is on disk and reaches the s
 on Linux the unit also reads ~/.memdoor/env (KEY=value lines) when it exists.
 
 Examples:
-  memdoor gateway install                      # localhost:18789, for this machine's own windows
-  memdoor gateway install --host 0.0.0.0       # reachable from your laptop: keep it behind ssh, Tailscale or a proxy
+  memdoor gateway install                      # :18789 on this machine and its network, for your laptop and your phone
+  memdoor gateway install --host localhost     # this machine alone; the ssh door (--gateway ssh://box) still reaches it
   memdoor gateway install --print              # show the unit, write nothing
   memdoor --gateway <host>:18789 run "…"       # from another machine, in that box's project`,
 	Args: cobra.NoArgs,

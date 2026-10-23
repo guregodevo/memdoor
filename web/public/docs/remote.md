@@ -135,15 +135,18 @@ holding this conversation on the relay · ctrl+c ends it, the link stays
 
 A job that started a run with `memdoor run` hands it to you with one more
 line: the link and its code are in the job's log and the job waits there,
-the gateway alive, until you are done or the job's timeout ends it. The
-runner needs the account's token in `MEMDOOR_BILLING_TOKEN`, a Pro seat; on
-your own machine `memdoor login` keeps it in `~/.memdoor/billing-token`.
+the gateway alive, until you are done or the job's timeout ends it. A
+runner's own address is no door for a phone, so the job keeps its gateway to
+localhost (`MEMDOOR_HOST: localhost`) and the link goes through the memdoor.ai
+relay: the runner needs the account's token in `MEMDOOR_BILLING_TOKEN`, a Pro
+seat; on your own machine `memdoor login` keeps it in `~/.memdoor/billing-token`.
 
 ```yaml
       - name: Review, then wait for me on the phone
         env:
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           MEMDOOR_BILLING_TOKEN: ${{ secrets.MEMDOOR_BILLING_TOKEN }}
+          MEMDOOR_HOST: localhost            # a runner's address is no door for a phone: the link goes through memdoor.ai
         timeout-minutes: 30
         run: |
           curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash

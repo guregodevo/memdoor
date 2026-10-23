@@ -17,8 +17,8 @@ falls back to a chat completion**.
 **THE DECISION MODEL IS NOT PRO** (Greg, 2026-10-03: "Jev at user key by
 default", "jev decision model is not pro"). It reverses 2026-09-27, when the
 seat was the decision model: Pi 1.0 hands any user Jev on their own key, so
-selling access to it sells nothing. Pro is remote control and the hosted
-workflow state on memdoor.ai. The decision model is
+selling access to it sells nothing. Pro is what memdoor.ai hosts: the relay
+for a gateway kept to localhost and the hosted workflow state. The decision model is
 chosen in this order (`autoDecisionModel`, gateway/decision_model.go):
 
 1. **A decision key of the gateway's own**: `MEMDOOR_SYSTEMONE_API_KEY` (or

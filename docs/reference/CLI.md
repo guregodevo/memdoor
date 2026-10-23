@@ -777,7 +777,7 @@ memdoor gateway [flags]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--port` | int | 18789 | Server port |
-| `--host` | string | `localhost` | Server host |
+| `--host` | string | `0.0.0.0` (or `MEMDOOR_HOST`) | The address it binds: this machine and its network; `localhost` for this machine only |
 
 **What it does**:
 - Starts the Memdoor gateway server

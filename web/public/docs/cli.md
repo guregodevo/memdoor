@@ -9,7 +9,7 @@ export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, â
 memdoor setup                     # workspace and account on this machine
 memdoor tui                       # the coding agent, on the directory you launch from
 memdoor resume                    # pick up a previous conversation where you left off
-memdoor login you@example.com     # sign in; Pro turns on remote control
+memdoor login you@example.com     # sign in to memdoor.ai: workflow state there, and the relay for a gateway kept to localhost
 memdoor account status            # this Mac's engine user, and the memdoor.ai account
 memdoor logout                    # sign out of memdoor.ai; the agent keeps working on your key
 memdoor doctor                    # diagnose an install

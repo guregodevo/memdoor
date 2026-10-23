@@ -1,6 +1,6 @@
 # The gateway
 
-One gateway, every door. The gateway is a small server on your machine, and
+One gateway, every door. The gateway is the daemon: a small server on your machine, and
 every run is a conversation on it. The window, `memdoor run` in a script or
 CI, a cron schedule, your editor and your phone are doors onto the same
 gateway, which is why a run started by one can be finished from another.
