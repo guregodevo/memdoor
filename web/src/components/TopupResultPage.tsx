@@ -31,7 +31,7 @@ export function TopupResultPage() {
       ? 'The checkout was cancelled and no subscription was started. The agent runs on your own key either way, decision model included.'
       : 'The payment was cancelled and your balance is unchanged.'
     : seat
-      ? 'Remote control is on, and your workflows’ state is kept on memdoor.ai from now on. Four lines and you are working, and they are in the email we just sent too.'
+      ? 'Your workflows’ state is kept on memdoor.ai from now on, and the memdoor.ai relay is yours. Four lines and you are working, and they are in the email we just sent too.'
       : 'Thanks — the payment went through and lands on your workspace within a few seconds.';
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-white px-6 py-16 text-neutral-800">
@@ -58,8 +58,9 @@ export function TopupResultPage() {
         {seat && !cancelled && (
           <p className="mt-4 text-xs leading-relaxed text-neutral-400">
             Sign in with the email you just paid with — a six-digit code arrives there, you type it, and
-            remote control is on: <code className="text-neutral-600">/remote</code> in the TUI. Inference stays on your
-            own key.
+            the seat is on: workflow state on memdoor.ai, and the relay behind{' '}
+            <code className="text-neutral-600">/remote</code> for a daemon kept to localhost. Inference stays on
+            your own key.
           </p>
         )}
         {seat && cancelled && (

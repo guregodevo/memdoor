@@ -358,8 +358,9 @@ export function CoderLandingPage() {
                 $10<span className="text-lg font-medium text-neutral-500"> / month</span>
               </div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
-                Remote control from your phone, and workflow state kept on memdoor.ai so a workflow can wait on
-                what another produced, from any machine. Coming: runs with your laptop closed.
+                What memdoor.ai hosts: workflow state kept there so a workflow can wait on what another
+                produced, from any machine, and the relay for a daemon kept to localhost. Next: the daemon
+                run for you.
               </p>
               <a
                 href="/pricing"

@@ -15,9 +15,14 @@ import { SeatCheckout } from './SeatCheckout';
 //     OpenRouter key (Greg, 2026-10-03: "Jev at user key by default", "jev
 //     decision model is not pro"), and so are workflows and their schedules on
 //     your own machine (Greg, 2026-10-04: "everyone can run schedule with
-//     local cron"). Pro is ten dollars for remote control and workflows
-//     across machines (every run's state on memdoor.ai, 2026-10-05), always
-//     on the person's own key: no seat supplies a model or decisions.
+//     local cron"), and so is every door onto a daemon of your own: the
+//     window on a laptop, ssh, the phone on the daemon's own address, a box
+//     that stays on (Greg, 2026-10-23: "no pro story", "now it's one deamon").
+//     Pro is ten dollars for what memdoor.ai hosts: workflow state across
+//     machines (every run's state on memdoor.ai, 2026-10-05), the relay for a
+//     daemon kept to localhost, and next the daemon itself ("the pro story
+//     will be the self host"), always on the person's own key: no seat
+//     supplies a model or decisions.
 //     Enterprise is the same served for a company, with full support, by
 //     invoice, arranged in a conversation (Greg, 2026-10-05: "an enterprise
 //     contact for serving it", "full support"). That is the whole catalogue.
@@ -51,16 +56,17 @@ const MEASURED: { work: string; off: string; on: string; saved: string }[] = [
 const FREE: string[] = [
   'The terminal agent: reads, edits, runs the tests, fixes what it broke.',
   'Workflows: say the steps, the coder writes them as a graph with a proof per step and a gate for you. Run by hand or on your local cron.',
-  'One gateway, every door: the window, memdoor run from a script or CI, a schedule, your editor; memdoor resume opens any run live.',
+  'One daemon, every door: the window, memdoor run from a script or CI, a schedule, your editor, ssh, your phone on its own address; memdoor resume opens any run live.',
+  'On your laptop, or on a box that stays on (memdoor gateway install), so a run outlives the lid.',
   'Your own key at OpenRouter, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, Anthropic or a company gateway, paid to them at list price; or a ChatGPT Plus/Pro plan with memdoor connect chatgpt.',
   'The decision model: judged reads, a toolbox sized to the turn, a stop instead of a cap. /usage shows what it kept out of your bill.',
   '/model: every model of your providers with its price; pin one.',
 ];
 
 const PRO: string[] = [
-  'The phone door: /remote opens the conversation on your phone, as the terminal itself, end-to-end encrypted, to watch a run and answer it.',
   'Workflow state on memdoor.ai, one table per workspace: a workflow can wait on what another produced, from any machine; history reads from anywhere.',
-  'Coming: runs with your laptop closed.',
+  'The memdoor.ai relay: /remote for a daemon kept to localhost, when your phone cannot reach it directly.',
+  'Next: the daemon run for you on memdoor.ai, so nothing of yours needs to stay on.',
   'Still on your own key: the seat never buys inference.',
 ];
 
@@ -73,7 +79,7 @@ const ENTERPRISE: string[] = [
 const BILLING_FAQ: { q: string; a: string }[] = [
   {
     q: 'What am I buying for $10?',
-    a: 'Remote control and workflow state on memdoor.ai. Workflows themselves, and scheduling them on your machine, are free. Inference stays on your own key.',
+    a: 'What memdoor.ai hosts for you: every workflow run\'s state, one table per workspace, and the relay for a daemon kept to localhost. The daemon, every door onto it, workflows and their schedules are free, on your machine or on a box of yours. Inference stays on your own key.',
   },
   {
     q: 'Can I cancel?',
@@ -152,7 +158,7 @@ export function PricingPage() {
             <div className="mb-1 text-4xl font-bold text-neutral-900">
               $10<span className="text-lg font-medium text-neutral-500"> / month</span>
             </div>
-            <div className="mb-6 text-sm text-neutral-500">Everything in Free, plus remote control and workflows across machines. Always your key.</div>
+            <div className="mb-6 text-sm text-neutral-500">Everything in Free, plus what memdoor.ai hosts: workflow state across machines and the relay; next, the daemon itself. Always your key.</div>
             <ul className="mb-8 space-y-3 text-sm leading-relaxed text-neutral-600">
               {PRO.map((f) => (
                 <li key={f} className="flex gap-3">
