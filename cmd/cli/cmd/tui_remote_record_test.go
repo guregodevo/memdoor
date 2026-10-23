@@ -110,7 +110,7 @@ func TestRecordRemoteCast(t *testing.T) {
 			}
 		}
 	}
-	send(remoteRelayTurn{TTY: &remoteTTYSize{Cols: cols, Rows: rows, Fresh: true}})
+	send(remoteRelayTurn{TTY: &remoteTTYSize{Cols: cols, Rows: rows}})
 	collect(3*time.Second, "")
 	for _, r := range question {
 		send(remoteRelayTurn{TTYIn: string(r)})

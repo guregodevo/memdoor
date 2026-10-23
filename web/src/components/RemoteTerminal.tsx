@@ -186,7 +186,7 @@ export function RemoteTerminal({
       fit.dispose();
       // No measured size yet (the page is still laying out): the resize
       // observer sends one as soon as there is one.
-      if (dims) void sendRef.current({ tty: { ...dims, fresh: true } });
+      if (dims) void sendRef.current({ tty: dims });
     }
     const id = randomId();
     awaitingRef.current = id;

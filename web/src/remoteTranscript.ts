@@ -15,8 +15,9 @@ export type Turn = {
   answer?: string;
   cancel?: boolean;
   history?: boolean;
-  // The terminal view: its size (fresh starts the program over), and keys.
-  tty?: { cols: number; rows: number; fresh?: boolean };
+  // The terminal view: its size (asking for it starts the program when none
+  // runs, resizes it otherwise), and keys.
+  tty?: { cols: number; rows: number };
   tty_in?: string;
   // Ask for the screen so far, addressed to this page's random id.
   watch?: string;

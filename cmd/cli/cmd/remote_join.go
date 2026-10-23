@@ -135,7 +135,7 @@ func joinRemote(link string, in io.Reader, out io.Writer, size func() (int, int)
 
 	if target.canDrive() {
 		cols, rows := size()
-		if err := j.send(remoteRelayTurn{TTY: &remoteTTYSize{Cols: cols, Rows: rows, Fresh: true}}); err != nil {
+		if err := j.send(remoteRelayTurn{TTY: &remoteTTYSize{Cols: cols, Rows: rows}}); err != nil {
 			return err
 		}
 	}

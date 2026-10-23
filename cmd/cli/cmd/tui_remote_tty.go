@@ -44,13 +44,12 @@ const (
 	remoteTTYHistoryMax = 1 << 20
 )
 
-// remoteTTYSize is a driving page's terminal: its size, and Fresh when the
-// page asks for a program after the last one ended ("open it again"). A
-// running program is resized, never replaced: other pages may be using it.
+// remoteTTYSize is a driving page's terminal: its size. A page asking for
+// it starts the program when none runs; a running one is resized, never
+// replaced, since other pages may be using it.
 type remoteTTYSize struct {
-	Cols  int  `json:"cols"`
-	Rows  int  `json:"rows"`
-	Fresh bool `json:"fresh,omitempty"`
+	Cols int `json:"cols"`
+	Rows int `json:"rows"`
 }
 
 func (s remoteTTYSize) clamped() tea.WindowSizeMsg {

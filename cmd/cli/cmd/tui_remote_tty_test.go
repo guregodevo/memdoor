@@ -77,7 +77,7 @@ func TestRemoteTTYRunsTheProgramForThePage(t *testing.T) {
 	r := newRemoteRelay(remoteSession{TTY: func() tea.Model { return ttyProbe{} }}, remoteLink{})
 	t.Cleanup(r.Close)
 
-	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20, Fresh: true}}, true)
+	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20}}, true)
 	screenUntil(t, r, "cols=60", false)
 
 	r.handle(nil, remoteRelayTurn{TTYIn: "hi"}, true)
@@ -127,12 +127,12 @@ func TestRemoteTTYLatePageJoinsTheScreen(t *testing.T) {
 	r := newRemoteRelay(remoteSession{TTY: func() tea.Model { return ttyProbe{} }}, remoteLink{})
 	t.Cleanup(r.Close)
 
-	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20, Fresh: true}}, true)
+	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20}}, true)
 	r.handle(nil, remoteRelayTurn{TTYIn: "old"}, true)
 	screenUntil(t, r, "typed=[old]", false)
 
 	// A second driving page opens, at its own size: a resize, not a restart.
-	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 70, Rows: 20, Fresh: true}}, true)
+	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 70, Rows: 20}}, true)
 	screenUntil(t, r, "cols=70 typed=[old]", false)
 
 	r.handle(nil, remoteRelayTurn{Watch: "page-2"}, true)
@@ -158,13 +158,13 @@ func TestRemoteViewOnlyPageCannotDrive(t *testing.T) {
 	t.Cleanup(r.Close)
 
 	// No program yet: a watcher cannot start one, and is told so.
-	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 40, Rows: 20, Fresh: true}}, false)
+	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 40, Rows: 20}}, false)
 	r.handle(nil, remoteRelayTurn{Watch: "viewer"}, false)
 	if _, none := replayFor(t, r, "viewer"); !none {
 		t.Fatal("a view-only page must not start the screen")
 	}
 
-	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20, Fresh: true}}, true)
+	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20}}, true)
 	screenUntil(t, r, "cols=60", false)
 	r.handle(nil, remoteRelayTurn{TTYIn: "x"}, false)
 	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 90, Rows: 20}}, false)
@@ -185,7 +185,7 @@ func TestRemoteViewOnlyPageCannotDrive(t *testing.T) {
 func TestRemoteTTYWithoutATUIIsIgnored(t *testing.T) {
 	r := newRemoteRelay(remoteSession{}, remoteLink{})
 	t.Cleanup(r.Close)
-	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20, Fresh: true}}, true)
+	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20}}, true)
 	r.handle(nil, remoteRelayTurn{TTYIn: "x"}, true)
 	select {
 	case b := <-r.ttyOut:
@@ -199,7 +199,7 @@ func TestRemoteTTYWithoutATUIIsIgnored(t *testing.T) {
 func TestRemoteTTYKeepsTypedOrder(t *testing.T) {
 	r := newRemoteRelay(remoteSession{TTY: func() tea.Model { return ttyProbe{} }}, remoteLink{})
 	t.Cleanup(r.Close)
-	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 200, Rows: 20, Fresh: true}}, true)
+	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 200, Rows: 20}}, true)
 	screenUntil(t, r, "cols=200", false)
 
 	text := strings.Repeat("abcdefghijklmnop", 8)

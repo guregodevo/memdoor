@@ -55,9 +55,10 @@ it was away.
 `/remote` gives the conversation a link and a QR code. The page it opens on your
 phone is the TUI itself, running on your computer: watch a turn, answer its
 question, stop it, start the next one. The screen and your keystrokes are
-end-to-end encrypted with a key that is only in the link, so the relay on
-memdoor.ai forwards what it cannot read. `/remote off` revokes the link.
-Remote control is Pro.
+end-to-end encrypted with a key that is only in the link, so the relay, your
+gateway or memdoor.ai, forwards what it cannot read. `/remote off` revokes the link.
+On your own gateway it is free; only the memdoor.ai relay, for a gateway
+kept to localhost, is Pro.
 
 → **[Remote control](/docs/remote)**
 
