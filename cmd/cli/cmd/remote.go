@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"memdoor/cmd/tui/ui"
 
@@ -14,33 +12,38 @@ import (
 	"golang.org/x/term"
 )
 
-// memdoor remote <id> — the phone door with no window (Greg, 2026-10-12:
-// "there should be a remote command to return in stdout the link", "from a
-// resume id"). It prints the conversation's link on stdout, one line, and
-// then holds the conversation on the relay until ctrl+c: a script or a CI
-// job that started a run with `memdoor run` can hand
-// it to a phone, and the job waits there while the phone drives. The page
-// the phone opens is the TUI on that conversation, as /remote gives it.
+// memdoor remote <id> — the phone's link for a conversation, from a script
+// with no window (Greg, 2026-10-12: "there should be a remote command to
+// return in stdout the link", "from a resume id"; 2026-10-24, once the
+// gateway held the link: "memdoor remote does not make sense, we should use
+// gateway instead", "we need to pass the --gateway <host> so memdoor
+// --gateway <host> remote"). It hands the conversation's link to the gateway
+// named by --gateway (this machine's by default), which hosts the phone's
+// terminal (remote_host.go), prints the link on stdout, one line, and
+// returns. Nothing here stays up: the link lives as long as that gateway, so
+// a job that waits while a phone drives waits on its own gateway, not on
+// this. `memdoor join`, a relay client in a terminal, went the same day:
+// --gateway <box> is the terminal's door onto a box.
 //
-// The hold ends on ctrl+c (or a term signal), and on that alone: nothing
-// cancels the command's context on its own, so a closed pipeline leaves the
-// process holding (proved 2026-10-12: `memdoor remote --last | head -1` kept
-// running after the reader exited).
-//
-// Stdout is the link and nothing else. The watch-only link, the QR code and
-// the hold line go to stderr: a job's log shows the code, and a phone scans
-// it off the screen (Greg: "or the qr code"). `off` revokes the link.
+// Stdout is the link and nothing else. The watch-only link and the QR code
+// go to stderr: a job's log shows the code, and a phone scans it off the
+// screen (Greg: "or the qr code"). `off` revokes the link.
 var remoteCmd = &cobra.Command{
 	Use:   "remote [id | off <id>]",
-	Short: "A link that opens a conversation on your phone; printed, then held until ctrl+c",
-	Long: `memdoor remote <id>        print the link on stdout and hold the conversation on the relay
-memdoor remote --last      the most recent conversation here
-memdoor remote             the list, and a question: which one
-memdoor remote --view <id> the watch-only link instead
-memdoor remote off <id>    revoke the link
+	Short: "The link that opens a conversation on your phone, on stdout; the gateway holds it",
+	Long: `memdoor remote <id>                    print the link on stdout; the gateway holds the conversation on it
+memdoor remote --last                  the most recent conversation here
+memdoor remote                         the list, and a question: which one
+memdoor remote --view <id>             the watch-only link instead
+memdoor remote off <id>                revoke the link
+memdoor --gateway <box> remote <id>    the same, for a conversation on that box: the box holds the link
 
-The id is the one memdoor run and memdoor resume print. The link stays valid
-across holds: the same one opens the conversation again next time.`,
+Without --gateway it is the gateway on this machine. The id is the one memdoor
+run and memdoor resume print. The link is the one /remote gives in a window,
+and it stays valid: the same one opens the
+conversation again next time. The gateway holds it with nothing else open and
+brings it back when it restarts, so a job that must wait while you drive from
+the phone waits on its own gateway (memdoor gateway & … wait), not on this.`,
 	Args:              cobra.MaximumNArgs(2),
 	ValidArgsFunction: cobra.NoFileCompletions,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -90,6 +93,12 @@ across holds: the same one opens the conversation again next time.`,
 			fmt.Fprintln(os.Stderr, text)
 			return nil
 		}
+		if remoteHeldHere(r.ChannelID) {
+			// The gateway could not take the link (an older binary): a
+			// link held by a command that has just returned opens nothing.
+			stopRemote(r.ChannelID)
+			return errGatewayHoldsNoLink
+		}
 		link, _, err := remoteLinkFor(r.ChannelID, false)
 		if err != nil {
 			return err
@@ -103,10 +112,12 @@ across holds: the same one opens the conversation again next time.`,
 			out = watch
 		}
 		fmt.Fprintln(os.Stdout, out)
-		fmt.Fprintln(os.Stderr, remoteHoldText(r, watch, view, base))
-		return holdRemote(cmd.Context())
+		fmt.Fprintln(os.Stderr, remoteLinkText(r, watch, view, base))
+		return nil
 	},
 }
+
+var errGatewayHoldsNoLink = errors.New("this gateway does not hold links (it is older than this command): upgrade it, or type /remote in a window on it")
 
 // remoteAsks reports whether a person is at the keyboard to pick from the
 // list (a test answers for them).
@@ -145,10 +156,10 @@ func remoteTarget(args []string, last bool) (sessionRecord, error) {
 	return sessionRecord{}, fmt.Errorf("which conversation? memdoor remote <id>, or --last")
 }
 
-// remoteHoldText is what stderr says beside the link: the watch-only link
+// remoteLinkText is what stderr says beside the link: the watch-only link
 // (unless that is the one printed), the QR code of the printed link, and
-// that the conversation is held.
-func remoteHoldText(r sessionRecord, watch string, view bool, base string) string {
+// who holds it.
+func remoteLinkText(r sessionRecord, watch string, view bool, base string) string {
 	var b strings.Builder
 	title := strings.TrimSpace(r.Title)
 	if title == "" {
@@ -167,17 +178,8 @@ func remoteHoldText(r sessionRecord, watch string, view bool, base string) strin
 	}
 	b.WriteString(qrText(link))
 	b.WriteString("\n")
-	b.WriteString("holding this conversation on " + relayHostOf(base) + " · ctrl+c ends it, the link stays")
+	b.WriteString("held by your gateway, on " + relayHostOf(base) + ": it works with nothing open here, and comes back when the gateway restarts")
 	return b.String()
-}
-
-// holdRemote keeps the process, and so the relay, alive until a signal or
-// the command's context ends.
-func holdRemote(ctx context.Context) error {
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	<-ctx.Done()
-	return nil
 }
 
 func init() {

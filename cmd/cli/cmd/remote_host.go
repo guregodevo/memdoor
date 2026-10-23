@@ -112,11 +112,13 @@ func (s remoteSession) hostedLink() (remoteLink, bool) {
 }
 
 // hostRemoteOnGateway hands the link to the gateway. True when the gateway
-// hosts it from now on; false when it cannot (an older gateway, no host, a
-// refusal), and the window hosts the link itself as before.
-func hostRemoteOnGateway(s remoteSession, l remoteLink) bool {
+// hosts it from now on; false with no error when it cannot (an older gateway
+// with no such door, or none reached), and the window hosts the link itself
+// as before; an error when the gateway refused, in its words (another user
+// holds this conversation's link): the person is told, nothing is hosted.
+func hostRemoteOnGateway(s remoteSession, l remoteLink) (bool, error) {
 	if remoteHostedHere || strings.TrimSpace(s.Gateway) == "" || s.Token == "" {
-		return false
+		return false, nil
 	}
 	dir := ""
 	if s.Dir != nil {
@@ -128,11 +130,24 @@ func hostRemoteOnGateway(s remoteSession, l remoteLink) bool {
 	}
 	resp, err := s.remoteAPI(http.MethodPut, spec)
 	if err != nil {
-		return false
+		return false, nil
 	}
 	defer resp.Body.Close()
-	io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<16))
-	return resp.StatusCode == http.StatusOK
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<16))
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return true, nil
+	case http.StatusNotFound:
+		return false, nil
+	}
+	var reply struct {
+		Error string `json:"error"`
+	}
+	why := strings.TrimSpace(string(body))
+	if json.Unmarshal(body, &reply) == nil && reply.Error != "" {
+		why = reply.Error
+	}
+	return false, fmt.Errorf("the gateway did not take the link: %s", why)
 }
 
 // unhostRemoteOnGateway revokes the link on the gateway (/remote off).

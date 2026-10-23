@@ -70,7 +70,7 @@ var _ ui.FS = remoteFS{}
 // one the window cannot know where that machine's project is.
 func remoteProjectDir(c *Client, dir string) (string, error) {
 	if strings.TrimSpace(dir) == "" {
-		return "", fmt.Errorf("the gateway at %s is on another machine: say which directory there the window works in\n  memdoor --gateway %s --dir /path/on/that/machine\n  or open a /remote link from a window on that machine: memdoor join <link>", gatewayShown(), gatewayHostOnly())
+		return "", fmt.Errorf("the gateway at %s is on another machine: say which directory there the window works in\n  memdoor --gateway %s --dir /path/on/that/machine", gatewayShown(), gatewayHostOnly())
 	}
 	abs, isDir, exists, err := remoteFS{c}.Stat(dir)
 	if err != nil {

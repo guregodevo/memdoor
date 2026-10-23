@@ -109,26 +109,17 @@ memdoor sessions export           # sessions → JSONL
 ## The phone door from a script
 
 ```bash
-memdoor remote <id>        # the link on stdout; holds the conversation on the relay until ctrl+c
-memdoor remote --last      # this directory's most recent conversation
-memdoor remote             # at a terminal: the list, and a question (which one)
-memdoor remote --view <id> # the watch-only link
-memdoor remote off <id>    # revoke
+memdoor remote <id>                    # the link on stdout; the gateway holds the conversation on it
+memdoor remote --last                  # this directory's most recent conversation
+memdoor remote                         # at a terminal: the list, and a question (which one)
+memdoor remote --view <id>             # the watch-only link
+memdoor remote off <id>                # revoke
+memdoor --gateway <box> remote <id>    # a conversation on that box: the box holds the link
 ```
 
 What `/remote` does in the window, as a command: the id is the one `memdoor
 run` and `memdoor resume` print; stdout is the link alone. See
 [Remote control](/docs/remote).
-
-## Joining from another terminal
-
-```
-memdoor join 'https://memdoor.ai/r/<id>#k=…'   # a /remote link, in this terminal
-```
-
-The host's computer runs the agent, in the host's folder; this terminal is its
-screen and keyboard. A watch-only link (`#v=`) shows the screen and sends
-nothing. `Ctrl+]` leaves. See [Remote control](/docs/remote).
 
 ## Workspace and channels
 

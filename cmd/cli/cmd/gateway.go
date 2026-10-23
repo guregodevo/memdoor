@@ -204,9 +204,13 @@ var gatewayUninstallCmd = &cobra.Command{
 	},
 }
 
+// The exit code is the answer too: 0 when the gateway answers, 1 when not,
+// so a script waits for its gateway with it (the CI job that hands a run to
+// a phone: `memdoor gateway &`, then `until memdoor gateway status; do sleep
+// 1; done`).
 var gatewayStatusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Is the gateway up, which version, and who manages it",
+	Short: "Is the gateway up, which version, and who manages it (exit 1 when it does not answer)",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
@@ -214,8 +218,9 @@ var gatewayStatusCmd = &cobra.Command{
 			Version string `json:"version"`
 			PID     int    `json:"pid"`
 		}
+		var down error
 		if err := c.GetJSON("/api/status", &st); err != nil {
-			fmt.Printf("gateway    not answering at %s\n", gatewayAddr)
+			down = fmt.Errorf("gateway    not answering at %s", gatewayAddr)
 		} else {
 			fmt.Printf("gateway    %s answering at %s (pid %d)\n", st.Version, gatewayAddr, st.PID)
 		}
@@ -230,7 +235,7 @@ var gatewayStatusCmd = &cobra.Command{
 			path, manager, _ := servicePath()
 			fmt.Printf("service    %s, %s (%s)\n", state, manager, path)
 		}
-		return nil
+		return down
 	},
 }
 

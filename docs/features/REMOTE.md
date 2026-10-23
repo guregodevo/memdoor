@@ -46,7 +46,7 @@ both paths against the Go vectors.
 ## The gateway holds the link (2026-10-23)
 
 Until the command review the terminal side lived in the process that typed
-`/remote` (the window, `memdoor remote`), so a link died with it: closing
+`/remote` (the window, the old `memdoor remote`), so a link died with it: closing
 the window on a box closed the phone's door. Now `tuiRemote` asks the
 gateway's `/api/remote/<channel>` first (`hostedLink`: the link it already
 holds, from any window), hands it a new one (`hostRemoteOnGateway`, the
@@ -60,8 +60,8 @@ before starting anything. In the gateway's process `remoteHostedHere` is
 set: the phone's own `/remote` turns nothing on, the host never hands a link
 to itself. A relay that answers 401 (`errRemoteSessionGone`) stops the loop
 instead of retrying every five seconds. Receipt (scratch gateway on
-0.0.0.0:18799, 2026-10-23): window closed, `memdoor join <link>` drove a
-turn; gateway restarted, the same link drove another; `/remote off` made the
+0.0.0.0:18799, 2026-10-23): window closed, a terminal on the link (`memdoor join`,
+since removed) drove a turn; gateway restarted, the same link drove another; `/remote off` made the
 gateway forget it and `join` said nothing serves it.
 
 ## Two hosts
@@ -118,15 +118,25 @@ Terminal to browser (`kind: "event"`): the gateway's agent events as they are,
 plus two streams of its own, `history` (the last 20 turns, long replies cut at
 8,000 characters) and `tty` (screen bytes, base64, or `ended`).
 
-## `memdoor join`
+## `memdoor remote` holds nothing (2026-10-24)
 
-`cmd/cli/cmd/remote_join.go`: a relay client that is the page without the
-browser. It parses `#k=` (driver: session, write and proof keys) or `#v=`
-(watcher: session key and proof), joins `/api/relay/browser`, asks for the
-screen with `tty` (drivers) and `watch`, writes `tty` frames to the terminal in
-raw mode, sends keys as `tty_in`, sends its size on SIGWINCH, and leaves on
-Ctrl+]. The host's TUI runs the agent in the host's folder, which is what
-`memdoor tui --gateway <url> --channel <id>` cannot promise.
+`cmd/cli/cmd/remote.go`: the link from a script. The gateway holds it, and
+`--gateway <box>` names whose (Greg: "memdoor remote does not make sense, we
+should use gateway instead", "we need to pass the --gateway <host> so memdoor
+--gateway <host> remote"). It settles the
+conversation (`remoteTarget`: an id prefix, `--last`, or the list and a
+question at a terminal), calls `tuiRemote` exactly as the window does, and
+returns: the link on stdout, the title, the watch-only link and the QR code
+on stderr (`remoteLinkText`). It never holds anything; when the gateway could
+not take the link (`remoteHeldHere`: an older gateway, 404) it stops the
+relay it would have run and fails with `errGatewayHoldsNoLink`. The former
+hold (`memdoor remote` stayed up until ctrl+c) and `memdoor join` (a relay
+client in a terminal, "redundant with gateway": `--gateway <box>` is the
+terminal's door onto a box) were removed the same day. A hand-over the
+gateway refuses (403: another user holds the conversation's link) is an
+error in the gateway's words, in the window too, instead of a second relay
+started beside the gateway's. A CI job that waits for
+the phone starts its gateway in the step and `wait`s on it.
 
 ## `/share`
 

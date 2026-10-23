@@ -95,43 +95,29 @@ no key bar, no Stop and no box to send a turn, and your terminal drops anything
 it sends except a request to see. The watch-only link does not contain your
 link's key and cannot be turned into it. `/remote off` revokes both links.
 
-## From another terminal
-
-The same link opens in a terminal on any machine with Memdoor installed:
-
-```
-$ memdoor join 'https://memdoor.ai/r/0L17wXRvEC5IzW_D#k=…'
-Joining 0L17wXRvEC5IzW_D — you can type; Ctrl+] leaves.
-```
-
-It is the page without the browser: the same screen the others see, drawn in
-your terminal at its size. The agent runs on the host's computer, in the
-host's folder. A watch-only link joins the same way and sends nothing.
-`Ctrl+]` leaves; every other key goes to the TUI.
-
 ## From a script, no window
 
-The phone door is a command like every other door (2026-10-12): what
-`/remote` does in the window, headless, for the conversation a run printed.
+The phone door is a command like every other door: what `/remote` does in
+the window, headless, for the conversation a run printed. The gateway is
+what holds the link, so `--gateway <box>` names whose.
 
 ```bash
-memdoor remote <id>        # the link on stdout, one line; then it holds the conversation on the relay
-memdoor remote --last      # this directory's most recent conversation
-memdoor remote             # at a terminal: the list, and a question (which one), as memdoor resume asks
-memdoor remote --view <id> # the watch-only link instead
-memdoor remote off <id>    # revoke
+memdoor remote <id>                    # the link on stdout, one line; the gateway holds the conversation on it
+memdoor remote --last                  # this directory's most recent conversation
+memdoor remote                         # at a terminal: the list, and a question (which one), as memdoor resume asks
+memdoor remote --view <id>             # the watch-only link instead
+memdoor remote off <id>                # revoke
+memdoor --gateway <box> remote <id>    # a conversation on that box: the box holds the link
 ```
 
 The id is the one `memdoor run` and `memdoor resume` print; any unique
-prefix works. Stdout is the link and nothing else, so `memdoor remote --last
-| pbcopy` works; the title, the watch-only link, the QR code and the hold line
-go to stderr, so a job's log shows a code your phone scans off the screen.
-The command stays up until `ctrl+c` or the job's timeout, and nothing else
-ends it: a closed pipe does not. The gateway holds the link, so the hold is
-for the job that started the run: it waits there for you. On a laptop,
-`ctrl+c` right away is fine. Ending the hold does not revoke the link: the
-same link opens the conversation the next time, from the window or from the
-command.
+prefix works. Stdout is the link and nothing else, so `memdoor remote
+--last | pbcopy` works; the title, the watch-only link and the QR code go to
+stderr, so a job's log shows a code your phone scans off the screen. The
+command returns at once: the gateway holds the link with no window and no
+command open, and brings it back when it restarts. The same link opens the
+conversation the next time, from the window or from the command. A gateway
+older than this command cannot hold a link and the command says so.
 
 ```
 $ memdoor remote --last
@@ -140,18 +126,19 @@ on your phone · "fix the failing test"
 watch only: https://memdoor.ai/r/6i3nQ7d8GL02TvGT#v=…
 █▀▀▀▀▀█ ▄▀ ▄█▄ █▀▀▀▀▀█
 …
-holding this conversation on the relay · ctrl+c ends it, the link stays
+held by your gateway, on memdoor.ai: it works with nothing open here, and comes back when the gateway restarts
 ```
 
 ### Finishing a CI run from your phone
 
-A job that started a run with `memdoor run` hands it to you with one more
-line: the link and its code are in the job's log and the job waits there,
-the gateway alive, until you are done or the job's timeout ends it. A
-runner's own address is no door for a phone, so the job keeps its gateway to
-localhost (`MEMDOOR_HOST: localhost`) and the link goes through the memdoor.ai
-relay: the runner needs the account's token in `MEMDOOR_BILLING_TOKEN`, a Pro
-seat; on your own machine `memdoor login` keeps it in `~/.memdoor/billing-token`.
+A job that started a run with `memdoor run` hands it to you with that line
+and waits on its gateway: the job starts the gateway itself, in the step,
+and `wait`s on it at the end, so the job stays, the link open, until you are
+done or the job's timeout ends it. A runner's own address is no door for a
+phone, so the job keeps its gateway to localhost (`MEMDOOR_HOST: localhost`)
+and the link goes through the memdoor.ai relay: the runner needs the
+account's token in `MEMDOOR_BILLING_TOKEN`, a Pro seat; on your own machine
+`memdoor login` keeps it in `~/.memdoor/billing-token`.
 
 ```yaml
       - name: Review, then wait for me on the phone
@@ -163,9 +150,12 @@ seat; on your own machine `memdoor login` keeps it in `~/.memdoor/billing-token`
         run: |
           curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
           export PATH="$HOME/.local/bin:$PATH"
+          memdoor gateway &                  # the job's gateway: the run lives in it
+          until memdoor gateway status >/dev/null 2>&1; do sleep 1; done
           git diff origin/${{ github.base_ref }}...HEAD \
             | memdoor run "review this diff; one finding per line; change nothing"
-          memdoor remote --last
+          memdoor remote --last              # the link and its code, in the job's log
+          wait                               # the job stays on its gateway while you finish the run from the phone
 ```
 
 The run ends with the job; a run that must outlive it belongs on [a box
@@ -179,9 +169,9 @@ machine, in this order:
 | Step | What happened |
 |---|---|
 | `memdoor run "reply with the single word ok; change nothing"` | started the gateway, answered `ok`, printed the conversation id |
-| `memdoor remote --last > link.txt` | one line on stdout, the link; stderr the title, the watch-only link, the code, the hold line; the process stayed up |
-| `memdoor join "$(cat link.txt)"` from another terminal | the run's conversation, its `ok` in view |
-| a turn typed in that terminal | answered on the gateway (`pong`, the model named in the footer) |
+| `memdoor remote --last > link.txt` (since 24 October the command returns at once: the gateway holds the link) | one line on stdout, the link; stderr the title, the watch-only link, the code |
+| the link opened in another terminal | the run's conversation, its `ok` in view |
+| a turn typed there | answered on the gateway (`pong`, the model named in the footer) |
 | `memdoor resume --last`, then `/remote` in the window | the same link, same id |
 | `memdoor remote off <id>` | "Remote control is off: the old link and its key no longer open this conversation." |
 
@@ -228,8 +218,7 @@ runs commands on your computer. Treat it like a password:
 | `/remote` | Print the link and the QR code for this conversation, and the watch-only link |
 | `/remote view` | Print the watch-only link and its QR code |
 | `/remote off` | Revoke both links |
-| `memdoor remote <id>` | The link on stdout, from a script; holds the conversation on the relay until `ctrl+c` (`--last`, `--view`, `off <id>`) |
-| `memdoor join <link>` | Open a link in a terminal instead of a browser (`Ctrl+]` leaves) |
+| `memdoor remote <id>` | The link on stdout, from a script; the gateway holds it (`--last`, `--view`, `off <id>`) |
 | `memdoor login you@example.com` | Sign in, once per computer |
 
 ## Where to next

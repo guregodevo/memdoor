@@ -166,8 +166,8 @@ Error: no workspace resolved for "channels". Set one of:
 ## Command index
 
 <!-- cli-index:start -->
-Generated from the binary's `--help` by `make cli-index` (39 top-level commands).
-`memdoor --help` shows 32 of them; the others are hidden from it and run when typed:
+Generated from the binary's `--help` by `make cli-index` (38 top-level commands).
+`memdoor --help` shows 31 of them; the others are hidden from it and run when typed:
 `auth`, `billing`, `channels`, `chrome`, `messages`, `sessions`, `users`. A command that appears here
 and nowhere else in this file is documented by its own `memdoor <command> --help`.
 
@@ -176,7 +176,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 - `doctor` — Is the gateway up and healthy, and what this machine is missing
 - `gateway` — The gateway in the foreground; install, status and uninstall run it as a service
   - `install` — Run the gateway as a service on this machine: up at boot, restarted if it stops, no root (systemd --user, launchd)
-  - `status` — Is the gateway up, which version, and who manages it
+  - `status` — Is the gateway up, which version, and who manages it (exit 1 when it does not answer)
   - `uninstall` — Stop the gateway service and remove its unit (the data stays)
 - `logs` — What the gateway logged: query, errors, since when
   - `errors` — What went wrong lately (--since 5m)
@@ -196,8 +196,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `list` — Every schedule, with its agent and its line
   - `remove` — Remove a schedule
   - `stats` — How often a schedule ran, and how it went
-- `join` — Open a link that /remote printed on another computer, in this terminal
-- `remote` — memdoor remote <id>        print the link on stdout and hold the conversation on the relay
+- `remote` — memdoor remote <id>                    print the link on stdout; the gateway holds the conversation on it
 - `resume` — Resume a previous conversation.
 - `run` — Run one coder turn on this project with no window.
 - `tui` — The window onto the gateway, in this directory (the bare `memdoor` opens it too)

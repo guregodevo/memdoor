@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"memdoor/gateway"
@@ -22,6 +23,10 @@ func TestTheWindowHandsTheLinkToTheGateway(t *testing.T) {
 	var got gateway.RemoteHostSpec
 	hosted := false
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/remote/theirs" && r.Method == http.MethodPut {
+			http.Error(w, `{"error":"another user holds this conversation's link"}`, http.StatusForbidden)
+			return
+		}
 		if r.URL.Path != "/api/remote/ch1" || r.Header.Get("Authorization") != "Bearer tok" {
 			http.NotFound(w, r)
 			return
@@ -49,8 +54,8 @@ func TestTheWindowHandsTheLinkToTheGateway(t *testing.T) {
 		t.Fatal("nothing hosted yet")
 	}
 	l := remoteLink{ChannelID: "ch1", ID: "abc", Key: "k1"}
-	if !hostRemoteOnGateway(s, l) {
-		t.Fatal("the gateway took the link")
+	if held, err := hostRemoteOnGateway(s, l); !held || err != nil {
+		t.Fatalf("the gateway took the link: %v %v", held, err)
 	}
 	if got.ID != "abc" || got.Key != "k1" || got.Dir != "/srv/proj" || got.Workspace != "w" || got.Token != "tok" || got.Relay != srv.URL || got.ChannelName != "c" {
 		t.Fatalf("the spec the gateway got: %+v", got)
@@ -73,8 +78,13 @@ func TestTheWindowHandsTheLinkToTheGateway(t *testing.T) {
 	// An older gateway, or one that is not its own process: 404, the
 	// window hosts.
 	s.ChannelID = "other"
-	if hostRemoteOnGateway(s, l) {
-		t.Fatal("a gateway without a host leaves the relay to the window")
+	if held, err := hostRemoteOnGateway(s, l); held || err != nil {
+		t.Fatalf("a gateway without a host leaves the relay to the window: %v %v", held, err)
+	}
+	// A refusal is said in the gateway's words, and nothing is hosted.
+	s.ChannelID = "theirs"
+	if held, err := hostRemoteOnGateway(s, l); held || err == nil || !strings.Contains(err.Error(), "another user holds") {
+		t.Fatalf("a refusal is told: %v %v", held, err)
 	}
 }
 
@@ -85,7 +95,7 @@ func TestTheHostNeverHandsALinkToItself(t *testing.T) {
 	remoteHostedHere = true
 	t.Cleanup(func() { remoteHostedHere = saved })
 	s := remoteSession{Gateway: "http://127.0.0.1:1", Token: "tok", ChannelID: "ch1"}
-	if hostRemoteOnGateway(s, remoteLink{ID: "a", Key: "k"}) {
+	if held, _ := hostRemoteOnGateway(s, remoteLink{ID: "a", Key: "k"}); held {
 		t.Fatal("no PUT from inside the gateway")
 	}
 	text, err := tuiRemote(s)("")

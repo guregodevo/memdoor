@@ -15,7 +15,7 @@ import (
 // THE GATEWAY HOLDS THE PHONE'S LINK (Greg, 2026-10-23, reviewing the
 // commands: "the daemon owns the work"). Until now the phone's terminal, the
 // second TUI program on a conversation, ran inside the window or inside
-// `memdoor remote`, so a link lived exactly as long as that process: closing
+// the old `memdoor remote`, so a link lived exactly as long as that process: closing
 // the window on a box closed the phone's door. Now a window hands its link
 // to the gateway (PUT /api/remote/<channel>) and the gateway's own process
 // hosts that terminal, in the binary's cmd package (cmd/cli/cmd/remote_host.go)

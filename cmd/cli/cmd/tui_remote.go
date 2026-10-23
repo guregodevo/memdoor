@@ -332,7 +332,10 @@ func tuiRemote(unresolved remoteSession) func(arg string) (string, error) {
 				return "", err
 			}
 		}
-		held := hostRemoteOnGateway(s, l)
+		held, err := hostRemoteOnGateway(s, l)
+		if err != nil {
+			return "", err
+		}
 		if !held {
 			startRemote(s, l)
 		}
@@ -380,7 +383,7 @@ func resumeRemote(s remoteSession) {
 		return // the gateway holds it; this window is only a window
 	}
 	if l, ok := loadRemoteLinks()[s.ChannelID]; ok {
-		if !hostRemoteOnGateway(s.resolved(), l) {
+		if held, err := hostRemoteOnGateway(s.resolved(), l); !held && err == nil {
 			startRemote(s.resolved(), l)
 		}
 	}
@@ -578,6 +581,15 @@ func startRemote(s remoteSession, l remoteLink) {
 	r := newRemoteRelay(s, l)
 	remoteRelays.byChannel[s.ChannelID] = r
 	go r.run()
+}
+
+// remoteHeldHere reports whether this process runs the relay for the
+// conversation: the gateway could not take the link, so the window hosts.
+func remoteHeldHere(channelID string) bool {
+	remoteRelays.Lock()
+	defer remoteRelays.Unlock()
+	_, ok := remoteRelays.byChannel[channelID]
+	return ok
 }
 
 // stopRemote revokes a conversation's link (/remote off): the relay is told

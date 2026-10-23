@@ -36,7 +36,7 @@ fresh one. To start it by hand:
 ```bash
 memdoor gateway                 # on :18789, in the foreground
 memdoor gateway --port 18799    # another port; --gateway :18799 on every command reaches it
-memdoor gateway status          # is it up, which version, who manages it
+memdoor gateway status          # is it up, which version, who manages it; exit 1 when it does not answer
 memdoor doctor                  # is it healthy
 memdoor logs errors --since 5m  # what went wrong
 ```
@@ -105,8 +105,7 @@ Your phone reaches the box the way your laptop does. `/remote` in a window
 on a box prints a link on that gateway, `http://box:18789/r/…`: a phone on
 the box's network, VPN or Tailscale opens the conversation there, with no
 memdoor.ai account and no plan. `memdoor --gateway <box> remote --last`
-prints the same link from a shell and holds the conversation on it;
-`memdoor join <link>` opens it in another terminal. The key after `#` never
+prints the same link from a shell; the box holds the conversation on it. The key after `#` never
 leaves the page and every frame is sealed with it, so the link works on the
 box's plain http. Through the ssh door the link is on the box's name, with
 the gateway's port. A gateway kept to localhost has no door for a phone,

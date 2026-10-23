@@ -70,7 +70,6 @@ var noWorkspaceTopLevels = map[string]bool{
 	"account": true,
 	"login":   true, // the same sign-in under its short name
 	"logout":  true, // forgetting a sign-in needs no workspace either
-	"join":    true, // a /remote link: the host's session, nothing local
 }
 
 var rootCmd = &cobra.Command{
@@ -93,7 +92,7 @@ On this machine:
 On a box that stays on (a VPS, a Mac mini):
   memdoor gateway install                # the gateway as a service: up at boot, restarted if it stops
   memdoor --gateway <box> run "…"        # from your laptop: a turn there, in that box's project
-  memdoor join <link>                    # a /remote link in your terminal; the same link opens on your phone
+  memdoor --gateway <box> remote --last  # the link that opens that run on your phone; the box holds it
 
 Workflows: say the steps in the window and it writes them as files in the repo;
 memdoor workflow run <name> reruns them with no one watching, and a gate waits

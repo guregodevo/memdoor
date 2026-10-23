@@ -80,22 +80,22 @@ func TestRemoteTargetByIDAndLast(t *testing.T) {
 	}
 }
 
-func TestRemoteHoldTextKeepsStdoutForTheLink(t *testing.T) {
+func TestGatewayRemoteTextKeepsStdoutForTheLink(t *testing.T) {
 	r := sessionRecord{ChannelID: "cf5a7add-0000-0000-0000-000000000000", Title: "fix the test"}
-	got := remoteHoldText(r, "https://memdoor.ai/r/x#v=tok", false, "https://memdoor.ai")
-	for _, want := range []string{`"fix the test"`, "watch only: https://memdoor.ai/r/x#v=tok", "ctrl+c ends it, the link stays"} {
+	got := remoteLinkText(r, "https://memdoor.ai/r/x#v=tok", false, "https://memdoor.ai")
+	for _, want := range []string{`"fix the test"`, "watch only: https://memdoor.ai/r/x#v=tok", "held by your gateway"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("stderr text lacks %q:\n%s", want, got)
 		}
 	}
 	if !strings.Contains(got, "█") && !strings.Contains(got, "▄") {
-		t.Error("the QR code goes to stderr even into a pipe: a CI log is what a phone scans")
+		t.Error("the QR code goes to stderr even into a pipe: a job's log is what a phone scans")
 	}
-	view := remoteHoldText(r, "https://memdoor.ai/r/x#v=tok", true, "https://memdoor.ai")
+	view := remoteLinkText(r, "https://memdoor.ai/r/x#v=tok", true, "https://memdoor.ai")
 	if !strings.Contains(view, "watch only ·") || strings.Contains(view, "watch only: https") {
 		t.Errorf("--view names itself and does not repeat the link:\n%s", view)
 	}
-	untitled := remoteHoldText(sessionRecord{ChannelID: "cf5a7add-0000-0000-0000-000000000000"}, "v", false, "https://memdoor.ai")
+	untitled := remoteLinkText(sessionRecord{ChannelID: "cf5a7add-0000-0000-0000-000000000000"}, "v", false, "https://memdoor.ai")
 	if !strings.Contains(untitled, `"cf5a7add"`) {
 		t.Errorf("an untitled conversation is named by its short id:\n%s", untitled)
 	}

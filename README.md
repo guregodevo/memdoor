@@ -128,7 +128,7 @@ memdoor run "make the retry wait configurable and add a test"     # a headless t
 git diff | memdoor run "review this diff; one line per finding"    # stdin is the input
 memdoor run --json "fix the failing test" | jq 'select(.event=="done")'
 memdoor workflow run release --wait                                 # progress on stderr, results on stdout
-memdoor remote --last                                               # the link /remote gives, on stdout; holds the run for your phone
+memdoor remote --last                                               # the link /remote gives, on stdout; the gateway holds the run for your phone
 ```
 
 The exit code is the turn's receipt: 0 checked, 2 unverified or a failing check,

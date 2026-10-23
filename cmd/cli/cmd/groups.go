@@ -46,9 +46,8 @@ var commandGroupAssignments = map[string]string{
 	"tui":           groupDoors,
 	"run":           groupDoors,
 	"resume":        groupDoors,
-	"conversations": groupDoors,
 	"remote":        groupDoors,
-	"join":          groupDoors,
+	"conversations": groupDoors,
 	"acp":           groupDoors,
 	"cron":          groupDoors,
 

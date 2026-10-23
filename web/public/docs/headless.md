@@ -41,11 +41,10 @@ your phone are doors onto it. A box that memdoor.ai runs for you is coming.
   See [Workflows](/docs/workflows).
 - **An editor session.** The coder in VS Code, Zed or JetBrains is a
   conversation on the same gateway. See [In your editor](/docs/editor).
-- **The phone, from a script.** `memdoor remote <id>` prints the link
-  `/remote` would, on stdout, and holds the conversation on the relay until
-  `ctrl+c` — nothing else ends it, a closed pipe included, so a CI step needs
-  its `timeout-minutes`: the run a script or a CI job started is on your
-  phone while the job waits. See [Remote control](/docs/remote).
+- **The phone, from a script.** `memdoor remote <id>` prints the
+  link `/remote` would, on stdout, and returns: the gateway holds the link,
+  so the run a script or a CI job started is on your phone for as long as
+  that gateway runs. See [Remote control](/docs/remote).
 
 Each of these answers into a conversation; a check's answer also wakes the
 conversation that asked for it, so the agent acts on it without you.
@@ -103,7 +102,7 @@ project whose `Add` returned `a - b`. The exit codes are the receipts.
 | `memdoor guards add --tool bash --pattern '\bgit push\b'` then `memdoor run "commit and push"` | 0 | committed, the push "blocked by a workspace tool guard", said so |
 | `echo "" \| memdoor run "ask me whether the new file is a.go or b.go"` | 3 | `? Should the new empty file be named a.go or b.go? 1. a.go 2. b.go` on stderr |
 | `memdoor cron add --id t --schedule "*/30 * * * *" --agent coder --message "say ok"`, `list`, `remove` | 0 | added, listed once, removed |
-| `memdoor remote --last > link.txt` (12 October), then `memdoor join "$(cat link.txt)"` from another terminal | 0 | the link alone on stdout; the join showed the run's conversation and a turn typed there answered on the gateway; `/remote` in a window gave the same link; `remote off` revoked it |
+| `memdoor remote --last > link.txt` (12 October), the link opened from another terminal | 0 | the link alone on stdout; the other terminal showed the run's conversation and a turn typed there answered on the gateway; `/remote` in a window gave the same link; `remote off` revoked it |
 
 The second row is the one to read twice: nothing changed and the last run
 failed, so the pipeline sees 2. A failing test you did not touch is still a
@@ -134,9 +133,12 @@ jobs:
           memdoor workflow run check --wait
 ```
 
-To finish a CI run from your phone, add `memdoor remote --last` as the last
-line: the link and its QR code are in the job's log and the job waits there, the gateway
-alive, until you are done or the job's timeout ends it. A runner's own address
+To finish a CI run from your phone, the job starts its gateway itself
+(`memdoor gateway &`, waits for it with `memdoor gateway status`, then `memdoor run`), prints the link with `memdoor remote
+--last` and `wait`s on the gateway: the link and its QR code are
+in the job's log and the job stays there, the gateway holding the link, until
+you are done or the job's timeout ends it; the full step is on the
+[Remote control](/docs/remote) page. A runner's own address
 is no door for a phone, so the job keeps its gateway to localhost
 (`MEMDOOR_HOST: localhost` in the step's env) and the link goes through the
 memdoor.ai relay: an account with Pro signed in on the runner, the token in
