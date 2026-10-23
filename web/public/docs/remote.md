@@ -68,9 +68,10 @@ from either view.
 
 ## When it works
 
-While the TUI on your computer is running, with that conversation open. Close
-the TUI and the page waits. Open the conversation again (`memdoor resume`) and
-the same link picks up where it was — there is nothing to scan twice.
+While your gateway is up: it holds the link once `/remote` turned it on, so
+the window may close and the page keeps working. If the gateway is down (a
+laptop asleep, say) the page waits; when the gateway is back, every link is
+back with it, and there is nothing to scan twice.
 
 Several pages can be open at once — your phone and your laptop, say — and
 they all show the same screen. A page that opens later is shown the screen so
