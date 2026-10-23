@@ -140,6 +140,11 @@ func TestRemoteTTYLatePageJoinsTheScreen(t *testing.T) {
 	if none || !strings.Contains(screen, "typed=[old]") {
 		t.Fatalf("the late page must be replayed the screen so far: none=%v %q", none, screen)
 	}
+	// The replay starts at the clear the resize caused: the 60-column
+	// frames are not in it, so the late page is not drawn narrow.
+	if !strings.HasPrefix(screen, remoteTTYClear) || strings.Contains(screen, "cols=60") {
+		t.Fatalf("the replay must begin at the resize's clear and hold no 60-column frame: %q", screen)
+	}
 }
 
 // A view-only page watches: it is replayed the screen and the conversation,

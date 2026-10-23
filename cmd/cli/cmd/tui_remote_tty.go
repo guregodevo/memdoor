@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -133,7 +134,16 @@ func remoteTTYReplayEvent(forID string, history []byte, size tea.WindowSizeMsg, 
 	return json.Marshal(map[string]any{"stream": remoteTTYStream, "data": data})
 }
 
-// record adds a flushed frame to the history and queues it, under hmu.
+// remoteTTYClear is what the renderer writes when it clears the screen
+// (bubbletea's EraseEntireScreen): the frame after it is the whole view,
+// so the history a late page is replayed can start there.
+const remoteTTYClear = "\x1b[2J"
+
+// record adds a flushed frame to the history and queues it, under hmu. A
+// frame that clears the screen starts the history over: what came before
+// was drawn at another size, and replaying it narrowed the screen a page
+// opened late (seen 2026-10-23 on a page that opened after a 60-column
+// terminal had joined).
 func (t *remoteTTY) record(r *remoteRelay, out []byte) {
 	b, err := remoteTTYEvent(out, false)
 	if err != nil {
@@ -141,7 +151,12 @@ func (t *remoteTTY) record(r *remoteRelay, out []byte) {
 	}
 	t.hmu.Lock()
 	defer t.hmu.Unlock()
-	t.history = append(t.history, out...)
+	if i := bytes.LastIndex(out, []byte(remoteTTYClear)); i >= 0 {
+		t.history = append(t.history[:0:0], out[i:]...)
+		t.truncated = false
+	} else {
+		t.history = append(t.history, out...)
+	}
 	if over := len(t.history) - remoteTTYHistoryMax; over > 0 {
 		t.history = append(t.history[:0:0], t.history[over:]...)
 		t.truncated = true
@@ -150,6 +165,8 @@ func (t *remoteTTY) record(r *remoteRelay, out []byte) {
 }
 
 // resize applies a driving page's size and tells every page, under hmu.
+// The view at the new size is then drawn from a cleared screen, not as a
+// diff over the old one: a diff leaves the old size's lines on every page.
 func (t *remoteTTY) resize(r *remoteRelay, size tea.WindowSizeMsg) {
 	t.hmu.Lock()
 	defer t.hmu.Unlock()
@@ -157,7 +174,10 @@ func (t *remoteTTY) resize(r *remoteRelay, size tea.WindowSizeMsg) {
 		return
 	}
 	t.size = size
-	go t.p.Send(size)
+	go func() {
+		t.p.Send(size)
+		t.p.Send(tea.ClearScreen())
+	}()
 	if b, err := remoteTTYSizeEvent(size); err == nil {
 		r.queueTTY(b, t.stop)
 	}

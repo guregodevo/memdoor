@@ -42,6 +42,19 @@ const KEYS: { label: string; bytes: string }[] = [
 ];
 
 const FONT_MAX = 12;
+// RESIZE_SETTLE_MS is how long the page waits for its layout to stop
+// changing before it asks the program for that size.
+const RESIZE_SETTLE_MS = 120;
+// A size is sent only when it is one a terminal can show: a page mid-layout
+// proposes a sliver, and the program's floor (20 columns) is not a screen.
+const MIN_COLS = 40;
+const MIN_ROWS = 8;
+
+function saneDims(d: { cols: number; rows: number } | undefined): { cols: number; rows: number } | undefined {
+  if (!d || !Number.isFinite(d.cols) || !Number.isFinite(d.rows)) return undefined;
+  if (d.cols < MIN_COLS || d.rows < MIN_ROWS) return undefined;
+  return { cols: d.cols, rows: d.rows };
+}
 const FONT_MIN = 6;
 // A monospace cell is about 0.6 of the font size wide.
 const CELL = 0.6;
@@ -126,23 +139,30 @@ export function RemoteTerminal({
     });
 
     // A driving page asks for the size that fits it; a watching page draws
-    // whatever size the program has.
+    // whatever size the program has. The size is sent once the layout has
+    // settled: every size sent redraws the program for every page, and a
+    // page mid-layout proposes sizes nobody wants.
     let last = "";
+    let settle: ReturnType<typeof setTimeout> | undefined;
     const resize = new ResizeObserver(() => {
       if (!canDrive) {
         if (term.cols && term.rows) drawAt(term.cols, term.rows);
         return;
       }
-      const dims = fit.proposeDimensions();
-      if (!dims || !dims.cols || !dims.rows) return;
-      const size = `${dims.cols}x${dims.rows}`;
-      if (size === last) return;
-      last = size;
-      void sendRef.current({ tty: { cols: dims.cols, rows: dims.rows } });
+      if (settle) clearTimeout(settle);
+      settle = setTimeout(() => {
+        const dims = saneDims(fit.proposeDimensions());
+        if (!dims) return;
+        const size = `${dims.cols}x${dims.rows}`;
+        if (size === last) return;
+        last = size;
+        void sendRef.current({ tty: dims });
+      }, RESIZE_SETTLE_MS);
     });
     resize.observe(el);
 
     return () => {
+      if (settle) clearTimeout(settle);
       resize.disconnect();
       stop();
       typed?.dispose();
@@ -162,11 +182,11 @@ export function RemoteTerminal({
     if (canDrive) {
       const fit = new FitAddon();
       term.loadAddon(fit);
-      const dims = fit.proposeDimensions();
+      const dims = saneDims(fit.proposeDimensions());
       fit.dispose();
-      void sendRef.current({
-        tty: { cols: dims?.cols || term.cols, rows: dims?.rows || term.rows, fresh: true },
-      });
+      // No measured size yet (the page is still laying out): the resize
+      // observer sends one as soon as there is one.
+      if (dims) void sendRef.current({ tty: { ...dims, fresh: true } });
     }
     const id = randomId();
     awaitingRef.current = id;
