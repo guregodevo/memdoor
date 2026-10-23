@@ -188,15 +188,11 @@ func TestRelaySeveralPagesShareASession(t *testing.T) {
 		}
 		pages = append(pages, p)
 	}
-	extra, _ := dialBrowser(t, srv, relayTestProof)
-	if extra == nil {
-		t.Fatal("one page too many: expected an upgrade then a close")
-	}
-	_ = extra.SetReadDeadline(time.Now().Add(2 * time.Second))
-	if _, _, err := extra.ReadMessage(); !websocket.IsCloseError(err, websocket.CloseTryAgainLater) {
-		t.Fatalf("page %d must be refused: %v", remoteRelayMaxBrowsers+1, err)
-	}
-
+	// A page counts once the server has attached it, after the handshake
+	// the dial returns on; every page receiving the terminal's frame proves
+	// all of them are counted before one too many dials (on a slow runner
+	// the ninth beat the eighth's attach and was admitted, public CI
+	// 2026-10-24).
 	screen := `{"kind":"event","payload":"screen"}`
 	if err := terminal.WriteMessage(websocket.TextMessage, []byte(screen)); err != nil {
 		t.Fatal(err)
@@ -206,6 +202,15 @@ func TestRelaySeveralPagesShareASession(t *testing.T) {
 			t.Fatalf("page %d got %q", i+1, got)
 		}
 	}
+	extra, _ := dialBrowser(t, srv, relayTestProof)
+	if extra == nil {
+		t.Fatal("one page too many: expected an upgrade then a close")
+	}
+	_ = extra.SetReadDeadline(time.Now().Add(2 * time.Second))
+	if _, _, err := extra.ReadMessage(); !websocket.IsCloseError(err, websocket.CloseTryAgainLater) {
+		t.Fatalf("page %d must be refused: %v", remoteRelayMaxBrowsers+1, err)
+	}
+
 	turn := `{"kind":"turn","payload":"from the last page"}`
 	if err := pages[len(pages)-1].WriteMessage(websocket.TextMessage, []byte(turn)); err != nil {
 		t.Fatal(err)
