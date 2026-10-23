@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"memdoor/pkg/authorization"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -212,6 +214,19 @@ func (cs *ChatServer) handleMessages(w http.ResponseWriter, r *http.Request) {
 		authorID, ok := requireAuth(w, r)
 		if !ok {
 			return
+		}
+		// A directory the client names must be one on THIS machine: a window
+		// on a laptop sending its own path to a gateway elsewhere used to be
+		// routed quietly to the gateway's scratch folder (until 2026-10-23).
+		if wd := strings.TrimSpace(req.Workdir); wd != "" {
+			if !filepath.IsAbs(wd) {
+				http.Error(w, `{"error":"workdir must be an absolute path on the gateway's machine"}`, http.StatusBadRequest)
+				return
+			}
+			if fi, err := os.Stat(wd); err != nil || !fi.IsDir() {
+				http.Error(w, `{"error":"no such directory on the gateway's machine: `+jsonSafe(wd)+`"}`, http.StatusBadRequest)
+				return
+			}
 		}
 
 		// Allow system:internal to specify sender_id (trusted agent tools)

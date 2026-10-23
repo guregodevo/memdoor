@@ -206,11 +206,18 @@ every one.`,
 			return resumeHeadless(r, limit, follow)
 		}
 		fmt.Printf("Resuming %q (%s, %d turns)\n", r.Title, humanSince(r.UpdatedAt), r.Turns)
+		// The directory the conversation was recorded in: on a gateway
+		// elsewhere it is that machine's, and the window resumes there.
+		resumeDir := ""
+		if _, local := localGatewayPort(); !local {
+			resumeDir = r.Dir
+		}
 		return runTUI(tuiOptions{
 			resumeChannel:   r.ChannelName,
 			resumeChannelID: r.ChannelID,
 			resumeTitle:     r.Title,
 			workspace:       r.Workspace,
+			dir:             resumeDir,
 		})
 	},
 }

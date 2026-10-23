@@ -3,7 +3,6 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -250,7 +249,7 @@ func (v judgedView) Body(r ToolRender) string {
 // it kept: "== path:2-9  (p=0.83)" from jgrep, "(p=0.80) path:1-38" from jread.
 // Paths are shown relative to the working directory.
 func judgedSummary(out string) (verdict string, places []string) {
-	cwd, _ := os.Getwd()
+	cwd := SessionDir()
 	rel := func(path string) string {
 		if cwd != "" && strings.HasPrefix(path, cwd+"/") {
 			return strings.TrimPrefix(path, cwd+"/")

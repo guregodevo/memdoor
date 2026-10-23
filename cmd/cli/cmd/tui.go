@@ -44,6 +44,9 @@ type tuiOptions struct {
 	resumeTitle     string
 	workspace       string
 	worktreePath    string
+	// dir is the project directory: on this machine the window moves there;
+	// on a gateway elsewhere it is that machine's directory (remote_fs.go).
+	dir string
 }
 
 var tuiCmd = &cobra.Command{
@@ -69,10 +72,11 @@ var tuiCmd = &cobra.Command{
 			fmt.Println(wt.finish())
 			return runErr
 		}
+		dir, _ := cmd.Flags().GetString("dir")
 		if ch, _ := cmd.Flags().GetString("channel"); ch != "" {
-			return runTUI(tuiOptions{resumeChannel: ch})
+			return runTUI(tuiOptions{resumeChannel: ch, dir: dir})
 		}
-		return runTUI(tuiOptions{})
+		return runTUI(tuiOptions{dir: dir})
 	},
 }
 
@@ -96,6 +100,24 @@ func runTUI(opts tuiOptions) error {
 		// A machine that never ran Memdoor is set up here, without a
 		// question; a key the shell holds reaches a gateway that started
 		// without it (tui_firstrun.go).
+		// THE PROJECT'S DIRECTORY. On this machine the window works where it
+		// was launched, or where --dir says. On a gateway elsewhere the
+		// project is on that machine: --dir names it there, it is checked
+		// there, and every read of it goes to the gateway (option 1,
+		// 2026-10-23). Before this the window sent its laptop directory and
+		// the gateway quietly worked in its scratch folder instead.
+		if _, local := localGatewayPort(); !local {
+			c := NewClient()
+			abs, derr := remoteProjectDir(c, opts.dir)
+			if derr != nil {
+				return derr
+			}
+			ui.SetSessionDir(abs)
+		} else if opts.dir != "" {
+			if err := os.Chdir(expandHomeDir(opts.dir)); err != nil {
+				return fmt.Errorf("--dir %s: %w", opts.dir, err)
+			}
+		}
 		if err := firstRunReady(); err != nil {
 			return err
 		}
@@ -166,16 +188,12 @@ func runTUI(opts tuiOptions) error {
 		// websocket is kept only for receiving the run's streamed events.
 		// Claude-CLI semantics: the coder works on the project the TUI was
 		// LAUNCHED from — capture cwd once and send it with every turn.
-		launchDir, _ := os.Getwd()
 		// The session's directory is READ PER TURN, not captured at launch:
-		// /dir re-roots a running session (os.Chdir) so a user who launched in
-		// the wrong folder points the agent elsewhere instead of relaunching.
-		curDir := func() string {
-			if d, err := os.Getwd(); err == nil {
-				return d
-			}
-			return launchDir
-		}
+		// /dir re-roots a running session (os.Chdir here, a directory on
+		// the gateway's machine when it is elsewhere) so a user who launched
+		// in the wrong folder points the agent elsewhere instead of
+		// relaunching. ui.SessionDir is the one truth for both.
+		curDir := ui.SessionDir
 		// One page per agent (ui/pages.go): each page has its own channel
 		// and its own poster bound to it. The first page is the coder's.
 		posterFor := tuiPoster(c, wsID, curDir)
@@ -185,6 +203,9 @@ func runTUI(opts tuiOptions) error {
 		// page's own channel and agent. The same wiring serves `memdoor
 		// remote`, the phone door with no window.
 		w := newTUIWiring(c, wsID, wsAddr, curDir, posterFor)
+		if ui.RemoteDir() {
+			w.fs = remoteFS{c}
+		}
 		pageConfig := w.pageConfig
 		newPage := func(agent string, page int) (ui.Model, error) {
 			fresh := "tui-" + agent + "-" + time.Now().Format("0102-150405")
@@ -301,6 +322,7 @@ func firstLine(text string) string {
 
 func init() {
 	tuiCmd.Flags().String("channel", "", "Rejoin an existing channel instead of starting a fresh conversation")
+	tuiCmd.Flags().String("dir", "", "the project directory: here by default; on a gateway elsewhere (--gateway), the directory on that machine")
 	tuiCmd.Flags().String("worktree", "", "Work in a git worktree of this repository (optionally named); your checkout is left alone. Untracked paths it needs to build (listed in .worktreeinclude) are linked in")
 	tuiCmd.Flags().Lookup("worktree").NoOptDefVal = "auto"
 	rootCmd.AddCommand(tuiCmd)

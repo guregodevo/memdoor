@@ -2,8 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -77,6 +75,11 @@ type PageConfig struct {
 	// runs inside one, so the websocket's messages are tagged with it.
 	Page  int
 	Paged bool
+	// FS is what the window reads of the project (sessiondir.go): nil reads
+	// this machine; the command wires the gateway's /api/fs when the project
+	// is on the gateway's machine, and Dir is that directory there.
+	FS  FS
+	Dir string
 }
 
 // NewPage is a page for one agent (pages.go): its conversation, its look,
@@ -86,6 +89,9 @@ type PageConfig struct {
 func NewPage(cfg PageConfig) Model {
 	if cfg.Agent == "" {
 		cfg.Agent = FirstAgent()
+	}
+	if cfg.Dir != "" {
+		SetSessionDir(cfg.Dir)
 	}
 	// Create textarea for input
 	ti := textarea.New()
@@ -130,6 +136,7 @@ func NewPage(cfg PageConfig) Model {
 		channelID:      cfg.ChannelID,
 		codeAgent:      cfg.Agent,
 		poster:         cfg.Poster,
+		fs:             cfg.FS,
 		usage:          cfg.Ops.Usage,
 		remote:         cfg.Ops.Remote,
 		share:          cfg.Ops.Share,
@@ -317,13 +324,7 @@ func (m Model) scopeLabel() string {
 // dirLabel is the base name of the directory this conversation works in.
 // /dir re-roots a session with os.Chdir, so the process directory is always
 // the truth about where the next turn will run.
-func (m Model) dirLabel() string {
-	d, err := os.Getwd()
-	if err != nil || d == "" {
-		return ""
-	}
-	return filepath.Base(d)
-}
+func (m Model) dirLabel() string { return dirBase() }
 
 // noteResultMsg carries the outcome of the async ops (/model, /usage)
 // that just report a message.

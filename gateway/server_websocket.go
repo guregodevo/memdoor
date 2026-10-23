@@ -491,10 +491,15 @@ func (s *Server) handleMessage(c *Client, msg *Message) {
 		// The client's launch directory (Claude-CLI semantics): the coder's
 		// confinement roots at the project the TUI was started from. Absolute,
 		// existing directories only — anything else falls back to the default.
-		if wd, _ := msg.Data["workdir"].(string); wd != "" && filepath.IsAbs(wd) {
-			if fi, err := os.Stat(wd); err == nil && fi.IsDir() {
-				jobCtx = context.WithValue(jobCtx, sharedctx.WorkdirKey, wd)
+		if wd, _ := msg.Data["workdir"].(string); wd != "" {
+			// A directory the client names must be one on THIS machine; a
+			// window elsewhere naming its own was quietly routed to the
+			// scratch folder until 2026-10-23.
+			if fi, err := os.Stat(wd); !filepath.IsAbs(wd) || err != nil || !fi.IsDir() {
+				c.sendMessage(Message{Type: "error", Error: "no such directory on the gateway's machine: " + wd})
+				return
 			}
+			jobCtx = context.WithValue(jobCtx, sharedctx.WorkdirKey, wd)
 		}
 
 		// A TUI chat turn runs the coding agent (the "coder" buddy) by default:

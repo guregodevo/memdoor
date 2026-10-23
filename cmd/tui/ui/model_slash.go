@@ -188,18 +188,41 @@ Your current session history is preserved on disk.`
 
 	case "/dir":
 		// Re-root the session on another directory without relaunching. The
-		// poster sends the PROCESS directory with every turn, so os.Chdir is
-		// the whole switch: the agent's confinement, cuts and previews follow.
-		// Live 2026-09-02: a session launched one folder away from the media
-		// had to be quit and relaunched to reach it.
-		cwd, _ := os.Getwd()
+		// poster sends the session's directory with every turn (SessionDir):
+		// on this machine os.Chdir is the whole switch, the agent's
+		// confinement, cuts and previews follow (live 2026-09-02: a session
+		// launched one folder away from the media had to be quit and
+		// relaunched); when the project is on the gateway's machine the path
+		// is checked there and kept as the session's directory.
+		cwd := SessionDir()
 		if len(parts) < 2 {
+			where := ""
+			if RemoteDir() {
+				where = " (on the gateway's machine)"
+			}
 			m.messages = append(m.messages, Message{Role: "assistant",
-				Content:   "Session directory: " + cwd + "\nUsage: /dir <path> — the agent's next turn works there (its files, cuts and previews land in it)",
+				Content:   "Session directory: " + cwd + where + "\nUsage: /dir <path> — the agent's next turn works there (its files, cuts and previews land in it)",
 				Timestamp: time.Now()})
 			return "", true
 		}
 		dir := expandHome(parts[1])
+		if RemoteDir() {
+			abs, isDir, exists, err := m.fsOf().Stat(parts[1])
+			switch {
+			case err != nil:
+				m.messages = append(m.messages, Message{Role: "assistant",
+					Content: fmt.Sprintf("Cannot check %s on the gateway's machine: %v", parts[1], err), Timestamp: time.Now()})
+			case !exists || !isDir:
+				m.messages = append(m.messages, Message{Role: "assistant",
+					Content: fmt.Sprintf("Cannot use %s: not a directory on the gateway's machine", abs), Timestamp: time.Now()})
+			default:
+				SetSessionDir(abs)
+				m.fileList, m.filesPanel = nil, nil
+				m.messages = append(m.messages, Message{Role: "assistant",
+					Content: "Session directory is now " + abs + " on the gateway's machine — the agent's next turn works there.", Timestamp: time.Now()})
+			}
+			return "", true
+		}
 		if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
 			m.messages = append(m.messages, Message{Role: "assistant",
 				Content: fmt.Sprintf("Cannot use %s: not a directory", dir), Timestamp: time.Now()})
@@ -211,6 +234,7 @@ Your current session history is preserved on disk.`
 			return "", true
 		}
 		now, _ := os.Getwd()
+		m.fileList, m.filesPanel = nil, nil
 		m.messages = append(m.messages, Message{Role: "assistant",
 			Content: "Session directory is now " + now + " — the agent's next turn works there.", Timestamp: time.Now()})
 		return "", true

@@ -29,6 +29,7 @@ type Model struct {
 	workspace string
 	channelID string
 	poster    func(agent, workspace, text, mode string) error
+	fs        FS // what the window reads of the project; nil = this machine (sessiondir.go)
 	// Network-effect ops (injected by cmd/cli, which owns the authed client).
 	// Model ops (injected by cmd/cli).
 	statusOp           func() Status                                  // footer status: where you are, what is thinking, what it costs
@@ -304,7 +305,7 @@ func loadSlashCommands(agent string) []string {
 	// expands "/skill:name" — see gateway slash-skills). The prefix keeps them
 	// from colliding with built-ins/custom commands and makes the dropdown
 	// self-documenting; includes skills the coder wrote itself.
-	wd, _ := os.Getwd()
+	wd := SessionDir()
 	for _, name := range ListedSkills(tools.AvailableSkillNames(wd)) {
 		commands = append(commands, "/skill:"+name)
 	}

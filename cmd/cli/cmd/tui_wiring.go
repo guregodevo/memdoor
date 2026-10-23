@@ -24,6 +24,7 @@ type tuiWiring struct {
 	decisionsOff bool
 	curDir       func() string
 	posterFor    func(channelID, channelName string) func(agent, w, text, mode string) error
+	fs           ui.FS // the project's reads when it is on the gateway's machine; nil = this machine
 }
 
 func newTUIWiring(c *Client, wsID, wsAddr string, curDir func() string,
@@ -83,7 +84,7 @@ func (w *tuiWiring) baseConfig(agent, chID, chName string, page int) ui.PageConf
 	c, wsID, curDir := w.c, w.wsID, w.curDir
 	return ui.PageConfig{
 		GatewayAddr: w.wsAddr, Workspace: wsID, ChannelID: chID, Token: c.token, Plan: w.plan, DecisionsOff: w.decisionsOff,
-		Agent: agent, Poster: w.posterFor(chID, chName), Page: page, Paged: true,
+		Agent: agent, Poster: w.posterFor(chID, chName), Page: page, Paged: true, FS: w.fs,
 		Ops: ui.Ops{
 			// /model: list + pin the model this conversation runs on.
 			Usage:          tuiUsage,

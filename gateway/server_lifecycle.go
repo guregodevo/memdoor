@@ -427,6 +427,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	http.Handle("/api/agents", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleAgents))))
 	http.Handle("/api/files/", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleFileByID))))          // File download (supports ?token= for img tags)
 	http.Handle("/api/files", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleFileUpload))))         // File upload (multipart)
+	http.Handle("/api/fs", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleFS))))                    // The project's files for a window on another machine (stat, list, read)
 	http.Handle("/api/cron-history", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleCronHistory)))) // Cron execution history (GET)
 	http.Handle("/api/cron-stats", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleCronStats))))     // Cron job statistics (GET)
 	http.Handle("/api/cron/", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleCronJob))))            // Individual cron job (GET/DELETE)

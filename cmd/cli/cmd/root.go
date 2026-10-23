@@ -118,9 +118,11 @@ for your yes. Pro (memdoor login) adds the phone and the hosted workflow state.`
 }
 
 func init() {
+	rootCmd.Flags().String("dir", "", "the project directory: here by default; on a gateway elsewhere (--gateway), the directory on that machine")
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
-			return runTUI(tuiOptions{})
+			dir, _ := cmd.Flags().GetString("dir")
+			return runTUI(tuiOptions{dir: dir})
 		}
 		return cmd.Help()
 	}

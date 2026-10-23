@@ -69,23 +69,23 @@ From your laptop:
 
 ```bash
 memdoor auth login-direct --gateway <box> --email you@… --password …   # once; the credentials are kept per gateway
-memdoor --gateway <box> run --dir /srv/proj "run the tests"            # a turn there, in that box's checkout
+memdoor --gateway <box> --dir /srv/proj                                  # the window, on that box's checkout
+memdoor --gateway <box> run --dir /srv/proj "run the tests"            # a headless turn there
 memdoor --gateway <box> workflow run release                            # a workflow there; it runs with no one watching
-memdoor --gateway <box> resume --last                                   # the window on that machine's last run
+memdoor --gateway <box> resume --last                                   # the window on that machine's last run, in its directory
 ```
 
 The run happens on that machine, in that machine's project, on that
-gateway's key; your terminal is the door. A window you open on the box
+gateway's key; your terminal is the door. The window's files panel (ctrl+f),
+the @-mentions and `/dir` read that machine's directory through the gateway,
+so what you see is what the agent sees. A directory the gateway does not have
+is refused by name, never quietly replaced. A window you open on the box
 itself (over ssh, in tmux) can print a `/remote` link: `memdoor join <link>`
-opens it in your laptop's terminal and the same link opens it on your phone,
-with the box doing the work. Workflows and schedules on that gateway need no
-window at all.
+opens it in your laptop's terminal and the same link opens it on your phone.
+Workflows and schedules on that gateway need no window at all.
 
-What is not there yet: a window on your laptop that works first-class on the
-box's files (the files panel reads your laptop's disk, and `/dir` checks your
-laptop's paths), and a gate answered from the phone when no window is open on
-the box. Both are on the way; `run --dir`, `workflow run` and `join` are the
-doors today.
+What is not there yet: a gate answered from the phone when no window is open
+on the box, and an image pasted into a window whose project is elsewhere.
 
 ## What is on it
 

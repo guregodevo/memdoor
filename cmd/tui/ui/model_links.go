@@ -45,7 +45,8 @@ func linkifyLine(line string) string {
 // linkifyBareFiles links file names relative to the process directory —
 // the session's directory, which /dir re-roots — when they exist.
 func linkifyBareFiles(line string) string {
-	if !strings.Contains(line, ".") {
+	if !strings.Contains(line, ".") || RemoteDir() {
+		// A file on another machine is not a file:// link on this one.
 		return line
 	}
 	cwd, err := os.Getwd()

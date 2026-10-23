@@ -85,8 +85,8 @@ func (m *Model) spin(msg tea.Msg) tea.Cmd {
 // titleDirName is the working directory's base name, or "memdoor" when there
 // is nothing useful to say (the root, or a directory that cannot be read).
 func titleDirName() string {
-	d, err := os.Getwd()
-	if err != nil || d == "" {
+	d := SessionDir()
+	if d == "" {
 		return "memdoor"
 	}
 	base := filepath.Base(d)

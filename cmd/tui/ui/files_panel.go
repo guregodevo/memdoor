@@ -66,13 +66,18 @@ func (m *Model) filesCommand(args []string) tea.Cmd {
 
 // openFilesPanel opens (or refreshes) the panel on the working directory.
 func (m *Model) openFilesPanel(query string) {
-	wd, err := os.Getwd()
-	if err != nil {
+	wd := SessionDir()
+	if wd == "" {
 		m.note("The working directory could not be read.")
 		return
 	}
 	if m.fileList == nil || time.Since(m.fileListAt) > fileListTTL {
-		m.fileList = loadFileList(wd)
+		files, err := m.fsOf().List(wd)
+		if err != nil {
+			m.note("The project's files could not be listed: " + err.Error())
+			return
+		}
+		m.fileList = files
 		m.fileListAt = time.Now()
 	}
 	p := &filesPanelState{root: wd, all: m.fileList, touched: m.filesTouched(), query: query}
@@ -224,56 +229,10 @@ func (m *Model) filesLoadPreview() {
 		return
 	}
 	p.previewPath, p.previewScroll, p.preview = sel, 0, nil
-	full := filepath.Join(p.root, filepath.FromSlash(sel))
-	if strings.HasSuffix(sel, "/") {
-		entries, err := os.ReadDir(full)
-		if err != nil {
-			p.preview = []string{err.Error()}
-			return
-		}
-		for _, e := range entries {
-			name := e.Name()
-			if e.IsDir() {
-				name += "/"
-			}
-			p.preview = append(p.preview, name)
-		}
-		return
-	}
-	if p.previewDiff {
-		rel := filepath.FromSlash(sel)
-		out, _ := exec.Command("git", "-C", p.root, "diff", "--", rel).CombinedOutput()
-		if strings.TrimSpace(string(out)) == "" {
-			out, _ = exec.Command("git", "-C", p.root, "diff", "--cached", "--", rel).CombinedOutput()
-		}
-		if strings.TrimSpace(string(out)) == "" {
-			// A file the turn created is untracked: git diff says nothing;
-			// against /dev/null it is the whole file, added.
-			if exec.Command("git", "-C", p.root, "ls-files", "--error-unmatch", rel).Run() != nil {
-				out, _ = exec.Command("git", "-C", p.root, "diff", "--no-index", "--", os.DevNull, rel).CombinedOutput()
-			}
-		}
-		if strings.TrimSpace(string(out)) == "" {
-			p.preview = []string{"(no uncommitted change in this file)"}
-			return
-		}
-		p.preview = strings.Split(strings.TrimRight(string(out), "\n"), "\n")
-		return
-	}
-	b, err := os.ReadFile(full)
+	lines, err := m.fsOf().Preview(p.root, sel, p.previewDiff)
 	if err != nil {
 		p.preview = []string{err.Error()}
 		return
-	}
-	if len(b) > 512*1024 {
-		b = b[:512*1024]
-	}
-	lines := strings.Split(string(b), "\n")
-	if len(lines) > filesPreviewLines*4 {
-		lines = append(lines[:filesPreviewLines*4], fmt.Sprintf("… %d more lines", len(lines)-filesPreviewLines*4))
-	}
-	for i, l := range lines {
-		lines[i] = fmt.Sprintf("%4d  %s", i+1, strings.ReplaceAll(l, "\t", "    "))
 	}
 	p.preview = lines
 }

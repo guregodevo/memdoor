@@ -3,7 +3,6 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -391,10 +390,7 @@ func (a *WebSocketAdapter) handleTodoEvent(msg protocol.Message) {
 
 // launchDir is the directory this window was started from: the project the
 // coder works on, and the one whose workflow runs it shows.
-func launchDir() string {
-	wd, _ := os.Getwd()
-	return wd
-}
+func launchDir() string { return SessionDir() }
 
 // sameDir compares two directories after resolving symlinks (/tmp is
 // /private/tmp on macOS).

@@ -220,7 +220,29 @@ func soleWorkspace() (string, bool) {
 	if len(slugs) == 1 {
 		return slugs[0], true
 	}
+	// A gateway on another machine keeps its workspaces there, not under
+	// this home: when it has exactly one, /api/setup/status names it (the
+	// same answer memdoor login and the first run pin from), and a laptop
+	// that never saw that box still knows which workspace a turn belongs to
+	// (option 1, 2026-10-23: `memdoor --gateway <box> run` said "workspace
+	// is required").
+	if _, local := localGatewayPort(); !local {
+		if slug := gatewaySoleWorkspace(); slug != "" {
+			return slug, true
+		}
+	}
 	return "", false
+}
+
+// gatewaySoleWorkspace is the configured gateway's only workspace, or "".
+func gatewaySoleWorkspace() string {
+	var st struct {
+		Slug string `json:"workspace_slug"`
+	}
+	if err := NewClient().GetJSON("/api/setup/status", &st); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(st.Slug)
 }
 
 // noWorkspaceErrorMessage builds the actionable error returned when a
