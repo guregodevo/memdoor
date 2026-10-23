@@ -204,8 +204,8 @@ export function CoderLandingPage() {
               Your daemon agents on <span className="text-emerald-400">every door</span>
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
-              Start it from CI, a schedule or a shell. Finish it from your phone or a window. It proves each
-              step and stops where only you decide.
+              Start it from CI, a schedule or a shell. Finish it from your phone or a window. Each step is
+              checked by its output, and the run stops where only you decide.
             </p>
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />

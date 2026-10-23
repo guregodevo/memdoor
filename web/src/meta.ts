@@ -8,7 +8,7 @@ const SITE = 'https://memdoor.ai';
 export const HOME_META = {
   title: 'Memdoor — Your daemon agents on every door',
   description:
-    'The coding agent for durable workflows, open source, on your own API key: start a run from CI, a schedule or a shell; finish it from your phone or a window. One gateway, every door. Steps proved, gates, resume. Free.',
+    'Your daemon agents on every door: a coding agent whose runs live on a gateway you own, and whose multi-step jobs are files in the repo. Start a run from CI, a schedule or a shell; finish it from your phone or a window. Steps checked by their output, gates, resume. Open source, on your own API key. Free.',
 };
 
 function setTag(selector: string, attr: string, value: string, create: () => HTMLElement) {
