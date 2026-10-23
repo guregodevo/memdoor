@@ -5,14 +5,14 @@ import (
 	"sort"
 )
 
-// listenAddresses is where another device could reach a gateway bound to
+// ListenAddresses is where another device could reach a gateway bound to
 // host: nothing for localhost, the host itself when it is one address, and
 // this machine's own addresses when it listens on every interface, the
 // private network ones first (a phone on the same Wi-Fi), then a VPN's
 // (Tailscale's 100.64/10), then the rest. A window puts a /remote link on
 // the first (2026-10-23, Greg: "/remote should not go through memdoor.ai
 // anymore unless it's needed").
-func listenAddresses(host string) []string {
+func ListenAddresses(host string) []string {
 	switch host {
 	case "", "0.0.0.0", "::", "[::]":
 		addrs, err := net.InterfaceAddrs()
@@ -37,6 +37,16 @@ func listenAddresses(host string) []string {
 		return nil
 	}
 	return []string{host}
+}
+
+// DialHost is the address to dial a gateway bound to host from its own
+// machine: loopback when it binds every interface, else the host itself.
+func DialHost(host string) string {
+	switch host {
+	case "", "0.0.0.0", "::", "[::]":
+		return "127.0.0.1"
+	}
+	return host
 }
 
 // orderAddresses keeps the addresses a phone could dial, in the order a

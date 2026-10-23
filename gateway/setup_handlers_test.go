@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -32,6 +34,32 @@ func TestSetupUsernameAlwaysValidates(t *testing.T) {
 			if !(ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '-' || ch == '_') {
 				t.Errorf("UsernameFromEmail(%q) = %q, which validation refuses", tc.email, got)
 			}
+		}
+	}
+}
+
+// The first account is made on the gateway's machine alone: a request from
+// the network, or one that came through a proxy, is refused before anything
+// is read (the gateway listens on the network by default, 2026-10-23).
+func TestSetupIsForTheGatewaysOwnMachineOnly(t *testing.T) {
+	s := &Server{}
+	for _, c := range []struct{ addr, real string }{{"10.0.0.5:4242", ""}, {"127.0.0.1:4242", "203.0.113.9"}} {
+		req := httptest.NewRequest(http.MethodPost, "/api/setup", strings.NewReader(`{}`))
+		req.RemoteAddr = c.addr
+		if c.real != "" {
+			req.Header.Set("X-Real-IP", c.real)
+		}
+		rec := httptest.NewRecorder()
+		s.handleSetup(rec, req)
+		if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "gateway's machine itself") {
+			t.Fatalf("from %s (X-Real-IP %q): %d %s", c.addr, c.real, rec.Code, rec.Body.String())
+		}
+	}
+	for _, addr := range []string{"127.0.0.1:4242", "[::1]:4242"} {
+		req := httptest.NewRequest(http.MethodPost, "/api/setup", nil)
+		req.RemoteAddr = addr
+		if !fromThisMachine(req) {
+			t.Fatalf("%s is this machine", addr)
 		}
 	}
 }

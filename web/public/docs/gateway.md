@@ -10,9 +10,11 @@ gateway, which is why a run started by one can be finished from another.
 A background process on the machine the run belongs to: your laptop, or a
 CI runner. It holds the conversations, runs the turns and their tools in
 your project, keeps the schedules and the workflow runs, and talks to the
-model on your key. It listens on `localhost:18789` and nothing else reaches
-it. Your files never leave the machine; what goes out is the request to the
-provider you chose.
+model on your key. It listens on port 18789, on this machine and on its
+network, so your phone has a door of its own; every door takes a token, and
+the first account can only be made on the machine itself.
+`MEMDOOR_HOST=localhost` keeps it to this machine. Your files never leave
+the machine; what goes out is the request to the provider you chose.
 
 ```
   window · memdoor run · cron · editor · phone ──► the gateway on your machine
@@ -59,9 +61,10 @@ memdoor gateway install                      # systemd --user on Linux, launchd 
 memdoor gateway status
 ```
 
-`gateway install --host 0.0.0.0` listens for your laptop. The gateway speaks
-plain HTTP, so keep that box behind ssh, Tailscale or a reverse proxy; it
-says so when it starts. On Linux, `loginctl enable-linger $USER` keeps the
+The gateway listens on the box's network, for your laptop and your phone.
+It speaks plain HTTP, so trust that network, or keep the box behind ssh,
+Tailscale or a reverse proxy; `--host localhost` keeps it to the box alone,
+and the ssh door still reaches it. On Linux, `loginctl enable-linger $USER` keeps the
 user service running when you are not logged in; the install prints the line
 when it is needed. Removing it is `memdoor gateway uninstall`; the data stays.
 
@@ -102,10 +105,8 @@ prints the same link from a shell and holds the conversation on it;
 `memdoor join <link>` opens it in another terminal. The key after `#` never
 leaves the page and every frame is sealed with it, so the link works on the
 box's plain http. Through the ssh door the link is on the box's name, with
-the gateway's port, as long as that gateway listens on the network
-(`gateway install --host 0.0.0.0`); a gateway that listens on localhost
-alone has no door for a phone, and `/remote` then goes through memdoor.ai
-and says so.
+the gateway's port. A gateway kept to localhost has no door for a phone,
+and `/remote` then goes through memdoor.ai and says so.
 
 What is not there yet: a gate answered from the phone when no window is open
 on the box, and an image pasted into a window whose project is elsewhere.

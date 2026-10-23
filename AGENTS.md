@@ -24,7 +24,10 @@ grep -r "duplicate_code" .    # Search before coding
 # workflows (local cron schedules included) on your own machine and key, and EVERY DOOR onto a
 # gateway of your own: `memdoor gateway install` on a box, the window on a laptop (--gateway
 # <box> --dir), ssh (--gateway ssh://box), the phone on the box's own address (/remote there
-# needs no account: Greg "no pro story", "a phone can connect to daemon"). Pro = what memdoor.ai
+# needs no account: Greg "no pro story", "a phone can connect to daemon"). THE GATEWAY BINDS THE
+# NETWORK BY DEFAULT (0.0.0.0, Greg 2026-10-23 "default to be the network"): /remote links live on
+# the gateway's own address, memdoor.ai only when it is kept to localhost (MEMDOOR_HOST=localhost);
+# the first account is made from the machine itself only (gateway/setup_handlers.go). Pro = what memdoor.ai
 # hosts: the relay for a gateway behind a laptop's NAT, the hosted workflow state (mario-state,
 # 2026-10-05), and next the box itself (Greg: "the pro story will be the self host").
 # A seat NEVER supplies a model key (Greg 2026-10-04) — always the user's key;

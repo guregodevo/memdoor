@@ -75,6 +75,17 @@ company's tooling is never copied onto disk. The gateway probes a provider
 (its model list, one small call) before keeping it, and contacts a provider
 you added only when a model of its is pinned or its list is read.
 
+## Where the gateway listens
+
+On this machine and on its network, port 18789, since 2026-10-23: a phone
+on the same network reaches a `/remote` link on the gateway itself, with no
+relay in between. Every door takes a token; `/health` and the sealed relay
+pages are the only unauthenticated ones; the first account can only be made
+from the machine itself (a request from the network is refused). It speaks
+plain HTTP, so it belongs on a network you trust, or behind ssh, Tailscale or
+a reverse proxy. `MEMDOOR_HOST=localhost` (or `--host localhost`) keeps it to
+this machine, and a company preset can set that.
+
 ## No "yolo" mode
 
 Memdoor's default is always-auto. `MEMDOOR_APPROVE=changes` (or the

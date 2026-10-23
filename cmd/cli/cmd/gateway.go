@@ -75,12 +75,15 @@ var gatewayCmd = &cobra.Command{
 		// One-line banner so the user sees the URL immediately and most
 		// terminals auto-link it. Below this, slog prints structured
 		// startup logs from gateway.Start.
-		fmt.Printf("Memdoor gateway → http://%s:%d\n", gatewayHost, gatewayPort)
+		fmt.Printf("Memdoor gateway → http://%s:%d\n", gateway.DialHost(gatewayHost), gatewayPort)
 		if !isLoopbackHost(gatewayHost) {
-			// The gateway speaks plain HTTP. Open to a network it is a
-			// token-protected door with no lock on the wire: say so once,
-			// where the person who typed --host reads it.
-			fmt.Printf("  listening beyond this machine without TLS: keep %s behind ssh, Tailscale or a reverse proxy\n", gatewayHost)
+			// The network is the default (Greg, 2026-10-23: "default to be
+			// the network"): a phone reaches the gateway directly. It
+			// speaks plain HTTP, every door takes a token, and the first
+			// account is made from this machine alone; say where it is
+			// reachable and what keeps it to this machine.
+			fmt.Printf("  also on this network, for your phone: %s\n", networkURLs(gatewayHost, gatewayPort))
+			fmt.Printf("  plain HTTP, every door token-gated: trust that network, or MEMDOOR_HOST=localhost keeps it to this machine\n")
 		}
 		err := gateway.Start(ctx, gatewayHost, gatewayPort, "", verbose)
 		// Mid-flight EADDRINUSE: rare (probe above is the common case)
@@ -111,7 +114,7 @@ var gatewayCmd = &cobra.Command{
 // returns "no" within the install script's patience.
 func probeGatewayHealth(host string, port int) (bool, string) {
 	client := &http.Client{Timeout: 1 * time.Second}
-	url := fmt.Sprintf("http://%s:%d/health", host, port)
+	url := fmt.Sprintf("http://%s:%d/health", gateway.DialHost(host), port)
 	resp, err := client.Get(url)
 	if err != nil {
 		return false, ""
@@ -230,9 +233,9 @@ var gatewayStatusCmd = &cobra.Command{
 
 func init() {
 	gatewayCmd.Flags().IntVar(&gatewayPort, "port", 18789, "Server port")
-	gatewayCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", "localhost"), "The address it binds (or MEMDOOR_HOST): localhost for this machine only, 0.0.0.0 for the network, which gives a phone a direct /remote door")
+	gatewayCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", defaultBindHost), "The address it binds (or MEMDOOR_HOST): 0.0.0.0 for this machine and its network, so a phone reaches it; localhost for this machine only")
 	gatewayInstallCmd.Flags().IntVar(&gatewayPort, "port", 18789, "the port the service listens on")
-	gatewayInstallCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", "localhost"), "the address it binds (or MEMDOOR_HOST): localhost for this machine only, 0.0.0.0 for the network")
+	gatewayInstallCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", defaultBindHost), "the address it binds (or MEMDOOR_HOST): 0.0.0.0 for this machine and its network, localhost for this machine only")
 	gatewayInstallCmd.Flags().Bool("print", false, "print the unit instead of installing it")
 	gatewayCmd.AddCommand(gatewayInstallCmd, gatewayUninstallCmd, gatewayStatusCmd)
 	rootCmd.AddCommand(gatewayCmd)
@@ -256,4 +259,21 @@ func keepCrashOutput() {
 	}
 	fmt.Fprintf(f, "\n=== gateway %s started %s (pid %d): a crash below is this run's ===\n", Version, time.Now().Format(time.RFC3339), os.Getpid())
 	_ = debug.SetCrashOutput(f, debug.CrashOptions{})
+}
+
+// defaultBindHost is where the gateway listens unless told otherwise: this
+// machine and its network, so a phone has a door of its own (2026-10-23).
+const defaultBindHost = "0.0.0.0"
+
+// networkURLs names the gateway on the network, for the start-up line.
+func networkURLs(host string, port int) string {
+	addrs := gateway.ListenAddresses(host)
+	if len(addrs) == 0 {
+		return fmt.Sprintf("http://%s:%d", host, port)
+	}
+	out := make([]string, 0, len(addrs))
+	for _, a := range addrs {
+		out = append(out, fmt.Sprintf("http://%s:%d", a, port))
+	}
+	return strings.Join(out, "  ")
 }

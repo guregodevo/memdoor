@@ -143,8 +143,9 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	}
 
 	server.listenHost = host
-	// Set gateway base URL for agent tools API calls
-	tools.SetGatewayBaseURL(host, port)
+	// Set gateway base URL for agent tools API calls: a bind to every
+	// interface is dialled on loopback.
+	tools.SetGatewayBaseURL(DialHost(host), port)
 
 	// Create ChatServer for Slack-like UI with DDD architecture
 	buddyRepo := server.repoFactory.Buddies()

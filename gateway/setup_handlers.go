@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"memdoor/pkg/auth"
+	"net"
 	"net/http"
 	"regexp"
 	"strings"
@@ -85,6 +86,15 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	// The first account is made from the gateway's own machine, never over
+	// the network: the gateway listens on the network by default
+	// (2026-10-23) and a fresh one must not be claimed by whoever reaches
+	// it first.
+	if !fromThisMachine(r) {
+		http.Error(w, `{"error": "the first account is created on the gateway's machine itself: run memdoor there"}`, http.StatusForbidden)
 		return
 	}
 
@@ -253,4 +263,19 @@ func soleWorkspaceRow(ctx context.Context, db *sql.DB) (name, slug string) {
 	}
 	_ = db.QueryRowContext(ctx, `SELECT name, slug FROM workspaces LIMIT 1`).Scan(&name, &slug)
 	return name, slug
+}
+
+// fromThisMachine reports whether the request came from the gateway's own
+// machine: a loopback peer, and no proxy in front (X-Real-IP, which nginx
+// sets on memdoor.ai, names the real peer).
+func fromThisMachine(r *http.Request) bool {
+	if strings.TrimSpace(r.Header.Get("X-Real-IP")) != "" {
+		return false
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	ip := net.ParseIP(strings.Trim(host, "[]"))
+	return ip != nil && ip.IsLoopback()
 }
