@@ -236,7 +236,7 @@ func installService(port int, host string, print bool) error {
 		}
 		fmt.Printf("  ✓ loaded %s (launchd, runs at login, restarts if it stops)\n", launchdLabel)
 	}
-	if waitForGateway(20 * time.Second) {
+	if waitForGatewayAt(host, port, 20*time.Second) {
 		fmt.Printf("  ✓ gateway answering on %s:%d\n", host, port)
 	} else {
 		fmt.Printf("  ⚠ the gateway has not answered on %s:%d yet — see %s\n", host, port, shared.MemdoorHome("gateway.log"))
@@ -346,6 +346,26 @@ func stopPidFileGateway() {
 		_ = p.Release()
 	}
 	_ = os.Remove(shared.MemdoorHome(gatewayPidFile))
+}
+
+// waitForGatewayAt polls the service's own host and port until a Memdoor
+// gateway answers there or the clock runs out. The configured address
+// (--gateway, MEMDOOR_GATEWAY) can name another port: on the CI runners the
+// install reported "not answered yet" on :18799 while polling :18789
+// (2026-10-23), one line before status showed it answering.
+func waitForGatewayAt(host string, port int, d time.Duration) bool {
+	probeHost := host
+	if probeHost == "0.0.0.0" || probeHost == "::" || probeHost == "" {
+		probeHost = "127.0.0.1"
+	}
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		if running, _ := probeGatewayHealth(probeHost, port); running {
+			return true
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return false
 }
 
 // waitForGateway polls the configured gateway until it answers or the clock
