@@ -58,6 +58,15 @@ Examples:
 		fmt.Println("Memdoor uninstaller")
 		fmt.Println()
 
+		// 0. A gateway the service manager owns is stopped and unregistered
+		//    there, or it would come back after the binary is gone.
+		if serviceInstalled() {
+			fmt.Println("→ Gateway service installed. Stopping and removing it...")
+			if err := uninstallService(); err != nil {
+				fmt.Fprintf(os.Stderr, "  ⚠ %v (continuing)\n", err)
+			}
+		}
+
 		// 1. Stop the gateway gracefully.
 		gatewayPID := findProcessOnPort(18789)
 		if gatewayPID > 0 {

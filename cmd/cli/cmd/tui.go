@@ -48,7 +48,7 @@ type tuiOptions struct {
 
 var tuiCmd = &cobra.Command{
 	Use:   "tui",
-	Short: "Launch the Terminal UI",
+	Short: "The window onto the gateway, in this directory (the bare `memdoor` opens it too)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// --worktree: the session runs in its own git worktree (worktree.go),
 		// and the window says where the work is when it closes.

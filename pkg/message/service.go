@@ -939,7 +939,13 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 
 	// Route to appropriate executor based on agent's execution type
 	var result *platform.ExecutionResult
-	if buddy.ExecutionType == "remote" && s.remoteExecutor != nil {
+	if buddy.ExecutionType == "remote" && s.remoteExecutor != nil && buddy.RemoteConfig == nil {
+		// A remote agent with no endpoint is misconfigured, not local: say so
+		// instead of reading the missing config (it was a nil dereference
+		// here until 2026-10-23, reachable through an update that set the
+		// execution type alone).
+		err = fmt.Errorf("remote agent %q has no remote configuration (endpoint, model)", buddy.Name)
+	} else if buddy.ExecutionType == "remote" && s.remoteExecutor != nil {
 		// Remote agent execution (OpenAI-compatible endpoint)
 		logger.Info("🔴 ROUTING TO REMOTE EXECUTOR",
 			slog.String("agent_id", agentID.String()),

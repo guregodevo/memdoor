@@ -171,13 +171,33 @@ Generated from the binary's `--help` by `make cli-index` (39 top-level commands)
 `auth`, `billing`, `channels`, `chrome`, `cron`, `messages`, `sessions`, `users`. A command that appears here
 and nowhere else in this file is documented by its own `memdoor <command> --help`.
 
-**Workspace & collaboration**
+**The gateway, the daemon that owns the work**
 
-- `account` — Sign in with your email (a code arrives, you type it)
-  - `login` — Sign in: a code is emailed, type it here (short: memdoor login)
-  - `logout` — Sign out of memdoor.ai on this Mac (the engine stays signed in)
-  - `status` — Who is signed in on this Mac, and what the seat is
-  - `subscribe` — Subscribe to Pro: remote control and the hosted workflow state, always on your own key; $10 a month
+- `doctor` — Is the gateway up and healthy, and what this machine is missing
+- `gateway` — The gateway in the foreground; install, status and uninstall run it as a service
+  - `install` — Run the gateway as a service on this machine: up at boot, restarted if it stops, no root (systemd --user, launchd)
+  - `status` — Is the gateway up, which version, and who manages it
+  - `uninstall` — Stop the gateway service and remove its unit (the data stays)
+- `logs` — What the gateway logged: query, errors, since when
+  - `errors` — Show recent errors
+  - `prune` — Delete old log events and reclaim disk space
+  - `query` — Query log events
+  - `session` — Show session timeline
+  - `stats` — Show log statistics
+  - `trace` — Trace a log event
+
+**Doors onto it**
+
+- `acp` — Runs Memdoor as an Agent Client Protocol agent on stdin/stdout, for an
+- `conversations` — List recent conversations (what `memdoor resume` picks from)
+- `join` — Open a link that /remote printed on another computer, in this terminal
+- `remote` — memdoor remote <id>        print the link on stdout and hold the conversation on the relay
+- `resume` — Resume a previous conversation.
+- `run` — Run one coder turn on this project with no window.
+- `tui` — The window onto the gateway, in this directory (the bare `memdoor` opens it too)
+
+**What it runs**
+
 - `agent` — Manage agents and send messages
   - `add` — Add a new agent
   - `delete` — Delete an agent
@@ -185,6 +205,48 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `sessions` — List agent sessions
   - `show` — Show agent details
   - `update` — Update an agent's configuration
+- `guards` — The rules that keep the agent out of what it must not touch.
+  - `add` — Add a rule
+  - `clear` — Remove every rule
+  - `remove` — Remove rule n (the number `memdoor guards` shows)
+- `mcp` — The MCP servers the coder can use, for the project in this directory.
+  - `add` — Add a server; it is tested at once, and signed in to if it asks
+  - `login` — Sign in to a server (OAuth, in your browser)
+  - `logout` — Forget a server's sign-in
+  - `off` — Turn a server off
+  - `on` — Turn a server on
+  - `remove` — Delete a server from its file
+  - `search` — Find servers in the official MCP registry
+  - `test` — Connect a server now and list its tools
+  - `trust` — Let this project's .mcp.json servers start
+- `workflow` — A workflow is a directory, .memdoor/workflows/<name>/ in a project (or in
+  - `approve` — Complete an external task: your yes, written where the DAG looks for it
+  - `changes` — Request changes at a gate: the task reruns with your comment, then the steps after it, and the run comes back to the gate
+  - `diff` — The full diff a run made since it started, committed or not: what you approve at its gate
+  - `history` — What a workflow did before: every run, newest first (survives a restart)
+  - `resume` — Continue a failed or stopped run: what it finished is skipped
+  - `run` — Start .memdoor/workflows/<name>/ in this project — a fresh run
+  - `status` — Every task's state in a run
+  - `stop` — Cancel a run: nothing more starts, the running task is told
+
+**Providers and models it runs them on**
+
+- `connect` — Adds a provider to this gateway. The kind is one of: gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, custom.
+- `meter` — Every model request: the model that answered, its tokens and cost (the ledger /usage sums)
+- `model` — Which models answer, and which you can pick.
+  - `check` — Probe a model for what a coder turn needs (no argument: the ladder)
+  - `providers` — A model's hosts: precision, context, uptime, cost band
+  - `search` — Find a model in the catalogue
+- `providers` — Every provider this gateway knows — the company AI gateway, Anthropic,
+- `savings` — What the decision model kept out of your model bill this month.
+
+**Workspace and account**
+
+- `account` — Sign in with your email (a code arrives, you type it)
+  - `login` — Sign in: a code is emailed, type it here (short: memdoor login)
+  - `logout` — Sign out of memdoor.ai on this Mac (the engine stays signed in)
+  - `status` — Who is signed in on this Mac, and what the seat is
+  - `subscribe` — Subscribe to Pro: remote control and the hosted workflow state, always on your own key; $10 a month
 - `login` — Sign in to memdoor.ai with your email: a six-digit code arrives there, and you
 - `logout` — Sign out of memdoor.ai on this Mac (the engine stays signed in)
 - `setup` — Onboard a fresh Memdoor install: create the workspace and the
@@ -198,71 +260,18 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `which` — Print the resolved workspace and where it came from
 - `workspaces` — Lists every workspace this install has touched, from
 
-**Servers & interfaces**
-
-- `gateway` — Start the gateway server
-
-**Config, auth & diagnostics**
+**This binary**
 
 - `config` — Manage configuration
   - `get` — Get configuration value by dot-notation path
   - `show` — Display full configuration
   - `validate` — Validate configuration file
-- `doctor` — Diagnose workspace and configuration health
-- `logs` — View and query gateway logs
-  - `errors` — Show recent errors
-  - `prune` — Delete old log events and reclaim disk space
-  - `query` — Query log events
-  - `session` — Show session timeline
-  - `stats` — Show log statistics
-  - `trace` — Trace a log event
-
-**Advanced & connectors**
-
-- `mcp` — The MCP servers the coder can use, for the project in this directory.
-  - `add` — Add a server; it is tested at once, and signed in to if it asks
-  - `login` — Sign in to a server (OAuth, in your browser)
-  - `logout` — Forget a server's sign-in
-  - `off` — Turn a server off
-  - `on` — Turn a server on
-  - `remove` — Delete a server from its file
-  - `search` — Find servers in the official MCP registry
-  - `test` — Connect a server now and list its tools
-  - `trust` — Let this project's .mcp.json servers start
-
-**Other commands**
-
-- `acp` — Runs Memdoor as an Agent Client Protocol agent on stdin/stdout, for an
-- `connect` — Adds a provider to this gateway. The kind is one of: gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, custom.
-- `conversations` — List recent conversations (what `memdoor resume` picks from)
-- `guards` — The rules that keep the agent out of what it must not touch.
-  - `add` — Add a rule
-  - `clear` — Remove every rule
-  - `remove` — Remove rule n (the number `memdoor guards` shows)
-- `join` — Open a link that /remote printed on another computer, in this terminal
-- `meter` — Every model request: the model that answered, its tokens and cost (the ledger /usage sums)
-- `model` — Which models answer, and which you can pick.
-  - `check` — Probe a model for what a coder turn needs (no argument: the ladder)
-  - `providers` — A model's hosts: precision, context, uptime, cost band
-  - `search` — Find a model in the catalogue
-- `providers` — Every provider this gateway knows — the company AI gateway, Anthropic,
-- `remote` — memdoor remote <id>        print the link on stdout and hold the conversation on the relay
-- `resume` — Resume a previous conversation.
-- `run` — Run one coder turn on this project with no window.
-- `savings` — What the decision model kept out of your model bill this month.
-- `tui` — Launch the Terminal UI
 - `uninstall` — Removes Memdoor and its running components:
 - `upgrade` — Compares the version baked into this binary (see 'memdoor
 - `version` — Prints the version string baked into this binary at build
-- `workflow` — A workflow is a directory, .memdoor/workflows/<name>/ in a project (or in
-  - `approve` — Complete an external task: your yes, written where the DAG looks for it
-  - `changes` — Request changes at a gate: the task reruns with your comment, then the steps after it, and the run comes back to the gate
-  - `diff` — The full diff a run made since it started, committed or not: what you approve at its gate
-  - `history` — What a workflow did before: every run, newest first (survives a restart)
-  - `resume` — Continue a failed or stopped run: what it finished is skipped
-  - `run` — Start .memdoor/workflows/<name>/ in this project — a fresh run
-  - `status` — Every task's state in a run
-  - `stop` — Cancel a run: nothing more starts, the running task is told
+
+**Other commands**
+
 
 **Hidden (notCodingCommands in root.go)**
 

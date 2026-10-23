@@ -6,84 +6,126 @@ import (
 
 // Groups + assignment for the top-level command list.
 //
-// Without grouping, `memdoor --help` is a flat wall of 25
-// alphabetically-sorted commands — overwhelming for new users and
-// hard for agents to navigate when picking the right verb. Cobra
-// supports command groups out of the box; we wire them here in a
-// single place so per-command init() functions don't each need to
-// know which group they belong to.
+// Without grouping, `memdoor --help` is a flat wall of thirty commands,
+// alphabetically sorted. Cobra supports command groups; they are wired here
+// in one place so per-command init() functions do not each need to know
+// which group they belong to.
 //
-// The grouping mirrors the mental model from AGENTS.md / docs/: a
-// workspace+agent+channels are how teams collaborate, gateway+mcp are
-// the surfaces, and the rest is config / diagnostics / less-common
-// operational stuff.
+// THE GROUPS SAY WHAT THE PRODUCT IS (Greg, 2026-10-23: "the deamon that owns
+// the work is the way to go", "repackage and realign commands product to
+// option 1"). The gateway is the daemon that owns the work; the window, a
+// headless run, a resumed conversation, the phone and the editor are doors
+// onto it; workflows and agents are what it runs; providers and models are
+// what it runs them on; the workspace and the account are whose it is.
+// Until 2026-10-23 the headings were "Workspace & collaboration", "Servers &
+// interfaces", "Config, auth & diagnostics", "Advanced & connectors": the
+// layout of a platform, not of a daemon.
 
 const (
-	groupWorkspace = "workspace"
-	groupServer    = "server"
-	groupSystem    = "system"
-	groupAdvanced  = "advanced"
+	groupDaemon   = "daemon"
+	groupDoors    = "doors"
+	groupWork     = "work"
+	groupModels   = "models"
+	groupAccount  = "account"
+	groupBinary   = "binary"
+	groupAdvanced = "advanced"
 )
 
-// commandGroupAssignments maps each top-level command name to a
-// group ID. Commands not in this map render under cobra's default
-// "Additional Commands" section — used as a soft fallback so
-// adding a new command without updating this map doesn't break
-// `--help`, it just leaves the new command ungrouped until
-// somebody slots it in.
+// commandGroupAssignments maps each top-level command name to a group ID.
+// Commands not in this map render under cobra's default "Additional
+// Commands" section, a soft fallback so adding a command without updating
+// this map does not break `--help`.
 var commandGroupAssignments = map[string]string{
-	// Workspaces, agents, channels — how teams use the product
-	"workspace":  groupWorkspace,
-	"use":        groupWorkspace, // top-level shortcut for `workspace use <slug>`
-	"which":      groupWorkspace, // top-level shortcut for `workspace which` (PS1-safe with --bare)
-	"workspaces": groupWorkspace, // top-level shortcut for `workspace list`
-	"setup":      groupWorkspace, // first-time bootstrap; sits next to `workspace use`
-	"account":    groupWorkspace, // the creator's sign-in: email + code, engine prepared behind it
-	"login":      groupWorkspace, // the same sign-in under its short name
-	"logout":     groupWorkspace, // signs out of memdoor.ai; the engine stays signed in
-	"users":      groupWorkspace,
-	"agent":      groupWorkspace,
-	"channels":   groupWorkspace,
-	"messages":   groupWorkspace,
-	"sessions":   groupWorkspace,
+	// The daemon that owns the work: start it, run it as a service, read it.
+	"gateway": groupDaemon,
+	"doctor":  groupDaemon,
+	"logs":    groupDaemon,
+	"health":  groupDaemon,
 
-	// Server processes + UIs people start to interact with the platform
-	"gateway": groupServer,
+	// Doors onto it. The bare name is the window; these are the others.
+	"tui":           groupDoors,
+	"run":           groupDoors,
+	"resume":        groupDoors,
+	"conversations": groupDoors,
+	"remote":        groupDoors,
+	"join":          groupDoors,
+	"acp":           groupDoors,
 
-	// Config, secrets, auth, diagnostics. setup belongs to
-	// Workspace & collaboration since it's the first-time
-	// bootstrap a new user runs right alongside `workspace use`.
-	"config": groupSystem,
-	"auth":   groupSystem,
-	"doctor": groupSystem,
-	"health": groupSystem,
-	"logs":   groupSystem,
+	// What it runs.
+	"workflow": groupWork,
+	"agent":    groupWork,
+	"cron":     groupWork,
+	"guards":   groupWork,
+	"mcp":      groupWork,
 
-	// Less-common / specialized — chrome+pipeline are connectors,
-	// cron is scheduling, rag is RAG infra
-	"cron":     groupAdvanced,
-	"pipeline": groupAdvanced,
+	// What it runs them on: providers, their keys, their models, the bill.
+	"connect":   groupModels,
+	"providers": groupModels,
+	"model":     groupModels,
+	"meter":     groupModels,
+	"savings":   groupModels,
+
+	// Whose it is: the workspace on the gateway, the memdoor.ai account.
+	"workspace":  groupAccount,
+	"use":        groupAccount, // shortcut for `workspace use <slug>`
+	"which":      groupAccount, // shortcut for `workspace which`
+	"workspaces": groupAccount, // shortcut for `workspace list`
+	"setup":      groupAccount,
+	"account":    groupAccount,
+	"login":      groupAccount,
+	"logout":     groupAccount,
+	"auth":       groupAccount,
+	"users":      groupAccount,
+	"channels":   groupAccount,
+	"messages":   groupAccount,
+	"sessions":   groupAccount,
+	"billing":    groupAccount,
+
+	// This binary and its configuration.
+	"config":    groupBinary,
+	"version":   groupBinary,
+	"upgrade":   groupBinary,
+	"uninstall": groupBinary,
+
+	// Connectors the agent reaches through tools.
 	"chrome":   groupAdvanced,
-	"mcp":      groupAdvanced, // the coder's MCP servers: add, sign in, state
+	"pipeline": groupAdvanced,
 }
 
-// assignCommandGroups installs cobra.Group definitions on rootCmd
-// and tags each registered subcommand with its GroupID. Called from
-// Execute() so it runs after every per-command init() has registered
-// against rootCmd.
+// assignCommandGroups installs cobra.Group definitions on rootCmd and tags
+// each registered subcommand with its GroupID. Called from Execute() so it
+// runs after every per-command init() has registered against rootCmd.
 func assignCommandGroups() {
 	// NO EMPTY HEADINGS: a heading with nothing under it is one of the first
-	// things a stranger reads.
+	// things a stranger reads. Hidden commands do not count as content.
+	declared := []*cobra.Group{
+		{ID: groupDaemon, Title: "The gateway, the daemon that owns the work:"},
+		{ID: groupDoors, Title: "Doors onto it:"},
+		{ID: groupWork, Title: "What it runs:"},
+		{ID: groupModels, Title: "Providers and models it runs them on:"},
+		{ID: groupAccount, Title: "Workspace and account:"},
+		{ID: groupBinary, Title: "This binary:"},
+		{ID: groupAdvanced, Title: "Connectors:"},
+	}
+	hidden := make(map[string]bool, len(notCodingCommands))
+	for _, n := range notCodingCommands {
+		hidden[n] = true
+	}
+	populated := map[string]bool{}
+	for _, c := range rootCmd.Commands() {
+		if id, ok := commandGroupAssignments[c.Name()]; ok && !hidden[c.Name()] {
+			populated[id] = true
+		}
+	}
 	groups := []*cobra.Group{}
-	groups = append(groups,
-		&cobra.Group{ID: groupWorkspace, Title: "Workspace & collaboration:"},
-		&cobra.Group{ID: groupServer, Title: "Servers & interfaces:"},
-		&cobra.Group{ID: groupSystem, Title: "Config, auth & diagnostics:"},
-		&cobra.Group{ID: groupAdvanced, Title: "Advanced & connectors:"},
-	)
+	for _, g := range declared {
+		if populated[g.ID] {
+			groups = append(groups, g)
+		}
+	}
 	rootCmd.AddGroup(groups...)
 	for _, c := range rootCmd.Commands() {
-		if id, ok := commandGroupAssignments[c.Name()]; ok {
+		if id, ok := commandGroupAssignments[c.Name()]; ok && populated[id] {
 			// A group that was never declared would fail cobra's check; those
 			// commands fall to "Additional Commands", where the hidden ones do
 			// not appear at all.

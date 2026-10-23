@@ -58,6 +58,33 @@ jobs:
           check 1 memdoor resume --last
           check 1 memdoor remote --last
           pkill -f "memdoor gateway" || true
+      # The gateway as a service (memdoor gateway install, 2026-10-23): the
+      # unit renders on both platforms; where the runner has a service
+      # manager for its user it is installed for real, answers, is restarted
+      # by the manager after a kill, and is removed again. A runner without
+      # a user bus (systemd --user needs one) prints the unit and says so.
+      - name: Gateway as a service
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          memdoor gateway install --print --port 18799 | head -20
+          if [ "$RUNNER_OS" = "Linux" ] && ! systemctl --user is-system-running >/dev/null 2>&1; then
+            echo "no systemd user instance on this runner: rendered only"; exit 0
+          fi
+          if [ "$RUNNER_OS" = "macOS" ] && ! launchctl print "gui/$(id -u)" >/dev/null 2>&1; then
+            echo "no launchd user session on this runner: rendered only"; exit 0
+          fi
+          memdoor gateway install --port 18799
+          export MEMDOOR_GATEWAY=http://127.0.0.1:18799
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:18799/api/status >/dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:18799/api/status >/dev/null || { echo "FAIL: service gateway not answering"; memdoor gateway status; cat ~/.memdoor/gateway.log | tail -20; exit 1; }
+          memdoor gateway status
+          pid=$(curl -s http://127.0.0.1:18799/api/status | sed -n 's/.*"pid":\([0-9]*\).*/\1/p')
+          kill "$pid"
+          for i in $(seq 1 30); do sleep 1; curl -sf http://127.0.0.1:18799/api/status >/dev/null && { echo "back after ${i}s"; break; }; done
+          curl -sf http://127.0.0.1:18799/api/status >/dev/null || { echo "FAIL: the manager did not restart the gateway"; exit 1; }
+          memdoor gateway uninstall
+          sleep 2
+          curl -sf http://127.0.0.1:18799/api/status >/dev/null && { echo "FAIL: still up after uninstall"; exit 1; } || echo "down after uninstall"
 
   windows:
     runs-on: windows-latest

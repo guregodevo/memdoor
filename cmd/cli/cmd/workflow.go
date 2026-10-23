@@ -127,7 +127,7 @@ func workflowDir(flag string) (string, error) {
 
 var workflowCmd = &cobra.Command{
 	Use:   "workflow",
-	Short: "Run a DAG of agent tasks from .memdoor/workflows/<name>/",
+	Short: "The steps the agent wrote as files in .memdoor/workflows/<name>/: run, status, approve a gate, resume",
 	Long: `A workflow is a directory, .memdoor/workflows/<name>/ in a project (or in
 ~/.memdoor/workflows for every project): one YAML file per task, each one
 turn of an agent, a model call or a command, with the tasks it requires and a

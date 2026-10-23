@@ -15,7 +15,7 @@ var doctorWorkspace string
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
-	Short: "Diagnose workspace and configuration health",
+	Short: "Is the gateway up and healthy, and what this machine is missing",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// A FRESH MACHINE IS NOT A SICK ONE (battle test, 2026-09-27). Run on a
 		// machine where nothing has been set up yet, doctor answered with a
@@ -146,6 +146,12 @@ var doctorCmd = &cobra.Command{
 			}
 		} else {
 			fmt.Printf("  OK Gateway is running (%s)\n", st.Version)
+		}
+		if state := serviceState(); state != "" {
+			_, manager, _ := servicePath()
+			fmt.Printf("  OK Service %s (%s): up at boot, restarted if it stops\n", state, manager)
+		} else if _, local := localGatewayPort(); local {
+			fmt.Println("  -- No service: the gateway ends with your login session (memdoor gateway install keeps it up on a box that stays on)")
 		}
 		fmt.Println()
 

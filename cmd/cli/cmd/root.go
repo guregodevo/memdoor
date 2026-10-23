@@ -75,23 +75,29 @@ var noWorkspaceTopLevels = map[string]bool{
 
 var rootCmd = &cobra.Command{
 	Use:   "memdoor",
-	Short: "Memdoor — a coding agent that cuts your model bill",
-	// WHAT A STRANGER READS FIRST (onboarding walk, 2026-09-27). This once
-	// described a product that was deleted; every line below is something
-	// they will actually type.
-	Long: `Memdoor is a coding agent in your terminal, on YOUR key, with a decision model
-in front of the chat model to cut what it reads and what it costs. Say the steps
-and it builds the workflow.
+	Short: "Memdoor — the gateway that owns your agents' work; the window, the shell, the phone and CI are doors onto it",
+	// WHAT A STRANGER READS FIRST (onboarding walk, 2026-09-27; realigned
+	// 2026-10-23 to the daemon). Every line below is something they will
+	// actually type.
+	Long: `Memdoor is a gateway, a small daemon that owns the work of coding agents: it
+runs the turns in your project on your own key, keeps the conversations, the
+schedules and the workflow runs, and asks you only at a gate. The window, a
+headless run, your phone, your editor and CI are doors onto the same gateway,
+so a run started from one is finished from another. On a box that stays on, it
+keeps working when every laptop is closed.
 
-Quick start:
-  export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect
-  cd <your-project> && memdoor           # the first run sets this machine up (memdoor tui: the same window)
+On this machine:
+  export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or memdoor connect
+  cd <your-project> && memdoor           # the first run starts the gateway here and opens the window
 
-Subscribed to Pro? memdoor login you@example.com — a six-digit code
-arrives there, and remote control (/remote) is on.
+On a box that stays on (a VPS, a Mac mini):
+  memdoor gateway install                # the gateway as a service: up at boot, restarted if it stops
+  memdoor --gateway <box> run "…"        # from your laptop: a turn there, in that box's project
+  memdoor join <link>                    # a /remote link in your terminal; the same link opens on your phone
 
-In the window: /model chooses which model answers, /usage is what this month
-used and saved, /remote opens the conversation on your phone.`,
+Workflows: say the steps in the window and it writes them as files in the repo;
+memdoor workflow run <name> reruns them with no one watching, and a gate waits
+for your yes. Pro (memdoor login) adds the phone and the hosted workflow state.`,
 	// SilenceUsage stops cobra from dumping the full --help block
 	// after every RunE error. Subcommands inherit this — routine
 	// errors ("not authenticated", "no LLM key") print just the

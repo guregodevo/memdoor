@@ -204,6 +204,10 @@ func (cs *ChatServer) handleAgentByName(w http.ResponseWriter, r *http.Request, 
 			buddy.SystemPrompt = req.SystemPrompt
 		}
 		if req.ExecutionType != nil {
+			if *req.ExecutionType != "local" && *req.ExecutionType != "remote" {
+				http.Error(w, "execution_type must be 'local' or 'remote'", http.StatusBadRequest)
+				return
+			}
 			buddy.ExecutionType = *req.ExecutionType
 		}
 		if req.AdminOnly != nil {
@@ -225,6 +229,15 @@ func (cs *ChatServer) handleAgentByName(w http.ResponseWriter, r *http.Request, 
 			}
 		}
 
+		// The same rule as on create: a remote agent names its endpoint and
+		// model. An update could set the type alone and leave a remote agent
+		// with no config, which the message service then dereferenced.
+		if buddy.ExecutionType == "remote" {
+			if buddy.RemoteConfig == nil || buddy.RemoteConfig.Endpoint == "" || buddy.RemoteConfig.Model == "" {
+				http.Error(w, "a remote agent needs remote_config.endpoint and remote_config.model", http.StatusBadRequest)
+				return
+			}
+		}
 		if err := cs.buddyRepo.Update(ctx, buddy); err != nil {
 			http.Error(w, fmt.Sprintf("Failed to update agent: %v", err), http.StatusInternalServerError)
 			return

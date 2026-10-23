@@ -124,8 +124,19 @@ GW_PORT="${MEMDOOR_PORT:-18789}"
 gw_pids() {
     pgrep -f "memdoor gateway" 2>/dev/null || lsof -ti:"$GW_PORT" -sTCP:LISTEN 2>/dev/null || true
 }
+# A gateway the service manager owns (memdoor gateway install) is restarted
+# through the manager after the swap, never killed by hand: killed, it would
+# come straight back on the old binary.
+SERVICE=""
+if command -v systemctl >/dev/null 2>&1 && systemctl --user is-active memdoor.service >/dev/null 2>&1; then
+    SERVICE="systemd"
+elif command -v launchctl >/dev/null 2>&1 && launchctl print "gui/$(id -u)/ai.memdoor.gateway" >/dev/null 2>&1; then
+    SERVICE="launchd"
+fi
 WAS_RUNNING=0
-if curl -sf --max-time 3 "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then
+if [ -n "$SERVICE" ]; then
+    echo "==> Gateway runs as a service ($SERVICE); it is restarted on the new binary after the download."
+elif curl -sf --max-time 3 "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then
     echo "==> Gateway running on :$GW_PORT — stopping it so the new binary can take over..."
     pids=$(gw_pids)
     [ -n "$pids" ] && kill -TERM $pids 2>/dev/null || true
@@ -297,7 +308,23 @@ echo
 # background, its log beside the data, and reported either way. It starts
 # with this shell's environment — keys kept by `memdoor connect` are on disk
 # and come back; a key that only lived in the old gateway's shell does not.
-if [ "${WAS_RUNNING:-0}" = "1" ]; then
+if [ -n "$SERVICE" ]; then
+    case "$SERVICE" in
+        systemd) systemctl --user restart memdoor.service ;;
+        launchd) launchctl kickstart -k "gui/$(id -u)/ai.memdoor.gateway" ;;
+    esac
+    i=0
+    while [ $i -lt 20 ]; do
+        if curl -sf "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then break; fi
+        sleep 1; i=$((i+1))
+    done
+    if curl -sf "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then
+        echo "✓ Gateway service restarted on the new binary ($SERVICE)."
+    else
+        echo "⚠ The gateway service has not answered on :$GW_PORT yet — memdoor gateway status, and ~/.memdoor/gateway.log."
+    fi
+    echo
+elif [ "${WAS_RUNNING:-0}" = "1" ]; then
     mkdir -p "$HOME/.memdoor"
     nohup "$DEST" gateway --port "$GW_PORT" >> "$HOME/.memdoor/gateway.log" 2>&1 &
     i=0

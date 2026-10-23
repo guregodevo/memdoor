@@ -12,7 +12,7 @@ import (
 
 var logsCmd = &cobra.Command{
 	Use:   "logs",
-	Short: "View and query gateway logs",
+	Short: "What the gateway logged: query, errors, since when",
 }
 
 var (

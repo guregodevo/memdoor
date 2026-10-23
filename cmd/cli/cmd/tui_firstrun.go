@@ -162,6 +162,11 @@ func handShellKeyToGateway(c *Client) {
 	}
 	b, err := os.ReadFile(shared.MemdoorHome(gatewayPidFile))
 	if err != nil {
+		if serviceInstalled() {
+			// A service is not restarted to pick up a shell's key: the key
+			// goes where the service reads it.
+			fmt.Fprintf(os.Stderr, "  → %s is set in this shell, and the gateway runs as a service that cannot see it: memdoor connect <provider> keeps the key where it can\n", keyVar)
+		}
 		return
 	}
 	pid, err := strconv.Atoi(strings.TrimSpace(string(b)))

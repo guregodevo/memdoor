@@ -321,6 +321,17 @@ func ensureGatewayRunning() {
 		_ = logF.Close()
 		return
 	}
+	if serviceInstalled() {
+		// The service manager owns the gateway on this machine: ask it,
+		// never start a second one by hand (the pid file marks only the
+		// kind the first run started).
+		_ = logF.Close()
+		if err := serviceStart(); err == nil {
+			fmt.Fprintln(os.Stderr, "  → starting the gateway service on :"+port)
+			waitForGateway(15 * time.Second)
+		}
+		return
+	}
 	cmd := exec.Command(binary, "gateway", "--port", port)
 	cmd.Stdout = logF
 	cmd.Stderr = logF

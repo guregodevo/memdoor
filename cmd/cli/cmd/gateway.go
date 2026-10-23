@@ -30,7 +30,7 @@ var (
 
 var gatewayCmd = &cobra.Command{
 	Use:   "gateway",
-	Short: "Start the gateway server",
+	Short: "The gateway in the foreground; install, status and uninstall run it as a service",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Pre-bind probe: if another memdoor gateway is already serving
@@ -76,6 +76,12 @@ var gatewayCmd = &cobra.Command{
 		// terminals auto-link it. Below this, slog prints structured
 		// startup logs from gateway.Start.
 		fmt.Printf("Memdoor gateway → http://%s:%d\n", gatewayHost, gatewayPort)
+		if !isLoopbackHost(gatewayHost) {
+			// The gateway speaks plain HTTP. Open to a network it is a
+			// token-protected door with no lock on the wire: say so once,
+			// where the person who typed --host reads it.
+			fmt.Printf("  listening beyond this machine without TLS: keep %s behind ssh, Tailscale or a reverse proxy\n", gatewayHost)
+		}
 		err := gateway.Start(ctx, gatewayHost, gatewayPort, "", verbose)
 		// Mid-flight EADDRINUSE: rare (probe above is the common case)
 		// but possible if a stale gateway started between the probe
@@ -157,9 +163,78 @@ func isAddrInUseErr(err error) bool {
 	return errors.Is(err, syscall.EADDRINUSE)
 }
 
+// THE GATEWAY AS A SERVICE (gateway_service.go): on a box that stays on, the
+// service manager owns it; the laptop and the phone are windows onto it.
+var gatewayInstallCmd = &cobra.Command{
+	Use:   "install",
+	Short: "Run the gateway as a service on this machine: up at boot, restarted if it stops, no root (systemd --user, launchd)",
+	Long: `Writes a user-level service for this binary and starts it:
+Linux   ~/.config/systemd/user/memdoor.service   (systemctl --user)
+macOS   ~/Library/LaunchAgents/ai.memdoor.gateway.plist   (launchctl)
+
+For a box that stays on, a VPS, a Mac mini, a home server: the gateway comes up
+at boot and stays up, so a run keeps going when no window is open and no laptop
+is awake. A key kept by ` + "`memdoor connect`" + ` is on disk and reaches the service;
+on Linux the unit also reads ~/.memdoor/env (KEY=value lines) when it exists.
+
+Examples:
+  memdoor gateway install                      # localhost:18789, for this machine's own windows
+  memdoor gateway install --host 0.0.0.0       # reachable from your laptop: keep it behind ssh, Tailscale or a proxy
+  memdoor gateway install --print              # show the unit, write nothing
+  memdoor --gateway <host>:18789 run "…"       # from another machine, in that box's project`,
+	Args: cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		print, _ := cmd.Flags().GetBool("print")
+		return installService(gatewayPort, gatewayHost, print)
+	},
+}
+
+var gatewayUninstallCmd = &cobra.Command{
+	Use:   "uninstall",
+	Short: "Stop the gateway service and remove its unit (the data stays)",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return uninstallService()
+	},
+}
+
+var gatewayStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Is the gateway up, which version, and who manages it",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c := NewClient()
+		var st struct {
+			Version string `json:"version"`
+			PID     int    `json:"pid"`
+		}
+		if err := c.GetJSON("/api/status", &st); err != nil {
+			fmt.Printf("gateway    not answering at %s\n", gatewayAddr)
+		} else {
+			fmt.Printf("gateway    %s answering at %s (pid %d)\n", st.Version, gatewayAddr, st.PID)
+		}
+		switch state := serviceState(); {
+		case state == "":
+			if _, err := os.Stat(shared.MemdoorHome(gatewayPidFile)); err == nil {
+				fmt.Println("managed by this machine's first run (gateway.pid); ends with the login session — `memdoor gateway install` makes it a service")
+			} else {
+				fmt.Println("service    none installed (memdoor gateway install)")
+			}
+		default:
+			path, manager, _ := servicePath()
+			fmt.Printf("service    %s, %s (%s)\n", state, manager, path)
+		}
+		return nil
+	},
+}
+
 func init() {
 	gatewayCmd.Flags().IntVar(&gatewayPort, "port", 18789, "Server port")
 	gatewayCmd.Flags().StringVar(&gatewayHost, "host", "localhost", "Server host")
+	gatewayInstallCmd.Flags().IntVar(&gatewayPort, "port", 18789, "the port the service listens on")
+	gatewayInstallCmd.Flags().StringVar(&gatewayHost, "host", "localhost", "the address it binds: localhost for this machine only, 0.0.0.0 for the network")
+	gatewayInstallCmd.Flags().Bool("print", false, "print the unit instead of installing it")
+	gatewayCmd.AddCommand(gatewayInstallCmd, gatewayUninstallCmd, gatewayStatusCmd)
 	rootCmd.AddCommand(gatewayCmd)
 }
 

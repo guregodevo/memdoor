@@ -68,17 +68,12 @@ func (s *Server) InitializeA2A() (*a2a.A2AHandler, chan *shared.A2AMessage, *aut
 
 		// Create response writer that captures the response
 		responseWriter := func(response interface{}) error {
-			if responseMap, ok := response.(map[string]interface{}); ok {
-				if text, ok := responseMap["text"].(string); ok {
-					responseChan <- text
-					return nil
-				}
-				if err, ok := responseMap["error"].(string); ok {
-					errorChan <- fmt.Errorf("%s", err)
-					return nil
-				}
+			text, err := a2aReplyOf(response)
+			if err != nil {
+				errorChan <- err
+				return nil
 			}
-			errorChan <- fmt.Errorf("invalid response format")
+			responseChan <- text
 			return nil
 		}
 
@@ -166,4 +161,32 @@ func loadA2APolicy(cfg *config.Config) *authorization.A2APolicy {
 	}
 
 	return policy
+}
+
+// a2aReplyOf reads what the queue hands a job's ResponseWriter: the turn's
+// *AgentResponse on success, the error on failure (server_jobs.go). Until
+// 2026-10-23 this writer accepted only a map, which the executor never
+// sends, so every agent-to-agent delivery ended as "invalid response format"
+// and the asking agent never saw the answer.
+func a2aReplyOf(response interface{}) (string, error) {
+	switch r := response.(type) {
+	case *AgentResponse:
+		if r == nil {
+			return "", fmt.Errorf("empty response")
+		}
+		if r.Error != "" {
+			return "", fmt.Errorf("%s", r.Error)
+		}
+		return r.Text, nil
+	case error:
+		return "", r
+	case map[string]interface{}:
+		if text, ok := r["text"].(string); ok {
+			return text, nil
+		}
+		if msg, ok := r["error"].(string); ok {
+			return "", fmt.Errorf("%s", msg)
+		}
+	}
+	return "", fmt.Errorf("invalid response format")
 }

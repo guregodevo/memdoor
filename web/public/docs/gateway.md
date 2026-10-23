@@ -22,22 +22,70 @@ provider you chose.
                                                        └─► your provider key ──► the model
 ```
 
-## You never start it
+## You never start it on your laptop
 
-The first command that needs it starts one when none is running: `memdoor
-tui`, `memdoor run`, `memdoor resume`, `workflow run`, `cron add` and
-`acp`. It stays up afterwards, so the next command finds it, and a key you
-export later reaches it the next time you run one. To start it by hand:
+The first command that needs it starts one when none is running: `memdoor`,
+`memdoor run`, `memdoor resume`, `workflow run`, `cron add` and `acp`. It
+stays up afterwards, so the next command finds it, and a key you export
+later reaches it the next time you run one. It ends with your login session:
+a reboot, a logout or a closed lid ends it too, and the next command starts a
+fresh one. To start it by hand:
 
 ```bash
 memdoor gateway                 # on :18789, in the foreground
 memdoor gateway --port 18799    # another port; --gateway :18799 on every command reaches it
+memdoor gateway status          # is it up, which version, who manages it
 memdoor doctor                  # is it healthy
 memdoor logs errors --since 5m  # what went wrong
 ```
 
 Its log is `~/.memdoor/gateway.log`; the pid of one Memdoor started is in
 `~/.memdoor/gateway.pid`, and `kill $(cat ~/.memdoor/gateway.pid)` stops it.
+
+## On a box that stays on
+
+A laptop sleeps when its lid closes, and everything on it stops, the gateway
+included. A run that must outlive the lid runs on a machine that does not
+sleep: a VPS, a Mac mini, a home server. There the gateway belongs to the
+service manager, so it is up at boot and comes back if it stops, and your
+laptop and your phone are windows onto it.
+
+```bash
+# on the box, once
+curl -fsSL https://memdoor.ai/install.sh | bash
+cd <your-project> && memdoor run "say hi"   # the first run creates the first account there
+memdoor connect openrouter                   # a key kept on disk; the service reads it
+memdoor gateway install                      # systemd --user on Linux, launchd on macOS; no root
+memdoor gateway status
+```
+
+`gateway install --host 0.0.0.0` listens for your laptop. The gateway speaks
+plain HTTP, so keep that box behind ssh, Tailscale or a reverse proxy; it
+says so when it starts. On Linux, `loginctl enable-linger $USER` keeps the
+user service running when you are not logged in; the install prints the line
+when it is needed. Removing it is `memdoor gateway uninstall`; the data stays.
+
+From your laptop:
+
+```bash
+memdoor auth login-direct --gateway <box> --email you@… --password …   # once; the credentials are kept per gateway
+memdoor --gateway <box> run --dir /srv/proj "run the tests"            # a turn there, in that box's checkout
+memdoor --gateway <box> workflow run release                            # a workflow there; it runs with no one watching
+memdoor --gateway <box> resume --last                                   # the window on that machine's last run
+```
+
+The run happens on that machine, in that machine's project, on that
+gateway's key; your terminal is the door. A window you open on the box
+itself (over ssh, in tmux) can print a `/remote` link: `memdoor join <link>`
+opens it in your laptop's terminal and the same link opens it on your phone,
+with the box doing the work. Workflows and schedules on that gateway need no
+window at all.
+
+What is not there yet: a window on your laptop that works first-class on the
+box's files (the files panel reads your laptop's disk, and `/dir` checks your
+laptop's paths), and a gate answered from the phone when no window is open on
+the box. Both are on the way; `run --dir`, `workflow run` and `join` are the
+doors today.
 
 ## What is on it
 
@@ -55,28 +103,6 @@ Everything above is on disk. A window reconnects on its own; a turn that
 was mid-run may have finished while the window was away, and its result is
 in the saved messages. A workflow run that was cut off continues from its
 last finished task with `memdoor workflow resume <run-id>`.
-
-## Another machine
-
-Every command takes `--gateway`: a URL, a host:port, or a bare host.
-
-```bash
-memdoor --gateway 192.168.1.10 resume --last      # the window, on that machine's last run
-memdoor --gateway 192.168.1.10 run "run the tests" # a headless turn there, in its project
-export MEMDOOR_GATEWAY=http://192.168.1.10:18789   # every command from now on
-```
-
-The run happens on that machine, in that machine's project, on that
-gateway's key; your terminal is the door. A gateway listens on localhost
-unless started with `--host`; a gateway you open to your network is yours
-to keep behind it.
-
-## Where it is not
-
-A CI runner's gateway lives as long as the job: `memdoor remote --last` as
-the job's last line keeps it up for your phone until the job's timeout. A
-run with the laptop closed is not here yet; it is what the hosted workflow
-state on memdoor.ai is for, and it is coming.
 
 ## Where to next
 
