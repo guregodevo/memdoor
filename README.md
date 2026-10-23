@@ -96,7 +96,7 @@ downloads.
 | `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, your company's AI gateway; `/connect chatgpt` signs in with a ChatGPT Plus/Pro plan, no key |
 | `/workflow` | The project's workflows and runs; enter opens a run's graph, `a` approves a gate, `/workflow:<name>` runs one |
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
-| `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted (Pro) |
+| `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |
 | `/share` | A read-only link to the conversation, encrypted, secrets removed; `/unshare` deletes it |
 | `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, each with what happened to it; enter previews, `ctrl+d` diffs, `ctrl+e` opens in `$EDITOR`, tab puts `@path` in the prompt |
 | `/graph` or `ctrl+g` | This turn as a graph: the reads, the edits that depended on them, the runs that depended on the edits, the failing check in red |
@@ -147,12 +147,6 @@ pin warns; use one for a trial, not on private code. On a vendor key or a compan
 [`docs/SECURITY.md`](docs/SECURITY.md) lists every host the binary can name and
 a test fails the build on a new one.
 
-## Price
-
-- **Free**: the agent, the decision model and workflows (with local schedules), on your own key.
-- **Pro, $10/month**: remote control through the memdoor.ai relay, and every workflow run's state kept on memdoor.ai so a workflow can wait on what another produced, from any machine. The seat never buys inference.
-- **Enterprise**: the same served for a company, invoiced — hello@memdoor.ai.
-
 ## Documentation
 
 - [Getting started](GETTING_STARTED.md)
@@ -165,7 +159,7 @@ a test fails the build on a new one.
 
 ```
 cmd/cli/       the CLI (cobra): tui, model, workflow, cron, account, …
-gateway/       the local gateway: agent runtime, tools, providers, workflows, billing service
+gateway/       the local gateway: agent runtime, tools, providers, workflows
 pkg/           the domain: decision, metering, plan, workflow (the mario task factory), …
 web/           the memdoor.ai site and the served docs (React, Vite)
 scripts/       install.sh, install.ps1, deploy.sh

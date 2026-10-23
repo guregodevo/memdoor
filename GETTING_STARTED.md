@@ -115,8 +115,8 @@ so the model reads what the task needs; there is no cap on
 tool calls per turn, because the decision model stops a turn that has
 stopped making progress; a provider's rate limit is waited out rather than
 failed. `memdoor meter` lists every turn with the
-model served and its tokens; `/usage` sums the month. The seat is flat: the
-prices you see when choosing are the hosts' list prices, not a bill.
+model served and its tokens; `/usage` sums the month. The prices you see
+when choosing are the hosts' list prices, not a bill.
 
 ## Optional: tab completion
 
