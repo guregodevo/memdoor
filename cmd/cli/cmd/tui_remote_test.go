@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/cipher"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -137,7 +138,8 @@ func TestRemoteCryptoMatchesTheBrowser(t *testing.T) {
 	dir := t.TempDir()
 	bundle := filepath.Join(dir, "remoteCrypto.mjs")
 	src, _ := filepath.Abs("../../../web/src/remoteCrypto.ts")
-	if out, err := exec.Command(esbuild, src, "--format=esm", "--outfile="+bundle).CombinedOutput(); err != nil {
+	// Bundled: the pure-JavaScript path pulls noble in from web/node_modules.
+	if out, err := exec.Command(esbuild, src, "--bundle", "--format=esm", "--outfile="+bundle).CombinedOutput(); err != nil {
 		t.Fatalf("esbuild: %v\n%s", err, out)
 	}
 
@@ -151,8 +153,9 @@ func TestRemoteCryptoMatchesTheBrowser(t *testing.T) {
 
 	driver := filepath.Join(dir, "check.mjs")
 	_ = os.WriteFile(driver, []byte(`
-import { deriveRemote, deriveView, open, seal, TO_BROWSER, TO_TERMINAL } from './remoteCrypto.mjs';
-const [key, plain, fromTerminal, viewToken] = process.argv.slice(2);
+import { deriveRemote, deriveView, open, seal, usePureCrypto, TO_BROWSER, TO_TERMINAL } from './remoteCrypto.mjs';
+const [key, plain, fromTerminal, viewToken, pure] = process.argv.slice(2);
+usePureCrypto(pure === 'pure');
 const k = await deriveRemote(key);
 const v = await deriveView(viewToken);
 const nonce = Uint8Array.from([0,1,2,3,4,5,6,7,8,9,10,11]);
@@ -169,10 +172,21 @@ console.log(JSON.stringify({
   fromViewer: await seal(v, TO_TERMINAL, plain, nonce),
 }));
 `), 0o644)
-	out, err := exec.Command(node, driver, key, plain, fromTerminal, view).CombinedOutput()
-	if err != nil {
-		t.Fatalf("node: %v\n%s", err, out)
+	// Both of the page's paths: WebCrypto, and the JavaScript one a plain-http
+	// page on a box's address is left with.
+	for _, path := range []string{"webcrypto", "pure"} {
+		t.Run(path, func(t *testing.T) {
+			out, err := exec.Command(node, driver, key, plain, fromTerminal, view, path).CombinedOutput()
+			if err != nil {
+				t.Fatalf("node: %v\n%s", err, out)
+			}
+			checkRemoteCryptoAnswer(t, out, plain, proof, view, aead, write, nonce)
+		})
 	}
+}
+
+func checkRemoteCryptoAnswer(t *testing.T, out []byte, plain, proof, view string, aead, write cipher.AEAD, nonce []byte) {
+	t.Helper()
 	var got struct {
 		Proof, Opened, Reflected, FromBrowser string
 		ViewProof, ViewOpened, FromViewer     string
@@ -418,7 +432,7 @@ func TestRemoteURLOverride(t *testing.T) {
 		t.Fatalf("remoteURL() = %q, want %q", got, want)
 	}
 	l := remoteLink{ID: "i"}
-	if got := l.url(); !strings.HasPrefix(got, "http://127.0.0.1:9/r/i#k=") {
+	if got := l.url(remoteURL()); !strings.HasPrefix(got, "http://127.0.0.1:9/r/i#k=") {
 		t.Fatalf("the link points at the override, got %q", got)
 	}
 }

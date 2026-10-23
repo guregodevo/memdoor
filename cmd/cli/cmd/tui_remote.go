@@ -41,11 +41,16 @@ import (
 // after "#", the part of a link a browser never sends to a server — so the
 // relay carries the session but cannot read it.
 //
-// TWO HOSTS. The link and the terminal's relay socket go through
-// memdoor.ai — it is already the outbound tunnel, so a phone behind NAT
-// reaches it without port forwarding — with the memdoor.ai account token;
-// the conversation's event feed and the posted turns stay on the gateway
-// this TUI talks to (remoteSession.Gateway and Token).
+// TWO RELAYS. A gateway on another machine (a box that stays on, reached
+// as --gateway <box>) is its own relay: the link is on that gateway, the
+// terminal dials its /api/relay with the gateway's own token, and a phone
+// that reaches the box reaches the daemon the way the laptop does. No
+// memdoor.ai account, no plan (Greg, 2026-10-23: "a phone can connect to
+// daemon", "no pro story"). A gateway on this machine sits behind the
+// laptop's NAT, so its link goes through memdoor.ai, the outbound tunnel a
+// phone reaches without port forwarding, with the memdoor.ai account token.
+// Either way the conversation's event feed and the posted turns stay on the
+// gateway this TUI talks to (remoteSession.Gateway and Token).
 
 // remoteURL is where the link points and where the terminal's relay socket
 // dials: the public relay host. Overridable so a local gateway can be
@@ -146,21 +151,21 @@ func saveRemoteLinks(links map[string]remoteLink) error {
 	return os.WriteFile(remoteLinksPath(), b, 0o600) // it holds keys: owner only
 }
 
-// url is the link on the relay host.
-func (l remoteLink) url() string {
-	return remoteURL() + "/r/" + l.ID + "#k=" + l.Key
+// url is the link on the relay host base.
+func (l remoteLink) url(base string) string {
+	return strings.TrimRight(base, "/") + "/r/" + l.ID + "#k=" + l.Key
 }
 
 // viewURL is the watch-only link (/remote view): after #v= it carries the
 // session key and the relay proof, both derived from the link key, and not
 // the link key itself. A page holding it reads every frame and joins the
 // relay, and cannot derive the write key a turn must be sealed with.
-func (l remoteLink) viewURL() (string, error) {
+func (l remoteLink) viewURL(base string) (string, error) {
 	tok, err := remoteViewToken(l.Key)
 	if err != nil {
 		return "", err
 	}
-	return remoteURL() + "/r/" + l.ID + "#v=" + tok, nil
+	return strings.TrimRight(base, "/") + "/r/" + l.ID + "#v=" + tok, nil
 }
 
 // qrText draws a link as a QR code in half-block characters.
@@ -188,6 +193,30 @@ type remoteSession struct {
 	TTY func() tea.Model
 }
 
+// direct reports whether the conversation's gateway is on another machine:
+// then that gateway is the relay. A loopback gateway is this laptop's, behind
+// its NAT, and its link goes through the hosted relay.
+func (s remoteSession) direct() bool {
+	return strings.TrimSpace(s.Gateway) != "" && !shared.IsLoopbackURL(s.Gateway)
+}
+
+// relayBase is where the link points and the terminal dials.
+func (s remoteSession) relayBase() string {
+	if s.direct() {
+		return strings.TrimRight(strings.TrimSpace(s.Gateway), "/")
+	}
+	return remoteURL()
+}
+
+// relayToken is the credential the relay takes: the gateway's own token on
+// the gateway's relay, the memdoor.ai account token on the hosted one.
+func (s remoteSession) relayToken() string {
+	if s.direct() {
+		return s.Token
+	}
+	return s.Account
+}
+
 // tuiRemote answers /remote and /remote off for one conversation, and keeps
 // the relay running while the link exists.
 func tuiRemote(s remoteSession) func(arg string) (string, error) {
@@ -203,21 +232,24 @@ func tuiRemote(s remoteSession) func(arg string) (string, error) {
 			}
 			return "Remote control is off: the old link and its key no longer open this conversation.", nil
 		}
-		if s.Account == "" {
-			return "", errors.New("remote control needs a memdoor.ai account: run `memdoor login you@example.com` first, then try /remote again")
-		}
-		// On the hosted relay remote is Pro: say so here, in the window,
-		// instead of handing out a link the relay will refuse (the relay's own
-		// check stays the authority). A self-hosted relay is never asked.
-		if !shared.IsLoopbackURL(remoteURL()) && remoteNeedsPro() {
-			return "", errRemoteIsPro
+		if !s.direct() {
+			if s.Account == "" {
+				return "", errors.New("remote control needs a memdoor.ai account: run `memdoor login you@example.com` first, then try /remote again")
+			}
+			// On the hosted relay remote is Pro: say so here, in the window,
+			// instead of handing out a link the relay will refuse (the relay's own
+			// check stays the authority). A self-hosted relay is never asked.
+			if !shared.IsLoopbackURL(remoteURL()) && remoteNeedsPro() {
+				return "", errRemoteIsPro
+			}
 		}
 		l, existing, err := remoteLinkFor(s.ChannelID, false)
 		if err != nil {
 			return "", err
 		}
 		startRemote(s, l)
-		view, err := l.viewURL()
+		base := s.relayBase()
+		view, err := l.viewURL(base)
 		if err != nil {
 			return "", err
 		}
@@ -229,9 +261,17 @@ func tuiRemote(s remoteSession) func(arg string) (string, error) {
 		if existing {
 			lead = "Remote control is on for this conversation — the same link as before:"
 		}
+		carrier := "the relay only carries what it cannot read"
+		if s.direct() {
+			lead = "Remote control for this conversation, on your gateway at " + relayHostOf(base) + " — open the link or scan the code from a phone that reaches that machine:"
+			if existing {
+				lead = "Remote control is on for this conversation, on your gateway at " + relayHostOf(base) + " — the same link as before:"
+			}
+			carrier = "the gateway only carries what it cannot read"
+		}
 		return fmt.Sprintf("%s\n\n%s\n\n%s\n\nWatch only (sees, cannot type): %s\n\n"+
-			"The key after # never leaves your devices; the relay only carries what it cannot read. "+
-			"/remote off revokes both links.", lead, l.url(), qrText(l.url()), view), nil
+			"The key after # never leaves your devices; %s. "+
+			"/remote off revokes both links.", lead, l.url(base), qrText(l.url(base)), view, carrier), nil
 	}
 }
 
@@ -549,13 +589,13 @@ func (r *remoteRelay) attach(feed *client.Client) error {
 	if err != nil {
 		return err
 	}
-	wsURL, err := remoteWSURL()
+	wsURL, err := remoteWSURL(r.s.relayBase())
 	if err != nil {
 		return err
 	}
 	wsURL += "?" + url.Values{"id": {r.link.ID}, "verifier": {verifier}}.Encode()
 	// The token rides the header, as on /ws, so it stays out of access logs.
-	conn, resp, err := websocket.DefaultDialer.Dial(wsURL, http.Header{"Authorization": {"Bearer " + r.s.Account}})
+	conn, resp, err := websocket.DefaultDialer.Dial(wsURL, http.Header{"Authorization": {"Bearer " + r.s.relayToken()}})
 	if err != nil {
 		// The relay says why in its body (remote is Pro on the hosted relay);
 		// pass that sentence on instead of "bad handshake".
@@ -688,9 +728,8 @@ func (r *remoteRelay) sendHistory() {
 }
 
 // remoteWSURL is the relay host's /api/relay socket: wss on an https host,
-// ws on a plain-http one (tests).
-func remoteWSURL() (string, error) {
-	base := remoteURL()
+// ws on a plain-http one (a gateway on a box, tests).
+func remoteWSURL(base string) (string, error) {
 	u, err := url.Parse(base)
 	if err != nil || u.Host == "" {
 		return "", fmt.Errorf("remote relay host %q is not a URL", base)
@@ -720,4 +759,12 @@ func remoteNeedsPro() bool {
 		return false
 	}
 	return strings.EqualFold(strings.TrimSpace(me.Plan), "free") || strings.TrimSpace(me.Plan) == ""
+}
+
+// relayHostOf is the host a link is on, for the line that names it.
+func relayHostOf(base string) string {
+	if u, err := url.Parse(base); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return base
 }

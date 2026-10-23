@@ -316,9 +316,9 @@ func loadCredentials() (*credentials, error) {
 	if err != nil {
 		return nil, err
 	}
-	c, ok := st.Gateways[normalizeGateway(gatewayAddr)]
+	c, ok := st.Gateways[normalizeGateway(gatewayKey())]
 	if !ok || c.Token == "" {
-		return nil, fmt.Errorf("not authenticated for gateway %s", normalizeGateway(gatewayAddr))
+		return nil, fmt.Errorf("not authenticated for gateway %s", normalizeGateway(gatewayKey()))
 	}
 	return &c, nil
 }
@@ -342,7 +342,7 @@ func sessionProblem() error {
 	}
 	if !creds.ExpiresAt.IsZero() && time.Now().After(creds.ExpiresAt) {
 		return fmt.Errorf("your session on %s expired %s ago (%s): run 'memdoor auth login-direct --email %s --password <pass>'",
-			normalizeGateway(gatewayAddr), humanizeDuration(time.Since(creds.ExpiresAt)),
+			normalizeGateway(gatewayKey()), humanizeDuration(time.Since(creds.ExpiresAt)),
 			creds.ExpiresAt.Format("2006-01-02 15:04"), creds.Email)
 	}
 	return nil
@@ -366,7 +366,7 @@ func saveCredentials(creds *credentials) error {
 	}
 	// Migrate forward: drop the legacy top-level fields once we write.
 	st.Token, st.Email, st.ExpiresAt = "", "", nil
-	st.Gateways[normalizeGateway(gatewayAddr)] = *creds
+	st.Gateways[normalizeGateway(gatewayKey())] = *creds
 	data, err := json.MarshalIndent(st, "", "  ")
 	if err != nil {
 		return err
@@ -381,7 +381,7 @@ func deleteCredentials() error {
 	if err != nil {
 		return os.Remove(credentialsPath())
 	}
-	delete(st.Gateways, normalizeGateway(gatewayAddr))
+	delete(st.Gateways, normalizeGateway(gatewayKey()))
 	st.Token, st.Email, st.ExpiresAt = "", "", nil
 	if len(st.Gateways) == 0 {
 		return os.Remove(credentialsPath())

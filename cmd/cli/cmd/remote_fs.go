@@ -58,9 +58,9 @@ func (r remoteFS) Stat(path string) (string, bool, bool, error) {
 func fsError(err error) error {
 	msg := err.Error()
 	if strings.Contains(msg, "404") {
-		return fmt.Errorf("the gateway at %s has no such directory", gatewayAddr)
+		return fmt.Errorf("the gateway at %s has no such directory", gatewayShown())
 	}
-	return fmt.Errorf("the gateway at %s: %v", gatewayAddr, err)
+	return fmt.Errorf("the gateway at %s: %v", gatewayShown(), err)
 }
 
 var _ ui.FS = remoteFS{}
@@ -70,20 +70,23 @@ var _ ui.FS = remoteFS{}
 // one the window cannot know where that machine's project is.
 func remoteProjectDir(c *Client, dir string) (string, error) {
 	if strings.TrimSpace(dir) == "" {
-		return "", fmt.Errorf("the gateway at %s is on another machine: say which directory there the window works in\n  memdoor --gateway %s --dir /path/on/that/machine\n  or open a /remote link from a window on that machine: memdoor join <link>", gatewayAddr, gatewayHostOnly())
+		return "", fmt.Errorf("the gateway at %s is on another machine: say which directory there the window works in\n  memdoor --gateway %s --dir /path/on/that/machine\n  or open a /remote link from a window on that machine: memdoor join <link>", gatewayShown(), gatewayHostOnly())
 	}
 	abs, isDir, exists, err := remoteFS{c}.Stat(dir)
 	if err != nil {
 		return "", err
 	}
 	if !exists || !isDir {
-		return "", fmt.Errorf("%s is not a directory on the gateway's machine (%s)", abs, gatewayAddr)
+		return "", fmt.Errorf("%s is not a directory on the gateway's machine (%s)", abs, gatewayShown())
 	}
 	return abs, nil
 }
 
 // gatewayHostOnly is the gateway's host for a line a person retypes.
 func gatewayHostOnly() string {
+	if sshDoorUp != nil {
+		return sshDoorUp.name
+	}
 	if u, err := url.Parse(gatewayAddr); err == nil && u.Host != "" {
 		return u.Host
 	}

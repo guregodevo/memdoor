@@ -6,11 +6,18 @@ The same terminal, on your phone. Type `/remote` in the TUI, scan the code, and
 the page that opens is the TUI itself — running on your computer, drawn on your
 phone.
 
-Part of Pro on the memdoor.ai relay. If you run your own relay and point `MEMDOOR_REMOTE_URL` at it, it is yours and free.
+Where the link lives depends on where the gateway is. A gateway on another
+machine (`memdoor --gateway <box>`, [a box that stays on](/docs/gateway)) is
+its own relay: the link is on it, `http://box:18789/r/…`, and a phone that
+reaches the box opens the conversation there with no account and no plan. A
+gateway on this laptop sits behind its NAT, so its link goes through the
+memdoor.ai relay, which is part of Pro; a relay of your own at
+`MEMDOOR_REMOTE_URL` is yours and free.
 
 ## Turn it on
 
-Sign in once, so the relay knows whose terminal it is:
+For the memdoor.ai relay, sign in once, so it knows whose terminal it is (a
+gateway on a box asks for nothing):
 
 ```
 $ memdoor login you@example.com

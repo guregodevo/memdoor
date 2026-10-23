@@ -265,12 +265,19 @@ func init() {
 	if v := strings.TrimSpace(os.Getenv("MEMDOOR_GATEWAY")); v != "" {
 		defaultGateway = v
 	}
-	rootCmd.PersistentFlags().StringVar(&gatewayAddr, "gateway", defaultGateway, "Gateway address (or MEMDOOR_GATEWAY): a URL, host:port, or a bare host or IP (http, port 18789)")
+	rootCmd.PersistentFlags().StringVar(&gatewayAddr, "gateway", defaultGateway, "Gateway address (or MEMDOOR_GATEWAY): a URL, host:port, a bare host or IP (http, port 18789), or ssh://[user@]box[:port] for a gateway reached through ssh")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
 	rootCmd.PersistentFlags().StringVarP(&workspaceSlug, "workspace", "w", "", "Workspace slug. Optional — overrides auto-discovery (env $MEMDOOR_WORKSPACE → .memdoor/workspace walked up from cwd → ~/.memdoor/config.json). Run 'memdoor workspace which' to see what would resolve.")
 	// Wired here (not on the rootCmd literal) to avoid an init cycle:
 	// the closure references rootCmd to detect the top-level subcommand.
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if isSSHAddr(gatewayAddr) {
+			local, err := openSSHDoor(gatewayAddr)
+			if err != nil {
+				return err
+			}
+			gatewayAddr = local
+		}
 		gatewayAddr = canonicalGatewayAddr(gatewayAddr)
 		return requireWorkspaceSlug(cmd, args)
 	}

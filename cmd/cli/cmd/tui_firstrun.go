@@ -32,6 +32,9 @@ const gatewayPidFile = "gateway.pid"
 // localGatewayPort is the port of the gateway the CLI talks to, and whether
 // that gateway is on this machine.
 func localGatewayPort() (string, bool) {
+	if sshDoorUp != nil { // a tunnel's end is local; the gateway is not
+		return "", false
+	}
 	u, err := url.Parse(gatewayAddr)
 	if err != nil {
 		return "", false
@@ -84,6 +87,9 @@ func machineReady() error {
 		return nil
 	}
 	if renewLocalSession() == nil {
+		return nil
+	}
+	if sshDoorUp != nil && sshRenewSession() == nil {
 		return nil
 	}
 	if _, err := loadCredentials(); err == nil {

@@ -99,14 +99,14 @@ func TestJoinFromATerminal(t *testing.T) {
 	link := remoteJoinHost(t)
 	time.Sleep(300 * time.Millisecond) // the host's terminal attaches to the relay
 
-	driverKeys, driverScreen, driverDone := startGuest(t, link.url())
+	driverKeys, driverScreen, driverDone := startGuest(t, link.url(remoteURL()))
 	waitFor(t, "the host's screen on the driver", func() bool { return strings.Contains(driverScreen.String(), "cols=60") })
 	if _, err := driverKeys.Write([]byte("hi")); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, "the driver's keys to reach the host", func() bool { return strings.Contains(driverScreen.String(), "typed=[hi]") })
 
-	view, err := link.viewURL()
+	view, err := link.viewURL(remoteURL())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,11 +151,11 @@ func TestJoinFromATerminal(t *testing.T) {
 func TestParseRemoteLink(t *testing.T) {
 	l := remoteLink{ID: "CCCCCCCCCCCCCCCC", Key: "k"}
 	t.Setenv("MEMDOOR_REMOTE_URL", "https://memdoor.ai")
-	full, err := parseRemoteLink(l.url())
+	full, err := parseRemoteLink(l.url(remoteURL()))
 	if err != nil || !full.canDrive() || full.id != l.ID || full.base != "https://memdoor.ai" {
 		t.Fatalf("full link: %+v %v", full, err)
 	}
-	v, _ := l.viewURL()
+	v, _ := l.viewURL(remoteURL())
 	view, err := parseRemoteLink(v)
 	if err != nil || view.canDrive() || view.keys.proof != full.keys.proof {
 		t.Fatalf("watch-only link: drive=%v same proof=%v %v", view.canDrive(), view.keys.proof == full.keys.proof, err)

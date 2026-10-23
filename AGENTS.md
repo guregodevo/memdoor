@@ -20,10 +20,13 @@ make cli-index                # Regenerate the command index in docs/reference/C
 ./memdoor logs query --regex "PATTERN" --limit N --since Xm
 grep -r "duplicate_code" .    # Search before coding
 
-# Plans (2026-10-04): free = the agent, the decision model AND workflows (local
-# cron schedules included) on your own machine and key; Pro = $10/month seat:
-# remote control through the memdoor.ai relay, the hosted workflow state (mario-state,
-# 2026-10-05: every Pro run's state on memdoor.ai); runs with the laptop closed are coming.
+# Plans (2026-10-04, doors opened 2026-10-23): free = the agent, the decision model AND
+# workflows (local cron schedules included) on your own machine and key, and EVERY DOOR onto a
+# gateway of your own: `memdoor gateway install` on a box, the window on a laptop (--gateway
+# <box> --dir), ssh (--gateway ssh://box), the phone on the box's own address (/remote there
+# needs no account: Greg "no pro story", "a phone can connect to daemon"). Pro = what memdoor.ai
+# hosts: the relay for a gateway behind a laptop's NAT, the hosted workflow state (mario-state,
+# 2026-10-05), and next the box itself (Greg: "the pro story will be the self host").
 # A seat NEVER supplies a model key (Greg 2026-10-04) — always the user's key;
 # the gateway never leases a model (no MEMDOOR_BRAIN_CLASS / MEMDOOR_BYOK any
 # more). The BROKER owns the seat: token ->
@@ -142,9 +145,11 @@ grep -r "duplicate_code" .    # Search before coding
   judged reads, a per-turn toolbox, a stop instead of a cap, `/model` with real
   list prices. Free is the agent **and the decision model** on their key (Greg,
   2026-10-03: "jev decision model is not pro"), and so are workflows and
-  their local schedules (2026-10-04); Pro is $10/month: remote control and
-  the hosted workflow state (one table per workspace on memdoor.ai, shipped
-  2026-10-05); runs with the laptop closed are coming. A seat never supplies a key: every model
+  their local schedules (2026-10-04), and every door onto a gateway of your
+  own (2026-10-23: a box that stays on, the window on a laptop, ssh, the phone
+  on the box's address); Pro is what memdoor.ai hosts: the relay for a gateway
+  behind a laptop's NAT and the hosted workflow state (one table per workspace
+  on memdoor.ai, shipped 2026-10-05); the hosted box is next. A seat never supplies a key: every model
   and decision call is on the user's own (`autoDecisionModel` never picks the
   broker; every chat request goes through a provider, `providers/factory.go`).
   Command line only — one binary, no app, no feature flags. The

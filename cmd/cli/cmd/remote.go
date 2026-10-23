@@ -91,15 +91,16 @@ across holds: the same one opens the conversation again next time.`,
 		if err != nil {
 			return err
 		}
-		out, watch := link.url(), ""
-		if watch, err = link.viewURL(); err != nil {
+		base := remote.relayBase()
+		out, watch := link.url(base), ""
+		if watch, err = link.viewURL(base); err != nil {
 			return err
 		}
 		if view {
 			out = watch
 		}
 		fmt.Fprintln(os.Stdout, out)
-		fmt.Fprintln(os.Stderr, remoteHoldText(r, watch, view))
+		fmt.Fprintln(os.Stderr, remoteHoldText(r, watch, view, base))
 		return holdRemote(cmd.Context())
 	},
 }
@@ -128,7 +129,7 @@ func remoteTarget(args []string, last bool) (sessionRecord, error) {
 // remoteHoldText is what stderr says beside the link: the watch-only link
 // (unless that is the one printed), the QR code of the printed link, and
 // that the conversation is held.
-func remoteHoldText(r sessionRecord, watch string, view bool) string {
+func remoteHoldText(r sessionRecord, watch string, view bool, base string) string {
 	var b strings.Builder
 	title := strings.TrimSpace(r.Title)
 	if title == "" {
@@ -142,12 +143,12 @@ func remoteHoldText(r sessionRecord, watch string, view bool) string {
 	link := watch
 	if !view {
 		if l, _, err := remoteLinkFor(r.ChannelID, false); err == nil {
-			link = l.url()
+			link = l.url(base)
 		}
 	}
 	b.WriteString(qrText(link))
 	b.WriteString("\n")
-	b.WriteString("holding this conversation on the relay · ctrl+c ends it, the link stays")
+	b.WriteString("holding this conversation on " + relayHostOf(base) + " · ctrl+c ends it, the link stays")
 	return b.String()
 }
 

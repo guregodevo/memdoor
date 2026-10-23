@@ -11,6 +11,8 @@
     "prebuild": "node scripts/sync-docs.mjs"
   },
   "dependencies": {
+    "@noble/ciphers": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "asciinema-player": "^3.17.0",

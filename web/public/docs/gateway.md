@@ -79,10 +79,30 @@ The run happens on that machine, in that machine's project, on that
 gateway's key; your terminal is the door. The window's files panel (ctrl+f),
 the @-mentions and `/dir` read that machine's directory through the gateway,
 so what you see is what the agent sees. A directory the gateway does not have
-is refused by name, never quietly replaced. A window you open on the box
-itself (over ssh, in tmux) can print a `/remote` link: `memdoor join <link>`
-opens it in your laptop's terminal and the same link opens it on your phone.
-Workflows and schedules on that gateway need no window at all.
+is refused by name, never quietly replaced. Workflows and schedules on that
+gateway need no window at all.
+
+Over ssh, nothing on the box is opened to the network: `--gateway
+ssh://you@box` (or `MEMDOOR_GATEWAY=ssh://you@box`) opens a tunnel to the
+gateway there for the length of the command, with the keys ssh already has,
+and signs in with the login the box generated for itself. `?port=18799`
+names a gateway on another port there.
+
+```bash
+memdoor --gateway ssh://you@box --dir /srv/proj                   # the window
+memdoor --gateway ssh://you@box run --dir /srv/proj "run the tests"
+memdoor --gateway ssh://you@box workflow run release
+```
+
+Your phone reaches the box the way your laptop does. `/remote` in a window
+on a box prints a link on that gateway, `http://box:18789/r/…`: a phone on
+the box's network, VPN or Tailscale opens the conversation there, with no
+memdoor.ai account and no plan. `memdoor --gateway <box> remote --last`
+prints the same link from a shell and holds the conversation on it;
+`memdoor join <link>` opens it in another terminal. The key after `#` never
+leaves the page and every frame is sealed with it, so the link works on the
+box's plain http. Through the ssh door the box has no address a phone can
+open, so there `/remote` goes through the memdoor.ai relay.
 
 What is not there yet: a gate answered from the phone when no window is open
 on the box, and an image pasted into a window whose project is elsewhere.

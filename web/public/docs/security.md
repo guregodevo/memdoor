@@ -28,6 +28,7 @@ lists them; the remote-control relay is sealed end to end).
 | Host | What | Contacted when |
 |---|---|---|
 | *(your gateway's host)* | The company's own AI gateway — not a literal in the binary; it comes from `AI_GATEWAY_BASE_URL` | Company-gateway mode, every model call |
+| *(a box of yours, over ssh)* | The ssh door: `--gateway ssh://you@box` runs your own `ssh`, with its keys and config, to tunnel to the gateway on that box; over the same connection it reads the login that gateway generated for itself (`~/.memdoor/local-login` there). Not a literal in the binary | Only when you name the box, for the length of the command; nothing goes anywhere else |
 | `api.anthropic.com` | Anthropic's Messages API | Company-key mode with `ANTHROPIC_API_KEY`; `ANTHROPIC_BASE_URL` replaces it with the company gateway |
 | `auth.openai.com` | Sign in with ChatGPT: the authorize page (opened in your browser), the token endpoint, the signing keys (JWKS) | Only during `memdoor connect chatgpt`, and when the plan's access token is renewed (hourly, with the refresh token) |
 | `api.openai.com` | OpenAI's Responses API on an `OPENAI_API_KEY` (since 2026-10-10; the chat endpoint refuses the gpt-6 models with tools); a signed-in ChatGPT plan's Responses requests and its model list | Company-key mode with `OPENAI_API_KEY`; `OPENAI_BASE_URL` replaces it. A ChatGPT plan: every model call. Also a row in the built-in model table (`pkg/domain/models.go`), never a call by itself |
