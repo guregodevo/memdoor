@@ -6,13 +6,15 @@ The same terminal, on your phone. Type `/remote` in the TUI, scan the code, and
 the page that opens is the TUI itself — running on your computer, drawn on your
 phone.
 
-Where the link lives depends on where the gateway is. A gateway on another
-machine (`memdoor --gateway <box>`, [a box that stays on](/docs/gateway)) is
-its own relay: the link is on it, `http://box:18789/r/…`, and a phone that
-reaches the box opens the conversation there with no account and no plan. A
-gateway on this laptop sits behind its NAT, so its link goes through the
-memdoor.ai relay, which is part of Pro; a relay of your own at
-`MEMDOOR_REMOTE_URL` is yours and free.
+The link lives on your gateway whenever a phone could reach it: a gateway
+on another machine (`memdoor --gateway <box>`, [a box that stays
+on](/docs/gateway)), or one on this laptop that listens on the network
+(`MEMDOOR_HOST=0.0.0.0`, or `memdoor gateway --host 0.0.0.0`). Then the
+link is `http://<its address>:18789/r/…`, the gateway is its own relay, and
+the phone opens the conversation there with no account and no plan. Only a
+gateway that listens on localhost alone, which is the default on a laptop,
+goes through the memdoor.ai relay; `/remote` says so, and that relay is part
+of Pro. A relay of your own at `MEMDOOR_REMOTE_URL` is yours and free.
 
 ## Turn it on
 

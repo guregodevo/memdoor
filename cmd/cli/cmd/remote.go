@@ -71,7 +71,7 @@ across holds: the same one opens the conversation again next time.`,
 		curDir := func() string { return dir }
 		poster := tuiPoster(c, wsID, curDir)
 		w := newTUIWiring(c, wsID, wsURLOf(gatewayAddr), curDir, poster)
-		remote := w.remoteFor(ui.FirstAgent(), r.ChannelID, r.ChannelName)
+		remote := w.remoteFor(ui.FirstAgent(), r.ChannelID, r.ChannelName).resolved()
 		arg := ""
 		switch {
 		case off:

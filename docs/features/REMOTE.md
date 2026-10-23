@@ -12,14 +12,20 @@ the terminal belongs to and which plan: an account without a seat gets
 gateway relaying for its own users (`MEMDOOR_REMOTE_URL` at it, someone
 hosting Memdoor themselves) never asks for a plan.
 
-A gateway on another machine is its own relay (2026-10-23, Greg: "a phone can
-connect to daemon", "no pro story"): when the window's gateway is not
-loopback, `remoteSession.direct()` is true, the link is
-`<gateway>/r/<id>#k=…`, the terminal dials that gateway's `/api/relay` with
-the gateway's own token (`relayAuth.local`, never billing), and no account or
-plan is asked in the window. A loopback gateway, the laptop's own or the end
-of an ssh tunnel (`--gateway ssh://box`, `cmd/cli/cmd/gateway_ssh.go`), keeps
-the hosted relay. A plain-http page away from localhost has no
+The gateway is its own relay whenever a phone could reach it (2026-10-23,
+Greg: "a phone can connect to daemon", "no pro story", "/remote should not go
+through memdoor.ai anymore unless it's needed"). `remoteSession.resolved()`
+settles it once per `/remote`: a gateway on another machine is the relay as
+the window reaches it; a gateway reached through loopback (the laptop's own,
+or the end of an ssh tunnel, `--gateway ssh://box`,
+`cmd/cli/cmd/gateway_ssh.go`) is asked where it listens (`/health`'s
+`listen`: host, port, and the machine's addresses when it binds every
+interface, private network first, `gateway/listen.go`), and the link goes on
+the first address it names, or on the box's name through the ssh door; only
+a gateway on localhost alone goes through memdoor.ai, with the reason in the
+window (`RelayWhy`). On the gateway's relay the terminal dials `/api/relay`
+with the gateway's own token (`relayAuth.local`, never billing) and no
+account or plan is asked. A plain-http page away from localhost has no
 `crypto.subtle` (an insecure context), which is how a phone reaches
 `http://box:18789/r/…`: `remoteCrypto.ts` then runs the same HKDF and
 AES-GCM in JavaScript (noble); `TestRemoteCryptoMatchesTheBrowser` checks

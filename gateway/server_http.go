@@ -57,6 +57,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		hint = "no model configured: set a provider key or run memdoor connect"
 	}
 	snapshot.LLM = &health.LLMHealth{Available: available, Hint: hint}
+	snapshot.Listen = &health.ListenHealth{Host: s.listenHost, Port: s.port, Addresses: listenAddresses(s.listenHost)}
 
 	// Return snapshot
 	if err := json.NewEncoder(w).Encode(snapshot); err != nil {

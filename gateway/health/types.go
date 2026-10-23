@@ -27,9 +27,22 @@ type HealthSummary struct {
 	// actually answer, instead of hanging on a request that will never
 	// produce a reply.
 	LLM *LLMHealth `json:"llm,omitempty"`
+
+	// Where this gateway listens, and the addresses another device could
+	// reach it on when it listens beyond this machine (none when it listens
+	// on localhost alone). A window uses it to put a /remote link on the
+	// gateway itself instead of the memdoor.ai relay.
+	Listen *ListenHealth `json:"listen,omitempty"`
 }
 
 // LLMHealth reports whether a model can answer on this gateway.
+// ListenHealth is the gateway's own address.
+type ListenHealth struct {
+	Host      string   `json:"host"`
+	Port      int      `json:"port"`
+	Addresses []string `json:"addresses,omitempty"`
+}
+
 type LLMHealth struct {
 	Available bool   `json:"available"`
 	Hint      string `json:"hint,omitempty"`

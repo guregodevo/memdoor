@@ -62,6 +62,7 @@ type Server struct {
 	repoFactory       repository.RepositoryFactory // Repository factory for database abstraction
 	log               *logs.EventLogger            // Structured logger
 	port              int
+	listenHost        string // the host it binds (Start); "" before
 	sessions          *SessionManager
 	agent             *AgentRuntime                  // AI agent runtime
 	decisions         decision.Service               // Workspace decision model (decisions.go); nil until wired

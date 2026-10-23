@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -203,6 +204,18 @@ func sshRenewSession() error {
 	return loginLocal(ll.Email, ll.Password)
 }
 
+// sshDoorHost is the box's name as typed, without the user: what a phone
+// on the same network or VPN dials.
+func sshDoorHost() string {
+	if sshDoorUp == nil {
+		return ""
+	}
+	if u, err := url.Parse(sshDoorUp.name); err == nil && u.Hostname() != "" {
+		return u.Hostname()
+	}
+	return sshDoorUp.name
+}
+
 // gatewayKey names the gateway in the credentials file: the address as
 // typed for an ssh door (its tunnel port changes every run), else the
 // address itself.
@@ -219,4 +232,12 @@ func gatewayShown() string {
 		return sshDoorUp.name
 	}
 	return gatewayAddr
+}
+
+// envOr is the variable's value, or def when it is unset or blank.
+func envOr(name, def string) string {
+	if v := strings.TrimSpace(os.Getenv(name)); v != "" {
+		return v
+	}
+	return def
 }

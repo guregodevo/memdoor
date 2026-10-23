@@ -230,9 +230,9 @@ var gatewayStatusCmd = &cobra.Command{
 
 func init() {
 	gatewayCmd.Flags().IntVar(&gatewayPort, "port", 18789, "Server port")
-	gatewayCmd.Flags().StringVar(&gatewayHost, "host", "localhost", "Server host")
+	gatewayCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", "localhost"), "The address it binds (or MEMDOOR_HOST): localhost for this machine only, 0.0.0.0 for the network, which gives a phone a direct /remote door")
 	gatewayInstallCmd.Flags().IntVar(&gatewayPort, "port", 18789, "the port the service listens on")
-	gatewayInstallCmd.Flags().StringVar(&gatewayHost, "host", "localhost", "the address it binds: localhost for this machine only, 0.0.0.0 for the network")
+	gatewayInstallCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", "localhost"), "the address it binds (or MEMDOOR_HOST): localhost for this machine only, 0.0.0.0 for the network")
 	gatewayInstallCmd.Flags().Bool("print", false, "print the unit instead of installing it")
 	gatewayCmd.AddCommand(gatewayInstallCmd, gatewayUninstallCmd, gatewayStatusCmd)
 	rootCmd.AddCommand(gatewayCmd)

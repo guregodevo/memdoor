@@ -12,10 +12,12 @@ import (
 	"fmt"
 	"io"
 	"memdoor/pkg/shared"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -186,7 +188,11 @@ type remoteSession struct {
 	// Account is the memdoor.ai account token: the relay host's credential
 	// for /api/relay, distinct from the local gateway's.
 	Account string
-	Post    func(text string) error
+	// Relay, RelayToken and RelayWhy are settled by resolved(): where the
+	// link lives, what the terminal dials it with, and when it is
+	// memdoor.ai, why the gateway itself could not be.
+	Relay, RelayToken, RelayWhy string
+	Post                        func(text string) error
 	// History reads the conversation's last turns from the gateway.
 	History func() []ui.Message
 	// TTY builds the TUI for this conversation, for the page's terminal view.
@@ -194,33 +200,97 @@ type remoteSession struct {
 }
 
 // direct reports whether the conversation's gateway is on another machine:
-// then that gateway is the relay. A loopback gateway is this laptop's, behind
-// its NAT, and its link goes through the hosted relay.
+// then that gateway is the relay, as it stands.
 func (s remoteSession) direct() bool {
 	return strings.TrimSpace(s.Gateway) != "" && !shared.IsLoopbackURL(s.Gateway)
 }
 
-// relayBase is where the link points and the terminal dials.
-func (s remoteSession) relayBase() string {
-	if s.direct() {
-		return strings.TrimRight(strings.TrimSpace(s.Gateway), "/")
-	}
-	return remoteURL()
+// remoteListen is the gateway's own address, from its /health.
+type remoteListen struct {
+	Host      string   `json:"host"`
+	Port      int      `json:"port"`
+	Addresses []string `json:"addresses"`
 }
+
+// gatewayListen asks the gateway where it listens. An unanswered question
+// is no address.
+func gatewayListen(gateway string) (remoteListen, bool) {
+	c := &http.Client{Timeout: 2 * time.Second}
+	resp, err := c.Get(strings.TrimRight(gateway, "/") + "/health")
+	if err != nil {
+		return remoteListen{}, false
+	}
+	defer resp.Body.Close()
+	var body struct {
+		Listen *remoteListen `json:"listen"`
+	}
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&body) != nil || body.Listen == nil {
+		return remoteListen{}, false
+	}
+	return *body.Listen, true
+}
+
+// resolved settles where this conversation's link lives, once: on the
+// gateway itself whenever a phone could reach it, through memdoor.ai only
+// when it could not (Greg, 2026-10-23: "/remote should not go through
+// memdoor.ai anymore unless it's needed").
+//
+//   - a gateway on another machine: that gateway, as the window reaches it;
+//   - a gateway reached through this machine's loopback (its own, or the end
+//     of an ssh tunnel) that listens beyond localhost: the box's name through
+//     the ssh door, else the first address the gateway names;
+//   - a gateway on localhost alone: memdoor.ai, and RelayWhy says so.
+func (s remoteSession) resolved() remoteSession {
+	if s.Relay != "" {
+		return s
+	}
+	gw := strings.TrimRight(strings.TrimSpace(s.Gateway), "/")
+	if s.direct() {
+		s.Relay, s.RelayToken = gw, s.Token
+		return s
+	}
+	hosted := func(why string) remoteSession {
+		s.Relay, s.RelayToken, s.RelayWhy = remoteURL(), s.Account, why
+		return s
+	}
+	if gw == "" {
+		return hosted("")
+	}
+	l, ok := gatewayListen(gw)
+	if !ok {
+		return hosted("")
+	}
+	if len(l.Addresses) == 0 {
+		if sshDoorUp != nil {
+			return hosted("the gateway on " + sshDoorHost() + " listens on localhost alone; there, memdoor gateway install --host 0.0.0.0 (or MEMDOOR_HOST=0.0.0.0) gives your phone a direct door")
+		}
+		return hosted("the gateway on this machine listens on localhost alone; MEMDOOR_HOST=0.0.0.0 before the next start (or memdoor gateway --host 0.0.0.0) gives your phone a direct door on this network")
+	}
+	host := l.Addresses[0]
+	if sshDoorUp != nil {
+		host = sshDoorHost()
+	}
+	s.Relay, s.RelayToken = "http://"+net.JoinHostPort(host, strconv.Itoa(l.Port)), s.Token
+	return s
+}
+
+// hosted reports whether the link goes through memdoor.ai.
+func (s remoteSession) hosted() bool { return s.resolved().Relay == remoteURL() }
+
+// relayBase is where the link points and the terminal dials.
+func (s remoteSession) relayBase() string { return s.resolved().Relay }
 
 // relayToken is the credential the relay takes: the gateway's own token on
 // the gateway's relay, the memdoor.ai account token on the hosted one.
-func (s remoteSession) relayToken() string {
-	if s.direct() {
-		return s.Token
-	}
-	return s.Account
-}
+func (s remoteSession) relayToken() string { return s.resolved().RelayToken }
 
 // tuiRemote answers /remote and /remote off for one conversation, and keeps
 // the relay running while the link exists.
-func tuiRemote(s remoteSession) func(arg string) (string, error) {
+func tuiRemote(unresolved remoteSession) func(arg string) (string, error) {
 	return func(arg string) (string, error) {
+		// Settled on every call: a gateway restarted on the network since
+		// the last /remote moves the link onto itself.
+		s := unresolved.resolved()
 		if strings.TrimSpace(arg) == "off" {
 			stopRemote(s.ChannelID)
 			_, had, err := remoteLinkFor(s.ChannelID, true)
@@ -232,7 +302,7 @@ func tuiRemote(s remoteSession) func(arg string) (string, error) {
 			}
 			return "Remote control is off: the old link and its key no longer open this conversation.", nil
 		}
-		if !s.direct() {
+		if s.hosted() {
 			if s.Account == "" {
 				return "", errors.New("remote control needs a memdoor.ai account: run `memdoor login you@example.com` first, then try /remote again")
 			}
@@ -262,16 +332,19 @@ func tuiRemote(s remoteSession) func(arg string) (string, error) {
 			lead = "Remote control is on for this conversation — the same link as before:"
 		}
 		carrier := "the relay only carries what it cannot read"
-		if s.direct() {
+		why := ""
+		if !s.hosted() {
 			lead = "Remote control for this conversation, on your gateway at " + relayHostOf(base) + " — open the link or scan the code from a phone that reaches that machine:"
 			if existing {
 				lead = "Remote control is on for this conversation, on your gateway at " + relayHostOf(base) + " — the same link as before:"
 			}
 			carrier = "the gateway only carries what it cannot read"
+		} else if s.RelayWhy != "" {
+			why = "\n\nThrough memdoor.ai: " + s.RelayWhy + "."
 		}
 		return fmt.Sprintf("%s\n\n%s\n\n%s\n\nWatch only (sees, cannot type): %s\n\n"+
 			"The key after # never leaves your devices; %s. "+
-			"/remote off revokes both links.", lead, l.url(base), qrText(l.url(base)), view, carrier), nil
+			"/remote off revokes both links.%s", lead, l.url(base), qrText(l.url(base)), view, carrier, why), nil
 	}
 }
 
@@ -280,7 +353,7 @@ func tuiRemote(s remoteSession) func(arg string) (string, error) {
 // keeps working without typing /remote again.
 func resumeRemote(s remoteSession) {
 	if l, ok := loadRemoteLinks()[s.ChannelID]; ok {
-		startRemote(s, l)
+		startRemote(s.resolved(), l)
 	}
 }
 

@@ -101,8 +101,11 @@ memdoor.ai account and no plan. `memdoor --gateway <box> remote --last`
 prints the same link from a shell and holds the conversation on it;
 `memdoor join <link>` opens it in another terminal. The key after `#` never
 leaves the page and every frame is sealed with it, so the link works on the
-box's plain http. Through the ssh door the box has no address a phone can
-open, so there `/remote` goes through the memdoor.ai relay.
+box's plain http. Through the ssh door the link is on the box's name, with
+the gateway's port, as long as that gateway listens on the network
+(`gateway install --host 0.0.0.0`); a gateway that listens on localhost
+alone has no door for a phone, and `/remote` then goes through memdoor.ai
+and says so.
 
 What is not there yet: a gate answered from the phone when no window is open
 on the box, and an image pasted into a window whose project is elsewhere.

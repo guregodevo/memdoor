@@ -142,6 +142,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 		return fmt.Errorf("failed to create server: %w", err)
 	}
 
+	server.listenHost = host
 	// Set gateway base URL for agent tools API calls
 	tools.SetGatewayBaseURL(host, port)
 
