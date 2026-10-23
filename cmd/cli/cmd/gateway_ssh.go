@@ -26,10 +26,11 @@ import (
 // outlives it. BatchMode means a box that would ask for a password fails at
 // once with ssh's own reason, instead of a prompt under the window.
 type sshDoor struct {
-	name  string // the address as typed: the credentials' key and the name in messages
-	local string // http://127.0.0.1:<port> this command talks to
-	stdin io.WriteCloser
-	cmd   *exec.Cmd
+	name   string // the address as typed: the credentials' key and the name in messages
+	local  string // http://127.0.0.1:<port> this command talks to
+	stdin  io.WriteCloser
+	cmd    *exec.Cmd
+	exited <-chan error // ssh's exit, waited for once
 }
 
 var sshDoorUp *sshDoor
@@ -119,6 +120,7 @@ func openSSHDoor(addr string) (string, error) {
 		if time.Now().After(deadline) {
 			_ = stdin.Close()
 			_ = cmd.Process.Kill()
+			<-exited // ssh is done writing its stderr once it has exited
 			why := strings.TrimSpace(lastLine(stderr.String()))
 			if why != "" {
 				why = " (" + why + ")"
@@ -127,7 +129,7 @@ func openSSHDoor(addr string) (string, error) {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
-	sshDoorUp = &sshDoor{name: strings.TrimSpace(addr), local: "http://127.0.0.1:" + strconv.Itoa(localPort), stdin: stdin, cmd: cmd}
+	sshDoorUp = &sshDoor{name: strings.TrimSpace(addr), local: "http://127.0.0.1:" + strconv.Itoa(localPort), stdin: stdin, cmd: cmd, exited: exited}
 	return sshDoorUp.local, nil
 }
 
@@ -138,12 +140,11 @@ func closeSSHDoor() {
 		return
 	}
 	_ = sshDoorUp.stdin.Close()
-	done := make(chan struct{})
-	go func() { _ = sshDoorUp.cmd.Wait(); close(done) }()
 	select {
-	case <-done:
+	case <-sshDoorUp.exited:
 	case <-time.After(2 * time.Second):
 		_ = sshDoorUp.cmd.Process.Kill()
+		<-sshDoorUp.exited
 	}
 	sshDoorUp = nil
 }
@@ -155,8 +156,11 @@ func sshReason(target, stderr string) string {
 	if why == "" {
 		why = "ssh exited before the tunnel was up"
 	}
-	if strings.Contains(why, "Permission denied") {
+	switch {
+	case strings.Contains(why, "Permission denied"):
 		why += "; the ssh door signs in with a key, never a prompt: ssh-copy-id " + target
+	case strings.Contains(why, "Host key verification failed"):
+		why += "; the ssh door never answers a host-key question: ssh " + target + " once by hand first"
 	}
 	return why
 }

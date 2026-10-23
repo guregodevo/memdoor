@@ -158,3 +158,23 @@ func TestSSHDoorSpecAndArgs(t *testing.T) {
 	}
 	_ = url.Values{}
 }
+
+// A box whose host key ssh has never seen is refused with the step that
+// records it; a gateway on another machine with no session says how to sign
+// in there, not "set this machine up".
+func TestTheSSHDoorAndARemoteGatewaySayTheNextStep(t *testing.T) {
+	if got := sshReason("me@box", "Host key verification failed.\n"); !strings.Contains(got, "ssh me@box once by hand") {
+		t.Fatalf("host key: %q", got)
+	}
+	if got := sshReason("me@box", ""); got != "ssh exited before the tunnel was up" {
+		t.Fatalf("no stderr: %q", got)
+	}
+	t.Setenv("HOME", t.TempDir())
+	saved := gatewayAddr
+	gatewayAddr = "http://box.lan:18799"
+	t.Cleanup(func() { gatewayAddr = saved })
+	err := sessionProblem()
+	if err == nil || !strings.Contains(err.Error(), "login-direct --gateway http://box.lan:18799") || strings.Contains(err.Error(), "not set up yet") {
+		t.Fatalf("a remote gateway without a session names the sign-in there: %v", err)
+	}
+}

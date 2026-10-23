@@ -334,6 +334,12 @@ func loadCredentials() (*credentials, error) {
 func sessionProblem() error {
 	creds, err := loadCredentials()
 	if err != nil {
+		// A gateway on another machine is signed in to by hand: nothing here
+		// can set it up, and "cd <project> && memdoor" would be the wrong
+		// advice (the http and ssh doors, 2026-10-23).
+		if _, local := localGatewayPort(); !local {
+			return fmt.Errorf("no session on %s yet: memdoor auth login-direct --gateway %s --email you@… --password …", gatewayShown(), gatewayShown())
+		}
 		// A FIRST RUN IS NOT AN EXPIRED SESSION (onboarding walk, 2026-09-27).
 		// Someone who has just installed this and typed `memdoor tui` was told
 		// to run `memdoor auth login-direct --email … --password …`, a command
