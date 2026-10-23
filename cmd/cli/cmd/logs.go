@@ -69,7 +69,7 @@ this command is the manual escape hatch.`,
 
 var logsQueryCmd = &cobra.Command{
 	Use:   "query",
-	Short: "Query log events",
+	Short: "Search the log: --regex, --since, --limit",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		params := url.Values{}
@@ -154,7 +154,7 @@ var logsQueryCmd = &cobra.Command{
 
 var logsErrorsCmd = &cobra.Command{
 	Use:   "errors",
-	Short: "Show recent errors",
+	Short: "What went wrong lately (--since 5m)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		params := url.Values{}
@@ -197,7 +197,7 @@ var logsErrorsCmd = &cobra.Command{
 
 var logsStatsCmd = &cobra.Command{
 	Use:   "stats",
-	Short: "Show log statistics",
+	Short: "How many events, by level and source",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		var stats map[string]interface{}
@@ -214,7 +214,7 @@ var logsStatsCmd = &cobra.Command{
 
 var logsTraceCmd = &cobra.Command{
 	Use:   "trace",
-	Short: "Trace a log event",
+	Short: "One event and everything around it, by id",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		eventID, _ := cmd.Flags().GetString("event-id")
 		if eventID == "" && len(args) > 0 {
@@ -236,7 +236,7 @@ var logsTraceCmd = &cobra.Command{
 
 var logsSessionCmd = &cobra.Command{
 	Use:   "session",
-	Short: "Show session timeline",
+	Short: "A conversation's timeline: each turn, each tool, as logged",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sessionID, _ := cmd.Flags().GetString("session-id")
 		if sessionID == "" && len(args) > 0 {

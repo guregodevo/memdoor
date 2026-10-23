@@ -111,6 +111,7 @@ memdoor sessions export           # sessions → JSONL
 ```bash
 memdoor remote <id>        # the link on stdout; holds the conversation on the relay until ctrl+c
 memdoor remote --last      # this directory's most recent conversation
+memdoor remote             # at a terminal: the list, and a question (which one)
 memdoor remote --view <id> # the watch-only link
 memdoor remote off <id>    # revoke
 ```

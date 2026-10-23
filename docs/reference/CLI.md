@@ -167,8 +167,8 @@ Error: no workspace resolved for "channels". Set one of:
 
 <!-- cli-index:start -->
 Generated from the binary's `--help` by `make cli-index` (39 top-level commands).
-`memdoor --help` shows 31 of them; the others are hidden from it and run when typed:
-`auth`, `billing`, `channels`, `chrome`, `cron`, `messages`, `sessions`, `users`. A command that appears here
+`memdoor --help` shows 32 of them; the others are hidden from it and run when typed:
+`auth`, `billing`, `channels`, `chrome`, `messages`, `sessions`, `users`. A command that appears here
 and nowhere else in this file is documented by its own `memdoor <command> --help`.
 
 **The gateway, the daemon that owns the work**
@@ -179,17 +179,23 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `status` — Is the gateway up, which version, and who manages it
   - `uninstall` — Stop the gateway service and remove its unit (the data stays)
 - `logs` — What the gateway logged: query, errors, since when
-  - `errors` — Show recent errors
+  - `errors` — What went wrong lately (--since 5m)
   - `prune` — Delete old log events and reclaim disk space
-  - `query` — Query log events
-  - `session` — Show session timeline
-  - `stats` — Show log statistics
-  - `trace` — Trace a log event
+  - `query` — Search the log: --regex, --since, --limit
+  - `session` — A conversation's timeline: each turn, each tool, as logged
+  - `stats` — How many events, by level and source
+  - `trace` — One event and everything around it, by id
 
 **Doors onto it**
 
 - `acp` — Runs Memdoor as an Agent Client Protocol agent on stdin/stdout, for an
 - `conversations` — List recent conversations (what `memdoor resume` picks from)
+- `cron` — Schedules: a prompt or a workflow on a cron line, run by the gateway with no window open
+  - `add` — Schedule a prompt (--message) or a workflow (--workflow) on a cron line
+  - `history` — What each run of a schedule did
+  - `list` — Every schedule, with its agent and its line
+  - `remove` — Remove a schedule
+  - `stats` — How often a schedule ran, and how it went
 - `join` — Open a link that /remote printed on another computer, in this terminal
 - `remote` — memdoor remote <id>        print the link on stdout and hold the conversation on the relay
 - `resume` — Resume a previous conversation.
@@ -198,13 +204,13 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **What it runs**
 
-- `agent` — Manage agents and send messages
-  - `add` — Add a new agent
-  - `delete` — Delete an agent
-  - `list` — List all agents
-  - `sessions` — List agent sessions
-  - `show` — Show agent details
-  - `update` — Update an agent's configuration
+- `agent` — The agents on this gateway: list them, or send one a message from a script
+  - `add` — Add an agent
+  - `delete` — Remove an agent (asks first)
+  - `list` — Every agent on this gateway: id and name
+  - `sessions` — An agent's sessions: one per conversation it has been in
+  - `show` — One agent: id, description and tools
+  - `update` — Change an agent's settings
 - `guards` — The rules that keep the agent out of what it must not touch.
   - `add` — Add a rule
   - `clear` — Remove every rule
@@ -242,11 +248,11 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **Workspace and account**
 
-- `account` — Sign in with your email (a code arrives, you type it)
+- `account` — The memdoor.ai account: sign in with your email, status, subscribe
   - `login` — Sign in: a code is emailed, type it here (short: memdoor login)
   - `logout` — Sign out of memdoor.ai on this Mac (the engine stays signed in)
   - `status` — Who is signed in on this Mac, and what the seat is
-  - `subscribe` — Subscribe to Pro: remote control and the hosted workflow state, always on your own key; $10 a month
+  - `subscribe` — Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month
 - `login` — Sign in to memdoor.ai with your email: a six-digit code arrives there, and you
 - `logout` — Sign out of memdoor.ai on this Mac (the engine stays signed in)
 - `setup` — Onboard a fresh Memdoor install: create the workspace and the
@@ -292,12 +298,6 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `members` — List members of a channel
 - `chrome` — Browser automation using a simple DSL (Domain-Specific Language) syntax. Connects to Chrome via DevTools Protocol.
   - `run` — Execute browser script from stdin
-- `cron` — Manage scheduled cron jobs
-  - `add` — Add a new cron job
-  - `history` — Show execution history
-  - `list` — List all cron jobs
-  - `remove` — Remove a cron job
-  - `stats` — Show job statistics
 - `messages` — View messages in a channel
 - `sessions` — Manage sessions
   - `clear` — Clear conversation history for a session (chat memory wipe)

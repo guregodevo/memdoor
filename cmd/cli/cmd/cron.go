@@ -34,12 +34,12 @@ func formatCronDuration(ms int64) string {
 
 var cronCmd = &cobra.Command{
 	Use:   "cron",
-	Short: "Manage scheduled cron jobs",
+	Short: "Schedules: a prompt or a workflow on a cron line, run by the gateway with no window open",
 }
 
 var cronListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all cron jobs",
+	Short: "Every schedule, with its agent and its line",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		var result struct {
@@ -84,7 +84,7 @@ var (
 
 var cronAddCmd = &cobra.Command{
 	Use:   "add",
-	Short: "Add a new cron job",
+	Short: "Schedule a prompt (--message) or a workflow (--workflow) on a cron line",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Headless: a schedule set from a shell starts the gateway it needs.
 		if err := firstRunReady(); err != nil {
@@ -144,7 +144,7 @@ var cronAddCmd = &cobra.Command{
 
 var cronRemoveCmd = &cobra.Command{
 	Use:   "remove [job-id]",
-	Short: "Remove a cron job",
+	Short: "Remove a schedule",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
@@ -160,7 +160,7 @@ var cronHistoryLimit int
 
 var cronHistoryCmd = &cobra.Command{
 	Use:   "history [job-id]",
-	Short: "Show execution history",
+	Short: "What each run of a schedule did",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		params := url.Values{}
@@ -201,7 +201,7 @@ var cronHistoryCmd = &cobra.Command{
 
 var cronStatsCmd = &cobra.Command{
 	Use:   "stats [job-id]",
-	Short: "Show job statistics",
+	Short: "How often a schedule ran, and how it went",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		path := "/api/cron-stats"

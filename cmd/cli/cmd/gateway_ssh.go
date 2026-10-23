@@ -184,7 +184,7 @@ func sshRenewSession() error {
 	if sshDoorUp == nil {
 		return fmt.Errorf("no ssh door")
 	}
-	target, sshPort, _, err := sshDoorSpec(sshDoorUp.name)
+	target, sshPort, gwPort, err := sshDoorSpec(sshDoorUp.name)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,31 @@ func sshRenewSession() error {
 	if json.Unmarshal(out, &ll) != nil || ll.Password == "" {
 		return fmt.Errorf("the generated login on %s is unreadable", target)
 	}
-	return loginLocal(ll.Email, ll.Password)
+	if err := loginLocal(ll.Email, ll.Password); err != nil {
+		return err
+	}
+	// One sign-in serves both doors onto the box: the session the ssh door
+	// just made is kept for the box's own address too, so `--gateway box`
+	// over its network needs no password the person never saw.
+	if creds, err := loadCredentials(); err == nil {
+		_ = saveCredentialsFor("http://"+net.JoinHostPort(sshDoorHost(), gwPort), creds)
+	}
+	return nil
+}
+
+// sshDoorHint is the ssh address of the gateway --gateway names over http,
+// for a line a person retypes: ssh://you@box, ?port= when the gateway is
+// not on 18789 there.
+func sshDoorHint() string {
+	u, err := url.Parse(gatewayAddr)
+	if err != nil || u.Hostname() == "" {
+		return "ssh://you@" + gatewayAddr
+	}
+	hint := "ssh://you@" + u.Hostname()
+	if p := u.Port(); p != "" && p != sshDefaultGatewayPort {
+		hint += "?port=" + p
+	}
+	return hint
 }
 
 // sshDoorHost is the box's name as typed, without the user: what a phone

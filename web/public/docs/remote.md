@@ -108,6 +108,7 @@ The phone door is a command like every other door (2026-10-12): what
 ```bash
 memdoor remote <id>        # the link on stdout, one line; then it holds the conversation on the relay
 memdoor remote --last      # this directory's most recent conversation
+memdoor remote             # at a terminal: the list, and a question (which one), as memdoor resume asks
 memdoor remote --view <id> # the watch-only link instead
 memdoor remote off <id>    # revoke
 ```

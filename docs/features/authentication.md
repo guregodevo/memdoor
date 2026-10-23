@@ -30,6 +30,7 @@ without a memdoor.ai account.
 
 ```bash
 memdoor auth login-direct --email you@work.com --password '…'   # 30-day session
+memdoor --gateway ssh://you@box run "…"   # a box: the ssh door reads the login the box generated (~/.memdoor/local-login) and keeps the session for ssh://box AND http://box:18789 (gateway_ssh.go sshRenewSession, 2026-10-23)
 memdoor auth token                                               # the token, for curl
 memdoor auth whoami                                              # the engine user and role
 ```

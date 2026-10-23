@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"context"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -71,5 +75,42 @@ func TestFreshMachineIsToldToSetUp(t *testing.T) {
 	}
 	if strings.Contains(msg, "config: set workspace_id") {
 		t.Errorf("the four-way recital is gone: %s", msg)
+	}
+}
+
+// A fresh laptop against a box: nothing resolves here, and the box has one
+// workspace. An exempt command (run, workflow, remote) takes that one instead
+// of sending the box a turn with no workspace, which it refused with
+// "workspace is required" (the ssh door, 2026-10-23).
+func TestARemoteGatewaysOnlyWorkspaceIsTheDefaultForRun(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv(envWorkspaceVar, "")
+	t.Chdir(t.TempDir())
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/setup/status" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = w.Write([]byte(`{"initialized":true,"workspace_slug":"box"}`))
+	}))
+	defer srv.Close()
+	savedAddr, savedSlug := gatewayAddr, workspaceSlug
+	gatewayAddr, workspaceSlug = strings.Replace(srv.URL, "127.0.0.1", "box.lan", 1), ""
+	t.Cleanup(func() { gatewayAddr, workspaceSlug = savedAddr, savedSlug })
+	// box.lan is not this machine: the request goes to the test server.
+	http.DefaultTransport.(*http.Transport).DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return net.Dial(network, strings.TrimPrefix(srv.URL, "http://"))
+	}
+	t.Cleanup(func() { http.DefaultTransport.(*http.Transport).DialContext = nil })
+	run, _, err := rootCmd.Find([]string{"run"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := requireWorkspaceSlug(run, nil); err != nil {
+		t.Fatal(err)
+	}
+	if workspaceSlug != "box" {
+		t.Fatalf("run on a box with one workspace takes it: %q", workspaceSlug)
 	}
 }

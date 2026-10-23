@@ -71,7 +71,7 @@ when it is needed. Removing it is `memdoor gateway uninstall`; the data stays.
 From your laptop:
 
 ```bash
-memdoor auth login-direct --gateway <box> --email you@… --password …   # once; the credentials are kept per gateway
+memdoor --gateway ssh://you@<box> run "say hi"   # once: the ssh door signs in with the box's own login, and keeps it for <box> too
 memdoor --gateway <box> --dir /srv/proj                                  # the window, on that box's checkout
 memdoor --gateway <box> run --dir /srv/proj "run the tests"            # a headless turn there
 memdoor --gateway <box> workflow run release                            # a workflow there; it runs with no one watching
@@ -79,7 +79,11 @@ memdoor --gateway <box> resume --last                                   # the wi
 ```
 
 The run happens on that machine, in that machine's project, on that
-gateway's key; your terminal is the door. The window's files panel (ctrl+f),
+gateway's key; your terminal is the door. The box generated its own login
+on its first run (`~/.memdoor/local-login` there); the ssh door reads it and
+signs you in, for `ssh://` and for the box's plain address alike, so no
+password is ever typed. Without ssh, `memdoor auth login-direct --gateway
+<box> --email … --password …` with that login does the same. The window's files panel (ctrl+f),
 the @-mentions and `/dir` read that machine's directory through the gateway,
 so what you see is what the agent sees. A directory the gateway does not have
 is refused by name, never quietly replaced. Workflows and schedules on that

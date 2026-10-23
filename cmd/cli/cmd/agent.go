@@ -22,7 +22,7 @@ var (
 var agentCmd = &cobra.Command{
 	Use:     "agent",
 	Aliases: []string{"agents"},
-	Short:   "Manage agents and send messages",
+	Short:   "The agents on this gateway: list them, or send one a message from a script",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if agentMessage == "" || agentChannel == "" || agentID == "" {
 			return cmd.Help()
@@ -68,7 +68,7 @@ var agentCmd = &cobra.Command{
 
 var agentListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all agents",
+	Short: "Every agent on this gateway: id and name",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		var result struct {
@@ -96,7 +96,7 @@ var agentListCmd = &cobra.Command{
 
 var agentShowCmd = &cobra.Command{
 	Use:   "show [agent-id]",
-	Short: "Show agent details",
+	Short: "One agent: id, description and tools",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
@@ -126,7 +126,7 @@ var agentShowCmd = &cobra.Command{
 
 var agentAddCmd = &cobra.Command{
 	Use:   "add [agent-id]",
-	Short: "Add a new agent",
+	Short: "Add an agent",
 	Long: `Add a new buddy to the workspace.
 
 Agents run on the gateway's models: each agent's ladder, on the provider
@@ -161,7 +161,7 @@ carries a name, a prompt, tools, a sandbox scope, etc.`,
 
 var agentUpdateCmd = &cobra.Command{
 	Use:   "update [agent-name]",
-	Short: "Update an agent's configuration",
+	Short: "Change an agent's settings",
 	Long: `Update an agent's prompt, tools, sandbox scope, etc.
 
 The model is not set here: every agent runs on the gateway's models, on the
@@ -209,7 +209,7 @@ provider key it holds ('memdoor model' shows each agent's ladder).`,
 
 var agentDeleteCmd = &cobra.Command{
 	Use:   "delete [agent-name]",
-	Short: "Delete an agent",
+	Short: "Remove an agent (asks first)",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		force, _ := cmd.Flags().GetBool("force")
@@ -234,7 +234,7 @@ var agentDeleteCmd = &cobra.Command{
 
 var agentSessionsCmd = &cobra.Command{
 	Use:   "sessions [agent-id]",
-	Short: "List agent sessions",
+	Short: "An agent's sessions: one per conversation it has been in",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()

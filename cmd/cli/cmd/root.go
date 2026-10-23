@@ -97,7 +97,8 @@ On a box that stays on (a VPS, a Mac mini):
 
 Workflows: say the steps in the window and it writes them as files in the repo;
 memdoor workflow run <name> reruns them with no one watching, and a gate waits
-for your yes. Pro (memdoor login) adds the phone and the hosted workflow state.`,
+for your yes. Pro (memdoor login) is what memdoor.ai hosts: workflow state across
+machines, and the relay for a gateway kept to localhost.`,
 	// SilenceUsage stops cobra from dumping the full --help block
 	// after every RunE error. Subcommands inherit this — routine
 	// errors ("not authenticated", "no LLM key") print just the
@@ -161,9 +162,9 @@ var notCodingCommands = []string{
 	// for a person; scripts keep `auth token` / `login-direct` / `whoami`
 	// (2026-10-03: three sign-in families, two identities, one broken flow).
 	"auth",
-	// Capabilities the agent reaches through tools, not the person through a
-	// command: a browser and a scheduler.
-	"chrome", "cron",
+	// A capability the agent reaches through a tool, not the person through
+	// a command: the browser. A schedule is a door (memdoor cron add), listed.
+	"chrome",
 }
 
 func hideNonCodingCommands() {
@@ -211,6 +212,12 @@ func requireWorkspaceSlug(cmd *cobra.Command, _ []string) error {
 		if slug, source, ok := resolveWorkspaceSlug(); ok {
 			workspaceSlug = slug
 			logResolvedWorkspace(slug, source)
+		} else if only, single := soleWorkspace(); single {
+			// The one workspace there is, on this machine or on the
+			// gateway --gateway names: a fresh laptop's `memdoor --gateway
+			// <box> run "…"` was refused by the box with "workspace is
+			// required" (the ssh door, 2026-10-23).
+			workspaceSlug = only
 		}
 		return nil
 	}

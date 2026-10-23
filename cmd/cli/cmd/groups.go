@@ -50,11 +50,11 @@ var commandGroupAssignments = map[string]string{
 	"remote":        groupDoors,
 	"join":          groupDoors,
 	"acp":           groupDoors,
+	"cron":          groupDoors,
 
 	// What it runs.
 	"workflow": groupWork,
 	"agent":    groupWork,
-	"cron":     groupWork,
 	"guards":   groupWork,
 	"mcp":      groupWork,
 

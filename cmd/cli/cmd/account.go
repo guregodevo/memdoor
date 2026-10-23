@@ -93,7 +93,7 @@ var (
 
 var accountCmd = &cobra.Command{
 	Use:   "account",
-	Short: "Sign in with your email (a code arrives, you type it)",
+	Short: "The memdoor.ai account: sign in with your email, status, subscribe",
 }
 
 var accountLoginCmd = &cobra.Command{
@@ -227,7 +227,7 @@ var accountSubscribeCmd = &cobra.Command{
 	// (Greg, 2026-10-04). The number is safe to say here from
 	// 2026-09-27: the live price was changed and a real checkout session
 	// quotes $10.00 USD (scripts/set-seat-price.sh switches it again if it moves).
-	Short: "Subscribe to Pro: remote control and the hosted workflow state, always on your own key; $10 a month",
+	Short: "Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		period := "monthly"
 		if accountYearly {

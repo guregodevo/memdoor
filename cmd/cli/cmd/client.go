@@ -337,8 +337,13 @@ func sessionProblem() error {
 		// A gateway on another machine is signed in to by hand: nothing here
 		// can set it up, and "cd <project> && memdoor" would be the wrong
 		// advice (the http and ssh doors, 2026-10-23).
+		if sshDoorUp != nil {
+			// The ssh door signs in with the login the box generated for
+			// itself; a box whose first user was made by hand has none.
+			return fmt.Errorf("no session on %s yet, and no generated login on that machine (~/.memdoor/local-login there, written by its first run): memdoor auth login-direct --gateway %s --email you@… --password … with the login you made there", gatewayShown(), gatewayShown())
+		}
 		if _, local := localGatewayPort(); !local {
-			return fmt.Errorf("no session on %s yet: memdoor auth login-direct --gateway %s --email you@… --password …", gatewayShown(), gatewayShown())
+			return fmt.Errorf("no session on %s yet: the ssh door signs in once for both addresses (memdoor --gateway %s), or memdoor auth login-direct --gateway %s --email you@… --password … with the login that machine generated (~/.memdoor/local-login there)", gatewayShown(), sshDoorHint(), gatewayShown())
 		}
 		// A FIRST RUN IS NOT AN EXPIRED SESSION (onboarding walk, 2026-09-27).
 		// Someone who has just installed this and typed `memdoor tui` was told
@@ -356,7 +361,11 @@ func sessionProblem() error {
 
 // saveCredentials stores the session for the currently-targeted gateway without
 // disturbing sessions saved for other gateways.
-func saveCredentials(creds *credentials) error {
+func saveCredentials(creds *credentials) error { return saveCredentialsFor(gatewayKey(), creds) }
+
+// saveCredentialsFor stores a session under one gateway's key: the address
+// as typed (http://box:18789, ssh://you@box).
+func saveCredentialsFor(key string, creds *credentials) error {
 	dir := filepath.Dir(credentialsPath())
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
@@ -372,7 +381,7 @@ func saveCredentials(creds *credentials) error {
 	}
 	// Migrate forward: drop the legacy top-level fields once we write.
 	st.Token, st.Email, st.ExpiresAt = "", "", nil
-	st.Gateways[normalizeGateway(gatewayKey())] = *creds
+	st.Gateways[normalizeGateway(key)] = *creds
 	data, err := json.MarshalIndent(st, "", "  ")
 	if err != nil {
 		return err

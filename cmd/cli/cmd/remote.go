@@ -11,6 +11,7 @@ import (
 	"memdoor/cmd/tui/ui"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // memdoor remote <id> — the phone door with no window (Greg, 2026-10-12:
@@ -34,12 +35,14 @@ var remoteCmd = &cobra.Command{
 	Short: "A link that opens a conversation on your phone; printed, then held until ctrl+c",
 	Long: `memdoor remote <id>        print the link on stdout and hold the conversation on the relay
 memdoor remote --last      the most recent conversation here
+memdoor remote             the list, and a question: which one
 memdoor remote --view <id> the watch-only link instead
 memdoor remote off <id>    revoke the link
 
 The id is the one memdoor run and memdoor resume print. The link stays valid
 across holds: the same one opens the conversation again next time.`,
-	Args: cobra.MaximumNArgs(2),
+	Args:              cobra.MaximumNArgs(2),
+	ValidArgsFunction: cobra.NoFileCompletions,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		last, _ := cmd.Flags().GetBool("last")
 		view, _ := cmd.Flags().GetBool("view")
@@ -105,23 +108,39 @@ across holds: the same one opens the conversation again next time.`,
 	},
 }
 
+// remoteAsks reports whether a person is at the keyboard to pick from the
+// list (a test answers for them).
+var remoteAsks = func() bool { return term.IsTerminal(int(os.Stdin.Fd())) }
+
 // remoteTarget is the conversation: an id (any unique prefix of the one a
-// run printed, from any directory), or --last for this directory's most
-// recent, falling back to the most recent anywhere.
+// run printed, from any directory), --last for this directory's most recent
+// (falling back to the most recent anywhere), or, at a terminal, the one
+// picked from the list, as memdoor resume asks. The list and the question
+// go to stderr: stdout stays the link.
 func remoteTarget(args []string, last bool) (sessionRecord, error) {
-	switch {
-	case len(args) == 1:
+	if len(args) == 1 {
 		return findSessionByID(loadSessionIndex(), args[0])
+	}
+	cwd, _ := os.Getwd()
+	recs := sessionsFor(cwd)
+	if len(recs) == 0 {
+		recs = sessionsFor("")
+	}
+	if len(recs) == 0 {
+		return sessionRecord{}, fmt.Errorf("no conversation yet — `memdoor run \"…\"` or `memdoor tui` starts one")
+	}
+	switch {
 	case last:
-		cwd, _ := os.Getwd()
-		recs := sessionsFor(cwd)
-		if len(recs) == 0 {
-			recs = sessionsFor("")
-		}
-		if len(recs) == 0 {
-			return sessionRecord{}, fmt.Errorf("no conversation yet — `memdoor run \"…\"` or `memdoor tui` starts one")
-		}
 		return recs[0], nil
+	case remoteAsks():
+		r, ok, err := askSession(recs, true, "Which one on your phone?", os.Stderr)
+		if err != nil {
+			return sessionRecord{}, err
+		}
+		if !ok {
+			return sessionRecord{}, fmt.Errorf("no conversation picked")
+		}
+		return r, nil
 	}
 	return sessionRecord{}, fmt.Errorf("which conversation? memdoor remote <id>, or --last")
 }

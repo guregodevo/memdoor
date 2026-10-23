@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"memdoor/pkg/shared"
 	"os"
 	"path/filepath"
@@ -179,21 +180,9 @@ every one.`,
 				printSessions(recs, all) // a pipe gets the list, never a question
 				return nil
 			}
-			printSessions(recs, all)
-			fmt.Print("\nResume which? (number or id, Enter to cancel): ")
-			line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
-			line = strings.TrimSpace(line)
-			if line == "" {
-				return nil
-			}
-			n, err := strconv.Atoi(line)
-			if err == nil && n >= 1 && n <= len(recs) {
-				pick = n - 1
-				break
-			}
-			r, ferr := findSessionByID(recs, line)
-			if ferr != nil {
-				return ferr
+			r, ok, err := askSession(recs, all, "Resume which?", os.Stdout)
+			if err != nil || !ok {
+				return err
 			}
 			recs, pick = []sessionRecord{r}, 0
 		}
@@ -273,10 +262,29 @@ func resumeLine(channelID string) string {
 	return "Goodbye!"
 }
 
-func printSessions(recs []sessionRecord, showDir bool) {
-	fmt.Println("Recent conversations:")
-	fmt.Println()
-	fmt.Printf("      %-*s  %-56s  %-13s  %s\n", shortIDLen, "ID", "TITLE", "STARTED", "LAST USED")
+// askSession prints the list on w and asks on stdin which one: a row
+// number or an id. Enter alone answers nothing (ok false).
+func askSession(recs []sessionRecord, showDir bool, question string, w io.Writer) (sessionRecord, bool, error) {
+	printSessionsTo(w, recs, showDir)
+	fmt.Fprintf(w, "\n%s (number or id, Enter to cancel): ", question)
+	line, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return sessionRecord{}, false, nil
+	}
+	if n, err := strconv.Atoi(line); err == nil && n >= 1 && n <= len(recs) {
+		return recs[n-1], true, nil
+	}
+	r, err := findSessionByID(recs, line)
+	return r, err == nil, err
+}
+
+func printSessions(recs []sessionRecord, showDir bool) { printSessionsTo(os.Stdout, recs, showDir) }
+
+func printSessionsTo(w io.Writer, recs []sessionRecord, showDir bool) {
+	fmt.Fprintln(w, "Recent conversations:")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "      %-*s  %-56s  %-13s  %s\n", shortIDLen, "ID", "TITLE", "STARTED", "LAST USED")
 	for i, r := range recs {
 		title := r.Title
 		if title == "" {
@@ -290,7 +298,7 @@ func printSessions(recs []sessionRecord, showDir bool) {
 		if showDir && r.Dir != "" {
 			line += "  " + shortDir(r.Dir)
 		}
-		fmt.Println(line)
+		fmt.Fprintln(w, line)
 	}
 }
 

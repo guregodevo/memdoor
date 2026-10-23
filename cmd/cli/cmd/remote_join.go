@@ -282,7 +282,7 @@ folder; this terminal is its screen and keyboard. A watch-only link (#v=)
 shows the screen and sends nothing.
 
 Ctrl+] leaves. Every other key goes to the TUI.`,
-	Example: `  memdoor join 'https://memdoor.ai/r/0L17wXRvEC5IzW_D#k=…'`,
+	Example: `  memdoor join 'http://box:18789/r/0L17wXRvEC5IzW_D#k=…'`,
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target, err := parseRemoteLink(args[0])

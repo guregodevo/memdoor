@@ -174,7 +174,7 @@ func TestTheSSHDoorAndARemoteGatewaySayTheNextStep(t *testing.T) {
 	gatewayAddr = "http://box.lan:18799"
 	t.Cleanup(func() { gatewayAddr = saved })
 	err := sessionProblem()
-	if err == nil || !strings.Contains(err.Error(), "login-direct --gateway http://box.lan:18799") || strings.Contains(err.Error(), "not set up yet") {
+	if err == nil || !strings.Contains(err.Error(), "login-direct --gateway http://box.lan:18799") || !strings.Contains(err.Error(), "ssh://you@box.lan?port=18799") || strings.Contains(err.Error(), "not set up yet") {
 		t.Fatalf("a remote gateway without a session names the sign-in there: %v", err)
 	}
 }

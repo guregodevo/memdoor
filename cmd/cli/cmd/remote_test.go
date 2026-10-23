@@ -1,12 +1,36 @@
 package cmd
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
 
-// memdoor remote: the phone door from a script. Stdout is the link, one
-// line; the rest is stderr; the target is an id or --last.
+// withStdin runs f with os.Stdin read from a pipe holding text: not a
+// terminal, so nothing is asked.
+func withStdin(t *testing.T, text string, f func()) {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = w.WriteString(text)
+	_ = w.Close()
+	saved := os.Stdin
+	os.Stdin = r
+	defer func() { os.Stdin = saved; _ = r.Close() }()
+	f()
+}
+
+// withTerminalStdin runs f as if a person at a keyboard typed text: the
+// question is asked, and the answer read from a pipe holding it.
+func withTerminalStdin(t *testing.T, text string, f func()) {
+	t.Helper()
+	saved := remoteAsks
+	remoteAsks = func() bool { return true }
+	defer func() { remoteAsks = saved }()
+	withStdin(t, text, f)
+}
 
 func TestRemoteTargetByIDAndLast(t *testing.T) {
 	home := t.TempDir()
@@ -25,9 +49,28 @@ func TestRemoteTargetByIDAndLast(t *testing.T) {
 	if _, err := remoteTarget([]string{"zzzz"}, false); err == nil {
 		t.Fatal("an unknown id must fail")
 	}
-	if _, err := remoteTarget(nil, false); err == nil || !strings.Contains(err.Error(), "--last") {
-		t.Fatalf("no target must say how: %v", err)
-	}
+	// In a pipe nothing can be asked: the error says how to name one. At a
+	// terminal the list is shown and a row or id read; an empty answer
+	// picks nothing.
+	withStdin(t, "", func() {
+		saved := remoteAsks
+		remoteAsks = func() bool { return false }
+		defer func() { remoteAsks = saved }()
+		if _, err := remoteTarget(nil, false); err == nil || !strings.Contains(err.Error(), "--last") {
+			t.Fatalf("no target in a pipe must say how: %v", err)
+		}
+	})
+	withTerminalStdin(t, "1\n", func() {
+		r, err := remoteTarget(nil, false)
+		if err != nil || r.Title != "newer" {
+			t.Fatalf("row 1 from the list: %+v %v", r, err)
+		}
+	})
+	withTerminalStdin(t, "\n", func() {
+		if _, err := remoteTarget(nil, false); err == nil || !strings.Contains(err.Error(), "picked") {
+			t.Fatalf("an empty answer picks nothing: %v", err)
+		}
+	})
 	// --last from a directory with no conversation falls back to the most
 	// recent anywhere.
 	t.Chdir(t.TempDir())
