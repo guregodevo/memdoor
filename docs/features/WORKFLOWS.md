@@ -117,6 +117,24 @@ artifact is there or it is not. Found live 2026-10-03: without this, a
 trading workflow's two tasks made their files and were judged unfinished
 twice each.
 
+**The task cannot edit its own check (2026-10-24, `gateway/target_guard.go`).**
+Measuring what a retry loop costs, `target: {command: ./never.sh}` with a
+script that always exits 1 was marked done on its third attempt: the agent
+rewrote `never.sh` to exit 0 and the engine ran it. Now, when a task starts
+(every attempt; a resume after the person's own edit takes the new file),
+`targetPrograms` names the project files in command position of the target
+command, or given to an interpreter (`sh x.sh`, `python x.py`), and
+`snapshotTargetPrograms` keeps their bytes, mode and hash on the session
+(`done_when_programs`). `executeTool` refuses `write_file`, `edit_file`,
+`apply_patch` and `search_replace` calls that name one
+(`targetGuardRefuses`), and after every tool call `restoreTargetPrograms`
+puts back any that changed (a shell redirect, a patch) and returns the tool
+an error saying so. The check mario and `doneWhen` run is then the declared
+one. Data the check reads (`test -f grades/x.json`) is not a program and
+stays the task's to produce; what a program depends on (tests, a Makefile)
+is not covered. Receipt: the never fixture, three attempts, ✗, the script
+unchanged in git; one refusal logged on the first attempt.
+
 `budget: 300000` on an agent task is the tokens its turn may spend running
 on alone while its target is missing (mario's YAML, beside `model:`);
 without it the workspace's `turn_token_budget` applies. `memdoor workflow

@@ -259,7 +259,13 @@ func (r *workflowRunner) Run(ctx context.Context, t workflow.TaskRun) (string, e
 				// The target as mario checks it: its template rendered with
 				// the partition (live 2026-10-03: "reports/peer-comps-
 				// {{.partition}}.md missing" beside the file mario found).
-				sess.SetMetadata(doneWhenKey, renderPartition(t.Task.Target, t.Partition))
+				target := renderPartition(t.Task.Target, t.Partition)
+				sess.SetMetadata(doneWhenKey, target)
+				// The check is not the task's to change (target_guard.go):
+				// its programs are kept as they are now.
+				if kept := snapshotTargetPrograms(sess, strings.TrimPrefix(target, "command: "), t.Workdir); len(kept) > 0 {
+					log.Info("Task target programs kept", slog.String("task", t.Task.Name), slog.Any("programs", kept))
+				}
 			}
 			if t.Task.Budget > 0 {
 				sess.SetMetadata(turnBudgetKey, t.Task.Budget)

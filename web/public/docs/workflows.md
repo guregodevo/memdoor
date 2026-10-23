@@ -55,6 +55,14 @@ a command that must exit 0 — never because the model said so. A task with
 no target keeps its answer as the proof, and the task after it reads it:
 `{{ output "log" }}` in a prompt is the upstream task's answer, inlined.
 
+The check is not the task's to change. The programs a target command runs
+from the project (`./check.sh`, `sh scripts/verify.sh`) are kept as they are
+when the task starts: a write to one of them is refused with the reason, and
+one changed by any other means is put back before the check runs. Found by
+measuring a check that could never pass: on its third try the agent rewrote
+the script to exit 0, and the run read done. What the check itself depends
+on (the tests `go test` runs, a Makefile's recipe) is the task's own work.
+
 ## Keeping one
 
 A workflow is files, so it is a thing you keep. Commit `.memdoor/workflows/

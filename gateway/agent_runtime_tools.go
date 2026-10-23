@@ -72,7 +72,19 @@ var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)(?:\S*[\\/])?bash(?:\.e
 // The shapes /share already redacts (pkg/secrets RedactText) are redacted
 // here, once, for every tool, before the result reaches any of the three.
 func (ar *AgentRuntime) executeTool(ctx context.Context, toolUse *llm.ToolUseBlock, runID string, session *Session) (info ToolExecutionInfo, result llm.ContentBlockParamUnion) {
+	// THE CHECK IS NOT THE TASK'S TO CHANGE (target_guard.go): a writing
+	// tool that names it is refused; whatever changed it anyway is put back.
+	if msg := targetGuardRefuses(session, toolUse.Name, toolUse.Input); msg != "" {
+		info.Error = msg
+		logs.New("Agent").WithRun(runID).Warn("Tool call refused: it names the task's check", slog.String("tool", toolUse.Name), slog.String("input", truncateForLog(string(toolUse.Input), 200)))
+		return info, llm.NewToolResultBlock(toolUse.ID, msg, true)
+	}
 	info, result = ar.executeToolUnredacted(ctx, toolUse, runID, session)
+	if changed := restoreTargetPrograms(session, turnWorkdir(ctx)); len(changed) > 0 {
+		info.Error = targetGuardMessage(toolUse.Name, changed, true)
+		logs.New("Agent").WithRun(runID).Warn("The task changed its own check; put back", slog.String("tool", toolUse.Name), slog.Any("programs", changed))
+		result = llm.NewToolResultBlock(toolUse.ID, info.Error, true)
+	}
 	return redactToolResult(info, result)
 }
 
