@@ -271,7 +271,7 @@ export function CoderLandingPage() {
             <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
               A run is a conversation on a gateway on your machine. Every door opens the same one.
             </p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {DOORS.map((d) => (
                 <a
                   key={d.name}
