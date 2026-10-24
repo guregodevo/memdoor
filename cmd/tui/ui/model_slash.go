@@ -11,8 +11,6 @@ import (
 
 	"memdoor/tools"
 	"regexp"
-
-	"github.com/atotto/clipboard"
 )
 
 // model_slash: slash-command handling and the /context /doctor /agents status views.
@@ -152,11 +150,7 @@ still works); skills live in .agents/skills/ (project) and ~/.memdoor/skills/
 			m.note("Nothing to copy yet.")
 			return "", true
 		}
-		if err := clipboard.WriteAll(text); err != nil {
-			m.note("Couldn't copy to the clipboard: " + err.Error())
-			return "", true
-		}
-		m.note(fmt.Sprintf("Copied %s to the clipboard (%d lines).", label, strings.Count(text, "\n")+1))
+		m.note(strings.Replace(copyText(text, strings.Count(text, "\n")+1), "Copied to", "Copied "+label+" to", 1))
 		return "", true
 
 	case "/context":
