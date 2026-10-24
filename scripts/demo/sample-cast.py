@@ -11,11 +11,13 @@ def grab(ansi):
 while time.time() - start < limit:
     scr = grab(True)
     if scr != last:
-        f.write(json.dumps([round(time.time() - start, 3), "o", "\x1b[H\x1b[2J" + scr.replace("\n", "\r\n")]) + "\n"); f.flush()
+        # No trailing newline: a full pane plus one more line break scrolls
+        # the first row off in the player (the ssh-door take, 2026-10-24).
+        f.write(json.dumps([round(time.time() - start, 3), "o", "\x1b[H\x1b[2J" + scr.rstrip("\n").replace("\n", "\r\n")]) + "\n"); f.flush()
         last = scr
         if until and until in grab(False):
             time.sleep(2.5)
-            f.write(json.dumps([round(time.time() - start, 3), "o", "\x1b[H\x1b[2J" + grab(True).replace("\n", "\r\n")]) + "\n")
+            f.write(json.dumps([round(time.time() - start, 3), "o", "\x1b[H\x1b[2J" + grab(True).rstrip("\n").replace("\n", "\r\n")]) + "\n")
             break
     time.sleep(0.25)
 f.close()
