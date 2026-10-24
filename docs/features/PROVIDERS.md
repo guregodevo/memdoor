@@ -321,6 +321,43 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
   `/connect <id>`. `/model` lists the other connected providers and what is
   not connected. `TestProviderPickerThenAProvidersModels`.
 
+## How a provider knows it is Memdoor (2026-10-24)
+
+Greg: "for each provider key we can see who is using our app… the idea is to
+promote memdoor." Nothing phones home (decided the same day); the count of
+people on Memdoor is whatever each provider shows for the app. Researched
+provider by provider, web only; what the binary sends is `pkg/attribution`
+(one definition, the User-Agent from `gateway/providers/app_headers.go`).
+
+| Provider | Reads an app header? | Where it shows | How a tool gets listed |
+|---|---|---|---|
+| OpenRouter | `HTTP-Referer` + `X-Title` | openrouter.ai/apps, public, daily chart; app_id 5145054 | By sending the headers |
+| Vercel AI Gateway | `http-referer` + `x-title` | vercel.com/ai-gateway/leaderboards/apps (public, CC-BY data) | By sending the headers ("your app can be featured") |
+| LLM Gateway | `X-Source` (falls back to `HTTP-Referer`, then the User-Agent of known agents) | llmgateway.io/apps and /rankings | By sending the header |
+| EUrouter | `HTTP-Referer` + `X-EUrouter-Title` | eurouter.ai rankings, 7/30/90-day | By sending the headers |
+| Requesty | `HTTP-Referer` + `X-Title` | The customer's own analytics only | — |
+| Google Gemini | `x-goog-api-client: memdoor-oai/<version>`, required of every partner integration | Google's side only (segmentation, outreach on error patterns) | No public list; libraries page is SDKs + frameworks |
+| OpenAI API | None (`OpenAI-Organization` is the key holder) | Nothing | — |
+| Sign in with ChatGPT | `agent_name_hint=Memdoor` at registration (we send it, `pkg/chatgpt`) | OpenAI's own page lists open-source integrations (OpenClaw, OpenCode, Pi, T3), no form | Codex for Open Source: credits + Pro for maintainers, tool-agnostic — developers.openai.com/codex/community/codex-for-oss |
+| Anthropic | None documented; first-party-only headers were used by third parties to ride plans and cut off | Console by key/workspace only | "Powered by Claude" directory has no submit path, sales only |
+| DeepSeek | None | Nothing | PR to github.com/deepseek-ai/awesome-deepseek-agent (CONTRIBUTING.md: `docs/<tool>.md` + zh-CN, a README row, alphabetical; Pi, OpenCode, Cline, Kilo are there) |
+| Baseten | None (`x-session-affinity` is cache pinning) | Nothing | docs.baseten.co/inference/integrations: "reach out to support@baseten.co" |
+| Groq | None | Nothing | console.groq.com/docs/coding-with-groq lists tools, no stated path; "Powered by Groq" badge at console.groq.com/docs/badge |
+| xAI | None | Nothing | No directory; news posts per negotiated OAuth integration |
+| Z.ai (GLM Coding Plan) | None | Nothing | docs.z.ai/devpack/tool/others; the plan is "limited to officially supported tools", no published path |
+| Moonshot (Kimi for Coding) | None; tampering with the User-Agent is a violation (ours is real) | Nothing | kimi.com/code/docs third-party list; contact-sales or the forum |
+| Mistral, Together, Fireworks, Cerebras | None | Nothing | Tool lists without a submission path (Fireworks harnesses, Cerebras integrations, Together Link repo); Mistral ambassador program |
+| Hugging Face Inference Providers | None | Nothing | PR to github.com/huggingface/hub-docs `docs/inference-providers/integrations/` (staff wrote every entry so far) |
+
+What changed in the binary: the pair goes to every host that reads it, Google
+gets its partner header, and a vendor key (Anthropic, OpenAI, xAI, Baseten,
+Groq, DeepSeek) still carries only the User-Agent and the company's own
+`MEMDOOR_VENDOR_HEADERS`. No new host is contacted (`gateway/egress_test.go`).
+
+Two plan providers matter beyond promotion: Z.ai's and Moonshot's coding plans
+are limited to the tools they list, so a person on one of those plans in
+Memdoor is outside the list until Memdoor is on it.
+
 ## Sign in with ChatGPT (2026-10-10)
 
 A ChatGPT Plus or Pro plan is a provider: `memdoor connect chatgpt` (or
