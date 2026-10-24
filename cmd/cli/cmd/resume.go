@@ -256,7 +256,7 @@ func findSessionByID(recs []sessionRecord, id string) (sessionRecord, error) {
 func resumeLine(channelID string) string {
 	for _, r := range loadSessionIndex() {
 		if r.ChannelID == channelID && r.Turns > 0 {
-			return "Resume this conversation with: memdoor resume " + shortID(channelID)
+			return "Resume this conversation with: " + resumeCommand(shortID(channelID))
 		}
 	}
 	return "Goodbye!"

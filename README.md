@@ -12,12 +12,24 @@
   </p>
 </div>
 
+On this machine:
+
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
 cd your-project && memdoor             # the first run sets the machine up
-memdoor --gateway ssh://you@box run "…"  # the same on a box: installed there over ssh on first use
 ```
+
+Or on a box you can ssh to, with nothing installed there:
+
+```bash
+curl -fsSL https://memdoor.ai/install.sh | bash          # here, once
+memdoor --gateway ssh://you@box                           # installs memdoor on the box, starts its gateway, opens the window on it
+memdoor --gateway ssh://you@box connect openrouter        # your key, kept on the box; every turn there runs on it
+memdoor --gateway ssh://you@box run "fix the failing test" # the same box from a script or CI
+```
+
+The runs live on the box: close the laptop, the work goes on, and your phone or the next terminal opens the same conversation there.
 
 No account. Telemetry off unless you turn it on. macOS, Linux, Windows, one static binary, Apache 2.0.
 

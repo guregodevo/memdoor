@@ -363,15 +363,22 @@ echo "Next:"
 if [ "${WAS_RUNNING:-0}" = "1" ]; then
     echo "  memdoor gateway &                      # restart it (this upgrade stopped it and could not restart it)"
 fi
-# Two lines, both runnable in THIS shell: the first run of the TUI sets the
-# machine up itself (no setup step, no admin email), and a key exported
-# here reaches the gateway it starts. No key at hand: /connect inside.
-# This terminal's PATH is the one thing a piped script cannot change: the
-# line that does it comes first, then the rest works as typed.
-if [ "$ON_PATH" = "0" ]; then
-    echo "  export PATH=\"$DEST_DIR:\$PATH\"   # this terminal; new terminals have it already"
+if [ "$INSTALL_MODE" = "existing" ] || [ "$HAD_DATA_DIR" = "1" ]; then
+    # An upgrade: nothing new to set up (Greg, Cloud Shell, 2026-10-24: the
+    # first-install lines read wrong after one). The conversations and the
+    # keys are the same, on the new binary.
+    echo "  memdoor resume --last                  # same conversations, same keys, on the new binary"
+else
+    # Two lines, both runnable in THIS shell: the first run of the TUI sets the
+    # machine up itself (no setup step, no admin email), and a key exported
+    # here reaches the gateway it starts. No key at hand: /connect inside.
+    # This terminal's PATH is the one thing a piped script cannot change: the
+    # line that does it comes first, then the rest works as typed.
+    if [ "$ON_PATH" = "0" ]; then
+        echo "  export PATH=\"$DEST_DIR:\$PATH\"   # this terminal; new terminals have it already"
+    fi
+    echo "  export OPEN_ROUTER_API_KEY=sk-or-...   # your key (or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or /connect inside)"
+    echo "  cd <your-project> && memdoor"
+    echo
+    echo "Pro (remote control)? memdoor login you@example.com"
 fi
-echo "  export OPEN_ROUTER_API_KEY=sk-or-...   # your key (or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or /connect inside)"
-echo "  cd <your-project> && memdoor"
-echo
-echo "Pro (remote control)? memdoor login you@example.com"

@@ -65,6 +65,30 @@ conversation touched, newest first. `ctrl+o` expands a tool frame to its full
 output. `@` mentions a file or folder, and on macOS an image on the clipboard
 pastes in.
 
+## Or on a box, over ssh
+
+The same first step works on a machine you can ssh to, with nothing
+installed there: a VPS, a Mac mini, a home server, Google Cloud Shell.
+Install memdoor here, then name the box:
+
+```bash
+memdoor --gateway ssh://you@box                      # the window, on the box
+memdoor --gateway ssh://you@box connect openrouter   # your key, kept on the box; asked for unseen
+memdoor --gateway ssh://you@box run "say hi"         # one turn from a script or CI
+```
+
+The first command finds no gateway on the box and sets it up over the same
+ssh: memdoor.ai's installer puts the binary in `~/.local/bin` there (no
+sudo), `memdoor gateway install` makes it a service (systemd --user,
+launchd; where there is no service manager it starts in the background),
+and the window opens on it, in the box's home unless `--dir` names a
+project there. Each step is printed as it happens. The runs then live on
+the box: close the laptop and the work goes on; `memdoor --gateway
+ssh://you@box resume --last` or your phone opens the same conversation.
+Nothing on the box is opened to the network, and the box's own login is
+read over ssh, so no password is typed. [The gateway](/docs/gateway) has
+the rest, the phone included.
+
 ## The commands worth knowing first
 
 | Command | What it does |

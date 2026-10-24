@@ -113,6 +113,7 @@ func runTUI(opts tuiOptions) error {
 				return derr
 			}
 			ui.SetSessionDir(abs)
+			ui.SetSessionPlace(sshDoorHostOrGateway(), remoteHome(c))
 		} else if opts.dir != "" {
 			if err := os.Chdir(expandHomeDir(opts.dir)); err != nil {
 				return fmt.Errorf("--dir %s: %w", opts.dir, err)

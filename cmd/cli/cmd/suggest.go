@@ -28,6 +28,9 @@ import (
 // next step — they get NO suggestion at all, even on a TTY. setup is excluded
 // here because it prints its own rich next-steps block.
 var nextStepSuggestions = map[string]string{
+	// After an upgrade nothing is new to set up: the conversations and the
+	// keys are the same, on the new binary.
+	"upgrade": `memdoor resume --last   (same conversations, same keys, on the new binary)`,
 	// workspace use is the last step before the first turn, so it points at it.
 	"workspace use":     `memdoor tui   (the agent works in this directory)`,
 	"auth login-direct": `memdoor tui   (the agent works in this directory)`,

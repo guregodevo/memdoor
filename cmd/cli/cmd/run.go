@@ -269,7 +269,7 @@ func (s *headlessSink) finish(conversation string, err error) int {
 			return code
 		}
 	}
-	fmt.Fprintf(s.errOut, "conversation %s · memdoor resume %s\n", conversation, conversation)
+	fmt.Fprintf(s.errOut, "conversation %s · %s\n", conversation, resumeCommand(conversation))
 	return code
 }
 

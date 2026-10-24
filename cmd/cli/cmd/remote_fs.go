@@ -116,6 +116,39 @@ func remoteDefaultDir(c *Client) (abs, why string, err error) {
 	return abs, "its home", nil
 }
 
+// resumeCommand is the command that reopens a conversation, with the gateway
+// named when it is not this machine's: a run through a door prints
+// "memdoor --gateway ssh://box resume <id>", so the person retypes it
+// without knowing the door is part of it (Greg, 2026-10-24).
+func resumeCommand(id string) string {
+	if _, local := localGatewayPort(); local {
+		return "memdoor resume " + id
+	}
+	return "memdoor --gateway " + gatewayShown() + " resume " + id
+}
+
+// remoteHome is the home directory on the gateway's machine, "" when it
+// cannot be asked.
+func remoteHome(c *Client) string {
+	abs, isDir, exists, err := remoteFS{c}.Stat("~")
+	if err != nil || !exists || !isDir {
+		return ""
+	}
+	return abs
+}
+
+// sshDoorHostOrGateway is the box's name as the header shows it: the host
+// of the ssh address, else the gateway's host.
+func sshDoorHostOrGateway() string {
+	if h := sshDoorHost(); h != "" {
+		return h
+	}
+	if u, err := url.Parse(gatewayAddr); err == nil && u.Hostname() != "" {
+		return u.Hostname()
+	}
+	return gatewayAddr
+}
+
 // gatewayHostOnly is the gateway's host for a line a person retypes.
 func gatewayHostOnly() string {
 	if sshDoorUp != nil {

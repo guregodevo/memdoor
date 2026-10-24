@@ -3,6 +3,7 @@ package ui
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"memdoor/pkg/filelist"
 )
@@ -71,5 +72,33 @@ func dirBase() string {
 	if d == "" {
 		return ""
 	}
+	if RemoteDir() && sessionHost != "" {
+		// On another machine the header says which, and where there:
+		// "cloudshell:~", "box:~/srv/app". The base name alone read as a
+		// user name when the directory was the box's home (2026-10-24).
+		return sessionHost + ":" + collapseHome(d, sessionHome)
+	}
 	return filepath.Base(d)
+}
+
+// sessionHost and sessionHome name the gateway's machine and its home when
+// the session's directory is there.
+var sessionHost, sessionHome string
+
+// SetSessionPlace names the machine the session's directory is on, and
+// that machine's home, for the header.
+func SetSessionPlace(host, home string) { sessionHost, sessionHome = host, home }
+
+// collapseHome is dir with home written as ~.
+func collapseHome(dir, home string) string {
+	if home == "" {
+		return dir
+	}
+	if dir == home {
+		return "~"
+	}
+	if rel, err := filepath.Rel(home, dir); err == nil && !strings.HasPrefix(rel, "..") {
+		return "~/" + filepath.ToSlash(rel)
+	}
+	return dir
 }

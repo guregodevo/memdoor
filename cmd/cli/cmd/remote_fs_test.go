@@ -48,3 +48,19 @@ func TestARemoteTurnWithNoDirHasAGoodDefault(t *testing.T) {
 		t.Fatalf("outside home here: the box's home, got %q", abs)
 	}
 }
+
+// The line that reopens a conversation names the gateway when it is not
+// this machine's, so a person retypes it without knowing the door is part
+// of it.
+func TestTheResumeLineNamesTheDoor(t *testing.T) {
+	saved := gatewayAddr
+	t.Cleanup(func() { gatewayAddr = saved })
+	gatewayAddr = "http://localhost:18789"
+	if got := resumeCommand("abcd1234"); got != "memdoor resume abcd1234" {
+		t.Fatalf("local: %q", got)
+	}
+	gatewayAddr = "http://box.lan:18789"
+	if got := resumeCommand("abcd1234"); got != "memdoor --gateway http://box.lan:18789 resume abcd1234" {
+		t.Fatalf("another machine: %q", got)
+	}
+}
