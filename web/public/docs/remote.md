@@ -95,6 +95,17 @@ no key bar, no Stop and no box to send a turn, and your terminal drops anything
 it sends except a request to see. The watch-only link does not contain your
 link's key and cannot be turned into it. `/remote off` revokes both links.
 
+## An audience
+
+The watch link is also how a session is streamed or paired on: up to 200
+pages may watch at once, apart from the eight the full link allows, and
+each sees the terminal as you see it, sealed the same way, with no account
+and nothing uploaded anywhere. `/remote view` prints a second form of the
+link with `?live=1` before the `#`: the terminal alone, no header, for a
+stream, a projector or an OBS browser source. Put the watch link in the
+chat, or the live link in the scene. Pair programming is the full link in a
+second pair of hands: both type into the same window.
+
 ## From a script, no window
 
 The phone door is a command like every other door: what `/remote` does in

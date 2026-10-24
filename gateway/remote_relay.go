@@ -60,10 +60,15 @@ const (
 	// for a sleeping laptop, and show an empty, "open" screen.
 	remoteRelayEndKind     = "end"
 	remoteRelayRevokedCode = 4001
-	// remoteRelayMaxBrowsers bounds the pages one session holds: the full
-	// link on a phone and a laptop, and view-only links (/remote view)
-	// handed to whoever should watch.
+	// remoteRelayMaxBrowsers bounds the driving pages one session holds:
+	// the full link on a phone and a laptop.
 	remoteRelayMaxBrowsers = 8
+	// remoteRelayMaxWatchers bounds the watch-only pages (/remote view,
+	// ?watch=1 on the socket): an audience, a stream's viewers, a pair
+	// programming partner (Greg, 2026-10-24: "someone shares his gateway and
+	// his followers see the TUI"). Frames are fanned out without waiting,
+	// so a slow viewer loses frames, never the terminal.
+	remoteRelayMaxWatchers = 200
 	// remoteRelayMaxSessionsPerUser bounds how many sessions one account
 	// can hold open on the relay (one per conversation with /remote on).
 	remoteRelayMaxSessionsPerUser = 32
@@ -91,9 +96,10 @@ type remoteRelayHub struct {
 
 // remoteRelayConn is one connected end of a session.
 type remoteRelayConn struct {
-	mu   sync.Mutex
-	conn *websocket.Conn
-	send chan []byte
+	mu    sync.Mutex
+	conn  *websocket.Conn
+	send  chan []byte
+	watch bool // a watch-only page: counted against remoteRelayMaxWatchers
 }
 
 // remoteRelaySession pairs one authenticated terminal with one browser.
@@ -279,9 +285,12 @@ func (h *remoteRelayHub) HandleRelayBrowser(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	conn.SetReadLimit(remoteRelayMaxFrame)
-	browser := &remoteRelayConn{conn: conn, send: make(chan []byte, 64)}
+	browser := &remoteRelayConn{conn: conn, send: make(chan []byte, 64), watch: r.URL.Query().Get("watch") == "1"}
 	if ok, ended := s.attachBrowser(browser); !ok {
 		msg := websocket.FormatCloseMessage(websocket.CloseTryAgainLater, "this session has as many pages open as it takes")
+		if browser.watch {
+			msg = websocket.FormatCloseMessage(websocket.CloseTryAgainLater, "this session has as many viewers as it takes")
+		}
 		if ended {
 			msg = websocket.FormatCloseMessage(remoteRelayRevokedCode, "this link was turned off")
 		}
@@ -369,7 +378,15 @@ func (s *remoteRelaySession) attachBrowser(c *remoteRelayConn) (ok, ended bool) 
 	if s.ended {
 		return false, true
 	}
-	if len(s.browsers) >= remoteRelayMaxBrowsers {
+	drivers, watchers := 0, 0
+	for b := range s.browsers {
+		if b.watch {
+			watchers++
+		} else {
+			drivers++
+		}
+	}
+	if (c.watch && watchers >= remoteRelayMaxWatchers) || (!c.watch && drivers >= remoteRelayMaxBrowsers) {
 		return false, false
 	}
 	if s.browsers == nil {

@@ -162,6 +162,15 @@ func (l remoteLink) url(base string) string {
 // session key and the relay proof, both derived from the link key, and not
 // the link key itself. A page holding it reads every frame and joins the
 // relay, and cannot derive the write key a turn must be sealed with.
+// liveURL is the watch link as a bare page: ?live=1 before the fragment
+// (the page draws the terminal alone, for a stream or an OBS source).
+func liveURL(view string) string {
+	if i := strings.Index(view, "#"); i >= 0 {
+		return view[:i] + "?live=1" + view[i:]
+	}
+	return view + "?live=1"
+}
+
 func (l remoteLink) viewURL(base string) (string, error) {
 	tok, err := remoteViewToken(l.Key)
 	if err != nil {
@@ -345,8 +354,9 @@ func tuiRemote(unresolved remoteSession) func(arg string) (string, error) {
 			return "", err
 		}
 		if strings.TrimSpace(arg) == "view" {
-			return fmt.Sprintf("A watch-only link to this conversation — whoever opens it sees the terminal and cannot type:\n\n%s\n\n%s\n\n"+
-				"/remote off revokes it, with the full link.", view, qrText(view)), nil
+			return fmt.Sprintf("A watch-only link to this conversation — whoever opens it sees the terminal and cannot type, up to 200 at once:\n\n%s\n\n%s\n\n"+
+				"For a stream or a projector, the terminal alone: %s\n\n"+
+				"/remote off revokes it, with the full link.", view, qrText(view), liveURL(view)), nil
 		}
 		lead := "Remote control for this conversation — open the link or scan the code:"
 		if existing {

@@ -166,7 +166,7 @@ func remoteLinkText(r sessionRecord, watch string, view bool, base string) strin
 		title = shortID(r.ChannelID)
 	}
 	if view {
-		fmt.Fprintf(&b, "watch only · %q\n", title)
+		fmt.Fprintf(&b, "watch only · %q · up to 200 at once · the terminal alone: %s\n", title, liveURL(watch))
 	} else {
 		fmt.Fprintf(&b, "on your phone · %q\nwatch only: %s\n", title, watch)
 	}

@@ -40,6 +40,9 @@ const b64bytes = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
 
 export function RemotePage() {
   const { id, key, canDrive } = linkParts();
+  // ?live=1 before the #: the terminal alone, no header, for a stream, a
+  // projector or an OBS browser source (2026-10-24).
+  const live = new URLSearchParams(window.location.search).get("live") === "1";
   const [items, setItems] = useState<Item[]>([]);
   const [status, setStatus] = useState<"connecting" | "open" | "closed">(
     "connecting",
@@ -72,7 +75,7 @@ export function RemotePage() {
       if (!alive) return;
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
       const ws = new WebSocket(
-        `${proto}//${window.location.host}/api/relay/browser?id=${encodeURIComponent(id)}&auth=${encodeURIComponent(k.proof)}`,
+        `${proto}//${window.location.host}/api/relay/browser?id=${encodeURIComponent(id)}&auth=${encodeURIComponent(k.proof)}${canDrive ? "" : "&watch=1"}`,
       );
       sockRef.current = ws;
       ws.onopen = () => {
@@ -177,6 +180,7 @@ export function RemotePage() {
 
   return (
     <div className="h-dvh bg-neutral-950 flex flex-col">
+      {!live && (
       <header className="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
         <span className="text-sm text-neutral-200 font-medium">
           Memdoor · remote
@@ -215,7 +219,8 @@ export function RemotePage() {
           </span>
         </div>
       </header>
-      {view === "terminal" && (
+      )}
+      {(view === "terminal" || live) && (
         <RemoteTerminal
           open={status === "open"}
           canDrive={canDrive}
@@ -223,7 +228,7 @@ export function RemotePage() {
           subscribe={subscribe}
         />
       )}
-      {view === "chat" && (
+      {view === "chat" && !live && (
         <>
           <main className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
             {items.length === 0 && (

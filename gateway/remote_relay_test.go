@@ -341,3 +341,47 @@ func TestAPageJoiningAnEndedSessionIsRevoked(t *testing.T) {
 		t.Fatalf("a page joining after the end must be told it was revoked: ok=%v ended=%v", ok, ended)
 	}
 }
+
+// Watch-only pages are an audience, not the phone: they do not count
+// against the driving pages' cap, and each of them gets what the terminal
+// sends (Greg, 2026-10-24: a stream's followers see the window).
+func TestRelayWatchersAreAnAudience(t *testing.T) {
+	_, srv := newRelayTestServer(t)
+	terminal, _ := dialTerminal(t, srv, "tok-a")
+	for i := 0; i < remoteRelayMaxBrowsers; i++ {
+		if p, code := dialBrowser(t, srv, relayTestProof); p == nil {
+			t.Fatalf("page %d refused: %d", i+1, code)
+		}
+	}
+	watchers := make([]*websocket.Conn, 0, 3)
+	for i := 0; i < 3; i++ {
+		c, resp, err := dialRelay(t, srv, "/api/relay/browser", url.Values{"id": {relayTestID}, "auth": {relayTestProof}, "watch": {"1"}})
+		if err != nil {
+			t.Fatalf("watcher %d refused beside %d driving pages: %v", i+1, remoteRelayMaxBrowsers, resp.StatusCode)
+		}
+		t.Cleanup(func() { c.Close() })
+		watchers = append(watchers, c)
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		relayTestHub.mu.RLock()
+		sess := relayTestHub.sessions[relayTestID]
+		relayTestHub.mu.RUnlock()
+		sess.mu.RLock()
+		n := len(sess.browsers)
+		sess.mu.RUnlock()
+		if n == remoteRelayMaxBrowsers+3 {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	screen := `{"kind":"event","payload":"screen"}`
+	if err := terminal.WriteMessage(websocket.TextMessage, []byte(screen)); err != nil {
+		t.Fatal(err)
+	}
+	for i, w := range watchers {
+		if got := readFrame(t, w); got != screen {
+			t.Fatalf("watcher %d got %q", i+1, got)
+		}
+	}
+}
