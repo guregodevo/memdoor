@@ -48,16 +48,17 @@ memdoor model providers z-ai/glm-5.3 # who serves it: precision, context, uptime
 In the terminal, without leaving the conversation:
 
 - `/model` — which model is answering, and the ladder it sits on
-- `/model 3` — pin rung 3 for this conversation (`rung 3/3 · pinned by you`)
+- `/model 3` — pin rung 3 (`rung 3/3 · pinned by you`). A pin is yours and it
+  stays: kept in `~/.memdoor/model.json`, every new conversation starts on it
 - `/model z-ai/glm-5.3 price` — pin any catalogue model, cheapest host first;
   `throughput`, `latency` and `default` are the other orderings
 - `/model z-ai/glm-5.3 order baidu,morph` — your own host order
-- `/model auto` — hand the choice back to the ladder
+- `/model auto` — hand the choice back to the ladder, and drop the kept pin
 - `/model-search sonnet` — find a model to pin, with its price, from the chat
 
-Anything tool-capable in OpenRouter's catalogue can be pinned. Models that
-cannot call a tool cannot run an agent turn, so they are filtered out of the
-listing.
+Anything tool-capable that a connected provider lists can be pinned; a pin by
+id goes to the provider that lists it. Models that cannot call a tool cannot
+run an agent turn, so they are filtered out of the listing.
 
 ## What travels, and what does not
 

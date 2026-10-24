@@ -38,7 +38,7 @@ func shortSessionKey(key string) string {
 
 var sessionsListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List the gateway's live sessions (for conversations you can resume, see `memdoor conversations`)",
+	Short: "List the gateway's live sessions (for conversations you can resume, see `memdoor resume`)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c := NewClient()
 		var result struct {

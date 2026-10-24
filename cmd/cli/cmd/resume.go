@@ -229,7 +229,7 @@ func shortID(channelID string) string {
 func findSessionByID(recs []sessionRecord, id string) (sessionRecord, error) {
 	id = strings.TrimSpace(id)
 	if len(id) < 4 {
-		return sessionRecord{}, fmt.Errorf("%q is not a row number or a conversation id — `memdoor conversations` lists both", id)
+		return sessionRecord{}, fmt.Errorf("%q is not a row number or a conversation id — `memdoor resume` lists both", id)
 	}
 	var hits []sessionRecord
 	for _, r := range recs {
@@ -242,7 +242,7 @@ func findSessionByID(recs []sessionRecord, id string) (sessionRecord, error) {
 	}
 	switch len(hits) {
 	case 0:
-		return sessionRecord{}, fmt.Errorf("no conversation with id %s — `memdoor conversations --all` lists every one", id)
+		return sessionRecord{}, fmt.Errorf("no conversation with id %s — `memdoor resume --all` lists every one", id)
 	case 1:
 		return hits[0], nil
 	}
@@ -309,31 +309,10 @@ func shortDir(dir string) string {
 	return dir
 }
 
-var conversationsCmd = &cobra.Command{
-	Use:   "conversations",
-	Short: "List recent conversations (what `memdoor resume` picks from)",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		all, _ := cmd.Flags().GetBool("all")
-		dir := ""
-		if !all {
-			dir, _ = os.Getwd()
-		}
-		recs := sessionsFor(dir)
-		if len(recs) == 0 {
-			fmt.Println("No conversations recorded yet — `memdoor tui` starts one.")
-			return nil
-		}
-		printSessions(recs, all)
-		return nil
-	},
-}
-
 func init() {
 	resumeCmd.Flags().Bool("all", false, "Every conversation, not just this directory's")
 	resumeCmd.Flags().Bool("last", false, "Resume the most recent without asking")
 	resumeCmd.Flags().Bool("follow", false, "Print the conversation as text and keep printing what a running turn does until it ends")
 	resumeCmd.Flags().Int("limit", 200, "Into a pipe: how many messages to print")
-	conversationsCmd.Flags().Bool("all", false, "Every conversation, not just this directory's")
 	rootCmd.AddCommand(resumeCmd)
-	rootCmd.AddCommand(conversationsCmd)
 }

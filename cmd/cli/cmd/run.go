@@ -28,7 +28,6 @@ import (
 // drawing: a CI job, a script, a queue worker gets the coder on this project
 // with no window, and `memdoor resume <id>` opens the conversation later.
 var (
-	runDirFlag          string
 	runConversationFlag string
 	runJSONFlag         bool
 	runYesFlag          bool
@@ -82,7 +81,7 @@ its id is printed at the end, and memdoor resume <id> opens it in a window.
 		if err := firstRunReady(); err != nil {
 			return err
 		}
-		dir := runDirFlag
+		dir := projectDirFlag
 		c := NewClient()
 		if _, local := localGatewayPort(); !local {
 			// The project is on the gateway's machine: --dir names it there,
@@ -345,7 +344,6 @@ func lastRunFailed(receipt string) bool {
 }
 
 func init() {
-	headlessRunCmd.Flags().StringVar(&runDirFlag, "dir", "", "the project directory (default: here)")
 	headlessRunCmd.Flags().StringVar(&runConversationFlag, "conversation", "", "continue this conversation instead of starting one")
 	headlessRunCmd.Flags().BoolVar(&runJSONFlag, "json", false, "NDJSON events on stdout instead of text")
 	headlessRunCmd.Flags().BoolVar(&runYesFlag, "yes", false, "answer any question with its first option (an approval with Yes)")

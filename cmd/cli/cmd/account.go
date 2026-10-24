@@ -20,7 +20,7 @@ import (
 
 // memdoor account — the creator's sign-in.
 //
-// A coach has one thing: the email she paid with. `memdoor account login`
+// A coach has one thing: the email she paid with. `memdoor login`
 // asks memdoor.ai to mail a code to it, takes the code, and from then on
 // this Mac holds her account token. Behind that one step
 // the gateway is prepared without a question asked: the directories,
@@ -28,10 +28,10 @@ import (
 // exactly these commands behind its sign-in screen (ADR-0009: the app
 // decides nothing), and a terminal user runs them by hand.
 //
-//	memdoor account login sara@example.com      # mails a code, asks for it
+//	memdoor login sara@example.com      # mails a code, asks for it
 //	memdoor account status                      # who is signed in, what plan
 //	memdoor account subscribe                   # Pro's checkout (remote control), in the browser
-//	memdoor account logout
+//	memdoor logout
 
 const (
 	accountRecordFile = "account.json"  // ~/.memdoor/account.json: {email, workspace}
@@ -93,15 +93,18 @@ var (
 
 var accountCmd = &cobra.Command{
 	Use:   "account",
-	Short: "The memdoor.ai account: sign in with your email, status, subscribe",
+	Short: "The memdoor.ai account: status, subscribe (sign in with memdoor login)",
 }
 
-var accountLoginCmd = &cobra.Command{
+var loginCmd = &cobra.Command{
 	Use:   "login [email]",
-	Short: "Sign in: a code is emailed, type it here (short: memdoor login)",
-	Example: `  memdoor account login sara@example.com
-  memdoor account login sara@example.com --send-only        # step one: mail the code
-  memdoor account login sara@example.com --code 482913 --json  # step two: verify it`,
+	Short: "Sign in: a code is emailed, type it here",
+	Long: `Sign in to memdoor.ai with your email: a six-digit code arrives there, and you
+type it here. The sign-in is for what memdoor.ai hosts (Pro); the agent on your
+own key needs none.`,
+	Example: `  memdoor login sara@example.com
+  memdoor login sara@example.com --send-only        # step one: mail the code
+  memdoor login sara@example.com --code 482913 --json  # step two: verify it`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		email := ""
@@ -189,7 +192,7 @@ var accountStatusCmd = &cobra.Command{
 	},
 }
 
-var accountLogoutCmd = &cobra.Command{
+var logoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Sign out of memdoor.ai on this machine (the gateway account stays signed in)",
 	RunE:  func(cmd *cobra.Command, args []string) error { return signOut() },
@@ -509,12 +512,12 @@ func prompt(label string) string {
 }
 
 func init() {
-	accountLoginCmd.Flags().StringVar(&accountCode, "code", "", "The six-digit code from the email")
-	accountLoginCmd.Flags().BoolVar(&accountSendOnly, "send-only", false, "Only mail the code; verify later with --code")
-	accountLoginCmd.Flags().BoolVar(&accountJSON, "json", false, "Print the result as JSON")
+	loginCmd.Flags().StringVar(&accountCode, "code", "", "The six-digit code from the email")
+	loginCmd.Flags().BoolVar(&accountSendOnly, "send-only", false, "Only mail the code; verify later with --code")
+	loginCmd.Flags().BoolVar(&accountJSON, "json", false, "Print the result as JSON")
 	accountStatusCmd.Flags().BoolVar(&accountJSON, "json", false, "Print the status as JSON")
 	accountSubscribeCmd.Flags().BoolVar(&accountYearly, "yearly", false, "Yearly billing instead of monthly")
 	accountSubscribeCmd.Flags().BoolVar(&accountJSON, "json", false, "Print the checkout URL as JSON instead of opening it")
-	accountCmd.AddCommand(accountLoginCmd, accountStatusCmd, accountLogoutCmd, accountSubscribeCmd)
-	rootCmd.AddCommand(accountCmd)
+	accountCmd.AddCommand(accountStatusCmd, accountSubscribeCmd)
+	rootCmd.AddCommand(accountCmd, loginCmd, logoutCmd)
 }

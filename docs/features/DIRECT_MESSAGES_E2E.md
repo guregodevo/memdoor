@@ -214,7 +214,7 @@ Enable private one-on-one conversations between users (humans or agents) in Memd
 ### Required Agents
 ```bash
 # List existing agents
-./memdoor agents list
+./memdoor agent list
 
 # Should show:
 # - writer (agent:writer)

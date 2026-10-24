@@ -17,27 +17,30 @@ part of Pro. A relay of your own at `MEMDOOR_REMOTE_URL` is yours and free.
 
 ## Turn it on
 
-For the memdoor.ai relay, sign in once, so it knows whose terminal it is (a
-gateway on a box asks for nothing):
-
-```
-$ memdoor login you@example.com
-```
-
-Then, in the conversation you want to take with you:
+In the conversation you want to take with you:
 
 ```
 > /remote
 
-  Remote control for this conversation — open the link or scan the code:
+  Remote control for this conversation, on your gateway at 192.168.1.20:18789 —
+  open the link or scan the code from a phone that reaches that machine:
 
-  https://memdoor.ai/r/0L17wXRvEC5IzW_D#k=…
+  http://192.168.1.20:18789/r/0L17wXRvEC5IzW_D#k=…
 
-  The key after # never leaves your devices; the relay only carries what it
-  cannot read. /remote off revokes the link.
+  The key after # never leaves your devices; the gateway only carries what it
+  cannot read. /remote off revokes both links.
 ```
 
-Scan the code with your phone, or open the link in any browser.
+Scan the code with your phone, or open the link in any browser. No account
+and no plan: the gateway serves the page on its own address.
+
+Only a gateway kept to localhost (`MEMDOOR_HOST=localhost`) goes through the
+memdoor.ai relay, and its link reads `https://memdoor.ai/r/<id>#k=…`; for
+that one, sign in once, so the relay knows whose terminal it is:
+
+```
+$ memdoor login you@example.com
+```
 
 Your gateway holds the link. Once `/remote` is on, the gateway's own process
 is the terminal end of the relay, not the window: close the window, put the
@@ -103,7 +106,7 @@ That is the path for an audience anywhere.
   A watch-only link to this conversation — whoever opens it sees the terminal
   and cannot type:
 
-  https://memdoor.ai/r/0L17wXRvEC5IzW_D#v=…
+  http://192.168.1.20:18789/r/0L17wXRvEC5IzW_D#v=…
 ```
 
 Send it to someone who should follow along. Their page says **watching**, has
@@ -150,12 +153,12 @@ older than this command cannot hold a link and the command says so.
 
 ```
 $ memdoor remote --last
-https://memdoor.ai/r/6i3nQ7d8GL02TvGT#k=…
+http://192.168.1.20:18789/r/6i3nQ7d8GL02TvGT#k=…
 on your phone · "fix the failing test"
-watch only: https://memdoor.ai/r/6i3nQ7d8GL02TvGT#v=…
+watch only: http://192.168.1.20:18789/r/6i3nQ7d8GL02TvGT#v=…
 █▀▀▀▀▀█ ▄▀ ▄█▄ █▀▀▀▀▀█
 …
-held by your gateway, on memdoor.ai: it works with nothing open here, and comes back when the gateway restarts
+held by your gateway, on 192.168.1.20:18789: it works with nothing open here, and comes back when the gateway restarts
 ```
 
 ### Finishing a CI run from your phone
@@ -221,7 +224,8 @@ What was asked and what was answered — not tool output — with anything that
 looks like a key, a token or a password replaced by `[redacted]` before it
 leaves your computer. It is encrypted there with a key that is only in the link;
 memdoor.ai stores bytes it cannot read. `/unshare` deletes every shared link to
-the conversation. It needs the same sign-in as `/remote`.
+the conversation. It needs a memdoor.ai sign-in (`memdoor login
+you@example.com`), unlike `/remote` on your own gateway.
 
 ## What travels, and who can read it
 
@@ -248,7 +252,7 @@ runs commands on your computer. Treat it like a password:
 | `/remote view` | Print the watch-only link and its QR code |
 | `/remote off` | Revoke both links |
 | `memdoor remote <id>` | The link on stdout, from a script; the gateway holds it (`--last`, `--view`, `off <id>`) |
-| `memdoor login you@example.com` | Sign in, once per computer |
+| `memdoor login you@example.com` | Sign in, once per computer: for the memdoor.ai relay (a gateway kept to localhost) and `/share`; `/remote` on your own gateway needs none |
 
 ## Where to next
 

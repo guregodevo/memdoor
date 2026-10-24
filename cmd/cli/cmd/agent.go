@@ -20,9 +20,8 @@ var (
 )
 
 var agentCmd = &cobra.Command{
-	Use:     "agent",
-	Aliases: []string{"agents"},
-	Short:   "The agents on this gateway: list them, or send one a message from a script",
+	Use:   "agent",
+	Short: "The agents on this gateway: list them, or send one a message from a script",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if agentMessage == "" || agentChannel == "" || agentID == "" {
 			return cmd.Help()

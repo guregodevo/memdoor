@@ -15,7 +15,7 @@ already reviewed for those tools.
 ```
 export ANTHROPIC_API_KEY=…            # or OPENAI_API_KEY / GEMINI_API_KEY
 export MEMDOOR_MODEL=claude-sonnet-5  # OpenAI and Gemini need the model named
-memdoor gateway
+cd your-project && memdoor
 ```
 
 A company that runs its **own AI gateway** — provider integrations set up
@@ -83,22 +83,24 @@ those out.
 
 ![/model: each agent's ladder at real prices; pin a rung or any model](/demo-model.cast)
 
-## Pinning one for a conversation
+## Pinning one
 
 In the TUI:
 
 | Type this | What happens |
 |---|---|
 | `/model` | The ladder, the current rung, and the reason |
-| `/model 3` | Pin rung 3 for this conversation |
+| `/model 3` | Pin rung 3; the pin stays for every new conversation until `/model auto` |
 | `/model z-ai/glm-5.3` | Pin that model, cheapest qualifying host first |
 | `/model z-ai/glm-5.3 throughput` | Pin it, fastest host first (`latency`, `price`, `default`) |
 | `/model z-ai/glm-5.3 order baidu,morph` | Your own host order |
-| `/model auto` | Hand the choice back to the ladder |
+| `/model auto` | Hand the choice back to the ladder, and drop the kept pin |
 | `/model-search sonnet` | Search the catalogue from the chat, then pin from the result |
 
 Pinning changes nothing else: same session, same history, same memory, same
-tools. The footer shows `pinned by you` so you never wonder what answered.
+tools. The footer shows `pinned by you` so you never wonder what answered. The
+pin is yours, kept in `~/.memdoor/model.json` on the gateway: every new
+conversation starts on it; a conversation that pins its own keeps that.
 
 ## What each turn cost
 
@@ -107,7 +109,7 @@ memdoor meter          # every turn: model served, tokens, duration
 ```
 
 Appended to `~/.memdoor/meter.jsonl` and never rewritten, so the ledger is
-yours to check against your OpenRouter invoice.
+yours to check against your provider's invoice.
 
 ## Next
 

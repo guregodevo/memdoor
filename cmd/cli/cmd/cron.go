@@ -74,12 +74,12 @@ var cronListCmd = &cobra.Command{
 }
 
 var (
-	cronAddWorkflow, cronAddPartition, cronAddDir string
-	cronAddID                                     string
-	cronAddSchedule                               string
-	cronAddMessage                                string
-	cronAddAgent                                  string
-	cronAddEnabled                                bool
+	cronAddWorkflow, cronAddPartition string
+	cronAddID                         string
+	cronAddSchedule                   string
+	cronAddMessage                    string
+	cronAddAgent                      string
+	cronAddEnabled                    bool
 )
 
 var cronAddCmd = &cobra.Command{
@@ -100,7 +100,7 @@ var cronAddCmd = &cobra.Command{
 			if cronAddPartition != "" {
 				message += " " + cronAddPartition
 			}
-			dir := cronAddDir
+			dir := projectDirFlag
 			if dir == "" {
 				dir, _ = os.Getwd()
 			}
@@ -234,7 +234,6 @@ func init() {
 	cronAddCmd.Flags().StringVar(&cronAddMessage, "message", "", "Job message: what the agent is asked (or use --workflow)")
 	cronAddCmd.Flags().StringVar(&cronAddWorkflow, "workflow", "", "Run this workflow of the project on the schedule instead of an agent turn")
 	cronAddCmd.Flags().StringVar(&cronAddPartition, "partition", "", "With --workflow: the run's partition, e.g. today (once a day); default a fresh run each time")
-	cronAddCmd.Flags().StringVar(&cronAddDir, "dir", "", "With --workflow: the project directory (default: here)")
 	cronAddCmd.Flags().StringVar(&cronAddAgent, "agent", "", "Agent ID")
 	cronAddCmd.Flags().BoolVar(&cronAddEnabled, "enabled", true, "Enable immediately")
 	_ = cronAddCmd.MarkFlagRequired("id")

@@ -5,7 +5,7 @@ Screens below were captured from running sessions at 96 columns — including th
 ## The first screen
 
 ```
-cd your-project && memdoor tui
+cd your-project && memdoor
 ```
 
 ```
@@ -251,13 +251,13 @@ it is free; only the memdoor.ai relay, for a gateway kept to localhost, is Pro.
 Each launch starts a fresh conversation. To return to an earlier one, leave the TUI and:
 
 ```
-$ memdoor conversations
+$ memdoor resume
 
       TITLE                                   STARTED        LAST USED
-   1. cut the 30 seconds about coming home    Sep 6 10:24    7m ago
+   1. make the throttle limit configurable    Sep 6 10:24    7m ago
 
 $ memdoor resume --last
-Resuming "cut the 30 seconds about coming home" (7m ago, 4 turns)
+Resuming "make the throttle limit configurable" (7m ago, 4 turns)
 ```
 
 It opens with that title in the header and the last exchanges in view, on the same session. `memdoor resume` with no argument lists and asks; `resume 2` takes the second row. Conversations are listed for the folder you're in — `--all` shows every one.

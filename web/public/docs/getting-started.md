@@ -42,12 +42,13 @@ prices. Put the export in your shell profile so it is there next time.
 
 ```bash
 cd your-project
-memdoor tui
+memdoor
 ```
 
-The first run sets this machine up by itself: it starts the local gateway in
+The bare command opens the window (`memdoor tui` still works). The first run
+sets this machine up by itself: it starts the local gateway in
 the background and makes the workspace, with nothing to answer. A key you
-export later reaches it the next time you run `memdoor tui`.
+export later reaches it the next time you run `memdoor`.
 
 The agent works on the directory you launched it from: its file tools stay inside it and its commands start there — not a sandbox: a shell command can still reach other folders. Type a task:
 
@@ -85,8 +86,9 @@ and the window opens on it, in the box's home unless `--dir` names a
 project there. Each step is printed as it happens. The runs then live on
 the box: close the laptop and the work goes on; `memdoor --gateway
 ssh://you@box resume --last` or your phone opens the same conversation.
-Nothing on the box is opened to the network, and the box's own login is
-read over ssh, so no password is typed. [The gateway](/docs/gateway) has
+The box's gateway listens on its own network, every door gated by the
+account token (`MEMDOOR_HOST=localhost` keeps it to the box), and the box's
+own login is read over ssh, so no password is typed. [The gateway](/docs/gateway) has
 the rest, the phone included.
 
 ## The commands worth knowing first

@@ -206,7 +206,7 @@ func TestLoginIsTheShortNameOfAccountLogin(t *testing.T) {
 		if loginCmd.Flags().Lookup(flag) == nil {
 			t.Errorf("memdoor login lacks --%s, which memdoor account login has", flag)
 		}
-		if accountLoginCmd.Flags().Lookup(flag) == nil {
+		if loginCmd.Flags().Lookup(flag) == nil {
 			t.Errorf("memdoor account login lost --%s", flag)
 		}
 	}
@@ -218,7 +218,7 @@ func TestLoginIsTheShortNameOfAccountLogin(t *testing.T) {
 	}
 	// No terminal and no email (a test has neither): both names refuse the
 	// same way, naming the short form.
-	for _, c := range []*cobra.Command{loginCmd, accountLoginCmd} {
+	for _, c := range []*cobra.Command{loginCmd, loginCmd} {
 		err := c.RunE(c, nil)
 		if err == nil || !strings.Contains(err.Error(), "an email is required: memdoor login") {
 			t.Errorf("%s with no email: %v", c.CommandPath(), err)

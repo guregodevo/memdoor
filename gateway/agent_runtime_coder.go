@@ -338,6 +338,30 @@ func confineToCoderWorkdir(toolName string, input json.RawMessage, wd string) js
 	return input
 }
 
+// planModeTools are what a plan-mode turn is refused: anything that changes
+// the project, runs something, or hands work to another turn. Plan mode reads
+// and proposes (exit_plan_mode); the person approves, the next turn implements.
+// MCP tools are refused as a family, as approval mode asks about them: their
+// effect is the server's to know, not ours.
+var planModeTools = map[string]bool{
+	"bash": true, "apply_patch": true, "write_file": true, "edit_file": true,
+	"sessions_spawn": true, "cron": true, "workflow": true, "task_flow": true,
+	"chrome": true, "send_email": true,
+}
+
+// planModeRefuses says whether a plan-mode turn may call tool, and why not.
+func planModeRefuses(ctx context.Context, tool string) string {
+	if permissionModeFromContext(ctx) != permissionModePlan {
+		return ""
+	}
+	if !planModeTools[tool] && !strings.HasPrefix(tool, "mcp__") {
+		return ""
+	}
+	return "plan mode: " + tool + " would change or run something, and this turn only reads and proposes. " +
+		"Read with read_file, jgrep, grep, glob and locate, then call exit_plan_mode with the plan; " +
+		"once the person approves it, the next turn implements it."
+}
+
 // permissionModeFromContext returns the turn's interaction mode (default when unset).
 func permissionModeFromContext(ctx context.Context) string {
 	if m, _ := ctx.Value(sharedctx.PermissionModeKey).(string); m != "" {

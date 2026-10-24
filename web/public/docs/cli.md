@@ -6,8 +6,8 @@ Every command is `memdoor <group> <command>`. `--help` works at every level and 
 
 ```
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, … — or memdoor connect
-memdoor setup                     # workspace and account on this machine
-memdoor tui                       # the coding agent, on the directory you launch from
+cd your-project && memdoor        # the first run sets the machine up: gateway, workspace, account, then the window
+memdoor tui                       # the coding agent, on the directory you launch from (the bare `memdoor` opens it too)
 memdoor resume                    # pick up a previous conversation where you left off
 memdoor login you@example.com     # sign in to memdoor.ai: workflow state there, and the relay for a gateway kept to localhost
 memdoor account status            # this Mac's engine user, and the memdoor.ai account
@@ -18,7 +18,7 @@ memdoor version                   # this build's version, commit and date
 memdoor uninstall                 # remove the binary (and ~/.memdoor unless --keep-data)
 ```
 
-`setup` takes flags for scripts: `--workspace-name`, `--admin-email`, `--admin-password`.
+`memdoor setup` does the first run's setup from a script: `--workspace-name`, `--admin-email`, `--admin-password`, `--workspace-dir`, `--non-interactive`; `doctor` takes `--workspace-dir` too.
 
 ## Providers
 
@@ -27,7 +27,7 @@ memdoor providers                 # each provider, connected or not; ● the one
 memdoor providers --models groq   # one provider's own list: window · max out · $ per million
 memdoor providers --audit         # where every window came from, and which are guesses
 memdoor providers --refresh       # read every list again (a vendor shipped a model)
-memdoor connect [kind]            # add one: gateway, anthropic, openai, gemini, xai, baseten, groq, deepseek, custom
+memdoor connect [kind]            # add one: gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, custom
 memdoor connect groq --probe      # test the key, keep nothing
 memdoor connect --remove <id>     # forget one you added
 ```
@@ -80,13 +80,43 @@ memdoor mcp trust                 # let this project's .mcp.json servers start
 
 `/mcp` in the window does the same. See [MCP](/docs/mcp).
 
+## Guards
+
+```
+memdoor guards                    # the rules
+memdoor guards add --tool bash --pattern '\bgit push\b' --message 'pushing is mine'
+memdoor guards add --tool '*' --pattern '\.env\b' --message 'secrets stay out of reach'
+memdoor guards remove 2           # the number `memdoor guards` shows
+memdoor guards clear
+```
+
+A rule names a tool (`*` for any) and a regex matched against the call's input; a matching call is refused with the message, on every agent and every turn. Setting them takes an admin's sign-in. See [Boundaries](/docs/boundaries).
+
+## Your editor
+
+```
+memdoor acp                       # the coder over the Agent Client Protocol, on stdin/stdout, for Zed, JetBrains or VS Code's ACP client to spawn
+```
+
+Each editor session is a conversation on this machine's gateway, in the folder the editor has open. See [Memdoor in your editor](/docs/editor).
+
+## Peers (experimental)
+
+```
+memdoor peers                                   # each peer: answering or not, its agents
+memdoor peers add box <gateway> --dir <path>    # name a gateway you are signed in to; @box:coder reaches it
+memdoor peers remove box
+```
+
+`@<peer>:<agent> …` in a window, a run or a message sends that turn to the agent on the peer, in the directory named there; the answer comes back as the reply.
+
 ## Conversations
 
 Each `memdoor tui` starts a fresh conversation; `resume` is how you deliberately go back to an old one.
 
 ```
-memdoor conversations             # what you've worked on here, newest first
-memdoor conversations --all       # every directory, not just this one
+memdoor resume                    # what you've worked on here, newest first, and which one to open
+memdoor resume --all              # every directory, not just this one
 memdoor resume                    # list and choose
 memdoor resume --last             # the one you were just in
 memdoor resume 2                  # straight to number 2 from the list
@@ -121,13 +151,12 @@ What `/remote` does in the window, as a command: the id is the one `memdoor
 run` and `memdoor resume` print; stdout is the link alone. See
 [Remote control](/docs/remote).
 
-## Workspace and channels
+## Workspace and scripts
 
 ```
 memdoor workspace use <slug>      # pin this directory to a workspace
 memdoor workspace which           # what would resolve here
-memdoor channels list|create
-memdoor messages -c <channel> [--include-threads]
+memdoor workspace list            # every workspace you have
 memdoor run "<prompt>" [--json] [--yes] [--dir <path>]   # a headless turn: answer on stdout, exit code = the receipt
 memdoor resume <id> | head                                # into a pipe: the conversation as text (a window at a terminal)
 git diff | memdoor run "review this"                    # stdin is the input the prompt is about
@@ -139,7 +168,7 @@ memdoor agent list|show|add|update|delete
 ## Running the gateway
 
 ```
-memdoor gateway                   # API + web UI on :18789
+memdoor gateway                   # the gateway in the foreground on :18789 (the API, the /r/ remote pages, the docs); install|status|uninstall run it as a service
 memdoor doctor                    # is it healthy
 memdoor logs query --regex "<re>" --since 10m
 memdoor logs errors --since 5m
@@ -149,16 +178,17 @@ memdoor auth login-direct --email <e> --password <p>   # the engine's sign-in, b
 memdoor auth token                # the session token, for curl
 ```
 
-`users`, `channels`, `messages`, `sessions`, `auth`, `cron` and the other
-operator commands are not listed in `memdoor --help`; every one runs when
-typed, and `docs/reference/CLI.md` lists them.
+`users`, `channels`, `messages`, `sessions`, `auth` and the other operator
+commands are not listed in `memdoor --help`; every one runs when typed, and
+`docs/reference/CLI.md` lists them. `cron` is listed: see [Scheduled checks](/docs/cron).
 
 ## Global flags
 
 | Flag | Meaning |
 |---|---|
 | `-w, --workspace <slug>` | Override workspace discovery |
-| `--gateway <url>` | Point at a different gateway (default `http://localhost:18789`) |
+| `--gateway <address>` | Point at a different gateway (or `MEMDOOR_GATEWAY`): a URL, `host:port`, a bare host or IP, or `ssh://[user@]box[:port]` for a gateway reached through ssh (default `http://localhost:18789`) |
+| `--dir <path>` | The project directory: here by default; with `--gateway`, the directory on that machine |
 | `-v, --verbose` | Verbose output |
 
 Workspace resolution order: `-w` → `$MEMDOOR_WORKSPACE` → a `.memdoor/workspace` file walked up from the current directory → `workspace_id` in `~/.memdoor/config.json`.

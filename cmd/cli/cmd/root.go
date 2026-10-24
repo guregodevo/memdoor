@@ -37,24 +37,21 @@ var noWorkspaceTopLevels = map[string]bool{
 	// their RunE): the gate must not fire first. Live 2026-10-11: on a GitHub
 	// runner that had never seen Memdoor, `memdoor run` died at this gate
 	// with "nothing is set up on this machine yet" before it could set it up.
-	"run":        true,
-	"workflow":   true,
-	"cron":       true,
-	"resume":     true,
-	"remote":     true,
-	"peers":      true,
-	"auth":       true,
-	"gateway":    true,
-	"doctor":     true,
-	"setup":      true,
-	"version":    true,
-	"logs":       true,
-	"billing":    true, // the billing service serves every workspace; it belongs to none
-	"workspace":  true, // `workspace which` resolves before any -w; `workspace use` sets it
-	"use":        true, // top-level shortcut for `workspace use <slug>`
-	"which":      true, // top-level shortcut for `workspace which` (PS1-safe with --bare)
-	"workspaces": true, // top-level shortcut for `workspace list`
-	"ask":        true, // `ask --all` / `--workspaces <list>` runs without a single resolved workspace; the no-flag path validates inside the handler
+	"run":       true,
+	"workflow":  true,
+	"cron":      true,
+	"resume":    true,
+	"remote":    true,
+	"peers":     true,
+	"auth":      true,
+	"gateway":   true,
+	"doctor":    true,
+	"setup":     true,
+	"version":   true,
+	"logs":      true,
+	"billing":   true, // the billing service serves every workspace; it belongs to none
+	"workspace": true, // `workspace which` resolves before any -w; `workspace use` sets it
+	"ask":       true, // `ask --all` / `--workspaces <list>` runs without a single resolved workspace; the no-flag path validates inside the handler
 	// savings reads ~/.memdoor/savings.jsonl, a machine-local ledger with no
 	// workspace in it; requiring one failed outside a pinned directory
 	// (onboarding walk, 2026-09-27).
@@ -63,7 +60,7 @@ var noWorkspaceTopLevels = map[string]bool{
 	"upgrade":   true, // swaps the memdoor binary; orthogonal to any workspace
 	"claude":    true, // `claude hook install` writes settings.json (no workspace); `claude hook capture` + `claude import` resolve opportunistically and validate in their own RunE
 	// THE SIGN-IN CANNOT REQUIRE WHAT THE SIGN-IN CREATES (paid onboarding
-	// walk, 2026-09-27). `memdoor account login` is the FIRST command a person
+	// walk, 2026-09-27). `memdoor login` is the FIRST command a person
 	// runs after paying, in whatever directory they happen to be in, and it
 	// answered "no workspace resolved for \"account\"" with four ways to fix a
 	// problem they do not have — the workspace is named after the account this
@@ -119,12 +116,15 @@ machines, and the relay for a gateway kept to localhost.`,
 	SilenceErrors: true,
 }
 
+// projectDirFlag is --dir, one flag for every command that works in a
+// project: the window, run, workflow, cron add, peers add.
+var projectDirFlag string
+
 func init() {
-	rootCmd.Flags().String("dir", "", "the project directory: here by default; on a gateway elsewhere (--gateway), the directory on that machine")
+	rootCmd.PersistentFlags().StringVar(&projectDirFlag, "dir", "", "the project directory: here by default; on a gateway elsewhere (--gateway, or a peer), the directory on that machine")
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
-			dir, _ := cmd.Flags().GetString("dir")
-			return runTUI(tuiOptions{dir: dir})
+			return runTUI(tuiOptions{dir: projectDirFlag})
 		}
 		return cmd.Help()
 	}

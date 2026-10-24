@@ -147,7 +147,7 @@ In the TUI, /workflow draws the graph as it runs. Every run is kept in the
 project's run table (.memdoor/runs.db), so history answers for runs that
 ended before this gateway started.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dir, err := workflowDir(workflowDirFlag)
+		dir, err := workflowDir(projectDirFlag)
 		if err != nil {
 			return err
 		}
@@ -183,7 +183,7 @@ ended before this gateway started.`,
 	},
 }
 
-var workflowDirFlag, workflowTimeoutFlag, workflowPartitionFlag string
+var workflowTimeoutFlag, workflowPartitionFlag string
 var workflowHistoryLimit int
 
 var workflowRunCmd = &cobra.Command{
@@ -196,7 +196,7 @@ var workflowRunCmd = &cobra.Command{
 		if err := firstRunReady(); err != nil {
 			return err
 		}
-		dir, err := workflowDir(workflowDirFlag)
+		dir, err := workflowDir(projectDirFlag)
 		if err != nil {
 			return err
 		}
@@ -279,7 +279,7 @@ var workflowResumeCmd = &cobra.Command{
 		if err := firstRunReady(); err != nil {
 			return err
 		}
-		dir, err := workflowDir(workflowDirFlag)
+		dir, err := workflowDir(projectDirFlag)
 		if err != nil {
 			return err
 		}
@@ -377,7 +377,6 @@ func printWorkflowTasks(r workflowRunStatus) {
 }
 
 func init() {
-	workflowCmd.PersistentFlags().StringVar(&workflowDirFlag, "dir", "", "the project directory (default: here)")
 	workflowRunCmd.Flags().BoolVar(&workflowWaitFlag, "wait", false, "follow the run to its end: progress on stderr, the files it produced on stdout, exit 0 done / 2 failed / 1 stopped")
 	workflowRunCmd.Flags().StringVar(&workflowTimeoutFlag, "timeout", "", "a clock on the whole run, e.g. 90m (default 2h, at most 24h)")
 	workflowRunCmd.Flags().StringVar(&workflowPartitionFlag, "partition", "", "resume an earlier run by its partition (status shows it), or \"today\" for a DAG run once a day; a run is fresh by default")
@@ -482,7 +481,7 @@ var workflowHistoryCmd = &cobra.Command{
 	Short: "What a workflow did before: every run, newest first (survives a restart)",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dir, err := workflowDir(workflowDirFlag)
+		dir, err := workflowDir(projectDirFlag)
 		if err != nil {
 			return err
 		}

@@ -83,7 +83,7 @@ the same coding turn on its fast model — a planted bug, a failing test,
 - **Its API states**: `context_window`, `max_completion_tokens`, prices,
   modalities.
 - **Fast model**: `openai/gpt-oss-20b` — 8 seconds on the coding turn,
-  the fastest of the eight; `qwen/qwen3.8-27b` for a stronger one.
+  the fastest here; `qwen/qwen3.8-27b` for a stronger one.
 - The free tier rate-limits quickly; Memdoor waits what `Retry-After`
   says (up to a minute) before asking again.
 
@@ -108,8 +108,8 @@ the same coding turn on its fast model — a planted bug, a failing test,
 - **Key**: `BASETEN_API_KEY` · base `https://inference.baseten.co/v1`
 - **Its API states**: `context_length`, `max_completion_tokens`, prices,
   modalities, supported features (only tool-capable models are listed).
-- **Fast model**: `zai-org/GLM-5.3-Flash` ($0.15 / $0.50 per million);
-  also DeepSeek V4, Kimi K3, Nemotron. Ids carry case — type them as
+- **Fast model**: `zai-org/GLM-5.3-Flash`; also DeepSeek V4, Kimi K3,
+  Nemotron. Ids carry case — type them as
   listed.
 
 ## Anthropic
@@ -171,4 +171,4 @@ catalogue; the public reference catalogue (models.dev, read once a day,
 kept on disk, never contacted on a company gateway); the provider's
 default — shown as `~` after the figure, warned once in the log, and
 declarable in `providers.json`. `memdoor providers --audit` prints the
-count: 609 models across the eight, 94% from a stated figure.
+count per provider, and how many of the figures are stated rather than guessed.

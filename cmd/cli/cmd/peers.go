@@ -49,8 +49,7 @@ var peerAddCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		dir, _ := cmd.Flags().GetString("dir")
-		peers[name] = gateway.PeerEntry{Gateway: gw, Dir: strings.TrimSpace(dir)}
+		peers[name] = gateway.PeerEntry{Gateway: gw, Dir: strings.TrimSpace(projectDirFlag)}
 		if err := gateway.SavePeers(peers); err != nil {
 			return err
 		}
@@ -247,7 +246,6 @@ func (s *peerSink) Ask(question string, options []string, approval string) strin
 }
 
 func init() {
-	peerAddCmd.Flags().String("dir", "", "the project on the peer a turn runs in (its absolute path there)")
 	peersCmd.AddCommand(peerAddCmd, peerRemoveCmd)
 	rootCmd.AddCommand(peersCmd)
 }

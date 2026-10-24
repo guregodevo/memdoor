@@ -28,7 +28,7 @@ Complete command-line interface reference for Memdoor.
   - [users](#users)
   - [account](#account) — sign in with your email (a code arrives, you type it)
   - [resume](#resume) — reopen a previous conversation
-  - [login](#login) — sign in with your email (short for `account login`)
+  - [login](#login) — sign in with your email
   - [logout](#logout) — sign out of memdoor.ai; the engine stays signed in
   - [chrome](#chrome)
   - [auth](#auth)
@@ -90,25 +90,25 @@ memdoor: workspace "myproject" (from file /Users/you/work/myproject/.memdoor/wor
 
 ### Ergonomics
 
-Three top-level shortcuts cover the daily switch / inspect / list flow:
+The daily switch / inspect / list flow:
 
 ```bash
-memdoor use <slug>      # = memdoor workspace use <slug>
-memdoor which           # = memdoor workspace which (add --bare for PS1 use)
-memdoor workspaces      # = memdoor workspace list (active row prefixed with '*')
+memdoor workspace use <slug>      # pin this directory
+memdoor workspace which           # what resolves here (add --bare for PS1 use)
+memdoor workspace list            # every workspace (active row prefixed with '*')
 ```
 
 `memdoor workspace recent` prints the 20 most recently-pinned slugs from `~/.memdoor/recent_workspaces`.
 
 **Shell prompt**: there is no `memdoor shell-prompt` command (removed
-2026-10-03). `memdoor which --bare` is still the one thing to call from a
+2026-10-03). `memdoor workspace which --bare` is still the one thing to call from a
 prompt function, and `memdoor completion <shell>` still exists:
 
 ```bash
-memdoor which --bare        # just the slug, for your own PS1 snippet
+memdoor workspace which --bare   # just the slug, for your own PS1 snippet
 ```
 
-**Tab completion**: cobra's standard completion script wires `memdoor use <TAB>` to suggest from the local workspace list. Source it once in your shell rc:
+**Tab completion**: cobra's standard completion script wires `memdoor workspace use <TAB>` to suggest from the local workspace list. Source it once in your shell rc:
 
 ```bash
 source <(memdoor completion zsh)        # zsh
@@ -166,8 +166,8 @@ Error: no workspace resolved for "channels". Set one of:
 ## Command index
 
 <!-- cli-index:start -->
-Generated from the binary's `--help` by `make cli-index` (39 top-level commands).
-`memdoor --help` shows 32 of them; the others are hidden from it and run when typed:
+Generated from the binary's `--help` by `make cli-index` (35 top-level commands).
+`memdoor --help` shows 28 of them; the others are hidden from it and run when typed:
 `auth`, `billing`, `channels`, `chrome`, `messages`, `sessions`, `users`. A command that appears here
 and nowhere else in this file is documented by its own `memdoor <command> --help`.
 
@@ -189,7 +189,6 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 **Doors onto it**
 
 - `acp` — Runs Memdoor as an Agent Client Protocol agent on stdin/stdout, for an
-- `conversations` — List recent conversations (what `memdoor resume` picks from)
 - `cron` — Schedules: a prompt or a workflow on a cron line, run by the gateway with no window open
   - `add` — Schedule a prompt (--message) or a workflow (--workflow) on a cron line
   - `history` — What each run of a schedule did
@@ -250,23 +249,18 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **Workspace and account**
 
-- `account` — The memdoor.ai account: sign in with your email, status, subscribe
-  - `login` — Sign in: a code is emailed, type it here (short: memdoor login)
-  - `logout` — Sign out of memdoor.ai on this machine (the gateway account stays signed in)
+- `account` — The memdoor.ai account: status, subscribe (sign in with memdoor login)
   - `status` — Who is signed in on this machine, and what the seat is
   - `subscribe` — Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month
 - `login` — Sign in to memdoor.ai with your email: a six-digit code arrives there, and you
 - `logout` — Sign out of memdoor.ai on this machine (the gateway account stays signed in)
 - `setup` — Sets a fresh install up: the workspace directory under ~/.memdoor
-- `use` — Writes <slug> into ./.memdoor/workspace so every memdoor invocation
-- `which` — Resolves the workspace slug using the standard chain (flag → env →
 - `workspace` — Workspace resolution chain (highest precedence first):
   - `delete` — Permanently delete a workspace (admin only, destructive)
   - `list` — List every workspace you have
   - `recent` — List recently-used workspaces (most recent first)
   - `use` — Pin the current directory to a workspace (writes ./.memdoor/workspace)
   - `which` — Print the resolved workspace and where it came from
-- `workspaces` — Lists every workspace this install has touched, from
 
 **This binary**
 
@@ -305,7 +299,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `clear` — Clear conversation history for a session (chat memory wipe)
   - `export` — Export local agent sessions as JSONL (for evals / fine-tuning datasets)
   - `get` — Get session details
-  - `list` — List the gateway's live sessions (for conversations you can resume, see `memdoor conversations`)
+  - `list` — List the gateway's live sessions (for conversations you can resume, see `memdoor resume`)
   - `rewind` — Undo the last N turns of a session (keep the rest)
 - `users` — Manage workspace users (admin only)
   - `create` — Create a new user (admin only)
@@ -1017,8 +1011,6 @@ memdoor logs session agent:chief:channel:general
 
 Send messages to an agent in a channel, or manage agents. **Requires `-w/--workspace`** (enforced by `requireWorkspaceSlug` in `cmd/cli/cmd/root.go`).
 
-**Alias**: `agents` (e.g., `memdoor agents list` works the same as `memdoor agent list`)
-
 **Usage**:
 ```bash
 memdoor -w WORKSPACE agent --message "Your message" --channel CHANNEL_NAME --agent-id AGENT_ID [flags]
@@ -1693,10 +1685,10 @@ without a question (directories, its own first user, a workspace named like
 the account). The command line runs exactly these steps; a person types them.
 
 ```bash
-memdoor login sara@example.com              # a code is emailed; type it when asked (= account login)
+memdoor login sara@example.com              # a code is emailed; type it when asked
 memdoor account status                      # this Mac's engine user, and the memdoor.ai account and seat
 memdoor account subscribe                   # Pro ($10/month), in the browser
-memdoor logout                              # sign out of memdoor.ai (= account logout)
+memdoor logout                              # sign out of memdoor.ai
 ```
 
 There are two identities, and the status prints both. **memdoor.ai** is the
@@ -1709,8 +1701,8 @@ memdoor.ai account.
 Non-interactive (scripts and CI):
 
 ```bash
-memdoor account login sara@example.com --send-only --json             # step one: mail the code
-memdoor account login sara@example.com --code 482913 --json           # step two: verify, prepare the engine
+memdoor login sara@example.com --send-only --json             # step one: mail the code
+memdoor login sara@example.com --code 482913 --json           # step two: verify, prepare the engine
 memdoor account status --json
 ```
 
@@ -1755,7 +1747,7 @@ memdoor resume --last       # the most recent, without asking
 memdoor resume 2            # row 2 from that list
 memdoor resume 8488c86b     # by id: the line the window prints as it closes, from any directory
 memdoor resume --all        # choose from every directory's
-memdoor conversations       # just list (same rows, no prompt)
+memdoor resume | cat        # into a pipe: the list, no question
 ```
 
 When a window closes after at least one turn, its last line is the way back
@@ -1776,8 +1768,7 @@ recognisable later. A conversation keeps the title it started with.
 ### login
 
 Sign in to memdoor.ai with your email. A six-digit code arrives there; type it
-when asked. It is `memdoor account login` under its short name, with the same
-flags, and it stores a durable token (0600 at `~/.memdoor/billing-token`).
+when asked. It stores a durable token (0600 at `~/.memdoor/billing-token`).
 
 **Usage**:
 ```bash
@@ -1803,8 +1794,7 @@ Workflows need no sign-in.
 Sign out of memdoor.ai on this Mac: the seat's token and the account record
 are forgotten, so remote control and the hosted workflow state are off; local
 workflows and their local schedules keep running. This Mac's engine
-session stays — the agent on your own key keeps working. It is
-`memdoor account logout` under its short name.
+session stays — the agent on your own key keeps working.
 
 ```bash
 memdoor logout
@@ -2138,9 +2128,9 @@ Memdoor uses JSON5 format for configuration (supports comments and trailing comm
 
 `memdoor workspace` manages which workspace the CLI targets:
 
-- `memdoor workspace list` — every workspace you have access to (alias: top-level `memdoor workspaces`)
-- `memdoor workspace use <slug>` — pin the current directory to a workspace (writes `./.memdoor/workspace`; alias: top-level `memdoor use <slug>`)
-- `memdoor workspace which` — print the resolved workspace + the source string (alias: top-level `memdoor which`)
+- `memdoor workspace list` — every workspace you have access to
+- `memdoor workspace use <slug>` — pin the current directory to a workspace (writes `./.memdoor/workspace`)
+- `memdoor workspace which` — print the resolved workspace + the source string
 - `memdoor workspace recent` — recently-used workspaces, most recent first
 - `memdoor workspace delete <slug>` — permanently delete a workspace (admin only, destructive)
 
@@ -2218,7 +2208,7 @@ memdoor gateway &
 memdoor tui
 
 # Or manage via CLI
-memdoor agents list
+memdoor agent list
 memdoor sessions list
 ```
 
@@ -2251,7 +2241,6 @@ memdoor cron add --help
 
 ## See Also
 
-- [Quick Start](QUICK_START.md)
 - [Cron Jobs Guide](CRON.md)
 - [Skills Reference](SKILLS.md)
 

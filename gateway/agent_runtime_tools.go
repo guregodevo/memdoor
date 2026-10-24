@@ -215,6 +215,15 @@ func (ar *AgentRuntime) executeToolUnredacted(ctx context.Context, toolUse *llm.
 		}
 	}
 
+	// PLAN MODE is read-only: a tool that would change or run something is
+	// refused with the way out (exit_plan_mode); the person approves the plan
+	// and the next turn, in another mode, implements it.
+	if msg := planModeRefuses(ctx, toolUse.Name); msg != "" {
+		info.Error = msg
+		log.Info("Tool refused in plan mode", slog.String("tool", toolUse.Name))
+		return info, llm.NewToolResultBlock(toolUse.ID, info.Error, true)
+	}
+
 	// Safety net: block obviously catastrophic bash commands (wipe root, format a
 	// disk, fork bomb) in ANY mode — a misfiring model must not be able to
 	// brick the machine on one command. Defense in depth, not a sandbox.

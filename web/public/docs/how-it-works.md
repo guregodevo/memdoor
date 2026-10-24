@@ -7,14 +7,23 @@ on your own account at the provider you chose, and everything else stays local.
 ## The architecture
 
 ```
-  memdoor tui / CLI ──► gateway on your machine ──► tools · sessions · git
-                              │
-                              ├─► decision model (Jev)  — what to read, when to stop
-                              │
-                              └─► your provider key ──► the model that writes code
+  the window · memdoor run · the phone (/remote) · the editor (memdoor acp)
+  CI · cron · --gateway ssh://you@box · --gateway <box> --dir
+          │
+          ▼
+  gateway on your machine (or the box) ──► tools · sessions · git
+          │
+          ├─► decision model (Jev)  — what to read, when to stop
+          │
+          └─► your provider key ──► the model that writes code
+
+  memdoor.ai relay ── only for a gateway kept to localhost (MEMDOOR_HOST=localhost)
 ```
 
-The decision model and the chat model sit behind the same key. Nothing
+The decision model runs on your own key: a decision key (`memdoor connect
+typesafe`), else the OpenRouter key you code with. On a vendor key, a
+company's AI gateway or a ChatGPT plan alone it is off until a decision key
+is set. Nothing
 downstream can tell which model answered, and nothing of your code passes
 through memdoor.ai.
 
@@ -50,8 +59,9 @@ models](/docs/your-key)**.
 
 ## Sessions
 
-Sessions persist across restarts, compact when they grow (`/compact`), and
-rewind when a turn derails (`memdoor sessions rewind`).
+Sessions persist across restarts and compact when they grow (`/compact`); a
+derailed turn can be undone with `memdoor sessions rewind`, an operator
+command left out of `--help`.
 
 ## What it is not
 

@@ -9,9 +9,9 @@ Everything you can type in the TUI. The `/` key opens a dropdown that filters as
 | `/model` | Which model is answering this conversation, its rung on the agent's ladder, and why |
 | `/model <rung>` | Pin a rung — `/model 3` for the top one. A pin stays: every new conversation starts on it until `/model auto` |
 | `/model <vendor/name> [price\|throughput\|latency\|default] [order a,b]` | Pin any catalogue model, and say how to order its hosts; it stays the same way |
-| `/model auto` | Hand the choice back to the ladder |
+| `/model auto` | Hand the choice back to the ladder, and drop the kept pin |
 | `/model-search [text]` | Alone: a picker of your providers — enter opens one's models, enter again pins. With text: every connected provider's matches, with prices; enter pins (an OpenRouter row opens its hosts first) |
-| `/connect [kind]` | Add a provider — the company AI gateway, Anthropic, OpenAI, Gemini, any OpenAI-compatible endpoint: pick the kind, the base URL prefilled, the token typed but never shown, probed before it is kept |
+| `/connect [kind]` | Add a provider — `gateway` (the company AI gateway), `chatgpt` (sign in, no key), `openrouter`, `anthropic`, `openai`, `gemini`, `xai`, `baseten`, `groq`, `deepseek`, `typesafe` (the decision model) or `custom` (any OpenAI-compatible endpoint): pick the kind, the base URL prefilled, the token typed but never shown, probed before it is kept |
 | `/usage` | What this workspace used this month: turns, tokens, cost on your key |
 
 ## Working

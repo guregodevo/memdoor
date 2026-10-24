@@ -39,9 +39,8 @@ func TestPeerAddNeedsASessionAndKeepsThePeer(t *testing.T) {
 	if err := saveCredentialsFor(normalizeGateway(srv.URL), &credentials{Token: "tok", Email: "me@example.test", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := peerAddCmd.Flags().Set("dir", "/srv/app"); err != nil {
-		t.Fatal(err)
-	}
+	projectDirFlag = "/srv/app"
+	t.Cleanup(func() { projectDirFlag = "" })
 	if err := peerAddCmd.RunE(peerAddCmd, []string{"Box", srv.URL}); err != nil {
 		t.Fatalf("add: %v", err)
 	}

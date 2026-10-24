@@ -14,19 +14,20 @@ when a turn has stopped making progress; the chat model sees a fraction of
 the text and answers the same ([`docs/features/DECIDE.md`](docs/features/DECIDE.md)).
 The models come from your own key — OpenRouter, Anthropic, OpenAI, Gemini,
 Groq, xAI, DeepSeek, Baseten or your company's AI gateway — at the provider's
-list price, shown when you choose. The decision model and workflows run on
-the same key; all of it is free.
+list price, shown when you choose. The decision model runs on a decision key
+(`memdoor connect typesafe`) or, failing that, on your OpenRouter key; on a
+vendor key, a company's AI gateway or a ChatGPT plan alone it is off until a
+decision key is set. It and workflows are free.
 
 ## Prerequisites
 
 | Platform | Installer |
 |---|---|
-| macOS, Apple Silicon (`darwin/arm64`) | `install.sh` |
+| macOS (`darwin/arm64`, `darwin/amd64`) | `install.sh` |
 | Linux (`linux/amd64`, `linux/arm64`) | `install.sh` |
 | Windows 64-bit (`windows/amd64`) | `install.ps1` |
 
-Intel Macs have no download — run Linux on that hardware. No Docker, Python, or package manager is needed on any
-platform.
+No Docker, Python, or package manager is needed on any platform.
 
 ---
 
@@ -74,10 +75,11 @@ what they are sent, and Memdoor says so at the pin: a trial, not private code.
 
 ```bash
 cd your-project
-memdoor tui
+memdoor
 ```
 
-The agent works on the directory you launched from: its file tools stay inside
+The bare command opens the window (`memdoor tui` still works); the first run
+starts the gateway and makes the workspace by itself. The agent works on the directory you launched from: its file tools stay inside
 it and its commands start there (not a sandbox: a shell command can still reach
 other folders). Type a task; watch the tool frames as it works.
 `Esc` interrupts, `ctrl+f` opens the files panel (what this conversation
@@ -129,13 +131,10 @@ memdoor completion fish > ~/.config/fish/completions/memdoor.fish
 ## Power user
 
 ```bash
-memdoor agent --message "explain failures" --channel general --agent-id chief   # message a specific agent
-go test ./... 2>&1 | memdoor agent -m "Explain failures" -c general -a chief    # pipe output into an agent
-memdoor messages --channel general --limit 20 --include-threads                  # read the conversation
-memdoor logs query --regex "route|rate" --since 5m                            # structured logs
+go test ./... 2>&1 | memdoor run "explain these failures"   # what is piped in is the input
+memdoor logs query --regex "route|rate" --since 5m          # structured logs
 memdoor logs errors --since 5m
-memdoor sessions rewind --channel <name> --turns 1                               # undo a derailed turn
-memdoor upgrade                                                                  # newer build via install.sh
+memdoor upgrade                                             # newer build via install.sh
 ```
 
 ## Troubleshooting

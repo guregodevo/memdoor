@@ -11,7 +11,7 @@ state across machines, and the relay for a gateway kept to localhost.
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPEN_ROUTER_API_KEY=sk-or-...   # or any provider's key, or: memdoor connect
-cd your-project && memdoor tui
+cd your-project && memdoor
 ```
 
 ## Start here

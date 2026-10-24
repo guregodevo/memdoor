@@ -323,7 +323,6 @@ func firstLine(text string) string {
 
 func init() {
 	tuiCmd.Flags().String("channel", "", "Rejoin an existing channel instead of starting a fresh conversation")
-	tuiCmd.Flags().String("dir", "", "the project directory: here by default; on a gateway elsewhere (--gateway), the directory on that machine")
 	tuiCmd.Flags().String("worktree", "", "Work in a git worktree of this repository (optionally named); your checkout is left alone. Untracked paths it needs to build (listed in .worktreeinclude) are linked in")
 	tuiCmd.Flags().Lookup("worktree").NoOptDefVal = "auto"
 	rootCmd.AddCommand(tuiCmd)

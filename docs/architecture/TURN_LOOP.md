@@ -148,9 +148,12 @@ edit the program its own check runs), the agent's allowlist,
 guardBlocks`), the ask gate (`ask_gate.go`: a question the agent could answer
 by reading or running goes back to it), approval, then for a codebase agent the
 confinement of every path to the turn's workdir (`coderPathEscape`,
-`confineToCoderWorkdir`). The permission mode changes one answer only:
-`exit_plan_mode` is told to wait for approval in plan mode and to proceed
-otherwise; no tool is withheld by it. `ask_user_question` is emitted as a
+`confineToCoderWorkdir`). Plan mode (`permission_mode: "plan"`, `memdoor agent
+--mode plan`) is read-only: `planModeRefuses` (`agent_runtime_coder.go`) turns
+back bash, apply_patch, write_file, edit_file, sessions_spawn, cron, workflow,
+task_flow, chrome, send_email and every MCP tool with the way out, and
+`exit_plan_mode` is told to wait for approval in that mode and to proceed
+otherwise. `ask_user_question` is emitted as a
 `question` event and blocks on `question_broker.go` until the window's `answer`
 arrives.
 

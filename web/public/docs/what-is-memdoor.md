@@ -2,7 +2,7 @@
 
 **Memdoor is a coding agent on your own key, any provider's, with one gateway behind every door: start a run from a window, a script, CI, a schedule, your editor or your phone, and finish it from any of them.**
 
-`cd` into a project, run `memdoor tui`, and type what you want done. It reads
+`cd` into a project, run `memdoor`, and type what you want done. It reads
 your files, writes patches, runs the build, reads the errors and fixes what it
 broke. That part is table stakes.
 
@@ -38,7 +38,10 @@ expensive model reads a fraction of the text and gives the same answer.
 ## What that measured
 
 44 runs, 22 pairs: the same tasks on the same model, decisions off and on,
-alternating, on the cheapest rung of the ladder (10 October 2026).
+alternating, on the cheapest rung of the ladder (10 October 2026). Three of
+the four tasks are below; the fourth, a second code question (3 pairs, +10%),
+is in the full table in
+[DECIDE.md](https://github.com/guregodevo/memdoor/blob/main/docs/features/DECIDE.md).
 
 | The work | Without | With | Change |
 |---|---|---|---|
@@ -53,8 +56,8 @@ changes. Reading less
 never cost a correct answer — that is the bar, and the reason each mechanism
 errs on the side of sending too much rather than too little.
 
-Per-run variance on edits is wider than the effect, so these come from five
-pairs each, never a single run.
+Per-run variance on edits is wider than the effect, so each row is several
+pairs, never a single run.
 
 ## Your key, your bill
 
@@ -113,7 +116,7 @@ gateway in the background on your machine.
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPEN_ROUTER_API_KEY=sk-or-...   # or any provider's key, or: memdoor connect
-cd your-project && memdoor tui
+cd your-project && memdoor
 ```
 
 ## Next

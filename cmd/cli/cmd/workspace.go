@@ -52,10 +52,10 @@ Designed for three callers:
     no error, exit 0) for safe use in PS1 / RPROMPT.
 
 PS1 example (zsh):
-  PROMPT='%~ $(memdoor which --bare 2>/dev/null) %# '
+  PROMPT='%~ $(memdoor workspace which --bare 2>/dev/null) %# '
 
 PS1 example (bash):
-  PS1='\w $(memdoor which --bare 2>/dev/null) \$ '`,
+  PS1='\w $(memdoor workspace which --bare 2>/dev/null) \$ '`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		bare, _ := cmd.Flags().GetBool("bare")
 		slug, source, ok := resolveWorkspaceSlug()
@@ -224,12 +224,11 @@ var workspaceListCmd = &cobra.Command{
 
 The output is one slug per line, sorted alphabetically. Pipe into
 fzf/grep/awk for shell-script use.
-
-The top-level 'memdoor workspaces' command is a shorthand for this.`,
+`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		slugs := listAllWorkspaceSlugs()
 		if len(slugs) == 0 {
-			fmt.Fprintln(os.Stderr, "no workspaces yet — run 'memdoor use <slug>' or 'memdoor setup' first")
+			fmt.Fprintln(os.Stderr, "no workspaces yet — run 'memdoor workspace use <slug>' or 'memdoor setup' first")
 			os.Exit(1)
 		}
 		active, _, _ := resolveWorkspaceSlug()
@@ -244,21 +243,11 @@ The top-level 'memdoor workspaces' command is a shorthand for this.`,
 	},
 }
 
-// workspacesCmd is the top-level shortcut: `memdoor workspaces`
-// instead of `memdoor workspace list`. Same handler. Mirrors the
-// `use` / `which` shortcut pattern.
-var workspacesCmd = &cobra.Command{
-	Use:   "workspaces",
-	Short: "List every workspace you have (shortcut for 'workspace list')",
-	Long:  workspaceListCmd.Long,
-	RunE:  workspaceListCmd.RunE,
-}
-
 var workspaceRecentCmd = &cobra.Command{
 	Use:   "recent",
 	Short: "List recently-used workspaces (most recent first)",
 	Long: `Reads ~/.memdoor/recent_workspaces — the history written by every
-'memdoor use <slug>' invocation, deduped and capped at the 20 most
+'memdoor workspace use <slug>' invocation, deduped and capped at the 20 most
 recent. Exits non-zero with an empty file or no history yet.
 
 Useful for shell completion and "what was that workspace I was just
@@ -268,7 +257,7 @@ in?" recall after switching projects.`,
 		data, err := os.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
-				fmt.Fprintln(os.Stderr, "no recent workspaces yet — run 'memdoor use <slug>' first")
+				fmt.Fprintln(os.Stderr, "no recent workspaces yet — run 'memdoor workspace use <slug>' first")
 				os.Exit(1)
 			}
 			return fmt.Errorf("read %s: %w", path, err)
@@ -343,39 +332,13 @@ if your session is unauthenticated.`,
 	},
 }
 
-// useCmd / whichCmd are top-level shortcuts: `memdoor use <slug>` and
-// `memdoor which` instead of the longer `memdoor workspace use ...` /
-// `memdoor workspace which`. Same handlers, half the keystrokes. The
-// MUST roadmap entry "Workspace Ergonomics + Cross-Workspace Query"
-// motivates this — fast switching + PS1-friendly status make per-task
-// workspaces ergonomic enough to actually use.
-var useCmd = &cobra.Command{
-	Use:               "use <slug>",
-	Short:             "Pin the current directory to a workspace (shortcut for 'workspace use')",
-	Long:              workspaceUseCmd.Long,
-	Args:              cobra.ExactArgs(1),
-	RunE:              workspaceUseCmd.RunE,
-	ValidArgsFunction: completeWorkspaceSlugs,
-}
-
-var whichCmd = &cobra.Command{
-	Use:   "which",
-	Short: "Print the resolved workspace (shortcut for 'workspace which')",
-	Long:  workspaceWhichCmd.Long,
-	RunE:  workspaceWhichCmd.RunE,
-}
-
 func init() {
 	workspaceDeleteCmd.Flags().Bool("yes", false, "Skip confirmation prompt (for scripted use)")
 	workspaceWhichCmd.Flags().Bool("bare", false, "Print just the slug (or empty); exit 0 even on no resolve. Use in PS1.")
-	whichCmd.Flags().Bool("bare", false, "Print just the slug (or empty); exit 0 even on no resolve. Use in PS1.")
 	workspaceCmd.AddCommand(workspaceWhichCmd)
 	workspaceCmd.AddCommand(workspaceUseCmd)
 	workspaceCmd.AddCommand(workspaceDeleteCmd)
 	workspaceCmd.AddCommand(workspaceRecentCmd)
 	workspaceCmd.AddCommand(workspaceListCmd)
 	rootCmd.AddCommand(workspaceCmd)
-	rootCmd.AddCommand(useCmd)
-	rootCmd.AddCommand(whichCmd)
-	rootCmd.AddCommand(workspacesCmd)
 }

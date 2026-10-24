@@ -38,7 +38,9 @@ end is one line, `■ digest done`. You never write a file.
 ## What a task is
 
 One YAML file per task, in your project under `.memdoor/workflows/<name>/`
-(a folder the repo ignores; commit it if you want the workflow kept). The
+(yours to commit: the `.memdoor/.gitignore` Memdoor writes ignores only the
+run outputs `runs/`, the run table `runs.db`, `worktrees/` and this machine's
+`workspace` marker, never `workflows/`). The
 file says its **type** and what the task **requires**; the engine runs the
 graph in that order and in parallel where it can.
 

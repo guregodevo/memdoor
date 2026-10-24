@@ -6,16 +6,16 @@ A workspace ships with a small team. Each has its own tools, prompt, and session
 
 | Agent | What it does |
 |---|---|
-| `coder` | The coding agent — the read, edit, build, verify loop |
-| `planner` | Produces a plan for a task; `/go` hands it to the coder |
-| `chief` | Workspace chief of staff — general tasks and delegation |
-| `verifier` | Checks work against what was asked |
-| `runner` | Executes commands on behalf of another agent |
-| `narrator` | Announces what's happening in a channel |
+| `coder` | The coding agent — the read, edit, build, verify loop, with `cron`, `workflow`, MCP and `sessions_spawn` for subtasks |
+| `planner` | Reads and searches, asks, and produces a plan (`read_file`, `grep`, `glob`, `todo_write`, `ask_user_question`, `task_flow`); `/go` hands it to the coder |
+| `chief` | A general assistant: `web_search`, `web_fetch`, `memory`, `send_email` |
+| `verifier` | Runs the build, the tests or the program through `verify` and reports what the toolchain said (`verify`, `read_file`) |
+| `runner` | Runs a command and reports its real output; it does not write code (`bash`, `read_file`) |
+| `narrator` | Narrates the coder's tool activity for a person; no tools |
 
-`memdoor tui` talks to the coder; start a message with `@planner` (or another agent's name) to send it there instead. `memdoor agent list` shows what's in your workspace. Agents can mention each other (`@coder`, `@chief`) and reply in threads. A scheduled check's answer, or a spawned subagent's report, wakes the conversation that asked for it.
+`memdoor tui` talks to the coder; start a message with `@planner` (or another agent's name) to send it there instead. `memdoor agent list` shows what's on your gateway. Agents can mention each other (`@coder`, `@chief`), and the mentioned agent's answer comes back as the reply. A scheduled check's answer, or a spawned subagent's report, wakes the conversation that asked for it.
 
-Agents are configuration, not code: tool allowlists, model, temperature, and prompt live in the database per agent, and `memdoor agent update` changes them.
+Agents are configuration, not code: tool allowlists, prompt, description and personality live in the database per agent, and `memdoor agent update` changes them. No agent has a model of its own: each runs on its ladder, or on the model you pin with `/model`.
 
 ```
 memdoor agent list
@@ -36,11 +36,11 @@ The coding agent's:
 | `todo_write`, `todo_read` | Track a multi-step plan visibly in the TUI |
 | `skill` | Load a skill's instructions on demand |
 | `ask_user_question` | Interrupt with a numbered picker when a decision is genuinely needed |
-| `see` | Look at an image or frames of a video with a vision model — a screenshot, a thumbnail, what is on screen |
 | `notes` | The coder's memory for a project: a file it reads at the start of a turn and appends to as it works |
 | `recall` | Return a tool output word for word after the transcript has been compacted |
 | `jgrep`, `jread` | The judged versions of `grep` and `read_file`: the decision model scores every match or section against the task and returns the ones that count |
 | `web_search`, `web_fetch` | Look something up on the web and read a page in full, on your own OpenRouter key; an answer with no source is refused |
+| `mcp`, `cron`, `workflow`, `sessions_spawn` | Call a connected MCP server's tool, schedule its own re-check, run or approve a workflow, run a subtask in a session of its own |
 
 Everything runs on your machine, inside the folder the TUI was launched from. What leaves it is the prompt and the excerpts the model has to read.
 
@@ -52,7 +52,8 @@ A skill is a markdown file of instructions the agent loads when it's relevant �
 
 **They resolve from disk first**, in this order:
 
-2. `<project>/.agents/skills/`
+1. `<project>/.agents/skills/`
+2. `~/.memdoor/workspace/skills/`
 3. `~/.memdoor/skills/` (seeded on first boot)
 4. the built-in defaults
 

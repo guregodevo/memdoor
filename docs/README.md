@@ -23,7 +23,6 @@ catalogue are in `internal/PLANS_AND_CAPACITY.md` (removed 2026-10-03).
 - **[Top-level README](../README.md)** — One-paragraph pitch + 60-second install
 - **[GETTING_STARTED.md](../GETTING_STARTED.md)** — Zero-to-first-session walkthrough
 - **[CLI Reference](reference/CLI.md)** — Every command, every flag
-- **[Quick Start](reference/QUICK_START.md)** — Minimal first-run path
 
 ---
 
@@ -70,12 +69,9 @@ catalogue are in `internal/PLANS_AND_CAPACITY.md` (removed 2026-10-03).
 Complete technical reference (`docs/reference/`):
 
 - **[CLI Reference](reference/CLI.md)** — All CLI commands and options
-- **[Quick Start](reference/QUICK_START.md)** — Minimal first-run path
 - **[Architecture](reference/ARCHITECTURE.md)** — System design, DDD, patterns
 - **[Authorization](reference/AUTHORIZATION.md)** — Channel ACL, roles, permissions
-- **[Cron Jobs](reference/CRON.md)** — Scheduled agent tasks
 - **[Logs](reference/LOGS.md)** — Structured logging and debugging
-- **[Logs Quick Reference](reference/LOGS_QUICK_REF.md)** — Common log queries
 - **[Queue](reference/QUEUE.md)** — Message queuing and concurrency
 - **[Skills](reference/SKILLS.md)** — Skill resolution, editing, seeding, self-extension
 - **[Gateway reference](reference/gateway/README.md)** — configuration, the WebSocket protocol, agent execution, troubleshooting
@@ -90,7 +86,7 @@ Feature-focused walkthroughs (`docs/features/`):
 - **[Browser Automation](features/BROWSER_AUTOMATION.md)** — `memdoor chrome run` DSL
 - **[Channels & Threading](features/channels-and-threading.md)**
 - **[Decisions](features/DECIDE.md)** — Jev through OpenRouter: jgrep / jread / jlogs, per-turn tool routing, the message gate
-- **[Cron Jobs](features/cron-jobs.md)** — lightweight overview (reference: `reference/CRON.md`); the coder's own `cron` tool
+- **[Scheduled checks and cron jobs](features/cron-jobs.md)** — the coder's own `cron` tool, and `memdoor cron add`
 - **[Workflows](features/WORKFLOWS.md)** — a DAG of agent tasks from a sentence, on mario (free; the hosted run state is Pro)
 - **[MCP servers](features/MCP.md)** — `/mcp`: the person's servers, OAuth, the registry
 - **[Providers](features/PROVIDERS.md)** — each provider with its own model list, `/connect`, the company gateway, attribution
@@ -99,7 +95,6 @@ Feature-focused walkthroughs (`docs/features/`):
 - **[Web search](features/WEB_SEARCH.md)** — OpenRouter's search tool on the person's key
 - **[Hashline edits](features/HASHLINE.md)** — line-anchored edits as an alternative to the patch format
 - **[Direct Messages (E2E)](features/DIRECT_MESSAGES_E2E.md)**
-- **[Logging](features/logging.md)**
 - **[Multi-Agent Collaboration](features/multi-agent-collaboration.md)** — `@mention`-based A2A
 - **[Secrets](features/secrets.md)** — Credentials and SecretRef resolution
 - **[Stdin Piping](features/stdin-piping.md)** — pipe logs/diffs into agents
@@ -118,17 +113,13 @@ Feature-focused walkthroughs (`docs/features/`):
 
 ## Advanced / Internal
 
-- **[Session Architecture](SESSION_ARCHITECTURE.md)**
-- **[SQLite Logs Design](SQLITE_LOGS_DESIGN.md)**
 - **[Memory Tool](MEMORY_TOOL.md)**
 - **[Secure Credentials](SECURE_CREDENTIALS.md)**
-- **[Sandbox Implementation](SANDBOX_IMPLEMENTATION_GUIDE.md)**
 
 ---
 
 ## Testing
 
-- **[Workspace Isolation Tests](testing/WORKSPACE_ISOLATION_TESTS.md)**
 
 ---
 

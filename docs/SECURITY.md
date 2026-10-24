@@ -14,7 +14,7 @@ places, chosen by configuration, never mixed:
 | Mode | Set by | Where prompts go | Nothing else is contacted? |
 |---|---|---|---|
 | **Your company's AI gateway** | `AI_GATEWAY_BASE_URL` + `AI_GATEWAY_TOKEN` (or any `*_AI_GATEWAY_TOKEN`: a personal or service-account token) + `MEMDOOR_MODEL` = the provider slug | `POST <base>/v1/responses` on that gateway (the OpenAI Responses shape; `AI_GATEWAY_API=chat` for chat/completions) | **Yes.** Nothing but the gateway. Comes before any vendor key. |
-| **Your company's vendor key** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY`, `BASETEN_API_KEY`, `GROQ_API_KEY` or `DEEPSEEK_API_KEY` (+ `*_BASE_URL` for a proxy in front) | That vendor, or the proxy in front of it | **Yes.** No OpenRouter, no memdoor.ai broker, no catalogue, no web search. `MEMDOOR_VENDOR_HEADERS` adds attribution headers to every request. |
+| **Your company's vendor key** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY`, `BASETEN_API_KEY`, `GROQ_API_KEY` or `DEEPSEEK_API_KEY` (+ `*_BASE_URL` for a proxy in front) | That vendor, or the proxy in front of it | **Yes.** No OpenRouter, no memdoor.ai (it never sees a model request), no catalogue, no web search. `MEMDOOR_VENDOR_HEADERS` adds attribution headers to every request. |
 | Your own OpenRouter key | `OPEN_ROUTER_API_KEY` | OpenRouter, with `data_collection: deny` and hosts that train on inputs excluded; a pinned `:free` model is the exception (`allow`, warned at the pin) | OpenRouter also serves the model catalogue and web search. |
 | A provider you connected | `memdoor connect`, kept in `~/.memdoor/providers.json` | That provider | Used when no key above is set, or when you pin one of its models. |
 | Your ChatGPT plan | `memdoor connect chatgpt` (Sign in with ChatGPT, in the browser; the tokens kept encrypted in `~/.memdoor/chatgpt-login.json`) | OpenAI's Responses API, with your plan's bearer token, `store: false` | Used like a connected provider. No API key, no client secret; `memdoor connect --remove chatgpt` signs out. |
@@ -42,6 +42,11 @@ lists them; the remote-control relay is sealed end to end).
 | `openrouter.ai` | Chat on your own OpenRouter key (each request names the app — `X-Title: Memdoor`, `HTTP-Referer: https://memdoor.ai` — for OpenRouter's apps page; never the person); its model catalogue (`/model`, `/api/models`); web search; the decisions endpoint on a decision key | Only with `OPEN_ROUTER_API_KEY` set and no company key. Never in company-key mode (`byok_catalog.go` refuses without a key) |
 | `memdoor.ai` | Billing and sign-in (`memdoor login`, `memdoor account`), the `/remote` relay for a gateway kept to localhost (sealed end to end), the hosted workflow state (`/state`, Pro: a run's task names, statuses and outputs' names, never your code), `/share` links, the upgrade check (`memdoor upgrade`), opt-in telemetry | Sign-in, account status, `/remote`, `/share`, `memdoor upgrade`: only when you run them. Telemetry: only with `MEMDOOR_TELEMETRY_ENABLED=1` (default off). Also appears as e-mail addresses (`hello@`, `noreply@`) in the seat-request and billing code that runs on memdoor.ai itself |
 | `api.typesafe.ai` | The decision model, direct | Only with `MEMDOOR_SYSTEMONE_API_KEY` set on the gateway (self-service decisions) |
+| `models.dev` | The public model catalogue (context window and output cap per model), read when a provider's own list states no window | At most once a day, outside company-key mode only; kept in `~/.memdoor/models-dev.json`, which a company-key gateway reads without contacting the host. Carries no prompt |
+| `registry.modelcontextprotocol.io` | The MCP server registry | Only `/mcp search` |
+| `mcp.linear.app` | An example URL in the `/mcp` panel's help text | Never contacted by the binary; shown as an example |
+| `ai-gateway.example.com` | The prefilled example in `memdoor connect`'s base-URL prompt | Never contacted; replaced by what you type |
+| `api.stripe.com`, `api.resend.com` | Stripe, transactional e-mail | Only the `memdoor-billing` service on memdoor.ai; never from a developer's machine |
 
 **The decision model is a hosted model.** Jev, by TypeSafe, answers the typed
 questions (is this search hit relevant, is this turn still making progress)
@@ -51,11 +56,6 @@ your OpenRouter key or directly on a decision key. On a vendor key or a company
 gateway alone it is **off**: nothing is judged off-machine, every read returns
 unjudged, the agent works without the savings. `memdoor connect typesafe` turns
 it on with a key of your own.
-| `models.dev` | The public model catalogue (context window and output cap per model), read when a provider's own list states no window | At most once a day, outside company-key mode only; kept in `~/.memdoor/models-dev.json`, which a company-key gateway reads without contacting the host. Carries no prompt |
-| `registry.modelcontextprotocol.io` | The MCP server registry | Only `/mcp search` |
-| `mcp.linear.app` | An example URL in the `/mcp` panel's help text | Never contacted by the binary; shown as an example |
-| `ai-gateway.example.com` | The prefilled example in `memdoor connect`'s base-URL prompt | Never contacted; replaced by what you type |
-| `api.stripe.com`, `api.resend.com` | Stripe, transactional e-mail | Only the `memdoor-billing` service on memdoor.ai; never from a developer's machine |
 
 ## Attribution headers
 
@@ -113,7 +113,8 @@ call outright (`memdoor guards`: never `.env`, never `git push`) are in
   an environment variable the company's preset controls. The same preset can
   set `MEMDOOR_APPROVE=changes`, which wins over the workspace setting.
 - The decision model, the catalogue and web search are not degraded
-  silently: the agent reads more instead (the free tier's behaviour), the
+  silently: the agent reads more instead (as without a decision key or an
+  OpenRouter key), the
   catalogue is the one model the key names, and `web_search` answers that it
   has no key.
 - `go test ./gateway/ -run TestEveryHostTheBinaryNamesIsDocumented` is the

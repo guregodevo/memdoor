@@ -199,5 +199,6 @@ const (
 	OpenRouterAppURL  = attribution.AppURL
 )
 
-// SetOpenRouterAttribution names this app on a request bound for OpenRouter.
+// SetOpenRouterAttribution names this app on a request bound for OpenRouter
+// or another host that lists apps (pkg/attribution).
 func SetOpenRouterAttribution(h http.Header) { attribution.Set(h) }

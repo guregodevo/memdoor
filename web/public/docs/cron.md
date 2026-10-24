@@ -20,8 +20,9 @@ your project, as the same agent — and the answer lands in your window:
 The answer does more than show: it wakes the agent that scheduled the check,
 as a turn of its own in your conversation, so it can act on it — stop the
 job, carry on with the next step, tell you. A run with nothing to report yet
-answers `HEARTBEAT_OK`: the note shows, nothing is woken; so does an answer
-identical to the previous one. (A spawned subagent's report wakes the
+answers exactly `HEARTBEAT_OK`, the token the check is told to use for that
+case: the ⏱ note still shows, nothing is woken; an answer identical to the
+previous run's wakes nobody either. (A spawned subagent's report wakes the
 conversation the same way.)
 
 The run that finds what it waited for stops the job. If nothing does, the

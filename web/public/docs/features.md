@@ -6,7 +6,7 @@ model in front of the chat model to cut what it reads and what it costs.
 
 ## The coding agent
 
-`cd your-project && memdoor tui`. It reads your files, writes patches, runs the
+`cd your-project && memdoor`. It reads your files, writes patches, runs the
 build, reads the errors and fixes what it broke, in the directory you launched it
 from: its file tools stay inside it and its commands start there — not a sandbox: a shell command can still reach other folders. `@` mentions files and folders, and `memdoor resume`
 returns to an earlier conversation.

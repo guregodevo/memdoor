@@ -143,7 +143,7 @@ elsewhere.
 
 | | Where |
 |---|---|
-| Conversations and their history | `~/.memdoor/memdoor.db`; `memdoor conversations` lists them, `memdoor resume <id>` opens one |
+| Conversations and their history | `~/.memdoor/memdoor.db`; `memdoor resume` lists them, `memdoor resume <id>` opens one |
 | Providers and keys | its environment, or what `memdoor connect` kept in `~/.memdoor/providers.json` |
 | Every model request, with its cost | `~/.memdoor/meter.jsonl`, summed by `/usage` and `memdoor savings` |
 | Schedules | `memdoor cron list` |

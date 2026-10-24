@@ -43,14 +43,13 @@ var commandGroupAssignments = map[string]string{
 	"health":  groupDaemon,
 
 	// Doors onto it. The bare name is the window; these are the others.
-	"tui":           groupDoors,
-	"run":           groupDoors,
-	"resume":        groupDoors,
-	"remote":        groupDoors,
-	"peers":         groupDoors,
-	"conversations": groupDoors,
-	"acp":           groupDoors,
-	"cron":          groupDoors,
+	"tui":    groupDoors,
+	"run":    groupDoors,
+	"resume": groupDoors,
+	"remote": groupDoors,
+	"peers":  groupDoors,
+	"acp":    groupDoors,
+	"cron":   groupDoors,
 
 	// What it runs.
 	"workflow": groupWork,
@@ -66,20 +65,17 @@ var commandGroupAssignments = map[string]string{
 	"savings":   groupModels,
 
 	// Whose it is: the workspace on the gateway, the memdoor.ai account.
-	"workspace":  groupAccount,
-	"use":        groupAccount, // shortcut for `workspace use <slug>`
-	"which":      groupAccount, // shortcut for `workspace which`
-	"workspaces": groupAccount, // shortcut for `workspace list`
-	"setup":      groupAccount,
-	"account":    groupAccount,
-	"login":      groupAccount,
-	"logout":     groupAccount,
-	"auth":       groupAccount,
-	"users":      groupAccount,
-	"channels":   groupAccount,
-	"messages":   groupAccount,
-	"sessions":   groupAccount,
-	"billing":    groupAccount,
+	"workspace": groupAccount,
+	"setup":     groupAccount,
+	"account":   groupAccount,
+	"login":     groupAccount,
+	"logout":    groupAccount,
+	"auth":      groupAccount,
+	"users":     groupAccount,
+	"channels":  groupAccount,
+	"messages":  groupAccount,
+	"sessions":  groupAccount,
+	"billing":   groupAccount,
 
 	// This binary and its configuration.
 	"config":    groupBinary,

@@ -237,7 +237,7 @@ func (c *Client) Evaluate(ctx context.Context, model string, req decision.Reques
 	// The free tier's decisions run on the person's own OpenRouter key, and
 	// until 2026-09-27 they counted toward no app at all — invisible in the
 	// ranking that is our channel (pkg/attribution).
-	attribution.SetIfOpenRouter(httpReq.Header, c.Endpoint())
+	attribution.SetFor(httpReq.Header, c.Endpoint())
 	if c.key != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+c.key)
 	}
