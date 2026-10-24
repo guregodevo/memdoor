@@ -42,7 +42,6 @@ var noWorkspaceTopLevels = map[string]bool{
 	"cron":       true,
 	"resume":     true,
 	"remote":     true,
-	"peer":       true,
 	"peers":      true,
 	"auth":       true,
 	"gateway":    true,

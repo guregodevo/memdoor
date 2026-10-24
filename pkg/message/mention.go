@@ -58,7 +58,7 @@ func ParseMentions(text string) []string {
 
 // PeerAgent splits a mention of another gateway's agent, @<peer>:<agent>
 // (experimental, 2026-10-24: "we can do @<host>:agent_name"): the peer's
-// name as `memdoor peer add` gave it, and the agent's name there. Whether
+// name as `memdoor peers add` gave it, and the agent's name there. Whether
 // the peer exists is the service's to say; "@coder:" followed by prose is
 // not one.
 func PeerAgent(name string) (peer, agent string, ok bool) {

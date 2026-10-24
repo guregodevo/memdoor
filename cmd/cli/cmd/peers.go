@@ -27,21 +27,6 @@ import (
 // sign-in it already has (credentials.json, per gateway): peerAsk below is
 // what the gateway's own process calls (gateway.SetPeerCaller).
 
-var peerCmd = &cobra.Command{
-	Use:   "peer",
-	Short: "Experimental: gateways an agent here can ask, as @<peer>:<agent>",
-	Long: `memdoor peer add <name> <gateway> [--dir <path there>]   name a gateway you are signed in to
-memdoor peer remove <name>
-memdoor peers                                            each peer: answering or not, its agents
-
-Experimental. A peer is a gateway you have signed in to once (memdoor --gateway
-<host> auth login-direct …, or the ssh door, which signs you in on the way). From
-then on "@<name>:<agent> …" in a window, a run or a message here sends that
-turn to the agent on the peer, in the directory --dir names there, and its
-answer comes back as the reply. The run on the peer is a conversation there:
-memdoor --gateway <host> resume <id> opens it.`,
-}
-
 var peerAddCmd = &cobra.Command{
 	Use:   "add <name> <gateway>",
 	Short: "Name a gateway you are signed in to; @<name>:<agent> reaches it",
@@ -97,15 +82,26 @@ var peerRemoveCmd = &cobra.Command{
 
 var peersCmd = &cobra.Command{
 	Use:   "peers",
-	Short: "Experimental: the gateways an agent here can ask, and which answer",
-	Args:  cobra.NoArgs,
+	Short: "Experimental: other gateways you can ask by name, @<peer>:<agent>",
+	Long: `memdoor peers                                              each peer: answering or not, its agents
+memdoor peers add <name> <gateway> [--dir <path there>]    name a gateway you are signed in to
+memdoor peers remove <name>
+
+Experimental. A peer is a gateway you have signed in to once (memdoor --gateway
+<host> auth login-direct …, or the ssh door, which signs you in on the way). From
+then on "@<name>:<agent> …" in a window, a run or a message here sends that
+turn to the agent on the peer, in the directory --dir names there, and its
+answer comes back as the reply; a name in that reply wakes an agent here. The
+run on the peer is a conversation there: memdoor --gateway <host> resume <id>
+opens it.`,
+	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		peers, err := gateway.LoadPeers()
 		if err != nil {
 			return err
 		}
 		if len(peers) == 0 {
-			fmt.Println("no peers — memdoor peer add <name> <gateway> names a gateway you are signed in to")
+			fmt.Println("no peers — memdoor peers add <name> <gateway> names a gateway you are signed in to")
 			return nil
 		}
 		names := make([]string, 0, len(peers))
@@ -252,6 +248,6 @@ func (s *peerSink) Ask(question string, options []string, approval string) strin
 
 func init() {
 	peerAddCmd.Flags().String("dir", "", "the project on the peer a turn runs in (its absolute path there)")
-	peerCmd.AddCommand(peerAddCmd, peerRemoveCmd)
-	rootCmd.AddCommand(peerCmd, peersCmd)
+	peersCmd.AddCommand(peerAddCmd, peerRemoveCmd)
+	rootCmd.AddCommand(peersCmd)
 }

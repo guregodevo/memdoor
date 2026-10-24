@@ -18,7 +18,7 @@ import (
 // another", "we can do @<host>:agent_name", "we have a quorum of gateways;
 // from the quorum we can see which gateway are available"). A peer is a
 // gateway this person has signed in to and named: ~/.memdoor/peers.json,
-// `memdoor peer add box http://box:18789 --dir /srv/app`. From then on
+// `memdoor peers add box http://box:18789 --dir /srv/app`. From then on
 // @box:coder in any conversation here is a mention of box's coder: the
 // turn runs there, in that directory, as `memdoor --gateway box run` would
 // run it, and the answer comes back as the thread's reply from box:coder

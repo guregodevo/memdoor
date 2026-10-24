@@ -13,12 +13,12 @@ from the machine that holds it, only the answer crossing.
 A **peer** is a gateway this person has signed in to once and named:
 
     memdoor --gateway http://box:18789 auth login-direct --email … --password …   # or the ssh door, which signs you in on the way
-    memdoor peer add box http://box:18789 --dir /srv/app
+    memdoor peers add box http://box:18789 --dir /srv/app
     memdoor peers        # the quorum: each peer, answering or not, its version, its agents, its dir
 
 `~/.memdoor/peers.json` (0600): `{"box": {"gateway": "http://box:18789", "dir": "/srv/app"}}`.
 The sign-in is the one `--gateway <box>` already keeps per gateway in
-`~/.memdoor/credentials.json`; `peer add` refuses without it and says how.
+`~/.memdoor/credentials.json`; `peers add` refuses without it and says how.
 
 From then on **`@box:coder <what>`** in any conversation on this gateway — the
 window, `memdoor run "@box:coder …"`, `memdoor agent -m "@box:coder …"` — is a
@@ -89,7 +89,7 @@ reason: "nobody named vps:coder answers here: not an agent on this gateway
 
 ## Receipts (two scratch gateways on one machine, 2026-10-24)
 
-- `peer add box http://127.0.0.1:18798 --dir …/ciw/proj`: refused until the
+- `peers add box http://127.0.0.1:18798 --dir …/ciw/proj`: refused until the
   sign-in existed; then listed box's six agents. `peers` showed it answering.
 - `memdoor run "@box:coder print the absolute path of the directory you are
   working in"`: stdout was box's project path, exit 0, only the peer

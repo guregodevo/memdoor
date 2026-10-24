@@ -113,7 +113,7 @@ grep -r "duplicate_code" .    # Search before coding
 # THAT PROGRAM (gateway/remote_host.go + cmd/cli/cmd/remote_host.go, /api/remote/<channel>,
 # ~/.memdoor/remote-hosted.json): the window hands the link over and may close; a restart
 # revives every link. The memdoor.ai relay takes the ACCOUNT token.
-# PEERS, EXPERIMENTAL (2026-10-24, docs/features/PEERS.md): `memdoor peer add box <gateway>
+# PEERS, EXPERIMENTAL (2026-10-24, docs/features/PEERS.md): `memdoor peers add box <gateway>
 # --dir <path there>` names a gateway you are signed in to; `@box:coder …` in any conversation
 # (window, run, agent -m) runs the turn on box and brings the answer back as the thread's reply
 # (pkg/message/peers.go, gateway/peers.go, cmd/cli/cmd/peers.go); `memdoor peers` is the quorum.
