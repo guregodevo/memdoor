@@ -1,8 +1,11 @@
 # Overview
 
 Everything Memdoor does, and where each part is documented. Memdoor is a coding
-agent in your terminal that runs on your own key, any provider's, with a decision
-model in front of the chat model to cut what it reads and what it costs.
+agent on a gateway you own, on your own key, any provider's: start a run from CI,
+a schedule or a shell, finish it from your phone or a window; multi-step jobs are
+files in the repo, run again by hand or on a schedule, each step checked by its
+output. A decision model in front of the chat model cuts what it reads and what
+it costs.
 
 ## The coding agent
 

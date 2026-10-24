@@ -6,9 +6,9 @@ version of this page is [memdoor.ai/docs/getting-started](https://memdoor.ai/doc
 
 ## What you are installing
 
-Memdoor is a coding agent in your terminal with a **decision model in front of
-the chat model** to cut
-what it reads. Jev judges which grep hits, file sections and log lines a
+Memdoor is a coding agent on a gateway you own, on your own key: start a run
+from CI, a schedule or a shell, finish it from your phone or a window. In front
+of the chat model sits a **decision model** that cuts what it reads. Jev judges which grep hits, file sections and log lines a
 task needs, which rung of the model ladder a conversation is on, and
 when a turn has stopped making progress; the chat model sees a fraction of
 the text and answers the same ([`docs/features/DECIDE.md`](docs/features/DECIDE.md)).

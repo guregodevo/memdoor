@@ -1,6 +1,6 @@
 # What is Memdoor
 
-**Memdoor is a coding agent on your own key, any provider's, with one gateway behind every door: start a run from a window, a script, CI, a schedule, your editor or your phone, and finish it from any of them.**
+**Your daemon agents on every door. Memdoor is a coding agent on a gateway you own, on your own key, any provider's: start a run from CI, a schedule or a shell, finish it from your phone or a window. Multi-step jobs are files in the repo, run again by hand or on a schedule; each step is checked by its output, and the run stops only where you decide.**
 
 `cd` into a project, run `memdoor`, and type what you want done. It reads
 your files, writes patches, runs the build, reads the errors and fixes what it

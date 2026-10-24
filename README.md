@@ -1,8 +1,8 @@
 <div align="center">
   <img src="web/public/memdoor-logo.png" alt="Memdoor" width="128" height="128">
   <h1>Memdoor</h1>
-  <p><strong>Your daemon agents on every door.</strong><br>A coding agent whose runs live on a gateway you own, and whose multi-step jobs are files in the repo, run again without a prompt.</p>
-  <p>Start it from CI, a schedule or a shell. Finish it from your phone or a window. Each step is checked by its output, and the run stops where only you decide.</p>
+  <p><strong>Your daemon agents on every door.</strong><br>A coding agent on a gateway you own, on your own key: start a run from CI, a schedule or a shell, finish it from your phone or a window.</p>
+  <p>Multi-step jobs are files in the repo, run again by hand or on a schedule. Each step is checked by its output, and the run stops only where you decide.</p>
   <p>
     <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue"></a>
     <a href="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml"><img alt="CI" src="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml/badge.svg"></a>

@@ -1,8 +1,11 @@
 # Memdoor docs
 
-A coding agent in your terminal, running on **your own key, any provider's**,
-with a decision model in front of the chat model to cut what it reads and what
-it costs. Measured over 44 paired runs: 74% fewer input tokens on a question
+**Your daemon agents on every door.** A coding agent on a gateway you own, on
+**your own key, any provider's**: start a run from CI, a schedule or a shell,
+finish it from your phone or a window. Multi-step jobs are files in the repo,
+run again by hand or on a schedule; each step is checked by its output, and the
+run stops only where you decide. A decision model in front of the chat model
+cuts what it reads and what it costs. Measured over 44 paired runs: 74% fewer input tokens on a question
 about the codebase, no change on edits, 22 of 22 passed each way. The
 agent, the decision model, workflows and every door onto your own gateway are
 free on your own key; Pro is $10 a month for what memdoor.ai hosts: workflow
