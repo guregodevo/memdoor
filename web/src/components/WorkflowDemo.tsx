@@ -44,7 +44,7 @@ const TAKES = [
     label: 'A box over ssh',
     ask: 'memdoor --gateway ssh://box run "write hello.py that prints this machine\'s hostname, run it"',
     cast: '/ssh-door.cast',
-    poster: 'npt:0:7',
+    poster: 'npt:0:4.4',
     what: 'the run on the box, in its home · the answer and the receipt here · memdoor resume reopens it',
   },
   {
