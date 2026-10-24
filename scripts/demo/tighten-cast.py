@@ -41,7 +41,11 @@ if b:
         clock += STEP
         out.append([round(clock, 3), "o", f[2]])
 
-out.append([round(clock + HOLD, 3), "o", ""])
+# The last screen held as repeated frames, one a second: the landing's player
+# caps idle gaps at 1.2 s and loops, so a single long gap showed the result
+# for under a second per loop (the ssh-door take, 2026-10-24).
+for i in range(1, int(HOLD * 2) + 1):
+    out.append([round(clock + i, 3), "o", out[-1][2]])
 with open(dst, "w") as fh:
     fh.write(json.dumps(head) + "\n")
     for f in out:
