@@ -290,8 +290,11 @@ func sshRenewSession() error {
 	if err != nil {
 		return fmt.Errorf("no generated login on %s: %v", target, err)
 	}
+	// The first JSON object in what came back: a login shell on the box may
+	// print after it (Cloud Shell through gcloud, 2026-10-24: a trailing
+	// line the strict parse refused as "extra data").
 	var ll localLogin
-	if json.Unmarshal([]byte(out), &ll) != nil || ll.Password == "" {
+	if json.NewDecoder(strings.NewReader(strings.TrimLeft(out, " \r\n\t"))).Decode(&ll) != nil || ll.Password == "" {
 		return fmt.Errorf("the generated login on %s is unreadable", target)
 	}
 	if err := loginLocal(ll.Email, ll.Password); err != nil {

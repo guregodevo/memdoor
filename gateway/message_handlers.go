@@ -224,7 +224,7 @@ func (cs *ChatServer) handleMessages(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if fi, err := os.Stat(wd); err != nil || !fi.IsDir() {
-				http.Error(w, `{"error":"no such directory on the gateway's machine: `+jsonSafe(wd)+`"}`, http.StatusBadRequest)
+				http.Error(w, `{"error":"no such directory on the gateway's machine: `+jsonSafe(wd)+` (a window or run on another machine names a directory there with --dir)"}`, http.StatusBadRequest)
 				return
 			}
 		}
