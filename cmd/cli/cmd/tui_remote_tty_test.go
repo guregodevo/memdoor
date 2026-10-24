@@ -157,11 +157,28 @@ func TestRemoteViewOnlyPageCannotDrive(t *testing.T) {
 	}, remoteLink{})
 	t.Cleanup(r.Close)
 
-	// No program yet: a watcher cannot start one, and is told so.
+	// No program yet: a watcher's size is dropped, but its asking to see
+	// starts the program at the stream's size (an audience used to wait for
+	// the full link, 2026-10-24); a driving page resizes it afterwards.
 	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 40, Rows: 20}}, false)
 	r.handle(nil, remoteRelayTurn{Watch: "viewer"}, false)
-	if _, none := replayFor(t, r, "viewer"); !none {
-		t.Fatal("a view-only page must not start the screen")
+	if _, none := replayFor(t, r, "viewer"); none {
+		t.Fatal("a view-only page's request starts the screen")
+	}
+	// The program draws on its own time: a later watcher's replay holds the
+	// stream-sized screen, not the 40 columns the watcher's own size asked.
+	drawn := false
+	for i := 0; i < 50 && !drawn; i++ {
+		id := fmt.Sprintf("viewer%d", i)
+		r.handle(nil, remoteRelayTurn{Watch: id}, false)
+		screen, _ := replayFor(t, r, id)
+		drawn = strings.Contains(screen, fmt.Sprintf("cols=%d", remoteWatchCols))
+		if !drawn {
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+	if !drawn {
+		t.Fatalf("the screen a watcher started is %d columns wide", remoteWatchCols)
 	}
 
 	r.handle(nil, remoteRelayTurn{TTY: &remoteTTYSize{Cols: 60, Rows: 20}}, true)

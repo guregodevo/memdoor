@@ -811,11 +811,20 @@ func sendRemoteEvent(conn *websocket.Conn, aead cipher.AEAD, ev []byte) error {
 // answer unblocks a pending question, text is posted as the next turn.
 func (r *remoteRelay) handle(feed *client.Client, t remoteRelayTurn, drive bool) {
 	if !drive {
-		// A view-only page may ask to see; everything else is driving.
+		// A view-only page may ask to see; everything else is driving. Its
+		// asking starts the terminal when none runs yet, at a stream's size:
+		// an audience used to wait until someone opened the full link
+		// (2026-10-24). A driving page that opens later resizes it.
 		switch {
 		case t.History:
 			r.sendHistory()
 		case t.Watch != "":
+			r.ttyMu.Lock()
+			none := r.tty == nil
+			r.ttyMu.Unlock()
+			if none {
+				r.ttyScreen(remoteTTYSize{Cols: remoteWatchCols, Rows: remoteWatchRows})
+			}
 			r.ttyReplay(t.Watch)
 		}
 		return

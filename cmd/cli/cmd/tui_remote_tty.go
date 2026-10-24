@@ -47,6 +47,13 @@ const (
 // remoteTTYSize is a driving page's terminal: its size. A page asking for
 // it starts the program when none runs; a running one is resized, never
 // replaced, since other pages may be using it.
+// remoteWatchCols and remoteWatchRows are the terminal's size when a
+// watch-only page starts it: a stream's frame, wide enough for a tool line.
+const (
+	remoteWatchCols = 110
+	remoteWatchRows = 32
+)
+
 type remoteTTYSize struct {
 	Cols int `json:"cols"`
 	Rows int `json:"rows"`

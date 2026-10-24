@@ -202,7 +202,7 @@ export function RemoteTerminal({
             <p className="text-sm text-neutral-400 text-center">
               {canDrive
                 ? "Starting the terminal…"
-                : "Waiting for the terminal: it appears when someone opens the full link."}
+                : "Waiting for the terminal…"}
             </p>
           </div>
         )}
