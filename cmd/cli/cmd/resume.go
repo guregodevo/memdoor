@@ -151,6 +151,12 @@ every one.`,
 		}
 		recs := sessionsFor(dir)
 		if len(recs) == 0 {
+			if len(args) == 0 && !last && !stdoutIsTerminal() {
+				// A pipe asked for the list: an empty list is an answer, not a
+				// failure (the installers canary runs this first, with nothing).
+				fmt.Fprintln(os.Stderr, "no conversations recorded here yet")
+				return nil
+			}
 			if !all {
 				return fmt.Errorf("no conversations recorded for this directory yet — `memdoor resume --all` to see every one, or `memdoor tui` to start")
 			}

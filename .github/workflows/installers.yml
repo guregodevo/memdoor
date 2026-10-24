@@ -54,7 +54,7 @@ jobs:
           check 0 memdoor providers
           check 0 memdoor workflow list
           check 0 memdoor cron list
-          check 0 memdoor conversations
+          check 0 memdoor resume
           check 1 memdoor resume --last
           check 1 memdoor remote --last
           pkill -f "memdoor gateway" || true
@@ -126,7 +126,7 @@ jobs:
           Check 0 @('providers')
           Check 0 @('workflow','list')
           Check 0 @('cron','list')
-          Check 0 @('conversations')
+          Check 0 @('resume')
           Check 1 @('resume','--last')
           Check 1 @('remote','--last')
           exit 0   # the runner would otherwise fail the step on the last command's expected 1
