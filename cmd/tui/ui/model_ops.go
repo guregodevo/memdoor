@@ -343,25 +343,35 @@ type noteResultMsg struct {
 // run's events back.
 // Returns nil only in the legacy ws-fallback path (no injected poster).
 
-// routeByMention lets a turn that opens with "@name " run as THAT agent
+// RouteByMention lets a turn that opens with "@name " run as THAT agent
 // instead of the session's coding agent. The poster prepends "@"+agent to
 // every turn, so a typed "@planner outline this" arrived as "@coder @planner
 // outline this" and the server routed to the FIRST mention, the coder. Only a
-// LEADING mention routes; "ping me @ 5pm" is ordinary text.
+// LEADING mention routes; "ping me @ 5pm" is ordinary text. A peer's agent,
+// "@box:coder" or "@box.lan:coder" (experimental, 2026-10-24), is a name
+// too; "@coder: outline" is the coder, the colon being prose.
 // The name is not validated here: an unknown agent is the server's error to
 // report, not a reason for the TUI to silently ignore what the user typed.
-func routeByMention(defaultAgent, text string) (agent, rest string) {
+func RouteByMention(defaultAgent, text string) (agent, rest string) {
 	t := strings.TrimSpace(text)
 	if !strings.HasPrefix(t, "@") || len(t) < 2 {
 		return defaultAgent, text
 	}
 	i := strings.IndexFunc(t[1:], func(r rune) bool {
-		return !(r == '-' || r == '_' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9')
+		return !(r == '-' || r == '_' || r == '.' || r == ':' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9')
 	})
 	if i <= 0 {
 		return defaultAgent, text
 	}
-	return strings.ToLower(t[1 : i+1]), strings.TrimSpace(t[i+1:])
+	name := strings.TrimRight(strings.ToLower(t[1:i+1]), ":.")
+	if name == "" {
+		return defaultAgent, text
+	}
+	return name, strings.TrimSpace(t[i+1:])
+}
+
+func routeByMention(defaultAgent, text string) (agent, rest string) {
+	return RouteByMention(defaultAgent, text)
 }
 
 func (m *Model) dispatch(agent, text string) tea.Cmd {

@@ -118,6 +118,8 @@ type Service struct {
 	agentExecutor        platform.AgentExecutor
 	remoteExecutor       platform.RemoteAgentExecutor // For remote agents (OpenAI-compatible endpoints)
 	turnLedger           TurnLedger                   // Turn reliability ledger (duck-typed; optional)
+	peers                PeerGateways                 // other gateways an @<peer>:<agent> reaches (duck-typed; optional)
+	turnFailed           TurnFailed                   // tells a session's feeds a turn will not happen (duck-typed; optional)
 	turnGate             *turnGate                    // One turn at a time per (channel, agent) — see turn_gate.go
 	broadcaster          MessageBroadcaster           // Optional callback for real-time broadcasts
 	executionBroadcaster ExecutionEventBroadcaster    // Optional callback for execution event broadcasts
@@ -203,6 +205,7 @@ type PostMessageRequest struct {
 	SkipMembershipCheck bool   // Trusted internal callers (system:internal) bypass membership validation
 	PermissionMode      string // Claude-style interaction mode for the turn: "default"|"acceptEdits"|"plan" (empty = default)
 	Workdir             string // Client's launch directory — the coder's confinement roots here (Claude-CLI semantics); empty = server default
+	AskedByPeer         bool   // Another gateway asked for this turn through a peer mention: the reply's mentions are its to resolve, none fire here
 }
 
 // resolveMentions parses @mentions from text and resolves them to ActorIDs
@@ -214,6 +217,17 @@ func (s *Service) resolveMentions(ctx context.Context, text string) []Mention {
 	for _, name := range mentionNames {
 		var actorID shared.ActorID
 		var displayName string
+
+		// A peer's agent, @<peer>:<agent>: an actor of its own when the
+		// peer is one of ours; else the part before the colon was a local
+		// name with prose after it.
+		if peer, _, ok := PeerAgent(name); ok {
+			if s.peers != nil && s.peers.IsPeer(peer) {
+				mentions = append(mentions, Mention{ActorID: shared.NewAgentActorID(name), Name: name})
+				continue
+			}
+			name = peer
+		}
 
 		// Try agent/buddy first
 		buddy, err := s.buddyRepo.GetByName(ctx, shared.WorkspaceFromContext(ctx), name)
@@ -400,6 +414,9 @@ func (s *Service) PostMessage(ctx context.Context, req PostMessageRequest) (*Mes
 			if fi, err := os.Stat(req.Workdir); err == nil && fi.IsDir() {
 				asyncCtx = context.WithValue(asyncCtx, sharedctx.WorkdirKey, req.Workdir)
 			}
+		}
+		if req.AskedByPeer {
+			asyncCtx = context.WithValue(asyncCtx, sharedctx.AskedByPeerKey, true)
 		}
 
 		go s.HandleAgentMentions(asyncCtx, msg)
@@ -614,6 +631,27 @@ func (s *Service) HandleAgentMentions(ctx context.Context, userMsg *Message) {
 		}
 	}
 
+	// A turn addressed to a name nobody here answers to ("@vps:coder …",
+	// "@nobody …") used to hang the window and the run: no agent started,
+	// so no turn ever ended (found 2026-10-24 with the peer syntax). Say so
+	// as the failure of the turn that was asked for.
+	if len(agentsToExecute) == 0 && userMsg.AuthorID.IsHuman() {
+		if name, ok := unansweredMention(userMsg); ok {
+			logger.Warn("Nobody answers to the mention", slog.String("name", name), slog.String("channel_id", userMsg.ChannelID))
+			runID := fmt.Sprintf("run-%d-%s", userMsg.ID, name)
+			reason := fmt.Sprintf("nobody named %s answers here: not an agent on this gateway (memdoor agent list), not a peer's (memdoor peers)", name)
+			s.broadcastExecutionEvent(userMsg.ChannelID, shared.NewAgentActorID(name), runID, "failed", map[string]interface{}{"error": reason})
+			if s.turnFailed != nil && execCtx != nil {
+				scope := execCtx.WorkspaceSlug
+				if scope == "" {
+					scope = execCtx.WorkspaceID
+				}
+				s.turnFailed(shared.NewChannelSessionID(scope, userMsg.ChannelID), runID, reason)
+			}
+			return
+		}
+	}
+
 	logger.Info("Processing agent mentions",
 		slog.Int64("message_id", int64(userMsg.ID)),
 		slog.Int("total_agents", len(agentsToExecute)),
@@ -687,6 +725,25 @@ type TurnLedger interface {
 
 // SetTurnLedger wires the reliability ledger (gateway startup).
 func (s *Service) SetTurnLedger(tl TurnLedger) { s.turnLedger = tl }
+
+// PeerGateways is what a mention of another gateway's agent needs
+// (experimental, 2026-10-24, gateway/peers.go): whether a peer by that name
+// exists, and the agent's answer from there.
+type PeerGateways interface {
+	IsPeer(peer string) bool
+	// Ask runs one turn of the peer's agent and streams it to sessionKey
+	// as runID, as a local turn would be streamed.
+	Ask(ctx context.Context, peer, agent, text, sessionKey, runID string) (string, error)
+}
+
+func (s *Service) SetPeers(p PeerGateways) { s.peers = p }
+
+// TurnFailed tells the feeds on a session (a window, a run) that the turn
+// they wait for will not happen, as a turn's own error would: the gateway
+// provides it (an agent lifecycle error on the session's event stream).
+type TurnFailed func(sessionKey, runID, reason string)
+
+func (s *Service) SetTurnFailed(f TurnFailed) { s.turnFailed = f }
 
 // TurnActive reports whether a turn for (channel, agent) is executing right
 // now. The gateway's turn janitor consults it before declaring a turn lost:
@@ -823,6 +880,13 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 
 	// Broadcast execution started event
 	s.broadcastExecutionEvent(userMsg.ChannelID, agentID, runID, "started", nil)
+
+	// A PEER'S AGENT (@<peer>:<agent>, experimental 2026-10-24): the turn
+	// runs on that gateway, and its answer is this thread's reply, as a
+	// local agent's would be (peers.go).
+	if peer, agent, ok := PeerAgent(agentID.ID()); ok && s.peers != nil && s.peers.IsPeer(peer) {
+		return s.finishPeerTurn(ctx, userMsg, agentID, runID, turnID, sessionKey, peer, agent)
+	}
 
 	// Look up buddy to get sandbox scope for security enforcement
 	agentName := agentID.ID() // Extract agent name from ActorID (e.g., "agent:coder" -> "coder")
@@ -1171,6 +1235,15 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 				continue
 			}
 		} else {
+			// A peer's agent (@box:coder) is a name this gateway was given,
+			// member of the channel or not; "@coder:merge" is the coder.
+			if peer, _, ok := PeerAgent(name); ok {
+				if s.peers != nil && s.peers.IsPeer(peer) {
+					mentions = append(mentions, Mention{ActorID: shared.NewAgentActorID(name), Name: name})
+					continue
+				}
+				name = peer
+			}
 			// Try agent name first (e.g., @writer)
 			agentActorID := shared.NewAgentActorID(name)
 			if err := agentActorID.Validate(); err == nil {
@@ -1349,19 +1422,19 @@ func (s *Service) executeAgentTurn(ctx context.Context, userMsg *Message, agentI
 	// Trigger agent-to-agent mentions (if any) - Agent response may mention other agents!
 	// This enables true multi-agent collaboration where agents can recruit teammates
 	if responseMsg.HasMentions() {
+		if askedByPeer(ctx) {
+			logger.Info("A peer asked this turn: its reply's mentions are the asker's to resolve",
+				slog.String("agent_id", agentID.String()),
+				slog.Int("mentions_count", len(responseMsg.Content.Mentions)))
+			return nil
+		}
 		logger.Info("Agent response contains mentions, triggering A2A communication",
 			slog.String("agent_id", agentID.String()),
 			slog.Int("mentions_count", len(responseMsg.Content.Mentions)))
 
-		// CRITICAL FIX: Create detached context with ExecutionContext (don't use ctx - it may be canceled!)
-		// Pattern: Same as PostMessage - detach from HTTP lifecycle
-		asyncCtx := context.Background()
-		if execCtx := shared.GetExecutionContext(ctx); execCtx != nil {
-			asyncCtx = shared.WithExecutionContext(asyncCtx, execCtx)
-		}
-
-		// Run async to avoid blocking this response
-		go s.HandleAgentMentions(asyncCtx, responseMsg)
+		// Detached from the turn's lifetime (ctx may be canceled), with what the
+		// next turn needs from it: the execution context, the project, the mode.
+		go s.HandleAgentMentions(asyncTurnContext(ctx), responseMsg)
 	}
 
 	return nil

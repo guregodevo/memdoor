@@ -47,6 +47,8 @@ var commandGroupAssignments = map[string]string{
 	"run":           groupDoors,
 	"resume":        groupDoors,
 	"remote":        groupDoors,
+	"peer":          groupDoors,
+	"peers":         groupDoors,
 	"conversations": groupDoors,
 	"acp":           groupDoors,
 	"cron":          groupDoors,

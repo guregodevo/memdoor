@@ -379,6 +379,7 @@ else
     fi
     echo "  export OPEN_ROUTER_API_KEY=sk-or-...   # your key (or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or /connect inside)"
     echo "  cd <your-project> && memdoor"
+    echo "  memdoor --gateway ssh://you@box          # or on a box you can ssh to: set up there on first use"
     echo
     echo "Pro (remote control)? memdoor login you@example.com"
 fi

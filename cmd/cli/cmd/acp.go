@@ -65,8 +65,25 @@ func init() {
 type gatewayRunner struct {
 	c         *Client
 	workspace string
+	agent     string // the agent a turn is posted to; coder when empty
+	addr      string // the gateway's address for the feed; this command's when empty (a peer's, peers.go)
+	asPeer    bool   // the turn is asked for another gateway's thread: its reply's mentions are that gateway's to resolve
 	mu        sync.Mutex
 	feeds     map[string]*client.Client // the websocket of a running turn, by conversation
+}
+
+func (r *gatewayRunner) agentName() string {
+	if r.agent != "" {
+		return r.agent
+	}
+	return acpAgentName
+}
+
+func (r *gatewayRunner) gatewayAddr() string {
+	if r.addr != "" {
+		return r.addr
+	}
+	return gatewayAddr
 }
 
 const acpAgentName = "coder"
@@ -95,7 +112,7 @@ func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string,
 	opts := client.DefaultOptions()
 	opts.EnableLogging = false
 	opts.Workspace, opts.Channel, opts.Token = r.workspace, conversation, r.c.token
-	feed := client.New(gatewayAddr, "", opts)
+	feed := client.New(r.gatewayAddr(), "", opts)
 	done := make(chan runEnd, 1)
 	end := func(e runEnd) {
 		select {
@@ -204,13 +221,17 @@ func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string,
 		r.mu.Unlock()
 	}()
 	recordSession(sessionRecord{ChannelID: conversation, ChannelName: "acp", Title: firstLine(text), Workspace: r.workspace, Dir: cwd})
-	if err := r.c.PostExpectOK("/api/messages", map[string]interface{}{
+	post := map[string]interface{}{
 		"channel_id":      conversation,
-		"text":            "@" + acpAgentName + " " + text,
+		"text":            "@" + r.agentName() + " " + text,
 		"workspace":       r.workspace,
 		"permission_mode": "acceptEdits",
 		"workdir":         cwd,
-	}); err != nil {
+	}
+	if r.asPeer {
+		post["asked_by_peer"] = true
+	}
+	if err := r.c.PostExpectOK("/api/messages", post); err != nil {
 		return err
 	}
 	select {

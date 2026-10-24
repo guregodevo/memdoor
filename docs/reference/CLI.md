@@ -166,8 +166,8 @@ Error: no workspace resolved for "channels". Set one of:
 ## Command index
 
 <!-- cli-index:start -->
-Generated from the binary's `--help` by `make cli-index` (38 top-level commands).
-`memdoor --help` shows 31 of them; the others are hidden from it and run when typed:
+Generated from the binary's `--help` by `make cli-index` (40 top-level commands).
+`memdoor --help` shows 33 of them; the others are hidden from it and run when typed:
 `auth`, `billing`, `channels`, `chrome`, `messages`, `sessions`, `users`. A command that appears here
 and nowhere else in this file is documented by its own `memdoor <command> --help`.
 
@@ -196,6 +196,10 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `list` — Every schedule, with its agent and its line
   - `remove` — Remove a schedule
   - `stats` — How often a schedule ran, and how it went
+- `peer` — memdoor peer add <name> <gateway> [--dir <path there>]   name a gateway you are signed in to
+  - `add` — Name a gateway you are signed in to; @<name>:<agent> reaches it
+  - `remove` — Forget a peer (the sign-in stays)
+- `peers` — Experimental: the gateways an agent here can ask, and which answer
 - `remote` — memdoor remote <id>                    print the link on stdout; the gateway holds the conversation on it
 - `resume` — Resume a previous conversation.
 - `run` — Run one coder turn on this project with no window.

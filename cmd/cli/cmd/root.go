@@ -42,6 +42,8 @@ var noWorkspaceTopLevels = map[string]bool{
 	"cron":       true,
 	"resume":     true,
 	"remote":     true,
+	"peer":       true,
+	"peers":      true,
 	"auth":       true,
 	"gateway":    true,
 	"doctor":     true,
@@ -89,10 +91,11 @@ On this machine:
   export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or memdoor connect
   cd <your-project> && memdoor           # the first run starts the gateway here and opens the window
 
-On a box that stays on (a VPS, a Mac mini):
-  memdoor gateway install                # the gateway as a service: up at boot, restarted if it stops
-  memdoor --gateway <box> run "…"        # from your laptop: a turn there, in that box's project
-  memdoor --gateway <box> remote --last  # the link that opens that run on your phone; the box holds it
+On a box you can ssh to (a VPS, a Mac mini, Cloud Shell), with nothing installed there:
+  memdoor --gateway ssh://you@box               # installs memdoor on the box, starts its gateway, opens the window on it
+  memdoor --gateway ssh://you@box connect openrouter   # your key, kept on the box; every turn there runs on it
+  memdoor --gateway ssh://you@box run "…"       # a turn there from a script or CI; --dir names a project on the box
+  memdoor --gateway ssh://you@box remote --last # the link that opens that run on your phone; the box holds it
 
 Workflows: say the steps in the window and it writes them as files in the repo;
 memdoor workflow run <name> reruns them with no one watching, and a gate waits

@@ -34,9 +34,10 @@ func (m Mention) Validate() error {
 // Supports both @agent format and @user@domain format
 // Actual ActorID lookup must be done by service layer
 func ParseMentions(text string) []string {
-	// Match @username or @email (e.g., @writer or @admin@localhost)
+	// Match @username or @email (e.g., @writer or @admin@localhost), or a
+	// peer's agent, @<peer>:<agent> (e.g., @box:coder; PeerAgent splits it).
 	// Pattern: @word or @word@word.word (supports agent names and emails)
-	re := regexp.MustCompile(`@([a-zA-Z0-9_-]+(?:@[a-zA-Z0-9.-]+)?)`)
+	re := regexp.MustCompile(`@([a-zA-Z0-9_.-]+:[a-zA-Z0-9_-]+|[a-zA-Z0-9_-]+(?:@[a-zA-Z0-9.-]+)?)`)
 	matches := re.FindAllStringSubmatch(text, -1)
 
 	mentions := make([]string, 0, len(matches))
@@ -53,6 +54,19 @@ func ParseMentions(text string) []string {
 	}
 
 	return mentions
+}
+
+// PeerAgent splits a mention of another gateway's agent, @<peer>:<agent>
+// (experimental, 2026-10-24: "we can do @<host>:agent_name"): the peer's
+// name as `memdoor peer add` gave it, and the agent's name there. Whether
+// the peer exists is the service's to say; "@coder:" followed by prose is
+// not one.
+func PeerAgent(name string) (peer, agent string, ok bool) {
+	i := strings.Index(name, ":")
+	if i <= 0 || i == len(name)-1 {
+		return "", "", false
+	}
+	return name[:i], name[i+1:], true
 }
 
 // IsReplySkip checks if the agent response contains the REPLY_SKIP token

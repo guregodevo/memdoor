@@ -182,6 +182,7 @@ func (cs *ChatServer) handleMessages(w http.ResponseWriter, r *http.Request) {
 			Workspace      string   `json:"workspace"`                 // Workspace slug (required)
 			PermissionMode string   `json:"permission_mode,omitempty"` // Claude-style mode: default|acceptEdits|plan
 			Workdir        string   `json:"workdir,omitempty"`         // Client's launch dir — the coder works on THIS project (Claude-CLI semantics)
+			AskedByPeer    bool     `json:"asked_by_peer,omitempty"`   // Another gateway asks through @<peer>:<agent>: the reply's mentions are its to resolve
 			AttachmentIDs  []string `json:"attachment_ids,omitempty"`
 			Content        struct {
 				Text     string   `json:"text"`
@@ -278,6 +279,7 @@ func (cs *ChatServer) handleMessages(w http.ResponseWriter, r *http.Request) {
 			SkipMembershipCheck: isInternalService,
 			PermissionMode:      req.PermissionMode,
 			Workdir:             req.Workdir,
+			AskedByPeer:         req.AskedByPeer,
 			Content: message.MessageContent{
 				Text: messageText,
 			},

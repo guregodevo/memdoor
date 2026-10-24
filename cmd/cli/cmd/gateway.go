@@ -88,6 +88,8 @@ var gatewayCmd = &cobra.Command{
 		// This process hosts the phone's links (remote_host.go): a window
 		// hands /remote over, and the link outlives the window.
 		gateway.SetRemoteHost(newGatewayRemoteHost(gatewayHost, gatewayPort))
+		// This process asks peers for @<peer>:<agent> (peers.go, experimental).
+		gateway.SetPeerCaller(peerAsk)
 		err := gateway.Start(ctx, gatewayHost, gatewayPort, "", verbose)
 		// Mid-flight EADDRINUSE: rare (probe above is the common case)
 		// but possible if a stale gateway started between the probe

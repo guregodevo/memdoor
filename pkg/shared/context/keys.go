@@ -72,4 +72,10 @@ const (
 	// file/bash/locate/verify confinement roots here; empty falls back to
 	// ~/memdoor-coder.
 	WorkdirKey ContextKey = "workdir"
+
+	// AskedByPeerKey marks a turn another gateway asked for through a peer
+	// mention (@<peer>:<agent>, experimental 2026-10-24). The reply is posted
+	// in the asker's thread, so a @name in it is the asker's to resolve: the
+	// reply wakes nobody on this gateway.
+	AskedByPeerKey ContextKey = "asked_by_peer"
 )

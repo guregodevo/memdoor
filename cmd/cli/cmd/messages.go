@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -78,6 +79,8 @@ var messagesCmd = &cobra.Command{
 			if displayAuthor == "" {
 				displayAuthor = authorID
 			}
+			// A peer's agent (agent:box:coder) has no name here: its id, as typed.
+			displayAuthor = strings.TrimPrefix(displayAuthor, "agent:")
 
 			content := ""
 			if c, ok := msg["content"].(map[string]interface{}); ok {

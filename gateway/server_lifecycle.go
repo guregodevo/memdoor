@@ -202,6 +202,20 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	authRepoAdapter := &authRepositoryAdapter{repo: authRepoForAuthz}
 
 	messageService := message.NewService(logs.New("Message"), messageRepo, membershipRepo, channelRepo, buddyRepo, authRepoAdapter, agentExecutorAdapter, remoteExecutor)
+	runtimeEvents := func() *infra.EventEmitter {
+		if server == nil || server.agent == nil {
+			return nil
+		}
+		return server.agent.EventEmitter()
+	}
+	messageService.SetPeers(newPeerSet(runtimeEvents)) // @<peer>:<agent>, experimental (peers.go)
+	// A turn nobody will run (a mention nobody answers to) is told to the
+	// session's feeds as a turn's own error, or a window and a run wait forever.
+	messageService.SetTurnFailed(func(sessionKey, runID, reason string) {
+		if ee := runtimeEvents(); ee != nil {
+			ee.EmitEvent(runID, infra.EventStreamLifecycle, sessionKey, map[string]interface{}{"event": "error", "error": reason})
+		}
+	})
 	// Workspace slug is resolved per-request from ExecutionContext
 	authorization.SetLogger(logs.New("HTTP"))
 

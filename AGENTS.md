@@ -113,6 +113,16 @@ grep -r "duplicate_code" .    # Search before coding
 # THAT PROGRAM (gateway/remote_host.go + cmd/cli/cmd/remote_host.go, /api/remote/<channel>,
 # ~/.memdoor/remote-hosted.json): the window hands the link over and may close; a restart
 # revives every link. The memdoor.ai relay takes the ACCOUNT token.
+# PEERS, EXPERIMENTAL (2026-10-24, docs/features/PEERS.md): `memdoor peer add box <gateway>
+# --dir <path there>` names a gateway you are signed in to; `@box:coder …` in any conversation
+# (window, run, agent -m) runs the turn on box and brings the answer back as the thread's reply
+# (pkg/message/peers.go, gateway/peers.go, cmd/cli/cmd/peers.go); `memdoor peers` is the quorum.
+# THE REPLY IS A2A ACROSS GATEWAYS (Greg: "it should be a2a with reply across gateway"): the
+# names in a peer's reply are resolved HERE, where the thread is (@coder wakes this coder,
+# @vps:coder asks another peer, the coder may ask box again; the mention depth ends it), and
+# a turn asked by a peer (asked_by_peer) wakes nobody on the peer. A turn woken by a reply now
+# gets the project and the mode of the turn before it (asyncTurnContext), not the scratch dir.
+# A mention nobody answers to now fails the turn instead of hanging the window and the run.
 # A new websocket path needs its own nginx location in scripts/deploy.sh.
 # MEMDOOR_REMOTE_URL=http://localhost:18789 tests it against a local gateway.
 

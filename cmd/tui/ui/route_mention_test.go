@@ -11,6 +11,9 @@ func TestRouteByMention(t *testing.T) {
 		"@planner make a plan": {"planner", "make a plan"},
 		"  @researcher sync":   {"researcher", "sync"},
 		"@Planner PLAN it":     {"planner", "PLAN it"},
+		"@box:coder review it": {"box:coder", "review it"},
+		"@box.lan:chief hi":    {"box.lan:chief", "hi"},
+		"@coder: outline it":   {"coder", "outline it"},
 	} {
 		agent, rest := routeByMention("coder", in)
 		if agent != want[0] || rest != want[1] {
