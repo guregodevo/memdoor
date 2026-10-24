@@ -75,7 +75,23 @@ back with it, and there is nothing to scan twice.
 
 Several pages can be open at once — your phone and your laptop, say — and
 they all show the same screen. A page that opens later is shown the screen so
-far. Up to eight pages per conversation.
+far. Up to eight pages per conversation, and watch-only pages apart (below).
+
+Where the page connects depends on where the gateway listens:
+
+```
+gateway on the network (default)      gateway kept to localhost (MEMDOOR_HOST=localhost)
+http://<box>:18789/r/<id>#…           https://memdoor.ai/r/<id>#…
+gateway ──http──▶ viewer              gateway ──dials out──▶ memdoor.ai ◀── viewers
+```
+
+On its own address the gateway serves the page and sends every frame to
+every viewer itself: right on a LAN, a VPN or Tailscale, or a VPS; a laptop
+behind NAT cannot be reached. Kept to localhost, the gateway dials out to
+memdoor.ai once with your account token (the Pro relay), each viewer dials
+memdoor.ai with a proof from the link, and the relay forwards sealed frames it
+cannot read, fanning them out there, so the gateway sends each frame once.
+That is the path for an audience anywhere.
 
 ## A link to watch, not to drive
 
@@ -103,8 +119,10 @@ each sees the terminal as you see it, sealed the same way, with no account
 and nothing uploaded anywhere. `/remote view` prints a second form of the
 link with `?live=1` before the `#`: the terminal alone, no header, for a
 stream, a projector or an OBS browser source. Put the watch link in the
-chat, or the live link in the scene. Pair programming is the full link in a
-second pair of hands: both type into the same window.
+chat, or the live link in the scene. A watcher's opening starts the
+terminal, so the stream shows before you open the full link yourself; a
+page of yours that opens later resizes it. Pair programming is the full link
+in a second pair of hands: both type into the same window.
 
 ## From a script, no window
 
