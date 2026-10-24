@@ -129,6 +129,7 @@ downloads.
 | `/workflow` | The project's workflows and runs; enter opens a run's graph, `a` approves a gate, `/workflow:<name>` runs one |
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |
+| `/remote view` | A watch-only link: whoever opens it sees the terminal live and cannot type, no account, up to 200 at once; `?live=1` is the terminal alone, for a stream or OBS |
 | `/share` | A read-only link to the conversation, encrypted, secrets removed; `/unshare` deletes it |
 | `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, each with what happened to it; enter previews, `ctrl+d` diffs, `ctrl+e` opens in `$EDITOR`, tab puts `@path` in the prompt |
 | `/graph` or `ctrl+g` | This turn as a graph: the reads, the edits that depended on them, the runs that depended on the edits, the failing check in red |
@@ -161,6 +162,7 @@ git diff | memdoor run "review this diff; one line per finding"    # stdin is th
 memdoor run --json "fix the failing test" | jq 'select(.event=="done")'
 memdoor workflow run release --wait                                 # progress on stderr, results on stdout
 memdoor remote --last                                               # the link /remote gives, on stdout; the gateway holds the run for your phone
+memdoor remote --view --last                                        # the watch-only link: an audience, or a pair of eyes
 ```
 
 The exit code is the turn's receipt: 0 checked, 2 unverified or a failing check,
