@@ -92,9 +92,28 @@ else
     INSTALL_MODE="user"
 fi
 
+# A directory of the person's own that is ALREADY on this shell's PATH
+# (~/bin on Debian and Cloud Shell, when it exists) beats ~/.local/bin when
+# that one is not: `memdoor` then works in this very terminal, not only in
+# the next (Cloud Shell, 2026-10-24: "memdoor: command not found" right
+# after "Installed").
+own_dir_on_path() {
+    _p="$PATH:"
+    while [ -n "$_p" ]; do
+        _d="${_p%%:*}"; _p="${_p#*:}"
+        case "$_d" in
+            "$HOME"/*) if [ -d "$_d" ] && [ -w "$_d" ]; then echo "$_d"; return 0; fi ;;
+        esac
+    done
+    return 1
+}
 case "$INSTALL_MODE" in
     user)
         DEST_DIR="$USER_BIN"
+        case ":$PATH:" in
+            *":$USER_BIN:"*) ;;
+            *) OWN=$(own_dir_on_path) && [ -n "$OWN" ] && DEST_DIR="$OWN" ;;
+        esac
         ;;
     prefix)
         DEST_DIR="$MEMDOOR_PREFIX"
@@ -347,9 +366,12 @@ fi
 # Two lines, both runnable in THIS shell: the first run of the TUI sets the
 # machine up itself (no setup step, no admin email), and a key exported
 # here reaches the gateway it starts. No key at hand: /connect inside.
-MD="memdoor"
-[ "$ON_PATH" = "0" ] && MD="$DEST"
+# This terminal's PATH is the one thing a piped script cannot change: the
+# line that does it comes first, then the rest works as typed.
+if [ "$ON_PATH" = "0" ]; then
+    echo "  export PATH=\"$DEST_DIR:\$PATH\"   # this terminal; new terminals have it already"
+fi
 echo "  export OPEN_ROUTER_API_KEY=sk-or-...   # your key (or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or /connect inside)"
-echo "  cd <your-project> && $MD"
+echo "  cd <your-project> && memdoor"
 echo
 echo "Pro (remote control)? memdoor login you@example.com"
