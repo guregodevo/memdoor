@@ -252,12 +252,12 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 - `account` — The memdoor.ai account: sign in with your email, status, subscribe
   - `login` — Sign in: a code is emailed, type it here (short: memdoor login)
-  - `logout` — Sign out of memdoor.ai on this Mac (the engine stays signed in)
-  - `status` — Who is signed in on this Mac, and what the seat is
+  - `logout` — Sign out of memdoor.ai on this machine (the gateway account stays signed in)
+  - `status` — Who is signed in on this machine, and what the seat is
   - `subscribe` — Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month
 - `login` — Sign in to memdoor.ai with your email: a six-digit code arrives there, and you
-- `logout` — Sign out of memdoor.ai on this Mac (the engine stays signed in)
-- `setup` — Onboard a fresh Memdoor install: create the workspace and the
+- `logout` — Sign out of memdoor.ai on this machine (the gateway account stays signed in)
+- `setup` — Sets a fresh install up: the workspace directory under ~/.memdoor
 - `use` — Writes <slug> into ./.memdoor/workspace so every memdoor invocation
 - `which` — Resolves the workspace slug using the standard chain (flag → env →
 - `workspace` — Workspace resolution chain (highest precedence first):
@@ -270,12 +270,12 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **This binary**
 
-- `config` — Manage configuration
+- `config` — The config file (~/.memdoor/config.json): validate, show, get a value
   - `get` — Get configuration value by dot-notation path
   - `show` — Display full configuration
   - `validate` — Validate configuration file
 - `uninstall` — Removes Memdoor and its running components:
-- `upgrade` — Compares the version baked into this binary (see 'memdoor
+- `upgrade` — Compares the version in this binary (memdoor version) with the latest
 - `version` — Prints the version string baked into this binary at build
 
 **Other commands**
@@ -301,7 +301,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 - `chrome` — Browser automation using a simple DSL (Domain-Specific Language) syntax. Connects to Chrome via DevTools Protocol.
   - `run` — Execute browser script from stdin
 - `messages` — View messages in a channel
-- `sessions` — Manage sessions
+- `sessions` — The gateway's live sessions: list, get, rewind a few turns, clear, export
   - `clear` — Clear conversation history for a session (chat memory wipe)
   - `export` — Export local agent sessions as JSONL (for evals / fine-tuning datasets)
   - `get` — Get session details
@@ -417,7 +417,7 @@ memdoor setup \
 memdoor setup --non-interactive
 
 # Custom workspace location
-memdoor setup --workspace ~/my-workspace
+memdoor setup --workspace-dir ~/my-workspace
 ```
 
 ---
@@ -447,7 +447,7 @@ memdoor doctor [flags]
 **Example**:
 ```bash
 memdoor doctor
-memdoor doctor --workspace ~/my-workspace
+memdoor doctor --workspace-dir ~/my-workspace
 ```
 
 **Output**:

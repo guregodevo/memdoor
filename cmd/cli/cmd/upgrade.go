@@ -58,21 +58,15 @@ func installerCommand() *exec.Cmd {
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Check for a newer memdoor build and install it via memdoor.ai/install.sh",
-	Long: `Compares the version baked into this binary (see 'memdoor
-version') against the latest published build at memdoor.ai/dl/VERSION.
-When a newer build is available, this command pipes
-memdoor.ai/install.sh into bash — same upgrade-in-place path the
-curl|bash installer uses, including the SIGTERM-then-swap dance that
-stops the running gateway before replacing the binary.
+	Long: `Compares the version in this binary (memdoor version) with the latest
+published build (memdoor.ai/dl/VERSION). When a newer one exists it runs
+memdoor.ai/install.sh, the same upgrade in place the installer does: the
+running gateway is stopped, the binary swapped, the gateway started again.
 
-Flags:
-  --check     Print the version delta and exit 0 if up-to-date / exit 1
-              if an upgrade is available. No download, no install.
-              Suitable for cron / shell prompts.
-  --force     Run the installer even when the local version matches
-              remote — useful for re-applying after a botched swap
-              or when the version string says "dev" (locally built).
-  --yes       Skip the interactive confirm before running the installer.`,
+  memdoor upgrade            ask, then upgrade
+  memdoor upgrade --check    print the versions; exit 0 when current, 1 when an upgrade exists
+  memdoor upgrade --yes      no question (a script)
+  memdoor upgrade --force    run the installer even when the versions match (a build that says "dev")`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		checkOnly, _ := cmd.Flags().GetBool("check")
 		force, _ := cmd.Flags().GetBool("force")

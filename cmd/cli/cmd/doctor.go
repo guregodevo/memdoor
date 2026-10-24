@@ -165,7 +165,7 @@ var doctorCmd = &cobra.Command{
 }
 
 func init() {
-	doctorCmd.Flags().StringVar(&doctorWorkspace, "workspace", "", "Workspace directory to check")
+	doctorCmd.Flags().StringVar(&doctorWorkspace, "workspace-dir", "", "The workspace directory to check (default ~/.memdoor/workspace)")
 	rootCmd.AddCommand(doctorCmd)
 }
 

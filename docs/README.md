@@ -39,12 +39,15 @@ catalogue are in `internal/PLANS_AND_CAPACITY.md` (removed 2026-10-03).
 
 ### Architecture Deep Dives
 
-- **[Multi-Agent Architecture](architecture/MULTI_AGENT_ARCHITECTURE.md)** — Agent isolation model
+- **[The gateway and its doors](architecture/GATEWAY_AND_DOORS.md)** — the process that owns the work; window, ssh, headless, phone, peers
+- **[The turn loop](architecture/TURN_LOOP.md)** — one turn from message to answer: queue, toolbox, guards, approval, wake
+- **[Model routing](architecture/MODEL_ROUTING.md)** — every request through a provider; pins, the decision model, windows as data
+- **[Multi-agent architecture](architecture/MULTI_AGENT_ARCHITECTURE.md)** — agents, per-agent sessions, mentions, subagents, peers
 - **[Execution Context](architecture/EXECUTION_CONTEXT.md)** — Session metadata flow
 - **[Config System](architecture/CONFIG_SYSTEM_DESIGN.md)** — JSON5 + `$include` loader
 - **[Agent Sandbox Security](architecture/AGENT_SANDBOX_SECURITY.md)** — Tool-level isolation
 - **[Always-Valid Pattern](architecture/ALWAYS_VALID_PATTERN.md)** — Constructor factories that fail fast
-- **[ADRs](adr/)** — [0001 managed lane](adr/0001-managed-lane-architecture.md) · [0002 inference stays direct](adr/0002-inference-stays-direct.md) · [0003 supplier risk](adr/0003-supplier-risk-and-multi-provider.md) · [0004 rental](adr/0004-rental-is-a-domain-object-the-broker-owns.md) · [0005 the TUI is the product](adr/0005-the-tui-is-the-product.md) · [0006 clipping runtime](adr/0006-clipping-runtime-python-or-go.md) · [0007 brain lease](adr/0007-brain-lease.md) · [0008 one pool](adr/0008-one-pool-raft-broker.md) · [0009 the app is composition](adr/0009-the-app-is-composition.md) · [0010 serverless endpoints](adr/0010-the-pool-is-serverless-endpoints.md) · [0011 an API brain](adr/0011-an-api-brain-through-the-broker.md) · [0012 the only brain](adr/0012-the-api-brain-is-the-only-brain.md) · [0013 freemium](adr/0013-freemium-the-mark-is-the-price.md) · [0014 generated shots](adr/0014-generated-shots-through-the-broker.md) · [0015 Jev decisions](adr/0015-decisions-through-jev-on-openrouter.md) · [0016 a brain per agent](adr/0016-a-brain-per-agent.md) · [0017 one vendor path](adr/0017-one-vendor-path-openrouter-for-every-agent.md) · [0018 hue and luminance](adr/0018-hue-is-what-luminance-is-how-much.md) · [0019 workflow runs on mario](adr/0019-workflow-runs-on-mario.md)
+- **[ADRs](adr/)** — [0015 decisions on the person's own key](adr/0015-decisions-through-jev-on-openrouter.md) · [0018 hue is what, luminance is how much](adr/0018-hue-is-what-luminance-is-how-much.md) · [0019 workflows run on mario](adr/0019-workflow-runs-on-mario.md) · [0020 every request through a provider](adr/0020-every-request-through-a-provider.md) · [0021 the gateway owns the work](adr/0021-the-gateway-owns-the-work-every-door-is-free.md) · [0022 a wake, not a heartbeat](adr/0022-a-wake-not-a-heartbeat.md) · [0023 peers](adr/0023-peers-a2a-across-gateways.md)
 
 ### Operations
 
@@ -108,7 +111,7 @@ Feature-focused walkthroughs (`docs/features/`):
 
 - **[Roadmap](roadmap/ROADMAP.md)** — Vision and priorities
 - **[MUST / SHOULD / COULD](roadmap/MUST.md)** — Priority tiers; MUST.md opens with a "What is left" list and carries the 2026-09-27 direction note below it
-- **[ADRs](adr/)** — 0001–0019; the index is above
+- **[ADRs](adr/)** — the decisions still in force; the index is above
 - **[Authentication Roadmap](roadmap/AUTHENTICATION.md)**
 
 ---

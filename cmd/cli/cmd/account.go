@@ -170,7 +170,7 @@ var accountLoginCmd = &cobra.Command{
 
 var accountStatusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Who is signed in on this Mac, and what the seat is",
+	Short: "Who is signed in on this machine, and what the seat is",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		st := currentAccountStatus()
 		if accountJSON {
@@ -191,7 +191,7 @@ var accountStatusCmd = &cobra.Command{
 
 var accountLogoutCmd = &cobra.Command{
 	Use:   "logout",
-	Short: "Sign out of memdoor.ai on this Mac (the engine stays signed in)",
+	Short: "Sign out of memdoor.ai on this machine (the gateway account stays signed in)",
 	RunE:  func(cmd *cobra.Command, args []string) error { return signOut() },
 }
 
@@ -319,9 +319,9 @@ func localSessionReady() (ready, signInAgain bool, note string) {
 	// Nothing on disk renews it. The sign-in does (ensureLocalEngine adopts
 	// the engine's user), so that is where to send the person.
 	if _, err := loadCredentials(); err == nil {
-		return false, true, "the session on this Mac has run out — sign in again to renew it"
+		return false, true, "the session on this machine has run out — sign in again to renew it"
 	}
-	return false, true, "this Mac has no session with the engine — sign in again to set it up"
+	return false, true, "this machine has no session with the gateway — sign in again to set it up"
 }
 
 // ensureLocalEngine makes this Mac able to run the account: directories,
@@ -373,7 +373,7 @@ func ensureLocalEngine(email, workspace string) (bool, string) {
 		return true, ""
 	}
 	if err := localSessionFor(email); err != nil {
-		return false, "this Mac's engine could not be signed in to: " + err.Error()
+		return false, "the gateway on this machine could not be signed in to: " + err.Error()
 	}
 	persistWorkspaceSlug(configPath, status.WorkspaceSlug)
 	return true, ""
@@ -440,10 +440,10 @@ func renewLocalSession() error {
 	var ll localLogin
 	b, err := os.ReadFile(homePath(localLoginFile))
 	if err != nil {
-		return fmt.Errorf("no generated login on this Mac: %w", err)
+		return fmt.Errorf("no generated login on this machine: %w", err)
 	}
 	if json.Unmarshal(b, &ll) != nil || ll.Password == "" {
-		return fmt.Errorf("the generated login on this Mac is unreadable")
+		return fmt.Errorf("the generated login on this machine is unreadable")
 	}
 	return loginLocal(ll.Email, ll.Password)
 }

@@ -30,40 +30,15 @@ var (
 var setupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Onboard: workspace + first admin user",
-	Long: `Onboard a fresh Memdoor install: create the workspace and the
-first admin user in one go.
+	Long: `Sets a fresh install up: the workspace directory under ~/.memdoor
+(its config and bootstrap files AGENTS.md, SOUL.md, TOOLS.md), then the first
+admin account on this gateway, signed in here (~/.memdoor/credentials.json,
+valid 30 days). The gateway is started if none is running. The bare memdoor
+command does all of this on its first run; setup is the same from a script.
 
-Phase 1 (always, no gateway required): create the on-disk workspace
-directory tree, default config, bootstrap files
-(AGENTS.md / SOUL.md / TOOLS.md).
-
-Phase 2 (needs a gateway — setup auto-starts one if it isn't already
-running): register the first admin user via the public /api/setup
-endpoint and auto-login. Credentials are saved to
-~/.memdoor/credentials.json and stay valid for 30 days across gateway
-restarts.
-
-Modes:
-  - Interactive (default on a TTY): prompts for workspace name,
-    admin email, and admin password (input hidden, with confirm).
-  - Non-interactive: pass '--admin-email', '--admin-password' (and
-    optionally '--workspace-name'). Suitable for scripts/CI.
-  - '--non-interactive' forces flag-only mode and never prompts.
-
-Examples:
-  # Interactive onboarding (recommended for first-time install).
-  # Setup auto-starts the gateway — no 'memdoor gateway &' step needed.
-  memdoor setup
-
-  # Scripted: dirs + admin registration in one shot.
-  memdoor setup \
-    --workspace-name 'my-project' \
-    --admin-email you@work.com \
-    --admin-password 'sekret-not-shared-1234'
-
-  # Phase 1 only (gateway not yet running): use --non-interactive.
-  memdoor setup --non-interactive
-`,
+  memdoor setup                                   asks for the workspace name, the email and the password
+  memdoor setup --admin-email you@work.com --admin-password '…' [--workspace-name my-project]
+  memdoor setup --non-interactive                 the directory and files only, no account, no questions`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if setupWorkspace == "" {
 			setupWorkspace = shared.MemdoorHome("workspace")
@@ -485,12 +460,12 @@ func persistWorkspaceSlug(configPath, slug string) {
 }
 
 func init() {
-	setupCmd.Flags().StringVar(&setupWorkspace, "workspace", "", "Workspace directory path")
+	setupCmd.Flags().StringVar(&setupWorkspace, "workspace-dir", "", "The workspace directory (default ~/.memdoor/workspace)")
 	setupCmd.Flags().BoolVar(&setupSkipBootstrap, "skip-bootstrap", false, "Skip creating bootstrap files")
 	setupCmd.Flags().StringVar(&setupAdminEmail, "admin-email", "", "Email for the first admin user (skips interactive prompt)")
 	setupCmd.Flags().StringVar(&setupAdminPassword, "admin-password", "", "Password for the first admin user (min 8 chars)")
 	setupCmd.Flags().StringVar(&setupWorkspaceName, "workspace-name", "", "Display name for the workspace (defaults to 'Memdoor')")
-	setupCmd.Flags().BoolVar(&setupNonInteractive, "non-interactive", false, "Never prompt — Phase 1 only unless --admin-email/--admin-password are provided")
+	setupCmd.Flags().BoolVar(&setupNonInteractive, "non-interactive", false, "Never ask: the directory and files only, unless --admin-email and --admin-password are given")
 	rootCmd.AddCommand(setupCmd)
 }
 

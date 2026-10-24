@@ -1,795 +1,269 @@
-# Memdoor Configuration System Design
+# Configuration
 
-**Date**: 2026-02-20
-**Status**: Design Phase
-**Priority**: HIGH (Week 22)
-**OpenClaw Reference**: `~/.openclaw/openclaw.json`
+Memdoor reads one optional file, `config.json`, and starts without it. The
+loader is `gateway/config/loader.go`; the schema is the `Config` struct in
+`gateway/config/types.go`; `$include` is `gateway/config/includes.go`. What
+a person tunes day to day is not in that file: the model is a provider's
+(`memdoor connect`, `/model`), and the gates (`approve`, `tool_guards`, the
+decision switches) are workspace settings in the database. This page says
+what the file holds, how it is read, and where the rest lives.
 
-> ⚠ **Historical design.** The agent schema has no `Model` field: the
-> model comes from a provider on the person's own key
-> ([`../features/PROVIDERS.md`](../features/PROVIDERS.md)). See
-> `gateway/config/types.go` for the live schema.
+## Where the file lives
 
-This document outlines the design for Memdoor's JSON5 configuration system, based on OpenClaw's architecture.
+`config.ResolveConfigPath()` looks, in order, for `<cwd>/.memdoor/config.json`,
+`~/.memdoor/config.json`, then the legacy `config.yaml` in the same two
+places (`shared.ProjectOrHome` and `shared.MemdoorHome` in
+`pkg/shared/paths.go`; `~/.memdoor` is built there and nowhere else). When
+none exists the path is `~/.memdoor/config.json`, and
+`LoadConfigFromFile` answers `DefaultConfig()` for a missing file. The gateway
+(`gateway/server.go`, the `Config loaded` log line) falls back to
+`DefaultConfig()` on any load error too, with a warning.
 
----
+A `.json` or `.json5` file is parsed as JSON5 (`github.com/titanous/json5`:
+comments and trailing commas), then as plain JSON if that fails; `.yaml` and
+`.yml` are parsed with `gopkg.in/yaml.v3`. `SaveConfigToFile` writes indented
+JSON, mode 0600; it is what `memdoor setup` and `memdoor auth login*` use to
+write `workspace_id`.
 
-## Executive Summary
+## A minimal configuration
 
-**Goal**: Replace environment variable configuration with a structured JSON5 config file at `~/.memdoor/memdoor.json`.
-
-**Key Benefits:**
-- **Multi-Agent Support** - Multiple isolated agents with separate workspaces
-- **Channel Routing** - Route different channels/accounts to different agents
-- **Per-Agent Configuration** - Different models, tools, permissions per agent
-- **Structured Validation** - Schema-based validation prevents misconfiguration
-- **Hot Reload** - Config changes without full restart
-- **Config Includes** - Split large configs across multiple files
-
-**Current State**: Memdoor uses environment variables only
-**Target State**: JSON5 config file with env var fallback
-
----
-
-## Configuration File Location
-
-**Primary**: `~/.memdoor/memdoor.json` (JSON5 format - comments + trailing commas allowed)
-
-**Environment Override**: `MEMDOOR_CONFIG_PATH` environment variable
-
-**Fallback Behavior**:
-1. If `~/.memdoor/memdoor.json` exists → use it
-2. If not → use environment variables (current behavior)
-3. Config file values override environment variables
-
----
-
-## Minimal Configuration (Recommended Starting Point)
+None. A gateway with no file runs with `DefaultConfig()`: one agent, `main`,
+on the workspace `~/.memdoor/workspace`; sessions at
+`~/.memdoor/agents/{agentId}/sessions.json`; cron on, its legacy store at
+`~/.memdoor/cron/jobs.json`; SQLite at `~/.memdoor/data/memdoor.db`. The
+same defaults are filled into a file that leaves a section out
+(`applyDefaults`), so a file is only ever the part a person changed.
 
 ```json5
+// ~/.memdoor/config.json: everything not written here is the default
 {
-  // Single agent, basic setup
+  workspace_id: "my-workspace",
   agents: {
-    defaults: {
-      workspace: "~/.memdoor/workspace",
-    },
-  },
-
-  // WhatsApp DM allowlist
-  channels: {
-    whatsapp: {
-      allowFrom: ["+15551234567"],
-    },
-  },
-}
-```
-
-**Equivalent to current environment variables**:
-```bash
-# No config needed - this is the default behavior
-# WhatsApp pairing + ~/.memdoor/workspace
-```
-
----
-
-## Multi-Agent Configuration Examples
-
-### Example 1: Two Agents - Home & Work (Separate WhatsApp Accounts)
-
-```json5
-{
-  agents: {
+    defaults: { workspace: "~/.memdoor/workspace" },
     list: [
-      {
-        id: "home",
-        name: "Home Assistant",
-        default: true,
-        workspace: "~/.memdoor/workspace-home",
-        agentDir: "~/.memdoor/agents/home/agent",
-        model: "anthropic/claude-sonnet-4-5",
-        identity: {
-          name: "HomeBot",
-          emoji: "🏠",
-        },
-      },
-      {
-        id: "work",
-        name: "Work Assistant",
-        workspace: "~/.memdoor/workspace-work",
-        agentDir: "~/.memdoor/agents/work/agent",
-        model: "anthropic/claude-opus-4-6",
-        identity: {
-          name: "WorkBot",
-          emoji: "💼",
-        },
-      },
-    ],
-  },
-
-  // Route WhatsApp accounts to agents
-  bindings: [
-    { agentId: "home", match: { channel: "whatsapp", accountId: "personal" } },
-    { agentId: "work", match: { channel: "whatsapp", accountId: "business" } },
-  ],
-
-  // Two WhatsApp account configurations
-  channels: {
-    whatsapp: {
-      accounts: {
-        personal: {
-          // Session stored in ~/.memdoor/channels/whatsapp/personal.db
-          authDir: "~/.memdoor/credentials/whatsapp/personal",
-        },
-        business: {
-          // Session stored in ~/.memdoor/channels/whatsapp/business.db
-          authDir: "~/.memdoor/credentials/whatsapp/business",
-        },
-      },
-    },
-  },
-}
-```
-
-**Key Features**:
-- Two isolated agents with separate workspaces
-- Two WhatsApp accounts (personal phone + work phone)
-- Each agent has its own model, identity, and workspace
-- Bindings route WhatsApp accounts to correct agent
-
-**Session Keys**:
-- `agent:home:main` - Home agent main session
-- `agent:work:main` - Work agent main session
-- `agent:home:whatsapp:dm:+15551234567` - Home WhatsApp DM
-- `agent:work:whatsapp:dm:+15559876543` - Work WhatsApp DM
-
----
-
-### Example 2: Split by Channel (WhatsApp → Fast, Telegram → Powerful)
-
-```json5
-{
-  agents: {
-    list: [
-      {
-        id: "chat",
-        name: "Everyday Chat",
-        workspace: "~/.memdoor/workspace-chat",
-        model: "anthropic/claude-sonnet-4-5",
-      },
-      {
-        id: "opus",
-        name: "Deep Work",
-        workspace: "~/.memdoor/workspace-opus",
-        model: "anthropic/claude-opus-4-6",
-      },
-    ],
-  },
-
-  bindings: [
-    { agentId: "chat", match: { channel: "whatsapp" } },
-    { agentId: "opus", match: { channel: "telegram" } },
-  ],
-
-  channels: {
-    whatsapp: {
-      allowFrom: ["+15551234567"],
-    },
-    telegram: {
-      enabled: true,
-      botToken: "${TELEGRAM_BOT_TOKEN}",
-      allowFrom: ["123456789"],
-    },
-  },
-}
-```
-
-**Use Case**: Route WhatsApp (fast queries) to Sonnet, Telegram (deep work) to Opus.
-
----
-
-### Example 3: One WhatsApp, Multiple Users via DM Routing
-
-```json5
-{
-  agents: {
-    list: [
-      { id: "alice", workspace: "~/.memdoor/workspace-alice" },
-      { id: "bob", workspace: "~/.memdoor/workspace-bob" },
-    ],
-  },
-
-  // Route WhatsApp DMs by sender phone number
-  bindings: [
-    {
-      agentId: "alice",
-      match: {
-        channel: "whatsapp",
-        peer: { kind: "dm", id: "+15551230001" },
-      },
-    },
-    {
-      agentId: "bob",
-      match: {
-        channel: "whatsapp",
-        peer: { kind: "dm", id: "+15551230002" },
-      },
-    },
-  ],
-
-  channels: {
-    whatsapp: {
-      dmPolicy: "allowlist",
-      allowFrom: ["+15551230001", "+15551230002"],
-    },
-  },
-}
-```
-
-**Use Case**: Two people sharing one WhatsApp bot number, isolated workspaces.
-
----
-
-### Example 4: Family Agent with Restricted Tools
-
-```json5
-{
-  agents: {
-    list: [
-      {
-        id: "family",
-        name: "Family Bot",
-        workspace: "~/.memdoor/workspace-family",
-        identity: { name: "FamilyBot", emoji: "👨‍👩‍👧‍👦" },
-
-        // Mention gating for groups
-        groupChat: {
-          mentionPatterns: ["@family", "@familybot"],
-        },
-
-        // Restricted tool access
-        tools: {
-          allow: ["read", "sessions_list", "sessions_history"],
-          deny: ["write", "edit", "exec", "bash"],
-        },
-
-        // Always sandboxed
-        sandbox: {
-          mode: "all",
-          scope: "agent",
-        },
-      },
-    ],
-  },
-
-  bindings: [
-    {
-      agentId: "family",
-      match: {
-        channel: "whatsapp",
-        peer: { kind: "group", id: "120363999999999999@g.us" },
-      },
-    },
-  ],
-
-  channels: {
-    whatsapp: {
-      groups: { "*": { requireMention: true } },
-    },
-  },
-}
-```
-
-**Key Features**:
-- Read-only agent (no write/edit/exec)
-- Sandbox isolation
-- Mention gating for group messages
-- Bound to specific WhatsApp group
-
----
-
-## Full Configuration Schema
-
-### Top-Level Structure
-
-```json5
-{
-  // Environment variables (inline fallback). Provider keys live in the
-  // environment or ~/.memdoor/providers.json, not here.
-  env: {
-    vars: {
-      // example: non-LLM secrets, e.g. SMTP creds
-    },
-  },
-
-  // Gateway server settings
-  gateway: {
-    mode: "local",           // "local" | "remote"
-    port: 18789,
-    bind: "loopback",        // "loopback" | "0.0.0.0"
-    auth: {
-      mode: "token",         // "none" | "token"
-      token: "gateway-secret",
-    },
-  },
-
-  // Logging configuration
-  logging: {
-    level: "info",           // "debug" | "info" | "warn" | "error"
-    file: "~/.memdoor/logs/memdoor.log",
-  },
-
-  // Agent configuration
-  agents: {
-    // Default settings for all agents
-    defaults: {
-      workspace: "~/.memdoor/workspace",
-      model: "anthropic/claude-sonnet-4-5",
-      imageModel: "anthropic/claude-sonnet-4-5",
-      thinkingDefault: "low",
-      verboseDefault: "off",
-      timeoutSeconds: 600,
-      maxConcurrent: 3,
-    },
-
-    // Individual agent definitions
-    list: [
-      {
-        id: "main",
-        name: "Main Agent",
-        default: true,
-        workspace: "~/.memdoor/workspace",
-        agentDir: "~/.memdoor/agents/main/agent",
-        model: "anthropic/claude-sonnet-4-5",
-        identity: {
-          name: "Memdoor",
-          emoji: "🦞",
-          theme: "helpful lobster",
-        },
-        tools: {
-          allow: ["*"],      // All tools allowed
-          deny: [],          // None denied
-        },
-        sandbox: {
-          mode: "off",       // "off" | "all" | "non-main"
-          scope: "agent",    // "agent" | "session"
-        },
-        groupChat: {
-          mentionPatterns: ["@memdoor", "@bot"],
-        },
-        subagents: {
-          allowAgents: ["work", "data"],
-          model: "anthropic/claude-haiku-3-5",
-        },
-      },
-    ],
-  },
-
-  // Message routing bindings
-  bindings: [
-    {
-      agentId: "main",
-      match: {
-        channel: "whatsapp",
-        accountId: "personal",
-        peer: { kind: "dm", id: "+15551234567" },
-      },
-    },
-  ],
-
-  // Agent-to-agent communication policy
-  tools: {
-    agentToAgent: {
-      enabled: false,
-      allow: [
-        { from: "main", to: "work" },
-        { from: "main", to: "data" },
-      ],
-      maxPingPongTurns: 5,
-    },
-  },
-
-  // Channel configurations
-  channels: {
-    whatsapp: {
-      enabled: true,
-      dmPolicy: "pairing",   // "pairing" | "allowlist" | "open"
-      allowFrom: [],
-      groupPolicy: "allowlist",
-      groupAllowFrom: [],
-      groups: {
-        "*": { requireMention: true },
-      },
-      accounts: {
-        personal: {
-          authDir: "~/.memdoor/credentials/whatsapp/personal",
-        },
-      },
-    },
-
-    telegram: {
-      enabled: false,
-      botToken: "${TELEGRAM_BOT_TOKEN}",
-      allowFrom: [],
-      groups: { "*": { requireMention: true } },
-    },
-
-    slack: {
-      enabled: false,
-      botToken: "${SLACK_BOT_TOKEN}",
-      appToken: "${SLACK_APP_TOKEN}",
-      channels: {},
-      dm: { enabled: true, allowFrom: [] },
-    },
-  },
-
-  // Session behavior
-  session: {
-    scope: "per-sender",     // "per-sender" | "per-channel-peer"
-    reset: {
-      mode: "daily",         // "daily" | "idle" | "manual"
-      atHour: 4,
-      idleMinutes: 60,
-    },
-    resetTriggers: ["/new", "/reset"],
-    typingIntervalSeconds: 5,
-  },
-
-  // Config file includes
-  $include: "./additional-config.json5",
-}
-```
-
----
-
-## Migration Path: Environment Variables → Config File
-
-### Current Environment Variables
-
-```bash
-# Gateway
-GATEWAY_PORT=18789
-GATEWAY_AUTH_TOKEN=secret
-
-# WhatsApp
-WHATSAPP_DB_PATH=~/.memdoor/channels/whatsapp.db
-
-# Workspace
-WORKSPACE_PATH=~/.memdoor/workspace
-```
-
-Provider keys are read from the environment or `memdoor connect`
-(`~/.memdoor/providers.json`), not from this config.
-
-### Equivalent JSON5 Config
-
-```json5
-{
-  // No LLM API key fields — local-only, no cloud provider.
-  gateway: {
-    port: 18789,
-    auth: {
-      mode: "token",
-      token: "secret",
-    },
-  },
-
-  agents: {
-    defaults: {
-      workspace: "~/.memdoor/workspace",
-      model: "anthropic/claude-sonnet-4-5",
-    },
-  },
-
-  channels: {
-    whatsapp: {
-      accounts: {
-        personal: {
-          authDir: "~/.memdoor/channels/whatsapp",
-        },
-      },
-    },
-  },
-}
-```
-
-### Migration Strategy
-
-**Phase 1: Config File Support (Week 22)**
-- Implement JSON5 config parser
-- Environment variables still work (fallback)
-- Config file overrides env vars
-
-**Phase 2: CLI Commands (Week 22)**
-- `memdoor config get <path>`
-- `memdoor config set <path> <value>`
-- `memdoor config unset <path>`
-- `memdoor setup` creates default config
-
-**Phase 3: Documentation (Week 22)**
-- Migration guide from env vars
-- Multi-agent examples
-- Config reference
-
-**Phase 4: Deprecation (Week 30+)**
-- Warn if using env vars without config
-- Recommend migration to config file
-
----
-
-## Config File Includes (`$include`)
-
-Split large configs across multiple files:
-
-```json5
-// ~/.memdoor/memdoor.json
-{
-  gateway: { port: 18789 },
-
-  // Include agent definitions from separate file
-  agents: { $include: "./agents.json5" },
-
-  // Merge multiple client configs
-  bindings: {
-    $include: [
-      "./clients/alice.json5",
-      "./clients/bob.json5",
+      { id: "coder", default: true, tools: { profile: "coding" } },
     ],
   },
 }
 ```
 
-```json5
-// ~/.memdoor/agents.json5
-{
-  defaults: {
-    workspace: "~/.memdoor/workspace",
-    model: "anthropic/claude-sonnet-4-5",
-  },
-  list: [
-    { id: "main", workspace: "~/.memdoor/workspace" },
-  ],
-}
-```
+## How a file is read
 
----
+`LoadConfigFromFile` runs five steps in this order:
 
-## Implementation Components
+1. `processIncludes` splices every `$include` (below).
+2. The result is parsed into `Config`.
+3. `substituteEnvVars` expands `${VAR}` with `os.ExpandEnv` in exactly five
+   fields: `session.store`, `cron.store`, `agents.defaults.workspace`, and
+   each agent's `workspace` and `agent_dir`. An unset variable expands to
+   an empty string. No other field sees the environment.
+4. `applyDefaults` fills the missing sections and expands a leading `~` in
+   `session.store`, `cron.store` and `database.sqlite.path`
+   (`ExpandUserPath`; the config path itself is expanded the same way).
+5. `resolveSecretRefs` turns secret references into values (below).
 
-### 1. Config Parser (`gateway/config/parser.go`)
+`Config.Validate()` runs under `memdoor config validate`, not at boot: it
+requires an `agents` section, unique agent ids, a workspace on each agent
+or in `agents.defaults`, and that every binding and cron job names an agent
+in the list.
 
-```go
-package config
+### `$include`
 
-import (
-    "encoding/json"
-    "os"
-)
-
-// Config represents the complete Memdoor configuration
-type Config struct {
-    Env      *EnvConfig      `json:"env,omitempty"`
-    Gateway  *GatewayConfig  `json:"gateway,omitempty"`
-    Logging  *LoggingConfig  `json:"logging,omitempty"`
-    Agents   *AgentsConfig   `json:"agents,omitempty"`
-    Bindings []Binding       `json:"bindings,omitempty"`
-    Tools    *ToolsConfig    `json:"tools,omitempty"`
-    Channels *ChannelsConfig `json:"channels,omitempty"`
-    Session  *SessionConfig  `json:"session,omitempty"`
-}
-
-// LoadConfig loads configuration from file or environment
-func LoadConfig(configPath string) (*Config, error) {
-    // 1. Try loading from config file
-    if _, err := os.Stat(configPath); err == nil {
-        return loadFromFile(configPath)
-    }
-
-    // 2. Fallback to environment variables
-    return loadFromEnv()
-}
-
-// loadFromFile parses JSON5 config file
-func loadFromFile(path string) (*Config, error) {
-    // Parse JSON5 (allows comments, trailing commas)
-    // Validate against schema
-    // Process $include directives
-    // Return validated config
-}
-
-// loadFromEnv creates config from environment variables (current behavior)
-func loadFromEnv() (*Config, error) {
-    // Read env vars
-    // Build config structure
-    // Return config
-}
-```
-
-### 2. Config Validation (`gateway/config/validator.go`)
-
-```go
-package config
-
-import "fmt"
-
-// ValidateConfig performs schema validation
-func ValidateConfig(cfg *Config) error {
-    // Check required fields
-    // Validate agent IDs are unique
-    // Validate bindings reference existing agents
-    // Validate channel configurations
-    // Validate tool policies
-    // Return validation errors
-}
-```
-
-### 3. Config CLI (`cmd/cli/commands/config.go`)
-
-```go
-package commands
-
-// ConfigGetCmd - get config value by path
-func ConfigGetCmd() *cobra.Command {
-    // openclaw config get agents.defaults.workspace
-}
-
-// ConfigSetCmd - set config value by path
-func ConfigSetCmd() *cobra.Command {
-    // openclaw config set agents.defaults.model "claude-opus-4-6"
-}
-
-// ConfigUnsetCmd - delete config value
-func ConfigUnsetCmd() *cobra.Command {
-    // openclaw config unset channels.telegram
-}
-```
-
----
-
-## Binding Resolution Logic
-
-**Routing Priority** (most specific wins):
-
-1. **Peer match** - Exact DM/group ID
-2. **Account match** - Specific channel account
-3. **Channel match** - Any account on channel
-4. **Default agent** - Fallback
-
-**Example Resolution**:
+A document may carry a top-level `$include`, a path or a list of paths,
+relative to the directory of the file that names them. Each included file
+is read, parsed in its own format (by extension), and may include further
+files; a file already on the current chain is a circular dependency and an
+error. The included maps are merged under the including document, maps
+recursively and every other value whole, and the including file wins over
+what it includes (`mergeMaps`; `TestProcessIncludes_OverrideBehavior` in
+`gateway/config/includes_test.go`). A `$include` inside a section is not
+processed; only the top level of a document is looked at.
 
 ```json5
 {
-  bindings: [
-    // Priority 1: Specific WhatsApp group → family agent
-    {
-      agentId: "family",
-      match: {
-        channel: "whatsapp",
-        peer: { kind: "group", id: "120363@g.us" },
-      },
-    },
-
-    // Priority 2: WhatsApp business account → work agent
-    {
-      agentId: "work",
-      match: { channel: "whatsapp", accountId: "business" },
-    },
-
-    // Priority 3: Any WhatsApp → home agent
-    {
-      agentId: "home",
-      match: { channel: "whatsapp" },
-    },
-
-    // Priority 4: Default agent (home)
-  ],
+  $include: ["./agents.json", "./cron.json"],
+  workspace_id: "my-workspace",   // wins over the same key in an included file
 }
 ```
 
----
+### Secret references
 
-## Agent Directory Structure
+A string field may hold a JSON object instead of a value:
+`{"source": "env", "id": "SLACK_BOT_TOKEN"}` (`secrets.SecretRef`,
+`pkg/secrets/types.go`). `secrets.DefaultResolver()`
+(`pkg/secrets/factory.go`) knows four sources: `env` (the variable's name),
+`file` (a path whose content is the secret), `exec` (a command run through
+the shell, its output the secret, `pkg/secrets/providers/exec.go`) and, on
+macOS, `keychain` (the item's name). A string that is not such an object
+passes through unchanged (`Resolver.ResolveString`, `pkg/secrets/resolver.go`).
 
-Each agent has isolated state directory:
+The loader resolves references in four fields only: `channels.slack.botToken`,
+`channels.slack.appToken`, `channels.slack.signingSecret` and
+`database.postgres.url`. Nothing reads those fields today (see `channels`
+and `database` below), so the mechanism is in place ahead of a consumer.
+Provider keys never go through it: `memdoor connect` keeps them in
+`~/.memdoor/providers.json` as a literal, an environment variable's name or a
+`!command`, and resolves them at use.
 
-```
-~/.memdoor/
-├── memdoor.json               # Main config
-├── agents/
-│   ├── main/
-│   │   ├── agent/               # Agent-specific state
-│   │   │   ├── auth-profiles.json
-│   │   │   ├── model-registry.json
-│   │   │   └── agent-config.json
-│   │   ├── sessions/            # Session store
-│   │   │   └── sessions.jsonl
-│   │   └── memory/              # Memory files
-│   │       └── 2026-02-20.md
-│   ├── work/
-│   │   ├── agent/
-│   │   ├── sessions/
-│   │   └── memory/
-│   └── family/
-│       ├── agent/
-│       ├── sessions/
-│       └── memory/
-├── workspace/                   # Main agent workspace
-├── workspace-work/              # Work agent workspace
-├── workspace-family/            # Family agent workspace
-└── channels/                    # Channel session storage
-    └── whatsapp/
-        ├── personal.db
-        └── business.db
-```
+## The sections
 
----
+The top level of `Config` (`gateway/config/types.go`), with the name each
+section has in the file:
 
-## Success Criteria
+| Key | Type | Read by |
+|---|---|---|
+| `workspace_id` | string | the CLI's workspace resolution |
+| `agents` | `AgentsConfig` | the agent runtime at boot |
+| `bindings` | `[]Binding` | nothing (parsed and validated only) |
+| `session` | `SessionConfig` | `gateway/session_persistence.go` |
+| `cron` | `CronConfig` | `gateway/cron/scheduler.go` |
+| `queue` | `QueueConfig` | nothing (parsed only) |
+| `channels` | `ChannelsConfig` | `gateway/channels/factory.go`, which builds no adapter |
+| `tools` | `ToolsConfig` | `gateway/a2a_integration.go` |
+| `agent` | `AgentConfig` | `gateway/server.go`, its `id` only |
+| `database` | `DatabaseConfig` | `gateway/repository/factory.go` |
 
-### Week 22 Completion Checklist
+**`workspace_id`** is the slug of this machine's workspace, written by
+`memdoor setup` once the gateway has registered it (`persistWorkspaceSlug`,
+`cmd/cli/cmd/setup.go`) and by `memdoor auth login*` (`pinWorkspace`,
+`cmd/cli/cmd/auth.go`). It is the last step of the resolution chain in
+`cmd/cli/cmd/workspace_discovery.go`: `-w`, then `$MEMDOOR_WORKSPACE`, then
+a `.memdoor/workspace` file walked up from the current directory, then this
+field; `memdoor workspace which` prints which one answered.
 
-- [ ] JSON5 config parser implementation
-- [ ] Schema validation system
-- [ ] Config file loading with env var fallback
-- [ ] `$include` directive support
-- [ ] Multi-agent routing logic
-- [ ] Binding resolution (peer → account → channel → default)
-- [ ] CLI commands (`config get`, `config set`, `config unset`)
-- [ ] `memdoor setup` command creates default config
-- [ ] Migration guide documentation
-- [ ] Multi-agent examples documentation
-- [ ] Unit tests for config parser
-- [ ] Integration tests for multi-agent routing
+**`agents`** has `defaults` and `list`. `AgentDefaultsConfig` holds
+`workspace`, `tools`, `identity` and `compaction`; each `AgentConfig` in the
+list holds `id`, `default`, `name`, `workspace`, `agent_dir`, `skills`,
+`tools`, `identity` and `compaction`. There is no model field, on purpose:
+the model is the provider's, chosen by a `/model` pin, else the engine
+chosen at start from the environment's keys, else the first provider added
+with `memdoor connect` (`providers.ClientFactory`,
+`gateway/providers/factory.go`; `docs/features/PROVIDERS.md`). At boot the
+gateway builds its runtime from `Config.GetDefaultAgent()`: the entry marked
+`default`, else the first. The agents the CLI lists and mentions
+(`memdoor agent list`, `@coder`) are buddies in SQLite, not this list; the
+file-backed agent store was removed because it made a second source of
+truth (`gateway/repository/factory.go`).
 
----
+- `tools` (`AgentToolsConfig`): `profile`, `allow`, `deny`. A deny wins; an
+  allow list, merged with the profile, is then the whole set; with neither,
+  every tool is allowed (`AgentConfig.IsToolAllowed`, applied in
+  `gateway/agent_runtime_tools.go`). Profiles are in
+  `gateway/config/tool_policy.go`: `minimal`, `chat` (the default),
+  `default`, `coding`, `messaging`, `full`; a name may be a group such as
+  `group:fs`, `group:runtime`, `group:web` or `group:sessions_spawn`, which
+  `ExpandToolGroups` spells out.
+- `compaction` (`CompactionConfig`, the agent's over `defaults`,
+  `resolveCompactionConfig` in `gateway/agent_adapter.go`): `enabled`
+  (unset is on), `compactionPercent` (default 60 of the window),
+  `thresholdTokens` (a fixed trigger that wins over the percent),
+  `keepRecentTokens` (what `/compact` keeps word for word, default 12000)
+  and `memoryFlush`.
+- `identity` (`IdentityConfig`): `name`, `emoji`, `avatar`.
+- `workspace` is the agent's bootstrap directory (AGENTS.md, SOUL.md,
+  skills); it is not where the coder writes, which is the directory the
+  TUI was launched from.
 
-## References
+**`bindings`** (`Binding`: `agent_id`, `match` with `channel`,
+`account_id`, `peer`) are parsed, validated against the agent list and
+counted by `memdoor config validate`; no code routes on them.
 
-**OpenClaw Source Files**:
-- `src/config/config.ts` - Config structure
-- `src/config/load-config.ts` - Config loading
-- `src/config/schema.ts` - Config schema
-- `src/config/includes.ts` - Include processing
-- `src/agents/routing.ts` - Agent routing logic
+**`session`** (`SessionConfig`): `store`, a path template with `{agentId}`;
+`main_key` (default `main`); `scope` (`per-agent` by default);
+`max_tool_result_bytes` (default 50000, `DefaultMaxToolResultBytes`) and
+`truncation_message_tail`, the two that bound a tool result kept in a session
+(`gateway/session_persistence.go`).
 
-**OpenClaw Documentation**:
-- the openclaw repo: `docs/concepts/multi-agent.md`
-- the openclaw repo: `docs/gateway/configuration.md`
-- the openclaw repo: `docs/gateway/configuration-examples.md`
+**`cron`** (`CronConfig`): `enabled` (default true; off, no scheduler is
+started, `gateway/server.go`), `store`, and `jobs`, each a `CronJob` with
+`id`, `schedule`, `agent_id`, `message`, `enabled`. Jobs written in the file
+are registered at start as legacy (`registerConfiguredJobs`,
+`gateway/cron/scheduler.go`); the jobs people and agents add, with
+`memdoor cron add` and the `cron` tool, live in SQLite
+(`cron.NewDBJobStore`) and carry the extra fields `workdir`, `session_key`,
+`max_runs`, `run_count` and `expires_at` (`docs/features/cron-jobs.md`).
 
-**Related Memdoor Docs**:
-- `docs/MULTI_AGENT_ARCHITECTURE.md` - Multi-agent design
-- `docs/OPENCLAW_PARITY_ANALYSIS.md` - Feature parity tracker
+**`queue`** (`QueueConfig`: `mode`, `debounce_ms`, `cap`, `drop_policy`,
+`lanes`) has getters with defaults in `types.go` and no caller outside the
+package.
 
----
+**`channels`** (`ChannelsConfig`) declares `whatsapp` and `slack` structs.
+`InitializeChannels` in `gateway/channels/factory.go` builds nothing from
+them: an enabled Slack block logs that the adapter is not implemented, and
+there is no WhatsApp adapter. The channels a gateway serves are its own: the
+TUI's websocket, the CLI, the remote page, cron, peers.
 
-## Open Questions
+**`tools.agentToAgent`** (`A2AConfig`): `enabled`, `allow` as a list of
+`{from, to}` with `*` as a wildcard, `maxPingPongTurns`. `loadA2APolicy` in
+`gateway/a2a_integration.go` turns it into the authorization policy for
+`sessions_send`; absent, `authorization.DefaultA2APolicy()` applies.
 
-1. **Default model**: Should we default to `claude-sonnet-4-5` or require explicit config?
-   - **Recommendation**: Default to Sonnet 4.5 for backward compatibility
+**`agent`** is the single-agent form kept for old files; only its `id` is
+read, to wire `sessions_send` (`gateway/server.go`).
 
-2. **Env var precedence**: Should config file override env vars or vice versa?
-   - **OpenClaw**: Config file overrides env vars
-   - **Recommendation**: Same (config file wins)
+**`database`** (`DatabaseConfig`): `type` and `sqlite.path` (default
+`~/.memdoor/data/memdoor.db`). `file` and `postgres` blocks parse, but
+`NewRepositoryFactory` in `gateway/repository/factory.go` accepts `sqlite`
+and nothing else.
 
-3. **Hot reload**: Should config changes trigger gateway restart?
-   - **OpenClaw**: Yes, with `config.apply` RPC
-   - **Recommendation**: Implement in Week 23
+## Environment variables
 
-4. **Schema strictness**: Reject unknown keys or allow them?
-   - **OpenClaw**: Strict - rejects unknown keys
-   - **Recommendation**: Same (fail-fast on misconfiguration)
+The file carries no address, port or key; those come from flags and the
+environment, and none of them overrides a value in the file.
 
----
+| Variable | What it sets | Where it is read |
+|---|---|---|
+| `MEMDOOR_HOST` | the address the gateway binds; default `0.0.0.0`, `localhost` keeps it to the machine; `--host` wins | `cmd/cli/cmd/gateway.go` |
+| `MEMDOOR_PORT` | the service's port for the installer and the ssh door; the binary itself takes `--port` (18789) | `scripts/install.sh`, `cmd/cli/cmd/gateway_ssh.go` |
+| `MEMDOOR_GATEWAY` | the address the CLI and TUI dial: a URL, `host:port`, a bare host, or `ssh://[user@]box[:port]`; `--gateway` wins | `cmd/cli/cmd/root.go` |
+| `MEMDOOR_WORKSPACE` | the workspace slug, second in the resolution chain | `cmd/cli/cmd/workspace_discovery.go` |
+| `MEMDOOR_APPROVE` | approval mode (`changes` asks before bash, writes and MCP tools); wins over the `approve` setting | `gateway/approval.go` |
+| `OPEN_ROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `AI_GATEWAY_BASE_URL` with `*_AI_GATEWAY_TOKEN`, `MEMDOOR_MODEL`, `MEMDOOR_VENDOR_HEADERS`, `MEMDOOR_MODEL_CONTEXT` | the built-in providers and the engine chosen at start | `gateway/providers/registry.go`, `vendor.go`; `docs/features/PROVIDERS.md` |
+| `MEMDOOR_SYSTEMONE_API_KEY` (or `TYPESAFE_API_KEY`), `MEMDOOR_SYSTEMONE_URL`, `MEMDOOR_SYSTEMONE_MODEL` | an explicit decision model; else the person's OpenRouter key judges | `gateway/decisions.go`; `docs/features/DECIDE.md` |
+| `MEMDOOR_NO_BROWSER` | never open a browser from `memdoor connect` and `memdoor mcp` | `cmd/cli/cmd/providers.go`, `mcp.go` |
+| `MEMDOOR_TELEMETRY_ENABLED` | WARN and above sent to memdoor.ai, off by default | `docs/internal/TELEMETRY.md` |
 
-## Next Steps
+`docs/SECURITY.md` lists every host the binary names; `gateway/egress_test.go`
+fails the build on a new one.
 
-1. Review this design document
-2. Implement config parser (Week 22)
-3. Add multi-agent routing logic
-4. Create CLI commands
-5. Write migration guide
-6. Test with multi-agent examples
+## Workspace settings, outside the file
 
-**Estimated Effort**: 1 week (Week 22)
-**Complexity**: Medium (requires routing logic + parser)
-**Value**: High (unlocks multi-agent, A2A communication, subagents)
+The gates are rows in the `workspace_settings` table, read on every call so
+a change needs no restart, written by an admin through
+`PUT /api/workspace/settings` (`gateway/workspace_settings_handlers.go`;
+`globalSettingKeys` is the whole list and a key not in it is refused):
+
+- `tool_guards`: regexp block rules per tool, set with `memdoor guards add
+  --tool bash --pattern '\bsudo\b'` (`cmd/cli/cmd/guards.go`,
+  `gateway/tool_guards.go`).
+- `approve`: `changes` or `off` (`gateway/approval.go`); `MEMDOOR_APPROVE`
+  wins when set.
+- `edit_format`: `patch` or `hashline` (`docs/features/HASHLINE.md`).
+- The decision model's switches (`gateway/decisions.go`,
+  `gateway/tool_routing.go`): `decision_message_gate` and
+  `decision_gate_threshold`, `decision_tool_routing` and `tool_families`,
+  `decision_turn_verdict`, `decision_turn_stop`,
+  `decision_result_acceptance` and `decision_result_acceptance_threshold`.
+
+Only the guards have a command; the others are set with the PUT, as
+`docs/reference/CLI.md` shows with a curl.
+
+## The other files under `~/.memdoor`
+
+`providers.json` is what `memdoor connect` keeps (mode 0600; the key as
+given, never resolved onto disk; `gateway/providers/registry.go`);
+`workspace/` holds the bootstrap files and the agents' directories;
+`skills/` is the seeded skill library (`docs/reference/SKILLS.md`);
+`data/memdoor.db` is the database; `workflows/<name>/` is the workflow
+library (`docs/features/WORKFLOWS.md`); MCP servers are a project's
+`.mcp.json` and `~/.memdoor/mcp.json` (`pkg/mcp/config.go`). A project's own
+`.memdoor/` is looked at first for the config file, workflows and the
+`workspace` pin.
+
+## Commands
+
+`memdoor config validate` runs `Validate()` and prints the counts (agents,
+bindings, cron jobs) and the path it read; `memdoor config show` prints the
+loaded `Config` as JSON with the defaults filled in; `memdoor config get
+agents.defaults.workspace` reads one value by dot path. All three are in
+`cmd/cli/cmd/config_cmd.go`.

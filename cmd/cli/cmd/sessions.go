@@ -17,7 +17,7 @@ import (
 
 var sessionsCmd = &cobra.Command{
 	Use:   "sessions",
-	Short: "Manage sessions",
+	Short: "The gateway's live sessions: list, get, rewind a few turns, clear, export",
 }
 
 // shortSessionKey makes a session key readable. The raw form

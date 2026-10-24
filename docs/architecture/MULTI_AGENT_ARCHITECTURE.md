@@ -1,699 +1,224 @@
-# Multi-Agent Architecture Design
-
-**Date**: 2026-02-19
-**Status**: Design Phase
-**Priority**: HIGH (Phase 1, Week 22)
-
-> ⚠ **Historical design.** YAML/JSON config examples below showing
-> per-agent `model: "anthropic/..."` fields are historical: the agent
-> schema has no `Model` field; the model comes from a provider on the
-> person's own key (`/model` pins one). The multi-agent structure
-> (per-agent workspace, tool palette, sandbox scope) is
-> unchanged. The file paths named below (`cmd/cli/cmd/*`, `gateway/agents/*`,
-> `gateway/channels/*`, `gateway/workspace/*`) are the design's, not the
-> tree's: the command tree moved out of `cmd/cli` and those packages were
-> reorganized; treat the names as illustrative.
-
-This document outlines the design for implementing OpenClaw-style multi-agent support in Memdoor.
-
----
-
-## Executive Summary
-
-OpenClaw supports **multiple isolated agents** within a single gateway instance, each with:
-- Separate workspaces and configuration
-- Independent session storage
-- Dedicated channel accounts (accountId)
-- Deterministic message routing via bindings
-
-**Memdoor Current State**: Single agent ("main") only
-
-**Goal**: Implement full multi-agent support to enable:
-1. Multiple people sharing one gateway
-2. Different personalities per agent
-3. Different models per agent
-4. Isolated workspaces and auth
-
----
-
-## OpenClaw Multi-Agent Architecture
-
-### Directory Structure
-
-```
-~/.openclaw/
-├── openclaw.json                    # Main config with agents.list[] and bindings[]
-├── agents/
-│   ├── main/
-│   │   ├── agent/                  # Agent state (auth, model cache, etc.)
-│   │   └── sessions/               # Per-agent sessions SQLite
-│   ├── work/
-│   │   ├── agent/
-│   │   └── sessions/
-│   └── family/
-│       ├── agent/
-│       └── sessions/
-├── workspace/                       # Default workspace (main agent)
-├── workspace-work/                  # Work agent workspace
-├── workspace-family/                # Family agent workspace
-└── credentials/
-    └── whatsapp/
-        ├── default/                 # WhatsApp account "default"
-        └── personal/                # WhatsApp account "personal"
-```
-
-### Session Key Format
-
-**Pattern**: `agent:<agentId>:<rest>`
-
-**Examples**:
-- `agent:main:main` - Default agent, main session
-- `agent:work:main` - Work agent, main session
-- `agent:main:whatsapp:dm:+15551234567` - DM session
-- `agent:main:discord:group:123456789` - Group session
-- `agent:work:telegram:default:dm:tg:123456` - Per-account DM
-- `agent:main:main:thread:abc123` - Thread session
-
-**Key Components**:
-1. **agentId**: Which agent "brain" to use
-2. **mainKey**: Default session key (usually "main")
-3. **channel**: Channel name (whatsapp, discord, etc.)
-4. **accountId**: Channel account identifier
-5. **peerKind**: dm, group, channel
-6. **peerId**: User/group ID
-7. **threadId**: Optional thread suffix
-
----
-
-## Bindings System
-
-**Purpose**: Route incoming messages to the correct agent
-
-### Binding Structure
-
-```typescript
-{
-  agentId: "work",
-  match: {
-    channel: "whatsapp",
-    accountId: "personal",
-    peer: {
-      kind: "direct",
-      id: "+15551234567"
-    }
-  }
-}
-```
-
-### Routing Priority (Most-Specific Wins)
-
-1. **Peer match** - Exact DM/group/channel ID
-2. **ParentPeer match** - Thread inheritance
-3. **GuildId + roles** - Discord role routing
-4. **GuildId** - Discord server
-5. **TeamId** - Slack workspace
-6. **AccountId match** - Channel account
-7. **Channel-level match** - Any message from channel
-8. **Fallback** - Default agent (first in `agents.list[]` with `default: true`)
-
-### Example Bindings Config
-
-```json5
-{
-  agents: {
-    list: [
-      {
-        id: "main",
-        default: true,
-        workspace: "~/.memdoor/workspace",
-        model: "anthropic/claude-sonnet-4-5"
-      },
-      {
-        id: "work",
-        workspace: "~/.memdoor/workspace-work",
-        model: "anthropic/claude-opus-4"
-      },
-      {
-        id: "family",
-        workspace: "~/.memdoor/workspace-family",
-        tools: {
-          allow: ["read", "sessions_list"],
-          deny: ["write", "exec", "browser"]
-        }
-      }
-    ]
-  },
-
-  bindings: [
-    // Specific WhatsApp group to family agent
-    {
-      agentId: "family",
-      match: {
-        channel: "whatsapp",
-        accountId: "personal",
-        peer: { kind: "group", id: "120363999999999999@g.us" }
-      }
-    },
-
-    // Work WhatsApp account to work agent
-    {
-      agentId: "work",
-      match: { channel: "whatsapp", accountId: "work" }
-    },
-
-    // All Discord to main agent
-    {
-      agentId: "main",
-      match: { channel: "discord" }
-    },
-
-    // Specific Telegram user to work agent
-    {
-      agentId: "work",
-      match: {
-        channel: "telegram",
-        peer: { kind: "direct", id: "tg:123456789" }
-      }
-    }
-  ]
-}
-```
-
----
-
-## Memdoor Current Architecture
-
-### Directory Structure (Current)
-
-```
-~/.memdoor/
-├── agents/
-│   └── main/                       # Only one agent
-│       ├── agent.json              # Agent metadata
-│       └── workspace -> ../../workspace/
-├── channels/
-│   └── whatsapp.db                 # WhatsApp session (global)
-├── sessions/                       # Global sessions (not per-agent!)
-│   └── sessions.db
-├── workspace/                      # Global workspace
-│   ├── memory/
-│   ├── skills/
-│   └── .git/
-├── config.json                     # Gateway config
-└── memdoor.yaml                  # User config (legacy)
-```
-
-### Session Management (Current)
-
-**File**: `gateway/session.go`
-
-```go
-type SessionManager struct {
-    sessions map[string]*Session
-    mu       sync.RWMutex
-}
-
-type Session struct {
-    ID           string
-    AgentID      string
-    CreatedAt    time.Time
-    LastActivity time.Time
-    Messages     []Message
-}
-```
-
-**Issues**:
--  Sessions stored globally, not per-agent
--  No session key format (agent:agentId:rest)
--  Single workspace reference
--  No bindings system
--  No accountId support
-
----
-
-## Implementation Plan
-
-### Phase 1: Agent Infrastructure (Week 22)
-
-#### 1.1 Agent Manager
-
-**File**: `gateway/agents/manager.go`
-
-```go
-type Agent struct {
-    ID         string
-    Name       string
-    Default    bool
-    Workspace  string
-    AgentDir   string
-    Model      string
-    Sandbox    *SandboxConfig
-    Tools      *ToolsConfig
-}
-
-type AgentManager struct {
-    agents     map[string]*Agent
-    defaultID  string
-    mu         sync.RWMutex
-}
-
-func (m *AgentManager) GetAgent(id string) (*Agent, error)
-func (m *AgentManager) ListAgents() []*Agent
-func (m *AgentManager) GetDefaultAgent() *Agent
-```
-
-#### 1.2 Session Key Parser
-
-**File**: `gateway/agents/session_key.go`
-
-```go
-type ParsedSessionKey struct {
-    AgentID   string
-    MainKey   string
-    Channel   string
-    AccountID string
-    PeerKind  string
-    PeerID    string
-    ThreadID  string
-}
-
-func ParseSessionKey(key string) (*ParsedSessionKey, error)
-func BuildAgentMainSessionKey(agentID, mainKey string) string
-func BuildAgentPeerSessionKey(params PeerSessionParams) string
-```
-
-#### 1.3 Bindings System
-
-**File**: `gateway/agents/bindings.go`
-
-```go
-type Binding struct {
-    AgentID string
-    Match   BindingMatch
-}
-
-type BindingMatch struct {
-    Channel   string
-    AccountID string
-    Peer      *PeerMatch
-    GuildID   string
-    TeamID    string
-}
-
-type PeerMatch struct {
-    Kind string // "direct", "group", "channel"
-    ID   string
-}
-
-type BindingResolver struct {
-    bindings []Binding
-    mu       sync.RWMutex
-}
-
-func (r *BindingResolver) ResolveAgent(msg *IncomingMessage) (string, error)
-```
-
-#### 1.4 Per-Agent Sessions
-
-**File**: `gateway/agents/session_store.go`
-
-```go
-type AgentSessionStore struct {
-    agentID string
-    dbPath  string
-    db      *sql.DB
-}
-
-func NewAgentSessionStore(agentID string) (*AgentSessionStore, error)
-func (s *AgentSessionStore) GetSession(sessionKey string) (*Session, error)
-func (s *AgentSessionStore) SaveSession(session *Session) error
-```
-
-**Database Path**: `~/.memdoor/agents/<agentId>/sessions/sessions.db`
-
-### Phase 2: Configuration System (Week 22)
-
-#### 2.1 Config Structure
-
-**File**: `gateway/config/config.go`
-
-```go
-type Config struct {
-    Agents   AgentsConfig
-    Bindings []Binding
-    Channels ChannelsConfig
-    Tools    ToolsConfig
-}
-
-type AgentsConfig struct {
-    List []AgentConfig
-}
-
-type AgentConfig struct {
-    ID        string
-    Name      string
-    Default   bool
-    Workspace string
-    AgentDir  string
-    Model     string
-    Sandbox   *SandboxConfig
-    Tools     *ToolsConfig
-}
-```
-
-#### 2.2 Config Loader
-
-**File**: `gateway/config/loader.go`
-
-```go
-func LoadConfig(path string) (*Config, error)
-func WatchConfig(path string, onChange func(*Config)) error
-func ValidateConfig(cfg *Config) error
-```
-
-**Config Paths**:
-1. `~/.memdoor/memdoor.json` (primary, JSON5 format)
-2. `~/.memdoor/config.yaml` (legacy, YAML format)
-3. `MEMDOOR_CONFIG_PATH` env var
-
-### Phase 3: Channel Account Support (Week 23)
-
-#### 3.1 Account Manager
-
-**File**: `gateway/channels/accounts.go`
-
-```go
-type AccountManager struct {
-    accounts map[string]map[string]*Account // channelID -> accountID -> Account
-    mu       sync.RWMutex
-}
-
-type Account struct {
-    ID        string
-    ChannelID string
-    AuthDir   string
-    Config    map[string]interface{}
-}
-
-func (m *AccountManager) GetAccount(channelID, accountID string) (*Account, error)
-func (m *AccountManager) RegisterAccount(account *Account) error
-```
-
-#### 3.2 Update WhatsApp Adapter
-
-**File**: `gateway/channels/whatsapp/adapter.go`
-
-- Add `AccountID` field
-- Support multiple WhatsApp accounts
-- Store auth in `~/.memdoor/credentials/whatsapp/<accountId>/`
-
-### Phase 4: Workspace Per Agent (Week 23)
-
-#### 4.1 Workspace Manager
-
-**File**: `gateway/workspace/agent_workspace.go`
-
-```go
-type AgentWorkspace struct {
-    AgentID   string
-    Path      string
-    MemoryDir string
-    SkillsDir string
-    GitRepo   *git.Repository
-}
-
-func NewAgentWorkspace(agentID string, path string) (*AgentWorkspace, error)
-func (w *AgentWorkspace) Initialize() error
-func (w *AgentWorkspace) GetMemoryPath(date time.Time) string
-```
-
-**Workspace Paths**:
-- Default: `~/.memdoor/workspace` (main agent)
-- Named: `~/.memdoor/workspace-<agentId>`
-- Custom: User-specified path in config
-
-### Phase 5: Integration (Week 23)
-
-#### 5.1 Update Server
-
-**File**: `gateway/server.go`
-
-```go
-type Server struct {
-    port          int
-    agentManager  *agents.AgentManager
-    bindings      *agents.BindingResolver
-    sessionStores map[string]*agents.AgentSessionStore // agentID -> store
-    // ... rest
-}
-
-func (s *Server) handleChannelMessage(msg *adapters.IncomingMessage) error {
-    // 1. Resolve agent via bindings
-    agentID, err := s.bindings.ResolveAgent(msg)
-
-    // 2. Get agent config
-    agent, err := s.agentManager.GetAgent(agentID)
-
-    // 3. Build session key
-    sessionKey := agents.BuildAgentPeerSessionKey(...)
-
-    // 4. Get session store for this agent
-    store := s.sessionStores[agentID]
-    session, err := store.GetOrCreateSession(sessionKey)
-
-    // 5. Execute with agent's runtime
-    response, err := s.executeAgentJob(ctx, agent, session, msg.Text)
-
-    // 6. Send response
-    return s.channelRouter.SendMessage(msg.ChannelID, msg.ChannelUserID, response.Text)
-}
-```
-
----
-
-## Migration Strategy
-
-### Step 1: Add Multi-Agent Support (Non-Breaking)
-
-**Week 22**:
-1.  Add `AgentManager` (default to "main")
-2.  Add `BindingResolver` (empty bindings = use default)
-3.  Add per-agent session stores
-4.  Keep existing single-agent behavior as default
-
-**Backward Compatibility**:
-- If no `agents.list[]` in config → create default "main" agent
-- If no bindings → all messages go to default agent
-- Existing sessions in `~/.memdoor/sessions/` → migrate to `~/.memdoor/agents/main/sessions/`
-
-### Step 2: Enable Config File (Week 22)
-
-1. Create `~/.memdoor/memdoor.json` loader
-2. Support YAML fallback for legacy configs
-3. Validate config structure
-4. Add `memdoor config` commands
-
-### Step 3: Add Multi-Account Support (Week 23)
-
-1. Update channel adapters to support `accountId`
-2. Store credentials per-account
-3. Update bindings to match on `accountId`
-
-### Step 4: Documentation (Week 23)
-
-1. Multi-agent setup guide
-2. Bindings examples
-3. Migration guide from single to multi-agent
-
----
-
-## Example Use Cases
-
-### Use Case 1: Multiple People, One Gateway
-
-**Scenario**: Alice and Bob share a Memdoor gateway
-
-**Config**:
-```json5
-{
-  agents: {
-    list: [
-      { id: "alice", workspace: "~/.memdoor/workspace-alice" },
-      { id: "bob", workspace: "~/.memdoor/workspace-bob" }
-    ]
-  },
-  bindings: [
-    {
-      agentId: "alice",
-      match: {
-        channel: "whatsapp",
-        accountId: "alice-phone"
-      }
-    },
-    {
-      agentId: "bob",
-      match: {
-        channel: "whatsapp",
-        accountId: "bob-phone"
-      }
-    }
-  ]
-}
-```
-
-**Benefits**:
--  Separate workspaces (no data mixing)
--  Separate auth/credentials
--  Separate session histories
--  Independent agent personalities
-
-### Use Case 2: Different Models Per Context
-
-**Scenario**: Fast agent for chat, Opus for deep work
-
-**Config**:
-```json5
-{
-  agents: {
-    list: [
-      {
-        id: "chat",
-        model: "anthropic/claude-sonnet-4-5",
-        workspace: "~/.memdoor/workspace-chat"
-      },
-      {
-        id: "opus",
-        model: "anthropic/claude-opus-4",
-        workspace: "~/.memdoor/workspace-opus"
-      }
-    ]
-  },
-  bindings: [
-    {
-      agentId: "chat",
-      match: { channel: "whatsapp" }
-    },
-    {
-      agentId: "opus",
-      match: { channel: "telegram" }
-    }
-  ]
-}
-```
-
-### Use Case 3: Restricted Family Bot
-
-**Scenario**: Family WhatsApp group with tool restrictions
-
-**Config**:
-```json5
-{
-  agents: {
-    list: [
-      {
-        id: "family",
-        workspace: "~/.memdoor/workspace-family",
-        tools: {
-          allow: ["read", "sessions_list"],
-          deny: ["write", "exec", "browser", "edit"]
-        }
-      }
-    ]
-  },
-  bindings: [
-    {
-      agentId: "family",
-      match: {
-        channel: "whatsapp",
-        peer: { kind: "group", id: "120363999999999999@g.us" }
-      }
-    }
-  ]
-}
-```
-
----
-
-## Testing Plan
-
-### Unit Tests
-
-1. **Session Key Parsing**
-   - Parse various formats
-   - Build session keys
-   - Extract agent ID
-
-2. **Bindings Resolution**
-   - Peer matching
-   - Channel matching
-   - Account matching
-   - Priority ordering
-
-3. **Agent Manager**
-   - Get agent by ID
-   - List agents
-   - Get default agent
-
-### Integration Tests
-
-1. **Multi-Agent Routing**
-   - Message from WhatsApp account A → agent A
-   - Message from WhatsApp account B → agent B
-   - Fallback to default agent
-
-2. **Session Isolation**
-   - Agent A session != Agent B session
-   - Same channel user → different agents → different sessions
-
-3. **Workspace Isolation**
-   - Agent A memory files != Agent B memory files
-   - Separate git repos
-
----
-
-## Success Criteria
-
-### Week 22 Completion Checklist
-
-- [ ] `AgentManager` implementation
-- [ ] Session key parser
-- [ ] Bindings resolver
-- [ ] Per-agent session stores
-- [ ] Config file loader (JSON5)
-- [ ] Backward compatibility (default "main" agent)
-- [ ] Session migration script
-- [ ] Unit tests (80%+ coverage)
-
-### Week 23 Completion Checklist
-
-- [ ] Multi-account channel support
-- [ ] Per-agent workspaces
-- [ ] WhatsApp multi-account
-- [ ] Integration tests
-- [ ] Documentation
-- [ ] Migration guide
-
----
-
-## Open Questions
-
-1. **Config reload**: Support hot reload like OpenClaw?
-   - **Decision**: Yes, implement file watcher in Week 22
-
-2. **Agent-to-agent messaging**: Support cross-agent sessions?
-   - **Decision**: Not in Phase 1, add in Phase 3 if needed
-
-3. **Per-agent models**: Allow different LLM providers?
-   - **Decision**: Yes, each agent can specify model in config
-
-4. **Shared skills**: Can agents share skill directories?
-   - **Decision**: Yes, default to shared `~/.memdoor/workspace/skills/`, allow per-agent override
-
----
-
-## References
-
-- OpenClaw Multi-Agent Docs: `~/Dev/openclaw/docs/configuration/multi-agent.md`
-- OpenClaw Session Keys: `~/Dev/openclaw/src/routing/session-key.ts`
-- OpenClaw Bindings: `~/Dev/openclaw/src/routing/bindings.ts`
-- OpenClaw Config: `~/Dev/openclaw/src/config/`
+# Multi-agent architecture
+
+Several agents share one gateway. Each has its own tool palette, its own
+prompt and its own transcript; they meet in a channel, where a mention of one
+by another is a turn, and a run one of them spawns reports back by waking the
+conversation that asked for it. This page names the code that does each part.
+
+## The agents
+
+A gateway seeds its agents into every active workspace at boot and at setup
+(`gateway/agent_seeding.go`, `ensureDefaultAgents`): rows of the `buddies`
+table, `INSERT OR IGNORE`, so a person's edits to one survive a restart.
+`memdoor agent list` prints what a workspace has.
+
+| Agent | Palette (`buddies.tools`) | Role |
+|-------|---------------------------|------|
+| coder | `coderToolPalette`: bash, read_file, apply_patch, grep, jgrep, jread, glob, todo_write, todo_read, locate, skill, ask_user_question, notes, recall, web_search, web_fetch, mcp, cron, workflow, sessions_spawn | reads, writes and runs code in the project the window was launched from |
+| planner | read_file, grep, glob, todo_write, ask_user_question, task_flow | researches read-only and writes a spec for the coder |
+| verifier | verify, read_file | runs build/test/run through `verify` and reports PASS/FAIL |
+| runner | bash, read_file | runs a program and reports what it printed |
+| narrator | none | speaks only; its prompt turns the coder's tool activity into commentary |
+| chief | web_fetch, web_search, memory, channels, send_email | the workspace's general agent |
+
+The palette is the allowlist for every turn the agent runs.
+`gateway/agent_runtime_tools.go` `filteredToolsFor` reads `buddy.Tools` from
+the turn's context (`sharedctx.BuddyToolsKey`) and keeps only those names out
+of the tools registered for the turn; the entry `mcp` admits every tool an MCP
+server contributes, and `memory` is added to any palette wider than one tool.
+A turn woken on an agent's behalf carries the palette on its job
+(`queue.AgentJob.BuddyTools`), so no turn runs as a blank default agent.
+
+Skills are files, not rows: the `skill` tool (in the coder's palette) loads
+`<name>.md` disk-first, `<project>/.agents/skills/` before `~/.memdoor/skills/`
+(seeded at boot from the repo's `skills/`: `chrome`, `review`, `workflow`), and
+`/skill:<name>` in the TUI injects one as the turn's task. The resolution chain
+and the seeding rules are in `docs/reference/SKILLS.md`.
+
+## One transcript per agent
+
+A turn in a channel runs on the session key
+`workspace:<ws>:channel:<ch>` (`pkg/message/service.go` `executeAgentTurn`,
+`shared.NewChannelSessionID`). Every agent mentioned in that channel shares
+the key, because the window subscribes to it for the run's events. The
+transcript the model reasons over is not shared: `gateway/agent_runtime_session.go`
+`transcriptKey` appends `:agent:<name>` to the key, and
+`gateway/session_persistence.go` `resolveSessionStorePath` maps that to
+
+    ~/.memdoor/workspaces/<ws>/channels/<ch>/agents/<agent>/sessions.json
+
+so the coder never loads the planner's tool calls and the planner never loads
+the coder's. What an agent does see of the others is the channel itself:
+`loadChannelHistory` gives each turn the channel's last twenty messages,
+replies included. Two more kinds of session get a file of their own, for the
+same reason: a spawned run, keyed `agent:<agent>:subagent:<run-id>`, lives
+under `~/.memdoor/subagents/`, and a workflow task's turn under
+`~/.memdoor/workflow-sessions/`, so one run never reads the one before it.
+
+## A mention is a turn
+
+The window, `memdoor run` and `memdoor agent -m` post to `/api/messages`
+(`gateway/message_handlers.go` `handleMessages`), which calls
+`pkg/message/service.go` `PostMessage`. The window prefixes the session's agent
+to every turn; a turn that opens with `@name` runs as that agent instead
+(`cmd/tui/ui/model_ops.go` `RouteByMention`).
+
+`resolveMentions` turns each `@name` (`pkg/message/mention.go` `ParseMentions`)
+into an actor: an agent of the workspace by name, else a person, else a peer's
+agent. The message is saved, broadcast, and `HandleAgentMentions` runs
+detached from the request:
+
+- every mentioned agent runs, except the author itself;
+- a reply in a thread also goes to the thread's lead, the first agent that
+  answered in it (`getThreadLead`);
+- a message that names nobody, in no thread, is offered to the message gate
+  when one is configured (`decision_gate.go`);
+- a person's turn that opens with a name nobody answers to fails the turn,
+  with the reason on the session's event stream (`unansweredMention`,
+  `SetTurnFailed`), instead of leaving the window waiting.
+
+Each agent's turn goes through `executeAgentAndSaveResponse`: the turn gate
+(below), the turn ledger (`TurnLedger.BeginTurn`, which skips a duplicate
+dispatch of the same trigger), then `executeAgentTurn`, which looks the buddy
+up, builds the session, runs the model through `agentExecutor.ProcessMessage`
+and saves the answer as a reply in the thread. When that reply itself
+mentions agents, `HandleAgentMentions` runs again on it, with the turn's
+context carried whole by `asyncTurnContext` (`pkg/message/peers.go`): the
+execution context, the project directory and the mode, so an agent a reply
+wakes works in the thread's project, not the scratch directory.
+
+### The depth bound
+
+`pkg/shared/execution_context.go` keeps `MentionDepth` on the execution
+context. A person's message is depth 0. When an agent's reply mentions
+another agent, `HandleAgentMentions` runs the mentioned agent with
+`WithIncrementedDepth`; `CanMentionAgents` refuses once the depth reaches
+`maxMentionDepth` (2): a person asks the coder, the coder asks the planner,
+the planner answers the coder, and the coder's next mention wakes nobody. A
+person's message always passes the check, so a person can interrupt any chain.
+
+### One turn fanning out
+
+    window                      gateway                                   agents
+      |  POST /api/messages "@coder add the flag"
+      |-------------------------> PostMessage -> HandleAgentMentions (depth 0)
+      |                              |  turnGate(channel, coder)
+      |  events on the session <-----|-----------------------------------> coder turn
+      |                              |  reply "@planner outline the change" saved
+      |                              |  HandleAgentMentions(asyncTurnContext) (depth 1)
+      |                              |  turnGate(channel, planner)
+      |  events on the session <-----|-----------------------------------> planner turn
+      |                              |  reply "@coder here is the outline" saved
+      |                              |  HandleAgentMentions (depth 2)
+      |  events on the session <-----|-----------------------------------> coder turn, woken
+      |                              |  a further mention in its reply: CanMentionAgents false
+
+Each hop is a message in the same thread and a turn in the agent's own
+transcript; the window sees all three because they share the session key.
+
+## Spawned runs
+
+The coder's `sessions_spawn` tool (`tools/subagent_tools.go`
+`SessionsSpawnTool.ExecuteWithSession`) runs a self-contained subtask in
+parallel, in its own session:
+
+1. The child session key is `agent:<agent>:subagent:<run-id>`; the run is
+   registered in `gateway/subagents` `SubagentRegistry` with the requester's
+   session key and the thread root to reply under.
+2. The child's metadata records who waits for it (`requester_session_key`),
+   where the requester works (`requester_workdir`), and the programs the
+   requester's check runs (`done_when_programs`, copied so a child cannot
+   change its parent's check).
+3. The target agent's palette and prompt are resolved at spawn time
+   (`resolveConfig`) and carried on the job; a target with no palette refuses
+   to spawn. Spawning a different agent is checked against the A2A policy
+   (`pkg/authorization/a2a_policy.go`, loaded by `gateway/a2a_integration.go`
+   `loadA2APolicy`; the default allows any agent to spawn any agent).
+4. The job goes to the queue's subagent lane
+   (`gateway/queue/lanes.go` `QueueManager.EnqueueSubagentJob`) with the
+   requester's working directory and a timeout (300 s unless the call says
+   otherwise); the executor cancels the turn when it expires.
+
+While the child runs, `gateway/agent_runtime_progress.go` `requesterOf` finds
+the screen waiting on it and mirrors its tool activity there as `subagent`
+events, which the window shows as "coder · Bash 10s…".
+
+When the child's turn ends, `gateway/server_jobs.go` `handleSubagentCompletion`
+asks the result acceptance (`result_acceptance.go`) whether the task is done;
+the first unfinished result goes back to the child once. An accepted result
+becomes an announcement (`subagents.BuildAnnouncementMessage`) and wakes the
+requester (next section); a child with `cleanup: delete`, the default, has its
+session removed afterwards.
+
+## A wake is a turn
+
+`gateway/server_jobs.go` `wakeConversation` gives a conversation a turn it did
+not type: the message is the thing it was waiting on. It looks up the
+conversation's agent for its palette and prompt, and enqueues an `AgentJob` on
+the main lane, in the conversation's project directory, with the caller's
+context stripped of its cancel (`context.WithoutCancel`) so a run that is
+ending does not take the woken turn down with it. Two callers:
+
+- a spawned run's report, from `handleSubagentCompletion`, as the requesting
+  agent in the requester's session, threaded under the message that started it;
+- a scheduled check's answer, from `postCronAnswer`: the `cron` tool's job
+  answers into the session that scheduled it; `cronAnswerWakes` lets it sleep
+  on when the answer is `HEARTBEAT_OK` (under 100 characters) or the same as
+  the last run's, and otherwise wakes the conversation with "⏱ <job>, the check
+  you scheduled, answered: …".
+
+## Peers: an agent on another gateway (experimental)
+
+`@<peer>:<agent>` reaches an agent of a gateway this person has signed in to
+and named: `memdoor peers add box http://box:18789 --dir /srv/app` writes
+`~/.memdoor/peers.json` (`gateway/peers.go` `LoadPeers`), `memdoor peers` lists
+them (`cmd/cli/cmd/peers.go`). The mechanism is the mention loop above:
+
+- `ParseMentions` accepts the two-part name and `PeerAgent` splits it;
+  `resolveMentions` makes it the actor `agent:box:coder` when `peerSet.IsPeer`
+  knows the peer, else the part before the colon is tried as a local name.
+- `executeAgentTurn` branches before the buddy lookup into `finishPeerTurn`
+  (`pkg/message/peers.go`): the text without the mention, plus a line saying
+  who asked and where the reply lands (`peerAskText`), goes to
+  `peerSet.Ask`, which hands it to the binary's `peerAsk` (a run against the
+  peer gateway with the stored sign-in, in the peer's directory) and streams
+  the peer's text back onto the asking session as a local turn's events.
+- The answer is saved as the thread's reply from `box:coder`, and its mentions
+  are resolved on the asking gateway (`peerReplyMentions`: this gateway's
+  agents, people and peers, never the peer agent itself), so `@coder` in the
+  reply wakes this coder and `@vps:coder` asks another peer, under the same
+  depth bound.
+- The turn is posted on the peer with `AskedByPeer`
+  (`sharedctx.AskedByPeerKey`); there, `askedByPeer` stops the reply's
+  mentions from waking anyone, because the thread the reply belongs to is the
+  asker's.
+
+`docs/features/PEERS.md` has the receipts and the known gaps.
+
+## Concurrency
+
+Two mechanisms order the work; both let different agents and different
+conversations run at the same time.
+
+- `pkg/message/turn_gate.go` `turnGate`: one turn at a time per
+  (channel, agent), in arrival order. A "continue" typed while the coder is
+  mid-turn waits for the turn instead of interleaving with it; the planner in
+  the same channel, or the coder in another, is not held. `TurnActive` lets the
+  turn janitor tell a long working turn from a lost one.
+- `gateway/queue/lanes.go` `QueueManager`: a FIFO lane per session key, and
+  global lanes that cap how many session lanes run at once (main 4, cron 4,
+  subagent 8, nested 8). Wakes, scheduled checks, spawned runs and the run
+  tracker's A2A runs (`gateway/run_tracker.go`) go through it, so two jobs on
+  one session never load the same transcript at once. `docs/reference/QUEUE.md`
+  has the failure the queue exists to prevent.
+
+The turn ledger (`TurnLedger`) makes a dispatch idempotent: the same trigger
+message for the same agent in the same channel runs once.
+
+## Related
+
+- `docs/features/multi-agent-collaboration.md`: mentions from the person's side
+- `docs/features/PEERS.md`: peers, receipts and gaps
+- `docs/features/cron-jobs.md`: scheduled checks and their wakes
+- `docs/reference/QUEUE.md`: the session lanes
+- `docs/reference/SKILLS.md`: where skills live and how they resolve

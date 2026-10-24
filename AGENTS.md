@@ -474,7 +474,7 @@ resolves a pinned model to the provider that lists it, else the engine chosen at
 start (a company's vendor key, else the person's own OpenRouter key) to its
 provider, else the first provider added with `memdoor connect`. No gateway
 leases a model and no seat supplies a key; the broker's brain (Qwen3.8-Omni-Flash,
-ADR-0011/0012/0017, the Hermes text protocol) is deleted. A gateway with no key
+the Hermes text protocol) is deleted. A gateway with no key
 has no model until one is connected. There is no local model.
 
 ## Git Workflow

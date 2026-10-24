@@ -115,6 +115,28 @@ func dialBrowser(t *testing.T, srv *httptest.Server, proof string) (*websocket.C
 	return c, http.StatusSwitchingProtocols
 }
 
+// waitForPages returns once the relay has attached n pages to the test
+// session, which happens after the dial's handshake returns.
+func waitForPages(t *testing.T, n int) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		relayTestHub.mu.RLock()
+		sess := relayTestHub.sessions[relayTestID]
+		relayTestHub.mu.RUnlock()
+		if sess != nil {
+			sess.mu.RLock()
+			got := len(sess.browsers)
+			sess.mu.RUnlock()
+			if got == n {
+				return
+			}
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("%d pages never attached", n)
+}
+
 func readFrame(t *testing.T, c *websocket.Conn) string {
 	t.Helper()
 	_ = c.SetReadDeadline(time.Now().Add(10 * time.Second))
@@ -189,10 +211,10 @@ func TestRelaySeveralPagesShareASession(t *testing.T) {
 		pages = append(pages, p)
 	}
 	// A page counts once the server has attached it, after the handshake
-	// the dial returns on; every page receiving the terminal's frame proves
-	// all of them are counted before one too many dials (on a slow runner
-	// the ninth beat the eighth's attach and was admitted, public CI
-	// 2026-10-24).
+	// the dial returns on: wait for the count, or on a slow runner the
+	// terminal's frame beats the last attach and that page never sees it
+	// (public CI, 2026-10-24, twice).
+	waitForPages(t, remoteRelayMaxBrowsers)
 	screen := `{"kind":"event","payload":"screen"}`
 	if err := terminal.WriteMessage(websocket.TextMessage, []byte(screen)); err != nil {
 		t.Fatal(err)
@@ -362,19 +384,7 @@ func TestRelayWatchersAreAnAudience(t *testing.T) {
 		t.Cleanup(func() { c.Close() })
 		watchers = append(watchers, c)
 	}
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
-		relayTestHub.mu.RLock()
-		sess := relayTestHub.sessions[relayTestID]
-		relayTestHub.mu.RUnlock()
-		sess.mu.RLock()
-		n := len(sess.browsers)
-		sess.mu.RUnlock()
-		if n == remoteRelayMaxBrowsers+3 {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
+	waitForPages(t, remoteRelayMaxBrowsers+3)
 	screen := `{"kind":"event","payload":"screen"}`
 	if err := terminal.WriteMessage(websocket.TextMessage, []byte(screen)); err != nil {
 		t.Fatal(err)

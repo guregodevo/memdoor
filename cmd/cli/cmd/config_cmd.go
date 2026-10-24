@@ -12,7 +12,7 @@ import (
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Manage configuration",
+	Short: "The config file (~/.memdoor/config.json): validate, show, get a value",
 }
 
 var configValidateCmd = &cobra.Command{

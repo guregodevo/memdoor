@@ -242,7 +242,7 @@ var gatewayStatusCmd = &cobra.Command{
 }
 
 func init() {
-	gatewayCmd.Flags().IntVar(&gatewayPort, "port", 18789, "Server port")
+	gatewayCmd.Flags().IntVar(&gatewayPort, "port", 18789, "The port it listens on")
 	gatewayCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", defaultBindHost), "The address it binds (or MEMDOOR_HOST): 0.0.0.0 for this machine and its network, so a phone reaches it; localhost for this machine only")
 	gatewayInstallCmd.Flags().IntVar(&gatewayPort, "port", 18789, "the port the service listens on")
 	gatewayInstallCmd.Flags().StringVar(&gatewayHost, "host", envOr("MEMDOOR_HOST", defaultBindHost), "the address it binds (or MEMDOOR_HOST): 0.0.0.0 for this machine and its network, localhost for this machine only")

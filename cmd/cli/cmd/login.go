@@ -23,7 +23,7 @@ type it here. The same as "memdoor account login".`,
 
 var logoutCmd = &cobra.Command{
 	Use:   "logout",
-	Short: "Sign out of memdoor.ai on this Mac (the engine stays signed in)",
+	Short: "Sign out of memdoor.ai on this machine (the gateway account stays signed in)",
 	Args:  cobra.NoArgs,
 	RunE:  func(cmd *cobra.Command, args []string) error { return signOut() },
 }
