@@ -85,7 +85,7 @@ func dialTerminal(t *testing.T, srv *httptest.Server, token string) (*websocket.
 	// browser dialed in that gap is told "no such session" (404), which is
 	// what a slow CI runner saw on 2026-10-23. Wait for the attach.
 	if relayTestHub != nil {
-		deadline := time.Now().Add(2 * time.Second)
+		deadline := time.Now().Add(10 * time.Second)
 		for time.Now().Before(deadline) {
 			relayTestHub.mu.RLock()
 			sess := relayTestHub.sessions[relayTestID]
@@ -117,7 +117,7 @@ func dialBrowser(t *testing.T, srv *httptest.Server, proof string) (*websocket.C
 
 func readFrame(t *testing.T, c *websocket.Conn) string {
 	t.Helper()
-	_ = c.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = c.SetReadDeadline(time.Now().Add(10 * time.Second))
 	_, b, err := c.ReadMessage()
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -135,7 +135,7 @@ func TestRelayTerminalTakeoverKeepsTheNewTerminal(t *testing.T) {
 	if browser == nil {
 		t.Fatalf("browser refused: %d", code)
 	}
-	_ = old.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = old.SetReadDeadline(time.Now().Add(10 * time.Second))
 	if _, _, err := old.ReadMessage(); err == nil {
 		t.Fatal("the replaced terminal must be closed")
 	}
@@ -206,7 +206,7 @@ func TestRelaySeveralPagesShareASession(t *testing.T) {
 	if extra == nil {
 		t.Fatal("one page too many: expected an upgrade then a close")
 	}
-	_ = extra.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = extra.SetReadDeadline(time.Now().Add(10 * time.Second))
 	if _, _, err := extra.ReadMessage(); !websocket.IsCloseError(err, websocket.CloseTryAgainLater) {
 		t.Fatalf("page %d must be refused: %v", remoteRelayMaxBrowsers+1, err)
 	}
@@ -277,7 +277,7 @@ func TestRelayCapsFrameSize(t *testing.T) {
 	if err := terminal.WriteMessage(websocket.TextMessage, frame(remoteRelayMaxFrame+1)); err != nil {
 		t.Fatal(err)
 	}
-	_ = terminal.SetReadDeadline(time.Now().Add(3 * time.Second))
+	_ = terminal.SetReadDeadline(time.Now().Add(10 * time.Second))
 	_, _, err := terminal.ReadMessage()
 	if !websocket.IsCloseError(err, websocket.CloseMessageTooBig) {
 		t.Fatalf("the sender of an oversized frame must be closed with 1009, got %v", err)
@@ -302,7 +302,7 @@ func TestRelayEndClosesTheSession(t *testing.T) {
 	if err := terminal.WriteMessage(websocket.TextMessage, []byte(`{"kind":"end"}`)); err != nil {
 		t.Fatal(err)
 	}
-	_ = page.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = page.SetReadDeadline(time.Now().Add(10 * time.Second))
 	if _, _, err := page.ReadMessage(); !websocket.IsCloseError(err, remoteRelayRevokedCode) {
 		t.Fatalf("the page must be closed as revoked: %v", err)
 	}
