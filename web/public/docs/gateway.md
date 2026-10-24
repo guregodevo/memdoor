@@ -53,7 +53,14 @@ service manager, so it is up at boot and comes back if it stops, and your
 laptop and your phone are windows onto it.
 
 ```bash
-# on the box, once
+# from your laptop, with ssh to the box and nothing installed there
+memdoor --gateway ssh://you@box run "say hi"           # installs memdoor on the box, starts its gateway as a service, signs you in, runs
+memdoor --gateway ssh://you@box connect openrouter     # a key, asked for unseen, kept on the box; every turn there runs on it
+```
+
+Or on the box itself, once:
+
+```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 cd <your-project> && memdoor run "say hi"   # the first run creates the first account there
 memdoor connect openrouter                   # a key kept on disk; the service reads it
