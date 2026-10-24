@@ -16,16 +16,18 @@ import (
 // text sent to the terminal's own clipboard with the OSC 52 escape, which
 // most terminals honour across ssh, and written to a file named in the
 // note, so nothing is lost either way.
-func copyText(text string, lines int) string {
+func copyText(label, text string, lines int) string {
 	if err := clipboard.WriteAll(text); err == nil {
-		return fmt.Sprintf("Copied to the clipboard (%d lines).", lines)
+		return fmt.Sprintf("Copied %s to the clipboard (%d lines).", label, lines)
 	}
-	_, _ = os.Stdout.WriteString(osc52(text))
+	if st, err := os.Stdout.Stat(); err == nil && st.Mode()&os.ModeCharDevice != 0 {
+		_, _ = os.Stdout.WriteString(osc52(text))
+	}
 	path := copyFile()
 	if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
-		return fmt.Sprintf("No clipboard on this machine: sent to your terminal's clipboard, if it takes OSC 52 (%d lines).", lines)
+		return fmt.Sprintf("Copied %s to your terminal's clipboard, if it takes OSC 52: this machine has no clipboard of its own (%d lines).", label, lines)
 	}
-	return fmt.Sprintf("No clipboard on this machine: sent to your terminal's clipboard, if it takes OSC 52, and saved to %s (%d lines).", path, lines)
+	return fmt.Sprintf("Copied %s to your terminal's clipboard, if it takes OSC 52, and to %s: this machine has no clipboard of its own (%d lines).", label, path, lines)
 }
 
 // osc52 is the escape that asks the terminal to set its clipboard: the

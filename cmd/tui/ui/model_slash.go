@@ -150,7 +150,7 @@ still works); skills live in .agents/skills/ (project) and ~/.memdoor/skills/
 			m.note("Nothing to copy yet.")
 			return "", true
 		}
-		m.note(strings.Replace(copyText(text, strings.Count(text, "\n")+1), "Copied to", "Copied "+label+" to", 1))
+		m.note(copyText(label, text, strings.Count(text, "\n")+1))
 		return "", true
 
 	case "/context":
