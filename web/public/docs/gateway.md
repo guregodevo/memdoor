@@ -53,9 +53,9 @@ service manager, so it is up at boot and comes back if it stops, and your
 laptop and your phone are windows onto it.
 
 ```bash
-# from your laptop, with ssh to the box and nothing installed there
-memdoor --gateway ssh://you@box run "say hi"           # installs memdoor on the box, starts its gateway as a service, signs you in, runs
-memdoor --gateway ssh://you@box connect openrouter     # a key, asked for unseen, kept on the box; every turn there runs on it
+# from your laptop: ssh to the box, nothing installed there
+memdoor --gateway ssh://you@box run "say hi"         # installs, starts the gateway, signs in, runs
+memdoor --gateway ssh://you@box connect openrouter   # your key, asked unseen, kept on the box
 ```
 
 Or on the box itself, once:
@@ -116,7 +116,8 @@ and macOS boxes; a Windows box is set up with `irm memdoor.ai/install.ps1 |
 iex` by hand.
 
 ```bash
-memdoor --gateway ssh://you@box --dir /srv/proj                   # the window
+memdoor --gateway ssh://you@box                                   # the window, in the box's home
+memdoor --gateway ssh://you@box --dir /srv/proj                   # the window, on a project there
 memdoor --gateway ssh://you@box run --dir /srv/proj "run the tests"
 memdoor --gateway ssh://you@box workflow run release
 ```
