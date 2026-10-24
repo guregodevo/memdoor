@@ -70,7 +70,12 @@ var _ ui.FS = remoteFS{}
 // one the window cannot know where that machine's project is.
 func remoteProjectDir(c *Client, dir string) (string, error) {
 	if strings.TrimSpace(dir) == "" {
-		return "", fmt.Errorf("the gateway at %s is on another machine: say which directory there the window works in\n  memdoor --gateway %s --dir /path/on/that/machine", gatewayShown(), gatewayHostOnly())
+		abs, why, err := remoteDefaultDir(c)
+		if err != nil {
+			return "", err
+		}
+		fmt.Fprintf(os.Stderr, "  on %s, working in %s (%s; --dir names another)\n", gatewayHostOnly(), abs, why)
+		return abs, nil
 	}
 	abs, isDir, exists, err := remoteFS{c}.Stat(dir)
 	if err != nil {
@@ -80,6 +85,35 @@ func remoteProjectDir(c *Client, dir string) (string, error) {
 		return "", fmt.Errorf("%s is not a directory on the gateway's machine (%s)", abs, gatewayShown())
 	}
 	return abs, nil
+}
+
+// remoteDefaultDir is where a turn on another machine works when no --dir
+// says (Greg, 2026-10-24: "good default please"; before, the laptop's own
+// directory was sent and refused by name there). The same path as here,
+// relative to home, when that machine has it: a repo cloned at the same
+// place on both. Else that machine's home, where ssh itself lands you.
+func remoteDefaultDir(c *Client) (abs, why string, err error) {
+	fs := remoteFS{c}
+	if cwd, cerr := os.Getwd(); cerr == nil {
+		if home, herr := os.UserHomeDir(); herr == nil {
+			if h, err := filepath.EvalSymlinks(home); err == nil {
+				home = h // a home behind a symlink (/var → /private/var on macOS)
+			}
+			if rel, rerr := filepath.Rel(home, cwd); rerr == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+				if abs, isDir, exists, serr := fs.Stat("~/" + filepath.ToSlash(rel)); serr == nil && exists && isDir {
+					return abs, "the same path as here", nil
+				}
+			}
+		}
+	}
+	abs, isDir, exists, serr := fs.Stat("~")
+	if serr != nil {
+		return "", "", serr
+	}
+	if !exists || !isDir {
+		return "", "", fmt.Errorf("no home directory on the gateway's machine (%s): --dir names where to work", gatewayShown())
+	}
+	return abs, "its home", nil
 }
 
 // gatewayHostOnly is the gateway's host for a line a person retypes.

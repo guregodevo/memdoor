@@ -82,17 +82,37 @@ its id is printed at the end, and memdoor resume <id> opens it in a window.
 			return err
 		}
 		dir := runDirFlag
-		if dir == "" {
-			dir, _ = os.Getwd()
-		}
-		if abs, err := filepath.Abs(dir); err == nil {
-			dir = abs
-		}
 		c := NewClient()
+		if _, local := localGatewayPort(); !local {
+			// The project is on the gateway's machine: --dir names it there,
+			// else the same path as here when it has one, else its home.
+			abs, derr := remoteProjectDir(c, dir)
+			if derr != nil {
+				return derr
+			}
+			dir = abs
+		} else {
+			if dir == "" {
+				dir, _ = os.Getwd()
+			}
+			if abs, err := filepath.Abs(dir); err == nil {
+				dir = abs
+			}
+		}
 		runner := &gatewayRunner{c: c, workspace: workspaceSlug, feeds: map[string]*client.Client{}}
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		conv := runConversationFlag
+		if conv != "" && len(conv) < 36 {
+			// A prefix, as memdoor resume takes one (2026-10-24: the full id
+			// was required here and the eight characters a run prints were
+			// "no such conversation").
+			rec, rerr := findSessionByID(loadSessionIndex(), conv)
+			if rerr != nil {
+				return rerr
+			}
+			conv = rec.ChannelID
+		}
 		if conv == "" {
 			var err error
 			if conv, err = runner.NewConversation(ctx, dir); err != nil {

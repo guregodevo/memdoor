@@ -80,7 +80,7 @@ From your laptop:
 ```bash
 memdoor --gateway ssh://you@<box> run "say hi"   # once: the ssh door signs in with the box's own login, and keeps it for <box> too
 memdoor --gateway <box> --dir /srv/proj                                  # the window, on that box's checkout
-memdoor --gateway <box> run --dir /srv/proj "run the tests"            # a headless turn there
+memdoor --gateway <box> run --dir /srv/proj "run the tests"            # a headless turn there; without --dir: the same path as here if the box has it, else its home
 memdoor --gateway <box> workflow run release                            # a workflow there; it runs with no one watching
 memdoor --gateway <box> resume --last                                   # the window on that machine's last run, in its directory
 ```
