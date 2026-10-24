@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -125,5 +126,48 @@ func TestModelsAreGroupedByProviderAndFlatOncePerID(t *testing.T) {
 		if g["id"] == "openai" && g["count"] != 2 {
 			t.Fatalf("each group still says how many it lists: %v", g)
 		}
+	}
+}
+
+// The first model of a provider's list may be refused for itself (no host
+// at the precision floor, an unknown id): the probe tries the next ones,
+// and a refusal of every model still connects the key, since the provider
+// answered about the model and not about us.
+func TestConnectProbeOutlivesARefusedFirstModel(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	var tested, hits []string
+	refuseAll := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits = append(hits, r.Method+" "+r.URL.Path)
+		switch r.URL.Path {
+		case "/v1/models":
+			_, _ = io.WriteString(w, `{"data":[{"id":"int4-only"},{"id":"served"}]}`)
+		case "/v1/chat/completions":
+			body, _ := io.ReadAll(r.Body)
+			var req struct {
+				Model string `json:"model"`
+			}
+			_ = json.Unmarshal(body, &req)
+			tested = append(tested, req.Model)
+			if req.Model == "int4-only" || refuseAll {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = io.WriteString(w, `{"error":{"message":"No endpoints found for the request with quantization: int8,fp8,fp16,bf16","code":404}}`)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = io.WriteString(w, `{"id":"c","model":"served","choices":[{"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1}}`)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+	res := connectProvider(context.Background(), connectRequest{ID: "or", Base: srv.URL + "/v1", Key: "sk-x", Probe: true})
+	if !res.OK || res.Tested != "served" {
+		t.Fatalf("the next model answers: %+v (tested %v, hits %v)", res, tested, hits)
+	}
+	refuseAll, tested = true, nil
+	res = connectProvider(context.Background(), connectRequest{ID: "or", Base: srv.URL + "/v1", Key: "sk-x", Probe: true})
+	if !res.OK || !strings.Contains(res.Answer, "the key and URL answered") || len(tested) < 2 {
+		t.Fatalf("every model refused still proves the key: %+v (tested %v)", res, tested)
 	}
 }

@@ -40,6 +40,10 @@ var sshDoorUp *sshDoor
 // tunnel before the door is given up.
 const sshDoorWait = 20 * time.Second
 
+// sshFirstLook is how long a gateway on the box has to answer through the
+// tunnel before the door looks at the box itself (sshBoxSetup).
+var sshFirstLook = 3 * time.Second
+
 const (
 	sshScheme             = "ssh://"
 	sshDefaultGatewayPort = "18789"
@@ -108,7 +112,14 @@ func openSSHDoor(addr string) (string, error) {
 	}
 	exited := make(chan error, 1)
 	go func() { exited <- cmd.Wait() }()
+	giveUp := func(err error) (string, error) {
+		_ = stdin.Close()
+		_ = cmd.Process.Kill()
+		<-exited // ssh is done writing its stderr once it has exited
+		return "", err
+	}
 	deadline := time.Now().Add(sshDoorWait)
+	firstLook, looked := time.Now().Add(sshFirstLook), false
 	for {
 		select {
 		case <-exited:
@@ -118,15 +129,19 @@ func openSSHDoor(addr string) (string, error) {
 		if ok, _ := probeGatewayHealth("127.0.0.1", localPort); ok {
 			break
 		}
+		if !looked && time.Now().After(firstLook) {
+			looked = true
+			if err := sshBoxSetup(target, sshPort, gatewayPort); err != nil {
+				return giveUp(err)
+			}
+			deadline = time.Now().Add(sshDoorWait)
+		}
 		if time.Now().After(deadline) {
-			_ = stdin.Close()
-			_ = cmd.Process.Kill()
-			<-exited // ssh is done writing its stderr once it has exited
 			why := strings.TrimSpace(lastLine(stderr.String()))
 			if why != "" {
 				why = " (" + why + ")"
 			}
-			return "", fmt.Errorf("ssh reached %s but no gateway answered on its port %s within %s%s: on the box, memdoor gateway status", target, gatewayPort, sshDoorWait, why)
+			return giveUp(fmt.Errorf("ssh reached %s but no gateway answered on its port %s within %s%s: on the box, memdoor gateway status", target, gatewayPort, sshDoorWait, why))
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
@@ -176,6 +191,89 @@ func lastLine(s string) string {
 	return ""
 }
 
+// sshRun runs one command on the box, with the keys ssh has and no prompt,
+// and answers its stdout; an error carries the command's or ssh's last line.
+func sshRun(target, sshPort, command string) (string, error) {
+	args := []string{"-T", "-o", "BatchMode=yes"}
+	if sshPort != "" {
+		args = append(args, "-p", sshPort)
+	}
+	args = append(args, target, command)
+	var stdout, stderr bytes.Buffer
+	c := exec.Command("ssh", args...)
+	c.Stdout, c.Stderr = &stdout, &stderr
+	if err := c.Run(); err != nil {
+		why := strings.TrimSpace(lastLine(stderr.String()))
+		if why == "" {
+			why = strings.TrimSpace(lastLine(stdout.String()))
+		}
+		if why == "" {
+			why = err.Error()
+		}
+		return stdout.String(), fmt.Errorf("%s", why)
+	}
+	return stdout.String(), nil
+}
+
+// sshFindMemdoor is the shell line that names memdoor on the box: on its
+// PATH, else where the installer puts it.
+const sshFindMemdoor = `command -v memdoor 2>/dev/null || { [ -x "$HOME/.local/bin/memdoor" ] && echo "$HOME/.local/bin/memdoor"; }`
+
+// sshBoxSetup makes a box answer the door (Greg, 2026-10-24: "it should be
+// accessible from http and ssh like github", "add memdoor --gateway
+// ssh://you@box run"). When no gateway answers through the tunnel, the box
+// is looked at over the same ssh: no memdoor there, and memdoor.ai's
+// installer puts it in ~/.local/bin, as on a laptop; its gateway not
+// running, and `memdoor gateway install --port <p>` makes it a service
+// there (systemd --user, launchd), or, where there is no service manager,
+// starts it in the background. Each step says what it does on stderr. A
+// gateway that runs and is merely slow is left alone: its own `gateway
+// status` decides. The box has no model until a key is connected there:
+// `memdoor --gateway ssh://you@box connect <provider>`.
+func sshBoxSetup(target, sshPort, gatewayPort string) error {
+	say := func(format string, a ...any) { fmt.Fprintf(os.Stderr, "  "+format+"\n", a...) }
+	find := func() string {
+		out, _ := sshRun(target, sshPort, sshFindMemdoor)
+		return strings.TrimSpace(lastLine(out))
+	}
+	bin := find()
+	if bin == "" {
+		say("%s has no memdoor: installing it there from %s (~/.local/bin, no sudo)", target, installScriptURL)
+		// MEMDOOR_PORT: the installer's upgrade-in-place block looks for a
+		// running gateway on that port and restarts it on the new binary;
+		// pointed at the door's port it touches only the gateway this door
+		// is for (2026-10-24: run against a scratch box on the developer's
+		// own machine, it found the developer's gateway on 18789 and
+		// restarted it under the scratch home).
+		if _, err := sshRun(target, sshPort, "curl -fsSL "+installScriptURL+" | MEMDOOR_PORT="+gatewayPort+" bash"); err != nil {
+			return fmt.Errorf("installing memdoor on %s: %v", target, err)
+		}
+		if bin = find(); bin == "" {
+			return fmt.Errorf("the installer ran on %s but left no memdoor on its PATH or in ~/.local/bin", target)
+		}
+	}
+	status := bin + " --gateway http://127.0.0.1:" + gatewayPort + " gateway status >/dev/null 2>&1"
+	if _, err := sshRun(target, sshPort, status); err == nil {
+		return nil
+	}
+	say("the gateway on %s is not running: installing it as a service there, on port %s", target, gatewayPort)
+	out, err := sshRun(target, sshPort, bin+" gateway install --port "+gatewayPort)
+	if err != nil {
+		say("no service manager on %s (%v): starting the gateway in the background there instead", target, err)
+		start := "mkdir -p ~/.memdoor && nohup " + bin + " gateway --port " + gatewayPort + " >> ~/.memdoor/gateway.log 2>&1 </dev/null &"
+		if _, err := sshRun(target, sshPort, start); err != nil {
+			return fmt.Errorf("starting the gateway on %s: %v", target, err)
+		}
+		return nil
+	}
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "enable-linger") {
+			say("on %s, %s", target, strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "→")))
+		}
+	}
+	return nil
+}
+
 // sshRenewSession signs in to the gateway on the box with the login that
 // box generated for itself (~/.memdoor/local-login there), read over the
 // same ssh: whoever may ssh in as that user may read it, so the door asks
@@ -188,17 +286,12 @@ func sshRenewSession() error {
 	if err != nil {
 		return err
 	}
-	args := []string{"-T", "-o", "BatchMode=yes"}
-	if sshPort != "" {
-		args = append(args, "-p", sshPort)
-	}
-	args = append(args, target, "cat ~/.memdoor/"+localLoginFile)
-	out, err := exec.Command("ssh", args...).Output()
+	out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+localLoginFile)
 	if err != nil {
 		return fmt.Errorf("no generated login on %s: %v", target, err)
 	}
 	var ll localLogin
-	if json.Unmarshal(out, &ll) != nil || ll.Password == "" {
+	if json.Unmarshal([]byte(out), &ll) != nil || ll.Password == "" {
 		return fmt.Errorf("the generated login on %s is unreadable", target)
 	}
 	if err := loginLocal(ll.Email, ll.Password); err != nil {

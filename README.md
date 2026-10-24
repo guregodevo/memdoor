@@ -16,6 +16,7 @@
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
 cd your-project && memdoor             # the first run sets the machine up
+memdoor --gateway ssh://you@box run "…"  # the same on a box: installed there over ssh on first use
 ```
 
 No account. Telemetry off unless you turn it on. macOS, Linux, Windows, one static binary, Apache 2.0.

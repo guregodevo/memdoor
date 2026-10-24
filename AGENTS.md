@@ -23,7 +23,9 @@ grep -r "duplicate_code" .    # Search before coding
 # Plans (2026-10-04, doors opened 2026-10-23): free = the agent, the decision model AND
 # workflows (local cron schedules included) on your own machine and key, and EVERY DOOR onto a
 # gateway of your own: `memdoor gateway install` on a box, the window on a laptop (--gateway
-# <box> --dir), ssh (--gateway ssh://box), the phone on the box's own address (/remote there
+# <box> --dir), ssh (--gateway ssh://box; a box with nothing on it is installed and started
+# over that ssh on first use, cmd/cli/cmd/gateway_ssh.go sshBoxSetup, Greg 2026-10-24 "accessible
+# from http and ssh like github"), the phone on the box's own address (/remote there
 # needs no account: Greg "no pro story", "a phone can connect to daemon"). THE GATEWAY BINDS THE
 # NETWORK BY DEFAULT (0.0.0.0, Greg 2026-10-23 "default to be the network"): /remote links live on
 # the gateway's own address, memdoor.ai only when it is kept to localhost (MEMDOOR_HOST=localhost);

@@ -130,7 +130,30 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 			lastErr = "the provider lists no models: name one to test with"
 			continue
 		}
-		answer, callErr := probeCall(ctx, p, model)
+		// The first model of the list may be one the provider will not
+		// serve the way we ask (OpenRouter, 2026-10-24: "No endpoints found
+		// for the request with quantization", the precision floor on a
+		// model with no fp8 host): that answer still proves the URL and the
+		// key, so the next models are tried, and failing all, the key is
+		// connected with the model's refusal as the answer.
+		candidates := []string{model}
+		if req.Model == "" {
+			for i := 1; i < len(list) && len(candidates) < 4; i++ {
+				candidates = append(candidates, list[i].ID)
+			}
+		}
+		var answer string
+		var callErr error
+		for _, m := range candidates {
+			model = m
+			answer, callErr = probeCall(ctx, p, m)
+			if callErr == nil || !refusesTheModelNotTheKey(callErr) {
+				break
+			}
+		}
+		if callErr != nil && refusesTheModelNotTheKey(callErr) {
+			answer, callErr = "(the key and URL answered; "+model+" itself was refused: "+strings.TrimSpace(callErr.Error())+")", nil
+		}
 		if callErr != nil {
 			lastErr = callErr.Error()
 			continue
@@ -188,6 +211,18 @@ func probeCall(ctx context.Context, p providers.Provider, model string) (string,
 		}
 	}
 	return strings.TrimSpace(b.String()), nil
+}
+
+// refusesTheModelNotTheKey: the provider read our request and refused the
+// model in it, not us. The URL and the key are proven by such an answer.
+func refusesTheModelNotTheKey(err error) bool {
+	e := strings.ToLower(err.Error())
+	for _, s := range []string{"no endpoints found", "not a valid model", "model_not_found", "does not exist", "unknown model", "no such model"} {
+		if strings.Contains(e, s) {
+			return true
+		}
+	}
+	return false
 }
 
 func connectAdvice(errText, api string) string {

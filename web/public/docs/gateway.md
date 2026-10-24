@@ -95,6 +95,19 @@ gateway there for the length of the command, with the keys ssh already has,
 and signs in with the login the box generated for itself. `?port=18799`
 names a gateway on another port there.
 
+A box with nothing on it is set up by the same line. When no gateway
+answers through the tunnel, the door looks at the box over the same ssh:
+no memdoor there, and it runs memdoor.ai's installer (the binary lands in
+`~/.local/bin`, no sudo); its gateway not running, and it installs it as a
+service there on the door's port (systemd --user, launchd; where there is
+no service manager it starts the gateway in the background). Each step is
+printed as it happens, and the command you typed then runs. A gateway that
+is running is left alone. The box has no model until a key is connected
+there, once: `memdoor --gateway ssh://you@box connect openrouter` (or any
+provider), and from then on every turn on that box runs on that key. Linux
+and macOS boxes; a Windows box is set up with `irm memdoor.ai/install.ps1 |
+iex` by hand.
+
 ```bash
 memdoor --gateway ssh://you@box --dir /srv/proj                   # the window
 memdoor --gateway ssh://you@box run --dir /srv/proj "run the tests"

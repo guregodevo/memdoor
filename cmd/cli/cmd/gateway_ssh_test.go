@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -39,12 +41,33 @@ if args[-1] == "cat":
     def serve():
         while True:
             c, _ = srv.accept()
-            r = socket.create_connection((rh, int(rp)))
+            try:
+                r = socket.create_connection((rh, int(rp)))
+            except OSError:
+                c.close(); continue  # as ssh: a forward nobody answers closes that one connection
             threading.Thread(target=pipe, args=(c, r), daemon=True).start()
             threading.Thread(target=pipe, args=(r, c), daemon=True).start()
     threading.Thread(target=serve, daemon=True).start()
     sys.stdin.buffer.read()
     sys.exit(0)
+box = os.environ.get("FAKE_SSH_BOX")
+if box:
+    cmd = args[-1]
+    with open(os.path.join(box, "commands.log"), "a") as f: f.write(cmd + "\n")
+    installed, running = os.path.join(box, "installed"), os.path.join(box, "running")
+    if "command -v memdoor" in cmd:
+        if os.path.exists(installed): print("/home/me/.local/bin/memdoor"); sys.exit(0)
+        sys.exit(1)
+    if "install.sh" in cmd:
+        open(installed, "w").close(); print("==> installed"); sys.exit(0)
+    if "gateway status" in cmd:
+        sys.exit(0 if os.path.exists(running) else 1)
+    if "gateway install" in cmd:
+        if os.environ.get("FAKE_SSH_NO_SERVICE"):
+            sys.stderr.write("systemctl --user daemon-reload: Failed to connect to bus\n"); sys.exit(1)
+        open(running, "w").close(); print("  → to keep it running when you are not logged in:  loginctl enable-linger me"); sys.exit(0)
+    if "nohup" in cmd:
+        open(running, "w").close(); sys.exit(0)
 sys.stdout.write(os.environ.get("FAKE_SSH_LOGIN", ""))
 `
 
@@ -176,5 +199,116 @@ func TestTheSSHDoorAndARemoteGatewaySayTheNextStep(t *testing.T) {
 	err := sessionProblem()
 	if err == nil || !strings.Contains(err.Error(), "login-direct --gateway http://box.lan:18799") || !strings.Contains(err.Error(), "ssh://you@box.lan?port=18799") || strings.Contains(err.Error(), "not set up yet") {
 		t.Fatalf("a remote gateway without a session names the sign-in there: %v", err)
+	}
+}
+
+// boxOnFakeSSH is a box the fake ssh plays: what memdoor is there is a
+// marker file; its gateway answers on port only once "running" exists.
+func boxOnFakeSSH(t *testing.T) (dir string, port int, commands func() string) {
+	t.Helper()
+	dir = t.TempDir()
+	t.Setenv("FAKE_SSH_BOX", dir)
+	saved := sshFirstLook
+	sshFirstLook = 200 * time.Millisecond
+	t.Cleanup(func() { sshFirstLook = saved })
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port = ln.Addr().(*net.TCPAddr).Port
+	_ = ln.Close()
+	stop := make(chan struct{})
+	t.Cleanup(func() { close(stop) })
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			if _, err := os.Stat(filepath.Join(dir, "running")); err == nil {
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+		if _, err := os.Stat(filepath.Join(dir, "slow")); err == nil {
+			time.Sleep(600 * time.Millisecond) // running, and slow to answer
+		}
+		l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+		if err != nil {
+			return
+		}
+		srv := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"status":"ok","version":"test"}`))
+		})}
+		go func() { <-stop; _ = srv.Close() }()
+		_ = srv.Serve(l)
+	}()
+	commands = func() string { b, _ := os.ReadFile(filepath.Join(dir, "commands.log")); return string(b) }
+	return dir, port, commands
+}
+
+// A box with nothing on it answers the door: no memdoor there, the
+// installer puts it; its gateway not running, it is installed as a service
+// on the door's port; then the tunnel sees it (Greg, 2026-10-24: "accessible
+// from http and ssh like github").
+func TestTheSSHDoorSetsUpABoxWithNothingOnIt(t *testing.T) {
+	withFakeSSH(t)
+	_, port, commands := boxOnFakeSSH(t)
+	local, err := openSSHDoor(fmt.Sprintf("ssh://me@box?port=%d", port))
+	if err != nil {
+		t.Fatalf("open: %v\n%s", err, commands())
+	}
+	if resp, err := http.Get(local + "/health"); err != nil || resp.StatusCode != 200 {
+		t.Fatalf("the box answers through the tunnel: %v %v", resp, err)
+	}
+	log := commands()
+	for _, step := range []string{"command -v memdoor", fmt.Sprintf("install.sh | MEMDOOR_PORT=%d bash", port), "gateway status", fmt.Sprintf("gateway install --port %d", port)} {
+		if !strings.Contains(log, step) {
+			t.Errorf("the door did not run %q on the box:\n%s", step, log)
+		}
+	}
+	if strings.Index(log, "install.sh") > strings.Index(log, "gateway install") {
+		t.Errorf("the installer runs before the service:\n%s", log)
+	}
+}
+
+// A box that has memdoor but no running gateway and no service manager (a
+// container) gets the gateway started in the background instead.
+func TestTheSSHDoorStartsTheGatewayWhereThereIsNoServiceManager(t *testing.T) {
+	withFakeSSH(t)
+	dir, port, commands := boxOnFakeSSH(t)
+	if err := os.WriteFile(filepath.Join(dir, "installed"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("FAKE_SSH_NO_SERVICE", "1")
+	if _, err := openSSHDoor(fmt.Sprintf("ssh://me@box?port=%d", port)); err != nil {
+		t.Fatalf("open: %v\n%s", err, commands())
+	}
+	log := commands()
+	if strings.Contains(log, "install.sh") {
+		t.Errorf("memdoor was there, nothing to install:\n%s", log)
+	}
+	if !strings.Contains(log, "nohup /home/me/.local/bin/memdoor gateway --port") {
+		t.Errorf("the gateway is started in the background:\n%s", log)
+	}
+}
+
+// A gateway that runs and is merely slow to answer is left alone: its own
+// status decides, and nothing is installed or restarted.
+func TestTheSSHDoorLeavesASlowRunningGatewayAlone(t *testing.T) {
+	withFakeSSH(t)
+	dir, port, commands := boxOnFakeSSH(t)
+	for _, marker := range []string{"installed", "slow", "running"} {
+		if err := os.WriteFile(filepath.Join(dir, marker), nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := openSSHDoor(fmt.Sprintf("ssh://me@box?port=%d", port)); err != nil {
+		t.Fatalf("open: %v\n%s", err, commands())
+	}
+	if log := commands(); strings.Contains(log, "gateway install") || strings.Contains(log, "nohup") || strings.Contains(log, "install.sh") {
+		t.Errorf("a running gateway was touched:\n%s", log)
 	}
 }

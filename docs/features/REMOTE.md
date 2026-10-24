@@ -17,7 +17,8 @@ Greg: "a phone can connect to daemon", "no pro story", "/remote should not go
 through memdoor.ai anymore unless it's needed"). `remoteSession.resolved()`
 settles it once per `/remote`: a gateway on another machine is the relay as
 the window reaches it; a gateway reached through loopback (the laptop's own,
-or the end of an ssh tunnel, `--gateway ssh://box`,
+or the end of an ssh tunnel, `--gateway ssh://box` (which sets the box up on
+first use when nothing answers there: `sshBoxSetup`, 2026-10-24),
 `cmd/cli/cmd/gateway_ssh.go`) is asked where it listens (`/health`'s
 `listen`: host, port, and the machine's addresses when it binds every
 interface, private network first, `gateway/listen.go`), and the link goes on
