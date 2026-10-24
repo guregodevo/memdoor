@@ -34,10 +34,6 @@ const (
 	PermissionAddMembers    Permission = "members:add"
 	PermissionRemoveMembers Permission = "members:remove"
 	PermissionViewMembers   Permission = "members:view"
-
-	// Reaction permissions
-	PermissionAddReaction    Permission = "reaction:add"
-	PermissionRemoveReaction Permission = "reaction:remove"
 )
 
 // Role represents a set of permissions
@@ -64,8 +60,6 @@ var rolePermissions = map[Role][]Permission{
 		PermissionAddMembers,
 		PermissionRemoveMembers,
 		PermissionViewMembers,
-		PermissionAddReaction,
-		PermissionRemoveReaction,
 	},
 	RoleMember: {
 		// Members can read/write but not delete channels
@@ -76,8 +70,6 @@ var rolePermissions = map[Role][]Permission{
 		PermissionEditMessages, // Can edit own messages
 		PermissionViewMembers,
 		PermissionAddMembers, // Members can invite others to collaborate
-		PermissionAddReaction,
-		PermissionRemoveReaction,
 	},
 	RoleGuest: {
 		// Guests have read-only access

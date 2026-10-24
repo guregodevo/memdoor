@@ -26,12 +26,6 @@ func (cs *ChatServer) handleMessagesWithID(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Check if this is a reactions request (/api/messages/:id/reactions)
-	if strings.Contains(r.URL.Path, "/reactions") {
-		cs.handleReactions(w, r)
-		return
-	}
-
 	// Check if this is a thread replies request (/api/messages/:id/replies)
 	if strings.HasSuffix(r.URL.Path, "/replies") {
 		// Route based on HTTP method
@@ -104,7 +98,7 @@ func (cs *ChatServer) handleGetSingleMessage(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	messageDTO := cs.enrichAndConvert(r.Context(), msg, nil)
+	messageDTO := cs.enrichAndConvert(r.Context(), msg)
 
 	json.NewEncoder(w).Encode(messageDTO)
 }
@@ -159,7 +153,7 @@ func (cs *ChatServer) handleEditMessage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	messageDTO := cs.enrichAndConvert(r.Context(), editedMsg, nil)
+	messageDTO := cs.enrichAndConvert(r.Context(), editedMsg)
 
 	// Broadcast message.updated to WebSocket clients
 	cs.hub.BroadcastToChannel(editedMsg.ChannelID, websocket.WSMessage{
@@ -315,7 +309,7 @@ func (cs *ChatServer) handleMessages(w http.ResponseWriter, r *http.Request) {
 
 		// Broadcast saved message (with real ID from database)
 		// Note: This is redundant with CreateBroadcaster, but kept for backward compatibility
-		messageDTO := cs.enrichAndConvert(r.Context(), msg, nil, fileDTOs...)
+		messageDTO := cs.enrichAndConvert(r.Context(), msg, fileDTOs...)
 
 		cs.hub.BroadcastToChannel(msg.ChannelID, websocket.WSMessage{
 			Type: websocket.MessageCreated,
@@ -518,7 +512,7 @@ func (cs *ChatServer) handleListUnreadMentions(w http.ResponseWriter, r *http.Re
 		slog.Int("total", len(messages)),
 		slog.Int("limit", limit))
 
-	messageDTOs := cs.enrichAndConvertBatch(r.Context(), messages, nil)
+	messageDTOs := cs.enrichAndConvertBatch(r.Context(), messages)
 
 	response := map[string]interface{}{
 		"messages": messageDTOs,

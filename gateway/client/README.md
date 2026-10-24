@@ -1,6 +1,6 @@
-# the maintainer WebSocket Client Library
+# Gateway WebSocket client
 
-Common WebSocket client library for connecting to the the maintainer gateway.
+The WebSocket client every Memdoor front end uses to talk to the gateway: the TUI, `memdoor run`, `memdoor resume`, the remote page host, the peers and the ACP bridge.
 
 ## Overview
 
@@ -12,7 +12,6 @@ This package provides a **thread-safe, RFC-compliant WebSocket client** that han
 - ✅ Connection lifecycle events (connected, disconnected, error)
 - ✅ Structured logging (optional)
 
-**Pattern**: Shared client library for TUI, CLI, and future clients
 
 ---
 
@@ -22,8 +21,8 @@ This package provides a **thread-safe, RFC-compliant WebSocket client** that han
 package main
 
 import (
-    "chat/gateway/client"
-    "chat/gateway/protocol"
+    "memdoor/gateway/client"
+    "memdoor/gateway/protocol"
     "fmt"
 )
 
@@ -51,7 +50,7 @@ func main() {
     c.Listen() // Start background read loop
 
     // Send chat message
-    c.SendChat("Hello, the maintainer!")
+    c.SendChat("hello")
 
     // Keep running
     select {}
@@ -330,8 +329,8 @@ if c.IsConnected() {
 package main
 
 import (
-    "chat/gateway/client"
-    "chat/gateway/protocol"
+    "memdoor/gateway/client"
+    "memdoor/gateway/protocol"
     tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -364,8 +363,8 @@ func main() {
 package main
 
 import (
-    "chat/gateway/client"
-    "chat/gateway/protocol"
+    "memdoor/gateway/client"
+    "memdoor/gateway/protocol"
     "fmt"
 )
 
@@ -438,7 +437,7 @@ See `websocket_test.go` for comprehensive integration tests.
 
 **Run tests:**
 ```bash
-go test -v chat/gateway/client
+go test -v memdoor/gateway/client
 ```
 
 **Test coverage:**
@@ -500,46 +499,6 @@ dialer := &websocket.Dialer{
 
 ---
 
-## Migration Guide
-
-### From TUI Custom Client
-
-**Before** (`cmd/tui/ui/websocket.go`):
-```go
-type WebSocketClient struct {
-    conn *websocket.Conn
-    // ... custom implementation
-}
-
-func (c *WebSocketClient) Connect() error {
-    dialer := &websocket.Dialer{...}
-    conn, _, err := dialer.Dial(url, nil)
-    // ... custom logic
-}
-```
-
-**After** (using common client):
-```go
-import "chat/gateway/client"
-
-opts := client.DefaultOptions()
-opts.EnableLogging = false  // TUI mode
-
-c := client.New(gatewayURL, sessionKey, opts)
-c.OnMessage(protocol.MessageTypeAgentEvent, handleAgentEvent)
-c.Connect()
-c.Listen()
-```
-
-**Benefits**:
-- ✅ RSV2 bug automatically fixed
-- ✅ Ping/pong handling automatic
-- ✅ Compression configured correctly
-- ✅ Less code to maintain
-- ✅ Consistent behavior across all clients
-
----
-
 ## RFC Compliance
 
 This client implements:
@@ -557,23 +516,3 @@ This client implements:
 - **RFC 1951** - DEFLATE compression algorithm
 
 ---
-
-## Pattern: OpenClaw Compatibility
-
-This client follows OpenClaw's WebSocket patterns:
-- Protocol message types match OpenClaw's TypeScript definitions
-- Compression threshold (8KB) matches OpenClaw server
-- Event-driven architecture compatible with OpenClaw clients
-
-**Cross-compatibility**: Go clients using this library can communicate with OpenClaw TypeScript servers and vice versa.
-
----
-
-## Credits
-
-**Pattern**: OpenClaw WebSocket client architecture
-**RFC Compliance**: Gorilla WebSocket + custom extensions
-**Author**: the maintainer Team
-**License**: MIT
-
-🦞 Built with Claude Code

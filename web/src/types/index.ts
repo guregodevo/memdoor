@@ -19,14 +19,6 @@ export interface Channel {
   updated_at: string;
 }
 
-// Reaction types
-export interface Reaction {
-  id: number;
-  user_id: ActorID;
-  emoji: string;
-  created_at: string;
-}
-
 // Message types
 export interface Message {
   id: string; // Changed from number to string to match backend DTO
@@ -34,7 +26,6 @@ export interface Message {
   author_id: ActorID;
   author_name: string; // Username for the author (e.g., "alice" for humans, "writer" for agents)
   content: MessageContent;
-  reactions?: Reaction[]; // Message reactions
   parent_id?: number; // If this is a thread reply, ID of the parent message
   is_read: boolean;
   created_at: string;
@@ -121,8 +112,6 @@ export type WSMessageType =
   | 'message.created'
   | 'message.updated'
   | 'message.deleted'
-  | 'reaction.added'
-  | 'reaction.removed'
   | 'execution.started'
   | 'execution.event'
   | 'execution.completed'

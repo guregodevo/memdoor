@@ -1,33 +1,14 @@
-# Secrets & Credentials
+# Secrets
 
-> **The `memdoor secrets` command was removed on 2026-10-03** (less code). The
-> runtime feature below still exists; the command examples in this page no
-> longer run.
+Two places a credential can live without landing in `config.json` or git.
+Neither has a command of its own (`memdoor secrets` was removed on
+2026-10-03); both are reached from the config file and from the agent's
+tools.
 
-**Version**: 1.0
-**Date**: 2026-04-18
+## A SecretRef in config.json
 
-Memdoor stores credentials (API keys, tokens) outside of `config.json` so plaintext secrets never land in git. Two scopes exist:
-
-- **Workspace-level secrets** — provider credentials used to resolve `SecretRef` values in `config.json` at load time. Managed via `memdoor secrets`.
-- **Agent-level secrets** — per-agent key/value store exposed to tools as the `secret` tool. Managed via the agent runtime (`pkg/repository/agent_secret.go`).
-
-## Providers
-
-Workspace secrets use pluggable backends selected via `--source`:
-
-| Provider | Read | Write | Typical Use |
-|----------|------|-------|-------------|
-| `env` | ✓ | ✓ | CI/CD, containers |
-| `keychain` | ✓ | ✓ | Local development (macOS) |
-| `file` | ✓ | ✓ | Docker/Kubernetes secrets mounts |
-| `exec` | ✓ | — | 1Password CLI (`op read …`) and similar |
-
-`exec` is read-only: the secret is the stdout of running a command.
-
-## SecretRef in config
-
-Instead of `"botToken": "xoxb-plain-token"`, reference a stored secret:
+Wherever `config.json` takes a credential, a reference can stand in for the
+value:
 
 ```json5
 {
@@ -39,36 +20,38 @@ Instead of `"botToken": "xoxb-plain-token"`, reference a stored secret:
 }
 ```
 
-Resolution happens automatically at config load. Plain strings and `${ENV_VAR}` substitutions still work for backward compatibility.
+The loader resolves it when the config is read (`gateway/config/loader.go`,
+`pkg/secrets/resolver.go`). Plain strings and `${ENV_VAR}` substitutions
+still work beside it.
+
+| `source` | Where the value comes from | Notes |
+|---|---|---|
+| `env` | the environment variable named by `id` | CI, containers |
+| `file` | the file at `id` | Docker and Kubernetes secret mounts |
+| `exec` | the stdout of the command in `id` | `op read …` and the like; read-only |
+| `keychain` | the macOS keychain item `id` | macOS only; absent elsewhere |
+
+A reference that cannot be resolved fails the config load, naming the field
+(`channels.slack.botToken: …`), never a value.
 
 ## Agent secrets
 
-Each agent has its own isolated keyring (`AgentSecretRepository`) so one agent's credentials can't leak to another. Values are:
+Each agent has its own keyring in the database (`AgentSecretRepository`,
+`pkg/repository/agent_secret.go`; SQLite in
+`pkg/repository/sqlite/agent_secrets.go`). An agent reads its own entries
+through the `get_secret` tool (`tools/secret_tool.go`) and nothing else can:
 
-- Write-only from the CLI side (read back only through the agent's `secret` tool).
-- Never serialized to JSON responses (`Value` has `json:"-"`).
-- Scoped by `agent_id` — deleting the agent deletes its secrets.
+- values are scoped by agent id, so one agent's credentials never reach
+  another's turn, and deleting the agent deletes them;
+- values never appear in an API response (`Value` is `json:"-"`);
+- the tool's description tells the model never to print what it read, and
+  anything that looks like a key, a token or a password is redacted from
+  tool output before it enters the transcript, from streamed bash output and
+  from `/share` (`pkg/secrets/redact.go`).
 
-## CLI
+## Provider keys are not here
 
-```bash
-# Scan config for plaintext credentials
-memdoor secrets audit
-
-# Store + retrieve
-memdoor secrets set slack-bot-token xoxb-... --source keychain
-memdoor secrets get slack-bot-token --source keychain --reveal
-
-# Pipe from stdin
-echo "sk-ant-..." | memdoor secrets set anthropic-key --source keychain
-```
-
-Full flag reference: [`reference/CLI.md#secrets`](../reference/CLI.md#secrets).
-
-## Files
-
-- `cmd/cli/cmd/secrets.go` — CLI surface (removed 2026-10-03, above)
-- `pkg/secrets/resolver.go` — SecretRef resolution
-- `pkg/repository/agent_secret.go` — agent-level keyring interface
-- `pkg/repository/sqlite/agent_secrets.go` — SQLite backend
-- `tools/secret_tool.go` — the `secret` tool exposed to agents
+The key a model runs on is not a secret in this sense: `memdoor connect`
+keeps it in `~/.memdoor/providers.json` as a value, an `ENV_NAME` or a
+`!command`, and the built-in providers read theirs from the gateway's
+environment. See [PROVIDERS.md](PROVIDERS.md).

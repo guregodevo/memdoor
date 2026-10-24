@@ -85,7 +85,7 @@ func TestConnectProbesThenKeeps(t *testing.T) {
 // once in the picker and twice in the groups.
 func TestModelsAreGroupedByProviderAndFlatOncePerID(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	for _, v := range []string{"AI_GATEWAY_BASE_URL", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY", "MEMDOOR_BYOK"} {
+	for _, v := range []string{"AI_GATEWAY_BASE_URL", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY"} {
 		t.Setenv(v, "")
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

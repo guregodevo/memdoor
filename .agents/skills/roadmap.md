@@ -169,7 +169,7 @@ git commit -m "Docs: Remove completed Direct Messages from roadmap"
 
 ```bash
 # 1. Determine priority
-# Example: "Add message reactions"
+# Example: "Pin a message in a channel"
 # - Not blocking launch → Not MUST
 # - Improves UX significantly → SHOULD
 # - Not critical → Not MUST
@@ -178,17 +178,16 @@ git commit -m "Docs: Remove completed Direct Messages from roadmap"
 vim docs/roadmap/SHOULD.md
 
 ## User Experience Improvements
-- [ ] Message reactions support
-  - [ ] Reaction picker UI
-  - [ ] Emoji rendering
-  - [ ] Reaction counts
+- [ ] Pinned messages
+  - [ ] Pin / unpin from the message menu
+  - [ ] Pinned list per channel
   - [ ] Database schema
 
 **Why SHOULD**: Significantly improves user engagement but not blocking launch.
 
 # 3. Commit
 git add docs/roadmap/SHOULD.md
-git commit -m "Docs: Add message reactions to SHOULD roadmap"
+git commit -m "Docs: Add pinned messages to SHOULD roadmap"
 ```
 
 ### Scenario 3: Priority Change

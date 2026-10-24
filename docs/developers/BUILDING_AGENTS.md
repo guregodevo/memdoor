@@ -2,11 +2,10 @@
 
 **Create specialized AI agents for your workflows**
 
-> ⚠ **2026-05-17 local-only pivot**: examples below that show
-> `provider: anthropic` / `model: claude-sonnet-4-5` on an agent
-> config are historical. Every agent runs on the gateway's engine: a
-> provider on the person's key, or the broker for a seat (see `memdoor
-> providers`). The agent schema has no per-agent provider/model field. Tools, personality, system prompt,
+> Examples below that show `provider: anthropic` / `model: claude-sonnet-4-5`
+> on an agent config are historical. Every agent runs through a provider on
+> the person's own key (`memdoor providers`); the model is pinned per agent
+> with `/model`, not in the agent file. Tools, personality, system prompt and
 > sandbox scope are unchanged.
 
 This guide shows you how to build custom agents with unique personalities, skills, and tools.

@@ -12,7 +12,6 @@ import (
 	"memdoor/gateway/dto"
 	"memdoor/gateway/websocket"
 	"memdoor/pkg/message"
-	"memdoor/pkg/reaction"
 	"memdoor/pkg/shared"
 )
 
@@ -53,24 +52,7 @@ func (cs *ChatServer) handleGetThreadReplies(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Extract message IDs for bulk reaction loading
-	replyIDs := make([]message.MessageID, len(replies))
-	for i, reply := range replies {
-		replyIDs[i] = reply.ID
-	}
-
-	// Bulk-load reactions for all replies
-	reactionsByMessage := make(map[message.MessageID][]*reaction.Reaction)
-	if len(replyIDs) > 0 && cs.reactionRepo != nil {
-		var err error
-		reactionsByMessage, err = cs.reactionRepo.ListByMessages(r.Context(), replyIDs)
-		if err != nil {
-			getChatLogger().Info("Failed to load reactions for thread replies", slog.String("error", err.Error()))
-			// Continue without reactions - don't fail the whole request
-		}
-	}
-
-	replyDTOs := cs.enrichAndConvertBatch(r.Context(), replies, reactionsByMessage)
+	replyDTOs := cs.enrichAndConvertBatch(r.Context(), replies)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"replies": replyDTOs,
@@ -225,7 +207,7 @@ func (cs *ChatServer) handleCreateThreadReply(w http.ResponseWriter, r *http.Req
 	}
 
 	// Broadcast reply message via WebSocket (so it appears in real-time)
-	messageDTO := cs.enrichAndConvert(r.Context(), replyMsg, nil)
+	messageDTO := cs.enrichAndConvert(r.Context(), replyMsg)
 
 	cs.hub.BroadcastToChannel(replyMsg.ChannelID, websocket.WSMessage{
 		Type: websocket.MessageCreated,

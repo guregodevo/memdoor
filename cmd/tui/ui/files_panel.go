@@ -46,7 +46,6 @@ type filesPanelState struct {
 	previewPath   string
 	previewDiff   bool
 	previewScroll int
-	note          string
 }
 
 type filesEditorDoneMsg struct{ err error }

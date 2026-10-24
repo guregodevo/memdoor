@@ -295,7 +295,6 @@ All critical tests PASSED :
 
 ## Related Documentation
 
-- [Session Isolation](../architecture/SESSION_ISOLATION.md)
 - [Domain Models](../../pkg/domain/models.go)
 - [Migration History](../../pkg/repository/sqlite/factory.go)
 

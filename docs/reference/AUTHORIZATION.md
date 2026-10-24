@@ -79,8 +79,8 @@ Default users from `memdoor setup`: `admin@localhost` (admin), `alice@localhost`
 
 | Role | Permissions |
 |------|------------|
-| `admin` | All: read, write, delete channel, manage members, delete/edit any message, reactions |
-| `member` | Read, write, edit own messages, view/add members, reactions |
+| `admin` | All: read, write, delete channel, manage members, delete/edit any message |
+| `member` | Read, write, edit own messages, view/add members |
 | `guest` | Read only: channels, messages, member list |
 
 ### Permissions
@@ -98,8 +98,6 @@ Default users from `memdoor setup`: `admin@localhost` (admin), `alice@localhost`
 | `members:add` | Y | Y | - |
 | `members:remove` | Y | - | - |
 | `members:view` | Y | Y | Y |
-| `reaction:add` | Y | Y | - |
-| `reaction:remove` | Y | Y | - |
 
 ### Special Rules
 
@@ -285,8 +283,6 @@ The following endpoints previously had missing auth checks and have been fixed:
 | Endpoint | Handler | Fix |
 |----------|---------|-----|
 | `DELETE /api/channels/:id` | `handleDeleteRoom` | Now requires `IsWorkspaceAdmin()`. |
-| `POST /api/messages/:id/reactions` | `handleReactions` | Now uses authenticated `actorID` instead of trusting request body `user_id`. |
-| `DELETE /api/messages/:id/reactions` | `handleReactions` | Now uses authenticated `actorID`. Users can only remove their own reactions. |
 | `GET /api/search` | `handleSearch` | Now requires authentication. TODO: filter results by accessible channels. |
 | `GET /api/messages/:id` | `handleGetSingleMessage` | Now requires auth + `CanReadChannel()` on the message's channel. |
 | `POST /api/messages/:id/read` | `handleMarkMessageRead` | Now requires authentication. |

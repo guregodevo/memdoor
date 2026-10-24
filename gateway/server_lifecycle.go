@@ -152,7 +152,6 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	channelRepo := server.repoFactory.Channels()
 	membershipRepo := server.repoFactory.ChannelMemberships()
 	messageRepo := server.repoFactory.Messages()
-	reactionRepo := server.repoFactory.Reactions()
 	agentSecretRepo := server.repoFactory.AgentSecrets()
 
 	// Wire get_secret tool into agent runtime
@@ -222,7 +221,6 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	chatServer := NewChatServer(
 		buddyRepo,
 		channelRepo,
-		reactionRepo,
 		server.repoFactory.CronJobs(),
 		server.repoFactory.CronHistory(),
 		agentSecretRepo,
@@ -435,7 +433,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	http.Handle("/api/channels/members", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleRoomMembers))))
 	http.Handle("/api/channels/", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleRoom))))
 	http.Handle("/api/channels", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleRooms))))
-	http.Handle("/api/messages/", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleMessagesWithID))))                     // Handles /api/messages/:id/read and /api/messages/:id/reactions
+	http.Handle("/api/messages/", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleMessagesWithID))))                     // Handles /api/messages/:id/read and /api/messages/:id/replies
 	http.Handle("/api/messages/unread-mentions", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleUnreadMentionCounts)))) // Get unread @mention counts per channel
 	http.Handle("/api/messages/threads", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleListUnreadMentions))))          // Get all unread @mention messages (for Threads view)
 	http.Handle("/api/messages", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleMessages))))

@@ -17,7 +17,6 @@ import (
 	"memdoor/pkg/channel"
 	"memdoor/pkg/domain"
 	"memdoor/pkg/message"
-	"memdoor/pkg/reaction"
 	"memdoor/pkg/shared"
 	sharedctx "memdoor/pkg/shared/context"
 
@@ -25,10 +24,6 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	// Every gateway asks the broker for a brain by default (ADR-0012, the
-	// TUI and the app alike). A test server must not: the first run after
-	// that default leased real brains from memdoor.ai for eight minutes.
-	os.Setenv("MEMDOOR_BRAIN_CLASS", "local")
 	// Initialize the global logger for handler tests (writes to temp dir)
 	tmpDir, err := os.MkdirTemp("", "gateway-test-logs-*")
 	if err != nil {
@@ -294,93 +289,6 @@ func (m *mockChannelRepo) GetWorkspaceSlug(_ context.Context, _ string) (string,
 		return "", m.err
 	}
 	return "", nil
-}
-
-// ---------- Mock: ReactionRepository ----------
-
-type mockReactionRepo struct {
-	mu        sync.Mutex
-	reactions []*reaction.Reaction
-	nextID    reaction.ReactionID
-	err       error
-}
-
-func (m *mockReactionRepo) Add(_ context.Context, r *reaction.Reaction) (reaction.ReactionID, error) {
-	if m.err != nil {
-		return 0, m.err
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.nextID++
-	r.ID = m.nextID
-	m.reactions = append(m.reactions, r)
-	return r.ID, nil
-}
-
-func (m *mockReactionRepo) Remove(_ context.Context, messageID message.MessageID, userID string, emoji string) error {
-	if m.err != nil {
-		return m.err
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for i, r := range m.reactions {
-		if r.MessageID == messageID && string(r.UserID) == userID && r.Emoji == emoji {
-			m.reactions = append(m.reactions[:i], m.reactions[i+1:]...)
-			return nil
-		}
-	}
-	return nil // idempotent
-}
-
-func (m *mockReactionRepo) ListByMessage(_ context.Context, messageID message.MessageID) ([]*reaction.Reaction, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	var result []*reaction.Reaction
-	for _, r := range m.reactions {
-		if r.MessageID == messageID {
-			result = append(result, r)
-		}
-	}
-	if result == nil {
-		result = []*reaction.Reaction{}
-	}
-	return result, nil
-}
-
-func (m *mockReactionRepo) ListByMessages(_ context.Context, messageIDs []message.MessageID) (map[message.MessageID][]*reaction.Reaction, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	result := make(map[message.MessageID][]*reaction.Reaction)
-	idSet := make(map[message.MessageID]bool)
-	for _, id := range messageIDs {
-		idSet[id] = true
-	}
-	for _, r := range m.reactions {
-		if idSet[r.MessageID] {
-			result[r.MessageID] = append(result[r.MessageID], r)
-		}
-	}
-	return result, nil
-}
-
-func (m *mockReactionRepo) GetByID(_ context.Context, id reaction.ReactionID) (*reaction.Reaction, error) {
-	if m.err != nil {
-		return nil, m.err
-	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for _, r := range m.reactions {
-		if r.ID == id {
-			return r, nil
-		}
-	}
-	return nil, nil
 }
 
 // ---------- Mock: HeartbeatRepository ----------
@@ -778,7 +686,6 @@ func (l *mockLogger) Debug(_ string, _ ...any) {}
 func newTestChatServer() *ChatServer {
 	buddyRepo := &mockBuddyRepo{}
 	channelRepo := &mockChannelRepo{}
-	reactionRepo := &mockReactionRepo{}
 	cronRepo := &mockCronJobRepo{}
 	cronHistoryRepo := &mockCronHistoryRepo{}
 	agentSecretRepo := newMockAgentSecretRepo()
@@ -809,7 +716,6 @@ func newTestChatServer() *ChatServer {
 		hub:             hub,
 		buddyRepo:       buddyRepo,
 		channelRepo:     channelRepo,
-		reactionRepo:    reactionRepo,
 		cronRepo:        cronRepo,
 		cronHistoryRepo: cronHistoryRepo,
 		agentSecretRepo: agentSecretRepo,

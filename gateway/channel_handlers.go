@@ -15,8 +15,6 @@ import (
 	"memdoor/pkg/authorization"
 	"memdoor/pkg/channel"
 	"memdoor/pkg/domain"
-	"memdoor/pkg/message"
-	"memdoor/pkg/reaction"
 	"memdoor/pkg/shared"
 
 	"github.com/google/uuid"
@@ -581,22 +579,6 @@ func (cs *ChatServer) handleGetRoomMessages(w http.ResponseWriter, r *http.Reque
 	}
 	messages := result.Messages
 
-	// Extract message IDs for bulk reaction loading
-	messageIDs := make([]message.MessageID, len(messages))
-	for i, msg := range messages {
-		messageIDs[i] = msg.ID
-	}
-
-	// Bulk-load reactions for all messages
-	reactionsByMessage := make(map[message.MessageID][]*reaction.Reaction)
-	if len(messageIDs) > 0 && cs.reactionRepo != nil {
-		var err error
-		reactionsByMessage, err = cs.reactionRepo.ListByMessages(r.Context(), messageIDs)
-		if err != nil {
-			getChatLogger().Info("Failed to load reactions", slog.String("error", err.Error()))
-		}
-	}
-
 	// PRESENTATION LAYER: Batch-load file attachments
 	fileAttachmentsByMsg := make(map[int64][]dto.FileRefDTO)
 	if cs.fileService != nil && len(messages) > 0 {
@@ -619,7 +601,7 @@ func (cs *ChatServer) handleGetRoomMessages(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	messageDTOs := cs.enrichAndConvertBatch(r.Context(), messages, reactionsByMessage)
+	messageDTOs := cs.enrichAndConvertBatch(r.Context(), messages)
 	// Attach file refs to DTOs
 	for i, msgDTO := range messageDTOs {
 		msgID, _ := strconv.ParseInt(msgDTO.ID, 10, 64)

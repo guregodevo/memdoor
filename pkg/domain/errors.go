@@ -80,14 +80,6 @@ func (e *ValidationError) Unwrap() error {
 	return e.cause
 }
 
-// NewValidationError creates a new ValidationError
-func NewValidationError(message string) *ValidationError {
-	return &ValidationError{
-		Message: message,
-		Details: make(map[string]string),
-	}
-}
-
 // NewFieldValidationError creates a validation error for a specific field
 func NewFieldValidationError(field, message string) *ValidationError {
 	return &ValidationError{

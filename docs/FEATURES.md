@@ -111,8 +111,8 @@ memdoor logs query --regex "ERROR|WARN" --limit 20
 # Recent errors only
 memdoor logs errors --since 5m
 
-# Follow logs real-time
-memdoor logs tail
+# The last five minutes, newest last
+memdoor logs query --since 5m --order asc
 ```
 
 **Features**:

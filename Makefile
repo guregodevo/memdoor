@@ -1,4 +1,4 @@
-.PHONY: up build web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose cowork start stop stop-gateway deploy setup quickstart all skills-sync indexnow
+.PHONY: up build web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose start stop stop-gateway deploy setup quickstart all skills-sync indexnow
 
 # Ports
 GATEWAY_PORT ?= 18789
@@ -205,11 +205,6 @@ gateway-verbose:
 	@lsof -ti:$(GATEWAY_PORT) -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
 	@cd gateway && $(MAKE) run-verbose
 
-# Launch the Cowork TUI (rebuilds first to pick up any changes)
-cowork: build
-	@pkill -f "memdoor cowork" 2>/dev/null || true
-	@./memdoor cowork
-
 # Start Memdoor (gateway + vite dev server) in the background.
 # Vite runs the React dev server with HMR; the gateway serves the API
 # + the embedded production bundle. Local dev usually wants vite for
@@ -302,24 +297,35 @@ all: fmt check build
 help:
 	@echo "🐙 Memdoor — a coding agent that cuts your model bill"
 	@echo ""
+	@echo "=== Every day ==="
 	@echo "  make build              - Build the memdoor binary"
-	@echo "  make start              - Start gateway + vite dev server (background)"
-	@echo "  make stop               - Stop Memdoor"
-	@echo "  make setup              - Build + initialize workspace"
-	@echo "  make quickstart         - Clean build + setup in one shot"
+	@echo "  make up                 - Rebuild and restart the gateway in the background (sources .envrc)"
+	@echo "  make start              - Gateway + vite dev server (background)"
+	@echo "  make stop               - Stop the gateway and the dev server"
+	@echo "  make test               - Run tests (test-verbose: with -v; test-a2a: the A2A suite)"
+	@echo "  make check              - go vet + go mod tidy (check-fmt: formatting, for CI)"
+	@echo "  make fmt                - Format Go files"
+	@echo "  make all                - Build + checks"
 	@echo ""
 	@echo "=== Run modes ==="
-	@echo "  make gateway            - Run gateway in foreground"
-	@echo "  make gateway-verbose    - Run gateway in foreground (verbose logs)"
-	@echo "  make cowork             - Launch the Cowork TUI"
+	@echo "  make gateway            - Run the gateway in the foreground (gateway-verbose: verbose logs)"
+	@echo "  make setup              - Build + initialize a workspace (quickstart: clean build + setup)"
+	@echo "  make skills-sync        - Copy the repo's skills to ~/.memdoor/skills"
+	@echo "  make workflow-selftest  - Run the workflow engine's selftest against the running gateway"
 	@echo ""
-	@echo "=== Development ==="
-	@echo "  make test               - Run tests"
-	@echo "  make test-a2a           - A2A messaging regression suite"
-	@echo "  make fmt                - Format Go files"
-	@echo "  make check              - go vet + go mod tidy"
-	@echo "  make check-fmt          - Verify formatting (CI)"
-	@echo "  make clean              - Remove binary"
+	@echo "=== Docs and web ==="
+	@echo "  make cli-index          - Regenerate the command index in docs/reference/CLI.md from --help"
+	@echo "  make web-build          - Build the web bundle alone"
+	@echo ""
+	@echo "=== Release ==="
+	@echo "  make deploy             - Deploy to memdoor.ai (tags itself; VPS_HOST=root@host overrides)"
+	@echo "  make rollback           - Put the previous release back (releases: what the deploys kept)"
+	@echo "  make oss-publish        - Push this release to the public repo (oss-tree: prepare only)"
+	@echo "  make indexnow           - Tell the IndexNow engines the sitemap changed"
+	@echo "  make github-protect     - Set the public repo's branch rules"
+	@echo "  make metrics            - Adoption, accounts, stars; snapshot under .memdoor/metrics/"
+	@echo "  make rotate-admin       - Rotate the prod admin password"
+	@echo "  make clean              - Remove the binary"
 
 # Default target
 .DEFAULT_GOAL := help

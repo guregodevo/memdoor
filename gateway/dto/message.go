@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"memdoor/pkg/domain"
 	"memdoor/pkg/message"
-	"memdoor/pkg/reaction"
 	"memdoor/pkg/shared"
 )
 
@@ -19,7 +18,6 @@ type MessageDTO struct {
 	AuthorID   string            `json:"author_id"`
 	AuthorName string            `json:"author_name"` // UI-specific: display name for the author
 	Content    MessageContentDTO `json:"content"`
-	Reactions  []ReactionDTO     `json:"reactions,omitempty"`
 	ParentID   *int64            `json:"parent_id,omitempty"` // If this is a thread reply, ID of the parent message
 	IsRead     bool              `json:"is_read"`
 	CreatedAt  string            `json:"created_at"` // RFC3339 formatted
@@ -61,14 +59,6 @@ type LinkPreviewMessageDTO struct {
 	CreatedAt   string `json:"created_at"`
 }
 
-// ReactionDTO represents a reaction for API responses
-type ReactionDTO struct {
-	ID        int64  `json:"id"`
-	UserID    string `json:"user_id"`
-	Emoji     string `json:"emoji"`
-	CreatedAt string `json:"created_at"` // RFC3339 formatted
-}
-
 // NameEnricher interface for looking up display names
 type NameEnricher interface {
 	LoadSingle(ctx context.Context, actorID shared.ActorID) string
@@ -107,7 +97,7 @@ func EnrichLinkPreviewNames(ctx context.Context, previews []message.LinkPreview,
 }
 
 // ToMessageDTO converts a domain Message to a DTO with enriched display name
-func ToMessageDTO(msg *message.Message, authorName string, reactions []*reaction.Reaction, attachments ...FileRefDTO) MessageDTO {
+func ToMessageDTO(msg *message.Message, authorName string, attachments ...FileRefDTO) MessageDTO {
 	// Convert mentions to string array
 	mentions := make([]string, len(msg.Content.Mentions))
 	for i, mention := range msg.Content.Mentions {
@@ -136,17 +126,6 @@ func ToMessageDTO(msg *message.Message, authorName string, reactions []*reaction
 		}
 	}
 
-	// Convert reactions
-	reactionDTOs := make([]ReactionDTO, 0, len(reactions))
-	for _, r := range reactions {
-		reactionDTOs = append(reactionDTOs, ReactionDTO{
-			ID:        int64(r.ID),
-			UserID:    r.UserID.String(),
-			Emoji:     r.Emoji,
-			CreatedAt: r.CreatedAt.Format(time.RFC3339),
-		})
-	}
-
 	// Convert ParentID to *int64 for JSON omitempty
 	var parentID *int64
 	if msg.ParentID != nil {
@@ -165,7 +144,6 @@ func ToMessageDTO(msg *message.Message, authorName string, reactions []*reaction
 			LinkPreviews: linkPreviews,
 			Attachments:  attachments,
 		},
-		Reactions: reactionDTOs,
 		ParentID:  parentID,
 		IsRead:    msg.IsRead,
 		CreatedAt: msg.CreatedAt.Format(time.RFC3339),
@@ -183,7 +161,7 @@ func formatUpdatedAt(msg *message.Message) string {
 
 // ToMessageDTOBatch converts multiple domain Messages to DTOs
 // displayNames should be a map of actorID -> displayName
-func ToMessageDTOBatch(messages []*message.Message, displayNames map[string]string, reactionsByMessage map[message.MessageID][]*reaction.Reaction) []MessageDTO {
+func ToMessageDTOBatch(messages []*message.Message, displayNames map[string]string) []MessageDTO {
 	dtos := make([]MessageDTO, len(messages))
 	for i, msg := range messages {
 		authorID := msg.AuthorID.String()
@@ -192,12 +170,7 @@ func ToMessageDTOBatch(messages []*message.Message, displayNames map[string]stri
 			authorName = authorID // Fallback
 		}
 
-		reactions := reactionsByMessage[msg.ID]
-		if reactions == nil {
-			reactions = []*reaction.Reaction{}
-		}
-
-		dtos[i] = ToMessageDTO(msg, authorName, reactions)
+		dtos[i] = ToMessageDTO(msg, authorName)
 	}
 	return dtos
 }

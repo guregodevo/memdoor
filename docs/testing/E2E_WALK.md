@@ -11,7 +11,7 @@ yet, so build from the repository. One command builds it, points `memdoor` on
 your PATH at it, and restarts your gateway on it:
 
 ```
-cd ~/Dev/aktapus    # direnv exports OPEN_ROUTER_API_KEY here
+cd memdoor          # your checkout; .envrc exports OPEN_ROUTER_API_KEY
 make up
 memdoor --version
 ```

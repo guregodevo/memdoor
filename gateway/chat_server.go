@@ -20,7 +20,6 @@ import (
 	"memdoor/pkg/channel"
 	"memdoor/pkg/filestore"
 	"memdoor/pkg/message"
-	"memdoor/pkg/reaction"
 	"memdoor/pkg/repository"
 	"memdoor/pkg/shared"
 )
@@ -75,7 +74,6 @@ type ChatServer struct {
 	queueManager *queue.QueueManager // Queue manager for per-session serialization
 	buddyRepo    repository.BuddyRepository
 	channelRepo  repository.ChannelRepository
-	reactionRepo reaction.Repository
 	cronRepo     repository.CronJobRepository // Cron job repository
 
 	// onCronJobAdded / onCronJobRemoved tell the RUNNING scheduler about jobs
@@ -107,7 +105,6 @@ type ChatServer struct {
 func NewChatServer(
 	buddyRepo repository.BuddyRepository,
 	channelRepo repository.ChannelRepository,
-	reactionRepo reaction.Repository,
 	cronRepo repository.CronJobRepository,
 	cronHistoryRepo repository.CronHistoryRepository,
 	agentSecretRepo repository.AgentSecretRepository,
@@ -124,7 +121,6 @@ func NewChatServer(
 		hub:             hub,
 		buddyRepo:       buddyRepo,
 		channelRepo:     channelRepo,
-		reactionRepo:    reactionRepo,
 		cronRepo:        cronRepo,
 		cronHistoryRepo: cronHistoryRepo,
 		agentSecretRepo: agentSecretRepo,
@@ -166,7 +162,7 @@ func (cs *ChatServer) CreateBroadcaster() message.MessageBroadcaster {
 	return func(msg *message.Message) {
 		ctx := context.Background()
 
-		messageDTO := cs.enrichAndConvert(ctx, msg, nil)
+		messageDTO := cs.enrichAndConvert(ctx, msg)
 
 		// Build the WSMessage for channel broadcast
 		channelWSMsg := websocket.WSMessage{
@@ -277,7 +273,7 @@ func requireAuth(w http.ResponseWriter, r *http.Request) (shared.ActorID, bool) 
 
 // enrichAndConvert enriches a single domain message with display names and link previews,
 // then converts it to a DTO for API responses. Consolidates the repeated enrichment pattern.
-func (cs *ChatServer) enrichAndConvert(ctx context.Context, msg *message.Message, reactions []*reaction.Reaction, fileDTOs ...dto.FileRefDTO) dto.MessageDTO {
+func (cs *ChatServer) enrichAndConvert(ctx context.Context, msg *message.Message, fileDTOs ...dto.FileRefDTO) dto.MessageDTO {
 	if len(msg.Content.LinkPreviews) > 0 {
 		msg.Content.LinkPreviews = dto.EnrichLinkPreviewNames(
 			ctx,
@@ -294,12 +290,12 @@ func (cs *ChatServer) enrichAndConvert(ctx context.Context, msg *message.Message
 		authorName = msg.AuthorID.String()
 	}
 
-	return dto.ToMessageDTO(msg, authorName, reactions, fileDTOs...)
+	return dto.ToMessageDTO(msg, authorName, fileDTOs...)
 }
 
 // enrichAndConvertBatch enriches a slice of domain messages with display names and link previews,
 // then converts them to DTOs for API responses.
-func (cs *ChatServer) enrichAndConvertBatch(ctx context.Context, msgs []*message.Message, reactionsByMessage map[message.MessageID][]*reaction.Reaction) []dto.MessageDTO {
+func (cs *ChatServer) enrichAndConvertBatch(ctx context.Context, msgs []*message.Message) []dto.MessageDTO {
 	// Batch-load display names
 	displayNames := make(map[string]string)
 	if cs.nameEnricher != nil {
@@ -322,7 +318,7 @@ func (cs *ChatServer) enrichAndConvertBatch(ctx context.Context, msgs []*message
 		}
 	}
 
-	return dto.ToMessageDTOBatch(msgs, displayNames, reactionsByMessage)
+	return dto.ToMessageDTOBatch(msgs, displayNames)
 }
 
 func mustMarshal(v interface{}) json.RawMessage {

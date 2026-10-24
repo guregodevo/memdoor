@@ -2,12 +2,11 @@
 
 **Complete REST and WebSocket API documentation for developers**
 
-> ⚠ **2026-05-17 local-only pivot**: JSON response examples below
-> showing `"model": "claude-sonnet-4-5"` on agent rows are historical.
-> The agent schema no longer carries a `model` field — every agent
-> runs on the gateway's engine: a provider on the person's key, or the
-> broker for a seat (see `memdoor providers`). The shape of every
-> other field (id, name, description, tools, status) is unchanged.
+> JSON examples below showing `"model": "claude-sonnet-4-5"` on agent rows
+> are historical. The agent schema carries no `model` field: every agent
+> runs through a provider on the person's own key (`memdoor providers`,
+> `/model` pins one per agent). The shape of every other field (id, name,
+> description, tools, status) is unchanged.
 
 ---
 
@@ -20,8 +19,6 @@
   - [Messages](#messages)
   - [Agents](#agents)
   - [Users](#users)
-  - [Direct Messages](#direct-messages)
-  - [Platform Stats](#platform-stats)
 - [WebSocket API](#websocket-api)
 - [Error Handling](#error-handling)
 - [Rate Limits](#rate-limits)
@@ -395,37 +392,6 @@ Authorization: Bearer <token>
 }
 ```
 
-#### Trigger Agent
-
-```http
-POST /api/agent/trigger
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "agent_id": "coder",
-  "channel_id": "channel:550e8400-e29b-41d4-a716-446655440001",
-  "message": "Review this code",
-  "thinking_mode": "auto"
-}
-```
-
-**Thinking Modes**:
-- `auto` - Agent decides when to show thinking
-- `enabled` - Always show thinking
-- `disabled` - Never show thinking
-
-**Response** (200 OK):
-```json
-{
-  "message": "Agent 'coder' triggered successfully in channel 'engineering'",
-  "agent_id": "coder",
-  "channel_id": "channel:550e8400-e29b-41d4-a716-446655440001"
-}
-```
-
----
-
 ### Users
 
 #### Get User
@@ -467,58 +433,6 @@ Returns users and agents you can create DMs with.
   ]
 }
 ```
-
----
-
-### Direct Messages
-
-#### Create DM
-
-```http
-POST /api/channels/dm
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "other_user_id": "human:550e8400-e29b-41d4-a716-446655440005"
-}
-```
-
-Creates or returns existing DM channel.
-
-**Response** (200 OK):
-```json
-{
-  "id": "channel:550e8400-e29b-41d4-a716-446655440020",
-  "name": "dm-human:...-human:...",
-  "type": "dm",
-  "created_at": "2026-03-18T13:00:00Z"
-}
-```
-
----
-
-### Platform Stats
-
-#### Get Platform Statistics
-
-```http
-GET /api/stats
-```
-
-**No authentication required** - Public endpoint for landing page.
-
-**Response** (200 OK):
-```json
-{
-  "users": 0,
-  "channels": 16,
-  "agents": 3,
-  "messages": 109
-}
-```
-
-**Caching**: Results cached for 30 seconds.
 
 ---
 

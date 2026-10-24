@@ -75,7 +75,7 @@ Complete technical reference (`docs/reference/`):
 - **[Logs Quick Reference](reference/LOGS_QUICK_REF.md)** — Common log queries
 - **[Queue](reference/QUEUE.md)** — Message queuing and concurrency
 - **[Skills](reference/SKILLS.md)** — Skill resolution, editing, seeding, self-extension
-- **[Gateway API (generated)](reference/gateway/README.md)** — HTTP/WebSocket endpoint reference
+- **[Gateway reference](reference/gateway/README.md)** — configuration, the WebSocket protocol, agent execution, troubleshooting
 
 ---
 
@@ -120,7 +120,6 @@ Feature-focused walkthroughs (`docs/features/`):
 - **[Memory Tool](MEMORY_TOOL.md)**
 - **[Secure Credentials](SECURE_CREDENTIALS.md)**
 - **[Sandbox Implementation](SANDBOX_IMPLEMENTATION_GUIDE.md)**
-- **[OpenClaw Organization](openclaw/OPENCLAW_ORGANIZATION.md)**
 
 ---
 

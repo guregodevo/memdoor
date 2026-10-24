@@ -28,7 +28,6 @@ type turnNode struct {
 type turnGraphState struct {
 	nodes  []turnNode
 	layers [][]int // node indexes per dependency layer, drawn in order
-	rows   []int   // the node drawn on each row (−1 for a separator)
 	index  int     // the selected node
 	head   string
 }

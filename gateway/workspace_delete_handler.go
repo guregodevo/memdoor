@@ -115,12 +115,6 @@ func (s *Server) handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {
 	// before their parents). SQLite doesn't enforce FKs by default
 	// so the order is for clarity, not correctness.
 	cascadeStmts := []string{
-		// Reactions hang off messages, which hang off channels.
-		`DELETE FROM reactions WHERE message_id IN (
-			SELECT id FROM messages WHERE channel_id IN (
-				SELECT id FROM channels WHERE workspace_id = ?
-			)
-		)`,
 		`DELETE FROM messages WHERE channel_id IN (
 			SELECT id FROM channels WHERE workspace_id = ?
 		)`,

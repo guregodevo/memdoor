@@ -8,7 +8,7 @@ import (
 )
 
 // Message is an immutable aggregate representing a message in a channel
-// Messages are append-only - no edits, no reactions (those are separate aggregates)
+// Messages are append-only
 //
 // INVARIANTS:
 // 1. Author must be a member of channel (enforced by service on write)

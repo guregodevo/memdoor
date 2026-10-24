@@ -8,7 +8,6 @@ import (
 	"memdoor/pkg/domain"
 	"memdoor/pkg/filestore"
 	"memdoor/pkg/message"
-	"memdoor/pkg/reaction"
 	"memdoor/pkg/shared"
 
 	"github.com/google/uuid"
@@ -209,8 +208,7 @@ type RepositoryFactory interface {
 	Channels() ChannelRepository
 	ChannelMemberships() channel.MembershipRepository // Channel membership management
 	Buddies() BuddyRepository
-	Messages() message.Repository   // New DDD message repository
-	Reactions() reaction.Repository // Message reactions
+	Messages() message.Repository // New DDD message repository
 	AgentEvents() AgentEventRepository
 	BuddyMemory() BuddyMemoryRepository
 	Sessions() SessionRepository

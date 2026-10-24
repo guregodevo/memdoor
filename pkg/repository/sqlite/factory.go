@@ -13,7 +13,6 @@ import (
 	"memdoor/pkg/channel"
 	"memdoor/pkg/filestore"
 	"memdoor/pkg/message"
-	"memdoor/pkg/reaction"
 	"memdoor/pkg/repository"
 	_ "memdoor/pkg/sqlitedriver"
 )
@@ -30,7 +29,6 @@ type SQLiteFactory struct {
 	channelMemberships channel.MembershipRepository
 	buddies            repository.BuddyRepository
 	messages           message.Repository
-	reactions          reaction.Repository
 	agentEvents        repository.AgentEventRepository
 	buddyMemory        repository.BuddyMemoryRepository
 	sessions           repository.SessionRepository
@@ -76,7 +74,6 @@ func NewSQLiteFactory(dbPath string) (repository.RepositoryFactory, error) {
 		channelMemberships: NewMembershipRepository(db),
 		buddies:            NewBuddyRepository(db),
 		messages:           NewMessageRepository(db),
-		reactions:          NewReactionRepository(db),
 		agentEvents:        NewAgentEventRepository(db),
 		buddyMemory:        NewBuddyMemoryRepository(db),
 		sessions:           NewSessionRepository(db),
@@ -100,7 +97,6 @@ func (f *SQLiteFactory) ChannelMemberships() channel.MembershipRepository {
 }
 func (f *SQLiteFactory) Buddies() repository.BuddyRepository             { return f.buddies }
 func (f *SQLiteFactory) Messages() message.Repository                    { return f.messages }
-func (f *SQLiteFactory) Reactions() reaction.Repository                  { return f.reactions }
 func (f *SQLiteFactory) AgentEvents() repository.AgentEventRepository    { return f.agentEvents }
 func (f *SQLiteFactory) BuddyMemory() repository.BuddyMemoryRepository   { return f.buddyMemory }
 func (f *SQLiteFactory) Sessions() repository.SessionRepository          { return f.sessions }
@@ -227,20 +223,6 @@ func initSchema(db *sql.DB) error {
 		FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE,
 		FOREIGN KEY (parent_id) REFERENCES messages(id) ON DELETE SET NULL
 	);
-
-	-- Message reactions table
-	CREATE TABLE IF NOT EXISTS reactions (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		message_id INTEGER NOT NULL,
-		user_id TEXT NOT NULL, -- ActorID format: 'human:alice' or 'agent:writer'
-		emoji TEXT NOT NULL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE (message_id, user_id, emoji), -- Prevent duplicate reactions
-		FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
-	);
-
-	-- Index for fast reaction lookups by message
-	CREATE INDEX IF NOT EXISTS idx_reactions_message_id ON reactions(message_id);
 
 	-- Agent events table (execution logs)
 	CREATE TABLE IF NOT EXISTS agent_events (

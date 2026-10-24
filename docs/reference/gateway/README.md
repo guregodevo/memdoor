@@ -2,11 +2,11 @@
 
 **Complete reference for the Memdoor Gateway service**
 
-> ⚠ Examples below with `TASKFORCE_API_KEY` env vars or agent rows with
-> `"model": "claude-sonnet-4-5"` are historical. The gateway runs on API
-> models only (2026-10-03): a provider on the person's key, a company's AI
-> gateway, or the broker for a seat. The internal LLM types stay
-> Anthropic-shaped; every provider converts to that shape.
+> Agent rows below with `"model": "claude-sonnet-4-5"` are historical
+> examples. The gateway runs on API models only (2026-10-03), through a
+> provider on the person's own key or a company's AI gateway
+> (`memdoor providers`); a seat never supplies a key. The internal LLM
+> types stay Anthropic-shaped; every provider converts to that shape.
 
 ---
 
@@ -589,7 +589,7 @@ curl http://localhost:18789/health
 ```
 
 **Common Causes:**
-- Invalid API key (TASKFORCE_API_KEY not set)
+- No provider connected (`memdoor providers` shows none answering)
 - Agent not configured in config.json
 - Rate limit exceeded
 - Network timeout
