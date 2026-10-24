@@ -58,7 +58,8 @@ no target keeps its answer as the proof, and the task after it reads it:
 The check is not the task's to change. The programs a target command runs
 from the project (`./check.sh`, `sh scripts/verify.sh`) are kept as they are
 when the task starts: a write to one of them is refused with the reason, and
-one changed by any other means is put back before the check runs. Found by
+one changed by any other means is put back after the tool call and again
+right before the check runs, whatever ran in the background. Found by
 measuring a check that could never pass: on its third try the agent rewrote
 the script to exit 0, and the run read done. What the check itself depends
 on (the tests `go test` runs, a Makefile's recipe) is the task's own work.

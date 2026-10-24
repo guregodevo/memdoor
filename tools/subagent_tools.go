@@ -59,6 +59,12 @@ type SessionGetter interface {
 // works, read back when the run's announcement is built.
 const RequesterWorkdirKey = "requester_workdir"
 
+// KeptProgramsKey is a session's record of the programs its task's check
+// runs (gateway/target_guard.go): kept as they are, refused to writing
+// tools, put back before the check. A spawned run inherits its
+// requester's, or the requester could change its check through a child.
+const KeptProgramsKey = "done_when_programs"
+
 // RequesterSessionKey is the child session's record of WHO is waiting for it.
 // A spawned run gets its own run id and its own session key, and events are
 // broadcast per session — so everything a sub-session did was invisible to the
@@ -272,6 +278,13 @@ func (t *SessionsSpawnTool) ExecuteWithSession(input json.RawMessage, requesterS
 		// in the coder's scratch directory (2026-09-15 11:58, a Valve trailer
 		// fetched into ~/memdoor-coder while the film lived in ~/zapping).
 		session.SetMetadata(RequesterWorkdirKey, workdir)
+	}
+	if requesterSessionKey != "" {
+		if requester, err := t.sessionGetter.GetOrCreateSession(requesterSessionKey, "main"); err == nil {
+			if kept, ok := requester.GetMetadata()[KeptProgramsKey]; ok {
+				session.SetMetadata(KeptProgramsKey, kept)
+			}
+		}
 	}
 
 	// Build and set subagent system prompt

@@ -127,13 +127,24 @@ command, or given to an interpreter (`sh x.sh`, `python x.py`), and
 `snapshotTargetPrograms` keeps their bytes, mode and hash on the session
 (`done_when_programs`). `executeTool` refuses `write_file`, `edit_file`,
 `apply_patch` and `search_replace` calls that name one
-(`targetGuardRefuses`), and after every tool call `restoreTargetPrograms`
-puts back any that changed (a shell redirect, a patch) and returns the tool
-an error saying so. The check mario and `doneWhen` run is then the declared
-one. Data the check reads (`test -f grades/x.json`) is not a program and
-stays the task's to produce; what a program depends on (tests, a Makefile)
-is not covered. Receipt: the never fixture, three attempts, ✗, the script
-unchanged in git; one refusal logged on the first attempt.
+(`targetGuardRefuses`, on the file the call names, `namedFiles`: its path
+field or a patch's file lines, never the content being written), after
+every tool call `restoreTargetPrograms` puts back any that changed (a shell
+redirect, a patch) and returns the tool an error saying so, and
+`restoreBeforeCheck` puts them back once more right before `doneWhen` is
+evaluated, so a change that lands after the last tool call (a background
+process the turn left running) never reaches the check (found by review,
+2026-10-24). A run spawned with `sessions_spawn` inherits the kept programs
+(`tools.KeptProgramsKey`), so a task cannot change its check through a
+child. The check mario and `doneWhen` run is then the declared one. Data
+the check reads (`test -f grades/x.json`) is not a program and stays the
+task's to produce; what a program depends on (tests, a Makefile) is not
+covered, nor is a program the kept one calls (`./run.sh` calling
+`./never.sh`: run.sh is kept). Receipts: the never fixture, three attempts,
+✗, the script unchanged in git, one refusal logged on the first attempt;
+the background fixture (`nohup sh -c 'sleep 2; … > never.sh' &`, then no
+tool call), ✗, "Kept programs put back before the check" logged, the
+script unchanged in git.
 
 `budget: 300000` on an agent task is the tokens its turn may spend running
 on alone while its target is missing (mario's YAML, beside `model:`);

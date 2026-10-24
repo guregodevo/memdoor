@@ -3,10 +3,14 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"memdoor/gateway/logs"
+	"memdoor/tools"
 )
 
 // THE AGENT CANNOT EDIT ITS OWN CHECK (Greg, 2026-10-24: "fix the hole, the
@@ -25,7 +29,7 @@ import (
 // Not covered, on purpose: what the check itself depends on (the tests
 // `go test` runs, a Makefile's recipe) is the task's own work.
 
-const targetProgramsKey = "done_when_programs"
+const targetProgramsKey = tools.KeptProgramsKey
 
 // targetProgramMax is the largest program kept; a check script is small.
 const targetProgramMax = 1 << 20
@@ -160,28 +164,62 @@ func targetGuardRefuses(session *Session, tool string, input []byte) string {
 	if !writingTools[tool] {
 		return ""
 	}
-	in := string(input)
+	named := namedFiles(input)
 	for _, p := range targetProgramsOf(session) {
-		if namesPath(in, p.Path) {
-			return targetGuardMessage(tool, []string{p.Path}, false)
+		for _, f := range named {
+			if sameFile(f, p.Path) {
+				return targetGuardMessage(tool, []string{p.Path}, false)
+			}
 		}
 	}
 	return ""
 }
 
-// namesPath reports whether text names the file: the path, or its base
-// name as a path component ("./never.sh", "never.sh", "/srv/app/never.sh").
-func namesPath(text, rel string) bool {
-	if strings.Contains(text, rel) {
-		return true
+var pathFields = []string{"path", "file_path", "filepath", "file", "filename", "target_file"}
+
+// namedFiles are the files a writing tool's input names: its path field,
+// or the file lines of a patch. The content being written is not looked
+// at: a note that mentions ./check.sh is not a write to check.sh (a review
+// of 2026-10-24 found the substring match refusing mycheck.sh and any file
+// whose text named the check).
+func namedFiles(input []byte) []string {
+	var fields map[string]any
+	if json.Unmarshal(input, &fields) != nil {
+		return nil
 	}
-	base := filepath.Base(rel)
-	for _, prefix := range []string{"./", "/", `"`, " ", "'"} {
-		if strings.Contains(text, prefix+base) {
-			return true
+	var named []string
+	for _, k := range pathFields {
+		if v, _ := fields[k].(string); strings.TrimSpace(v) != "" {
+			named = append(named, strings.TrimSpace(v))
 		}
 	}
-	return false
+	for _, k := range []string{"patch", "diff"} {
+		if v, _ := fields[k].(string); v != "" {
+			for _, m := range patchFileLine.FindAllStringSubmatch(v, -1) {
+				named = append(named, strings.TrimSpace(m[1]))
+			}
+		}
+	}
+	return named
+}
+
+// sameFile: the named path is the kept one, relative to the project or
+// absolute ("./never.sh", "never.sh", "/srv/app/never.sh" for never.sh;
+// not mycheck.sh for check.sh, not scripts/never.sh for never.sh).
+func sameFile(named, rel string) bool {
+	n := filepath.ToSlash(filepath.Clean(named))
+	return n == rel || (filepath.IsAbs(named) && strings.HasSuffix(n, "/"+rel))
+}
+
+// restoreBeforeCheck puts the kept programs back right before the check is
+// evaluated: a change that lands after the last tool call (a background
+// process the turn left running) is put back too, so the check never runs
+// on a rewritten script. Found by review, 2026-10-24.
+func restoreBeforeCheck(session *Session, dir string) {
+	if changed := restoreTargetPrograms(session, dir); len(changed) > 0 {
+		logs.New("Agent").WithSession(session.ID).Warn("Kept programs put back before the check",
+			slog.Any("paths", changed))
+	}
 }
 
 func targetGuardMessage(tool string, paths []string, restored bool) string {

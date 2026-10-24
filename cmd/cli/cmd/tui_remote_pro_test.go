@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -80,7 +81,17 @@ func TestRemoteOnAnotherMachineIsOnThatGateway(t *testing.T) {
 	if strings.Contains(out, "relay only carries") {
 		t.Fatalf("the sentence names the gateway, not a relay: %q", out)
 	}
-	laptop := remoteSession{Gateway: "http://127.0.0.1:18789", Token: "gw-token", Account: "acct", ChannelID: "c-lap"}
+	// A loopback port nobody listens on: a gateway on this machine that
+	// names no network address. The test used to ask 127.0.0.1:18789, the
+	// developer's own gateway, which binds the network by default and so,
+	// by design, hosts the link itself (failed 2026-10-24 once it did).
+	closed, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	quiet := "http://" + closed.Addr().String()
+	closed.Close()
+	laptop := remoteSession{Gateway: quiet, Token: "gw-token", Account: "acct", ChannelID: "c-lap"}
 	if laptop.direct() || laptop.relayBase() != "https://memdoor.ai" || laptop.relayToken() != "acct" {
 		t.Fatalf("a gateway on this machine goes through the hosted relay: base=%q token=%q", laptop.relayBase(), laptop.relayToken())
 	}

@@ -63,6 +63,19 @@ func TestTheTaskCannotChangeItsOwnCheck(t *testing.T) {
 	if msg := targetGuardRefuses(s, "write_file", []byte(`{"path":"ok.txt"}`)); msg != "" {
 		t.Errorf("another file is the task's: %q", msg)
 	}
+	if msg := targetGuardRefuses(s, "write_file", []byte(`{"path":"`+abs+`","content":"exit 0"}`)); msg == "" {
+		t.Error("the absolute path is the same file")
+	}
+	for _, in := range []string{
+		`{"path":"mynever.sh","content":"exit 0"}`,
+		`{"path":"notes.md","content":"the check is ./never.sh and it fails"}`,
+		`{"path":"scripts/never.sh","content":"exit 0"}`,
+		`{"file_path":"README.md","old_string":"never.sh","new_string":"never.sh (the check)"}`,
+	} {
+		if msg := targetGuardRefuses(s, "write_file", []byte(in)); msg != "" {
+			t.Errorf("not the check, refused: %s: %q", in, msg)
+		}
+	}
 	if msg := targetGuardRefuses(s, "bash", []byte(`{"command":"./never.sh"}`)); msg != "" {
 		t.Errorf("running the check is allowed: %q", msg)
 	}

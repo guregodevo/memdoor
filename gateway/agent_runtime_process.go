@@ -895,6 +895,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 				// A DECLARED DONE (a workflow task's target) is checked, not
 				// judged: the artifact is there or it is not.
 				declaredTarget, _ := session.GetMetadataValue(doneWhenKey)
+				restoreBeforeCheck(session, turnWorkdir(ctx))
 				label, exists, declared := doneWhen(ctx, turnWorkdir(ctx), fmt.Sprint(declaredTarget))
 				var p float64
 				retry := false
@@ -1098,6 +1099,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	if ar.agentWorksOnCodebase(ctx) && len(response.ToolsExecuted) > 0 {
 		line := ar.turnVerdict.judgeExitZeroChecks(ctx, receiptsOf(response.ToolsExecuted)).line()
 		if declaredTarget, ok := session.GetMetadataValue(doneWhenKey); ok {
+			restoreBeforeCheck(session, turnWorkdir(ctx))
 			if label, exists, declared := doneWhen(ctx, turnWorkdir(ctx), fmt.Sprint(declaredTarget)); declared {
 				present, absent := " exists", " missing"
 				if strings.HasPrefix(label, "target `") { // a command target passes or fails
