@@ -104,6 +104,21 @@ func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string,
 		}
 	}
 	var streamed int // text streamed as deltas since the last whole-text frame
+	// A round's text after a tool call starts on its own line: two rounds
+	// ran together ("…run the file.Created hello.py", 2026-10-24).
+	var lastText byte
+	var toolsSince bool
+	emit := func(t string) {
+		if t == "" {
+			return
+		}
+		if toolsSince && lastText != 0 && lastText != '\n' {
+			sink.Text("\n")
+		}
+		toolsSince = false
+		lastText = t[len(t)-1]
+		sink.Text(t)
+	}
 	feed.OnMessage(protocol.MessageTypeAgentEvent, func(msg protocol.Message) error {
 		stream, _ := msg.Data["stream"].(string)
 		data, _ := msg.Data["data"].(map[string]any)
@@ -116,20 +131,21 @@ func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string,
 			switch str("event") {
 			case "text_delta":
 				streamed += len(str("delta"))
-				sink.Text(str("delta"))
+				emit(str("delta"))
 			case "text":
 				// The whole round's text follows its deltas: skip what was
 				// streamed; an appended tail (the receipt line) is new.
 				if append, _ := data["append"].(bool); append {
-					sink.Text("\n" + str("text"))
+					emit("\n" + str("text"))
 				} else if streamed == 0 {
-					sink.Text(str("text"))
+					emit(str("text"))
 				}
 				streamed = 0
 			}
 		case "tool":
 			switch str("event") {
 			case "start":
+				toolsSince = true
 				sink.ToolStart(str("id"), str("tool"), json.RawMessage(str("input")))
 			case "complete":
 				sink.ToolDone(str("id"), str("output"), str("error") != "")

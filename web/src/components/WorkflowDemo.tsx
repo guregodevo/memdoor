@@ -37,15 +37,15 @@ const TAKES = [
     what: 'failing test → fix → gate → your one comment → fixed → PR',
   },
   {
-    // Recorded 2026-10-11: a plain shell, no window. The gateway starts on the
-    // first command; the exit code is the turn's receipt; resume prints the
-    // same conversation into a pipe.
-    key: 'headless',
-    label: 'Headless',
-    ask: 'git diff | memdoor run "review this diff" — then a fix, a workflow with --wait, and resume | head.',
-    cast: '/headless.cast',
-    poster: 'npt:0:20',
-    what: '',
+    // Recorded 2026-10-24 against Google Cloud Shell: one line from a laptop,
+    // the ssh door, no --dir. The turn runs on the box, in its home, and the
+    // answer and the receipt come back; the conversation stays there.
+    key: 'ssh',
+    label: 'A box over ssh',
+    ask: 'memdoor --gateway ssh://box run "write hello.py that prints this machine\'s hostname, run it"',
+    cast: '/ssh-door.cast',
+    poster: 'npt:0:7',
+    what: 'the run on the box, in its home · the answer and the receipt here · memdoor resume reopens it',
   },
   {
     key: 'cost',
