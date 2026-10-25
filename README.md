@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="web/public/memdoor-logo.png" alt="Memdoor" width="128" height="128">
+  <img src="web/public/icon-512.png" alt="" width="72" height="72">
   <h1>Memdoor</h1>
   <p><strong>Your daemon agents on every door.</strong><br>A coding agent on a gateway you own, on your own key: start a run from CI, a schedule or a shell, finish it from your phone or a window.</p>
   <p>Multi-step jobs are files in the repo, run again by hand or on a schedule. Each step is checked by its output, and the run stops only where you decide.</p>
