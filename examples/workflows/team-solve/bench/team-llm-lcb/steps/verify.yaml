@@ -1,0 +1,5 @@
+type: command
+requires:
+  - table_pattern: write2
+command: |
+  "${LCB_PYTHON:-python3}" "${LCB_BENCH:-$HOME/lcb-bench}"/grade.py --public "$(basename "$PWD")" > final-test-output.log 2>&1; r=$?; cat final-test-output.log; exit $r

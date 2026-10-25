@@ -1,0 +1,23 @@
+type: llm
+model: openrouter:qwen/qwen3.8-27b throughput thinking off
+requires:
+  - table_pattern: ideate-a
+  - table_pattern: ideate-b
+prompt: |
+  You are the solver. Read the problem, the plan and the two proposals, choose the
+  approach you can argue is correct and fast enough, and write the complete program.
+  Answer with a short justification, then ONE ```python block with the whole program
+  and nothing after it. If the problem gives starter code, complete it exactly;
+  otherwise read stdin and print the answer. No input() prompts, no debug output.
+
+  # Problem
+  {{ output "read" }}
+
+  # Plan
+  {{ output "plan" }}
+
+  # Proposal A
+  {{ output "ideate-a" }}
+
+  # Proposal B
+  {{ output "ideate-b" }}

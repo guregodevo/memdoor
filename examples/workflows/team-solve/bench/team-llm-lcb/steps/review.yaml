@@ -1,0 +1,21 @@
+type: llm
+model: openrouter:qwen/qwen3.8-27b throughput thinking off
+requires:
+  - table_pattern: test
+prompt: |
+  You are the manager. Below are the problem, the solver's program and the result of
+  running it on the sample tests. If every sample passed, answer exactly:
+  NO REPAIR NEEDED
+  and nothing else. Otherwise diagnose the failure from the test output (wrong answer,
+  crash, timeout, output format) and write precise repair instructions for a fresh
+  worker who will see only this review and the program: what is wrong, where, and what
+  to change. Do not write the whole program.
+
+  # Problem
+  {{ output "read" }}
+
+  # Program
+  {{ output "solve" }}
+
+  # Sample test result
+  {{ output "test" }}

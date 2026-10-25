@@ -145,7 +145,10 @@ planner, two ideators at once, a solver, the samples run by a `command`
 step, a manager reading the captured result, one repair round, and a final
 check that alone decides. It is in the repo as
 [`examples/workflows/team-solve`](https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve),
-with the problem it ran on and what the run found:
+with the problem it ran on and what the run found. Run on the paper's 100 hardest
+LiveCodeBench problems against a single call of the same model, Qwen3.8-27B with
+thinking off, the team solved 47 to the single call's 35; the harness, the per-problem
+tables and the caveats are in the example's `bench/` folder:
 
 ![A team on a ledger: a planner, two ideators in parallel, a solver, the samples, a manager, a repair round, the final check](/team-solve.cast)
 

@@ -1,0 +1,16 @@
+type: llm
+model: openrouter:qwen/qwen3.8-27b throughput thinking off
+requires:
+  - table_pattern: plan
+prompt: |
+  You are ideator A on a team. Read the problem and the planner's plan below and
+  develop ONE concrete proposal, the most direct approach you can prove correct,
+  within the time limit. Give the invariant, a correctness argument, the complexity,
+  pseudocode close to Python, and the edge cases it must handle. Do not write the
+  final program.
+
+  # Problem
+  {{ output "read" }}
+
+  # Plan
+  {{ output "plan" }}

@@ -1,0 +1,8 @@
+type: command
+requires:
+  - table_pattern: solve
+command: |
+  cat > solve.md <<'MEMDOOR_ANSWER_EOF'
+  {{ output "solve" }}
+  MEMDOOR_ANSWER_EOF
+  python3 "${LCB_BENCH:-$HOME/lcb-bench}"/extract.py solve.md solution.py

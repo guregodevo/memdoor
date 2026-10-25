@@ -171,7 +171,18 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 	}
 	ctx = cheapestRung(ctx)
 	if model = strings.TrimSpace(model); model != "" {
-		ctx = context.WithValue(ctx, sharedctx.ModelKey, model)
+		id, sort, order, effort := parseTaskModel(model)
+		model = id
+		ctx = context.WithValue(ctx, sharedctx.ModelKey, id)
+		if sort != "" {
+			ctx = context.WithValue(ctx, sharedctx.SortKey, sort)
+		}
+		if order != "" {
+			ctx = context.WithValue(ctx, sharedctx.OrderKey, order)
+		}
+		if effort != "" {
+			ctx = context.WithValue(ctx, sharedctx.EffortKey, effort)
+		}
 	}
 	ctx = context.WithValue(ctx, "buddy_agent_name", workflowModelAgent) //nolint:staticcheck // the key the agent runtime reads
 	client, err := c.s.clientFactory.GetClientFor(ctx, workflowModelAgent)
@@ -1445,10 +1456,53 @@ func (r *workflowRun) reviewSince() time.Time {
 // DeepSeek).
 func pinTaskModel(sess *Session, model, actor string) error {
 	if model != "" {
-		return pinModel(sess, model, "", "")
+		id, sort, order, effort := parseTaskModel(model)
+		if err := pinModel(sess, id, sort, order); err != nil {
+			return err
+		}
+		if effort != "" {
+			sess.SetMetadata(sessionEffortKey, effort)
+		}
+		return nil
 	}
 	applyPersistentPin(actor, sess)
 	return nil
+}
+
+// parseTaskModel reads a task's `model:` the way /model reads its line:
+// the id, then an optional host preference (price, throughput, latency,
+// default), an optional `order host1,host2`, and an optional `thinking
+// off|low|medium|high` (the turn's reasoning effort; off = no thinking at
+// all). A bench on 2026-10-25 needed all three: the same model answered at
+// 885 tokens a second on the throughput host and at 44 on the cheapest, it
+// thought past the host's 32K output cap on a planning prompt and wrote
+// nothing, and an llm task has no window to type /model or Shift+Tab in.
+func parseTaskModel(model string) (id, sort, order, effort string) {
+	fields := strings.Fields(model)
+	if len(fields) == 0 {
+		return "", "", "", ""
+	}
+	id = fields[0]
+	for i := 1; i < len(fields); i++ {
+		switch f := strings.ToLower(fields[i]); f {
+		case "price", "throughput", "latency", "default":
+			sort = f
+		case "order":
+			if i+1 < len(fields) {
+				order = fields[i+1]
+				i++
+			}
+		case "thinking", "effort":
+			if i+1 < len(fields) {
+				switch e := strings.ToLower(fields[i+1]); e {
+				case "off", "low", "medium", "high":
+					effort = e
+					i++
+				}
+			}
+		}
+	}
+	return id, sort, order, effort
 }
 
 // sameProject compares two project directories after resolving symlinks

@@ -1,0 +1,18 @@
+type: llm
+model: openrouter:qwen/qwen3.8-27b throughput thinking off
+requires:
+  - table_pattern: review
+prompt: |
+  You are the repair worker. If the review says NO REPAIR NEEDED, answer with the
+  program below unchanged in ONE ```python block. Otherwise apply the review's
+  instructions and answer with the corrected complete program in ONE ```python block
+  and nothing after it.
+
+  # Problem
+  {{ output "read" }}
+
+  # Program
+  {{ output "solve" }}
+
+  # Review
+  {{ output "review" }}

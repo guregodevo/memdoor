@@ -1,0 +1,10 @@
+type: llm
+model: openrouter:qwen/qwen3.8-27b throughput thinking off
+requires:
+  - table_pattern: read
+prompt: |
+  Solve this programming problem. Answer with one complete Python program in a
+  single ```python code block and nothing after it. If the problem gives starter
+  code, complete it; otherwise read stdin and print the answer.
+
+  {{ output "read" }}

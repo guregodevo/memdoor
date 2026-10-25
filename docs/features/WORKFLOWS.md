@@ -105,6 +105,16 @@ summary of a `command`'s git log answered "the commits weren't included in
 your message"). A person's approval is written there too. A browser step is a `command` whose line is
 `memdoor chrome run`.
 
+
+A task's `model:` is read the way /model reads its line (2026-10-25): the id, then
+an optional host preference (`price`, `throughput`, `latency`, `default`) and an
+optional `order host1,host2`, and an optional `thinking off|low|medium|high` (the
+step's reasoning effort; `off` sends OpenRouter's `reasoning.enabled=false`), for agent
+and llm tasks alike. The LCB-100 bench needed all of it: Qwen3.8-27B answered at 885
+tokens a second on OpenRouter's throughput host (Cerebras) and at 44 on the cheapest
+(Darkbloom); with thinking on it ran past that host's 32K output cap on a planning
+prompt and wrote nothing, with thinking off it planned in 3 s; and an llm task has no
+window to type /model or Shift+Tab in.
 ## The target is the turn's definition of done
 
 An agent task's `target` is handed to its turn as the declared done

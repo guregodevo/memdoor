@@ -23,7 +23,7 @@ Run it, or schedule it:
 | Workflow | What it shows |
 |---|---|
 | [nightly-rule](workflows/nightly-rule/) | A nightly build → grade → file where a stale input cannot be filed: steps 2 and 3 are gated by a `test … -nt` command the engine runs |
-| [team-solve](workflows/team-solve/) | The GVS5H method as a workflow: a planner, two parallel ideators, a solver, a manager and one repair round, fresh contexts talking through a ledger on disk; the samples decide, run by a `command` step |
+| [team-solve](workflows/team-solve/) | The GVS5H method as a workflow: a planner, two parallel ideators, a solver, a manager and one repair round, fresh contexts talking through a ledger on disk; the samples decide, run by a `command` step. Benched on LCB-100 against a single call of the same model: 47 vs 35 ([bench](workflows/team-solve/bench/)) |
 
 ## Add one
 

@@ -1,0 +1,17 @@
+type: llm
+model: openrouter:qwen/qwen3.8-27b throughput thinking off
+requires:
+  - table_pattern: plan
+prompt: |
+  You are ideator B on a team. Read the problem and the planner's plan below and
+  develop ONE concrete proposal that differs from the obvious approach, or the
+  obvious approach argued carefully with its proof. Look for the trap in the problem:
+  the constraint, the case or the overflow the direct method misses. Give the
+  invariant, a correctness argument, the complexity, pseudocode close to Python, and
+  the edge cases. Do not write the final program.
+
+  # Problem
+  {{ output "read" }}
+
+  # Plan
+  {{ output "plan" }}

@@ -60,3 +60,10 @@ ladder through OpenRouter:
 - The first attempts failed every step in 0 s with "no agent named coder":
   a run looked its agent up only in its own workspace. Fixed in the gateway
   the same day (v1.692.0).
+
+## On a benchmark
+
+The same method with every role one model call, run on GVS5H's 100 hardest
+LiveCodeBench problems against a single call of the same model, Qwen3.8-27B
+with thinking off: 47 solved against 35, with the harness, the result tables
+and the caveats in [`bench/`](bench/).

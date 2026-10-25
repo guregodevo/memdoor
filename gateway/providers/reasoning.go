@@ -28,5 +28,12 @@ func reasoningFor(ctx context.Context, model string) map[string]any {
 	if effort == "" || reasoningSupport == nil || !reasoningSupport(model) {
 		return nil
 	}
+	// "off" is OpenRouter's enabled:false (Qwen's enable_thinking=false
+	// on the hosts that take it): a step of a bench that must answer
+	// within a host's output cap (2026-10-25: Qwen3.8-27B thought past
+	// 32K tokens on a planning prompt and wrote nothing).
+	if effort == "off" {
+		return map[string]any{"enabled": false}
+	}
 	return map[string]any{"effort": effort}
 }
