@@ -55,7 +55,11 @@ var noWorkspaceTopLevels = map[string]bool{
 	// savings reads ~/.memdoor/savings.jsonl, a machine-local ledger with no
 	// workspace in it; requiring one failed outside a pinned directory
 	// (onboarding walk, 2026-09-27).
-	"savings":   true,
+	"savings": true,
+	// meter reads ~/.memdoor/meter.jsonl, the same kind of machine-local
+	// ledger; on a box with no pinned project it refused to print it
+	// (production host, 2026-10-25).
+	"meter":     true,
 	"uninstall": true, // tears down the install; running pre-setup must work
 	"upgrade":   true, // swaps the memdoor binary; orthogonal to any workspace
 	"claude":    true, // `claude hook install` writes settings.json (no workspace); `claude hook capture` + `claude import` resolve opportunistically and validate in their own RunE
