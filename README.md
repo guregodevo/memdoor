@@ -43,7 +43,10 @@ nvidia/nemotron-3-super-120b-a12b:free` run a real session: 50 requests a day,
 and the free hosts train on what they are sent, so a trial, not private code.
 Or no key at all: `memdoor connect local` finds a model running on this machine
 ([janis](https://github.com/guregodevo/janis), Ollama, llama.cpp, LM Studio),
-and nothing leaves it.
+and nothing leaves it. janis is ours: one Go server that runs the open models on
+a Mac's GPU through MLX or on an NVIDIA box through CUDA, serves chat and the
+decision model with no key, and runs Qwen3-Coder-30B-A3B on a $0.71-an-hour
+Google L4; `memdoor --gateway ssh://you@box connect local` makes that box yours.
 
 <p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
 
