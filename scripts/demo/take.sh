@@ -11,7 +11,10 @@ if [ -n "$DEMO_DIR" ]; then dir=$DEMO_DIR; else
 rm -rf $dir && mkdir -p $dir && git -C $REPO archive HEAD | tar -x -C $dir && (cd $dir && git init -q && git add -A >/dev/null 2>&1 && git -c user.email=demo@memdoor.ai -c user.name=demo commit -q -m checkout)
 [ -d $REPO/.memdoor/workflows/digest ] && mkdir -p $dir/.memdoor/workflows && cp -R $REPO/.memdoor/workflows/digest $dir/.memdoor/workflows/
 fi
-cd $dir; env -u CMUX_WORKSPACE_ID -u CMUX_SOCKET_PATH tmux new-session -d -s $sess -x 96 -y 30 "MEMDOOR_NO_BROWSER=1 $REPO/memdoor tui"; sleep 7
+# DEMO_CMD=<command>: what the pane runs instead of the local window (a
+# door: `memdoor --gateway ssh://you@box`, recorded from the laptop).
+cmd=${DEMO_CMD:-"$REPO/memdoor tui"}
+cd $dir; env -u CMUX_WORKSPACE_ID -u CMUX_SOCKET_PATH tmux new-session -d -s $sess -x 96 -y 30 "MEMDOOR_NO_BROWSER=1 $cmd"; sleep 7
 python3 $S/sample-cast.py $sess $cast 96 30 "$until" $limit > $cast.log 2>&1 &
 sleep 1
 while IFS= read -r line; do

@@ -67,6 +67,40 @@ or `!command` that prints it (Keychain, 1Password, Vault) — the file keeps
 what you typed, never the resolved secret. `--remove <id>` forgets one. When two providers list the same id, name
 the provider: `/model groq:qwen/qwen3.8-27b`.
 
+## A local LLM with janis
+
+No key, no provider, a model on a machine you own: [janis](https://github.com/guregodevo/janis)
+is Memdoor's own runtime, one Go server that runs the open models on a Mac's
+GPU through MLX and on an NVIDIA box through CUDA, and serves both the chat
+and the [decision model](/docs/decide) to Memdoor. Ollama, llama.cpp and LM
+Studio work the same way for the chat half.
+
+```
+git clone https://github.com/guregodevo/janis && cd janis
+make build && go build -o janis ./cmd/janis   # on Linux with a GPU: ./scripts/fetch-ggml.sh --cuda first, then -tags ggml
+./janis pull                                  # the model that fits this machine; or: pull Qwen3-Coder-30B-A3B-Instruct-4bit
+./janis serve                                 # http://127.0.0.1:8090/v1 — chat completions, tools, decisions
+memdoor connect local                         # finds it; chat and decisions, no token
+```
+
+In the window `/model search` lists what janis serves, at no price, and
+`/model <id>` pins one; the footer names it on every answer. janis loads a
+model at the first request that names it and swaps when another is asked
+for, so pin the one you mean.
+
+On a box with a GPU, the same thing through the ssh door, with your laptop
+and phone as windows onto it:
+
+```
+memdoor --gateway ssh://you@box connect local   # installs Memdoor on the box, finds janis there
+cd your-project && memdoor --gateway ssh://you@box
+```
+
+Measured on a Google L4 ($0.71 an hour, nothing per token): Qwen3-8B about
+38 tokens a second, Qwen3-Coder-30B-A3B (128 experts, 8 active) 11, the
+numbers and what limits them in janis's README. On a janis the decision
+model runs there too; on the other runtimes decisions stay off.
+
 ## The catalogue, at real prices
 
 Your OpenRouter key sees the whole catalogue, so the listing carries the list
