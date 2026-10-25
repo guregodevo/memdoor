@@ -185,6 +185,10 @@ in any project — `workflow.Names(workdir)` lists the project's own then the
 library's it does not shadow, `workflow.Find(workdir, name)` resolves in
 that order and then as a path. The dropdown, the panel, the CLI and the
 tool all read the same two places. Receipt: a unit test over both.
+Worked examples, each built by the coder from a description and run before
+it was added, live in `examples/workflows/` (nightly-rule, 2026-10-07;
+team-solve, the GVS5H ledger method, 2026-10-25, with the sample problem and
+the run's receipt in its README) and are copied the same way.
 
 ## The partition
 

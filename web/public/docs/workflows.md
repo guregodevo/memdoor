@@ -137,6 +137,18 @@ the sentence.
 
 ![A fan-out: one fetch, five readers at once, one merge](/workflow-hn.cast)
 
+A team is requirements too. [GVS5H](https://github.com/slee-persis/GVS5H)
+showed five fresh contexts of one open model matching a frontier model on
+hard coding problems by talking only through files on disk: a plan, notes,
+the current solution. Described to the coder, it became eight tasks: a
+planner, two ideators at once, a solver, the samples run by a `command`
+step, a manager reading the captured result, one repair round, and a final
+check that alone decides. It is in the repo as
+[`examples/workflows/team-solve`](https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve),
+with the problem it ran on and what the run found:
+
+![A team on a ledger: a planner, two ideators in parallel, a solver, the samples, a manager, a repair round, the final check](/team-solve.cast)
+
 Memdoor releases itself with a workflow, reviews its own commits with one,
 and tests its terminal with one — all three live in its repo:
 

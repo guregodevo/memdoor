@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Trim a sampled cast: during a wait where only a clock ticks, keep one frame per `every` seconds; cap any gap at `cap` seconds."""
+"""Trim a sampled cast: during a wait where only a clock ticks, keep one frame per `every` seconds; cap any gap at `cap` seconds;
+an optional fifth argument `rate` keeps at most one frame per `rate` seconds even while the screen changes (a long run whose
+tool frames stream: team-solve, 512 s, 4.4 MB at 4 frames/s)."""
 import json, re, sys
 src, dst, every, cap = sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4])
+rate = float(sys.argv[5]) if len(sys.argv) > 5 else 0.0
 ansi = re.compile(r"\x1b\[[0-9;]*m")
 def shape(s):  # the screen with its clocks blanked, to tell a tick from a change
     return re.sub(r"\b\d+(m\d+)?s\b", "Ns", ansi.sub("", s))
@@ -12,6 +15,8 @@ kept, last_shape, last_at = [], None, -1e9
 for at, kind, data in frames:
     sh = shape(data)
     if sh == last_shape and at - last_at < every:
+        continue
+    if rate and at - last_at < rate and at != frames[-1][0]:
         continue
     kept.append([at, kind, data]); last_shape, last_at = sh, at
 out, t, prev = [], 0.0, kept[0][0] if kept else 0.0

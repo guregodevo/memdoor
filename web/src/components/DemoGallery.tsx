@@ -29,6 +29,13 @@ const DEMOS = [
     note: 'two at once → merge → waits for you → goes on',
   },
   {
+    title: 'A team on a ledger',
+    ask: '/workflow:team-solve — a planner, two ideators, a solver and a manager, fresh contexts talking through files on disk (the GVS5H method).',
+    cast: '/team-solve.cast',
+    poster: 'npt:7:15',
+    note: 'plan → two at once → solve → samples → review → repair → the final check decides · 8 steps',
+  },
+  {
     title: 'A fan-out',
     ask: 'Deep research on the top 5 Hacker News stories: read each article, summarize each.',
     cast: '/workflow-hn.cast',
