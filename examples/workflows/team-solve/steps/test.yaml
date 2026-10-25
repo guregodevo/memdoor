@@ -1,0 +1,11 @@
+type: command
+requires:
+  - table_pattern: solve
+command: |
+  bash .memdoor/workflows/team-solve/check-samples.sh > test-output.log 2>&1
+  result=$?
+  printf '%s\n' "$result" > test-status.txt
+  cat test-output.log
+  printf 'Initial sample-test exit status: %s\n' "$result"
+timeout: 5m
+max_retries: 0
