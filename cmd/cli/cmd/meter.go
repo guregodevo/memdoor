@@ -42,6 +42,27 @@ var meterCmd = &cobra.Command{
 			}
 			return nil
 		}
+		if byModel, _ := cmd.Flags().GetBool("models"); byModel {
+			when := time.Now()
+			if month, _ := cmd.Flags().GetString("month"); month != "" {
+				parsed, err := time.Parse("2006-01", month)
+				if err != nil {
+					return fmt.Errorf("--month wants YYYY-MM, got %q", month)
+				}
+				when = parsed
+			}
+			m := readMeterMonth(when)
+			fmt.Printf("%s, per model (the month's requests on every engine)\n", when.Format("January 2006"))
+			fmt.Printf("%-44s %-8s %12s %12s %s\n", "MODEL", "REQUESTS", "TOKENS IN", "TOKENS OUT", "PAID $ (this key)")
+			for _, r := range m.ByModel {
+				paid := ""
+				if r.priced > 0 {
+					paid = fmt.Sprintf("%.2f", r.cost)
+				}
+				fmt.Printf("%-44s %-8d %12d %12d %s\n", r.model, r.requests, r.in, r.out, paid)
+			}
+			return nil
+		}
 		if tail, _ := cmd.Flags().GetInt("tail"); tail > 0 {
 			if tail > len(entries) {
 				tail = len(entries)
@@ -103,5 +124,7 @@ var meterCmd = &cobra.Command{
 func init() {
 	meterCmd.Flags().Bool("users", false, "Per-user usage over the last 30 days: model requests, sessions, brain minutes, cost")
 	meterCmd.Flags().Int("tail", 0, "Show the last N metered model requests instead of the summary")
+	meterCmd.Flags().Bool("models", false, "This month per model, largest first (what /usage shows in the window)")
+	meterCmd.Flags().String("month", "", "With --models: a month to sum instead of this one (2026-09)")
 	rootCmd.AddCommand(meterCmd)
 }

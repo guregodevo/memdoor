@@ -46,6 +46,7 @@ memdoor model check [<id>]        # probe a model for what a coder turn needs (n
 memdoor model check --saved       # what was probed already, spending nothing
 memdoor meter                     # every model request: the model, its tokens and cost
 memdoor meter --tail 20           # the last 20 requests instead of the summary
+memdoor meter --models            # this month per model, largest first (what /usage shows in the window)
 memdoor savings                   # what the decision model kept out of your bill this month
 memdoor savings --month 2026-08   # a month you have already paid for
 ```
