@@ -323,7 +323,7 @@ help:
 	@echo "  make oss-publish        - Push this release to the public repo (oss-tree: prepare only)"
 	@echo "  make indexnow           - Tell the IndexNow engines the sitemap changed"
 	@echo "  make github-protect     - Set the public repo's branch rules"
-	@echo "  make metrics            - Adoption, accounts, stars; snapshot under .memdoor/metrics/"
+	@echo "  make metrics            - Adoption, accounts, stars, OpenRouter tokens minus this machine; snapshot under .memdoor/metrics/"
 	@echo "  make rotate-admin       - Rotate the prod admin password"
 	@echo "  make clean              - Remove the binary"
 

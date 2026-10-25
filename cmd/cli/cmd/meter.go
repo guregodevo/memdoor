@@ -68,8 +68,8 @@ var meterCmd = &cobra.Command{
 				tail = len(entries)
 			}
 			for _, e := range entries[len(entries)-tail:] {
-				fmt.Printf("%s  %-14s %6d in %6d out  %5s cached  %6.1fs\n",
-					e.TS.Local().Format("01-02 15:04:05"), e.Engine, e.InputTokens, e.OutputTokens,
+				fmt.Printf("%s  %-14s %-36s %6d in %6d out  %5s cached  %6.1fs\n",
+					e.TS.Local().Format("01-02 15:04:05"), e.Engine, e.Model, e.InputTokens, e.OutputTokens,
 					cacheCell(e), float64(e.DurationMS)/1000)
 			}
 			return nil
