@@ -1,8 +1,8 @@
 # Overview
 
 Everything Memdoor does, and where each part is documented. Memdoor is a coding
-agent on a gateway you own, on your own key, any provider's: start a run from CI,
-a schedule or a shell, finish it from your phone or a window; multi-step jobs are
+agent on a gateway you own, on your own key, any provider's: runs from Terminal,
+a shell, CI, cron, your IDE or phone; multi-step jobs are
 files in the repo, run again by hand or on a schedule, each step checked by its
 output. A decision model in front of the chat model cuts what it reads and what
 it costs.

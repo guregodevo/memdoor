@@ -1,8 +1,7 @@
 # Memdoor docs
 
-**Your daemon agents on every door.** A coding agent on a gateway you own, on
-**your own key, any provider's**: start a run from CI, a schedule or a shell,
-finish it from your phone or a window. Multi-step jobs are files in the repo,
+**A minimalist coding agent** that runs from Terminal, a shell, CI, cron,
+your IDE or phone, on a gateway you own, on **your own key, any provider's**. Multi-step jobs are files in the repo,
 run again by hand or on a schedule; each step is checked by its output, and the
 run stops only where you decide. A decision model in front of the chat model
 cuts what it reads and what it costs. Measured over 44 paired runs: 74% fewer input tokens on a question

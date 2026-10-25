@@ -5,15 +5,15 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Memdoor — Your daemon agents on every door</title>
-    <meta name="description" content="Your daemon agents on every door: a coding agent whose runs live on a gateway you own, and whose multi-step jobs are files in the repo. Start a run from CI, a schedule or a shell; finish it from your phone or a window. Steps checked by their output, gates, resume. Open source, on your own API key. Free." />
+    <title>Memdoor — a lightweight coding and automation agent</title>
+    <meta name="description" content="A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo." />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://memdoor.ai" />
     <link rel="canonical" href="https://memdoor.ai/" />
-    <meta property="og:title" content="Memdoor — Your daemon agents on every door" />
-    <meta property="og:description" content="Your daemon agents on every door: a coding agent whose runs live on a gateway you own, and whose multi-step jobs are files in the repo. Start a run from CI, a schedule or a shell; finish it from your phone or a window. Steps checked by their output, gates, resume. Open source, on your own API key. Free." />
+    <meta property="og:title" content="Memdoor — a lightweight coding and automation agent" />
+    <meta property="og:description" content="A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo." />
     <meta property="og:image" content="https://memdoor.ai/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -21,8 +21,8 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Memdoor — Your daemon agents on every door" />
-    <meta name="twitter:description" content="Your daemon agents on every door: a coding agent whose runs live on a gateway you own, and whose multi-step jobs are files in the repo. Start a run from CI, a schedule or a shell; finish it from your phone or a window. Steps checked by their output, gates, resume. Open source, on your own API key. Free." />
+    <meta name="twitter:title" content="Memdoor — a lightweight coding and automation agent" />
+    <meta name="twitter:description" content="A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo." />
     <meta name="twitter:image" content="https://memdoor.ai/og-image.png" />
 
     <meta name="theme-color" content="#ffffff" />
@@ -43,7 +43,7 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Memdoor",
-      "description": "Your daemon agents on every door: a coding agent whose runs live on a gateway you own, and whose multi-step jobs are files in the repo. Every run is a conversation on your machine, started from a window, a script, CI, a schedule, your editor or your phone; each step checked by its output, a gate for you, resume at the failed step. Free. Pro ($10/month) is what memdoor.ai hosts: workflow state across machines and the relay for a daemon kept to localhost.",
+      "description": "A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo.",
       "image": "https://memdoor.ai/og-image.png",
       "author": { "@type": "Organization", "name": "Memdoor", "url": "https://memdoor.ai" },
       "license": "https://www.apache.org/licenses/LICENSE-2.0",
@@ -67,8 +67,10 @@
         Keep this in sync with /llms.txt and the binary's `memdoor --help` output.
       -->
       <main class="prerender-fallback" style="max-width:720px;margin:2rem auto;padding:0 1rem;font-family:system-ui,sans-serif;line-height:1.5;color:#171717">
-        <h1>Memdoor: an AI coding agent in your terminal, on your own API key</h1>
-        <p>Memdoor reads your files, writes patches, runs the build and fixes what it broke, on your own account at OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq or xAI. A decision model in front of the chat model keeps what it reads to what the task needs: 49% fewer input tokens on a question about a codebase, 26% fewer on an edit, measured over twenty paired runs with every answer right.</p>
+        <h1>Memdoor: a lightweight coding and automation agent</h1>
+        <p>One CLI binary for macOS, Linux and Windows, used locally or over SSH on another machine. No Docker or Python required. Start work from a terminal, your IDE or phone, or from a shell script, CI or a schedule, and finish it from any of those, on a gateway you own.</p>
+        <p>Token optimization: a decision model filters search hits, file sections and logs, selects the tools the turn needs and stops stalled turns. Across 44 runs (22 pairs), all tasks passed with decisions off and on; one codebase question used 74% fewer input tokens, while edits and fixes showed no saving. Savings depend on the task.</p>
+        <p>Headless-first CLI: memdoor run takes a prompt, writes an answer to stdout and returns an exit code reflecting its checks. Resume the same conversation interactively when needed.</p>
         <p>Describe the steps and it builds a workflow: one task file per step, run as a graph. Independent steps run in parallel, a step is done when its file exists or its command passes, a gate waits for your approval, and a failed run resumes at the failed step. Workflows run by hand or on your local cron.</p>
         <p>Free: the agent, the decision model and workflows. Pro, $10 a month: remote control from your phone (the page is your terminal, end-to-end encrypted) and workflow state kept on memdoor.ai so a workflow can wait on what another produced, from any machine. Every model call is on your own key.</p>
         <h2>Install (macOS, Linux, Windows)</h2>

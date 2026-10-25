@@ -1,6 +1,13 @@
 # Memdoor
 
-> The coding agent for durable workflows: repeatable, headless, open source, on your own API key. One gateway, every door: every run is a conversation on a gateway on your machine, started from a terminal window, `memdoor run` in a script or CI, a cron schedule, your editor or your phone. Steps run as a checked, resumable graph with a gate for you; a decision model cuts what the model reads. One binary, free; Pro is $10 a month for what runs on memdoor.ai.
+> A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows. Open source, on a gateway you own, using your own provider account.
+
+## Why Memdoor
+
+- Token optimization: judged reads, tool selection and progress checks reduce unnecessary model input and stalled turns. Savings depend on the task; measurements are below.
+- Single binary: deploy the CLI on macOS, Linux or Windows without Docker or Python. Connect over SSH to another machine with `memdoor --gateway ssh://you@box`.
+- CLI, headless first: `memdoor run` takes a prompt, writes to stdout and returns a check-aware exit code for shell scripts, CI and cron. Resume the same conversation from a terminal, IDE or phone.
+- Durable workflows: keep task graphs in the repo, check outputs, wait for approval where required and resume failed runs without repeating completed steps.
 
 ## What it is
 

@@ -1,6 +1,22 @@
 # What is Memdoor
 
-**Your daemon agents on every door. Memdoor is a coding agent on a gateway you own, on your own key, any provider's: start a run from CI, a schedule or a shell, finish it from your phone or a window. Multi-step jobs are files in the repo, run again by hand or on a schedule; each step is checked by its output, and the run stops only where you decide.**
+**A lightweight coding and automation agent in a single CLI binary. Run it locally or connect over SSH to another machine, on a gateway you own, using your own provider account. No Docker or Python required.**
+
+Lightweight means simple to deploy, not limited to small tasks. Memdoor is
+headless first: start a run from a shell script, CI or a schedule, or work
+interactively from a terminal, your IDE or phone, and finish it from any of
+those. It combines four things:
+
+- **Token optimization:** filter reads, select tools and stop stalled turns
+  before they consume more model calls. Savings depend on the task.
+- **A single binary:** install on macOS, Linux or Windows and connect to
+  another machine with `memdoor --gateway ssh://you@box`.
+- **A headless-first CLI:** prompts in, answers on stdout and exit codes
+  that reflect checks, with the same conversation available to resume.
+- **Durable workflows:** task files in your repo, output checks, approval
+  gates and resume after failure, run by hand or on a schedule.
+
+See [Why Memdoor](/docs/why) for the reasons and measurements.
 
 `cd` into a project, run `memdoor`, and type what you want done. It reads
 your files, writes patches, runs the build, reads the errors and fixes what it

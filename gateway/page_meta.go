@@ -24,8 +24,8 @@ type pageMeta struct {
 }
 
 var homeMeta = pageMeta{
-	Title:       "Memdoor — AI coding agent in your terminal, on your own API key",
-	Description: "A coding agent for the terminal on your own API key (OpenRouter, Anthropic, OpenAI…). Describe the steps; it runs them as a checked, resumable workflow. Free.",
+	Title:       "Memdoor — a lightweight coding and automation agent",
+	Description: "A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows.",
 	Path:        "/",
 }
 

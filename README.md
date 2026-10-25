@@ -1,8 +1,8 @@
 <div align="center">
   <img src="web/public/icon-512.png" alt="" width="72" height="72">
   <h1>Memdoor</h1>
-  <p><strong>Your daemon agents on every door.</strong><br>A coding agent on a gateway you own, on your own key: start a run from CI, a schedule or a shell, finish it from your phone or a window.</p>
-  <p>Multi-step jobs are files in the repo, run again by hand or on a schedule. Each step is checked by its output, and the run stops only where you decide.</p>
+  <p><strong>Your daemon agents on every door.</strong><br>A lightweight coding and automation agent in a single CLI binary. Run it locally or connect over SSH to another machine — no Docker or Python required. Work interactively from a terminal, your IDE or phone, or start a run from a shell script, CI or a schedule and finish it from any of those, on a gateway you own, using your own key.</p>
+  <p>One binary to deploy. A headless-first CLI. Multi-step jobs kept as files in your repo, with checks, approval gates and resume. Less of your token bill, through a decision model in front of the chat model.</p>
   <p>
     <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-blue"></a>
     <a href="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml"><img alt="CI" src="https://github.com/guregodevo/memdoor/actions/workflows/lint.yml/badge.svg"></a>
