@@ -202,7 +202,9 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 			return nil, err
 		}
 		hr.Header.Set("Content-Type", "application/json")
-		hr.Header.Set("Authorization", "Bearer "+token)
+		if token != "" { // a local runtime is connected with no key
+			hr.Header.Set("Authorization", "Bearer "+token)
+		}
 		SetAppHeaders(hr)
 		setVendorHeaders(hr.Header)
 		setAttributionHeaders(ctx, hr.Header)

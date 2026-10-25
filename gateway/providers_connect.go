@@ -26,6 +26,36 @@ import (
 
 var providerIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,39}$`)
 
+// decisionsSuffix names the decision provider a local runtime brings with it.
+const decisionsSuffix = "-decisions"
+
+// localRuntimeBases are where the runtimes listen by default, janis first:
+// a blank base on `connect local` tries them in this order on the gateway's
+// machine (the box, when the gateway is there).
+var localRuntimeBases = []string{
+	"http://localhost:8090/v1",  // janis serve
+	"http://localhost:11434/v1", // ollama
+	"http://localhost:8080/v1",  // llama-server
+	"http://localhost:1234/v1",  // LM Studio
+}
+
+// findLocalRuntime is the first default address whose model list answers.
+func findLocalRuntime(ctx context.Context) (string, []string) {
+	var tried []string
+	for _, base := range localRuntimeBases {
+		tried = append(tried, base)
+		pctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		p := providers.Provider{ID: "local", API: providers.APIChat, Base: base, Keyless: true}
+		providers.ForgetModels("local")
+		list, err := providers.ModelsOf(pctx, p)
+		cancel()
+		if err == nil && len(list) > 0 {
+			return base, tried
+		}
+	}
+	return "", tried
+}
+
 type connectRequest struct {
 	ID      string            `json:"id"`
 	Name    string            `json:"name"`
@@ -35,21 +65,24 @@ type connectRequest struct {
 	Model   string            `json:"model"` // a model to declare and test with (a gateway that lists none)
 	Headers map[string]string `json:"headers"`
 	Context int               `json:"context"`
-	Probe   bool              `json:"probe"` // true: test only, keep nothing
+	Probe   bool              `json:"probe"`   // true: test only, keep nothing
+	Keyless bool              `json:"keyless"` // a local runtime (Ollama, llama.cpp, janis): no token, none sent
 }
 
 type connectResult struct {
-	OK      bool              `json:"ok"`
-	ID      string            `json:"id"`
-	API     string            `json:"api"`
-	Models  int               `json:"models"`
-	Sample  []string          `json:"sample,omitempty"`
-	Tested  string            `json:"tested,omitempty"` // the model the test call used
-	Answer  string            `json:"answer,omitempty"`
-	Error   string            `json:"error,omitempty"`
-	Advice  string            `json:"advice,omitempty"`
-	Saved   bool              `json:"saved"`
-	Headers map[string]string `json:"headers,omitempty"`
+	OK        bool              `json:"ok"`
+	ID        string            `json:"id"`
+	API       string            `json:"api"`
+	Models    int               `json:"models"`
+	Sample    []string          `json:"sample,omitempty"`
+	Tested    string            `json:"tested,omitempty"` // the model the test call used
+	Answer    string            `json:"answer,omitempty"`
+	Error     string            `json:"error,omitempty"`
+	Advice    string            `json:"advice,omitempty"`
+	Saved     bool              `json:"saved"`
+	Headers   map[string]string `json:"headers,omitempty"`
+	Decisions bool              `json:"decisions,omitempty"` // a local runtime's decisions endpoint answered and was kept as <id>-decisions
+	Base      string            `json:"base,omitempty"`      // the address a blank base resolved to (a local runtime found on this machine)
 }
 
 // handleProvidersConnect is POST /api/providers/connect and DELETE
@@ -62,6 +95,10 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 		if err := providers.RemoveProvider(id); err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": %q}`, err.Error()), http.StatusBadRequest)
 			return
+		}
+		_ = providers.RemoveProvider(id + decisionsSuffix) // a local runtime's decisions go with it
+		if s.rewireDecisions != nil {
+			s.rewireDecisions()
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "id": id})
 		return
@@ -77,7 +114,11 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 	}
 	// Always 200: a failed probe is an answer in words (error, advice), not
 	// an HTTP error the client would have to unwrap.
-	_ = json.NewEncoder(w).Encode(connectProvider(r.Context(), req))
+	res := connectProvider(r.Context(), req)
+	if res.OK && res.Saved && (req.API == providers.APIDecisions || res.Decisions) && s.rewireDecisions != nil {
+		s.rewireDecisions() // judges from this turn on, no gateway start needed
+	}
+	_ = json.NewEncoder(w).Encode(res)
 }
 
 // connectProvider probes, then saves unless asked only to probe. The API
@@ -89,17 +130,30 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 	case !providerIDPattern.MatchString(req.ID):
 		res.Error = "the provider needs a short id: letters, digits and dashes (corp, lab-proxy)"
 		return res
+	case req.Keyless && req.Base == "":
+		// A blank base on a local runtime: find one on this machine.
+		found, tried := findLocalRuntime(ctx)
+		if found == "" {
+			res.Error = "no runtime answers on this machine (tried " + strings.Join(tried, ", ") + ")"
+			res.Advice = "start one: janis serve (github.com/guregodevo/janis), ollama serve, llama-server, LM Studio; or name its address with --base"
+			return res
+		}
+		req.Base = found
+		res.Base = found
 	case req.Base == "" || !strings.HasPrefix(req.Base, "http"):
 		res.Error = "the base URL must start with http:// or https://"
 		return res
-	case strings.TrimSpace(req.Key) == "":
+	case strings.TrimSpace(req.Key) == "" && !req.Keyless:
 		res.Error = "a token or key is needed: the value, the NAME of an environment variable that holds it, or !command that prints it"
 		return res
 	}
-	key, source := resolveKeyForConnect(req.Key)
-	if key == "" {
-		res.Error = source
-		return res
+	key, source := "", providers.KeySourceNone
+	if !req.Keyless {
+		key, source = resolveKeyForConnect(req.Key)
+		if key == "" {
+			res.Error = source
+			return res
+		}
 	}
 	if req.API == providers.APIDecisions {
 		return connectDecisions(ctx, req, key, source)
@@ -110,7 +164,7 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 	}
 	var lastErr string
 	for _, api := range apis {
-		p := providers.Provider{ID: req.ID, Name: req.Name, API: api, Base: req.Base, Key: key, Headers: req.Headers, Context: req.Context}
+		p := providers.Provider{ID: req.ID, Name: req.Name, API: api, Base: req.Base, Key: key, KeySource: source, Keyless: req.Keyless, Headers: req.Headers, Context: req.Context}
 		if req.Model != "" {
 			p.Models = []providers.Model{{ID: req.Model, Name: req.Model, Context: req.Context}}
 		}
@@ -185,6 +239,14 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 			res.Saved = true
 			logs.New("Providers").Info("provider connected", "id", req.ID, "api", api, "base", req.Base, "models", len(list), "key_source", source)
 		}
+		if req.Keyless {
+			// A local runtime that also judges (janis serve answers
+			// /v1/systemone): its decisions are kept as <id>-decisions, so
+			// the decision model runs on this machine with no key. A runtime
+			// without the endpoint (Ollama, llama.cpp) is simply chat.
+			d := connectDecisions(ctx, connectRequest{ID: req.ID + decisionsSuffix, Name: req.Name + " (decisions)", API: providers.APIDecisions, Base: strings.TrimSuffix(req.Base, "/v1"), Keyless: true, Probe: req.Probe}, "", providers.KeySourceNone)
+			res.Decisions = d.OK
+		}
 		return res
 	}
 	res.Error = oneLine(lastErr, 200)
@@ -217,7 +279,7 @@ func probeCall(ctx context.Context, p providers.Provider, model string) (string,
 // model in it, not us. The URL and the key are proven by such an answer.
 func refusesTheModelNotTheKey(err error) bool {
 	e := strings.ToLower(err.Error())
-	for _, s := range []string{"no endpoints found", "not a valid model", "model_not_found", "does not exist", "unknown model", "no such model"} {
+	for _, s := range []string{"no endpoints found", "not a valid model", "model_not_found", "does not exist", "unknown model", "no such model", "was retired", "deprecated"} {
 		if strings.Contains(e, s) {
 			return true
 		}
@@ -249,7 +311,7 @@ func resolveKeyForConnect(raw string) (string, string) {
 }
 
 func providerSpecOf(req connectRequest, api string) providers.ProviderSpec {
-	spec := providers.ProviderSpec{ID: req.ID, Name: req.Name, API: api, Base: req.Base, Key: req.Key, Headers: req.Headers, Context: req.Context}
+	spec := providers.ProviderSpec{ID: req.ID, Name: req.Name, API: api, Base: req.Base, Key: req.Key, Keyless: req.Keyless, Headers: req.Headers, Context: req.Context}
 	if req.Model != "" {
 		spec.Models = []providers.Model{{ID: req.Model, Name: req.Model, Context: req.Context}}
 	}

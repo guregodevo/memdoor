@@ -66,6 +66,7 @@ type Server struct {
 	sessions          *SessionManager
 	agent             *AgentRuntime                  // AI agent runtime
 	decisions         decision.Service               // Workspace decision model (decisions.go); nil until wired
+	rewireDecisions   func()                         // rebuilds the decision service from the providers now connected (set by wireDecisions)
 	acceptance        *resultAcceptance              // Is a spawned agent's result the task done? (result_acceptance.go); nil = off
 	clientFactory     *providers.ClientFactory       // LLM provider factory
 	runTracker        *RunTracker                    // Async run tracking (OpenClaw pattern)

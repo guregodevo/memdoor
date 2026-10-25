@@ -171,3 +171,61 @@ func TestConnectProbeOutlivesARefusedFirstModel(t *testing.T) {
 		t.Fatalf("every model refused still proves the key: %+v (tested %v)", res, tested)
 	}
 }
+
+// A local runtime (Ollama, llama.cpp, janis, LM Studio) is connected with no
+// key (2026-10-25): the probe sends no Authorization header, the provider
+// counts as connected, and providers.json records keyless, never a token.
+func TestConnectALocalRuntimeNeedsNoKey(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	var auth []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth = append(auth, r.Header.Get("Authorization"))
+		switch r.URL.Path {
+		case "/v1/models":
+			_, _ = io.WriteString(w, `{"data":[{"id":"qwen3-8b"}]}`)
+		case "/v1/systemone":
+			_, _ = io.WriteString(w, `{"model":"qwen3-8b","answers":{"q":{"type":"noul","noul":0.9,"confidence":0.9}}}`)
+		case "/v1/chat/completions":
+			w.Header().Set("Content-Type", "text/event-stream")
+			_, _ = io.WriteString(w, "data: {\"id\":\"c\",\"model\":\"qwen3-8b\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ok\"},\"finish_reason\":null}]}\n\n")
+			_, _ = io.WriteString(w, "data: {\"id\":\"c\",\"model\":\"qwen3-8b\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1}}\n\n")
+			_, _ = io.WriteString(w, "data: [DONE]\n\n")
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+
+	res := connectProvider(context.Background(), connectRequest{ID: "local", Name: "Local runtime", API: providers.APIChat, Base: srv.URL + "/v1"})
+	if res.OK || !strings.Contains(res.Error, "token or key") {
+		t.Fatalf("without keyless a key is still required: %+v", res)
+	}
+	// A blank base finds the runtime among the default addresses.
+	saved := localRuntimeBases
+	localRuntimeBases = []string{"http://localhost:1/v1", srv.URL + "/v1"}
+	defer func() { localRuntimeBases = saved }()
+	res = connectProvider(context.Background(), connectRequest{ID: "local", Name: "Local runtime", API: providers.APIChat, Keyless: true})
+	if !res.OK || !res.Saved || res.Tested != "qwen3-8b" || res.Answer != "ok" || !res.Decisions || res.Base != srv.URL+"/v1" {
+		t.Fatalf("keyless connect on a blank base, decisions too: %+v", res)
+	}
+	localRuntimeBases = []string{"http://localhost:1/v1"}
+	if r := connectProvider(context.Background(), connectRequest{ID: "none", Keyless: true}); r.OK || !strings.Contains(r.Error, "no runtime answers") || !strings.Contains(r.Advice, "janis serve") {
+		t.Fatalf("nothing listening is said in words, with what to start: %+v", r)
+	}
+	if dp, ok := providers.DecisionProvider(); !ok || dp.ID != "local-decisions" || !dp.Keyless || dp.Key != "" || dp.Base != srv.URL {
+		t.Fatalf("the runtime's decisions are the decision provider, keyless, on the runtime's origin: %+v %v", dp, ok)
+	}
+	for _, a := range auth {
+		if a != "" {
+			t.Fatalf("no Authorization header on a keyless runtime, got %q", a)
+		}
+	}
+	p, ok := providers.FindProvider("local")
+	if !ok || !p.Connected() || p.Key != "" || !p.Keyless || p.KeySource != providers.KeySourceNone {
+		t.Fatalf("kept as connected with no key: %+v", p)
+	}
+	home, _ := os.UserHomeDir()
+	if b, err := os.ReadFile(home + "/.memdoor/providers.json"); err != nil || !strings.Contains(string(b), `"keyless": true`) {
+		t.Fatalf("the file says keyless: %s %v", b, err)
+	}
+}

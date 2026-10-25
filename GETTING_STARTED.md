@@ -71,6 +71,17 @@ window, `/model nvidia/nemotron-3-super-120b-a12b:free` pins a free model
 (50 requests a day; 1,000 once $10 has ever been bought). Free hosts train on
 what they are sent, and Memdoor says so at the pin: a trial, not private code.
 
+No key at all, a model on this machine: a running [janis](https://github.com/guregodevo/janis)
+(`janis pull && janis serve`), Ollama, llama.cpp or LM Studio is a provider
+of its own, and nothing leaves the machine:
+
+```bash
+memdoor connect local          # finds the runtime on this machine; no token
+```
+
+On janis the decision model runs there too, with no key. On the others,
+decisions stay off.
+
 ## 3. Start coding
 
 ```bash

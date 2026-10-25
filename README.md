@@ -41,6 +41,9 @@ way (Anthropic's terms); Claude needs an API key.
 No money on a key yet? A free OpenRouter account and `/model
 nvidia/nemotron-3-super-120b-a12b:free` run a real session: 50 requests a day,
 and the free hosts train on what they are sent, so a trial, not private code.
+Or no key at all: `memdoor connect local` finds a model running on this machine
+([janis](https://github.com/guregodevo/janis), Ollama, llama.cpp, LM Studio),
+and nothing leaves it.
 
 <p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
 
@@ -133,7 +136,7 @@ cp memdoor ~/.local/bin/               # or anywhere on your PATH
 | Command | What it does |
 |---|---|
 | `/model` | Which model answers: the agent's ladder (cheapest rung first), or pin any model of your providers, with list prices |
-| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, your company's AI gateway; `/connect chatgpt` signs in with a ChatGPT Plus/Pro plan, no key |
+| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, your company's AI gateway; `/connect local` a runtime on this machine or the box (Ollama, llama.cpp, janis), no key; `/connect chatgpt` signs in with a ChatGPT Plus/Pro plan, no key |
 | `/workflow` | The project's workflows and runs; enter opens a run's graph, `a` approves a gate, `/workflow:<name>` runs one |
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |

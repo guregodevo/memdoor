@@ -171,7 +171,9 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		}
 
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+m.client.apiKey)
+		if m.client.apiKey != "" { // a local runtime is connected with no key
+			req.Header.Set("Authorization", "Bearer "+m.client.apiKey)
+		}
 		SetAppHeaders(req)
 		if m.client.attribute {
 			SetOpenRouterAttribution(req.Header)

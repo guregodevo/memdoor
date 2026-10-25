@@ -23,48 +23,56 @@ type ConnectKind struct {
 	ID, Name, API, Base, Hint string
 	AsksModel                 bool   // a gateway or custom endpoint may list no model
 	KeyVar                    string // the variable the key is usually under, prefilled on the token step; "" when not obvious (a company gateway names its own)
+	Keyless                   bool   // no token at all: a runtime on this machine or the box (Ollama, llama.cpp, janis, LM Studio)
 }
 
 var ConnectKinds = []ConnectKind{
-	{"gateway", "Company AI gateway", "", "https://ai-gateway.example.com/ai", "the base before /v1; a personal or service-account token", true, ""},
+	{"gateway", "Company AI gateway", "", "https://ai-gateway.example.com/ai", "the base before /v1; a personal or service-account token", true, "", false},
 	// Sign in with ChatGPT (2026-10-10): a Plus or Pro plan's allowance, no
 	// key; the browser step runs on the gateway (gateway/providers_chatgpt.go).
-	{"chatgpt", "ChatGPT plan (Plus/Pro)", "chatgpt", "https://api.openai.com/v1", "sign in with ChatGPT in the browser: your plan's allowance, no API key", false, ""},
-	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPEN_ROUTER_API_KEY"},
-	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY"},
-	{"openai", "OpenAI", "responses", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY"},
-	{"gemini", "Google Gemini", "chat", "https://generativelanguage.googleapis.com/v1beta/openai", "an API key from Google AI Studio", false, "GEMINI_API_KEY"},
-	{"xai", "xAI Grok", "chat", "https://api.x.ai/v1", "an API key from console.x.ai", false, "XAI_API_KEY"},
-	{"baseten", "Baseten", "chat", "https://inference.baseten.co/v1", "an API key from app.baseten.co", false, "BASETEN_API_KEY"},
-	{"groq", "Groq", "chat", "https://api.groq.com/openai/v1", "an API key from console.groq.com", false, "GROQ_API_KEY"},
-	{"deepseek", "DeepSeek", "chat", "https://api.deepseek.com/v1", "an API key from platform.deepseek.com", false, "DEEPSEEK_API_KEY"},
-	{"typesafe", "TypeSafe (Jev, decisions)", "decisions", "https://api.typesafe.ai", "a key from typesafe.ai: the decision model, with any chat provider", false, "TYPESAFE_API_KEY"},
-	{"custom", "Any OpenAI-compatible endpoint", "", "https://host/v1", "a base URL and its key", true, ""},
+	{"chatgpt", "ChatGPT plan (Plus/Pro)", "chatgpt", "https://api.openai.com/v1", "sign in with ChatGPT in the browser: your plan's allowance, no API key", false, "", false},
+	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPEN_ROUTER_API_KEY", false},
+	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY", false},
+	{"openai", "OpenAI", "responses", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY", false},
+	{"gemini", "Google Gemini", "chat", "https://generativelanguage.googleapis.com/v1beta/openai", "an API key from Google AI Studio", false, "GEMINI_API_KEY", false},
+	{"xai", "xAI Grok", "chat", "https://api.x.ai/v1", "an API key from console.x.ai", false, "XAI_API_KEY", false},
+	{"baseten", "Baseten", "chat", "https://inference.baseten.co/v1", "an API key from app.baseten.co", false, "BASETEN_API_KEY", false},
+	{"groq", "Groq", "chat", "https://api.groq.com/openai/v1", "an API key from console.groq.com", false, "GROQ_API_KEY", false},
+	{"deepseek", "DeepSeek", "chat", "https://api.deepseek.com/v1", "an API key from platform.deepseek.com", false, "DEEPSEEK_API_KEY", false},
+	{"typesafe", "TypeSafe (Jev, decisions)", "decisions", "https://api.typesafe.ai", "a key from typesafe.ai: the decision model, with any chat provider", false, "TYPESAFE_API_KEY", false},
+	// A local runtime (2026-10-25, Greg: "janis should work like a llama.cpp or
+	// ollama, independent from memdoor"): an OpenAI-compatible server on this
+	// machine or the box, no token; nothing leaves the machine it runs on.
+	{"local", "Local runtime (janis, Ollama, llama.cpp, LM Studio)", "chat", "", "blank finds one on the gateway's machine (janis :8090, Ollama :11434, llama.cpp :8080, LM Studio :1234); or its address; no key", true, "", true},
+	{"custom", "Any OpenAI-compatible endpoint", "", "https://host/v1", "a base URL and its key", true, "", false},
 }
 
 // ConnectRequest and ConnectResult mirror the gateway's
 // /api/providers/connect (gateway/providers_connect.go).
 type ConnectRequest struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	API   string `json:"api"`
-	Base  string `json:"base"`
-	Key   string `json:"key"`
-	Model string `json:"model"`
-	Probe bool   `json:"probe"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	API     string `json:"api"`
+	Base    string `json:"base"`
+	Key     string `json:"key"`
+	Model   string `json:"model"`
+	Probe   bool   `json:"probe"`
+	Keyless bool   `json:"keyless"` // a local runtime: no token to ask for or send
 }
 
 type ConnectResult struct {
-	OK     bool     `json:"ok"`
-	ID     string   `json:"id"`
-	API    string   `json:"api"`
-	Models int      `json:"models"`
-	Sample []string `json:"sample"`
-	Tested string   `json:"tested"`
-	Answer string   `json:"answer"`
-	Error  string   `json:"error"`
-	Advice string   `json:"advice"`
-	Saved  bool     `json:"saved"`
+	OK        bool     `json:"ok"`
+	ID        string   `json:"id"`
+	API       string   `json:"api"`
+	Models    int      `json:"models"`
+	Sample    []string `json:"sample"`
+	Tested    string   `json:"tested"`
+	Answer    string   `json:"answer"`
+	Error     string   `json:"error"`
+	Advice    string   `json:"advice"`
+	Saved     bool     `json:"saved"`
+	Decisions bool     `json:"decisions"` // a local runtime's decisions endpoint answered too
+	Base      string   `json:"base"`      // where a blank base found the runtime
 }
 
 // ConnectOps is the one call /connect makes, and the browser sign-in's
@@ -348,7 +356,16 @@ func (m *Model) connectEnter(value string) tea.Cmd {
 			value = f.kind.Base
 		}
 		f.base = value
-		f.step = connectStepKey
+		if f.kind.Keyless {
+			f.key = ""
+			if f.kind.AsksModel {
+				f.step = connectStepModel
+			} else {
+				return m.connectSend()
+			}
+		} else {
+			f.step = connectStepKey
+		}
 	case connectStepKey:
 		if value == "" {
 			return nil
@@ -375,7 +392,7 @@ func (m *Model) connectSend() tea.Cmd {
 	if id == "" {
 		id = f.kind.ID
 	}
-	req := ConnectRequest{ID: id, Name: f.kind.Name, API: f.kind.API, Base: f.base, Key: f.key, Model: f.model}
+	req := ConnectRequest{ID: id, Name: f.kind.Name, API: f.kind.API, Base: f.base, Key: f.key, Model: f.model, Keyless: f.kind.Keyless}
 	op := m.connectOps.Connect
 	return func() tea.Msg { res, err := op(req); return connectResultMsg{req: req, res: res, err: err} }
 }
@@ -405,10 +422,16 @@ func (m *Model) connectDone(msg connectResultMsg) {
 	default:
 		r := msg.res
 		s := fmt.Sprintf("✓ **%s** connected · %s API · %d models · tested %s → %q · kept in ~/.memdoor/providers.json", r.ID, r.API, r.Models, r.Tested, r.Answer)
+		if r.Base != "" {
+			s += "\n  found at " + r.Base
+		}
 		if len(r.Sample) > 0 {
 			s += "\n  e.g. " + strings.Join(r.Sample, ", ")
 		}
 		s += "\n  /model <id> pins one of its models for this conversation; /model-search <name> finds them."
+		if r.Decisions {
+			s += "\n  it judges too: kept as " + r.ID + "-decisions, the decision model runs here with no key."
+		}
 		m.note(s)
 	}
 }

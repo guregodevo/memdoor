@@ -73,7 +73,10 @@ the directory 0700). The credential is stored as given — a literal, the
 NAME of an environment variable, or `!command` — so a secret in your
 company's tooling is never copied onto disk. The gateway probes a provider
 (its model list, one small call) before keeping it, and contacts a provider
-you added only when a model of its is pinned or its list is read.
+you added only when a model of its is pinned or its list is read. A local
+runtime (`memdoor connect local`: Ollama, llama.cpp, janis, LM Studio on
+this machine or on the box) is kept with no credential at all, and its
+requests carry none; they go to the address you gave, normally localhost.
 
 ## Where the gateway listens
 

@@ -696,3 +696,11 @@ Decision model on, averages of three runs:
 
 The queue lives in the roadmap: [`../roadmap/SHOULD.md`](../roadmap/SHOULD.md),
 "Decisions (Jev) — where next".
+
+## A local decision model, no key (2026-10-25)
+
+`janis serve` answers the System One wire on the loaded model
+(`POST /v1/systemone`, github.com/guregodevo/janis `serve`): `memdoor connect
+local` on it keeps `local-decisions`, and from the next gateway start every
+judged read, tool routing and stop decision runs on this machine with no key.
+See docs/features/PROVIDERS.md, "A local decision model".

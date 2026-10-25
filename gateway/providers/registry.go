@@ -92,15 +92,20 @@ type Provider struct {
 	API       string            `json:"api"`
 	Base      string            `json:"base"`
 	Key       string            `json:"-"`
-	KeySource string            `json:"key_source,omitempty"` // "env OPENAI_API_KEY", "providers.json", "command", ""
+	KeySource string            `json:"key_source,omitempty"` // "env OPENAI_API_KEY", "providers.json", "command", KeySourceNone, ""
+	Keyless   bool              `json:"keyless,omitempty"`    // a local runtime: connected with no key, and no Authorization header sent
 	Headers   map[string]string `json:"headers,omitempty"`
 	Models    []Model           `json:"models,omitempty"` // declared by hand (a gateway that returns none)
 	Context   int               `json:"context,omitempty"`
 	BuiltIn   bool              `json:"built_in,omitempty"`
 }
 
+// KeySourceNone is the key source of a keyless provider: a runtime on this
+// machine or the box (Ollama, llama.cpp, janis, LM Studio) that asks for none.
+const KeySourceNone = "no key: a local runtime"
+
 // Connected reports whether the provider has a credential to use.
-func (p Provider) Connected() bool { return strings.TrimSpace(p.Key) != "" }
+func (p Provider) Connected() bool { return p.Keyless || strings.TrimSpace(p.Key) != "" }
 
 // Engine is the provider as the one active engine.
 func (p Provider) Engine(model string) RemoteEngine {
@@ -154,7 +159,8 @@ type ProviderSpec struct {
 	Name    string            `json:"name,omitempty"`
 	API     string            `json:"api"`
 	Base    string            `json:"base"`
-	Key     string            `json:"key"` // literal, an env var NAME, or "!command"
+	Key     string            `json:"key"` // literal, an env var NAME, or "!command"; "" with keyless
+	Keyless bool              `json:"keyless,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
 	Models  []Model           `json:"models,omitempty"`
 	Context int               `json:"context,omitempty"`
@@ -231,11 +237,14 @@ func Providers() []Provider {
 			if json.Unmarshal(b, &f) == nil {
 				for _, s := range f.Providers {
 					key, source := resolveKey(s.Key)
+					if s.Keyless {
+						key, source = "", KeySourceNone
+					}
 					name := s.Name
 					if name == "" {
 						name = s.ID
 					}
-					fromFile = append(fromFile, Provider{ID: s.ID, Name: name, API: s.API, Base: strings.TrimRight(s.Base, "/"), Key: key, KeySource: source, Headers: s.Headers, Models: s.Models, Context: s.Context})
+					fromFile = append(fromFile, Provider{ID: s.ID, Name: name, API: s.API, Base: strings.TrimRight(s.Base, "/"), Key: key, KeySource: source, Keyless: s.Keyless, Headers: s.Headers, Models: s.Models, Context: s.Context})
 				}
 			}
 		}

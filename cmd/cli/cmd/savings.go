@@ -45,7 +45,7 @@ invoice is the authority on what you paid; this is what you did not.`,
 		if s.JudgedCalls == 0 && s.ToolboxCalls == 0 && s.EarlyStops == 0 {
 			fmt.Printf("Nothing recorded for %s yet. The decision model writes this ledger as it works:\n", s.Month)
 			fmt.Println("  is it on?   with an OpenRouter or decision key it is; without one nothing is judged")
-			fmt.Println("              `memdoor connect typesafe` turns it on next to any chat provider")
+			fmt.Println("              `memdoor connect typesafe` turns it on next to any chat provider; so does `connect local` on a janis")
 			return nil
 		}
 

@@ -120,7 +120,10 @@ func getJSON(ctx context.Context, rawURL string, headers map[string]string, v an
 }
 
 func bearer(p Provider) map[string]string {
-	h := map[string]string{"Authorization": "Bearer " + p.Key}
+	h := map[string]string{}
+	if p.Key != "" {
+		h["Authorization"] = "Bearer " + p.Key
+	}
 	for k, v := range AppHeaders(p.Base) {
 		h[k] = v
 	}

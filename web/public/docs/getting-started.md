@@ -38,6 +38,16 @@ No key at hand? Skip it: type `/connect` inside the TUI and paste one. This
 is the whole account setup: your key, your bill, at the provider's list
 prices. Put the export in your shell profile so it is there next time.
 
+No key at all, a model on this machine: a running [janis](https://github.com/guregodevo/janis)
+(`janis pull && janis serve`), Ollama, llama.cpp or LM Studio is a
+[provider of its own](/docs/providers), and nothing leaves the machine:
+
+```bash
+memdoor connect local          # finds the runtime on this machine; no token
+```
+
+On janis the [decision model](/docs/decide) runs there too, with no key.
+
 ## First turn
 
 ```bash

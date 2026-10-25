@@ -131,6 +131,13 @@ func systemOneFromEnv() (p decision.Provider, codingKey bool) {
 // wireDecisions builds the service, installs it for the HTTP route and the
 // decision tools (jgrep, decision_evaluate), and attaches the message gate.
 func (s *Server) wireDecisions(db *sql.DB, messageService *message.Service) {
+	// Kept as a closure so a provider connected later (memdoor connect local
+	// on a janis, connect typesafe) judges at once, without a gateway start.
+	s.rewireDecisions = func() { s.installDecisions(db, messageService) }
+	s.rewireDecisions()
+}
+
+func (s *Server) installDecisions(db *sql.DB, messageService *message.Service) {
 	read := newWorkspaceSettingReader(db)
 	svc, err := newDecisionService(read)
 	if err != nil {

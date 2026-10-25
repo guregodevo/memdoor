@@ -135,6 +135,27 @@ the same coding turn on its fast model — a planted bug, a failing test,
   memdoor.ai, no catalogue, no public reference (the last copy on disk
   answers). [Where your data goes](/docs/security).
 
+## A local runtime — no key
+
+`memdoor connect local` (or `/connect local` in the window): an
+OpenAI-compatible server on this machine or on the box the gateway runs
+on — janis, Ollama, llama.cpp, LM Studio, vLLM. It asks for no token and
+sends none; a blank base finds the runtime on the gateway's machine (janis
+on 8090, Ollama 11434, llama.cpp 8080, LM Studio 1234), or you name its
+address. The probe reads the
+runtime's model list and makes one call, as with every provider;
+`/model search` then lists what the runtime serves, at no price, and
+`/model <id>` pins one. On a box reached with `--gateway ssh://you@box`,
+the runtime runs on the box and the window on your laptop. Nothing leaves
+the machine the runtime runs on.
+
+A runtime that also judges — [janis](https://github.com/guregodevo/janis)
+answers the decision model's questions on the same loaded model — is
+connected as both: `connect local` keeps its decisions as `local-decisions`,
+and the [decision model](/docs/decide) runs on this machine with no key
+from that moment. On a runtime without that endpoint (Ollama,
+llama.cpp) decisions stay off, as on a vendor key.
+
 ## Any OpenAI-compatible endpoint
 
 `memdoor connect custom` with a base URL and its key: a vLLM, an internal

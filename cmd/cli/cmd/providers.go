@@ -231,7 +231,9 @@ var connectCmd = &cobra.Command{
 	Long: `Adds a provider to this gateway. The kind is one of: ` + connectKindList() + `.
 The token is read without
 echo; it can be the value, the NAME of an environment variable that holds it,
-or !command that prints it (Keychain, 1Password, Vault). Before anything is
+or !command that prints it (Keychain, 1Password, Vault). A local runtime
+(memdoor connect local: Ollama, llama.cpp, janis, LM Studio on this machine or
+the box) has no token and is asked for none. Before anything is
 kept, the gateway reads the provider's model list and makes one tiny call;
 a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 (0600). --probe tests without keeping.`,
@@ -307,11 +309,15 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 			if !term.IsTerminal(int(os.Stdin.Fd())) && pick.Base != "" {
 				base = pick.Base
 			} else {
-				base = ask("Base URL", pick.Base)
+				prompt := "Base URL"
+				if pick.Keyless {
+					prompt = "Base URL (blank: find a runtime on the gateway's machine — janis :8090, Ollama :11434, llama.cpp :8080, LM Studio :1234)"
+				}
+				base = ask(prompt, pick.Base)
 			}
 		}
 		key, _ := cmd.Flags().GetString("key")
-		if key == "" {
+		if key == "" && !pick.Keyless {
 			// The kind's variable NAME is the default (none for a company
 			// gateway, whose name is its own): Enter keeps it, and when the
 			// gateway already holds it the prompt says so.
@@ -348,19 +354,21 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 		probe, _ := cmd.Flags().GetBool("probe")
 		fmt.Println("Probing …")
 		var res struct {
-			OK     bool     `json:"ok"`
-			ID     string   `json:"id"`
-			API    string   `json:"api"`
-			Models int      `json:"models"`
-			Sample []string `json:"sample"`
-			Tested string   `json:"tested"`
-			Answer string   `json:"answer"`
-			Error  string   `json:"error"`
-			Advice string   `json:"advice"`
-			Saved  bool     `json:"saved"`
+			OK        bool     `json:"ok"`
+			ID        string   `json:"id"`
+			API       string   `json:"api"`
+			Models    int      `json:"models"`
+			Sample    []string `json:"sample"`
+			Tested    string   `json:"tested"`
+			Answer    string   `json:"answer"`
+			Error     string   `json:"error"`
+			Advice    string   `json:"advice"`
+			Saved     bool     `json:"saved"`
+			Decisions bool     `json:"decisions"`
+			Base      string   `json:"base"`
 		}
 		err := NewClient().PostJSON("/api/providers/connect", map[string]any{
-			"id": id, "name": pick.Name, "api": pick.API, "base": base, "key": strings.TrimSpace(key), "model": model, "probe": probe,
+			"id": id, "name": pick.Name, "api": pick.API, "base": base, "key": strings.TrimSpace(key), "model": model, "probe": probe, "keyless": pick.Keyless,
 		}, &res)
 		if err != nil && res.Error == "" {
 			return err
@@ -376,11 +384,17 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 		if !res.Saved {
 			kept = "probe only, nothing kept"
 		}
+		if res.Base != "" {
+			fmt.Printf("  found at %s\n", res.Base)
+		}
 		fmt.Printf("✓ %s connected · %s API · %d models · tested %s → %q · %s\n", res.ID, res.API, res.Models, res.Tested, res.Answer, kept)
 		if len(res.Sample) > 0 {
 			fmt.Printf("  e.g. %s\n", strings.Join(res.Sample, ", "))
 		}
 		fmt.Println("  /model <id> in the window pins one of its models; memdoor model search <name> finds them.")
+		if res.Decisions {
+			fmt.Printf("  it judges too: kept as %s-decisions, the decision model runs here with no key.\n", res.ID)
+		}
 		return nil
 	},
 }

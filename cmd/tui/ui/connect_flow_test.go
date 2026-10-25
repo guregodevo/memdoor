@@ -91,3 +91,29 @@ func TestConnectFlowPicksTypesProbesAndSays(t *testing.T) {
 }
 
 func lipglossPlain() lipgloss.Style { return lipgloss.NewStyle() }
+
+// A local runtime (Ollama, llama.cpp, janis, LM Studio) has no token: /connect
+// local goes from the base URL to the model question and sends keyless.
+func TestConnectALocalRuntimeAsksNoKey(t *testing.T) {
+	var got ConnectRequest
+	m := &Model{width: 100, input: textarea.New()}
+	m.connectOps = ConnectOps{Connect: func(req ConnectRequest) (ConnectResult, error) {
+		got = req
+		return ConnectResult{OK: true, ID: req.ID, API: "chat", Models: 3, Tested: "qwen3:8b", Answer: "ok", Saved: true}, nil
+	}}
+	m.connectCommand([]string{"local"})
+	if m.connect == nil || m.connect.kind.ID != "local" || m.connect.step != connectStepBase || m.input.Value() != "" {
+		t.Fatalf("/connect local starts at the base, blank (the gateway finds a runtime): %+v %q", m.connect, m.input.Value())
+	}
+	if h, _ := m.connectKey(press(tea.KeyEnter)); !h || m.connect.step != connectStepModel {
+		t.Fatalf("enter on the base skips the token step: %+v", m.connect)
+	}
+	h, cmd := m.connectKey(press(tea.KeyEnter))
+	if !h || cmd == nil || m.connect.step != connectStepProbing {
+		t.Fatalf("a blank model sends: %+v", m.connect)
+	}
+	cmd()
+	if !got.Keyless || got.Key != "" || got.ID != "local" || got.API != "chat" || got.Base != "" {
+		t.Fatalf("the request says keyless and carries no token: %+v", got)
+	}
+}

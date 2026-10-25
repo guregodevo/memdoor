@@ -389,6 +389,47 @@ on any vendor key. A Claude subscription has no equivalent: Anthropic's terms
 forbid it outside Claude Code, and the company acted on it against OpenCode in
 March 2026.
 
+## A local runtime, no key (2026-10-25)
+
+Greg: "the next move can be local llm that you ssh from a different machine",
+"it should be a different provider", "janis should work like a llama.cpp or
+ollama, independent from memdoor". The `local` kind in `/connect` and
+`memdoor connect local` (`cmd/tui/ui/connect_flow.go` `ConnectKinds`,
+`Keyless`): an OpenAI-compatible server on this machine or the box — Ollama,
+llama.cpp, janis, LM Studio, vLLM — connected with no token. The request
+carries `keyless`; the gateway skips the key rule, keeps `"keyless": true`
+in `providers.json` with an empty key, and `Provider.Connected()` counts it
+as connected. No `Authorization` header is sent when the key is empty
+(`catalogue.go bearer`, `oai_native.go`, `responses.go`); the key source
+reads `no key: a local runtime`. The base is prefilled with Ollama's
+`http://localhost:11434/v1` and edited to the runtime's port. janis gets its
+own OpenAI-compatible server in its own repo (`janis serve`), so a box runs
+it the way it runs llama.cpp; Memdoor knows no runtime by name. Tests:
+`TestConnectALocalRuntimeNeedsNoKey` (gateway),
+`TestConnectALocalRuntimeAsksNoKey` (window).
+
+**A local decision model** (Greg: "there should be a janis jev model"): janis
+serve also answers `POST /v1/systemone`, the System One wire Memdoor's
+decision client speaks (`pkg/decision/systemone`), from the engine's
+`Decide` (one prefill per question, the probability read off the option
+letters). `connect local` on a keyless runtime also tries that endpoint at
+the runtime's origin and keeps it as `<id>-decisions` (API `decisions`,
+keyless); `providers.DecisionProvider()` returns it, and `systemOneFromEnv`
+accepts an empty key on localhost, so the decision model runs on the
+machine with no key. The decision service is rebuilt on the spot
+(`gateway/decisions.go`: `wireDecisions` keeps `s.rewireDecisions`, the
+connect handler calls it after a decisions provider is kept or removed), so
+it judges from the next turn, no gateway start. `--remove local` drops
+both. A runtime without the endpoint stays chat-only.
+
+**Minimum friction (Greg, 2026-10-25: "minimum friction for install and
+quick getting started")**: a blank base on `connect local` finds the runtime
+on the gateway's machine (`findLocalRuntime`, `localRuntimeBases`: janis
+8090, Ollama 11434, llama.cpp 8080, LM Studio 1234, the first whose model
+list answers), so the whole local setup is `janis pull && janis serve` then
+`memdoor connect local`. Nothing listening is said in words with what to
+start.
+
 ## Next
 
 - Attribution as a field (user, team from the sign-in identity) rather
