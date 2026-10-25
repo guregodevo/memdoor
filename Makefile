@@ -100,6 +100,16 @@ github-protect:
 metrics:
 	@mkdir -p .memdoor/metrics && ./scripts/metrics.sh | tee .memdoor/metrics/$$(date +%Y-%m-%dT%H%M).txt
 
+# metrics-apps reads other people's use from the providers' app statistics:
+# OpenRouter's daily chart for memdoor.ai minus this machine's ledger, per UTC day
+# and model, written to .memdoor/metrics/openrouter.tsv (the whole series each
+# run); and whether LLM Gateway, EUrouter and Vercel list us yet. Daily, from this
+# Mac's crontab, so a snapshot exists even if the page changes:
+#   0 9 * * * cd ~/Dev/aktapus && PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin make metrics-apps >/dev/null 2>&1
+# (installed on Greg's Mac 2026-10-25)
+metrics-apps:
+	@./scripts/metrics-apps.sh
+
 # rollback puts the previous release back on memdoor.ai (scripts/rollback.sh);
 # releases lists what the deploys kept.
 rollback:
@@ -323,7 +333,8 @@ help:
 	@echo "  make oss-publish        - Push this release to the public repo (oss-tree: prepare only)"
 	@echo "  make indexnow           - Tell the IndexNow engines the sitemap changed"
 	@echo "  make github-protect     - Set the public repo's branch rules"
-	@echo "  make metrics            - Adoption, accounts, stars, OpenRouter tokens minus this machine; snapshot under .memdoor/metrics/"
+	@echo "  make metrics            - Adoption, accounts, stars, other people on OpenRouter; snapshot under .memdoor/metrics/
+	@echo "  make metrics-apps       - Other people's use from the providers' app stats (OpenRouter per day minus this machine; who lists us)""
 	@echo "  make rotate-admin       - Rotate the prod admin password"
 	@echo "  make clean              - Remove the binary"
 

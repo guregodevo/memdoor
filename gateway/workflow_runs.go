@@ -226,10 +226,19 @@ func (r *workflowRunner) Run(ctx context.Context, t workflow.TaskRun) (string, e
 	if agentID == "" {
 		agentID = "coder"
 	}
+	// The agents are the gateway's, not a workspace's: `memdoor agent list`
+	// shows the same six from every workspace, and a run reports to whatever
+	// workspace the window or the -w flag named. So the run's workspace is
+	// tried first and any workspace after it (2026-10-25: a run from a
+	// project pinned to another workspace failed every task with "no agent
+	// named coder" while the coder had just built the workflow).
 	var buddyTools []string
 	if r.s.repoFactory != nil {
-		if buddy, err := r.s.repoFactory.Buddies().GetByName(ctx, r.run.Workspace, agentID); err == nil && buddy != nil {
-			buddyTools = append([]string(nil), buddy.Tools...)
+		for _, ws := range []string{r.run.Workspace, ""} {
+			if buddy, err := r.s.repoFactory.Buddies().GetByName(ctx, ws, agentID); err == nil && buddy != nil && len(buddy.Tools) > 0 {
+				buddyTools = append([]string(nil), buddy.Tools...)
+				break
+			}
 		}
 	}
 	if len(buddyTools) == 0 {

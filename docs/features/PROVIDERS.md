@@ -323,6 +323,13 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
 
 ## How a provider knows it is Memdoor (2026-10-24)
 
+`make metrics-apps` (scripts/metrics-apps.sh, 2026-10-25) reads those statistics back:
+OpenRouter's app page (all-time totals per model, and a chart per model per UTC day) minus
+this machine's own ledger (`memdoor meter`, read in UTC), per day, written to
+.memdoor/metrics/openrouter.tsv; and whether LLM Gateway, EUrouter or Vercel list a Memdoor
+row yet. The remainder on a day is other people on their own key; before the launch
+(2026-10-21) it includes Memdoor's own machines of the time.
+
 Greg: "for each provider key we can see who is using our app… the idea is to
 promote memdoor." Nothing phones home (decided the same day); the count of
 people on Memdoor is whatever each provider shows for the app. Researched
