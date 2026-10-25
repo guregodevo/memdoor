@@ -120,6 +120,14 @@ Git Bash when it is installed, otherwise PowerShell). One binary, installed to
 ([`scripts/install.sh`](scripts/install.sh)) verifies the SHA-256 of what it
 downloads.
 
+From a clone, with Go 1.25, Node 22 and SQLite 3 (`libsqlite3-dev` on Linux):
+
+```bash
+git clone https://github.com/guregodevo/memdoor && cd memdoor
+make build                             # ./memdoor, stamped with the tag it was built from
+cp memdoor ~/.local/bin/               # or anywhere on your PATH
+```
+
 ## In the window
 
 | Command | What it does |
