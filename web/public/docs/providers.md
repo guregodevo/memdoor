@@ -156,6 +156,23 @@ and the [decision model](/docs/decide) runs on this machine with no key
 from that moment. On a runtime without that endpoint (Ollama,
 llama.cpp) decisions stay off, as on a vendor key.
 
+### The box's model answers the laptop
+
+A gateway on a box with a GPU is a peer of the one on your laptop: `memdoor
+peers add box http://box:18789 --dir ~/app` names it once you are signed in to
+it (the ssh door signs you in on the way), and `@box:coder …` in any
+conversation here runs the turn there, on the model that box serves, and brings
+the answer back as the reply. The laptop needs no GPU and no key for that
+model; the box's tokens show on the box's own ledger (`memdoor meter` there).
+
+![A laptop with no GPU asks @box:coder; the box runs Qwen3.8-27B through janis on its L4, patches main.go, runs it, and the answer lands in the laptop's window](/local-model.cast)
+
+Recorded 2026-10-26: a g2-standard-16 with one L4 on Google Cloud, janis
+serving Qwen3.8-27B 4-bit (the Qwen3.5 hybrid on CUDA), Memdoor installed on
+the box through the ssh door. The 27B answers at about 5 tokens a second on
+that card and reads a coder prompt at 250; a turn that edits and runs a file
+takes a few minutes, all of it on the box.
+
 ## Any OpenAI-compatible endpoint
 
 `memdoor connect custom` with a base URL and its key: a vLLM, an internal

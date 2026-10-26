@@ -6,8 +6,11 @@ import json, re, sys
 src, dst, every, cap = sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4])
 rate = float(sys.argv[5]) if len(sys.argv) > 5 else 0.0
 ansi = re.compile(r"\x1b\[[0-9;]*m")
-def shape(s):  # the screen with its clocks blanked, to tell a tick from a change
-    return re.sub(r"\b\d+(m\d+)?s\b", "Ns", ansi.sub("", s))
+def shape(s):  # the screen with its clocks and spinners blanked, to tell a tick from a change
+    s = re.sub(r"[\u2800-\u28ff\u2588\u258c\u258f]", "", ansi.sub("", s))  # the braille spinner and the cursor block (a peer turn spun for five minutes, 2026-10-26)
+    s = "\n".join(l.rstrip() for l in s.split("\r\n"))  # a blinking cursor leaves a trailing space behind
+    s = re.sub(r"[A-Za-z]+… \(", "…(", s)  # the status verb the window rotates while it waits (Noodling…, Spelunking…)
+    return re.sub(r"\b\d+(m\d+)?s\b", "Ns", s)
 lines = open(src).read().splitlines()
 head = lines[0]
 frames = [json.loads(l) for l in lines[1:] if l.startswith("[")]

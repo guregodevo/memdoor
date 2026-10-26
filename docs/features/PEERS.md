@@ -27,6 +27,17 @@ mention of box's coder: the turn runs on box, in `/srv/app`, as `memdoor
 `box:coder`. The run on the peer is a conversation there (`memdoor --gateway
 box resume <id>` opens it; the reply ends with that line).
 
+## Recorded
+
+The landing's "Your own model" tab and the gallery (web/public/local-model.cast,
+2026-10-26): the window on a laptop with no GPU asks `@box:coder` to add a flag
+to a Go program and run it; the box, a g2-standard-16 with one L4 on Google
+Cloud serving Qwen3.8-27B through janis, reads, patches, builds and runs it,
+and the receipt lands in the laptop's window. The take needed janis to keep the
+stream alive while a tool call is generated (the gateway's idle watchdog is a
+minute) and the gateway to keep a local runtime's model order (the loaded model
+first, v1.697.0).
+
 ## How it works
 
 - `pkg/message/mention.go`: `ParseMentions` accepts `@<peer>:<agent>`

@@ -17,8 +17,9 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // agent's page saw a CIFAR-10 training recipe and filed it under ML ops. The
 // poster is the frame before the cast loads, and the still for anyone who
 // prefers reduced motion.
-// Four tabs, the four things it is (Greg, 2026-10-11: "Workflows / Headless /
-// Cost saving", "No babysitting? the top 4 features"). Each is a real session.
+// Five tabs, the things it is (Greg, 2026-10-11: "Workflows / Headless /
+// Cost saving", "No babysitting? the top 4 features"; 2026-10-26: "the story
+// of local model with peer features"). Each is a real session.
 const TAKES = [
   {
     key: 'workflows',
@@ -46,6 +47,18 @@ const TAKES = [
     cast: '/ssh-door.cast',
     poster: 'npt:0:4.4',
     what: 'the run on the box, in its home · the answer and the receipt here · memdoor resume reopens it',
+  },
+  {
+    // Recorded 2026-10-26: the window on a laptop with no GPU, the box a
+    // g2-standard-16 with one L4 serving Qwen3.8-27B through janis, Memdoor on
+    // it through the ssh door, named as a peer. The turn runs there, on its
+    // model; the edit, the run and the answer come back here.
+    key: 'local',
+    label: 'Your own model',
+    ask: '@box:coder add a -k flag to main.go that prints the Kelvin value as well, then run it',
+    cast: '/local-model.cast',
+    poster: 'npt:2:17',
+    what: 'the box runs Qwen3.8-27B on its own GPU · the laptop has no GPU and no key for it · the patch, the run and the answer land here',
   },
   {
     key: 'cost',

@@ -36,6 +36,13 @@ const DEMOS = [
     note: 'plan → two at once → solve → samples → review → repair → the final check decides · 8 steps',
   },
   {
+    title: 'Your own model, on your own box',
+    ask: '@box:coder add a -k flag to main.go that prints the Kelvin value as well, then run it — asked from a laptop with no GPU, answered by Qwen3.8-27B through janis on the box\'s L4.',
+    cast: '/local-model.cast',
+    poster: 'npt:2:17',
+    note: 'a peer named once · the turn runs on the box, on its model · the patch, the run and the answer come back',
+  },
+  {
     title: 'A fan-out',
     ask: 'Deep research on the top 5 Hacker News stories: read each article, summarize each.',
     cast: '/workflow-hn.cast',

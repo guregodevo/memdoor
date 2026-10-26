@@ -47,6 +47,11 @@ and nothing leaves it. janis is ours: one Go server that runs the open models on
 a Mac's GPU through MLX or on an NVIDIA box through CUDA, serves chat and the
 decision model with no key, and runs Qwen3-Coder-30B-A3B on a $0.71-an-hour
 Google L4; `memdoor --gateway ssh://you@box connect local` makes that box yours.
+And that box answers your laptop: `memdoor peers add box http://box:18789 --dir
+~/app` names it, and `@box:coder …` in any conversation here runs the turn there,
+on the box's own model, and brings the answer back. Recorded on memdoor.ai: a
+laptop with no GPU asks, Qwen3.8-27B on an L4 through janis reads, patches and
+runs a Go program on the box, the window on the laptop shows it land.
 
 <p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
 
