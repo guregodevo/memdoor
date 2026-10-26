@@ -173,6 +173,14 @@ func (openAIShapeReader) ListModels(ctx context.Context, p Provider) ([]Model, e
 		}
 		out = append(out, Model{ID: d.ID, Name: name, Context: ctxLen, Tools: true})
 	}
+	if p.Keyless {
+		// A local runtime's order says something: janis lists the model it
+		// has loaded first, and the first model is the one a turn gets when
+		// nothing is pinned. Sorted by id, "Qwen3-8B-4bit" came before
+		// "Qwen3.8-27B-4bit" and every turn on a box serving the 27B asked
+		// for the 8B, which the runtime then tried to load beside it (2026-10-26).
+		return out, nil
+	}
 	return sortModels(out), nil
 }
 
