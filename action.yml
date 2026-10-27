@@ -24,7 +24,7 @@
 # Exit: 0 done, 2 a task failed, 1 stopped (timeout), 3 a gate nobody in
 # the job can approve (stop-at-gate, the default; its review is in the log).
 name: Memdoor Workflow
-description: Run a Memdoor workflow (a DAG of agent, model and command steps in .memdoor/workflows) on your own model key
+description: Review PRs, fix failing tests and write release notes with an AI agent, on your own model key
 author: guregodevo
 branding:
   icon: git-merge
