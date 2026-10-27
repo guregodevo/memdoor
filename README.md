@@ -33,6 +33,34 @@ The runs live on the box: close the laptop, the work goes on, and your phone or 
 
 No account. Telemetry off unless you turn it on. macOS, Linux, Windows, one static binary, Apache 2.0.
 
+### In GitHub Actions
+
+One step in a workflow, on your key, with nothing to add to your repo
+([Marketplace](https://github.com/marketplace/actions/memdoor-workflow)):
+
+```yaml
+on: pull_request
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: guregodevo/memdoor@v1
+        with:
+          workflow: pr-review
+          openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+```
+
+- **`pr-review`** reviews the pull request, verifies each finding by running the code, and fails the job only on a blocker.
+- **`fix-tests`** finds the test command, fixes the code until the tests pass, and leaves the fix in the working tree.
+- **`release-notes`** turns the commits since the last tag into Added / Changed / Fixed.
+
+Or `workflow: <name>` for your own, `.memdoor/workflows/<name>/` in the repo. The
+job ends with the run's outcome (0 done, 2 failed, 1 stopped, 3 stopped at an
+approval gate) and its summary shows the review, the fix or the notes. Trigger on
+`pull_request`, never `pull_request_target`: GitHub gives a fork's pull request no
+secrets, so a stranger's code never runs beside your key.
+
 On a ChatGPT Plus or Pro plan? Skip the key: `memdoor connect chatgpt` (or
 `/connect chatgpt` in the window) opens Sign in with ChatGPT, and your plan's
 allowance answers Memdoor's turns. A Claude subscription cannot be used this
@@ -189,19 +217,7 @@ The exit code is the turn's receipt: 0 checked, 2 unverified or a failing check,
 starts if none is running; every run is a conversation `memdoor resume` opens.
 [Headless, then attached](https://memdoor.ai/docs/headless).
 
-A workflow in GitHub Actions is one step, on your key; the job ends with the
-run's outcome (0 done, 2 failed, 1 stopped, 3 stopped at a gate). Three are
-built in and need no file in your repo: `pr-review` (fails on a blocker only),
-`fix-tests` (leaves the fix in the working tree), `release-notes`.
-
-```yaml
-- uses: guregodevo/memdoor@v1
-  with:
-    workflow: pr-review
-    openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
-```
-
-Run it on `pull_request`, never `pull_request_target`: GitHub gives a fork's pull request no secrets, so a stranger's code never runs next to your key; `pull_request_target` runs their code with your secrets.
+A workflow in GitHub Actions is one step: [In GitHub Actions](#in-github-actions) above.
 
 ## Where your data goes
 
