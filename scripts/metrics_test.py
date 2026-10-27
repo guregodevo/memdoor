@@ -48,6 +48,16 @@ class MetricsRequestsTest(unittest.TestCase):
             "/install.sh", "/dl/memdoor-darwin-arm64", "/dl/VERSION",
         ])
 
+    def test_a_binary_redirected_to_github_counts(self):
+        rows = [self.row("10/Oct/2026", path, status) for path, status in [
+            ("/dl/memdoor-linux-amd64", 302), ("/dl/memdoor-windows-amd64.exe", 302),
+            ("/dl/memdoor-linux-amd64?ci=1", 302), ("/dl/Memdoor.zip", 302),
+            ("/install.sh", 302),
+        ]]
+        self.assertEqual([line.split()[2] for line in self.filter(rows)], [
+            "/dl/memdoor-linux-amd64", "/dl/memdoor-windows-amd64.exe",
+        ])
+
     def test_bot_heuristic_is_case_insensitive(self):
         rows = [self.row("10/Oct/2026", agent=agent) for agent in [
             "GoogleBot", "CURL/8", "Mozilla/5.0",
