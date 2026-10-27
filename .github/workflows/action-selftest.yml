@@ -1,5 +1,5 @@
-# The Memdoor workflow action (action.yml at the root), run as a user's job
-# runs it, on memdoor built from this commit: three keyless workflows of
+# The published Memdoor workflow action (guregodevo/memdoor-action@v1), run
+# as a user's job runs it, on memdoor built from this commit (install: false): three keyless workflows of
 # command steps — one that passes, one that fails, one that stops at a gate —
 # and a built-in (fix-tests on a suite that passes, from the library in a repo
 # with no .memdoor), each one's exit code and outputs checked. No model key: an agent step is
@@ -13,7 +13,6 @@ permissions:
 on:
   push:
     paths:
-      - action.yml
       - cmd/cli/cmd/workflow.go
       - gateway/workflow*.go
       - pkg/workflow/**
@@ -57,7 +56,7 @@ jobs:
 
       - name: A run that passes
         id: pass
-        uses: ./
+        uses: guregodevo/memdoor-action@v1
         with:
           workflow: ci-pass
           working-directory: ${{ runner.temp }}/proj
@@ -66,7 +65,7 @@ jobs:
       - name: A run that fails
         id: fail
         continue-on-error: true
-        uses: ./
+        uses: guregodevo/memdoor-action@v1
         with:
           workflow: ci-fail
           working-directory: ${{ runner.temp }}/proj
@@ -75,7 +74,7 @@ jobs:
       - name: A run that stops at its gate
         id: gate
         continue-on-error: true
-        uses: ./
+        uses: guregodevo/memdoor-action@v1
         with:
           workflow: ci-gate
           working-directory: ${{ runner.temp }}/proj
@@ -94,7 +93,7 @@ jobs:
 
       - name: A built-in workflow (fix-tests, nothing to fix)
         id: builtin
-        uses: ./
+        uses: guregodevo/memdoor-action@v1
         with:
           workflow: fix-tests
           working-directory: ${{ runner.temp }}/green

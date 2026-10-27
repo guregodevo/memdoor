@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: guregodevo/memdoor@v1
+      - uses: guregodevo/memdoor-action@v1
         with:
           workflow: pr-review
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}

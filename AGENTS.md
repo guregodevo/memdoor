@@ -96,8 +96,9 @@ grep -r "duplicate_code" .    # Search before coding
 ./memdoor workflow run release   # /workflow in the TUI draws the DAG live; Esc stops this window's run
 # Reusable: a project's .memdoor/workflows/<name>/, or the library ~/.memdoor/workflows/<name>/ (any project)
 # BUILT IN (2026-10-27): workflows/ (embedded) is seeded into the library at boot (SeedEmbeddedWorkflows,
-# the skill seed's rules): pr-review, fix-tests, release-notes run in a repo with no .memdoor; action.yml
-# at the root is the GitHub Action (uses: guregodevo/memdoor@v1, workflow: pr-review), --stop-at-gate = exit 3.
+# the skill seed's rules): pr-review, fix-tests, release-notes run in a repo with no .memdoor. The GitHub
+# Action is guregodevo/memdoor-action (its own repo: action.yml, a README that is the Marketplace page, a
+# self-test that installs from memdoor.ai): uses: guregodevo/memdoor-action@v1; --stop-at-gate = exit 3.
 # The coder has a `workflow` tool (list/run/status/stop/approve) — gateway/workflow_tool.go —
 # and the `workflow` SKILL (skills/workflow.md): the person says what they want, the coder
 # builds the files. Never put the format in a prompt to the user.

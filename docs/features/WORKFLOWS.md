@@ -319,7 +319,8 @@ review on stderr, for a job nobody can approve from.
 
 ## In GitHub Actions
 
-`action.yml` at the repo root makes a workflow one step of a GitHub job:
+The action, [guregodevo/memdoor-action](https://github.com/guregodevo/memdoor-action)
+(its own repository, so its README is the Marketplace page), makes a workflow one step of a GitHub job:
 the runner installs memdoor, the first command starts a gateway on
 localhost and sets the runner up, and the job ends with the run's exit code.
 The key is yours, from the repo's secrets.
@@ -332,7 +333,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: guregodevo/memdoor@v1
+      - uses: guregodevo/memdoor-action@v1
         with:
           workflow: pr-review                  # built in; or your own .memdoor/workflows/<name>/
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
@@ -363,8 +364,9 @@ included). The job summary is `memdoor workflow status` of the run, then
 every Markdown file it produced (the review, the fix's report, the notes).
 Linux and macOS runners.
 
-`.github/workflows/action-selftest.yml` runs the action on memdoor built
-from the commit: a run that passes (0), one that fails (2), one that stops
+`.github/workflows/action-selftest.yml` here runs the published action
+(`install: false`) on memdoor built from the commit, and the action repository's
+own self-test installs memdoor from memdoor.ai on Ubuntu and macOS: a run that passes (0), one that fails (2), one that stops
 at its gate (3), keyless command steps, and the built-in fix-tests on a
 suite that passes (0, nothing changed, no key).
 
