@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"memdoor/pkg/shell"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -29,7 +28,7 @@ import (
 // anything using terminfo checks, and the two specific ones cover the
 // offenders measured in practice.
 func plainEnv() []string {
-	return append(os.Environ(),
+	return append(shell.Env(),
 		"NO_COLOR=1",
 		"TERM=dumb",
 		"PYTHON_COLORS=0",

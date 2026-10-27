@@ -5,7 +5,7 @@
 # end (memdoor workflow run --wait). Linux and macOS runners.
 #
 #   - uses: actions/checkout@v5
-#   - uses: guregodevo/memdoor@main
+#   - uses: guregodevo/memdoor@v1
 #     with:
 #       workflow: pr-review
 #       openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
@@ -13,6 +13,13 @@
 # Built in, with no file in your repo: pr-review (fails on a blocker only),
 # fix-tests (leaves the fix in the working tree), release-notes. A workflow
 # of your own is .memdoor/workflows/<name>/ in the repo.
+#
+# Your key: the agent runs the repo's code on the runner, where the key is.
+# Trigger on pull_request, NEVER pull_request_target: GitHub gives a fork's
+# pull request no secrets, so a stranger's code never runs beside your key,
+# while pull_request_target runs their code with your secrets. Memdoor keeps
+# model keys out of the environment of every command the agent runs
+# (pkg/shell Env), a second line, not the boundary.
 #
 # Exit: 0 done, 2 a task failed, 1 stopped (timeout), 3 a gate nobody in
 # the job can approve (stop-at-gate, the default; its review is in the log).

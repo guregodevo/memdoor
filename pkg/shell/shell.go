@@ -61,11 +61,14 @@ func current() choice {
 	return chosen
 }
 
-// Command is the shell running line, with ctx as its lifetime.
+// Command is the shell running line, with ctx as its lifetime and Env as
+// its environment (no model key).
 func Command(ctx context.Context, line string) *exec.Cmd {
 	c := current()
 	args := append(append([]string{}, c.args...), line)
-	return exec.CommandContext(ctx, c.prog, args...)
+	cmd := exec.CommandContext(ctx, c.prog, args...)
+	cmd.Env = Env()
+	return cmd
 }
 
 // Name is the family of the shell in use: bash, powershell, cmd or sh.

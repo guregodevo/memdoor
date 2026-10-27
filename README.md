@@ -195,11 +195,13 @@ built in and need no file in your repo: `pr-review` (fails on a blocker only),
 `fix-tests` (leaves the fix in the working tree), `release-notes`.
 
 ```yaml
-- uses: guregodevo/memdoor@main
+- uses: guregodevo/memdoor@v1
   with:
     workflow: pr-review
     openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
 ```
+
+Run it on `pull_request`, never `pull_request_target`: GitHub gives a fork's pull request no secrets, so a stranger's code never runs next to your key; `pull_request_target` runs their code with your secrets.
 
 ## Where your data goes
 
