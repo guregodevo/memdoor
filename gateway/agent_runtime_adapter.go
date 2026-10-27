@@ -45,7 +45,7 @@ type sessionLookup interface {
 
 // routeKeys are the session metadata that describe a conversation's rung
 // (turn_tier.go, route_handler.go).
-var routeKeys = []string{sessionTierKey, sessionPinnedKey, sessionReasonKey, sessionModelKey, sessionSortKey, sessionOrderKey, sessionEffortKey}
+var routeKeys = []string{sessionTierKey, sessionPinnedKey, sessionReasonKey, sessionModelKey, sessionSortKey, sessionOrderKey, sessionEffortKey, sessionMaxTokensKey}
 
 // carryRoute copies the registered session's rung onto the turn's session.
 func (a *AgentExecutorAdapter) carryRoute(session *Session) {

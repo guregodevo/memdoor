@@ -1,0 +1,17 @@
+type: command
+command: |
+  f=.memdoor/runs/pr-review-{{.partition}}.md
+  [ -f "$f" ] || { echo "nothing to review"; exit 0; }
+  # A finding line: a bullet, then P0 (bold, bracketed or bare), never P01.
+  p0=$(grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P0([^0-9]|$)' "$f" || true)
+  others=$(grep -cE '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P[12]([^0-9]|$)' "$f" || true)
+  if [ -n "$p0" ]; then
+    echo "$(printf '%s\n' "$p0" | wc -l | tr -d ' ') finding(s) that must not merge:" >&2
+    printf '%s\n' "$p0" >&2
+    exit 1
+  fi
+  echo "no blocking finding; $others to consider in $f"
+requires:
+  - table_pattern: review
+timeout: 1m
+max_retries: 0

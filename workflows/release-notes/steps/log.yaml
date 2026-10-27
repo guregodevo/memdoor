@@ -1,0 +1,20 @@
+type: command
+command: |
+  set -e
+  if [ "$(git rev-parse --is-shallow-repository)" = true ]; then git fetch -q --unshallow --tags origin || true; fi
+  git fetch -q --tags origin 2>/dev/null || true
+  p="{{.partition}}"
+  if git rev-parse -q --verify "$p^{commit}" >/dev/null; then to=$p; else to=HEAD; fi
+  if prev=$(git describe --tags --abbrev=0 "$to^" 2>/dev/null); then range="$prev..$to"; else prev=""; range=$to; fi
+  mkdir -p .memdoor/runs
+  out=.memdoor/runs/release-notes-{{.partition}}.log
+  {
+    echo "release: $([ "$to" = HEAD ] && echo unreleased || echo "$to")"
+    echo "date: $(git log -1 --format=%cs "$to")"
+    echo "since: ${prev:-the first commit}"
+    echo
+    git log --no-merges --format='--- %h %s%n%b' "$range"
+  } > "$out"
+  echo "$(git rev-list --no-merges --count "$range") commits in ${range}"
+timeout: 5m
+max_retries: 0

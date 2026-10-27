@@ -108,7 +108,7 @@ your message"). A person's approval is written there too. A browser step is a `c
 
 A task's `model:` is read the way /model reads its line (2026-10-25): the id, then
 an optional host preference (`price`, `throughput`, `latency`, `default`) and an
-optional `order host1,host2`, and an optional `thinking off|low|medium|high` (the
+optional `order host1,host2`, and an optional `thinking off|low|medium|high`, `max_tokens N` (the reply's ceiling for the task, under the provider's) (the
 step's reasoning effort; `off` sends OpenRouter's `reasoning.enabled=false`), for agent
 and llm tasks alike. The LCB-100 bench needed all of it: Qwen3.8-27B answered at 885
 tokens a second on OpenRouter's throughput host (Cerebras) and at 44 on the cheapest
@@ -200,6 +200,32 @@ it was added, live in `examples/workflows/` (nightly-rule, 2026-10-07;
 team-solve, the GVS5H ledger method, 2026-10-25, with the sample problem and
 the run's receipt in its README) and are copied the same way.
 
+### Built in
+
+Three workflows ship in the binary (`workflows/`, embedded) and are seeded
+into the library at the gateway's boot (`SeedEmbeddedWorkflows`, the skill
+seed's rules): so they run in a repository with no `.memdoor` at all, a
+GitHub job's first included. A project's own workflow of the same name wins;
+an edited library copy is never overwritten; a library directory of that
+name the seed did not write is left alone.
+
+| Workflow | What it does | Fails when |
+|---|---|---|
+| `pr-review` | The change (a PR against its base, else the branch or the last commit) reviewed by the coder with the `review` skill, verified by running; `.memdoor/runs/pr-review-<partition>.md` with **P0**/**P1**/**P2** findings | there is a P0: what must not merge |
+| `fix-tests` | The project's test command (`$MEMDOOR_TEST_COMMAND`, else found from go.mod, Cargo.toml, package.json, pyproject.toml, a Makefile); when it fails, the coder fixes the code and reruns until it passes; the fix stays in the working tree, the report in `.memdoor/runs/fix-tests-<partition>.md` | the tests still fail |
+| `release-notes` | Every commit since the tag before the release (the partition, else HEAD) into `.memdoor/runs/release-notes-<partition>.md`: Added / Changed / Fixed, what a person notices | — |
+
+Receipt, 2026-10-27, each through the action's own step on a fresh HOME:
+pr-review on a shallow PR merge checkout that narrowed a loop bound found
+it as a P0 verified by running (`Sum([]int{1,2,3})` returns 3) and failed
+the job, exit 2, the review in the summary, while a correct change (a `Max`
+with its test) passed with "No findings" after `go vet` and `go test`, exit 0;
+the change is taken right from a PR's shallow or full checkout, a shallow
+push, a local branch and a first commit; fix-tests on a Go package whose
+`Reverse` dropped the first rune fixed `i > 0` to `i >= 0` in 18 s, tests
+untouched; release-notes for v0.2.0 kept the two visible commits and left
+the refactor out; fix-tests on a passing suite skipped the agent, no key.
+
 ## The partition
 
 mario runs a DAG per *partition*, and **the partition is the identity of
@@ -285,6 +311,49 @@ memdoor workflow history <name> [--limit 20]
 
 `--dir` names the project (default: here). The run happens on the gateway;
 the shell and the TUI read the same state.
+
+`--wait` follows the run to its end: progress on stderr, the files it
+produced on stdout, exit 0 done, 2 failed, 1 stopped. A gate is waited on;
+`--stop-at-gate` (implies `--wait`) ends there with exit 3 and the gate's
+review on stderr, for a job nobody can approve from.
+
+## In GitHub Actions
+
+`action.yml` at the repo root makes a workflow one step of a GitHub job:
+the runner installs memdoor, the first command starts a gateway on
+localhost and sets the runner up, and the job ends with the run's exit code.
+The key is yours, from the repo's secrets.
+
+```yaml
+# .github/workflows/review.yml
+on: pull_request
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: guregodevo/memdoor@main
+        with:
+          workflow: pr-review                  # built in; or your own .memdoor/workflows/<name>/
+          openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+          timeout: 45m
+```
+
+Inputs: `workflow`, `working-directory`, `timeout`, `partition`,
+`stop-at-gate` (default `true`: a gate fails the job with exit 3; `false`
+waits for an approval from another door, bounded by `timeout`), `install`
+(`false` uses the memdoor on PATH), and a key: `openrouter-api-key`,
+`anthropic-api-key`, `openai-api-key`, `gemini-api-key` (a key already in
+the job's env works too), `model`. Outputs: `run-id`, `exit-code`,
+`results` (the files the run produced, one per line, a failed run's
+included). The job summary is `memdoor workflow status` of the run, then
+every Markdown file it produced (the review, the fix's report, the notes).
+Linux and macOS runners.
+
+`.github/workflows/action-selftest.yml` runs the action on memdoor built
+from the commit: a run that passes (0), one that fails (2), one that stops
+at its gate (3), keyless command steps, and the built-in fix-tests on a
+suite that passes (0, nothing changed, no key).
 
 ## Runs you can see later
 

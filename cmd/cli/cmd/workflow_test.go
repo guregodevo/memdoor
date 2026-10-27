@@ -32,3 +32,50 @@ func TestPrintWorkflowTasks(t *testing.T) {
 		}
 	}
 }
+
+// run --wait ends on the run's outcome; a gate ends it only with
+// --stop-at-gate (a CI job has nobody to approve), as exit 3.
+func TestWorkflowWaitEnds(t *testing.T) {
+	gate := workflowRunStatus{State: "waiting", Tasks: []workflowTaskStatus{
+		{Name: "build", State: "done"},
+		{Name: "approve", State: "waiting", External: true},
+	}}
+	cases := []struct {
+		st         workflowRunStatus
+		stopAtGate bool
+		code       int
+		end        bool
+	}{
+		{workflowRunStatus{State: "running"}, true, 0, false},
+		{workflowRunStatus{State: "done"}, false, workflowExitDone, true},
+		{workflowRunStatus{State: "failed"}, false, workflowExitFailed, true},
+		{workflowRunStatus{State: "stopped"}, false, workflowExitStopped, true},
+		{gate, false, workflowExitGate, false},
+		{gate, true, workflowExitGate, true},
+	}
+	for _, c := range cases {
+		code, end := workflowWaitEnds(c.st, c.stopAtGate)
+		if code != c.code || end != c.end {
+			t.Errorf("%s stopAtGate=%v: got (%d, %v), want (%d, %v)", c.st.State, c.stopAtGate, code, end, c.code, c.end)
+		}
+	}
+	if g := waitingGate(gate); g != "approve" {
+		t.Errorf("waitingGate = %q, want approve", g)
+	}
+	if g := waitingGate(workflowRunStatus{State: "running", Tasks: gate.Tasks}); g != "" {
+		t.Errorf("a running run stands at no gate, got %q", g)
+	}
+}
+
+// A command task's error shows its exit status and what it said, not the
+// command it repeats (mario: "task <name>: <command>: exit status 1 — …").
+func TestTaskErrorText(t *testing.T) {
+	got := taskErrorText("task w.steps.verdict: f=x\n[ -f \"$f\" ] || exit 0\n: exit status 1 — 1 finding(s) that must not merge:\n- **P0** `a.go:6` — wrong")
+	want := "exit status 1 — 1 finding(s) that must not merge:\n- **P0** `a.go:6` — wrong"
+	if got != want {
+		t.Fatalf("got %q, want %q", got, want)
+	}
+	if got := taskErrorText("no model is configured"); got != "no model is configured" {
+		t.Fatalf("an error with no exit status changed: %q", got)
+	}
+}

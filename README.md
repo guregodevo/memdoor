@@ -189,6 +189,18 @@ The exit code is the turn's receipt: 0 checked, 2 unverified or a failing check,
 starts if none is running; every run is a conversation `memdoor resume` opens.
 [Headless, then attached](https://memdoor.ai/docs/headless).
 
+A workflow in GitHub Actions is one step, on your key; the job ends with the
+run's outcome (0 done, 2 failed, 1 stopped, 3 stopped at a gate). Three are
+built in and need no file in your repo: `pr-review` (fails on a blocker only),
+`fix-tests` (leaves the fix in the working tree), `release-notes`.
+
+```yaml
+- uses: guregodevo/memdoor@main
+  with:
+    workflow: pr-review
+    openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+```
+
 ## Where your data goes
 
 Files, sessions and commands stay on your machine. What leaves is what the

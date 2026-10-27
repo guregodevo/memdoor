@@ -25,15 +25,16 @@ import (
 // route_pinned and route_reason, and the turn runs on exactly that rung.
 
 const (
-	sessionPinnedKey  = "route_pinned"
-	sessionReasonKey  = "route_reason"
-	sessionModelKey   = "route_model"       // a model pinned by id, off the ladder
-	sessionSortKey    = "route_sort"        // host preference for it: price | throughput | latency | default
-	sessionOrderKey   = "route_order"       // the person's own host order, comma-separated
-	sessionEffortKey  = "route_effort"      // reasoning effort the person chose (Shift+Tab); "" = auto
-	sessionEffortUsed = "route_effort_used" // the last turn's effort, and where it came from:
-	sessionEffortFrom = "route_effort_from" // "chosen", "decision model" or "default"
-	reasonPinned      = "pinned by you"
+	sessionPinnedKey    = "route_pinned"
+	sessionReasonKey    = "route_reason"
+	sessionModelKey     = "route_model"       // a model pinned by id, off the ladder
+	sessionSortKey      = "route_sort"        // host preference for it: price | throughput | latency | default
+	sessionOrderKey     = "route_order"       // the person's own host order, comma-separated
+	sessionEffortKey    = "route_effort"      // reasoning effort the person chose (Shift+Tab); "" = auto
+	sessionMaxTokensKey = "route_max_tokens"  // a task's own reply ceiling (`max_tokens N` on its model line); "" = the model's
+	sessionEffortUsed   = "route_effort_used" // the last turn's effort, and where it came from:
+	sessionEffortFrom   = "route_effort_from" // "chosen", "decision model" or "default"
+	reasonPinned        = "pinned by you"
 )
 
 // modelIDRe: vendor/model as OpenRouter names them, or a provider's own id

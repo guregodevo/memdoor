@@ -5,7 +5,7 @@
 Exit 0 when every graded test passes. Writes nothing but stdout."""
 import json, multiprocessing, os, sys
 multiprocessing.set_start_method("fork", force=True)  # macOS + Python 3.14 default (forkserver) kills the grader's Manager
-BENCH = os.path.dirname(os.path.abspath(__file__))
+BENCH = os.environ.get("LCB_BENCH", os.path.dirname(os.path.abspath(__file__)))  # where problems.json is (materialize.py wrote it)
 sys.path.insert(0, os.environ.get("LCB_RUNNER", os.environ.get("LCB_RUNNER", os.path.expanduser("~/GVS5H/codebase/livecodebench"))))
 from lcb_runner.evaluation.compute_code_generation_metrics import check_correctness  # noqa: E402
 mode, pid = sys.argv[1], sys.argv[2]

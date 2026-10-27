@@ -1,0 +1,130 @@
+# The Memdoor workflow action (action.yml at the root), run as a user's job
+# runs it, on memdoor built from this commit: three keyless workflows of
+# command steps — one that passes, one that fails, one that stops at a gate —
+# and a built-in (fix-tests on a suite that passes, from the library in a repo
+# with no .memdoor), each one's exit code and outputs checked. No model key: an agent step is
+# the provider's business, the action's is install-free start, the run, the
+# exit code and the summary.
+name: Action (memdoor workflow)
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - action.yml
+      - cmd/cli/cmd/workflow.go
+      - gateway/workflow*.go
+      - pkg/workflow/**
+      - workflows/**
+      - gateway/skills_seed.go
+      - .github/workflows/action-selftest.yml
+  workflow_dispatch:
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      # gateway/web/embed.go embeds web/dist (gitignored); the cgo SQLite needs its header.
+      - name: Build memdoor from this commit
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libsqlite3-dev
+          (cd web && npm ci && npm run build)
+          mkdir -p "$HOME/.local/bin"
+          (cd cmd/cli && CGO_ENABLED=1 CGO_CFLAGS="-DSQLITE_ENABLE_FTS5" CGO_LDFLAGS="-lm" go build -o "$HOME/.local/bin/memdoor" main.go)
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Write the test workflows
+        run: |
+          P="$RUNNER_TEMP/proj"; W="$P/.memdoor/workflows"
+          mkdir -p "$W/ci-pass/steps" "$W/ci-fail/steps" "$W/ci-gate/steps"
+          printf 'type: command\ncommand: echo built > BUILT.txt\ntarget:\n  file: BUILT.txt\n' > "$W/ci-pass/steps/build.yaml"
+          printf 'type: command\ncommand: grep -q built BUILT.txt && echo checked\nrequires:\n  - table_pattern: build\n' > "$W/ci-pass/steps/check.yaml"
+          printf 'type: command\ncommand: echo "fails on purpose" >&2; exit 1\nmax_retries: 0\n' > "$W/ci-fail/steps/broken.yaml"
+          printf 'type: command\ncommand: echo prepared\n' > "$W/ci-gate/steps/prep.yaml"
+          printf 'type: command\ncommand: echo shipped\nrequires:\n  - table_pattern: prep\n  - table_pattern: approve\n    external: true\n' > "$W/ci-gate/steps/ship.yaml"
+
+      - name: A run that passes
+        id: pass
+        uses: ./
+        with:
+          workflow: ci-pass
+          working-directory: ${{ runner.temp }}/proj
+          install: 'false'
+
+      - name: A run that fails
+        id: fail
+        continue-on-error: true
+        uses: ./
+        with:
+          workflow: ci-fail
+          working-directory: ${{ runner.temp }}/proj
+          install: 'false'
+
+      - name: A run that stops at its gate
+        id: gate
+        continue-on-error: true
+        uses: ./
+        with:
+          workflow: ci-gate
+          working-directory: ${{ runner.temp }}/proj
+          install: 'false'
+
+      # A built-in from the library, in a repo with no .memdoor: fix-tests on a
+      # suite that passes runs its checks and skips the agent (its target, the
+      # tests, already holds), so no key is needed.
+      - name: A Go project whose tests pass
+        run: |
+          G="$RUNNER_TEMP/green"; mkdir -p "$G" && cd "$G"
+          printf 'module green\n\ngo 1.22\n' > go.mod
+          printf 'package green\n\nfunc Two() int { return 2 }\n' > green.go
+          printf 'package green\n\nimport "testing"\n\nfunc TestTwo(t *testing.T) {\n\tif Two() != 2 {\n\t\tt.Fatal("two")\n\t}\n}\n' > green_test.go
+          git init -q && git add -A && git -c user.name=ci -c user.email=ci@example.test commit -qm green
+
+      - name: A built-in workflow (fix-tests, nothing to fix)
+        id: builtin
+        uses: ./
+        with:
+          workflow: fix-tests
+          working-directory: ${{ runner.temp }}/green
+          install: 'false'
+
+      - name: Each outcome is the one expected
+        env:
+          BUILTIN_CODE: ${{ steps.builtin.outputs.exit-code }}
+          BUILTIN_RESULTS: ${{ steps.builtin.outputs.results }}
+          PASS_CODE: ${{ steps.pass.outputs.exit-code }}
+          PASS_ID: ${{ steps.pass.outputs.run-id }}
+          PASS_RESULTS: ${{ steps.pass.outputs.results }}
+          FAIL_CODE: ${{ steps.fail.outputs.exit-code }}
+          FAIL_OUTCOME: ${{ steps.fail.outcome }}
+          GATE_CODE: ${{ steps.gate.outputs.exit-code }}
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+        run: |
+          ok=1
+          check() { if [ "$2" = "$3" ]; then echo "✓ $1 = $2"; else echo "✗ $1 = '$2', want '$3'"; ok=0; fi; }
+          check "pass exit-code" "$PASS_CODE" 0
+          case "$PASS_ID" in ci-pass-*) echo "✓ pass run-id $PASS_ID";; *) echo "✗ pass run-id '$PASS_ID'"; ok=0;; esac
+          check "pass results" "$PASS_RESULTS" BUILT.txt
+          check "fail exit-code" "$FAIL_CODE" 2
+          check "fail outcome" "$FAIL_OUTCOME" failure
+          check "gate exit-code" "$GATE_CODE" 3
+          check "gate outcome" "$GATE_OUTCOME" failure
+          check "built-in exit-code" "$BUILTIN_CODE" 0
+          case "$BUILTIN_RESULTS" in .memdoor/runs/fix-tests-*.md) echo "✓ built-in results $BUILTIN_RESULTS";; *) echo "✗ built-in results '$BUILTIN_RESULTS'"; ok=0;; esac
+          grep -q "nothing was changed" "$RUNNER_TEMP/green/$BUILTIN_RESULTS" && echo "✓ fix-tests reported nothing to fix" || { echo "✗ fix-tests report"; ok=0; }
+          [ "$ok" = 1 ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

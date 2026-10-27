@@ -702,6 +702,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// Seed embedded skills to ~/.memdoor/skills before anything can call the
 	// skill tool — cheap (hash compares), and makes disk the source of truth.
 	SeedEmbeddedSkills()
+	SeedEmbeddedWorkflows()
 
 	// Deploy watchdog: progress announcements, auto-registration, and the
 	// idle auto-stop that makes the /model picker's "auto-stops" true.

@@ -20,7 +20,7 @@ the file name is the task's name. Every file:
 type: agent
 prompt: Run `go test ./...` and answer the ok/FAIL line.   # the WORK, as a message to an agent
 agent: coder            # optional: who runs it (coder, verifier, runner …) — default coder
-model: groq:qwen/qwen3.8-27b   # optional: which model answers, as /model names them (also on llm tasks);
+model: groq:qwen/qwen3.8-27b   # optional: which model answers, as /model names them (also on llm tasks); after it: price|throughput|latency, `order a,b`, `thinking off|low|medium|high`, `max_tokens N`;
                         # a host preference after it as /model takes one: `qwen/qwen3.8-27b throughput`, `… order cerebras,deepinfra`,
                         # and `thinking off|low|medium|high` for the step's reasoning (off = no thinking: answers within a host's output cap)
 requires:               # optional: the tasks this one waits for, by name
@@ -112,6 +112,51 @@ requires:
 5. **A workflow can fail**; that is it working. A task that cannot meet its
    target after its retries reads `✗` with the reason and what depends on
    it stays `waiting`. Report it; do not paper over it with a looser target.
+6. **The tasks ARE the orchestration.** A harness, a pipeline, a team of
+   models: every role is a task (`llm` or `agent`) whose `model:` line routes
+   the call through the gateway, and the ledger the roles share is files on
+   disk, passed by `requires` and read by the next prompt (`{{ output "x" }}`,
+   or the file by name). Never a Python or shell orchestrator, never a
+   script that calls a model API itself; the only code is a `command` task
+   that checks or lands something (runs the samples, builds, writes a reply
+   to its file). A loop is unrolled: round 1, round 2, … to its bound, and
+   a round whose predecessor already finished does nothing but pass the
+   files on. (2026-10-26: asked to reproduce a published five-agent
+   harness, the first two builds wrote a pipeline.py and asked how to call
+   OpenRouter.)
+7. **Decide, do not ask, when nobody is at the keyboard.** A build started
+   by `memdoor run`, a cron, a peer or another workflow has no one to answer
+   a picker; rule 6 answers the usual questions (through the gateway, files
+   for the ledger, a command task for a check). Ask in a window only, and
+   only when the answers would lead to materially different workflows.
+8. **A condition is a check, never an instruction to the model.** "Do
+   nothing after done", "skip when the tests passed", "keep the previous
+   answer": a model told to do nothing still answers, and a write task that
+   saves whatever came back saves that answer over the good one (2026-10-27:
+   a harness solved its problem in round 1, the manager said done in round
+   2, and rounds 3 to 10 overwrote the program twice because the pass-through
+   lived in the prompt). Enforce it where the files are written: the
+   `command` task that lands a reply reads the ledger first and declines
+   (`if grep -qsx done status-*.txt; then exit 0; fi`), a target that already
+   exists skips the task, a sticky state is copied forward by the command,
+   not re-decided by the model. The model's task is to answer; the DAG's task
+   is to decide whether the answer counts. **A task that must not even run
+   carries `when:`**, a shell line checked just before it in the project
+   directory; false and the task is skipped as done with an empty answer,
+   nothing called (`when: '! grep -qsx done status-*.txt'` on every round
+   after the first: a finished loop costs nothing more). A loop has a bound AND a stop
+   rule, both mechanical: the bound is the number of rounds unrolled, the
+   stop rule a check in the command (the manager named the same task twice:
+   no progress, mark the loop stopped and let every later round decline,
+   the way GVS5H's harness stops on a reissued task). Max retries on a task
+   bound one failing call; they do not bound a loop that keeps "succeeding".
+9. **A reply is landed by a parser that survives the last section.** Cut a
+   section to the next header OR the end of the reply (`awk
+   '/^### STATUS/{f=1;next} /^### /{f=0} f'`), never with a range that needs a
+   header after it (`sed -n '/^### STATUS/,/^### /p' | sed '$d'` dropped the
+   word "done" when STATUS was the final section, and the loop never knew it
+   had finished). Before the run, feed the parser a reply that ends at each
+   section and read back what it wrote.
 
 ## A README beside the steps
 

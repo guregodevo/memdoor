@@ -1,0 +1,25 @@
+type: agent
+agent: coder
+when: test -s .memdoor/runs/pr-review-{{.partition}}.diff
+prompt: |
+  Review a code change with the `review` skill (load it first). The change is the unified diff in `.memdoor/runs/pr-review-{{.partition}}.diff`; read it to the end, then open the changed files and what they call, so every finding is about the code as it now is.
+  Verify before you report: build it, run the tests that touch it, or run the line in question, when the project's tools are here; when they are not, say what you read instead. A finding you could not ground in a file and line is not a finding.
+  Write `.memdoor/runs/pr-review-{{.partition}}.md`, and nothing else, in this shape:
+
+  ## Summary
+  Two or three sentences: what the change does and whether it does it.
+
+  ## Findings
+  - **P0** `path/to/file.go:42` — what is wrong, why it breaks, the fix.
+  - **P1** `path:line` — …
+  - **P2** `path:line` — …
+
+  P0 is only what must not merge: a bug a user hits, a security hole, data loss, a build or a test the change breaks. P1 is what should be fixed soon; P2 a nit. One line per finding, most severe first. With no findings, write `No findings.` under the heading.
+  Change no file in the project: this step reads, runs and writes the review only.
+requires:
+  - table_pattern: diff
+target:
+  file: .memdoor/runs/pr-review-{{.partition}}.md
+budget: 300000
+timeout: 20m
+max_retries: 1

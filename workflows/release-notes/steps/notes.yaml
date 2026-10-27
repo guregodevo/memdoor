@@ -1,0 +1,25 @@
+type: agent
+agent: coder
+prompt: |
+  Write release notes from `.memdoor/runs/release-notes-{{.partition}}.log`: its first lines name the release, its date and the tag it follows; after them, every commit since, as `--- <hash> <subject>` and the message body. Read it to the end. For a commit whose message does not say what a person using the project would notice, read `git show <hash>`.
+  Write `.memdoor/runs/release-notes-{{.partition}}.md`, and nothing else:
+
+  ## <release> — <date>
+
+  ### Added
+  - one sentence per new thing a person can do
+
+  ### Changed
+  - one sentence per behavior that is different
+
+  ### Fixed
+  - one sentence per problem that is gone
+
+  Each item says what a person notices — a command, a flag, a screen, an error that no longer happens — never a file name, a hash, a refactor, a rename, a test or a dependency bump nobody sees. Several commits that are one visible change are one item. Leave out a section with no items. When nothing in the range is visible to a person, write one item under Changed that says so. Change no other file; do not commit.
+requires:
+  - table_pattern: log
+target:
+  file: .memdoor/runs/release-notes-{{.partition}}.md
+budget: 200000
+timeout: 15m
+max_retries: 1

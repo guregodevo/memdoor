@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	ctxmgmt "memdoor/gateway/context"
 	"memdoor/gateway/infra"
 	"memdoor/gateway/providers"
 	"memdoor/pkg/authorization"
@@ -15,6 +16,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -161,6 +163,39 @@ func (s *Server) workflowTypes(runner workflow.Runner) []tasks.Base {
 // written and a reasoning-only reply read back.
 type workflowCompleter struct{ s *Server }
 
+// llmTaskMaxTokens is the reply an llm task may write: the provider's output
+// ceiling for the model, within what the window leaves after the prompt,
+// and never less than an agent turn's reserve. An agent turn keeps its reply
+// to a quarter of the window, 16K at most, to protect the conversation after
+// it; an llm task is one prompt and one reply, and with reasoning on the
+// model needs the real ceiling (2026-10-26: the 27B thinking high on a hard
+// problem spent all of a 16K cap on reasoning and wrote nothing; the
+// provider allows 235K).
+func llmTaskMaxTokens(model string, promptChars int) int64 {
+	reserve := maxOutputTokens(model)
+	l, err := ctxmgmt.GetModelLimits(model)
+	if err != nil || l.MaxOutputCeiling <= 0 {
+		return reserve
+	}
+	room := int64(l.ContextWindow) - int64(promptChars)/3 - 1024 // a rough token count of the prompt, and a margin
+	cap := int64(l.MaxOutputCeiling)
+	if room < cap {
+		cap = room
+	}
+	if cap < reserve {
+		return reserve
+	}
+	return cap
+}
+
+// capped is n under the task's own ceiling when the model line names one.
+func capped(n, ceiling int64) int64 {
+	if ceiling > 0 && ceiling < n {
+		return ceiling
+	}
+	return n
+}
+
 // workflowModelAgent is whose ladder an llm task climbs when its YAML names
 // no model: the coder's cheapest rung, as a summary does.
 const workflowModelAgent = "coder"
@@ -170,9 +205,10 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 		return "", fmt.Errorf("no model client on this gateway")
 	}
 	ctx = cheapestRung(ctx)
+	var capTokens int64
 	if model = strings.TrimSpace(model); model != "" {
-		id, sort, order, effort := parseTaskModel(model)
-		model = id
+		id, sort, order, effort, n := parseTaskModel(model)
+		model, capTokens = id, n
 		ctx = context.WithValue(ctx, sharedctx.ModelKey, id)
 		if sort != "" {
 			ctx = context.WithValue(ctx, sharedctx.SortKey, sort)
@@ -194,7 +230,7 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 	resp, err := client.Messages().New(ctx, llm.MessageNewParams{
 		Model:     llm.Model(providers.ModelName),
 		Messages:  []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
-		MaxTokens: maxOutputTokens(model),
+		MaxTokens: capped(llmTaskMaxTokens(model, len(prompt)), capTokens),
 		Agent:     "workflow",
 	})
 	if err != nil {
@@ -499,7 +535,8 @@ type workflowRunJSON struct {
 	Review string `json:"review,omitempty"`
 	// Results are the files the run's tasks produced (their file targets,
 	// in the workflow's order), once it is done: what the person came for
-	// (2026-10-04: "we dont see the result").
+	// (2026-10-04: "we dont see the result"). A failed run has them too: a
+	// review that failed its verdict is the thing to read (2026-10-27).
 	Results []string `json:"results,omitempty"`
 }
 
@@ -527,7 +564,7 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 	if out.State == "waiting" {
 		out.Review = reviewOf(r.Dir, r.base, r.reviewSince())
 	}
-	if out.State == "done" {
+	if out.State == "done" || out.State == "failed" {
 		out.Results = resultFiles(r.Dir, r.Partition, r.WF)
 	}
 	receipts := make(map[string]string, len(r.receipts))
@@ -628,7 +665,11 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition s
 // external target nobody has made yet — then approving (or any other way
 // the target appears) triggers it again, and what exists is skipped.
 func (s *Server) triggerWorkflow(run *workflowRun) {
-	ctx, cancel := context.WithCancel(context.Background())
+	// Every model call of the run carries the run as its session: the meter
+	// line of an llm task then says which run it belongs to, and a bench
+	// running eight problems at once can bill each (2026-10-26, the GVS5H
+	// rows: the entries had no session at all).
+	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID))
 	var exe *workflow.Execution
 	repo, err := s.runRepository(run.Dir)
 	if err == nil {
@@ -1456,12 +1497,15 @@ func (r *workflowRun) reviewSince() time.Time {
 // DeepSeek).
 func pinTaskModel(sess *Session, model, actor string) error {
 	if model != "" {
-		id, sort, order, effort := parseTaskModel(model)
+		id, sort, order, effort, maxTokens := parseTaskModel(model)
 		if err := pinModel(sess, id, sort, order); err != nil {
 			return err
 		}
 		if effort != "" {
 			sess.SetMetadata(sessionEffortKey, effort)
+		}
+		if maxTokens > 0 {
+			sess.SetMetadata(sessionMaxTokensKey, strconv.FormatInt(maxTokens, 10))
 		}
 		return nil
 	}
@@ -1471,16 +1515,17 @@ func pinTaskModel(sess *Session, model, actor string) error {
 
 // parseTaskModel reads a task's `model:` the way /model reads its line:
 // the id, then an optional host preference (price, throughput, latency,
-// default), an optional `order host1,host2`, and an optional `thinking
+// default), an optional `order host1,host2`, an optional `thinking
 // off|low|medium|high` (the turn's reasoning effort; off = no thinking at
-// all). A bench on 2026-10-25 needed all three: the same model answered at
+// all), and an optional `max_tokens N` (the reply's ceiling, under the
+// provider's). A bench on 2026-10-25 needed all three: the same model answered at
 // 885 tokens a second on the throughput host and at 44 on the cheapest, it
 // thought past the host's 32K output cap on a planning prompt and wrote
 // nothing, and an llm task has no window to type /model or Shift+Tab in.
-func parseTaskModel(model string) (id, sort, order, effort string) {
+func parseTaskModel(model string) (id, sort, order, effort string, maxTokens int64) {
 	fields := strings.Fields(model)
 	if len(fields) == 0 {
-		return "", "", "", ""
+		return "", "", "", "", 0
 	}
 	id = fields[0]
 	for i := 1; i < len(fields); i++ {
@@ -1490,6 +1535,16 @@ func parseTaskModel(model string) (id, sort, order, effort string) {
 		case "order":
 			if i+1 < len(fields) {
 				order = fields[i+1]
+				i++
+			}
+		case "max_tokens", "cap":
+			// The reply's ceiling for this task, under the provider's: a
+			// bench meets a paper's 128K setting, a budget stops a call that
+			// thinks to the host's 235K (one problem cost a dollar, 2026-10-27).
+			if i+1 < len(fields) {
+				if n, err := strconv.ParseInt(fields[i+1], 10, 64); err == nil && n > 0 {
+					maxTokens = n
+				}
 				i++
 			}
 		case "thinking", "effort":
@@ -1502,7 +1557,7 @@ func parseTaskModel(model string) (id, sort, order, effort string) {
 			}
 		}
 	}
-	return id, sort, order, effort
+	return id, sort, order, effort, maxTokens
 }
 
 // sameProject compares two project directories after resolving symlinks

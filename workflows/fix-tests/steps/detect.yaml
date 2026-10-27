@@ -1,0 +1,16 @@
+type: command
+command: |
+  set -e
+  if [ -n "${MEMDOOR_TEST_COMMAND:-}" ]; then c=$MEMDOOR_TEST_COMMAND
+  elif [ -f go.mod ]; then c='go test ./...'
+  elif [ -f Cargo.toml ]; then c='cargo test'
+  elif [ -f package.json ] && grep -q '"test"[[:space:]]*:' package.json; then c='npm test'
+  elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f pytest.ini ]; then
+    if command -v python3 >/dev/null; then c='python3 -m pytest'; else c='python -m pytest'; fi
+  elif [ -f Makefile ] && grep -qE '^test:' Makefile; then c='make test'
+  else echo "no test command found here: set MEMDOOR_TEST_COMMAND" >&2; exit 1; fi
+  mkdir -p .memdoor/runs
+  printf '%s\n' "$c" > .memdoor/runs/fix-tests-{{.partition}}.sh
+  echo "test command: $c"
+timeout: 1m
+max_retries: 0

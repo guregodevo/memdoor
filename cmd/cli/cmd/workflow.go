@@ -53,10 +53,46 @@ type workflowListResponse struct {
 	} `json:"entries"`
 }
 
-var workflowWaitFlag bool
+var workflowWaitFlag, workflowStopAtGateFlag bool
+
+// Exit codes of run --wait: the pipeline's contract, as memdoor run's.
+const (
+	workflowExitDone    = 0
+	workflowExitStopped = 1
+	workflowExitFailed  = 2
+	workflowExitGate    = 3 // --stop-at-gate: a gate nobody here can approve (a CI job)
+)
+
+// workflowWaitEnds says whether --wait is over at this status, and its code.
+func workflowWaitEnds(st workflowRunStatus, stopAtGate bool) (int, bool) {
+	switch st.State {
+	case "done":
+		return workflowExitDone, true
+	case "failed":
+		return workflowExitFailed, true
+	case "stopped":
+		return workflowExitStopped, true
+	case "waiting":
+		return workflowExitGate, stopAtGate
+	}
+	return 0, false
+}
+
+// waitingGate is the external task a waiting run stands at, "" when none.
+func waitingGate(st workflowRunStatus) string {
+	if st.State != "waiting" {
+		return ""
+	}
+	for _, t := range st.Tasks {
+		if t.External && t.State != "done" && t.State != "skipped" {
+			return t.Name
+		}
+	}
+	return ""
+}
 
 // waitForWorkflowRun follows a run to its end and exits with its outcome.
-func waitForWorkflowRun(id string) error {
+func waitForWorkflowRun(id string, stopAtGate bool) error {
 	last := ""
 	for {
 		time.Sleep(3 * time.Second)
@@ -65,34 +101,52 @@ func waitForWorkflowRun(id string) error {
 			return err
 		}
 		line := fmt.Sprintf("%s · %d/%d done", st.State, st.Done, st.Total)
-		for _, t := range st.Tasks {
-			if t.External && t.State != "done" && t.State != "skipped" && st.State == "waiting" {
-				line += fmt.Sprintf(" · ⏸ %s waits for memdoor workflow approve %s %s", t.Name, id, t.Name)
-				break
-			}
+		if gate := waitingGate(st); gate != "" {
+			line += fmt.Sprintf(" · ⏸ %s waits for memdoor workflow approve %s %s", gate, id, gate)
 		}
 		if line != last {
 			fmt.Fprintln(os.Stderr, "  "+line)
 			last = line
 		}
-		switch st.State {
-		case "done":
-			// stdout is the pipe: what the run produced, one path per line.
-			for _, r := range st.Results {
-				fmt.Println(r)
-			}
+		code, end := workflowWaitEnds(st, stopAtGate)
+		if !end {
+			continue
+		}
+		// stdout is the pipe: what the run produced, one path per line — a
+		// failed run's too (a review whose verdict failed is still read).
+		for _, r := range st.Results {
+			fmt.Println(r)
+		}
+		switch code {
+		case workflowExitDone:
 			return nil
-		case "failed":
+		case workflowExitFailed:
 			for _, t := range st.Tasks {
 				if t.State == "failed" {
-					fmt.Fprintf(os.Stderr, "  ✗ %s — %s\n", t.Name, oneLineOf(t.Error, 200))
+					fmt.Fprintf(os.Stderr, "  ✗ %s — %s\n", t.Name, oneLineOf(taskErrorText(t.Error), 200))
 				}
 			}
-			os.Exit(2)
-		case "stopped":
-			os.Exit(1)
+		case workflowExitGate:
+			// What the approver would have read: the job log is the review.
+			for _, l := range strings.Split(st.Review, "\n") {
+				if l != "" {
+					fmt.Fprintln(os.Stderr, "  "+l)
+				}
+			}
 		}
+		os.Exit(code)
 	}
+}
+
+// taskErrorText is a failed task's error as a person reads it: a command
+// task's error repeats its whole command before the exit status (mario's
+// "task <name>: <command>: exit status 1 — <stderr>"), and the command is in
+// the file; what failed is the status and what the command said.
+func taskErrorText(e string) string {
+	if i := strings.Index(e, ": exit status "); i >= 0 {
+		return e[i+2:]
+	}
+	return e
 }
 
 func oneLineOf(s string, n int) string {
@@ -211,7 +265,7 @@ var workflowRunCmd = &cobra.Command{
 		if err := workflowPost("run", body, &out); err != nil {
 			return err
 		}
-		if !workflowWaitFlag {
+		if !workflowWaitFlag && !workflowStopAtGateFlag {
 			fmt.Printf("▶ %s started as %s — %d tasks\n", out.Workflow, out.ID, out.Total)
 			printWorkflowTasks(out)
 			fmt.Println("\n  memdoor workflow status " + out.ID)
@@ -221,8 +275,9 @@ var workflowRunCmd = &cobra.Command{
 		fmt.Fprintf(os.Stderr, "▶ %s started as %s — %d tasks\n", out.Workflow, out.ID, out.Total)
 		// --wait: a CI job needs the outcome, not the id. Poll until the run
 		// is done (0), failed (2) or stopped (1); a gate is reported and
-		// waited on — the job's own timeout bounds it.
-		return waitForWorkflowRun(out.ID)
+		// waited on — the job's own timeout bounds it — unless
+		// --stop-at-gate ends it there (3).
+		return waitForWorkflowRun(out.ID, workflowStopAtGateFlag)
 	},
 }
 
@@ -371,13 +426,14 @@ func printWorkflowTasks(r workflowRunStatus) {
 			fmt.Println("      " + t.Receipt)
 		}
 		if t.Error != "" && t.State != "done" {
-			fmt.Println("      " + t.Error)
+			fmt.Println("      " + strings.ReplaceAll(taskErrorText(t.Error), "\n", "\n      "))
 		}
 	}
 }
 
 func init() {
 	workflowRunCmd.Flags().BoolVar(&workflowWaitFlag, "wait", false, "follow the run to its end: progress on stderr, the files it produced on stdout, exit 0 done / 2 failed / 1 stopped")
+	workflowRunCmd.Flags().BoolVar(&workflowStopAtGateFlag, "stop-at-gate", false, "--wait, except a gate ends the command with exit 3 and its review on stderr: for a CI job nobody can approve from (the run stays waiting on the gateway)")
 	workflowRunCmd.Flags().StringVar(&workflowTimeoutFlag, "timeout", "", "a clock on the whole run, e.g. 90m (default 2h, at most 24h)")
 	workflowRunCmd.Flags().StringVar(&workflowPartitionFlag, "partition", "", "resume an earlier run by its partition (status shows it), or \"today\" for a DAG run once a day; a run is fresh by default")
 	workflowHistoryCmd.Flags().IntVar(&workflowHistoryLimit, "limit", 0, "history: how many runs back to show (default 20)")

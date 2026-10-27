@@ -1,0 +1,24 @@
+type: command
+command: |
+  set -e
+  r=.memdoor/runs/fix-tests-{{.partition}}
+  cmd=$(cat "$r.sh")
+  new=$(git ls-files --others --exclude-standard -- . ':(exclude).memdoor')
+  {
+    echo "## fix-tests"
+    echo
+    if git diff --quiet && [ -z "$new" ]; then
+      echo "The tests pass with \`$cmd\`; nothing was changed."
+    else
+      if [ -f "$r.notes.md" ]; then cat "$r.notes.md"; echo; fi
+      if [ -n "$new" ]; then echo "### New files"; echo; printf '%s\n' "$new" | sed 's/.*/- `&`/'; echo; fi
+      echo "### Diff"; echo; echo '```diff'; git diff; echo '```'
+    fi
+  } > "$r.md"
+  git diff --stat
+requires:
+  - table_pattern: fix
+target:
+  file: .memdoor/runs/fix-tests-{{.partition}}.md
+timeout: 2m
+max_retries: 0

@@ -162,6 +162,7 @@ memdoor run "<prompt>" [--json] [--yes] [--dir <path>]   # a headless turn: answ
 memdoor resume <id> | head                                # into a pipe: the conversation as text (a window at a terminal)
 git diff | memdoor run "review this"                    # stdin is the input the prompt is about
 memdoor workflow run <name> --wait                      # progress on stderr, results on stdout, exit = outcome
+memdoor workflow run <name> --stop-at-gate              # --wait, but a gate ends it with exit 3 (CI: nobody to approve)
 memdoor agent -m "<text>" -c <channel> -a <agent>   # message an agent from a script
 memdoor agent list|show|add|update|delete
 ```

@@ -1,0 +1,13 @@
+type: agent
+agent: coder
+prompt: |
+  This project's tests fail. The test command is in `.memdoor/runs/fix-tests-{{.partition}}.sh` (one line); run it with `sh .memdoor/runs/fix-tests-{{.partition}}.sh` and read the failure to the end.
+  Find the cause and fix the code under test. Change a test only when the test itself is wrong, and then say why in the notes. Do not delete, skip or weaken a test to make it pass. Rerun the command after each change until it passes.
+  Then write `.memdoor/runs/fix-tests-{{.partition}}.notes.md`: **Cause** (what was wrong, file:line), **Change** (what you changed and why), **Checked** (the command and its last lines). Do not commit, push or create branches.
+requires:
+  - table_pattern: detect
+target:
+  command: sh .memdoor/runs/fix-tests-{{.partition}}.sh
+budget: 400000
+timeout: 30m
+max_retries: 1

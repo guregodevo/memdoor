@@ -90,6 +90,7 @@ const agentSchema = `{
     },
     "timeout": {"type": "string", "description": "A clock on the turn, e.g. 20m."},
     "max_retries": {"type": "integer", "minimum": 0},
+    "when": {"type": "string"},
     "start_date": {"type": "string"},
     "stop_date": {"type": "string"}
   },

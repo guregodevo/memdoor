@@ -1,0 +1,155 @@
+# Memdoor workflow as a GitHub Action: run .memdoor/workflows/<name>/ from
+# the checked-out repo on the runner, on your own model key, and fail the job
+# on the run's outcome. The runner installs memdoor, the first command starts
+# a gateway on localhost and sets the machine up, the run is followed to its
+# end (memdoor workflow run --wait). Linux and macOS runners.
+#
+#   - uses: actions/checkout@v5
+#   - uses: guregodevo/memdoor@main
+#     with:
+#       workflow: pr-review
+#       openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+#
+# Built in, with no file in your repo: pr-review (fails on a blocker only),
+# fix-tests (leaves the fix in the working tree), release-notes. A workflow
+# of your own is .memdoor/workflows/<name>/ in the repo.
+#
+# Exit: 0 done, 2 a task failed, 1 stopped (timeout), 3 a gate nobody in
+# the job can approve (stop-at-gate, the default; its review is in the log).
+name: Memdoor Workflow
+description: Run a Memdoor workflow (a DAG of agent, model and command steps in .memdoor/workflows) on your own model key
+author: guregodevo
+branding:
+  icon: git-merge
+  color: blue
+
+inputs:
+  workflow:
+    description: 'A built-in workflow (pr-review, fix-tests, release-notes) or your own: .memdoor/workflows/<name>/ in working-directory'
+    required: true
+  working-directory:
+    description: The project the workflow runs in
+    default: .
+  timeout:
+    description: A clock on the whole run, e.g. 45m (memdoor's default 2h, at most 24h)
+    default: ''
+  partition:
+    description: Resume an earlier run by its partition, or "today" for one run a day; fresh by default
+    default: ''
+  stop-at-gate:
+    description: 'true: a gate (an external task) ends the job with exit 3. false: wait at it, for a gateway someone approves from (memdoor workflow approve), bounded by timeout'
+    default: 'true'
+  install:
+    description: 'true: install the latest memdoor from memdoor.ai. false: use the memdoor already on PATH'
+    default: 'true'
+  openrouter-api-key:
+    description: OPEN_ROUTER_API_KEY — one key, every model on OpenRouter
+    default: ''
+  anthropic-api-key:
+    description: ANTHROPIC_API_KEY
+    default: ''
+  openai-api-key:
+    description: OPENAI_API_KEY
+    default: ''
+  gemini-api-key:
+    description: GEMINI_API_KEY
+    default: ''
+  model:
+    description: MEMDOOR_MODEL — pin the model the agents answer with
+    default: ''
+
+outputs:
+  run-id:
+    description: The run's id (memdoor workflow status <run-id>)
+    value: ${{ steps.run.outputs.run-id }}
+  exit-code:
+    description: 0 done, 1 stopped, 2 failed, 3 stopped at a gate
+    value: ${{ steps.run.outputs.exit-code }}
+  results:
+    description: What the run produced, one path per line
+    value: ${{ steps.run.outputs.results }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install memdoor
+      if: inputs.install == 'true'
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          echo "::error::the Memdoor workflow action runs on Linux and macOS runners"; exit 1
+        fi
+        curl -fsSL https://memdoor.ai/install.sh | bash
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+    - name: Run the workflow
+      id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        WF_NAME: ${{ inputs.workflow }}
+        WF_TIMEOUT: ${{ inputs.timeout }}
+        WF_PARTITION: ${{ inputs.partition }}
+        WF_STOP_AT_GATE: ${{ inputs.stop-at-gate }}
+        KEY_OPENROUTER: ${{ inputs.openrouter-api-key }}
+        KEY_ANTHROPIC: ${{ inputs.anthropic-api-key }}
+        KEY_OPENAI: ${{ inputs.openai-api-key }}
+        KEY_GEMINI: ${{ inputs.gemini-api-key }}
+        WF_MODEL: ${{ inputs.model }}
+        # The runner's gateway is for this job only: no door on the network.
+        MEMDOOR_HOST: localhost
+        MEMDOOR_NO_BROWSER: '1'
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        # A key given as an input wins; one set in the job's env is kept.
+        [ -n "$KEY_OPENROUTER" ] && export OPEN_ROUTER_API_KEY="$KEY_OPENROUTER"
+        [ -n "$KEY_ANTHROPIC" ] && export ANTHROPIC_API_KEY="$KEY_ANTHROPIC"
+        [ -n "$KEY_OPENAI" ] && export OPENAI_API_KEY="$KEY_OPENAI"
+        [ -n "$KEY_GEMINI" ] && export GEMINI_API_KEY="$KEY_GEMINI"
+        [ -n "$WF_MODEL" ] && export MEMDOOR_MODEL="$WF_MODEL"
+        unset KEY_OPENROUTER KEY_ANTHROPIC KEY_OPENAI KEY_GEMINI
+
+        memdoor --version
+        args=(workflow run "$WF_NAME" --dir .)
+        [ -n "$WF_TIMEOUT" ] && args+=(--timeout "$WF_TIMEOUT")
+        [ -n "$WF_PARTITION" ] && args+=(--partition "$WF_PARTITION")
+        if [ "$WF_STOP_AT_GATE" = "true" ]; then args+=(--stop-at-gate); else args+=(--wait); fi
+
+        results="$RUNNER_TEMP/memdoor-results.txt"
+        progress="$RUNNER_TEMP/memdoor-progress.txt"
+        # stdout (the results) to a file, stderr (the progress) live to the log.
+        set +e
+        memdoor "${args[@]}" 2>&1 > "$results" | tee "$progress" >&2
+        code=${PIPESTATUS[0]}
+        set -e
+
+        id=$(grep -oE 'started as [^ ]+' "$progress" | head -1 | cut -d' ' -f3 || true)
+        echo "run-id=$id" >> "$GITHUB_OUTPUT"
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        { echo "results<<MEMDOOR_RESULTS_EOF"; cat "$results"; echo "MEMDOOR_RESULTS_EOF"; } >> "$GITHUB_OUTPUT"
+        cat "$results"
+
+        {
+          echo "### Memdoor workflow \`$WF_NAME\`"
+          case $code in
+            0) echo "✓ done" ;; 1) echo "■ stopped" ;; 2) echo "✗ failed" ;;
+            3) echo "⏸ stopped at a gate: nobody in this job can approve it" ;;
+            *) echo "✗ memdoor exited $code" ;;
+          esac
+          if [ -n "$id" ]; then
+            echo '```'; memdoor workflow status "$id" 2>&1 || true; echo '```'
+          fi
+          # A Markdown file the run produced (a review, a fix's report, the
+          # notes) is what the person came for: shown as written, 200 KB each.
+          while IFS= read -r f; do
+            case "$f" in *.md) ;; *) continue ;; esac
+            [ -f "$f" ] || continue
+            echo; echo "---"; echo; head -c 200000 "$f"; echo
+          done < "$results"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        # A failed task says why above; a stop or a crash may be the gateway's.
+        if [ "$code" != 0 ] && [ "$code" != 2 ] && [ "$code" != 3 ]; then
+          echo "::group::gateway errors"; memdoor logs errors --since 6h 2>&1 | tail -40 || true; echo "::endgroup::"
+        fi
+        exit $code

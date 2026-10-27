@@ -37,8 +37,10 @@ your phone are doors onto it. A box that memdoor.ai runs for you is coming.
   <run-id>` shows every task's state, `history <name>` what earlier runs did.
   On a CI runner the whole job is the installer, the key in the environment
   and that one command with `--wait`: it starts the gateway, sets the runner
-  up itself, and exits with the run's outcome.
-  See [Workflows](/docs/workflows).
+  up itself, and exits with the run's outcome. On GitHub that job is one
+  step, `uses: guregodevo/memdoor@main` with the workflow's name and your
+  key; `pr-review`, `fix-tests` and `release-notes` are built in and need
+  no file in the repo. See [Workflows](/docs/workflows).
 - **An editor session.** The coder in VS Code, Zed or JetBrains is a
   conversation on the same gateway. See [In your editor](/docs/editor).
 - **The phone, from a script.** `memdoor remote <id>` prints the
@@ -81,7 +83,9 @@ resume <id>` opens it in a window. `--conversation <id>` continues one.
 
 `memdoor workflow run <name> --wait` is the same contract for a workflow:
 progress on stderr, the files the run produced on stdout, exit 0 done, 2
-failed, 1 stopped; a gate is reported and waited on.
+failed, 1 stopped; a gate is reported and waited on. `--stop-at-gate` ends
+it at a gate instead, exit 3 with the gate's review on stderr: the job that
+has nobody to approve from (the run stays waiting on the gateway).
 
 ## A walk through the doors
 
