@@ -36,7 +36,7 @@ No account. Telemetry off unless you turn it on. macOS, Linux, Windows, one stat
 ### In GitHub Actions
 
 One step in a workflow, on your key, with nothing to add to your repo
-([Marketplace](https://github.com/marketplace/actions/memdoor-workflow)):
+([Marketplace](https://github.com/marketplace/actions/memdoor)):
 
 ```yaml
 on: pull_request
