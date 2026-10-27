@@ -233,7 +233,7 @@ a test fails the build on a new one.
 ## Documentation
 
 - [Getting started](GETTING_STARTED.md)
-- [Workflows](docs/features/WORKFLOWS.md) · [Scheduled checks](docs/features/cron-jobs.md) · [MCP servers](docs/features/MCP.md)
+- [Workflows](docs/features/WORKFLOWS.md) · [Scheduled checks](docs/features/cron-jobs.md) · [MCP servers](docs/features/MCP.md) · [GitHub Action](https://github.com/guregodevo/memdoor-action)
 - [Providers](docs/features/PROVIDERS.md) · [Security](docs/SECURITY.md) · [Decisions](docs/features/DECIDE.md)
 - [CLI reference](docs/reference/CLI.md) · [Architecture](docs/reference/ARCHITECTURE.md) · [Skills](docs/reference/SKILLS.md) · [ADRs](docs/adr/)
 - The served docs: [memdoor.ai/docs](https://memdoor.ai/docs/getting-started)
