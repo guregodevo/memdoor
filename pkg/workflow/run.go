@@ -14,6 +14,8 @@ import (
 	"github.com/guregodevo/mario/static"
 	"github.com/guregodevo/mario/tasks"
 	mario "github.com/guregodevo/mario/workflow"
+
+	"memdoor/pkg/shell"
 )
 
 // Events is what a host watches: every transition a task makes, by workflow
@@ -224,6 +226,7 @@ func Start(ctx context.Context, wf Workflow, types []tasks.Base, opts Options) (
 	for _, t := range types {
 		b := t.Bind(wf.Defs, opts.Workdir, outputs, opts.Partition, version)
 		b.Externals = wf.siblings // a requirement on another workflow is checked by that task's target
+		b.Env = shell.Env         // a command step, a when and a command target never see a model key
 		reg.Add(b)
 	}
 	// The host's repository, or the in-memory one: a run that must be
@@ -358,7 +361,7 @@ func (e *Execution) proof(t Task) mario.DataEndpoint {
 		if d.Target.File != "" {
 			return tasks.FileEndpoint(t.Full, e.workdir, d.Target.File)
 		}
-		return tasks.CommandEndpoint(t.Full, e.workdir, d.Target.Command)
+		return tasks.CommandEndpointWithEnv(t.Full, e.workdir, d.Target.Command, shell.Env)
 	}
 	return e.outputs.Endpoint(t.Full, e.partition)
 }

@@ -344,14 +344,14 @@ jobs:
 key is. Trigger on `pull_request`, never `pull_request_target`: GitHub gives a
 fork's pull request no secrets, so a stranger's code never runs beside your
 key, while `pull_request_target` runs their code with your secrets. Memdoor
-also keeps model keys out of the environment of every command the agent runs
-(`shell.Env`: the bash tool, the turn's checks), so an `env` or a test that
-dumps its environment cannot carry one into the model's context or the job
-summary. That is a second line, not the boundary: a process of the same user
-can read a parent's starting environment (`/proc/<pid>/environ`), and a
-workflow's own `command:` steps run with the gateway's environment (mario
-starts them). A project's tests that need a model key get it under another
-name.
+also keeps model keys out of the environment of every command the agent or a
+workflow runs (`shell.Env`: the bash tool, the turn's checks, and a step's
+`command:`, `when:` and command target, through mario's `Base.Env`), so an
+`env` or a test that dumps its environment cannot carry one into the model's
+context or the job summary. That is a second line, not the boundary: a
+process of the same user can read a parent's starting environment
+(`/proc/<pid>/environ`). A project's tests that need a model key get it under
+another name.
 
 Inputs: `workflow`, `working-directory`, `timeout`, `partition`,
 `stop-at-gate` (default `true`: a gate fails the job with exit 3; `false`
