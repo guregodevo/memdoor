@@ -96,13 +96,13 @@ is one function. This gateway offers three, mixed freely in a DAG:
 |---|---|---|
 | `agent` | a turn of a Memdoor agent (`prompt`, `agent`) — Memdoor's own type | its target, or its answer |
 | `command` | a shell line in the project (`command: git log --oneline -8`) — mario's | its target, or its stdout |
-| `llm` | one model call, no tools (`prompt`, `model`) on this gateway's client — mario's | its target, or the answer |
+| `llm` | one model call, no tools (`prompt`, `model`) on this gateway's client — mario's; a `file` target is where the answer is written | its target, or the answer |
 
 Every output lives at `.memdoor/runs/<workflow>/<group>/<task>/<partition>`
 (mario's `Outputs`), and a prompt reads one with `{{ output "log" }}` — the
 kept output of the required task `log`, inlined (found live: an `llm`
 summary of a `command`'s git log answered "the commits weren't included in
-your message"). A person's approval is written there too. A browser step is a `command` whose line is
+your message"). A prompt reads a file of the project with `{{ file "path" }}`, as it is when the task runs (pr-review's one-call review reads the diff its `diff` command wrote, 2026-10-28). A person's approval is written there too. A browser step is a `command` whose line is
 `memdoor chrome run`.
 
 
@@ -110,7 +110,7 @@ A task's `model:` is read the way /model reads its line (2026-10-25): the id, th
 an optional host preference (`price`, `throughput`, `latency`, `default`) and an
 optional `order host1,host2`, and an optional `thinking off|low|medium|high`, `max_tokens N` (the reply's ceiling for the task, under the provider's) (the
 step's reasoning effort; `off` sends OpenRouter's `reasoning.enabled=false`), for agent
-and llm tasks alike. The LCB-100 bench needed all of it: Qwen3.8-27B answered at 885
+and llm tasks alike. The id may be left out: `model: thinking off` is the model that answers here, with thinking off (on a runtime connected with no key, Ollama's `reasoning_effort: none`). The LCB-100 bench needed all of it: Qwen3.8-27B answered at 885
 tokens a second on OpenRouter's throughput host (Cerebras) and at 44 on the cheapest
 (Darkbloom); with thinking on it ran past that host's 32K output cap on a planning
 prompt and wrote nothing, with thinking off it planned in 3 s; and an llm task has no

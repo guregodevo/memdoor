@@ -460,7 +460,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	http.Handle("/api/logs/prune", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleLogsPrune)))) // Prune old log events (POST)
 	// Automatic log retention: prune events older than 30 days
 	// (default 30d; "0"/"off" disables) so events.db can't grow unbounded.
-	logs.StartRetention(context.Background(), logs.LogRetention())
+	logs.StartRetention(context.Background(), logs.LogRetention(), logs.DefaultLogMaxBytes)
 	http.Handle("/api/logs/errors", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleLogsErrors))))   // Log errors (GET)
 	http.Handle("/api/logs/stats", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleLogsStats))))     // Log statistics (GET)
 	http.Handle("/api/logs/trace", addCORS(authMiddleware.Handler(http.HandlerFunc(server.handleLogsTrace))))     // Log causal trace (GET)

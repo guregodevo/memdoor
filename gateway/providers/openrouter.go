@@ -29,12 +29,26 @@ func newDirectOpenRouterClient(ctx context.Context, re *RemoteEngine, model stri
 // on screen but a clock, until the person gave up (live 2026-09-29).
 var oaiStallAfter = 60 * time.Second
 
+// keylessStallAfter is the same silence for a runtime connected with no key
+// (Ollama, llama.cpp, janis): it sends nothing while it reads the prompt, and
+// a CPU reads slowly. A GitHub runner's 4 vCPUs read a 9B's 5,655-token
+// prompt at 11.8 tokens a second, eight minutes before the first token, and
+// the 60 s stall dropped the request twice (2026-10-27).
+var keylessStallAfter = 10 * time.Minute
+
 // oaiHTTPClient bounds the wait for response headers; the body is bounded
 // between bytes by idleTimeoutReader (oai_native.go).
-func oaiHTTPClient() *http.Client {
+func oaiHTTPClient() *http.Client { return stallBoundClient(oaiStallAfter, 20*time.Minute) }
+
+// keylessHTTPClient is oaiHTTPClient for a keyless runtime: a slow first
+// token, and a whole answer that may take longer than 20 minutes on a CPU
+// (the task's or the turn's own clock still bounds it).
+func keylessHTTPClient() *http.Client { return stallBoundClient(keylessStallAfter, time.Hour) }
+
+func stallBoundClient(stall, total time.Duration) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.ResponseHeaderTimeout = oaiStallAfter
-	return &http.Client{Timeout: 20 * time.Minute, Transport: t}
+	t.ResponseHeaderTimeout = stall
+	return &http.Client{Timeout: total, Transport: t}
 }
 
 // retryAfter is how long a refusal asks the client to wait (the Retry-After

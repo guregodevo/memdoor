@@ -1,0 +1,31 @@
+type: llm
+model: thinking off
+# The review in one model call, for a slow model (MEMDOOR_LEAN: the GitHub
+# Action sets it with local-model, a model on the runner's CPU): the diff in
+# the prompt, no tools, no loop. The agent's review (review.yaml) runs instead
+# when it is not set.
+when: test -s .memdoor/runs/pr-review-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  You review a code change. The unified diff is below: lines starting with + are added, lines starting with - are removed.
+
+  Write the review in exactly this Markdown shape, and nothing else:
+
+  ## Summary
+  Two sentences: what the change does and whether it does it correctly.
+
+  ## Findings
+  - **P0** `path/to/file.go:42` — what is wrong, why it breaks, the fix.
+  - **P1** `path:line` — …
+  - **P2** `path:line` — …
+
+  P0 is only what must not merge: a bug a user hits, a security hole, data loss, a broken build. P1 is what should be fixed soon; P2 a nit. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
+
+  ```diff
+  {{ file (printf ".memdoor/runs/pr-review-%s.diff" .partition) }}
+  ```
+requires:
+  - table_pattern: diff
+target:
+  file: .memdoor/runs/pr-review-{{.partition}}.md
+timeout: 30m
+max_retries: 0

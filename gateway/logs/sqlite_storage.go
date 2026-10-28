@@ -726,22 +726,102 @@ func (s *SQLiteStorage) Close() error {
 	return s.db.Close()
 }
 
+// pruneBatch is how many rows one DELETE removes. One statement over
+// millions of rows held the write lock for minutes: the gateway's own log
+// writes queued behind it and `memdoor logs prune` timed out (2026-10-27).
+const pruneBatch = 20000
+
 // PruneBefore deletes events older than cutoff (timestamps are stored as
-// unix seconds) and returns the number removed. After a non-empty delete
-// it runs VACUUM to return the freed pages to the OS — best-effort, since
-// VACUUM takes a write lock and can't run in a transaction; a transient
-// lock must not fail the prune (the rows are already gone and space
-// reclaims on the next VACUUM/retention tick).
+// unix seconds), pruneBatch rows a statement so writers interleave, and
+// returns the number removed. After a non-empty delete the freed pages are
+// returned to the OS — best-effort, since VACUUM takes a write lock and
+// can't run in a transaction; a transient lock must not fail the prune.
 func (s *SQLiteStorage) PruneBefore(ctx context.Context, cutoff time.Time) (int64, error) {
-	res, err := s.db.ExecContext(ctx, "DELETE FROM events WHERE timestamp < ?", cutoff.Unix())
+	n, err := s.deleteBatches(ctx, "timestamp < ?", cutoff.Unix())
 	if err != nil {
-		return 0, fmt.Errorf("prune events: %w", err)
+		return n, fmt.Errorf("prune events: %w", err)
 	}
-	n, _ := res.RowsAffected()
 	if n > 0 {
-		_, _ = s.db.ExecContext(ctx, "VACUUM")
+		s.reclaim(ctx)
 	}
 	return n, nil
+}
+
+// PruneToSize deletes the oldest events until the database and its
+// write-ahead log are under maxBytes: enough rows to land at half the
+// ceiling, sized from the file itself so a run of long rows is not
+// undershot. maxBytes <= 0 means no ceiling.
+func (s *SQLiteStorage) PruneToSize(ctx context.Context, maxBytes int64) (int64, error) {
+	var total int64
+	// Bytes a row takes is an estimate from the file; a pass that lands
+	// over the ceiling (indexes, a write-ahead log not yet truncated) is
+	// followed by another, a few at most.
+	for pass := 0; pass < 4; pass++ {
+		size := s.FileSize()
+		if maxBytes <= 0 || size <= maxBytes {
+			return total, nil
+		}
+		var count int64
+		if err := s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM events").Scan(&count); err != nil {
+			return total, fmt.Errorf("prune to size: %w", err)
+		}
+		if count == 0 {
+			s.reclaim(ctx)
+			return total, nil
+		}
+		keep := count * (maxBytes / 2) / size
+		drop := count - keep
+		if drop < 1 {
+			drop = 1
+		}
+		var cutoff int64
+		if err := s.db.QueryRowContext(ctx, "SELECT timestamp FROM events ORDER BY timestamp LIMIT 1 OFFSET ?", drop-1).Scan(&cutoff); err != nil {
+			return total, fmt.Errorf("prune to size: %w", err)
+		}
+		n, err := s.deleteBatches(ctx, "timestamp <= ?", cutoff)
+		total += n
+		s.reclaim(ctx)
+		if err != nil {
+			return total, fmt.Errorf("prune to size: %w", err)
+		}
+	}
+	return total, nil
+}
+
+// FileSize is what the database takes on disk: the file and its
+// write-ahead log.
+func (s *SQLiteStorage) FileSize() int64 {
+	var size int64
+	for _, p := range []string{s.path, s.path + "-wal"} {
+		if st, err := os.Stat(p); err == nil {
+			size += st.Size()
+		}
+	}
+	return size
+}
+
+func (s *SQLiteStorage) deleteBatches(ctx context.Context, where string, args ...any) (int64, error) {
+	var total int64
+	for {
+		res, err := s.db.ExecContext(ctx, "DELETE FROM events WHERE rowid IN (SELECT rowid FROM events WHERE "+where+" ORDER BY timestamp LIMIT ?)", append(append([]any{}, args...), pruneBatch)...)
+		if err != nil {
+			return total, err
+		}
+		n, _ := res.RowsAffected()
+		total += n
+		if n < pruneBatch {
+			return total, nil
+		}
+	}
+}
+
+// reclaim gives freed pages back to the OS. In WAL mode VACUUM writes the
+// rebuilt database into the write-ahead log, so a checkpoint follows it or
+// the file on disk does not shrink.
+func (s *SQLiteStorage) reclaim(ctx context.Context) {
+	_, _ = s.db.ExecContext(ctx, "PRAGMA wal_checkpoint(TRUNCATE)")
+	_, _ = s.db.ExecContext(ctx, "VACUUM")
+	_, _ = s.db.ExecContext(ctx, "PRAGMA wal_checkpoint(TRUNCATE)")
 }
 
 // Helper functions

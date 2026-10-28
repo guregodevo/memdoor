@@ -127,7 +127,7 @@ func (p Provider) Engine(model string) RemoteEngine {
 	if ctxLen == 0 {
 		ctxLen = gatewayDefaultContext
 	}
-	re := RemoteEngine{Name: VendorEngineName, Vendor: vendor, Endpoint: p.Base, APIKey: p.Key, Model: model, CtxLen: ctxLen, AgentModels: map[string]string{"coder": model}}
+	re := RemoteEngine{Name: VendorEngineName, Vendor: vendor, Endpoint: p.Base, APIKey: p.Key, Model: model, CtxLen: ctxLen, AgentModels: map[string]string{"coder": model}, Keyless: p.Keyless}
 	if byok {
 		// The key is the provider's own: a connected OpenRouter lives in the
 		// file, where ByokEngine (the environment's) does not look.

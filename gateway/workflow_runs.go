@@ -209,7 +209,9 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 	if model = strings.TrimSpace(model); model != "" {
 		id, sort, order, effort, n := parseTaskModel(model)
 		model, capTokens = id, n
-		ctx = context.WithValue(ctx, sharedctx.ModelKey, id)
+		if id != "" {
+			ctx = context.WithValue(ctx, sharedctx.ModelKey, id)
+		}
 		if sort != "" {
 			ctx = context.WithValue(ctx, sharedctx.SortKey, sort)
 		}
@@ -1425,12 +1427,16 @@ func (s *Server) partitionsOf(dir, name string) []string {
 // exist, in the workflow's task order: what the run produced.
 func resultFiles(dir, partition string, wf workflow.Workflow) []string {
 	var out []string
+	seen := map[string]bool{}
 	for _, t := range wf.Tasks {
 		if !strings.HasPrefix(t.Target, "file ") {
 			continue
 		}
+		// Two tasks may name one file, each under its own `when` (pr-review's
+		// two reviews): it is one result.
 		f := renderPartition(strings.TrimSpace(strings.TrimPrefix(t.Target, "file ")), partition)
-		if _, err := os.Stat(filepath.Join(dir, f)); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, f)); err == nil && !seen[f] {
+			seen[f] = true
 			out = append(out, f)
 		}
 	}
@@ -1527,8 +1533,14 @@ func parseTaskModel(model string) (id, sort, order, effort string, maxTokens int
 	if len(fields) == 0 {
 		return "", "", "", "", 0
 	}
-	id = fields[0]
-	for i := 1; i < len(fields); i++ {
+	// The id is optional: "thinking off" keeps whatever model answers here
+	// (the built-in pr-review's one-call review, on the model a CI job
+	// connected).
+	start := 0
+	if !taskModelOption(fields[0]) {
+		id, start = fields[0], 1
+	}
+	for i := start; i < len(fields); i++ {
 		switch f := strings.ToLower(fields[i]); f {
 		case "price", "throughput", "latency", "default":
 			sort = f
@@ -1558,6 +1570,15 @@ func parseTaskModel(model string) (id, sort, order, effort string, maxTokens int
 		}
 	}
 	return id, sort, order, effort, maxTokens
+}
+
+// taskModelOption reports whether a model line's word is one of its options.
+func taskModelOption(word string) bool {
+	switch strings.ToLower(word) {
+	case "price", "throughput", "latency", "default", "order", "max_tokens", "cap", "thinking", "effort":
+		return true
+	}
+	return false
 }
 
 // sameProject compares two project directories after resolving symlinks

@@ -188,13 +188,17 @@ func newVendorClient(_ context.Context, re *RemoteEngine, model string) LLMClien
 	case VendorChatGPT:
 		return newChatGPTClient(model)
 	}
-	return &oaiClient{
+	c := &oaiClient{
 		apiKey:     re.APIKey,
 		baseURL:    strings.TrimSuffix(strings.TrimRight(re.Endpoint, "/"), "/chat/completions"),
 		httpClient: oaiHTTPClient(),
 		model:      model,
 		vendor:     true,
 	}
+	if re.Keyless {
+		c.keyless, c.httpClient = true, keylessHTTPClient()
+	}
+	return c
 }
 
 // VendorHeaders is MEMDOOR_VENDOR_HEADERS parsed: "Name: value" pairs

@@ -40,6 +40,17 @@ type oaiClient struct {
 	// vendor: a company's key (vendor.go) — the company's attribution
 	// headers travel on every request, nothing OpenRouter-specific does.
 	vendor bool
+	// keyless: a runtime connected with no key (Ollama, llama.cpp, janis):
+	// keylessStallAfter, and thinking turned off the way Ollama reads it.
+	keyless bool
+}
+
+// stallAfter is how long this client's provider may send nothing.
+func (c *oaiClient) stallAfter() time.Duration {
+	if c.keyless {
+		return keylessStallAfter
+	}
+	return oaiStallAfter
 }
 
 type oaiMessages struct {
@@ -100,6 +111,9 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 	if m.client.attribute {
 		reqBody.Provider = withStickyHost(m.client.provider, model) // byok_hosts.go
 		reqBody.Reasoning = reasoningFor(ctx, model)                // reasoning.go
+	}
+	if m.client.keyless {
+		reqBody.ReasoningEffort = keylessReasoningEffort(ctx) // reasoning.go
 	}
 
 	if m.client.vendor && strings.Contains(m.client.baseURL, "api.openai.com") {
@@ -162,6 +176,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 	)
 	cb := llm.StreamCallbackFromContext(ctx)
 	shrunk := false
+	stall := m.client.stallAfter()
 	for attempt := 0; ; attempt++ {
 		req, err := http.NewRequestWithContext(ctx, "POST",
 			m.client.baseURL+"/chat/completions",
@@ -188,13 +203,13 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		if err != nil {
 			if providerSilent(err) && ctx.Err() == nil {
 				if attempt < len(oaiRetryAfter) {
-					logs.New("Remote").Warn("provider sent no answer; asking again", slog.Duration("silent_for", oaiStallAfter),
+					logs.New("Remote").Warn("provider sent no answer; asking again", slog.Duration("silent_for", stall),
 						slog.Int("attempt", attempt+1), slog.String("model", modelLabel))
-					llm.Notify(ctx, fmt.Sprintf("The model's provider sent nothing for %s — asking again.", oaiStallAfter))
+					llm.Notify(ctx, fmt.Sprintf("The model's provider sent nothing for %s — asking again.", stall))
 					time.Sleep(oaiRetryAfter[attempt])
 					continue
 				}
-				return nil, errProviderSilent()
+				return nil, errProviderSilent(stall)
 			}
 			return nil, fmt.Errorf("oai request failed: %w", err)
 		}
@@ -241,18 +256,18 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		// WithStreamCallback) fires for every text fragment — that's the
 		// hook the agent runtime uses for AssistantStreamer broadcasts.
 		acc = &streamAccumulator{}
-		body := newIdleTimeoutReader(resp.Body, oaiStallAfter)
+		body := newIdleTimeoutReader(resp.Body, stall)
 		consumeErr = acc.consume(body, cb, llm.StreamGuardFromContext(ctx))
 		body.Close()
 		if errors.Is(consumeErr, errStreamIdle) && ctx.Err() == nil {
 			if acc.content.Len() == 0 && len(acc.toolCalls) == 0 && attempt < len(oaiRetryAfter) {
-				logs.New("Remote").Warn("provider went silent before any text; asking again", slog.Duration("silent_for", oaiStallAfter),
+				logs.New("Remote").Warn("provider went silent before any text; asking again", slog.Duration("silent_for", stall),
 					slog.Int("attempt", attempt+1), slog.String("model", modelLabel))
-				llm.Notify(ctx, fmt.Sprintf("The model's provider went silent for %s — asking again.", oaiStallAfter))
+				llm.Notify(ctx, fmt.Sprintf("The model's provider went silent for %s — asking again.", stall))
 				time.Sleep(oaiRetryAfter[attempt])
 				continue
 			}
-			consumeErr = errProviderSilent()
+			consumeErr = errProviderSilent(stall)
 		}
 		// The connection dropped mid-stream (a reset, an unexpected EOF) with
 		// nothing shown yet: ask again, as for silence and provider errors. A
@@ -414,13 +429,13 @@ func chatLastUserMessageLen(messages []chatMessage) int {
 // refused (429/5xx) or failed mid-stream before any text; tests shorten it.
 var oaiRetryAfter = []time.Duration{2 * time.Second, 5 * time.Second}
 
-// providerSilent is a request that got no headers within oaiStallAfter.
+// providerSilent is a request that got no headers within the stall limit.
 func providerSilent(err error) bool {
 	var ne net.Error
 	return errors.As(err, &ne) && ne.Timeout()
 }
 
 // errProviderSilent is an answer the provider never sent.
-func errProviderSilent() error {
-	return fmt.Errorf("the model's provider sent nothing for %s", oaiStallAfter)
+func errProviderSilent(stall time.Duration) error {
+	return fmt.Errorf("the model's provider sent nothing for %s", stall)
 }

@@ -19,8 +19,11 @@ concurrency:
   group: pr-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+# Runs on the public repo only: the private one has no Actions minutes, and
+# the public tree carries these same files, so its runs are the checks.
 jobs:
   review:
+    if: github.repository != 'guregodevo/memdoor-private'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

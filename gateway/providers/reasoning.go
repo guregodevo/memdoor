@@ -37,3 +37,15 @@ func reasoningFor(ctx context.Context, model string) map[string]any {
 	}
 	return map[string]any{"effort": effort}
 }
+
+// keylessReasoningEffort is reasoning_effort for a keyless runtime: "none"
+// when the step says thinking off, else nothing. Ollama reads "none" as
+// think=false; an effort it is not sent, since a model with no thinking
+// mode refuses one. A 4B on a CPU runner thought 1,300 tokens at 2.6 a
+// second in one call of a review (2026-10-27).
+func keylessReasoningEffort(ctx context.Context) string {
+	if effort, _ := ctx.Value(sharedctx.EffortKey).(string); effort == "off" {
+		return "none"
+	}
+	return ""
+}

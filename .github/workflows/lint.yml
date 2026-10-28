@@ -13,8 +13,11 @@ on:
   pull_request:
     branches: [ master, main ]
 
+# Runs on the public repo only: the private one has no Actions minutes, and
+# the public tree carries these same files, so its runs are the checks.
 jobs:
   ci:
+    if: github.repository != 'guregodevo/memdoor-private'
     name: Build, vet & test
     runs-on: ubuntu-latest
 

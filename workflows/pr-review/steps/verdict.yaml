@@ -13,5 +13,6 @@ command: |
   echo "no blocking finding; $others to consider in $f"
 requires:
   - table_pattern: review
+  - table_pattern: review-lean
 timeout: 1m
 max_retries: 0

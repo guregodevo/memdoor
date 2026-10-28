@@ -37,6 +37,9 @@ type RemoteEngine struct {
 	// (vendor.go): "anthropic", "openai" or "google". Nothing but that
 	// endpoint is contacted — no OpenRouter, no catalogue.
 	Vendor string `json:"vendor,omitempty"`
+	// Keyless: a runtime on this machine or the box, connected with no key
+	// (Provider.Keyless); its client waits longer for a first token.
+	Keyless bool `json:"keyless,omitempty"`
 }
 
 // ModelFromContext is the model pinned by id for the turn, "" when none.

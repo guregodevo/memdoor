@@ -30,6 +30,12 @@ type Storage interface {
 	// both `memdoor logs prune` and the automatic retention loop.
 	PruneBefore(ctx context.Context, cutoff time.Time) (int64, error)
 
+	// PruneToSize deletes the oldest events until the database on disk is
+	// under maxBytes and reclaims the space. Returns the number deleted.
+	// The retention loop's size ceiling: a scheduler that logged every
+	// poll wrote 40 GB in a night (2026-10-26) under an age-only rule.
+	PruneToSize(ctx context.Context, maxBytes int64) (int64, error)
+
 	// Close closes the storage backend
 	Close() error
 }

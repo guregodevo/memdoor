@@ -18,8 +18,11 @@ on:
   schedule:
     - cron: '17 6 * * 1'   # Mondays, in case the site changed under the scripts
 
+# Runs on the public repo only: the private one has no Actions minutes, and
+# the public tree carries these same files, so its runs are the checks.
 jobs:
   unix:
+    if: github.repository != 'guregodevo/memdoor-private'
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -87,6 +90,7 @@ jobs:
           curl -sf http://127.0.0.1:18799/api/status >/dev/null && { echo "FAIL: still up after uninstall"; exit 1; } || echo "down after uninstall"
 
   windows:
+    if: github.repository != 'guregodevo/memdoor-private'
     runs-on: windows-latest
     steps:
       - name: Install

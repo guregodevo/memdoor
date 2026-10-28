@@ -460,9 +460,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if text := strings.TrimSpace(m.input.Value()); text != "" {
 				// THE BRAIN GATE: nothing is sent to a brain that cannot answer.
 				// Slash commands still run — /usage, /model and the rest are
-				// the gateway's, not the brain's. The text stays in the box.
+				// the gateway's, not the brain's. The text is kept and comes
+				// back into the box once the gate lifts: left in the box, the
+				// /connect typed next was appended to it (2026-10-12).
 				if m.status.Gate != "" && !looksLikeSlashCommand(text) {
-					m.note("⏳ " + m.status.Gate)
+					m.heldPrompt = text
+					m.input.Reset()
+					m.note("⏳ " + m.status.Gate + "\n  your message is kept and comes back into the box once a model answers")
 					m.viewport.SetContent(m.renderMessages())
 					m.viewport.GotoBottom()
 					return m, nil
@@ -1180,6 +1184,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.answeredBy != "" {
 				m.status.Model = m.answeredBy
 			}
+		}
+		if m.status.Gate == "" && m.heldPrompt != "" && strings.TrimSpace(m.input.Value()) == "" {
+			m.input.SetValue(m.heldPrompt)
+			m.heldPrompt = ""
 		}
 		if m.status.Gate != "" {
 			return m, statusTickSoon()

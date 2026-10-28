@@ -415,6 +415,16 @@ it the way it runs llama.cpp; Memdoor knows no runtime by name. Tests:
 `TestConnectALocalRuntimeNeedsNoKey` (gateway),
 `TestConnectALocalRuntimeAsksNoKey` (window).
 
+**A keyless runtime may read in silence (2026-10-28).** It sends nothing
+while it reads the prompt, and a CPU reads slowly: a GitHub runner's 4 vCPUs
+read a 9B's review prompt at 11.8 tokens a second, eight minutes before the
+first token, and the cloud's 60 s stall limit dropped it twice. Its client
+(`RemoteEngine.Keyless`, `oaiClient.keyless`) waits `keylessStallAfter`, 10
+minutes, and an hour in all; a step's `thinking off` reaches it as
+`reasoning_effort: "none"`, Ollama's think=false (no other effort is sent: a
+model with no thinking mode refuses one). Test:
+`TestAKeylessRuntimeMayReadInSilence`.
+
 **A local decision model** (Greg: "there should be a janis jev model"): janis
 serve also answers `POST /v1/systemone`, the System One wire Memdoor's
 decision client speaks (`pkg/decision/systemone`), from the engine's

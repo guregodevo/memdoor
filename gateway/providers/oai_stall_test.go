@@ -4,12 +4,15 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"memdoor/gateway/logs"
 	"memdoor/pkg/llm"
+	sharedctx "memdoor/pkg/shared/context"
 )
 
 func withStallAfter(t *testing.T, d time.Duration) {
@@ -144,5 +147,44 @@ func TestARetryAfterSilenceIsAnnounced(t *testing.T) {
 	}
 	if len(said) != 1 || !strings.Contains(said[0], "sent nothing") || !strings.Contains(said[0], "asking again") {
 		t.Fatalf("one notice naming the silence and the retry: %q", said)
+	}
+}
+
+// A runtime connected with no key reads the prompt before it sends a byte,
+// and a CPU reads slowly (a runner's 4 vCPUs: eight minutes for a 9B's
+// review prompt, 2026-10-27). The cloud's minute of silence does not apply
+// to it, and a step's thinking off reaches it as Ollama's reasoning_effort.
+func TestAKeylessRuntimeMayReadInSilence(t *testing.T) {
+	withStallAfter(t, 150*time.Millisecond)
+	old := keylessStallAfter
+	keylessStallAfter = 5 * time.Second
+	t.Cleanup(func() { keylessStallAfter = old })
+	var calls int32
+	var body string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&calls, 1)
+		b, _ := io.ReadAll(r.Body)
+		body = string(b)
+		time.Sleep(600 * time.Millisecond)
+		sse(w, `{"choices":[{"index":0,"delta":{"content":"OK"}}]}`, `{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":1}}`)
+	}))
+	defer srv.Close()
+	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	t.Setenv("HOME", t.TempDir())
+	local := Provider{ID: "local", API: APIChat, Base: srv.URL + "/v1", Keyless: true}.Client(context.Background(), "qwen3:4b")
+	ctx := context.WithValue(context.Background(), sharedctx.EffortKey, "off")
+	msg, err := local.Messages().New(ctx, llm.MessageNewParams{MaxTokens: 64,
+		Messages: []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("hi"))}})
+	if err != nil || atomic.LoadInt32(&calls) != 1 || msg.Content[0].Text != "OK" {
+		t.Fatalf("calls=%d err=%v", calls, err)
+	}
+	if !strings.Contains(body, `"reasoning_effort":"none"`) {
+		t.Fatalf("thinking off was not sent as reasoning_effort none: %s", body)
+	}
+
+	// With no thinking off, nothing is sent: a model with no thinking mode
+	// refuses an effort.
+	if _, err := ask(local); err != nil || strings.Contains(body, "reasoning_effort") {
+		t.Fatalf("err=%v body=%s", err, body)
 	}
 }

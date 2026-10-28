@@ -74,6 +74,9 @@ type chatRequest struct {
 	// Reasoning is OpenRouter's reasoning control ({"effort": "high"}), sent
 	// only for a model that lists the parameter (reasoning.go).
 	Reasoning map[string]any `json:"reasoning,omitempty"`
+	// ReasoningEffort is the OpenAI-style field a keyless runtime reads:
+	// Ollama's "none" is its think=false (reasoning.go).
+	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 }
 
 // chatStreamOptions is the OpenAI streaming knob bag. We only need

@@ -1,6 +1,6 @@
 type: agent
 agent: coder
-when: test -s .memdoor/runs/pr-review-{{.partition}}.diff
+when: test -s .memdoor/runs/pr-review-{{.partition}}.diff && [ -z "${MEMDOOR_LEAN:-}" ]
 prompt: |
   Review a code change with the `review` skill (load it first). The change is the unified diff in `.memdoor/runs/pr-review-{{.partition}}.diff`; read it to the end, then open the changed files and what they call, so every finding is about the code as it now is.
   Verify before you report: build it, run the tests that touch it, or run the line in question, when the project's tools are here; when they are not, say what you read instead. A finding you could not ground in a file and line is not a finding.

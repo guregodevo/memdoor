@@ -14,6 +14,9 @@ func TestATaskModelLineNamesTheHostPreference(t *testing.T) {
 		{"qwen/qwen3.8-27b thinking sideways", "qwen/qwen3.8-27b", "", "", ""},
 		{"openrouter:qwen/qwen3.8-27b thinking high order modal max_tokens 128000", "openrouter:qwen/qwen3.8-27b", "", "modal", "high"},
 		{"", "", "", "", ""},
+		// No id: the model that answers here, with the options.
+		{"thinking off", "", "", "", "off"},
+		{"Throughput thinking low", "", "throughput", "", "low"},
 	}
 	for _, c := range cases {
 		id, sort, order, effort, _ := parseTaskModel(c.in)
