@@ -4,8 +4,8 @@ requires:
   - table_pattern: plan
 prompt: |
   You are independent ideator A in a fresh context. Read task.md, plan.md,
-  and the current notes.md. Develop one concrete efficient counting proposal,
-  favoring a streaming prefix-state frequency method. Include pseudocode,
+  and the current notes.md. Develop one concrete proposal: the most direct
+  algorithm you can prove meets the stated constraints. Include pseudocode,
   the invariant, correctness reasoning, complexity, and edge cases. Append
   your proposal to the Proposal A section of notes.md by an apply_patch
   insertion immediately before its unique <!-- proposal-a --> marker. Keep

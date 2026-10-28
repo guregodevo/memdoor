@@ -2,7 +2,9 @@ type: command
 requires:
   - table_pattern: repair
 command: |
-  bash .memdoor/workflows/team-solve/check-samples.sh > final-test-output.log 2>&1
+  check=.memdoor/workflows/team-solve/check-samples.sh
+  [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve/check-samples.sh"
+  bash "$check" > final-test-output.log 2>&1
   result=$?
   cat final-test-output.log
   exit "$result"
