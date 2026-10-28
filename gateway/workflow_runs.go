@@ -196,6 +196,9 @@ func capped(n, ceiling int64) int64 {
 	return n
 }
 
+// llmTaskCallTimeout is the clock on an llm task's call.
+var llmTaskCallTimeout = 10 * time.Minute
+
 // workflowModelAgent is whose ladder an llm task climbs when its YAML names
 // no model: the coder's cheapest rung, as a summary does.
 const workflowModelAgent = "coder"
@@ -227,27 +230,53 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 	if err != nil {
 		return "", err
 	}
-	ctx, cancel := context.WithTimeout(llm.WithUtilityCall(ctx), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(llm.WithUtilityCall(ctx), llmTaskCallTimeout)
 	defer cancel()
-	resp, err := client.Messages().New(ctx, llm.MessageNewParams{
-		Model:     llm.Model(providers.ModelName),
-		Messages:  []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
-		MaxTokens: capped(llmTaskMaxTokens(model, len(prompt)), capTokens),
-		Agent:     "workflow",
-	})
+	ask := func(ctx context.Context) (string, llm.StopReason, error) {
+		resp, err := client.Messages().New(ctx, llm.MessageNewParams{
+			Model:     llm.Model(providers.ModelName),
+			Messages:  []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
+			MaxTokens: capped(llmTaskMaxTokens(model, len(prompt)), capTokens),
+			Agent:     "workflow",
+		})
+		if err != nil {
+			return "", "", err
+		}
+		var b strings.Builder
+		for _, part := range resp.Content {
+			if part.Type == "text" {
+				b.WriteString(part.Text)
+			}
+		}
+		return strings.TrimSpace(b.String()), resp.StopReason, nil
+	}
+	text, stop, err := ask(ctx)
 	if err != nil {
 		return "", err
 	}
-	var b strings.Builder
-	for _, part := range resp.Content {
-		if part.Type == "text" {
-			b.WriteString(part.Text)
+	if text == "" && stop != llm.StopReasonMaxTokens {
+		if effort, _ := ctx.Value(sharedctx.EffortKey).(string); effort != "off" {
+			// The model closed its reasoning and stopped without an answer: a
+			// 27B on a hard statement did it four times out of four on one
+			// problem, 19K to 51K tokens of thought each (2026-10-28). The
+			// same prompt without thinking answers.
+			logs.New("workflow").Warn("the model reasoned and wrote nothing; asking again without thinking", "model", model)
+			if text, stop, err = ask(context.WithValue(ctx, sharedctx.EffortKey, "off")); err != nil {
+				return "", err
+			}
 		}
 	}
-	if text := strings.TrimSpace(b.String()); text != "" {
+	// The client keeps what streamed before the clock ran out (a window
+	// shows it); a task's answer cut there is not its answer. A 4B on a CI
+	// runner's CPU wrote a review for the whole ten minutes and the cut text
+	// passed as the review (2026-10-28).
+	if ctx.Err() != nil {
+		return "", fmt.Errorf("the model's answer was cut off after %s, unfinished", llmTaskCallTimeout)
+	}
+	if text != "" {
 		return text, nil
 	}
-	if resp.StopReason == llm.StopReasonMaxTokens {
+	if stop == llm.StopReasonMaxTokens {
 		return "", fmt.Errorf("the model used its whole reply on reasoning and wrote nothing")
 	}
 	return "", fmt.Errorf("the model wrote nothing")
