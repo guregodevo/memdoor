@@ -68,12 +68,19 @@ a 3,000-line Go project, each reviewed both ways on `ubuntu-latest`, twice
 |---|---|---|
 | An obvious bug: a loop that now skips the last layer | P0, the right reason, 2 of 2 | P0: the last layer is left out of every estimate |
 | A subtle bug: the returned path built from the lowercased file name | P0, the right reason ("uses `name` instead of `e.Name()`"), 2 of 2 | P0, proved by a test it wrote: `MODEL.GGUF` comes back as a path that does not exist |
-| The same change done correctly | **a false P0**, 2 of 2: it filed the change's own fix as the fault | passed |
+| The same change done correctly | **a false P0**, 2 of 2: it filed the change's own fix as the fault; with the re-check (below), 1 of 2 | passed |
 | Review | 45–90 s | 35–60 s |
 | Job | 2–3 min, most of it the model's first download | about 1 min |
 
 The local model catches bugs and can fail a correct pull request: read its P0
-before you believe it. `Qwen3.5-9B-4bit` is the quiet one: it passed the
+before you believe it. Since v1.714.0 each of its P0s gets a second look on
+the same model, one question: is it a problem of the code after the change, or
+of the code before it? One answered "before" is demoted to P2. On the correct
+change that turned one of two runs green; the other run's "P0" was praise
+("which is correct … no bug here"), which the question does not catch
+([#12](https://github.com/guregodevo/llamafit/pull/12),
+[#13](https://github.com/guregodevo/llamafit/pull/13),
+[#14](https://github.com/guregodevo/llamafit/pull/14)). `Qwen3.5-9B-4bit` is the quiet one: it passed the
 correct change and missed the subtle bug. The agent on a key opens the files
 around the change and runs the code to prove what it finds, and was right all
 three times. Use local where a key cannot go (a public repository you would
