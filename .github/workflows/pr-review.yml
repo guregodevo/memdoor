@@ -1,12 +1,9 @@
 # Every pull request is reviewed by Memdoor's own pr-review workflow, through
-# the published action: the change is read, findings are verified by running
-# the code, and the check fails only on a P0 (what must not merge). The
-# review is the job summary.
-#
-# On pull_request, never pull_request_target: a pull request from a fork gets
-# no secrets, so no stranger's code ever runs beside the key. Such a pull
-# request has no key here, and the review is skipped with a note rather than
-# failed.
+# the published action, on a model inside the job: Qwen3-8B on the runner's
+# CPU, through janis. No key, so a pull request from a fork is reviewed too,
+# on pull_request (never pull_request_target: a stranger's code never runs
+# beside a secret, and there is none here). The check fails only on a P0
+# (what must not merge); the review is the job summary.
 name: PR review (Memdoor)
 
 permissions:
@@ -26,21 +23,11 @@ jobs:
     if: github.repository != 'guregodevo/memdoor-private'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      HAS_KEY: ${{ secrets.OPEN_ROUTER_API_KEY != '' }}
     steps:
-      - name: No key for this pull request
-        if: env.HAS_KEY != 'true'
-        run: |
-          echo "::notice::No OPEN_ROUTER_API_KEY for this pull request (a fork gets no secrets): the review is skipped."
-          echo "Memdoor's review needs the repository's key; a pull request from a fork has none, so it is not reviewed here." >> "$GITHUB_STEP_SUMMARY"
-
       - uses: actions/checkout@v5
-        if: env.HAS_KEY == 'true'
 
       - uses: guregodevo/memdoor-action@v1
-        if: env.HAS_KEY == 'true'
         with:
           workflow: pr-review
-          openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+          local-model: Qwen3-8B-4bit
           timeout: 25m
