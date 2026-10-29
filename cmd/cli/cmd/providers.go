@@ -239,7 +239,7 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 (0600). --probe tests without keeping. The gateway starts if none is running.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// A fresh machine (a CI runner) connects before anything else ran.
-		if err := machineReady(); err != nil {
+		if err := firstRunReady(); err != nil {
 			return err
 		}
 		if rm, _ := cmd.Flags().GetString("remove"); rm != "" {

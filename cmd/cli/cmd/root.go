@@ -39,6 +39,8 @@ var noWorkspaceTopLevels = map[string]bool{
 	// with "nothing is set up on this machine yet" before it could set it up.
 	"run":       true,
 	"workflow":  true,
+	"connect":   true, // a provider is the gateway's (providers.json); the GitHub action connects its local model first
+	"providers": true,
 	"cron":      true,
 	"resume":    true,
 	"remote":    true,
