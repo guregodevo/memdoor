@@ -25,8 +25,8 @@ func SeedEmbeddedSkills() {
 	seedEmbedded(skills.FS, shared.MemdoorHome("skills"), "Skill", func(rel string) string { return rel })
 }
 
-// SeedEmbeddedWorkflows copies the built-in workflows (pr-review, fix-tests,
-// release-notes …) to the person's library, ~/.memdoor/workflows, where any
+// SeedEmbeddedWorkflows copies the built-in workflows (pr-review, write-tests,
+// explain-failure …) to the person's library, ~/.memdoor/workflows, where any
 // project finds them after its own (workflow.Find): `memdoor workflow run
 // pr-review` works in a repo with no .memdoor at all, the GitHub action's
 // first job included (2026-10-27). A workflow is one unit: a directory of

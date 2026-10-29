@@ -51,15 +51,22 @@ jobs:
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
 ```
 
+Eight are built in:
+
 - **`pr-review`** reviews the pull request, verifies each finding by running the code, and fails the job only on a blocker.
+- **`security-review`** does the same for security only: secrets, injection, path traversal, missing authorization.
+- **`write-tests`** writes tests for what the change touches, and fails the job when one shows the change is wrong.
+- **`pr-description`** writes the description: title, What, Why, How to test, Risk.
+- **`explain-failure`** reads a failed run's logs and the diff: the cause, file:line, and the fix.
+- **`issue-triage`** suggests labels, the kind, a summary and duplicates for a new issue.
 - **`fix-tests`** finds the test command, fixes the code until the tests pass, and leaves the fix in the working tree.
 - **`release-notes`** turns the commits since the last tag into Added / Changed / Fixed.
 
-No key at all: `local-model: Qwen3-8B-4bit` instead of the key runs pr-review on
-a model inside the runner ([janis](https://github.com/guregodevo/janis), one
+No key at all: `local-model: Qwen3-8B-4bit` instead of the key runs any of them
+on a model inside the runner ([janis](https://github.com/guregodevo/janis), one
 file, the model cached), in one model call. It is a free first pass, not a
 reviewer: on a free runner it caught an obvious and a subtle bug in about a
-minute each, and filed a correct change's own fix as a blocker.
+minute each, and can file a correct change's own fix as a blocker.
 
 Or `workflow: <name>` for your own, `.memdoor/workflows/<name>/` in the repo. The
 job ends with the run's outcome (0 done, 2 failed, 1 stopped, 3 stopped at an

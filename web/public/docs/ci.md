@@ -1,7 +1,8 @@
 # In CI
 
-A review on every pull request, a failing suite fixed, release notes on a
-tag: one step in a GitHub job, nothing added to your repository. The model
+A review on every pull request, tests written for it, a failed run explained,
+a new issue triaged, release notes on a tag: one step in a GitHub job, nothing
+added to your repository. The model
 runs on your key, or with no key at all on a model inside the runner. The job
 passes or fails on a check, never because the model said so.
 
@@ -52,9 +53,9 @@ key already in the job's environment.
 one file, runs the model with it on the runner's CPU, caches the model, and
 points Memdoor at it. Nothing installed, no secret, no API account, and
 nothing leaves the runner. Linux runners. A free runner has 4 CPUs and 16 GB,
-so a 9B model is about the largest that fits, and the review is one model
-call: no agent, nothing run to prove a finding. A free first pass, not a
-reviewer.
+so a 9B model is about the largest that fits, and each workflow is one model
+call with everything it needs in the prompt: no agent, nothing run to prove a
+finding. A free first pass, not a reviewer.
 
 ## What each one catches
 
@@ -100,19 +101,26 @@ Eight, none of them a file in your repository. Each runs on your key (an
 agent that reads the code around the change and runs it) or on a model
 inside the runner (one model call with everything it needs in the prompt).
 
-| `workflow:` | Run it on | What it does | The job fails when |
+| `workflow:` | Run it on, with | What it does | The job fails when |
 |---|---|---|---|
 | `pr-review` | `pull_request` | Reviews the change against its base branch and writes **P0** / P1 / P2 findings. | a P0: something that must not merge |
 | `security-review` | `pull_request` | The same, for security only: secrets, injection, path traversal, missing authorization, unsafe deserialization, SSRF, weak crypto, an exploitable CI workflow. | an exploitable P0 |
 | `write-tests` | `pull_request` | Writes tests for the functions the change touches and leaves them in the working tree. Never edits an existing test. | an existing test already fails with the change, or a new test shows the change is wrong |
 | `pr-description` | `pull_request` | Writes the pull request's description: title, What, Why, How to test, Risk. | — |
-| `explain-failure` | `workflow_run` on failure | Reads the failed run's logs and the commit's diff: the Cause (step, file:line), Why, the Fix. | — |
-| `issue-triage` | `issues` opened | Labels the repository has, the kind, a summary, duplicates among open issues, what the reporter should add. Applies nothing. | — |
+| `explain-failure` | `workflow_run` on failure; `actions: read` | Reads the failed run's logs and the commit's diff: the Cause (step, file:line), Why, the Fix. | — |
+| `issue-triage` | `issues` opened; `issues: read` | Labels the repository has, the kind, a summary, duplicates among open issues, what the reporter should add. Applies nothing. | — |
 | `fix-tests` | `push`, or by hand | Finds the test command, fixes the code until it passes, leaves the fix in the working tree. | the tests still fail |
 | `release-notes` | a tag push | The commits since the previous tag as Added / Changed / Fixed. | — |
 
+Every one needs `contents: read`; the two that read GitHub (`gh`) do it on the
+job's own token, passed as `github-token` (the default), with the permission
+above. Tests, fixes and notes stay in the runner's working tree, and the job
+summary shows them; commit them in a later step if you want them kept.
+
 Measured on GitHub's runners ([llamafit](https://github.com/guregodevo/llamafit)
-#15, #16 and #17), each both ways. A pull request with a path traversal:
+[#15](https://github.com/guregodevo/llamafit/pull/15),
+[#16](https://github.com/guregodevo/llamafit/issues/16) and
+[#17](https://github.com/guregodevo/llamafit/pull/17)), each both ways. A pull request with a path traversal:
 `security-review` red on a key and on the 8B; the same kind of request done
 correctly: green both ways. On the 8B that takes a re-check: each P0 is asked
 once more whether the code after the change lets someone read, write or run
@@ -128,7 +136,10 @@ about one on a key.
 `write-tests` on the 8B kept no test in ten tries: its tests compile but do
 not match how the code behaves, and a test that does not pass is removed, never
 kept. The job stays green and says so, after about a quarter of an hour on a
-runner. Writing tests that pass needs the agent, on a key.
+runner. Writing tests that pass needs the agent, on a key. `fix-tests` and
+`release-notes` were measured on fixtures on a Mac, not yet on a runner: on the
+8B, `fix-tests` fixed an off-by-one with a one-line edit, and `release-notes`
+sorted the commits since the last tag.
 
 Explain a failed CI run (`gh` reads the logs on the job's own token):
 
@@ -151,6 +162,30 @@ jobs:
           workflow: explain-failure
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
 ```
+
+Triage each new issue (the labels, the kind, likely duplicates in the job
+summary; nothing is applied):
+
+```yaml
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+  issues: read
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: guregodevo/memdoor-action@v1
+        with:
+          workflow: issue-triage
+          openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+```
+
+`workflow_run` and `issues` jobs run from the workflow file on the default
+branch: commit them to `main` before they fire.
 
 Notes on every tag:
 
@@ -185,7 +220,7 @@ approval from another door, bounded by `timeout`.
 | Exit | Meaning |
 |---|---|
 | 0 | done |
-| 2 | a step failed (for `pr-review`, a P0) |
+| 2 | a step failed: a P0 in `pr-review` or `security-review`, a test showing the change is wrong in `write-tests`, tests still failing after `fix-tests` |
 | 1 | stopped (timeout) |
 | 3 | stopped at an approval gate |
 
@@ -202,7 +237,8 @@ also keeps model keys out of the environment of every command the agent or a
 step runs, so a test that prints its environment cannot carry one into the
 model's context or the log. That is a second line, not the boundary.
 
-Every input, and macOS runners, are in the
+Every input (`model`, `partition`, `timeout`, `github-token`…), and macOS
+runners, are in the
 [action's README](https://github.com/guregodevo/memdoor-action#inputs).
 
 ## Without the action
