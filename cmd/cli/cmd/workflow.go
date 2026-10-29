@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -117,6 +118,7 @@ func waitForWorkflowRun(id string, stopAtGate bool) error {
 		for _, r := range st.Results {
 			fmt.Println(r)
 		}
+		reportToGitHub(st, code)
 		switch code {
 		case workflowExitDone:
 			return nil
@@ -290,25 +292,29 @@ var workflowStatusCmd = &cobra.Command{
 		if err := workflowPost("status", map[string]interface{}{"run_id": args[0]}, &out); err != nil {
 			return err
 		}
-		fmt.Printf("%s · run %s · partition %s · %s · %d/%d done\n", out.Workflow, out.ID, out.Partition, out.State, out.Done, out.Total)
-		if out.Error != "" {
-			fmt.Println("  " + out.Error)
-		}
-		printWorkflowTasks(out)
-		if len(out.Results) > 0 {
-			fmt.Println("\nResults:")
-			for _, f := range out.Results {
-				fmt.Println("  " + f)
-			}
-		}
-		if out.Review != "" {
-			fmt.Println("\nTo review before approving (memdoor workflow diff " + out.ID + " for every line):")
-			for _, l := range strings.Split(out.Review, "\n") {
-				fmt.Println("  " + l)
-			}
-		}
+		fprintWorkflowStatus(os.Stdout, out)
 		return nil
 	},
+}
+
+func fprintWorkflowStatus(w io.Writer, out workflowRunStatus) {
+	fmt.Fprintf(w, "%s · run %s · partition %s · %s · %d/%d done\n", out.Workflow, out.ID, out.Partition, out.State, out.Done, out.Total)
+	if out.Error != "" {
+		fmt.Fprintln(w, "  "+out.Error)
+	}
+	fprintWorkflowTasks(w, out)
+	if len(out.Results) > 0 {
+		fmt.Fprintln(w, "\nResults:")
+		for _, f := range out.Results {
+			fmt.Fprintln(w, "  "+f)
+		}
+	}
+	if out.Review != "" {
+		fmt.Fprintln(w, "\nTo review before approving (memdoor workflow diff "+out.ID+" for every line):")
+		for _, l := range strings.Split(out.Review, "\n") {
+			fmt.Fprintln(w, "  "+l)
+		}
+	}
 }
 
 var workflowStopCmd = &cobra.Command{
@@ -398,7 +404,9 @@ var workflowDiffCmd = &cobra.Command{
 	},
 }
 
-func printWorkflowTasks(r workflowRunStatus) {
+func printWorkflowTasks(r workflowRunStatus) { fprintWorkflowTasks(os.Stdout, r) }
+
+func fprintWorkflowTasks(out io.Writer, r workflowRunStatus) {
 	w := 0
 	for _, t := range r.Tasks {
 		if len(t.Name) > w {
@@ -420,13 +428,13 @@ func printWorkflowTasks(r workflowRunStatus) {
 		if t.External && t.State != "done" {
 			line += "  (external)"
 		}
-		fmt.Println(line)
+		fmt.Fprintln(out, line)
 		if t.Receipt != "" {
 			// What proved the step, not only that it is done.
-			fmt.Println("      " + t.Receipt)
+			fmt.Fprintln(out, "      "+t.Receipt)
 		}
 		if t.Error != "" && t.State != "done" {
-			fmt.Println("      " + strings.ReplaceAll(taskErrorText(t.Error), "\n", "\n      "))
+			fmt.Fprintln(out, "      "+strings.ReplaceAll(taskErrorText(t.Error), "\n", "\n      "))
 		}
 	}
 }

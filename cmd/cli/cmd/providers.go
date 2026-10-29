@@ -236,8 +236,12 @@ or !command that prints it (Keychain, 1Password, Vault). A local runtime
 the box) has no token and is asked for none. Before anything is
 kept, the gateway reads the provider's model list and makes one tiny call;
 a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
-(0600). --probe tests without keeping.`,
+(0600). --probe tests without keeping. The gateway starts if none is running.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// A fresh machine (a CI runner) connects before anything else ran.
+		if err := machineReady(); err != nil {
+			return err
+		}
 		if rm, _ := cmd.Flags().GetString("remove"); rm != "" {
 			var res map[string]any
 			if rm == "chatgpt" {

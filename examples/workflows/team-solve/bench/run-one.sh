@@ -5,7 +5,7 @@ B=$(cd "$(dirname "$0")" && pwd); WFDIR=$1; id=$2; WF=$(basename "$WFDIR"); P=${
 GW=${MEMDOOR_GATEWAY:-http://localhost:18799}; MEMDOOR=${MEMDOOR_BIN:-memdoor}; PY=${LCB_PYTHON:-python3}
 export MEMDOOR_NO_BROWSER=1
 mkdir -p "$B/results" "$B/logs/$WF"; start=$(date +%s)
-rm -f "$d/solution.py" "$d/plan.md" "$d/notes.md" "$d/review.md" "$d/answer.md" "$d"/*.log "$d/test-status.txt" "$d/tasks.json" "$d"/status-*.txt "$d"/next-*.txt "$d"/nexts-*.txt "$d"/wstatus-*.txt "$d"/samples-*.txt "$d"/digest-*.md "$d"/*-reply*.md "$d"/ideation-reply.md
+rm -f "$d/solution.py" "$d/best.py" "$d/plan.md" "$d/notes.md" "$d/review.md" "$d/answer.md" "$d"/*.log "$d/test-status.txt" "$d/tasks.json" "$d"/status-*.txt "$d"/next-*.txt "$d"/nexts-*.txt "$d"/wstatus-*.txt "$d"/samples-*.txt "$d"/digest-*.md "$d"/*-reply*.md "$d"/ideation-reply.md
 [ -d "$d/.git" ] || git -C "$d" init -q
 (cd "$d" && "$MEMDOOR" --gateway "$GW" workflow run --timeout "${RUN_TIMEOUT:-12h}" "$WFDIR") > "$B/logs/$WF/$id.log" 2>&1
 run=$(grep -oE "started as [^ ]+" "$B/logs/$WF/$id.log" | head -1 | awk '{print $3}')
