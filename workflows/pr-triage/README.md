@@ -1,7 +1,0 @@
-# pr-triage
-
-Triages a pull request for a maintainer who has many to look at, and writes `.memdoor/runs/pr-triage-<partition>.md`: a first line `labels: a, b` (only labels the repository has), the **Verdict** (ready for review, needs work, or likely slop, with one sentence why), a two-sentence **Summary**, **Claims vs diff** (each thing the description claims, and whether the diff does it), **Missing** (tests, a linked issue, a reproduction, docs), **Possible duplicates** among open pull requests and issues, and **Checked in this job**: the project's tests run on the pull request's code, and its size. The verdict advises a person; it never fails the job and nothing is applied to the pull request.
-
-On a pull request from a fork the job holds no secret and a read-only token, so the contributor's code runs, and is read, where there is nothing to steal; with `local-model:` there is no model key either. The PR comes from the `pull_request` event; else `--partition <PR number>` (`gh pr view`); else `.memdoor/pr.md` beside the last commit.
-
-Run it with `memdoor workflow run pr-triage --partition 42 --wait`, or in GitHub Actions with `uses: guregodevo/memdoor-action@v1` and `workflow: pr-triage` on `pull_request`. Needs a model on your key; with a small local model set `MEMDOOR_LEAN=1` (the GitHub Action sets it with `local-model:`) and `triage-lean` runs instead: one model call, everything inlined, no tools.

@@ -39,7 +39,7 @@ your phone are doors onto it. A box that memdoor.ai runs for you is coming.
   and that one command with `--wait`: it starts the gateway, sets the runner
   up itself, and exits with the run's outcome. On GitHub that job is one
   step, `uses: guregodevo/memdoor-action@v1` with the workflow's name and your
-  key; `pr-triage`, `pr-review`, `security-review`, `write-tests`, `pr-description`,
+  key; `pr-review`, `security-review`, `write-tests`, `pr-description`,
   `explain-failure`, `issue-triage`, `fix-tests` and `release-notes` are
   built in and need no file in the repo. See [Workflows](/docs/workflows).
 - **An editor session.** The coder in VS Code, Zed or JetBrains is a
@@ -116,7 +116,7 @@ failing test.
 ## In CI
 
 On GitHub, one step: `uses: guregodevo/memdoor-action@v1` with a workflow
-(one of nine built in, such as `pr-triage` or `pr-review`, or your own) and your key, or a
+(one of eight built in, such as `pr-review` or `write-tests`, or your own) and your key, or a
 model inside the runner. The run's outcome is the job's. The whole page is
 **[In CI](/docs/ci)**; elsewhere, the same run is three shell lines:
 

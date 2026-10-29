@@ -98,13 +98,12 @@ has none saved; a `pull_request` job saved it.
 
 ## The built-in workflows
 
-Nine, none of them a file in your repository. Each runs on your key (an
+Eight, none of them a file in your repository. Each runs on your key (an
 agent that reads the code around the change and runs it) or on a model
 inside the runner (one model call with everything it needs in the prompt).
 
 | `workflow:` | Run it on, with | What it does | The job fails when |
 |---|---|---|---|
-| `pr-triage` | `pull_request` | Sorts the pull request for a maintainer: **ready for review**, **needs work** or **likely slop**, with the reasons; the verdict comes from checks run in the job (the tests, tests claimed and none changed, functions nothing calls, and whether the diff does what the title says), plus labels, a summary, what is missing and duplicates. Advisory. | never: the verdict is for a person |
 | `pr-review` | `pull_request` | Reviews the change against its base branch and writes **P0** / P1 / P2 findings. | a P0: something that must not merge |
 | `security-review` | `pull_request` | The same, for security only: secrets, injection, path traversal, missing authorization, unsafe deserialization, SSRF, weak crypto, an exploitable CI workflow. | an exploitable P0 |
 | `write-tests` | `pull_request` | Writes tests for the functions the change touches and leaves them in the working tree. Never edits an existing test. | an existing test already fails with the change, or a new test shows the change is wrong |

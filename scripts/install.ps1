@@ -23,50 +23,65 @@ if ([Environment]::Is64BitOperatingSystem -ne $true) {
     Fail "Memdoor needs 64-bit Windows."
 }
 
-Write-Host "Downloading $Asset ..."
 $tmp = Join-Path ([System.IO.Path]::GetTempPath()) "memdoor-$([guid]::NewGuid()).exe"
-try {
-    # Our own test runs mark their download so adoption counts people only.
-    $ciMark = if ($env:MEMDOOR_CI) { "?ci=1" } else { "" }
-    Invoke-WebRequest -Uri "$Base/$Asset$ciMark" -OutFile $tmp -UseBasicParsing
-} catch {
-    Fail "could not download $Base/$Asset — $($_.Exception.Message)"
+
+# Downloads $Asset to $tmp and returns its expected and actual hashes. Verify
+# BEFORE the file is ever placed or run: a compromise of the download host or
+# a downgraded connection would otherwise be silent code execution on every
+# machine that ran this line.
+function Get-VerifiedDownload {
+    Write-Host "Downloading $Asset ..."
+    try {
+        # Our own test runs mark their download so adoption counts people only.
+        $ciMark = if ($env:MEMDOOR_CI) { "?ci=1" } else { "" }
+        Invoke-WebRequest -Uri "$Base/$Asset$ciMark" -OutFile $tmp -UseBasicParsing
+    } catch {
+        Fail "could not download $Base/$Asset — $($_.Exception.Message)"
+    }
+
+    Write-Host "Verifying checksum ..."
+    try {
+        # /dl/ is served as application/octet-stream (so browsers download the
+        # binaries), and for that type PowerShell hands back bytes, not text: the
+        # manifest then matched nothing and every Windows install was refused
+        # (found 2026-10-06). Decode it as text whatever the server says.
+        $resp = Invoke-WebRequest -Uri "$Base/SHA256SUMS" -UseBasicParsing
+        if ($resp.Content -is [byte[]]) { $sums = [System.Text.Encoding]::UTF8.GetString($resp.Content) }
+        else { $sums = [string]$resp.Content }
+    } catch {
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        Fail "could not fetch $Base/SHA256SUMS — refusing to install an unverified binary."
+    }
+
+    $expected = $null
+    foreach ($line in $sums -split "`n") {
+        # sha256sum format: "<hash>  <filename>"
+        $parts = ($line.Trim() -split '\s+')
+        if ($parts.Count -ge 2 -and $parts[-1] -eq $Asset) { $expected = $parts[0].ToLower() }
+    }
+    if (-not $expected) {
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        Fail "$Asset is not listed in SHA256SUMS — refusing to install."
+    }
+    @{ Expected = $expected; Actual = (Get-FileHash -Path $tmp -Algorithm SHA256).Hash.ToLower() }
 }
 
-# Verify BEFORE the file is ever placed or run. A compromise of the download
-# host or a downgraded connection would otherwise be silent code execution on
-# every machine that ran this line.
-Write-Host "Verifying checksum ..."
-try {
-    # /dl/ is served as application/octet-stream (so browsers download the
-    # binaries), and for that type PowerShell hands back bytes, not text: the
-    # manifest then matched nothing and every Windows install was refused
-    # (found 2026-10-06). Decode it as text whatever the server says.
-    $resp = Invoke-WebRequest -Uri "$Base/SHA256SUMS" -UseBasicParsing
-    if ($resp.Content -is [byte[]]) { $sums = [System.Text.Encoding]::UTF8.GetString($resp.Content) }
-    else { $sums = [string]$resp.Content }
-} catch {
+# The binary is fetched before the manifest, so an install that straddles a
+# deploy's switch (under a second, deploy.sh step 8) can hold one release's
+# binary and the next one's hashes. Both are fetched again once, a few
+# seconds later, when they are the same release; a second mismatch is not a
+# deploy and the install is refused.
+$hashes = Get-VerifiedDownload
+if ($hashes.Actual -ne $hashes.Expected) {
+    Write-Host "checksum mismatch for $Asset; a release may have been switching: fetching both again in 5s"
+    Start-Sleep -Seconds 5
+    $hashes = Get-VerifiedDownload
+}
+if ($hashes.Actual -ne $hashes.Expected) {
     Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-    Fail "could not fetch $Base/SHA256SUMS — refusing to install an unverified binary."
+    Fail "checksum mismatch for $Asset.`n  expected $($hashes.Expected)`n  got      $($hashes.Actual)`nRefusing to install."
 }
-
-$expected = $null
-foreach ($line in $sums -split "`n") {
-    # sha256sum format: "<hash>  <filename>"
-    $parts = ($line.Trim() -split '\s+')
-    if ($parts.Count -ge 2 -and $parts[-1] -eq $Asset) { $expected = $parts[0].ToLower() }
-}
-if (-not $expected) {
-    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-    Fail "$Asset is not listed in SHA256SUMS — refusing to install."
-}
-
-$actual = (Get-FileHash -Path $tmp -Algorithm SHA256).Hash.ToLower()
-if ($actual -ne $expected) {
-    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-    Fail "checksum mismatch for $Asset.`n  expected $expected`n  got      $actual`nRefusing to install."
-}
-Write-Host "  ok ($($expected.Substring(0,16))...)"
+Write-Host "  ok ($($hashes.Expected.Substring(0,16))...)"
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 # Replacing a RUNNING exe fails on Windows, unlike Unix, and `memdoor upgrade`

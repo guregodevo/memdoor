@@ -197,7 +197,7 @@ echo "==> Downloading $URL"
 # over plain HTTPS from a static dir; a compromise of /var/www/memdoor.ai/dl/
 # or a TLS downgrade would otherwise be a silent RCE on every installer.
 # We pin the download to a SHA256SUMS manifest published alongside the
-# binaries (deploy.sh step 4.555). FAIL CLOSED: if the manifest can't be
+# binaries (deploy.sh step 4.555, written in step 8). FAIL CLOSED: if the manifest can't be
 # fetched, or the expected hash is missing, or the computed hash doesn't
 # match, we refuse to install. No silent skip.
 #
@@ -237,10 +237,26 @@ verify_download() {
         echo "ERROR: checksum mismatch for ${_name}!" >&2
         echo "       expected: $_expected" >&2
         echo "       actual:   $_actual" >&2
-        echo "       The download may be corrupted or tampered with. Aborting." >&2
-        exit 1
+        return 2
     fi
     echo "  ✓ sha256 verified ($_actual)"
+}
+# The binary is fetched before the manifest, so an install that straddles a
+# deploy's switch (under a second, deploy.sh step 8) can hold one release's
+# binary and the next one's hashes. Both are fetched again once, a few
+# seconds later, when they are the same release; a second mismatch is not a
+# deploy and the install is refused.
+download_verified() {
+    # $1 = destination path.
+    curl -fL --progress-bar "$URL" -o "$1"
+    verify_download "$1" && return 0
+    echo "==> A release may have been switching: fetching both again in 5s" >&2
+    sleep 5
+    curl -fL --progress-bar "$URL" -o "$1"
+    verify_download "$1" && return 0
+    echo "       The download may be corrupted or tampered with. Aborting." >&2
+    rm -f "$1"
+    exit 1
 }
 
 TMP_DEST=$(mktemp /tmp/memdoor.XXXXXX)
@@ -253,8 +269,7 @@ case "$INSTALL_MODE" in
             echo "  Pick a directory you own: MEMDOOR_PREFIX=\$HOME/bin curl -fsSL https://memdoor.ai/install.sh | bash" >&2
             exit 1
         fi
-        curl -fL --progress-bar "$URL" -o "$TMP_DEST"
-        verify_download "$TMP_DEST"
+        download_verified "$TMP_DEST"
         chmod +x "$TMP_DEST"
         xattr -c "$TMP_DEST" 2>/dev/null || true
         codesign --force --sign - "$TMP_DEST" 2>/dev/null || true
@@ -264,8 +279,7 @@ case "$INSTALL_MODE" in
         # Download as the regular user (curl doesn't need root), sudo
         # only the mv into the root-owned dir. Avoids leaving a temp
         # file owned by root in /tmp if the install fails mid-way.
-        curl -fL --progress-bar "$URL" -o "$TMP_DEST"
-        verify_download "$TMP_DEST"
+        download_verified "$TMP_DEST"
         chmod +x "$TMP_DEST"
         xattr -c "$TMP_DEST" 2>/dev/null || true
         codesign --force --sign - "$TMP_DEST" 2>/dev/null || true

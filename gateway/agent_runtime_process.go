@@ -274,10 +274,10 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 		ctx = context.WithValue(ctx, sharedctx.OrderKey, sessionString(session, sessionOrderKey))
 	}
 	effort, effortFrom := ar.turnEffort(ctx, session, agentName, userMessage)
-	// A workflow task's model line may cap the reply (`max_tokens N`): under
-	// the model's own ceiling, never above it.
+	// A workflow task's model line may set the reply limit (`max_tokens N`),
+	// sent as asked (replyLimit).
 	if n, err := strconv.ParseInt(sessionString(session, sessionMaxTokensKey), 10, 64); err == nil && n > 0 {
-		ctx = withMaxOutputOverride(ctx, capped(maxOutputTokens(sessionModel(session)), n))
+		ctx = withMaxOutputOverride(ctx, replyLimit(maxOutputTokens(sessionModel(session)), n))
 	}
 	ctx = context.WithValue(ctx, sharedctx.EffortKey, effort)
 	reportRoute(ctx, sessionEffortUsed, effort)
