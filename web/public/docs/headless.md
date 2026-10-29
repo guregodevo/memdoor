@@ -133,7 +133,7 @@ you are done or the job's timeout ends it; the full step is on the
 [Remote control](/docs/remote) page. A runner's own address
 is no door for a phone, so the job keeps its gateway to localhost
 (`MEMDOOR_HOST: localhost` in the step's env) and the link goes through the
-memdoor.ai relay: an account with Pro signed in on the runner, the token in
+memdoor.ai relay: an account with the hosted gateway signed in on the runner, the token in
 `MEMDOOR_BILLING_TOKEN` (or in `~/.memdoor/billing-token` when `memdoor
 login` wrote it there).
 

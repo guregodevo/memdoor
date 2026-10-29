@@ -14,8 +14,13 @@ command: |
   else
     awk '/^## Possible duplicates/ { print; print "none"; skip = 1; next } /^## / { skip = 0 } !skip { print }' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   fi
+  # The labels line goes first, as `labels: a, b`, wherever and however the model wrote it
+  # ("1. **Labels:** `bug`"); with none, the triage keeps an empty one.
+  awk '!found { l = $0; gsub(/[*`_]/, "", l); sub(/^[ \t>#0-9.)-]+/, "", l)
+      if (tolower(substr(l, 1, 7)) == "labels:") { found = 1; first = "labels:" substr(l, 8); next } }
+    { rest[++n] = $0 }
+    END { print (found ? first : "labels:"); s = 1; while (s <= n && rest[s] ~ /^[ \t]*$/) s++; for (i = s; i <= n; i++) print rest[i] }' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   # A label the repository does not have is dropped from the first line.
-  head -1 "$f" | grep -q '^labels:' || { echo "first line is not the labels line" >&2; exit 1; }
   awk 'NR==1 { n=split($0, a, ":"); if (n>1) { m=split(a[2], ls, ","); for (i=1;i<=m;i++) { gsub(/^[ \t]+|[ \t]+$/, "", ls[i]); if (ls[i]!="") print ls[i] } } }' "$f" > "$r.asked"
   if [ -s "$r.asked" ]; then
     # Filter against the context step's label list: it exists even where gh does not.

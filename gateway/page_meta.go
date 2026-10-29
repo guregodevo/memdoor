@@ -30,9 +30,9 @@ var homeMeta = pageMeta{
 }
 
 var routeMetas = map[string]pageMeta{
-	"/pricing": {
-		Title:       "Pricing — Memdoor: the agent is free, Pro is $10 a month, Enterprise by invoice",
-		Description: "The coding agent, the decision model and workflows are free on your own provider key. Pro, $10 a month: remote control from your phone and workflows across machines. Enterprise: the same served for your company with full support.",
+	"/enterprise": {
+		Title:       "Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway",
+		Description: "Memdoor is Apache-2.0: the coding agent, workflows, the gateway and every door onto it. Self-host it for one person or a whole company, free, on your own provider key; Enterprise adds full support. The gateway hosted on memdoor.ai is $10 a month.",
 	},
 	"/features": {
 		Title:       "Features — Memdoor: workflows, judged reads, every coding-agent table stake",
@@ -184,7 +184,7 @@ func renderIndex(index []byte, m pageMeta) []byte {
 	s = reTwTitle.ReplaceAllString(s, "${1}"+t+"${2}")
 	s = reTwDesc.ReplaceAllString(s, "${1}"+d+"${2}")
 	s = reCanonical.ReplaceAllString(s, "${1}"+url+"${2}")
-	s = reFallback.ReplaceAllString(s, "${1}<h1>"+t+"</h1><p>"+d+"</p><p><a href=\"/\">Memdoor</a> · <a href=\"/docs/getting-started\">Docs</a> · <a href=\"/pricing\">Pricing</a></p>${2}")
+	s = reFallback.ReplaceAllString(s, "${1}<h1>"+t+"</h1><p>"+d+"</p><p><a href=\"/\">Memdoor</a> · <a href=\"/docs/getting-started\">Docs</a> · <a href=\"/enterprise\">Enterprise</a></p>${2}")
 	return []byte(s)
 }
 

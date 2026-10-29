@@ -2,8 +2,8 @@ import { useLocation } from 'react-router-dom';
 
 // TopupResultPage — where Stripe sends the browser after Checkout.
 //
-// Two flows land here. The subscription (the pricing page's button →
-// /billing/v1/checkout/seat, or `memdoor account subscribe`) returns to
+// Two flows land here. The subscription (`memdoor account subscribe` →
+// /billing/v1/checkout/seat) returns to
 // /pro/success or /pro/cancelled; the older prepaid top-up returns to
 // /topup/success or /topup/cancelled and is kept so a link already in flight
 // still resolves. Both need a route of their own: without one the path fell
@@ -64,8 +64,8 @@ export function TopupResultPage() {
           </p>
         )}
         {seat && cancelled && (
-          <a href="/pricing" className="text-sm text-neutral-600 underline underline-offset-4">
-            Back to pricing
+          <a href="/enterprise" className="text-sm text-neutral-600 underline underline-offset-4">
+            Back
           </a>
         )}
         <p className="mt-8 text-xs text-neutral-400">
@@ -73,8 +73,8 @@ export function TopupResultPage() {
             Getting started
           </a>
           <span className="px-2">·</span>
-          <a href="/pricing" className="text-neutral-600 underline underline-offset-4">
-            What the subscription includes
+          <a href="/enterprise" className="text-neutral-600 underline underline-offset-4">
+            What memdoor.ai hosts
           </a>
         </p>
       </div>

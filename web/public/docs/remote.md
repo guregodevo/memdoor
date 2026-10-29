@@ -13,7 +13,7 @@ phone on the same Wi-Fi, VPN or Tailscale opens the conversation there with
 no account and no plan. The same holds for [a box that stays
 on](/docs/gateway). Only a gateway kept to localhost (`MEMDOOR_HOST=localhost`)
 goes through the memdoor.ai relay; `/remote` says so, and that relay is
-part of Pro. A relay of your own at `MEMDOOR_REMOTE_URL` is yours and free.
+part of the hosted gateway. A relay of your own at `MEMDOOR_REMOTE_URL` is yours and free.
 
 ## Turn it on
 
@@ -91,7 +91,7 @@ gateway ──http──▶ viewer              gateway ──dials out──▶
 On its own address the gateway serves the page and sends every frame to
 every viewer itself: right on a LAN, a VPN or Tailscale, or a VPS; a laptop
 behind NAT cannot be reached. Kept to localhost, the gateway dials out to
-memdoor.ai once with your account token (the Pro relay), each viewer dials
+memdoor.ai once with your account token (the hosted gateway's relay), each viewer dials
 memdoor.ai with a proof from the link, and the relay forwards sealed frames it
 cannot read, fanning them out there, so the gateway sends each frame once.
 That is the path for an audience anywhere.
@@ -169,7 +169,7 @@ and `wait`s on it at the end, so the job stays, the link open, until you are
 done or the job's timeout ends it. A runner's own address is no door for a
 phone, so the job keeps its gateway to localhost (`MEMDOOR_HOST: localhost`)
 and the link goes through the memdoor.ai relay: the runner needs the
-account's token in `MEMDOOR_BILLING_TOKEN`, a Pro seat; on your own machine
+account's token in `MEMDOOR_BILLING_TOKEN`, with the hosted gateway; on your own machine
 `memdoor login` keeps it in `~/.memdoor/billing-token`.
 
 ```yaml

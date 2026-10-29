@@ -49,7 +49,7 @@ export const WORKFLOWS: { feature: string; detail: string }[] = [
   { feature: 'A gate', detail: 'the run waits for your approval; a comment sends the step back' },
   { feature: 'Resume', detail: 'a failed run starts again at the failed step' },
   { feature: 'Schedules', detail: 'memdoor cron add --workflow <name>, on your local cron, free' },
-  { feature: 'State on memdoor.ai (Pro)', detail: 'a workflow can wait on what another produced, from any machine' },
+  { feature: 'State on memdoor.ai (hosted gateway)', detail: 'a workflow can wait on what another produced, from any machine' },
 ];
 
 export const ONLY: { feature: string; detail: string }[] = [
@@ -141,8 +141,8 @@ export function FeaturesPage() {
             <a href="/docs/remote" className="text-neutral-300 underline underline-offset-4 hover:text-white">
               How it works
             </a>
-            <a href="/pricing" className="text-neutral-500 underline underline-offset-4 hover:text-white">
-              Pro, $10 a month
+            <a href="/enterprise" className="text-neutral-500 underline underline-offset-4 hover:text-white">
+              Self-host it, or the hosted gateway
             </a>
           </div>
         </div>

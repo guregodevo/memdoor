@@ -13,7 +13,7 @@ prompt: |
   <one-line title, imperative, no prefix>
 
   **What**
-  Two or three sentences: what changes, for a reviewer reading the diff.
+  One bullet per file in the list of changed files below, in that order: `- path — what changes in it`, one sentence, for a reviewer reading the diff. A one-line change gets its bullet as much as a long one.
 
   **Why**
   Why the change is made, from the commit messages and the code. When neither states a reason, write "not stated" — do not invent one.
@@ -25,6 +25,12 @@ prompt: |
   What could break, and who hits it; when nothing is likely to, write "low" and say why.
 
   Plain and short: no marketing words, no restating the diff line by line. Everything you need is in the prompt; do not refer to files.
+
+  The changed files, with their added and removed line counts:
+
+  ```
+  {{ file (printf ".memdoor/runs/pr-description-%s.stat" .partition) }}
+  ```
 
   ```diff
   {{ file (printf ".memdoor/runs/pr-description-%s.diff" .partition) }}

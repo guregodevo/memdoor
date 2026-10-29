@@ -115,14 +115,15 @@ with your local cron (`memdoor cron add --workflow <name>`).
 
 **Every door onto your own gateway is free:** the window on a laptop, ssh,
 your phone on the gateway's own address, and runs with the laptop closed
-on [a box that stays on](/docs/gateway). **Pro is $10 a month** for what
-memdoor.ai hosts for you: the relay for a gateway kept to localhost, and
-every workflow run's state kept on memdoor.ai, one table per workspace, so
-a workflow can wait on what another produced, from any machine; next, a box
-that memdoor.ai runs for you. The models always run
-on your own key — a seat never supplies one. Subscribe at
-[memdoor.ai/pricing](https://memdoor.ai/pricing), or run `memdoor account
-subscribe`; cancel any month.
+on [a box that stays on](/docs/gateway). All of it is open source
+(Apache-2.0), and a company self-hosts it the same way, for free;
+Enterprise adds full support, by invoice. **The
+hosted gateway** is the one paid thing: memdoor.ai relays your phone to a
+gateway kept to localhost and keeps every workflow run's state, one table
+per workspace, so a workflow can wait on what another produced, from any
+machine; next, a box that memdoor.ai runs for you. It is $10 a month,
+cancel any month. The models always run on your own key — memdoor.ai never
+supplies one. See [memdoor.ai/enterprise](https://memdoor.ai/enterprise).
 
 ## Today
 

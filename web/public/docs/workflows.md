@@ -6,7 +6,7 @@ in parallel where nothing stands in the way, drawn in your window as it
 goes. Workflows are free on your machine, and so is running one on a
 schedule with your local cron: `memdoor cron add --id nightly --schedule
 "0 7 * * *" --workflow <name> --partition today` runs it in this project
-every morning, once a day. Pro keeps every run's state on memdoor.ai, one
+every morning, once a day. The hosted gateway keeps every run's state on memdoor.ai, one
 table per workspace: every project and every person on the workspace share
 it, so a workflow can wait on a task another workflow produced, from any
 machine. Runs with your laptop closed: `memdoor gateway install` on [a box

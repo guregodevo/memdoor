@@ -19,8 +19,8 @@ places, chosen by configuration, never mixed:
 | A provider you connected | `memdoor connect`, kept in `~/.memdoor/providers.json` | That provider | Used when no key above is set, or when you pin one of its models. A host that lists apps (Vercel AI Gateway, LLM Gateway, EUrouter, Requesty) gets the same app headers as OpenRouter, Google its `x-goog-api-client`; the rest see only the User-Agent (`pkg/attribution`). |
 | Your ChatGPT plan | `memdoor connect chatgpt` (Sign in with ChatGPT, in the browser; the tokens kept encrypted in `~/.memdoor/chatgpt-login.json`) | OpenAI's Responses API, with your plan's bearer token, `store: false` | Used like a connected provider. No API key, no client secret; `memdoor connect --remove chatgpt` signs out. |
 
-A Pro seat changes nothing about where prompts go: it never supplies a model
-key. No memdoor.ai call carries a prompt in the clear (the hosts table below
+The hosted gateway changes nothing about whose key a prompt is sent on: it never
+supplies a model key. No memdoor.ai call carries a prompt in the clear (the hosts table below
 lists them; the remote-control relay is sealed end to end).
 
 ## Every host the binary names
@@ -40,7 +40,7 @@ lists them; the remote-control relay is sealed end to end).
 | `api.groq.com` | Groq's inference API (OpenAI-compatible) | Company-key mode with `GROQ_API_KEY`; `GROQ_BASE_URL` replaces it |
 | `api.deepseek.com` | DeepSeek's API (OpenAI-compatible) | Company-key mode with `DEEPSEEK_API_KEY`; `DEEPSEEK_BASE_URL` replaces it |
 | `openrouter.ai` | Chat on your own OpenRouter key (each request names the app — `X-Title: Memdoor`, `HTTP-Referer: https://memdoor.ai` — for OpenRouter's apps page; never the person. Every request to every provider carries `User-Agent: Memdoor/<version> (+https://memdoor.ai)`; which other hosts read an app header is `pkg/attribution`, researched in docs/features/PROVIDERS.md); its model catalogue (`/model`, `/api/models`); web search; the decisions endpoint on a decision key | Only with `OPEN_ROUTER_API_KEY` set and no company key. Never in company-key mode (`byok_catalog.go` refuses without a key) |
-| `memdoor.ai` | Billing and sign-in (`memdoor login`, `memdoor account`), the `/remote` relay for a gateway kept to localhost (sealed end to end), the hosted workflow state (`/state`, Pro: a run's task names, statuses and outputs' names, never your code), `/share` links, the upgrade check (`memdoor upgrade`), opt-in telemetry | Sign-in, account status, `/remote`, `/share`, `memdoor upgrade`: only when you run them. Telemetry: only with `MEMDOOR_TELEMETRY_ENABLED=1` (default off). Also appears as e-mail addresses (`hello@`, `noreply@`) in the seat-request and billing code that runs on memdoor.ai itself |
+| `memdoor.ai` | Billing and sign-in (`memdoor login`, `memdoor account`), the `/remote` relay for a gateway kept to localhost (sealed end to end), the hosted workflow state (`/state`, hosted gateway: a run's task names, statuses and outputs' names, never your code), `/share` links, the upgrade check (`memdoor upgrade`), opt-in telemetry | Sign-in, account status, `/remote`, `/share`, `memdoor upgrade`: only when you run them. Telemetry: only with `MEMDOOR_TELEMETRY_ENABLED=1` (default off). Also appears as e-mail addresses (`hello@`, `noreply@`) in the seat-request and billing code that runs on memdoor.ai itself |
 | `api.typesafe.ai` | The decision model, direct | Only with `MEMDOOR_SYSTEMONE_API_KEY` set on the gateway (self-service decisions) |
 | `models.dev` | The public model catalogue (context window and output cap per model), read when a provider's own list states no window | At most once a day, outside company-key mode only; kept in `~/.memdoor/models-dev.json`, which a company-key gateway reads without contacting the host. Carries no prompt |
 | `registry.modelcontextprotocol.io` | The MCP server registry | Only `/mcp search` |

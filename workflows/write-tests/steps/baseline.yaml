@@ -7,6 +7,8 @@ type: command
 command: |
   r=.memdoor/runs/write-tests-{{.partition}}
   if ! sh "$r.sh" > "$r.baseline" 2>&1; then
+    # A fresh runner's module downloads are not the failure.
+    grep -v '^go: downloading ' "$r.baseline" > "$r.baseline.tmp" && mv "$r.baseline.tmp" "$r.baseline"
     {
       echo "## write-tests"
       echo

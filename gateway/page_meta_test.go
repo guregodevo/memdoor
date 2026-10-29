@@ -21,19 +21,19 @@ func TestEveryRouteCarriesItsOwnHead(t *testing.T) {
 	if home != sampleIndex {
 		t.Fatal("the home is served as built")
 	}
-	pricing := string(r.For("/pricing"))
+	enterprise := string(r.For("/enterprise"))
 	for _, want := range []string{
-		"<title>Pricing — Memdoor: the agent is free, Pro is $10 a month, Enterprise by invoice</title>",
-		`<link rel="canonical" href="https://memdoor.ai/pricing" />`,
-		`<meta property="og:url" content="https://memdoor.ai/pricing" />`,
-		"<h1>Pricing — Memdoor",
+		"<title>Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway</title>",
+		`<link rel="canonical" href="https://memdoor.ai/enterprise" />`,
+		`<meta property="og:url" content="https://memdoor.ai/enterprise" />`,
+		"<h1>Enterprise — Memdoor",
 	} {
-		if !strings.Contains(pricing, want) {
-			t.Fatalf("/pricing lacks %q", want)
+		if !strings.Contains(enterprise, want) {
+			t.Fatalf("/enterprise lacks %q", want)
 		}
 	}
-	if strings.Contains(pricing, "home text") || strings.Contains(pricing, "Home description") {
-		t.Fatal("/pricing still carries the home's text")
+	if strings.Contains(enterprise, "home text") || strings.Contains(enterprise, "Home description") {
+		t.Fatal("/enterprise still carries the home's text")
 	}
 	doc := string(r.For("/docs/workflows/"))
 	if !strings.Contains(doc, "<title>Workflows — Memdoor docs</title>") || !strings.Contains(doc, `content="A workflow is a graph of tasks. Each one has a target."`) {
@@ -56,7 +56,7 @@ func TestEveryRouteCarriesItsOwnHead(t *testing.T) {
 	if string(r.For("/no-such-route")) != sampleIndex {
 		t.Fatal("an unknown route gets the home head (the catch-all answers 404 for it anyway)")
 	}
-	if &r.For("/pricing")[0] != &r.For("/pricing")[0] {
+	if &r.For("/enterprise")[0] != &r.For("/enterprise")[0] {
 		t.Fatal("a route is rendered once and kept")
 	}
 }

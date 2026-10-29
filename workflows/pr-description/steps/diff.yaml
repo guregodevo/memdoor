@@ -21,6 +21,8 @@ command: |
     else base=$(git hash-object -t tree /dev/null); what="first commit"; fi
   fi
   git diff "$base" > "$out"
+  # The files it touches, each with its line counts: what a one-call description must cover.
+  git diff --stat=200 "$base" | sed '$d' > .memdoor/runs/pr-description-{{.partition}}.stat
   # The commits step needs the same base: the commit messages on the change's side.
   git rev-parse "$base" > .memdoor/runs/pr-description-{{.partition}}.base
   echo "describing the $what: $(git diff --shortstat "$base" | sed 's/^ //')"

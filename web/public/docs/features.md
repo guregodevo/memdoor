@@ -62,7 +62,7 @@ screen and your keystrokes are
 end-to-end encrypted with a key that is only in the link, so the relay, your
 gateway or memdoor.ai, forwards what it cannot read. `/remote off` revokes the link.
 On your own gateway it is free; only the memdoor.ai relay, for a gateway
-kept to localhost, is Pro.
+kept to localhost, is part of the hosted gateway.
 
 → **[Remote control](/docs/remote)**
 

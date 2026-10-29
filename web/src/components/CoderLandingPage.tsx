@@ -16,15 +16,16 @@ import { DemoGallery } from './DemoGallery';
 // line outsiders repeated back buried in the second section). The hero says
 // the workflow rule; the numbers section says the saving with its caveat.
 // Remote control, MCP, the model picker and scheduled checks are on
-// /features and /pricing; remote control is free on your own daemon since
-// 2026-10-23, the memdoor.ai relay (a daemon kept to localhost) is Pro.
+// /features and /enterprise; remote control is free on your own daemon since
+// 2026-10-23, the memdoor.ai relay is part of the hosted gateway.
 //
 // Copy pass 2026-10-05 (Greg: "review landing ai slop"): each fact once, plain
 // declaratives, no "X, not Y" refrains, no list-of-three cadence.
 //
-// The Pro card used to ask for an email, because Stripe held no $10 price. It
-// holds one from 2026-09-27, so the card sends people to /pricing, where the
-// checkout is (Greg: "a proper pricing page", "No email to hello").
+// No price section any more (Greg, 2026-10-29: "100% opensource", "the landing
+// page Pricing is misleading. It can make people scared"): all of it is free,
+// self-hosted is Enterprise, and only the gateway memdoor.ai hosts is paid, the
+// existing $10 a month (checkout on /enterprise).
 
 const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 
@@ -62,7 +63,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Is it free?',
-    a: 'The agent, the decision model, workflows and every door onto your daemon, your phone included, are free on your own key. Pro, $10 a month, is what memdoor.ai hosts: workflow state across machines and the relay; it never buys inference.',
+    a: 'Yes, and open source (Apache-2.0): the agent, workflows and every door onto your gateway, your phone included, on your own key, on your laptop or your company\'s machines. Only the gateway memdoor.ai hosts for you is paid, $10 a month; it never buys inference.',
   },
   {
     q: 'Can I use my ChatGPT subscription?',
@@ -126,10 +127,10 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
           Workflows
         </a>
         <a
-          href="/pricing"
+          href="/enterprise"
           className={dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900'}
         >
-          Pricing
+          Enterprise
         </a>
         <a
           href="/docs/getting-started"
@@ -318,42 +319,38 @@ export function CoderLandingPage() {
           </div>
         </section>
 
-        {/* PRICE — a solo dev's arithmetic, stated plainly. */}
+        {/* OPEN SOURCE — what it costs, without a price table. */}
         <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
-          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">What it costs</div>
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">Open source</div>
           <h2 className="mx-auto mb-10 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-            Free on your key. Pro for what runs on memdoor.ai.
+            Free to run, on your machine or your company&rsquo;s.
           </h2>
           <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-2">
-            <div className="rounded-2xl border border-neutral-200 bg-white p-7">
-              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Free</div>
-              <div className="mb-4 text-3xl font-bold text-neutral-900">Your own key</div>
+            <div className="rounded-2xl border-2 border-neutral-900 bg-white p-7">
+              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Open source</div>
+              <div className="mb-4 text-3xl font-bold text-neutral-900">Free, Apache-2.0</div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
-                The agent, the decision model and workflows, on your own account at OpenRouter, OpenAI, Gemini,
-                DeepSeek, Baseten, Groq, xAI or Anthropic. One daemon, every door, on your laptop or a box that
-                stays on. Memdoor adds nothing to the bill.
+                All of it: the agent, the decision model on your key, workflows, the gateway and every door onto it.
+                On your own account at OpenRouter, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or Anthropic, on
+                your laptop or a box that stays on. Memdoor adds nothing to the bill.
               </p>
               <InstallLine />
             </div>
-            <div className="rounded-2xl border-2 border-neutral-900 bg-white p-7">
-              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Pro</div>
+            <div className="rounded-2xl border border-neutral-200 bg-white p-7">
+              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Hosted gateway</div>
               <div className="mb-4 text-3xl font-bold text-neutral-900">
                 $10<span className="text-lg font-medium text-neutral-500"> / month</span>
               </div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
-                What memdoor.ai hosts: workflow state kept there so a workflow can wait on what another
-                produced, from any machine, and the relay for a daemon kept to localhost. Next: the daemon
-                run for you.
+                If you would rather not run the gateway yourself: memdoor.ai relays your phone to a laptop behind NAT
+                and keeps workflow state across machines. Still your key; cancel any month.
               </p>
               <a
-                href="/pricing"
-                className="inline-block rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-700"
+                href="/enterprise"
+                className="inline-block rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:border-neutral-900"
               >
                 Subscribe — $10 / month
               </a>
-              <p className="mt-3 text-xs text-neutral-500">
-                Cancel any month.
-              </p>
             </div>
           </div>
         </section>
@@ -421,8 +418,8 @@ export function CoderLandingPage() {
             Remote control
           </a>
           <span className="px-2">·</span>
-          <a href="/pricing" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
-            Pricing
+          <a href="/enterprise" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">
+            Enterprise
           </a>
           <span className="px-2">·</span>
           <a href="/docs/getting-started" className="text-neutral-600 underline underline-offset-4 hover:text-neutral-900">

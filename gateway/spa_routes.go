@@ -7,7 +7,7 @@ import "strings"
 // of as another copy of the home page.
 var spaRoutes = map[string]bool{
 	"/": true, "/devs": true, "/docs": true, "/download": true, "/features": true,
-	"/forgot-password": true, "/login": true, "/pricing": true, "/reset-password": true,
+	"/forgot-password": true, "/login": true, "/enterprise": true, "/reset-password": true,
 	"/setup": true, "/verify-email": true, "/welcome": true, "/workflows": true,
 	"/extension": true, "/extension/install": true, "/extension/connect": true,
 	"/compare/claude-code": true, "/compare/codex-cli": true, "/compare/gemini-cli": true, "/compare/aider": true, "/compare/pi": true,
@@ -22,6 +22,7 @@ var legacyRedirects = map[string]string{
 	"/how-it-works":                  "/docs/how-it-works",
 	"/getting-started":               "/docs/getting-started",
 	"/docs/creators/getting-started": "/docs/getting-started",
+	"/pricing":                       "/enterprise",
 }
 
 func isSPARoute(p string) bool {

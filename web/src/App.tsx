@@ -12,7 +12,7 @@ import { ForgotPasswordPage } from './components/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { CoderLandingPage } from './components/CoderLandingPage';
 import { WorkflowCatalogPage } from './components/WorkflowCatalogPage';
-import { PricingPage } from './components/PricingPage';
+import { EnterprisePage } from './components/EnterprisePage';
 import { FeaturesPage } from './components/FeaturesPage';
 import { ComparePage } from './components/ComparePage';
 import { DocsPage } from './components/DocsPage';
@@ -92,11 +92,11 @@ function App() {
   if (location.pathname === '/devs') {
     return <CoderLandingPage />;
   }
-  // /pricing is a page again (Greg, 2026-09-27: "a proper pricing page"). It
-  // was the landing page while Stripe held no $10 price and the only Pro path
-  // was an email to hello@; Stripe holds one now, so the page takes money.
-  if (location.pathname === '/pricing') {
-    return <PricingPage />;
+  // /enterprise is what /pricing was (Greg, 2026-10-29: all of it open source,
+  // self-hosted as enterprise, the hosted gateway at the existing $10 a month). The gateway redirects
+  // /pricing; a client-side link to it still lands here.
+  if (location.pathname === '/enterprise' || location.pathname === '/pricing') {
+    return <EnterprisePage />;
   }
   if (location.pathname === '/features') {
     return <FeaturesPage />;
@@ -113,7 +113,7 @@ function App() {
   // this is an invite/register flow. The landing is the canonical home.
   // THE PITCH IS THE CODING AGENT (2026-09-27 epoch, Greg: "the landing page
   // should be targetting solo dev … they bring their own open router key,
-  // memdoor cuts the bill"). The root serves it, and so does /devs; /pricing is its own page.
+  // memdoor cuts the bill"). The root serves it, and so does /devs; /enterprise is its own page.
   const searchParams_root = new URLSearchParams(location.search);
   if (location.pathname === '/' && !searchParams_root.get('register') && !searchParams_root.get('invite')) {
     return <CoderLandingPage />;

@@ -553,7 +553,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	staticFS := newGzipStatic(distFS, http.FileServer(http.FS(distFS)))
 
 	// SPA routes - serve the React app's index.html for client-side routing
-	for _, route := range []string{"/login", "/verify-email", "/forgot-password", "/reset-password", "/pricing", "/extension", "/extension/install", "/extension/connect"} {
+	for _, route := range []string{"/login", "/verify-email", "/forgot-password", "/reset-password", "/enterprise", "/extension", "/extension/install", "/extension/connect"} {
 		http.HandleFunc(route, serveIndex)
 	}
 
