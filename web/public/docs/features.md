@@ -78,6 +78,16 @@ from there. The engine is mario, an open DAG runner.
 
 → **[Workflows](/docs/workflows)**
 
+## In CI
+
+One step in a GitHub job reviews every pull request, fixes a failing suite or
+writes release notes, and the job passes or fails on a check. The model runs on
+your key, or with no key on a model inside the runner: a free first pass that
+catches the obvious, beside an agent on your key that runs the code to prove
+what it finds.
+
+→ **[In CI](/docs/ci)**
+
 ## Sessions
 
 Sessions persist, compact when they grow, and rewind when a turn derails.

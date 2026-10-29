@@ -28,6 +28,7 @@ cd your-project && memdoor
 - **[Remote control](/docs/remote)** — `/remote`: the same terminal, on your phone.
 - **[In your editor](/docs/editor)** — the coder in VS Code, Zed or JetBrains (`memdoor acp`).
 - **[Headless, then attached](/docs/headless)** — scheduled checks, workflows from CI, editor sessions: every run is a conversation you can come back into.
+- **[In CI](/docs/ci)** — a review on every pull request with `guregodevo/memdoor-action`, on your key or on a model inside the runner.
 - **[Boundaries](/docs/boundaries)** — what the agent may touch: writes in the project, `memdoor guards` rules, approval mode, gates.
 - **[Models](/docs/models)** — picking and pinning a model.
 - **[Agents and skills](/docs/agents-and-skills)** — who does the work, what tools they hold, how to extend them.

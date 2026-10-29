@@ -114,27 +114,15 @@ failing test.
 
 ## In CI
 
-The job is the installer, the key, and the command, in one step so the
-gateway the first command starts is still there for the next. On GitHub:
+On GitHub, one step: `uses: guregodevo/memdoor-action@v1` with a workflow
+(`pr-review`, `fix-tests`, `release-notes` or your own) and your key, or a
+model inside the runner. The run's outcome is the job's. The whole page is
+**[In CI](/docs/ci)**; elsewhere, the same run is three shell lines:
 
-```yaml
-jobs:
-  memdoor:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-go@v5          # whatever the project's checks need
-        with: { go-version: stable }
-      - name: Review the change and run the project's check workflow
-        env:
-          OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
-        run: |
-          curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
-          export PATH="$HOME/.local/bin:$PATH"
-          git diff origin/${{ github.base_ref }}...HEAD \
-            | memdoor run "review this diff; one finding per line; change nothing"
-          memdoor workflow run check --wait
+```bash
+curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
+export PATH="$HOME/.local/bin:$PATH"
+memdoor workflow run pr-review --wait --stop-at-gate
 ```
 
 To finish a CI run from your phone, the job starts its gateway itself
@@ -148,14 +136,6 @@ is no door for a phone, so the job keeps its gateway to localhost
 memdoor.ai relay: an account with Pro signed in on the runner, the token in
 `MEMDOOR_BILLING_TOKEN` (or in `~/.memdoor/billing-token` when `memdoor
 login` wrote it there).
-
-The step fails when the review's last check fails (exit 2) or the workflow
-run does, which is the point: the run's outcome is the job's. `?ci=1` keeps
-the install out of the download count. The receipt behind this job is the
-walk above and the same three commands on a home that had never seen
-Memdoor (set up, answered, exit codes as shown); it has not been run on
-GitHub's own runners yet. `memdoor run --json` piped into `jq` turns the
-review into an annotation if you want one.
 
 ## Coming back in
 
