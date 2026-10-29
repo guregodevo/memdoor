@@ -7,9 +7,10 @@ command: |
   r=.memdoor/runs/write-tests-{{.partition}}
   test_re='(_test\.go|(^|/)test_[^/]*\.py|_test\.py|\.(test|spec)\.[cm]?[jt]sx?|(^|/)(tests?|__tests__|spec)/.*)$'
   : > "$r.ctx"
-  # The new file's path, beside the first changed source file: the call is
-  # not trusted to name one (it copied the prompt's example path).
-  first=$(sed -n 's|^+++ b/||p' "$r.diff" | grep -vE "$test_re" | while read -r f; do [ -f "$f" ] && { echo "$f"; break; }; done)
+  # The new file's path, beside the first changed source file in a language
+  # this call writes tests for (a pull request's first file may be its CI
+  # YAML): the call is not trusted to name one (it copied the prompt's example path).
+  first=$(sed -n 's|^+++ b/||p' "$r.diff" | grep -vE "$test_re" | grep -E '\.(go|py|tsx?|jsx?|mjs|cjs)$' | while read -r f; do [ -f "$f" ] && { echo "$f"; break; }; done)
   case "$first" in
     *.go) p="${first%.go}_change_test.go" ;;
     *.py) p="$(dirname "$first")/test_$(basename "${first%.py}")_change.py" ;;
