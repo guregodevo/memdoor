@@ -91,7 +91,6 @@ const docsStructure: DocEntry[] = [
       { title: 'MCP servers', path: 'mcp' },
       { title: 'Scheduled checks', path: 'cron' },
       { title: 'Workflows', path: 'workflows' },
-      { title: 'Team-solve results', path: 'team-solve-results' },
       { title: 'No babysitting', path: 'no-babysitting' },
       { title: 'Boundaries', path: 'boundaries' },
     ],

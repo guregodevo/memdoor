@@ -127,5 +127,5 @@ problems, one pass:
 
 The workflow, the prompts, every run's ledger, the meter rows of every call, a chart and
 the lessons live in [memdoor-demos](https://github.com/guregodevo/memdoor-demos); the
-summary page is [memdoor.ai/docs/team-solve-results](https://memdoor.ai/docs/team-solve-results).
+summary is on the [workflows page](https://memdoor.ai/docs/workflows#the-paper-s-own-harness-from-one-prompt).
 The runner rows are in [`bench/results/gvs5h-stress.tsv`](bench/results/gvs5h-stress.tsv).
