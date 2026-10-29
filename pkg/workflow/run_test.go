@@ -13,7 +13,7 @@ import (
 	"github.com/guregodevo/mario/tasks"
 )
 
-// writeWorkflow lays out <dir>/<name>/steps/<task>.yaml the way mario reads it.
+// writeWorkflow lays out <dir>/<name>/steps/<task>.yaml, one file per task, the way mario reads it.
 func writeWorkflow(t *testing.T, root, name string, files map[string]string) string {
 	t.Helper()
 	dir := filepath.Join(root, name, "steps")
