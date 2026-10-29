@@ -73,7 +73,7 @@ a 3,000-line Go project, each reviewed both ways on `ubuntu-latest`, twice
 | Review | 45–90 s | 35–60 s |
 | Job | 2–3 min, most of it the model's first download | about 1 min |
 
-The local model catches bugs and also files opinions as P0s, so since v1.730.0
+The local model catches bugs and also files opinions as P0s, so since v1.731.0
 its P0s are advisory: they are in the review, and the job does not fail on
 them (with a key, a P0 still fails the check). Read a local P0 before you
 believe it. Since v1.714.0 each of its P0s gets a second look on
