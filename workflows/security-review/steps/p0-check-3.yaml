@@ -1,0 +1,23 @@
+type: llm
+model: thinking off
+# The same question as p0-check-1, on the lean review's P0 number 3.
+when: test -s .memdoor/runs/security-review-{{.partition}}.p0-3
+prompt: |
+  Here is a code change. Lines starting with - are the code before, lines starting with + the code after.
+
+  ```diff
+  {{ file (printf ".memdoor/runs/security-review-%s.diff" .partition) }}
+  ```
+
+  A security reviewer says:
+  {{ file (printf ".memdoor/runs/security-review-%s.p0-3" .partition) }}
+
+  Does the code after the change let someone read, write or run something they were not allowed to before the change?
+
+  Answer with one word: YES or NO.
+requires:
+  - table_pattern: p0-list
+target:
+  file: .memdoor/runs/security-review-{{.partition}}.p0check-3
+timeout: 20m
+max_retries: 0

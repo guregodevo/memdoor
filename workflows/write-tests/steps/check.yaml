@@ -29,16 +29,21 @@ command: |
       { git ls-files --others --exclude-standard | grep -v '^\.memdoor/'; git diff --name-only; } | sed 's/.*/- `&`/'
       echo; echo '```diff'; git diff; git ls-files --others --exclude-standard | grep -v '^\.memdoor/' | xargs -I{} git diff --no-index /dev/null {} 2>/dev/null; echo '```'
     else
-      echo "No test was kept: the tests the local model wrote did not pass, and were removed (a first pass on a small model; with a key the agent writes and runs them until they pass)."
+      if [ -s "$r.landed" ]; then
+        echo "No test was kept: the tests the local model wrote did not pass, and were removed (a first pass on a small model; with a key the agent writes and runs them until they pass)."
+      else
+        echo "No test was written: the local model's answer held no test file (a first pass on a small model; with a key the agent writes and runs them until they pass)."
+      fi
     fi
     echo; echo "### Checked"; echo; echo '```'; tail -15 "$r.check"; echo '```'
   } > "$r.md"
   if [ -z "$ok" ]; then
     tail -15 "$r.check" >&2
-    # The local model's tests failing is its miss, not the change's: removed,
-    # reported, and the job stays green. On a key the agent's step would not
-    # have finished with failing tests unless it wrote a finding (.found).
-    [ -s "$r.landed" ] && exit 0
+    # The local model's tests failing, or no test from it at all, is its miss,
+    # not the change's: removed, reported, and the job stays green. On a key the
+    # agent's step would not have finished with failing tests unless it wrote a
+    # finding (.found).
+    [ -n "${MEMDOOR_LEAN:-}" ] && exit 0
     exit 1
   fi
   echo "tests written and passing"

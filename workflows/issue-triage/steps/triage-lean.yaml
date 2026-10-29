@@ -18,13 +18,21 @@ prompt: |
 
   {{ file (printf ".memdoor/runs/issue-triage-%s.open" .partition) }}
 
-  Answer with these five parts in this order, as plain Markdown (no code fence around the answer):
+  Write the triage in exactly this Markdown shape, and nothing else (no code fence around it):
 
-  1. A first line that starts with `labels:` followed by the names of the labels above that fit, comma-separated; a name not in the list above is never used, and when none fits the line is just `labels:`.
-  2. `## Kind`, then one word: bug, feature, question or docs.
-  3. `## Summary`, then two sentences: what the reporter says, and what they ask for.
-  4. `## Possible duplicates`, then a list of the open issues above whose title is about the same problem, each `- #number — why`; only numbers from the list above; when none is, the word `none`.
-  5. `## Missing`, then a list of what the report lacks to act on it (the version, steps to reproduce, logs); only what is really absent from the issue; when nothing is, the word `nothing`.
+  labels: <the names of the labels above that fit, comma-separated; a name not in the list above is never used; when none fits, nothing after the colon>
+
+  ## Kind
+  <one word: bug, feature, question or docs>
+
+  ## Summary
+  <two sentences: what the reporter says, and what they ask for>
+
+  ## Possible duplicates
+  <a list of the open issues above whose title is about the same problem, each `- #number — why`; only numbers from the list above; when none is, the word none>
+
+  ## Missing
+  <a list of what the report lacks to act on it (the version, steps to reproduce, logs); only what is really absent from the issue; when nothing is, the word nothing>
 requires:
   - table_pattern: context
 target:

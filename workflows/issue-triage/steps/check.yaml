@@ -6,6 +6,8 @@ command: |
   [ -f "$f" ] || { echo "no triage written"; exit 1; }
   # A small model fences its whole answer: drop the fence lines.
   grep -v '^```' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  # "2. ## Kind" (a small model numbers the parts it was given) is "## Kind".
+  sed -E 's/^[0-9]+[.)][[:space:]]*(##)/\1/' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   # A duplicate that is not an open issue is dropped (a small model invents #12).
   if grep -q '^#[0-9]' "$r.open"; then
     awk 'NR==FNR { split($1, a, " "); ok[a[1]] = 1; next }

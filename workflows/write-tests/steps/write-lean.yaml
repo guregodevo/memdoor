@@ -14,7 +14,7 @@ prompt: |
 
   {{ file (printf ".memdoor/runs/write-tests-%s.ctx" .partition) }}
 
-  Write ONE NEW test file, `{{ file (printf ".memdoor/runs/write-tests-%s.newpath" .partition) }}`, in the same package as the changed code and in the project's style. Test each function the change touches: its normal case, one edge case, and the case the change is about. A test asserts what the code should do. Only what the code above shows exists; never call a function or a helper you cannot see.
+  Write ONE NEW test file, `{{ file (printf ".memdoor/runs/write-tests-%s.newpath" .partition) }}`, in the same package as the changed code and in the project's style. Test each function the change touches: its normal case, one edge case, and the case the change is about. A test asserts what the code should do. Only what the code above shows exists; never call a function or a helper you cannot see. The file holds test functions only (`func TestXxx(t *testing.T)`): the code under test is already in the package, so never copy or redeclare it.
 
   Answer with the whole file in one fenced code block, and nothing else.
 requires:

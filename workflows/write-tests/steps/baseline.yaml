@@ -33,6 +33,12 @@ command: |
     d=$(git diff --numstat -- "$f" | awk '{print $2}')
     [ "${d:-0}" = 0 ] || { echo "$f: $d existing line(s) changed or removed; an existing test is only added to" >&2; exit 1; }
   done
+  # A skipped test passes and tests nothing (an 8B wrote one that skips unless an env var is set).
+  for f in $new $changed; do
+    if printf '%s\n' $new | grep -qxF "$f"; then cat "$f"; else git diff -U0 -- "$f" | grep '^+'; fi \
+      | grep -qE 't\.Skip|pytest\.(mark\.)?skip|(it|test|describe)\.skip\(|(^|[^a-zA-Z])xit\(' \
+      && { echo "$f: a new test skips, and a skipped test tests nothing" >&2; exit 1; }
+  done
   sh "$r.sh"
   CHECK
   # goimports.py: a Go test file's imports, from the compiler's own messages
