@@ -111,22 +111,3 @@ with LiveCodeBench's own checker:
 These are thinking-off numbers, not the paper's setting (66.8% → 92.4% with
 128K tokens of thinking). The finding is the gap between the two arms. The
 bench README says why, and how to run it again for about four dollars.
-
-## The paper's setting: thinking on, the harness rebuilt from one prompt (2026-10-28)
-
-A second build reproduces GVS5H's own harness from a six-line prompt (five roles, the
-manager and worker alternating up to ten rounds, thinking high, a 128K output cap) and
-adds a brute-force stress test as the ground truth for "done". On the authors' first ten
-problems, one pass:
-
-| arm | solved of 10 |
-|---|---|
-| this harness, Qwen3.8-27B, one pass | 7, for $4.95 including every failed attempt |
-| the authors' 27B harness, five passes | 9 to 10 by pass |
-| the authors' 27B single call, five passes | 4 to 8 by pass |
-| Claude Fable 5 alone, five passes | 7 to 10 by pass |
-
-The workflow, the prompts, every run's ledger, the meter rows of every call, a chart and
-the lessons live in [memdoor-demos](https://github.com/guregodevo/memdoor-demos); the
-summary is on the [workflows page](https://memdoor.ai/docs/workflows#the-paper-s-own-harness-from-one-prompt).
-The runner rows are in [`bench/results/gvs5h-stress.tsv`](bench/results/gvs5h-stress.tsv).

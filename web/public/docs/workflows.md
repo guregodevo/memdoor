@@ -152,34 +152,6 @@ tables and the caveats are in the example's `bench/` folder:
 
 ![A team on a ledger: a planner, two ideators in parallel, a solver, the samples, a manager, a repair round, the final check](/team-solve.cast)
 
-### The paper's own harness, from one prompt
-
-The team above is our reading of the method. A second test took the paper's own harness
-at its own setting: thinking on, a 128K output cap, five roles, the manager and worker
-alternating up to ten rounds. A six-line prompt named the paper's file, the roles, the
-loop and the model line; the coder read the code and wrote one task per role per round,
-92 tasks and no orchestrator. A second prompt added a brute-force stress test as the
-ground truth for done: a reference and a random generator written once, a `command` task
-per round that diffs the two on 200 small inputs, gated with `when:` on that round's
-samples passing. On the authors' first ten problems, one pass:
-
-![The ten: ours beside the authors' harness and Fable 5 alone](/team-solve-the-ten.svg)
-
-| arm | solved of 10 |
-|---|---|
-| this harness, Qwen3.8-27B, one pass | 7, for $4.95 including every failed attempt |
-| the authors' 27B harness, five passes | 9 to 10 by pass |
-| the authors' 27B single call, five passes | 4 to 8 by pass |
-| Claude Fable 5 alone, five passes | 7 to 10 by pass |
-
-One miss is the model's: on abc400_g the stress test refused the solution in nine rounds
-of ten and the hidden grader agreed. The other is the harness's: on arc196_c the plan
-came back empty four times, then the brute-force reference crashed and the harness blamed
-the solution. Both are fixed in the workflow and the gateway. Our grades are raw with
-LiveCodeBench's grader, the authors' are patched; our calls went to whichever of four
-OpenRouter hosts answered first; ten problems and one pass against their hundred times
-five. The workflow, every run's ledger, the meter rows of every call and the lessons are
-in [memdoor-demos](https://github.com/guregodevo/memdoor-demos).
 
 Memdoor releases itself with a workflow, reviews its own commits with one,
 and tests its terminal with one — all three live in its repo:

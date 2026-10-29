@@ -7,12 +7,12 @@ export MEMDOOR_NO_BROWSER=1
 mkdir -p "$B/results" "$B/logs/$WF"; start=$(date +%s)
 rm -f "$d/solution.py" "$d/plan.md" "$d/notes.md" "$d/review.md" "$d/answer.md" "$d"/*.log "$d/test-status.txt" "$d/tasks.json" "$d"/status-*.txt "$d"/next-*.txt "$d"/nexts-*.txt "$d"/wstatus-*.txt "$d"/samples-*.txt "$d"/digest-*.md "$d"/*-reply*.md "$d"/ideation-reply.md
 [ -d "$d/.git" ] || git -C "$d" init -q
-(cd "$d" && "$MEMDOOR" --gateway "$GW" workflow run "$WFDIR") > "$B/logs/$WF/$id.log" 2>&1
+(cd "$d" && "$MEMDOOR" --gateway "$GW" workflow run --timeout "${RUN_TIMEOUT:-12h}" "$WFDIR") > "$B/logs/$WF/$id.log" 2>&1
 run=$(grep -oE "started as [^ ]+" "$B/logs/$WF/$id.log" | head -1 | awk '{print $3}')
 state=unknown
 if [ -n "$run" ]; then
   i=0
-  while [ $i -lt ${WAIT_STEPS:-1440} ]; do   # 5 s a step: 2 h by default (a ten-round harness with thinking on)
+  while [ $i -lt ${WAIT_STEPS:-8640} ]; do   # 5 s a step: 12 h by default (a ten-round harness whose calls may think for an hour)
     st=$(cd "$d" && "$MEMDOOR" --gateway "$GW" workflow status "$run" 2>&1)
     state=$(printf '%s' "$st" | head -1 | grep -oE "· (running|done|failed|stopped) ·" | tr -d '· ')
     [ "$state" = running ] || break

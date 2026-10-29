@@ -342,11 +342,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 	// Reasoning models (DeepSeek R1/V4) sometimes leave content empty
 	// and put the final answer in reasoning_content. Fall back to it so
 	// the agent has something to post.
-	// A streamed Qwen3.8-27B on a hard problem did it four times in one run:
-	// finish=stop, 20K+ tokens of reasoning, empty content, the code inside
-	// the reasoning (2026-10-29). GVS5H's harness falls back the same way. Not
-	// for a tool-call turn: its reasoning is not an answer.
-	if choice.Message.Content == "" && choice.Message.ReasoningContent != "" && len(choice.Message.ToolCalls) == 0 {
+	if choice.Message.Content == "" && choice.Message.ReasoningContent != "" {
 		choice.Message.Content = choice.Message.ReasoningContent
 	}
 	// Normalize cache-hit tokens across provider shapes: DeepSeek
