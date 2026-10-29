@@ -51,5 +51,8 @@ requires:
   - table_pattern: write
   - table_pattern: land
   - table_pattern: land2
+# The report is the run's result: the job summary shows it.
+target:
+  file: .memdoor/runs/write-tests-{{.partition}}.md
 timeout: 30m
 max_retries: 0
