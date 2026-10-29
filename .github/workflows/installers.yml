@@ -8,12 +8,13 @@ name: Installers (from memdoor.ai)
 permissions:
   contents: read
 
+# Not on push: the scripts and binaries checked are the ones memdoor.ai
+# serves, which change only when a deploy finishes, and a tag push (paths
+# filters never apply to tags) landed mid-deploy, after /dl/SHA256SUMS held
+# the new hashes but before nginx sent /dl/ to the new release: every
+# release failed on a checksum mismatch (2026-10-29). scripts/deploy.sh
+# dispatches this run once the site serves the new version.
 on:
-  push:
-    paths:
-      - scripts/install.sh
-      - scripts/install.ps1
-      - .github/workflows/installers.yml
   workflow_dispatch:
   schedule:
     - cron: '17 6 * * 1'   # Mondays, in case the site changed under the scripts
