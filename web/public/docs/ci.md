@@ -94,13 +94,54 @@ workflow once on a push to `main` and every pull request starts from it.
 
 ## The built-in workflows
 
-| `workflow:` | What it does | The job fails when |
-|---|---|---|
-| `pr-review` | Reviews the pull request against its base branch and writes **P0** / P1 / P2 findings. | there is a P0: something that must not merge |
-| `fix-tests` | Finds the test command (`go test`, `cargo test`, `npm test`, pytest, `make test`, or `MEMDOOR_TEST_COMMAND`), fixes the code until it passes, and leaves the fix in the working tree with a report. Skipped, no model called, when the tests already pass. | the tests still fail |
-| `release-notes` | Turns the commits since the previous tag into Added / Changed / Fixed. | — |
+Eight, none of them a file in your repository. Each runs on your key (an
+agent that reads the code around the change and runs it) or on a model
+inside the runner (one model call with everything it needs in the prompt).
 
-`fix-tests` and `release-notes` need a key. Notes on every tag:
+| `workflow:` | Run it on | What it does | The job fails when |
+|---|---|---|---|
+| `pr-review` | `pull_request` | Reviews the change against its base branch and writes **P0** / P1 / P2 findings. | a P0: something that must not merge |
+| `security-review` | `pull_request` | The same, for security only: secrets, injection, path traversal, missing authorization, unsafe deserialization, SSRF, weak crypto, an exploitable CI workflow. | an exploitable P0 |
+| `write-tests` | `pull_request` | Writes tests for the functions the change touches and leaves them in the working tree. Never edits an existing test. | an existing test already fails with the change, or a new test shows the change is wrong |
+| `pr-description` | `pull_request` | Writes the pull request's description: title, What, Why, How to test, Risk. | — |
+| `explain-failure` | `workflow_run` on failure | Reads the failed run's logs and the commit's diff: the Cause (step, file:line), Why, the Fix. | — |
+| `issue-triage` | `issues` opened | Labels the repository has, the kind, a summary, duplicates among open issues, what the reporter should add. Applies nothing. | — |
+| `fix-tests` | `push`, or by hand | Finds the test command, fixes the code until it passes, leaves the fix in the working tree. | the tests still fail |
+| `release-notes` | a tag push | The commits since the previous tag as Added / Changed / Fixed. | — |
+
+Measured on [llamafit](https://github.com/guregodevo/llamafit) fixtures, each
+both ways: with a key, `write-tests` on a change with a subtle bug failed the
+run with a test showing the bug, and `explain-failure` named the failing test,
+the changed line and the exact bytes missing. On Qwen3-8B, `explain-failure`,
+`pr-description`, `security-review`, `issue-triage` and `release-notes` wrote
+their reports in under a minute each; `fix-tests` fixed an off-by-one with a
+one-line edit. `write-tests` on the 8B kept no test in five tries: its tests
+compile but do not match how the code behaves, and a test that does not pass is
+removed, never kept. Writing tests that pass needs the agent, on a key.
+
+Explain a failed CI run (`gh` reads the logs on the job's own token):
+
+```yaml
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  explain:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: guregodevo/memdoor-action@v1
+        with:
+          workflow: explain-failure
+          openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+```
+
+Notes on every tag:
 
 ```yaml
 on:

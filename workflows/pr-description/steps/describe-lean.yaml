@@ -1,0 +1,44 @@
+type: llm
+model: thinking off
+# The description in one model call, for a slow model (MEMDOOR_LEAN: the
+# GitHub Action sets it with local-model, a model on the runner's CPU): the
+# diff and the commits in the prompt, no tools, no loop. The agent's describe
+# (describe.yaml) runs instead when it is not set.
+when: test -s .memdoor/runs/pr-description-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  You write a pull request description. The unified diff is below: lines starting with + are added, lines starting with - are removed. After it, the commit messages of the change.
+
+  Write the description in exactly this Markdown shape, and nothing else:
+
+  <one-line title, imperative, no prefix>
+
+  **What**
+  Two or three sentences: what changes, for a reviewer reading the diff.
+
+  **Why**
+  Why the change is made, from the commit messages and the code. When neither states a reason, write "not stated" — do not invent one.
+
+  **How to test**
+  The commands or steps someone can follow to see the change work, each on its own line.
+
+  **Risk**
+  What could break, and who hits it; when nothing is likely to, write "low" and say why.
+
+  Plain and short: no marketing words, no restating the diff line by line. Everything you need is in the prompt; do not refer to files.
+
+  ```diff
+  {{ file (printf ".memdoor/runs/pr-description-%s.diff" .partition) }}
+  ```
+
+  Commit messages:
+
+  ```
+  {{ file (printf ".memdoor/runs/pr-description-%s.commits" .partition) }}
+  ```
+requires:
+  - table_pattern: diff
+  - table_pattern: commits
+target:
+  file: .memdoor/runs/pr-description-{{.partition}}.md
+timeout: 30m
+max_retries: 0

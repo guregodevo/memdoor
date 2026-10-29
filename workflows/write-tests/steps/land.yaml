@@ -1,0 +1,18 @@
+type: command
+# The local model's answer to disk: its first fenced block, written to the
+# path lean-context chose (never an existing file).
+when: test -s .memdoor/runs/write-tests-{{.partition}}.answer && [ -n "${MEMDOOR_LEAN:-}" ]
+command: |
+  r=.memdoor/runs/write-tests-{{.partition}}
+  p=$(cat "$r.newpath")
+  [ -e "$p" ] && { echo "$p exists already" >&2; exit 1; }
+  awk '!inb && /^```/ { inb = 1; next } inb && /^```[[:space:]]*$/ { exit } inb { print }' "$r.answer" > "$p"
+  [ -s "$p" ] || { rm -f "$p"; echo "no fenced code block in the answer" >&2; exit 1; }
+  case "$p" in *.go) python3 "$r.goimports.py" "$p" ;; esac
+  echo "$p" > "$r.landed"
+  cp "$p" "$r.first"
+  echo "wrote $p ($(wc -l < "$p" | tr -d ' ') lines)"
+requires:
+  - table_pattern: write-lean
+timeout: 1m
+max_retries: 0

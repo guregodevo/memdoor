@@ -1,0 +1,28 @@
+type: agent
+when: test -s .memdoor/runs/pr-description-{{.partition}}.diff && [ -z "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  Write a pull request description for the change in front of you. The change is the unified diff in `.memdoor/runs/pr-description-{{.partition}}.diff`; read it to the end, then open the changed files and what they call so the description is about the code as it now is. The commit messages on the change's side are in `.memdoor/runs/pr-description-{{.partition}}.commits`; they say why the change was made when the code does not.
+  Write `.memdoor/runs/pr-description-{{.partition}}.md`, and nothing else, in exactly this shape:
+
+  <one-line title, imperative, no prefix>
+
+  **What**
+  Two or three sentences: what changes, for a reviewer reading the diff.
+
+  **Why**
+  Why the change is made, from the commit messages and the code. When neither states a reason, write "not stated" — do not invent one.
+
+  **How to test**
+  The commands or steps someone can follow to see the change work, each on its own line, taken from the project's build and test tools and the code itself.
+
+  **Risk**
+  What could break, and who hits it; when nothing is likely to, write "low" and say why.
+
+  Plain and short: no marketing words ("robust", "seamless", "powerful"), no restating the diff line by line. Change no file in the project: this step reads and writes the description only.
+requires:
+  - table_pattern: diff
+  - table_pattern: commits
+target:
+  file: .memdoor/runs/pr-description-{{.partition}}.md
+timeout: 20m
+max_retries: 1

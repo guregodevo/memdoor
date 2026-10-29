@@ -1,0 +1,25 @@
+type: agent
+agent: coder
+when: test -s .memdoor/runs/explain-failure-{{.partition}}.logs && [ -z "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  This project's run (outside GitHub: its test command; see `.memdoor/runs/explain-failure-{{.partition}}.logs` for the last log lines) failed. The commit's diff against its parent is in `.memdoor/runs/explain-failure-{{.partition}}.diff`, if it is not empty.
+  Read the log to the end; the error is near the end. Open the files the log points at, and what they call, so the cause is grounded in the code as it now is; verify what you can by running it, when the project's tools are here.
+  Then write `.memdoor/runs/explain-failure-{{.partition}}.md`, and nothing else, in this shape:
+
+  ## Cause
+  The failing step or check, and the file and line it points at, as `path/to/file.go:42`.
+
+  ## Why
+  Two or three sentences: what happened and why the change caused it (or why it is unrelated to the change).
+
+  ## Fix
+  The change to make, concrete: the file, the line, what to write or remove.
+
+  Change no file in the project: this step reads, runs and writes the explanation only.
+requires:
+  - table_pattern: context
+target:
+  file: .memdoor/runs/explain-failure-{{.partition}}.md
+budget: 200000
+timeout: 20m
+max_retries: 1

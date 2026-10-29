@@ -1,0 +1,14 @@
+type: command
+# The corrected file over the first one.
+when: test -s .memdoor/runs/write-tests-{{.partition}}.answer2 && [ -n "${MEMDOOR_LEAN:-}" ]
+command: |
+  r=.memdoor/runs/write-tests-{{.partition}}
+  p=$(cat "$r.newpath")
+  awk '!inb && /^```/ { inb = 1; next } inb && /^```[[:space:]]*$/ { exit } inb { print }' "$r.answer2" > "$p.new"
+  [ -s "$p.new" ] && mv "$p.new" "$p" || { rm -f "$p.new"; echo "no fenced code block in the retry" >&2; exit 0; }
+  case "$p" in *.go) python3 "$r.goimports.py" "$p" ;; esac
+  echo "rewrote $p"
+requires:
+  - table_pattern: retry-lean
+timeout: 1m
+max_retries: 0

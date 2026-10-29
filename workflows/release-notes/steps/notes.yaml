@@ -1,5 +1,6 @@
 type: agent
 agent: coder
+when: test -s .memdoor/runs/release-notes-{{.partition}}.log && [ -z "${MEMDOOR_LEAN:-}" ]
 prompt: |
   Write release notes from `.memdoor/runs/release-notes-{{.partition}}.log`: its first lines name the release, its date and the tag it follows; after them, every commit since, as `--- <hash> <subject>` and the message body. Read it to the end. For a commit whose message does not say what a person using the project would notice, read `git show <hash>`.
   Write `.memdoor/runs/release-notes-{{.partition}}.md`, and nothing else:

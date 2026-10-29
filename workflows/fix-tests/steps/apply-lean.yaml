@@ -1,0 +1,50 @@
+type: command
+# Writes the corrected files the answer holds. A test file is written only
+# when the answer says why (TEST-CHANGED).
+when: '[ -s .memdoor/runs/fix-tests-{{.partition}}.answer ]'
+command: |
+  set -e
+  r=.memdoor/runs/fix-tests-{{.partition}}
+  f="$r.answer"
+  if head -1 "$f" | grep -q '^CANNOT-FIX'; then cp "$f" "$r.unfixable"; exit 0; fi
+  tc=$(head -1 "$f" | grep '^TEST-CHANGED:' || true)
+  [ -n "$tc" ] && printf '%s\n' "$tc" > "$r.notes-lean.md"
+  # Each SEARCH must match the file exactly once; only tracked files; a test
+  # file only with a TEST-CHANGED reason. The files touched go to .written,
+  # which test-lean reverts when the tests still fail.
+  python3 - "$f" "$r.written" "$tc" <<'PY'
+  import re, subprocess, sys
+  answer, written, tc = sys.argv[1], sys.argv[2], sys.argv[3]
+  blocks = re.findall(r'^===EDIT (\S+)\n<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n?>>>>>>> REPLACE', open(answer).read(), re.M | re.S)
+  if not blocks:
+      print("no ===EDIT block in the answer: nothing applied", file=sys.stderr)
+      open(written, "w").write(""); sys.exit(0)
+  done = []
+  for path, old, new in blocks:
+      if subprocess.run(["git", "ls-files", "--error-unmatch", "--", path], capture_output=True).returncode:
+          print(f"refusing {path}: not a tracked file", file=sys.stderr); continue
+      if re.search(r"test|spec", path) and not tc:
+          print(f"refusing to edit test file {path} without a TEST-CHANGED reason", file=sys.stderr); continue
+      src = open(path).read()
+      if src.count(old) == 1:
+          src = src.replace(old, new, 1)
+      else:
+          # A small model copies tabs as spaces: match the lines ignoring
+          # their indentation, once, and gofmt puts it back for Go.
+          lines, want = src.split("\n"), [l.strip() for l in old.split("\n")]
+          at = [i for i in range(len(lines) - len(want) + 1) if [l.strip() for l in lines[i:i + len(want)]] == want]
+          if len(at) != 1:
+              print(f"{path}: the SEARCH lines match {len(at)} places, not one", file=sys.stderr); continue
+          lines[at[0]:at[0] + len(want)] = new.split("\n")
+          src = "\n".join(lines)
+      open(path, "w").write(src)
+      if path.endswith(".go"):
+          subprocess.run(["gofmt", "-w", path])
+      done.append(path); print(f"edited {path}")
+  open(written, "w").write("".join(p + "\n" for p in dict.fromkeys(done)))
+  PY
+  echo "applied the lean answer"
+requires:
+  - table_pattern: fix-lean
+timeout: 2m
+max_retries: 0

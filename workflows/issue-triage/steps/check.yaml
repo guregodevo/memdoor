@@ -1,0 +1,36 @@
+type: command
+command: |
+  set -e
+  r=.memdoor/runs/issue-triage-{{.partition}}
+  f=$r.md
+  [ -f "$f" ] || { echo "no triage written"; exit 1; }
+  # A small model fences its whole answer: drop the fence lines.
+  grep -v '^```' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  # A duplicate that is not an open issue is dropped (a small model invents #12).
+  if grep -q '^#[0-9]' "$r.open"; then
+    awk 'NR==FNR { split($1, a, " "); ok[a[1]] = 1; next }
+      /^- #[0-9]+/ { n = $2; sub(/[^#0-9].*/, "", n); if (!(n in ok)) next }
+      { print }' "$r.open" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  else
+    awk '/^## Possible duplicates/ { print; print "none"; skip = 1; next } /^## / { skip = 0 } !skip { print }' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  fi
+  # A label the repository does not have is dropped from the first line.
+  head -1 "$f" | grep -q '^labels:' || { echo "first line is not the labels line" >&2; exit 1; }
+  awk 'NR==1 { n=split($0, a, ":"); if (n>1) { m=split(a[2], ls, ","); for (i=1;i<=m;i++) { gsub(/^[ \t]+|[ \t]+$/, "", ls[i]); if (ls[i]!="") print ls[i] } } }' "$f" > "$r.asked"
+  if [ -s "$r.asked" ]; then
+    # Filter against the context step's label list: it exists even where gh does not.
+    keep=$(awk 'NR==FNR { h[$0]=1; next } { gsub(/^[ \t]+|[ \t]+$/, ""); if ($0 in h) print }' "$r.labels" "$r.asked" | awk '{ s = s (NR>1 ? ", " : "") $0 } END { print s }')
+    if [ -z "$keep" ]; then echo "labels:" > "$r.l1"
+    else echo "labels: $keep" > "$r.l1"; fi
+    { cat "$r.l1"; tail -n +2 "$f"; } > "$f.tmp" && mv "$f.tmp" "$f"
+  fi
+  grep -q '^## Kind' "$f" || { echo "no Kind section" >&2; exit 1; }
+  grep -q '^## Summary' "$f" || { echo "no Summary section" >&2; exit 1; }
+  grep -q '^## Possible duplicates' "$f" || { echo "no Possible duplicates section" >&2; exit 1; }
+  grep -q '^## Missing' "$f" || { echo "no Missing section" >&2; exit 1; }
+  echo "triage ok in $f"
+requires:
+  - table_pattern: triage
+  - table_pattern: triage-lean
+timeout: 1m
+max_retries: 0

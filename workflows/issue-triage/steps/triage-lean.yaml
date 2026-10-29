@@ -1,0 +1,33 @@
+type: llm
+model: thinking off
+# The triage in one model call, for a slow model (MEMDOOR_LEAN: the GitHub
+# Action sets it with local-model, a model on the runner's CPU): the issue,
+# the labels and the open issues all inlined in the prompt, no tools, no loop.
+# The agent's triage (triage.yaml) runs instead when it is not set.
+when: '[ -n "${MEMDOOR_LEAN:-}" ]'
+prompt: |
+  You triage an issue. The issue:
+
+  {{ file (printf ".memdoor/runs/issue-triage-%s.context" .partition) }}
+
+  The repository's labels, one per line:
+
+  {{ file (printf ".memdoor/runs/issue-triage-%s.labels" .partition) }}
+
+  The open issues, "#number title" per line:
+
+  {{ file (printf ".memdoor/runs/issue-triage-%s.open" .partition) }}
+
+  Answer with these five parts in this order, as plain Markdown (no code fence around the answer):
+
+  1. A first line that starts with `labels:` followed by the names of the labels above that fit, comma-separated; a name not in the list above is never used, and when none fits the line is just `labels:`.
+  2. `## Kind`, then one word: bug, feature, question or docs.
+  3. `## Summary`, then two sentences: what the reporter says, and what they ask for.
+  4. `## Possible duplicates`, then a list of the open issues above whose title is about the same problem, each `- #number — why`; only numbers from the list above; when none is, the word `none`.
+  5. `## Missing`, then a list of what the report lacks to act on it (the version, steps to reproduce, logs); only what is really absent from the issue; when nothing is, the word `nothing`.
+requires:
+  - table_pattern: context
+target:
+  file: .memdoor/runs/issue-triage-{{.partition}}.md
+timeout: 30m
+max_retries: 0

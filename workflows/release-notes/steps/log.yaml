@@ -15,6 +15,16 @@ command: |
     echo
     git log --no-merges --format='--- %h %s%n%b' "$range"
   } > "$out"
+  # A short log for the lean notes (MEMDOOR_LEAN): subjects and the first two
+  # lines of each body, at most 300 commits, small enough for the runner's CPU.
+  {
+    sed -n '1,4p' "$out"
+    # Subjects and the first two lines of each body, at most 300 commits.
+    git log --no-merges --format='--- %h %s%n%b' "$range" | awk '
+      /^--- /{ c++; if (c > 300) exit; print; body=0; blank=0; next }
+      c > 0 { if ($0 == "") { if (++blank <= 1) print; next }
+              if (body < 2) print; body++ }'
+  } > .memdoor/runs/release-notes-{{.partition}}-lean.log
   echo "$(git rev-list --no-merges --count "$range") commits in ${range}"
 timeout: 5m
 max_retries: 0

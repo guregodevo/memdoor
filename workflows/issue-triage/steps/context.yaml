@@ -1,0 +1,35 @@
+type: command
+# The issue, the repository's labels and the open issues' titles. The issue
+# comes from the run, not the environment (a gateway already running does not
+# see a variable set for one command): the GitHub `issues` event's payload;
+# else the partition when it is an issue number (gh issue view); else
+# .memdoor/issue.md, an issue's text written by hand.
+command: |
+  set -e
+  r=.memdoor/runs/issue-triage-{{.partition}}
+  mkdir -p .memdoor/runs
+  p='{{.partition}}'
+  if [ -f "${GITHUB_EVENT_PATH:-}" ] && python3 - "$GITHUB_EVENT_PATH" "$r.context" <<'PY'
+  import json, sys
+  i = json.load(open(sys.argv[1])).get("issue")
+  if not i:
+      sys.exit(1)
+  labels = ", ".join(l["name"] for l in i.get("labels", [])) or "(none)"
+  open(sys.argv[2], "w").write(f'issue #{i["number"]} "{i["title"]}"\nauthor: {i["user"]["login"]}\nlabels now: {labels}\nbody:\n{(i.get("body") or "(empty)")[:8000]}\n')
+  PY
+  then src="the issues event"
+  elif expr "$p" : '[0-9][0-9]*$' >/dev/null; then
+    gh issue view "$p" > "$r.context"; src="gh issue view $p"
+  elif [ -s .memdoor/issue.md ]; then
+    cp .memdoor/issue.md "$r.context"; src=".memdoor/issue.md"
+  else
+    echo "no issue: run it on an issues event, with --partition <issue number>, or write the issue to .memdoor/issue.md" >&2
+    exit 1
+  fi
+  gh label list --limit 200 --json name -q '.[].name' > "$r.labels" 2>/dev/null || : > "$r.labels"
+  [ -s "$r.labels" ] || echo "(no labels known: write labels: with nothing after it)" > "$r.labels"
+  gh issue list --state open --limit 200 --json number,title -q '.[] | "#\(.number) \(.title)"' > "$r.open" 2>/dev/null || : > "$r.open"
+  [ -s "$r.open" ] || echo "(no open issues known)" > "$r.open"
+  echo "the issue from $src; $(grep -vc '^(no' "$r.labels") labels, $(grep -vc '^(no' "$r.open") open issues"
+timeout: 2m
+max_retries: 1

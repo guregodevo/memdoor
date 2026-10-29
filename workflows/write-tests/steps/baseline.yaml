@@ -1,0 +1,69 @@
+type: command
+# The tests as the change leaves them, before a test is written. A failure
+# here is the finding: the change breaks an existing test, and writing tests
+# around it would only lock the break in (an agent did exactly that,
+# "updating" the failing test's expected value, 2026-10-29). Otherwise it
+# writes check.sh, the condition the written tests must meet.
+command: |
+  r=.memdoor/runs/write-tests-{{.partition}}
+  if ! sh "$r.sh" > "$r.baseline" 2>&1; then
+    {
+      echo "## write-tests"
+      echo
+      echo "An existing test fails with this change, so no test was written: the change, or the test, is wrong. \`$(cat "$r.sh")\`:"
+      echo
+      echo '```'; tail -30 "$r.baseline"; echo '```'
+    } > "$r.md"
+    echo "an existing test fails with the change:" >&2
+    tail -15 "$r.baseline" >&2
+    exit 1
+  fi
+  # check.sh: at least one test file new or changed; no line of a tracked test
+  # file changed or removed (added to only); the test command passes.
+  cat > "$r.check.sh" <<'CHECK'
+  set -e
+  r=$1
+  test_re='(_test\.go|(^|/)test_[^/]*\.py|_test\.py|\.(test|spec)\.[cm]?[jt]sx?|(^|/)(tests?|__tests__|spec)/.*)$'
+  new=$(git ls-files --others --exclude-standard | grep -v '^\.memdoor/' | grep -E "$test_re" || true)
+  changed=$(git diff --name-only | grep -E "$test_re" || true)
+  [ -n "$new$changed" ] || { echo "no test file is new or changed" >&2; exit 1; }
+  for f in $changed; do
+    d=$(git diff --numstat -- "$f" | awk '{print $2}')
+    [ "${d:-0}" = 0 ] || { echo "$f: $d existing line(s) changed or removed; an existing test is only added to" >&2; exit 1; }
+  done
+  sh "$r.sh"
+  CHECK
+  # goimports.py: a Go test file's imports, from the compiler's own messages
+  # (unused ones dropped, a missing standard package added); an 8B misses an
+  # import more often than it gets a test wrong.
+  cat > "$r.goimports.py" <<'PY'
+  import re, subprocess, sys, os
+  p = sys.argv[1]
+  std = {"filepath": "path/filepath", "strings": "strings", "os": "os", "fmt": "fmt", "bytes": "bytes",
+         "errors": "errors", "io": "io", "sort": "sort", "strconv": "strconv", "time": "time",
+         "reflect": "reflect", "math": "math", "context": "context", "sync": "sync", "json": "encoding/json"}
+  for _ in range(3):
+      out = subprocess.run(["go", "vet", "./" + (os.path.dirname(p) or ".")], capture_output=True, text=True).stderr
+      base = re.escape(os.path.basename(p))
+      unused = set(re.findall(base + r':\d+:\d+: "([^"]+)" imported and not used', out))
+      missing = {std[m] for m in re.findall(base + r':\d+:\d+: undefined: (\w+)', out) if m in std}
+      if not unused and not missing:
+          break
+      src = open(p).read()
+      for u in unused:
+          src = re.sub(r'^\s*"%s"\s*\n' % re.escape(u), "", src, flags=re.M)
+          src = re.sub(r'^import "%s"\s*\n' % re.escape(u), "", src, flags=re.M)
+      if missing:
+          add = "".join('\t"%s"\n' % m for m in sorted(missing))
+          if re.search(r'^import \(\n', src, re.M):
+              src = re.sub(r'^import \(\n', lambda m: m.group(0) + add, src, count=1, flags=re.M)
+          else:
+              src = re.sub(r'^(package \w+\n)', lambda m: m.group(1) + "\nimport (\n" + add + ")\n", src, count=1, flags=re.M)
+      src = re.sub(r'^import \(\s*\)\n', "", src, flags=re.M)
+      open(p, "w").write(src)
+  PY
+  echo "the tests pass before any is written"
+requires:
+  - table_pattern: detect
+timeout: 30m
+max_retries: 0

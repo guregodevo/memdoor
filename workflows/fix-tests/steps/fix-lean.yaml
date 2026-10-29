@@ -1,0 +1,43 @@
+type: llm
+model: thinking off
+# One model call with the failure tail and the files' contents in the prompt,
+# no tools and no loop. The agent (fix.yaml) runs instead when MEMDOOR_LEAN is
+# not set.
+when: '[ -s .memdoor/runs/fix-tests-{{.partition}}.tail ] && [ -n "${MEMDOOR_LEAN:-}" ]'
+prompt: |
+  A test suite fails. The last lines of the failure:
+
+  ```
+  {{ file (printf ".memdoor/runs/fix-tests-%s.tail" .partition) }}
+  ```
+
+  What the last commit changed (the first suspect: a test that passed before it fails now):
+
+  ```diff
+  {{ file (printf ".memdoor/runs/fix-tests-%s.lastdiff" .partition) }}
+  ```
+
+  The files the failure names, and the files the last commit changed:
+
+  ```
+  {{ file (printf ".memdoor/runs/fix-tests-%s.ctx" .partition) }}
+  ```
+
+  Answer with the smallest edit that fixes it, as one or more blocks in exactly this shape and nothing else:
+
+  ===EDIT path/to/file.go
+  <<<<<<< SEARCH
+  the lines as they are in the file now
+  =======
+  the lines as they should be
+  >>>>>>> REPLACE
+
+  SEARCH is copied from the file's contents above (under `===== path =====`), never from the diff: no line starts with + or -. Keep the edit to the few lines that are wrong.
+
+  Fix the code under test. Edit a test only when the test itself is wrong, and then put the reason on the first line of your answer as `TEST-CHANGED: <why>`, before the first block. Never delete, skip or weaken a test to make it pass. When you cannot fix it, answer only `CANNOT-FIX`.
+requires:
+  - table_pattern: prepare-lean
+target:
+  file: .memdoor/runs/fix-tests-{{.partition}}.answer
+timeout: 30m
+max_retries: 0

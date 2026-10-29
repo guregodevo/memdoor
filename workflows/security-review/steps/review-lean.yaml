@@ -1,0 +1,42 @@
+type: llm
+model: thinking off
+# The review in one model call, for a slow model (MEMDOOR_LEAN: the GitHub
+# Action sets it with local-model, a model on the runner's CPU): the diff in
+# the prompt, no tools, no loop. The agent's review (review.yaml) runs instead
+# when MEMDOOR_LEAN is not set.
+when: test -s .memdoor/runs/security-review-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  You review a code change for security only. The unified diff is below: lines starting with + are added, lines starting with - are removed. You look for what an attacker could use, and nothing else: not style, not general bugs.
+  Look for, in order:
+  - secrets or keys committed: API keys, tokens, passwords, private keys, connection strings with credentials.
+  - injection: SQL built from user input, shell commands built from user input, templates or format strings a user reaches, path traversal in a user-supplied path.
+  - missing or broken authorization: a handler without its permission check, an ID a user supplies and the code trusts, a check done on the client only.
+  - unsafe deserialization: untrusted bytes into pickle or yaml.load without SafeLoader or the like.
+  - SSRF: a user-supplied URL the server fetches.
+  - weak crypto or randomness: MD5 or SHA1 for security, math/rand where crypto/rand is needed, a hard-coded IV, salt or nonce.
+  - user input reaching a dangerous call: eval, exec, a file delete or write, a redirect.
+  - a dependency the diff adds with a known risk: say why you suspect it, never invent a CVE number.
+  - a CI workflow the change makes exploitable: `pull_request_target` that checks out the PR's code, a secret exposed to a fork's workflow.
+  Only the lines the change adds are its fault: what a removed line did wrong is fixed by the change, never a finding.
+
+  Write the review in exactly this Markdown shape, and nothing else:
+
+  ## Summary
+  Two sentences: what the change does and what its security posture is.
+
+  ## Findings
+  - **P0** `path/to/file.go:42` — what an attacker does with it (the attack), and the fix.
+  - **P1** `path:line` — the attack, and the fix.
+  - **P2** `path:line` — the attack, and the fix.
+
+  **P0** is exploitable now, by the code this change adds: it must not merge. **P1** is exploitable under a condition the change does not itself create; **P2** is hardening. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
+
+  ```diff
+  {{ file (printf ".memdoor/runs/security-review-%s.diff" .partition) }}
+  ```
+requires:
+  - table_pattern: diff
+target:
+  file: .memdoor/runs/security-review-{{.partition}}.md
+timeout: 30m
+max_retries: 0

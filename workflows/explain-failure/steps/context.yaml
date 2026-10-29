@@ -1,0 +1,48 @@
+type: command
+command: |
+  set -e
+  mkdir -p .memdoor/runs
+  r=.memdoor/runs/explain-failure-{{.partition}}
+  # GitHub: started by a workflow_run event for the failed run — its failed
+  # jobs' logs, and the failed commit's diff against its parent. The checkout
+  # on workflow_run is the default branch, so fetch the failed run's own sha.
+  if [ -n "${GITHUB_EVENT_PATH:-}" ] && command -v gh >/dev/null && [ -n "${GH_TOKEN:-}" ] \
+     && runid=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("workflow_run",{}).get("id",""))' "$GITHUB_EVENT_PATH" 2>/dev/null) && [ -n "$runid" ]; then
+    sha=$(gh run view "$runid" --json headSha --jq .headSha)
+    if [ "$sha" != "$(git rev-parse HEAD)" ] && [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+      git fetch -q --no-tags --depth=2 origin "$sha"
+    fi
+    git diff "${sha}^" "$sha" > "$r.diff" || true
+    gh run view "$runid" --log-failed 2>/dev/null | tail -400 > "$r.logs" || true
+    [ -s "$r.logs" ] || { echo "no failed-job logs for run $runid" >&2; exit 1; }
+    echo "explaining failed GitHub run $runid ($(wc -l < "$r.logs" | tr -d ' ') log lines, $(test -s "$r.diff" && echo "$(git diff --shortstat "${sha}^" "$sha" | sed 's/^ //')" || echo 'no diff'))"
+    exit 0
+  fi
+  # Outside GitHub: run the project's tests (as fix-tests detects them) and
+  # keep their tail. If they pass, there is nothing to explain: write the
+  # report here, so the explain steps are skipped by their `when`.
+  if [ -n "${MEMDOOR_TEST_COMMAND:-}" ]; then c=$MEMDOOR_TEST_COMMAND
+  elif [ -f go.mod ]; then c='go test ./...'
+  elif [ -f Cargo.toml ]; then c='cargo test'
+  elif [ -f package.json ] && grep -q '"test"[[:space:]]*:' package.json; then c='npm test'
+  elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f pytest.ini ]; then
+    if command -v python3 >/dev/null; then c='python3 -m pytest'; else c='python -m pytest'; fi
+  elif [ -f Makefile ] && grep -qE '^test:' Makefile; then c='make test'
+  else echo "no test command found here: set MEMDOOR_TEST_COMMAND" >&2; exit 1; fi
+  # The diff the explain prompt reads, here as pr-review's diff step: the last
+  # commit against its parent, uncommitted edits included.
+  if git rev-parse -q --verify HEAD~1 >/dev/null; then base=$(git rev-parse HEAD~1); else base=$(git hash-object -t tree /dev/null); fi
+  git diff "$base" > "$r.diff"
+  if sh -c "$c" > "$r.logs" 2>&1; then
+    {
+      echo "# explain-failure"
+      echo
+      echo "The tests pass with \`$c\`; there is nothing to explain."
+    } > "$r.md"
+    echo "tests pass with $c: nothing to explain"
+    exit 0
+  fi
+  tail -400 "$r.logs" > "$r.logs.tmp" && mv "$r.logs.tmp" "$r.logs"
+  echo "test command failed: $c ($(wc -l < "$r.logs" | tr -d ' ') lines kept)"
+timeout: 30m
+max_retries: 0

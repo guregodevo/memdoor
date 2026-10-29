@@ -1,0 +1,27 @@
+type: command
+command: |
+  f=.memdoor/runs/security-review-{{.partition}}.md
+  [ -f "$f" ] || { echo "nothing to review"; exit 0; }
+  # The report is written by an agent whose patch tool echoes residue: its own
+  # patch syntax (*** Begin Patch / *** Update File: / hunks with - and +
+  # prefixes) can end up after the review. Strip from the first line that
+  # looks like tool residue to the end.
+  if grep -q '^@@ ' "$f" || grep -q '^\*\*\* ' "$f"; then
+    n=$(grep -n -m1 -E '^(@@ |\*\*\* )' "$f" | cut -d: -f1)
+    head -n $((n - 1)) "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  fi
+  # A finding line: a bullet, then P0 (bold, bracketed or bare), never P01.
+  re='^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P0([^0-9]|$)'
+  p0=$(grep -E "$re" "$f" || true)
+  others=$(grep -cE '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P[12]([^0-9]|$)' "$f" || true)
+  if [ -n "$p0" ]; then
+    echo "$(printf '%s\n' "$p0" | wc -l | tr -d ' ') security finding(s) that must not merge:" >&2
+    printf '%s\n' "$p0" >&2
+    exit 1
+  fi
+  echo "no blocking security finding; $others to consider in $f"
+requires:
+  - table_pattern: review
+  - table_pattern: review-lean
+timeout: 1m
+max_retries: 0

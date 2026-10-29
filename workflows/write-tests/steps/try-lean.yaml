@@ -1,0 +1,14 @@
+type: command
+# The local model's file, run once: when the check fails, its errors go to
+# retry-lean, which gets one more call to correct the file (an 8B forgets an
+# import more often than it gets a test wrong).
+when: test -s .memdoor/runs/write-tests-{{.partition}}.landed && [ -n "${MEMDOOR_LEAN:-}" ]
+command: |
+  r=.memdoor/runs/write-tests-{{.partition}}
+  if sh "$r.check.sh" "$r" > "$r.try1" 2>&1; then echo "passes on the first answer"; exit 0; fi
+  tail -40 "$r.try1" > "$r.errors"
+  echo "fails on the first answer: one retry"
+requires:
+  - table_pattern: land
+timeout: 30m
+max_retries: 0

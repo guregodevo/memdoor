@@ -1,0 +1,21 @@
+type: agent
+agent: coder
+# On a key: the agent writes the tests, done when check.sh passes (a test
+# file new or added to, no existing line touched, the tests pass), or when a
+# test it wrote shows the change is wrong (.found): the agent that had to make
+# its tests pass asserted the bug it had just found (2026-10-29).
+when: test -s .memdoor/runs/write-tests-{{.partition}}.diff && [ -z "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  Add tests for a code change. The change is the unified diff in `.memdoor/runs/write-tests-{{.partition}}.diff`: read it to the end, then open the changed files and what they call, so a test exercises the code as it now is. The project's test command is in `.memdoor/runs/write-tests-{{.partition}}.sh` (one line); it passes now.
+  For each function the change touches, test its normal case, one edge case (an empty, zero or boundary input), and the case the change is about. Put the tests where this project keeps its tests, in its style, with its helpers and naming; a new test file beside the code when there is none to follow.
+  Never change the code under test. Never change or remove a line of an existing test: you may only add new tests, in a new file or appended to an existing one.
+  A test asserts what the code should do, never what a bug makes it do. When a test shows the change is wrong (the code does not do what the change means to), keep that test, failing, asserting the right behavior, and write the finding to `.memdoor/runs/write-tests-{{.partition}}.found`: the test's name and what it shows, in two sentences. That is the most useful thing this run can find.
+  The run is done when `sh .memdoor/runs/write-tests-{{.partition}}.check.sh .memdoor/runs/write-tests-{{.partition}}` passes, or when a `.found` is written. Then write `.memdoor/runs/write-tests-{{.partition}}.notes.md`: **Tests** (one line per test: the file, the name, the case it checks). Do not commit.
+requires:
+  - table_pattern: diff
+  - table_pattern: baseline
+target:
+  command: sh .memdoor/runs/write-tests-{{.partition}}.check.sh .memdoor/runs/write-tests-{{.partition}} || test -s .memdoor/runs/write-tests-{{.partition}}.found
+budget: 400000
+timeout: 30m
+max_retries: 1

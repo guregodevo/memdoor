@@ -1,0 +1,32 @@
+type: command
+# The lean path (MEMDOOR_LEAN, a small model on the runner's CPU): one model
+# call instead of the agent loop (fix.yaml). This step keeps the tail of the
+# failing output and the contents of the source and test files the failure
+# names, capped, for the prompt.
+when: '[ -n "${MEMDOOR_LEAN:-}" ]'
+command: |
+  set -e
+  r=.memdoor/runs/fix-tests-{{.partition}}
+  # The tests pass: nothing for the model to do (no .tail, fix-lean skips).
+  if sh "$r.sh" > "$r.fail" 2>&1; then echo "the tests pass: nothing to fix"; exit 0; fi
+  tail -c 4000 "$r.fail" > "$r.tail"
+  # What the last commit changed: in CI the change under test, the first suspect.
+  git diff HEAD~1 2>/dev/null | head -c 6000 > "$r.lastdiff" || true
+  [ -s "$r.lastdiff" ] || echo "(no previous commit)" > "$r.lastdiff"
+  # Files the failure names: paths that end like source or test files.
+  # Files the failure names (Go indents its file:line), then the files the last
+  # commit changed: in CI the change under test, where the bug most often is.
+  { sed -E 's/^[[:space:]]+//' "$r.fail" | cut -d: -f1 | grep -vE '^(---|FAIL|ok)' | grep -E '\.(go|py|rs|ts|js|c|cpp|h|java)$'
+    git diff --name-only HEAD~1 2>/dev/null | grep -E '\.(go|py|rs|ts|js|c|cpp|h|java)$'; } | awk '!seen[$0]++' | head -8 > "$r.files" || true
+  : > "$r.ctx"
+  while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    printf '===== %s =====\n' "$f" >> "$r.ctx"
+    head -c 12000 "$f" >> "$r.ctx"
+    printf '\n' >> "$r.ctx"
+  done < "$r.files"
+  echo "lean context: $(wc -l < "$r.files" | tr -d ' ') file(s), $(wc -c < "$r.ctx" | tr -d ' ') bytes"
+requires:
+  - table_pattern: detect
+timeout: 5m
+max_retries: 0

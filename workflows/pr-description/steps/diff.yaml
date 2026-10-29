@@ -1,0 +1,29 @@
+type: command
+command: |
+  set -e
+  out=.memdoor/runs/pr-description-{{.partition}}.diff
+  mkdir -p .memdoor/runs
+  shallow=$(git rev-parse --is-shallow-repository)
+  if [ -n "${GITHUB_BASE_REF:-}" ]; then
+    # A pull request: the checkout is the merge of the PR into its base, so the
+    # base's tip against it is exactly what the PR changes.
+    if [ "$shallow" = true ]; then git fetch -q --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+    else git fetch -q --no-tags origin "$GITHUB_BASE_REF"; fi
+    base=$(git rev-parse FETCH_HEAD); what="pull request into $GITHUB_BASE_REF"
+  elif mb=$(git merge-base HEAD origin/HEAD 2>/dev/null) && [ "$mb" != "$(git rev-parse HEAD)" ]; then
+    base=$mb; what="branch against $(git rev-parse --abbrev-ref origin/HEAD)"
+  else
+    if ! git rev-parse -q --verify HEAD~1 >/dev/null && [ "$shallow" = true ]; then
+      git fetch -q --no-tags --deepen=1 origin "$(git rev-parse HEAD)" \
+        || { echo "a shallow checkout whose parent cannot be fetched: check out with fetch-depth: 2 or more" >&2; exit 1; }
+    fi
+    if git rev-parse -q --verify HEAD~1 >/dev/null; then base=$(git rev-parse HEAD~1); what="last commit"
+    else base=$(git hash-object -t tree /dev/null); what="first commit"; fi
+  fi
+  git diff "$base" > "$out"
+  # The commits step needs the same base: the commit messages on the change's side.
+  git rev-parse "$base" > .memdoor/runs/pr-description-{{.partition}}.base
+  echo "describing the $what: $(git diff --shortstat "$base" | sed 's/^ //')"
+  [ -s "$out" ] || echo "nothing changed: nothing to describe"
+timeout: 5m
+max_retries: 0

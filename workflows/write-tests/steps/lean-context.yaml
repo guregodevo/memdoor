@@ -1,0 +1,34 @@
+type: command
+# For the one call on a local model: the changed source files' contents
+# (not the tests, 400 lines each at most) and one existing test file of the
+# same directory as a style to follow, all in one file the prompt inlines.
+when: test -s .memdoor/runs/write-tests-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
+command: |
+  r=.memdoor/runs/write-tests-{{.partition}}
+  test_re='(_test\.go|(^|/)test_[^/]*\.py|_test\.py|\.(test|spec)\.[cm]?[jt]sx?|(^|/)(tests?|__tests__|spec)/.*)$'
+  : > "$r.ctx"
+  # The new file's path, beside the first changed source file: the call is
+  # not trusted to name one (it copied the prompt's example path).
+  first=$(sed -n 's|^+++ b/||p' "$r.diff" | grep -vE "$test_re" | while read -r f; do [ -f "$f" ] && { echo "$f"; break; }; done)
+  case "$first" in
+    *.go) p="${first%.go}_change_test.go" ;;
+    *.py) p="$(dirname "$first")/test_$(basename "${first%.py}")_change.py" ;;
+    *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs) p="${first%.*}.change.test.${first##*.}" ;;
+    *.rs) p="" ;;
+    *) p="" ;;
+  esac
+  [ -n "$p" ] || { echo "no new test file to name for $first: the local model writes Go, Python and JS/TS tests" >&2; exit 0; }
+  [ -e "$p" ] && { echo "$p exists already" >&2; exit 0; }
+  printf '%s\n' "$p" > "$r.newpath"
+  for f in $(sed -n 's|^+++ b/||p' "$r.diff" | grep -vE "$test_re" | head -5); do
+    [ -f "$f" ] || continue
+    { echo "### $f"; echo '```'; head -400 "$f"; echo '```'; echo; } >> "$r.ctx"
+    t=$(git ls-files "$(dirname "$f")" | grep -E "$test_re" | head -1)
+    [ -n "$t" ] && ! grep -q "^### $t (style)" "$r.ctx" && { echo "### $t (style)"; echo '```'; head -80 "$t"; echo '```'; echo; } >> "$r.ctx"
+  done
+  wc -l < "$r.ctx"
+requires:
+  - table_pattern: diff
+  - table_pattern: baseline
+timeout: 1m
+max_retries: 0

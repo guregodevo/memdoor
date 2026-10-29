@@ -1,0 +1,39 @@
+type: agent
+agent: coder
+# The full review: an agent that reads the diff, opens the changed files and
+# what they call, and looks for what an attacker could use. Runs when a model
+# key is set; review-lean.yaml runs instead when MEMDOOR_LEAN is.
+when: test -s .memdoor/runs/security-review-{{.partition}}.diff && [ -z "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  Review a code change for SECURITY ONLY with the `review` skill (load it first). The change is the unified diff in `.memdoor/runs/security-review-{{.partition}}.diff`; read it to the end, then open the changed files and what they call, so every finding is about the code as it now is.
+  You look for what an attacker could use, and nothing else: not style, not general bugs. In order:
+  - secrets or keys committed (in the diff, in files it adds, in test fixtures it ships): API keys, tokens, passwords, private keys, connection strings with credentials.
+  - injection: SQL built from user input, shell commands built from user input, template or format strings a user reaches, path traversal (`../` in a user-supplied path that reaches a file open, a copy, an archive extract).
+  - missing or broken authorization: a handler or route without its permission check, an ID a user supplies and the code trusts (another tenant's, another user's), a check done on the client only.
+  - unsafe deserialization: untrusted bytes into pickle, yaml.load without SafeLoader, Java/Go/Node object or template deserialization, PHP unserialize.
+  - SSRF: a URL the user supplies that the server fetches (webhook, import, preview, redirect), reachable at internal addresses.
+  - weak crypto or randomness: MD5/SHA1 for security, ECB, math/rand where crypto/rand is needed, a hard-coded IV or salt, a fixed nonce.
+  - user input reaching a dangerous call: eval, exec, os/exec without an argument list, yaml.Load, a file delete or write from a request, a redirect from a request.
+  - a dependency the diff adds with a known risk (a package famous for compromise or typo-squatting, a version with a known CVE in code the change actually uses): say why you suspect it, do not guess a CVE number you cannot name.
+  - a CI workflow the change makes exploitable: `pull_request_target` that checks out the PR's code, a secret exposed to a fork's workflow, a script run from an untrusted artifact name or PR title.
+  Verify before you report: open the caller, check whether the input is sanitized upstream, run the line in question when the project's tools are here. A finding you could not ground in a file and line is not a finding — and a check that exists elsewhere in the code is not a missing check.
+  In a GitHub run, `gh` is on the runner and GH_TOKEN is set, and the event payload is the JSON file at $GITHUB_EVENT_PATH: you may read the payload and run read-only `gh` commands (pr view, pr diff) for context — whether the change is from a fork, who authored it. Do not post comments, do not edit anything, do not call anything that writes.
+  Write `.memdoor/runs/security-review-{{.partition}}.md`, and nothing else, in exactly this Markdown shape:
+
+  ## Summary
+  Two or three sentences: what the change does and what its security posture is.
+
+  ## Findings
+  - **P0** `path/to/file.go:42` — what an attacker does with it (the attack), and the fix.
+  - **P1** `path:line` — the attack, and the fix.
+  - **P2** `path:line` — the attack, and the fix.
+
+  **P0** is exploitable now, by the code this change adds: it must not merge. **P1** is exploitable under a condition the change does not itself create (an env, a flag, a deploy), or a real hole the attacker reaches only with effort. **P2** is hardening: a defense the change omits, a dependency worth watching. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
+  Change no file in the project: this step reads, runs and writes the review only.
+requires:
+  - table_pattern: diff
+target:
+  file: .memdoor/runs/security-review-{{.partition}}.md
+budget: 300000
+timeout: 20m
+max_retries: 1

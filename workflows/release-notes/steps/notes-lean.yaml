@@ -1,0 +1,34 @@
+type: llm
+model: thinking off
+# The notes in one model call, for a slow model (MEMDOOR_LEAN: the GitHub
+# Action sets it with local-model, a model on the runner's CPU): the commit
+# log in the prompt, no tools, no loop. The agent's notes (notes.yaml) run
+# instead when it is not set.
+when: test -s .memdoor/runs/release-notes-{{.partition}}-lean.log && [ -n "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  You write release notes. The commit log is below: its first lines name the release, its date and the tag it follows; after them, every commit since, as `--- <hash> <subject>` and the first lines of the message body.
+
+  Write the notes in exactly this Markdown shape, and nothing else:
+
+  ## <release> — <date>
+
+  ### Added
+  - one sentence per new thing a person can do
+
+  ### Changed
+  - one sentence per behavior that is different
+
+  ### Fixed
+  - one sentence per problem that is gone
+
+  Each item says what a person notices — a command, a flag, a screen, an error that no longer happens — never a file name, a hash, a refactor, a rename, a test or a dependency bump nobody sees. Several commits that are one visible change are one item. Leave out a section with no items. When nothing in the range is visible to a person, write one item under Changed that says so.
+
+  ```
+  {{ file (printf ".memdoor/runs/release-notes-%s-lean.log" .partition) }}
+  ```
+requires:
+  - table_pattern: log
+target:
+  file: .memdoor/runs/release-notes-{{.partition}}.md
+timeout: 30m
+max_retries: 0

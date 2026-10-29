@@ -1,0 +1,27 @@
+type: llm
+model: thinking off
+when: test -s .memdoor/runs/write-tests-{{.partition}}.errors && [ -n "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  You wrote this test file, `{{ file (printf ".memdoor/runs/write-tests-%s.newpath" .partition) }}`:
+
+  ```
+  {{ file (printf ".memdoor/runs/write-tests-%s.first" .partition) }}
+  ```
+
+  Running the tests with it gives:
+
+  ```
+  {{ file (printf ".memdoor/runs/write-tests-%s.errors" .partition) }}
+  ```
+
+  Correct the file: a missing import, a wrong name, a test whose expectation is not what the code above should do. The code under test as the change leaves it:
+
+  {{ file (printf ".memdoor/runs/write-tests-%s.ctx" .partition) }}
+
+  Answer with the whole corrected file in one fenced code block, and nothing else.
+requires:
+  - table_pattern: try-lean
+target:
+  file: .memdoor/runs/write-tests-{{.partition}}.answer2
+timeout: 30m
+max_retries: 0

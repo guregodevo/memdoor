@@ -1,0 +1,36 @@
+type: llm
+model: thinking off
+# The explanation in one model call, for a slow model (MEMDOOR_LEAN: the
+# GitHub Action sets it with local-model, a small model on the runner's CPU):
+# the log tail and the diff inlined in the prompt, no tools, no loop. The
+# agent's explanation (explain.yaml) runs instead when it is not set.
+when: test -s .memdoor/runs/explain-failure-{{.partition}}.logs && [ -n "${MEMDOOR_LEAN:-}" ]
+prompt: |
+  A run of this project failed. Its last log lines are below, after LOGS, and the commit's diff against its parent after DIFF. In the log lines the error is near the end; the diff shows what the commit changed, lines starting with + added, lines starting with - removed.
+
+  Write the explanation in exactly this Markdown shape, and nothing else:
+
+  ## Cause
+  The failing step or check, and the file and line it points at, as `path/to/file.go:42`.
+
+  ## Why
+  Two or three sentences: what happened and why the change caused it (or why it is unrelated to the change).
+
+  ## Fix
+  The change to make, concrete: the file, the line, what to write or remove.
+
+  LOGS:
+  ```
+  {{ file (printf ".memdoor/runs/explain-failure-%s.logs" .partition) }}
+  ```
+
+  DIFF:
+  ```diff
+  {{ file (printf ".memdoor/runs/explain-failure-%s.diff" .partition) }}
+  ```
+requires:
+  - table_pattern: context
+target:
+  file: .memdoor/runs/explain-failure-{{.partition}}.md
+timeout: 30m
+max_retries: 0

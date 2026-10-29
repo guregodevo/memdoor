@@ -1,5 +1,6 @@
 type: agent
 agent: coder
+when: '[ -z "${MEMDOOR_LEAN:-}" ]'
 prompt: |
   This project's tests fail. The test command is in `.memdoor/runs/fix-tests-{{.partition}}.sh` (one line); run it with `sh .memdoor/runs/fix-tests-{{.partition}}.sh` and read the failure to the end.
   Find the cause and fix the code under test. Change a test only when the test itself is wrong, and then say why in the notes. Do not delete, skip or weaken a test to make it pass. Rerun the command after each change until it passes.

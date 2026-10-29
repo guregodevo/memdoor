@@ -1,0 +1,38 @@
+type: agent
+agent: coder
+when: '[ -z "${MEMDOOR_LEAN:-}" ]'
+prompt: |
+  Triage one issue. Read these three files (written by the context step):
+  - `.memdoor/runs/issue-triage-{{.partition}}.context` — the issue (number, title, author, body);
+  - `.memdoor/runs/issue-triage-{{.partition}}.labels` — the repository's labels, one per line;
+  - `.memdoor/runs/issue-triage-{{.partition}}.open` — open issues, `#number title` per line.
+  Judge from the issue's text alone; do not open the code, do not run anything, do not change any file in the project. A label in your labels line MUST be a name that appears in the labels file; if nothing fits, the line is `labels:` with nothing after it.
+  Write `.memdoor/runs/issue-triage-{{.partition}}.md`, and nothing else, in exactly this shape:
+
+  ```
+  labels: a, b
+  ## Kind
+  bug | feature | question | docs
+  ## Summary
+  Two sentences: what the reporter says and what it asks for.
+  ## Possible duplicates
+  - #12 — a few words on why it may be the same issue
+  ```
+
+  Under Possible duplicates list only open issues whose title plausibly matches (say why in a few words); if none, write `none`. End with:
+
+  ```
+  ## Missing
+  - version
+  - steps to reproduce
+  - logs
+  ```
+
+  List only what the issue body actually lacks; if the report has everything, write `nothing`. Apply nothing to the issue itself — no comment, no label, no edit.
+requires:
+  - table_pattern: context
+target:
+  file: .memdoor/runs/issue-triage-{{.partition}}.md
+budget: 100000
+timeout: 10m
+max_retries: 1

@@ -1,0 +1,27 @@
+type: command
+# The test command decides. On a failure the change is reverted and the run
+# fails with the unfixable report.
+when: '[ -s .memdoor/runs/fix-tests-{{.partition}}.answer ]'
+command: |
+  r=.memdoor/runs/fix-tests-{{.partition}}
+  if sh "$r.sh" > "$r.testlog" 2>&1; then
+    echo "the tests pass after the lean fix"
+    exit 0
+  fi
+  echo "still failing after the lean fix; reverting" >&2
+  tail -20 "$r.testlog" >&2 || true
+  # Only the files the answer wrote: the rest of the tree is the person's.
+  [ -s "$r.written" ] && xargs git checkout -- < "$r.written" 2>/dev/null || true
+  {
+    echo "## fix-tests"
+    echo
+    echo "The local model could not fix the failing tests. One attempt was made; it still failed, and the change was reverted."
+    echo
+    echo "### Failure (last lines)"
+    echo '```'; tail -40 "$r.testlog"; echo '```'
+  } > "$r.md"
+  exit 1
+requires:
+  - table_pattern: apply-lean
+timeout: 30m
+max_retries: 0

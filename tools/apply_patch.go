@@ -898,6 +898,10 @@ func truncateForMessage(s string, max int) string {
 	return string(r[:max-1]) + "…"
 }
 
+// closingTagsPrefix matches closing tags at the start of a line, the residue of
+// a tool call's argument markup ("</arg_value>", "</parameter>").
+var closingTagsPrefix = regexp.MustCompile(`^(</[A-Za-z_][\w:-]*>\s*)+`)
+
 // ---- parser (ported from apply-patch.ts) ----
 
 func parsePatch(text string) ([]patchHunk, error) {
@@ -914,6 +918,9 @@ func parsePatch(text string) ([]patchHunk, error) {
 		if strings.HasPrefix(last, "+") || strings.HasPrefix(last, "-") {
 			last = last[1:]
 		}
+		// A tool call's closing tag glued in front of it ("</arg_value>*** End
+		// Patch"): the marker still, not a line of the file.
+		last = strings.TrimSpace(closingTagsPrefix.ReplaceAllString(last, ""))
 		if last == endPatchMarker {
 			lines = lines[:n-1]
 		}

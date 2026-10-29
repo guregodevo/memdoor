@@ -1569,3 +1569,18 @@ func TestApplyPatchAppliesAnIndentationOnlyChange(t *testing.T) {
 		t.Fatalf("file after patch:\n%s", b)
 	}
 }
+
+// A model closes its tool call's argument tag on the End Patch line itself
+// ("</arg_value>*** End Patch"): the line is the marker, not file content.
+// Twice in one day it ended a workflow's report (2026-10-29).
+func TestApplyPatchEndMarkerAfterAClosingTag(t *testing.T) {
+	dir := t.TempDir()
+	patch := "*** Begin Patch\n*** Add File: r.md\n+## Cause\n+the loop\n</arg_value>*** End Patch"
+	got, err := runPatch(t, dir, patch, "r.md")
+	if err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if want := "## Cause\nthe loop\n"; got != want {
+		t.Fatalf("got=%q\nwant=%q", got, want)
+	}
+}

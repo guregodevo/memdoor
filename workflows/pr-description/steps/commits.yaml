@@ -1,0 +1,13 @@
+type: command
+command: |
+  set -e
+  out=.memdoor/runs/pr-description-{{.partition}}.commits
+  base=$(cat .memdoor/runs/pr-description-{{.partition}}.base)
+  # The commit messages on the change's side of the diff, newest first. If the
+  # change is uncommitted work only, there are none.
+  git log --no-decorate --format='--- %h %s%n%b' "$base..HEAD" > "$out" || true
+  [ -s "$out" ] || echo "(no commit messages: the change is uncommitted work)" > "$out"
+timeout: 1m
+max_retries: 0
+requires:
+  - table_pattern: diff

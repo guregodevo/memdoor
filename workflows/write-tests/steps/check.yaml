@@ -1,0 +1,50 @@
+type: command
+# Last: check.sh decides, and the report says what was written. On a local
+# model a file that fails it is removed, so the tree is left as it was.
+command: |
+  r=.memdoor/runs/write-tests-{{.partition}}
+  [ -f "$r.check.sh" ] || exit 1   # baseline failed: its report stands
+  if [ ! -s "$r.diff" ]; then echo "## write-tests" > "$r.md"; echo >> "$r.md"; echo "Nothing changed: no tests to write." >> "$r.md"; exit 0; fi
+  ok=1; sh "$r.check.sh" "$r" > "$r.check" 2>&1 || ok=
+  if [ -s "$r.found" ]; then
+    {
+      echo "## write-tests"; echo
+      echo "**A test shows the change is wrong.**"; echo; cat "$r.found"; echo
+      [ -f "$r.notes.md" ] && { cat "$r.notes.md"; echo; }
+      echo "### Tests written"; echo; echo '```diff'; git diff; git ls-files --others --exclude-standard | grep -v '^\.memdoor/' | xargs -I{} git diff --no-index /dev/null {} 2>/dev/null; echo '```'
+      echo; echo "### Checked"; echo; echo '```'; tail -15 "$r.check"; echo '```'
+    } > "$r.md"
+    cat "$r.found" >&2
+    exit 1
+  fi
+  if [ -z "$ok" ] && [ -s "$r.landed" ]; then
+    xargs rm -f < "$r.landed"
+  fi
+  {
+    echo "## write-tests"
+    echo
+    if [ -n "$ok" ]; then
+      [ -f "$r.notes.md" ] && { cat "$r.notes.md"; echo; }
+      echo "### Tests written"; echo
+      { git ls-files --others --exclude-standard | grep -v '^\.memdoor/'; git diff --name-only; } | sed 's/.*/- `&`/'
+      echo; echo '```diff'; git diff; git ls-files --others --exclude-standard | grep -v '^\.memdoor/' | xargs -I{} git diff --no-index /dev/null {} 2>/dev/null; echo '```'
+    else
+      echo "No test was kept: the tests the local model wrote did not pass, and were removed (a first pass on a small model; with a key the agent writes and runs them until they pass)."
+    fi
+    echo; echo "### Checked"; echo; echo '```'; tail -15 "$r.check"; echo '```'
+  } > "$r.md"
+  if [ -z "$ok" ]; then
+    tail -15 "$r.check" >&2
+    # The local model's tests failing is its miss, not the change's: removed,
+    # reported, and the job stays green. On a key the agent's step would not
+    # have finished with failing tests unless it wrote a finding (.found).
+    [ -s "$r.landed" ] && exit 0
+    exit 1
+  fi
+  echo "tests written and passing"
+requires:
+  - table_pattern: write
+  - table_pattern: land
+  - table_pattern: land2
+timeout: 30m
+max_retries: 0

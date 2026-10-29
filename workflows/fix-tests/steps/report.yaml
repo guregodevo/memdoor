@@ -11,6 +11,11 @@ command: |
       echo "The tests pass with \`$cmd\`; nothing was changed."
     else
       if [ -f "$r.notes.md" ]; then cat "$r.notes.md"; echo; fi
+      # The local model's own words, before its first edit, as the cause.
+      if [ -s "$r.answer" ] && ! [ -f "$r.notes.md" ]; then
+        cause=$(awk '/^===EDIT /{exit} {print}' "$r.answer" | sed '/^TEST-CHANGED:/d' | sed '/^[[:space:]]*$/d')
+        [ -n "$cause" ] && { echo "### Cause"; echo; echo "$cause"; echo; }
+      fi
       if [ -n "$new" ]; then echo "### New files"; echo; printf '%s\n' "$new" | sed 's/.*/- `&`/'; echo; fi
       echo "### Diff"; echo; echo '```diff'; git diff; echo '```'
     fi
@@ -18,6 +23,7 @@ command: |
   git diff --stat
 requires:
   - table_pattern: fix
+  - table_pattern: test-lean
 target:
   file: .memdoor/runs/fix-tests-{{.partition}}.md
 timeout: 2m
