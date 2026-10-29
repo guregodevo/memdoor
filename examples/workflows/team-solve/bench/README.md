@@ -27,6 +27,15 @@ OpenRouter (Cerebras, fp16), about 75 minutes with 6 problems in flight.
 `results/*.tsv` has every problem: id, run state, samples passed, all tests
 passed, seconds.
 
+## Thinking on, the GVS5H harness, 2026-10-28
+
+`results/gvs5h-stress.tsv` holds the rows of the harness built from one prompt, run at the
+paper's setting on its first ten ids: 7 of 10 solved on every hidden test, one pass,
+$4.95. `functional-tests.py` writes the samples of the 27 LeetCode-style problems (graded by
+calling a method) as `tests/N.in`, `N.out` and `func_name`; without it the harness ran
+blind on them. The workflow, every run's ledger and the comparison with the authors'
+passes are in [memdoor-demos](https://github.com/guregodevo/memdoor-demos).
+
 ## What this is not
 
 - **Not the paper's setting.** GVS5H gave Qwen3.8-27B up to 128K tokens to
