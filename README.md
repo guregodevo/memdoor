@@ -55,10 +55,11 @@ jobs:
 - **`fix-tests`** finds the test command, fixes the code until the tests pass, and leaves the fix in the working tree.
 - **`release-notes`** turns the commits since the last tag into Added / Changed / Fixed.
 
-No key at all: `local-model: qwen3.5:9b` instead of the key runs pr-review on a
-model inside the runner (Ollama, cached), in one model call. It is a free first
-pass, not a reviewer: on a free runner it caught an obvious off-by-one in under a
-minute, missed a subtle bug, and raised no false blocker on a correct change.
+No key at all: `local-model: Qwen3-8B-4bit` instead of the key runs pr-review on
+a model inside the runner ([janis](https://github.com/guregodevo/janis), one
+file, the model cached), in one model call. It is a free first pass, not a
+reviewer: on a free runner it caught an obvious and a subtle bug in about a
+minute each, and filed a correct change's own fix as a blocker.
 
 Or `workflow: <name>` for your own, `.memdoor/workflows/<name>/` in the repo. The
 job ends with the run's outcome (0 done, 2 failed, 1 stopped, 3 stopped at an
