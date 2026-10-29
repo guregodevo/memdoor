@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="13">
+<rect width="1000" height="700" fill="#fff"/>
+<text x="20" y="34" font-size="20" font-weight="600">The ten: one prompt built the harness, one pass, Qwen3.8-27B</text>
+<text x="20" y="56" fill="#555">Memdoor stress harness (this run) beside the authors' 27B harness and Claude Fable 5 alone (their five passes, same ids, their grader patched)</text>
+<text x="150" y="92" fill="#555">problem</text>
+<text x="270" y="92" fill="#555">ours: hidden tests · calls · cost (bar, $1.41 full)</text>
+<text x="710" y="92" fill="#555">authors' harness</text>
+<text x="850" y="92" fill="#555">Fable 5 alone</text>
+<text x="20" y="115" font-weight="600">arc196_a</text>
+<circle cx="258" cy="110" r="7" fill="#2e7d32"/>
+<rect x="275" y="101" width="68" height="18" fill="#2e7d32" opacity="0.25"/>
+<text x="280" y="115">43/43 · 12 calls · $0.32</text>
+<rect x="710" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="115" fill="#555">5/5</text>
+<rect x="850" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="103" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="103" width="14" height="14" rx="2" fill="#ddd"/>
+<rect x="922" y="103" width="14" height="14" rx="2" fill="#ddd"/>
+<text x="946" y="115" fill="#555">3/5</text>
+<text x="20" y="159" font-weight="600">arc196_b</text>
+<circle cx="258" cy="154" r="7" fill="#2e7d32"/>
+<rect x="275" y="145" width="55" height="18" fill="#2e7d32" opacity="0.25"/>
+<text x="280" y="159">2/2 · 9 calls · $0.26</text>
+<rect x="710" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="159" fill="#555">5/5</text>
+<rect x="850" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="922" y="147" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="946" y="159" fill="#555">5/5</text>
+<text x="20" y="203" font-weight="600">arc196_c</text>
+<circle cx="258" cy="198" r="7" fill="#c62828"/>
+<rect x="275" y="189" width="280" height="18" fill="#c62828" opacity="0.25"/>
+<text x="280" y="203">2/43 · - calls · $1.32</text>
+<rect x="710" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="203" fill="#555">5/5</text>
+<rect x="850" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="922" y="191" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="946" y="203" fill="#555">5/5</text>
+<text x="20" y="247" font-weight="600">arc196_d</text>
+<circle cx="258" cy="242" r="7" fill="#2e7d32"/>
+<rect x="275" y="233" width="89" height="18" fill="#2e7d32" opacity="0.25"/>
+<text x="280" y="247">42/42 · 9 calls · $0.42</text>
+<rect x="710" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="247" fill="#555">5/5</text>
+<rect x="850" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="922" y="235" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="946" y="247" fill="#555">5/5</text>
+<text x="20" y="291" font-weight="600">3777</text>
+<circle cx="258" cy="286" r="7" fill="#2e7d32"/>
+<rect x="275" y="277" width="140" height="18" fill="#2e7d32" opacity="0.25"/>
+<text x="280" y="291">43/43 · 17 calls · $0.66</text>
+<rect x="710" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="279" width="14" height="14" rx="2" fill="#ddd"/>
+<text x="806" y="291" fill="#555">4/5</text>
+<rect x="850" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="922" y="279" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="946" y="291" fill="#555">5/5</text>
+<text x="20" y="335" font-weight="600">abc400_e</text>
+<circle cx="258" cy="330" r="7" fill="#2e7d32"/>
+<rect x="275" y="321" width="6" height="18" fill="#2e7d32" opacity="0.25"/>
+<text x="280" y="335">5/5 · 8 calls · $0.03</text>
+<rect x="710" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="335" fill="#555">5/5</text>
+<rect x="850" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="922" y="323" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="946" y="335" fill="#555">5/5</text>
+<text x="20" y="379" font-weight="600">abc400_g</text>
+<circle cx="258" cy="374" r="7" fill="#c62828"/>
+<rect x="275" y="365" width="300" height="18" fill="#c62828" opacity="0.25"/>
+<text x="280" y="379">2/6 · 39 calls · $1.41</text>
+<rect x="710" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="379" fill="#555">5/5</text>
+<rect x="850" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="922" y="367" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="946" y="379" fill="#555">5/5</text>
+<text x="20" y="423" font-weight="600">3717</text>
+<circle cx="258" cy="418" r="7" fill="#2e7d32"/>
+<rect x="275" y="409" width="14" height="18" fill="#2e7d32" opacity="0.25"/>
+<text x="280" y="423">42/42 · 8 calls · $0.07</text>
+<rect x="710" y="411" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="411" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="411" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="411" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="411" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="423" fill="#555">5/5</text>
+<rect x="850" y="411" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="411" width="14" height="14" rx="2" fill="#ddd"/>
+<rect x="886" y="411" width="14" height="14" rx="2" fill="#ddd"/>
+<rect x="904" y="411" width="14" height="14" rx="2" fill="#ddd"/>
+<rect x="922" y="411" width="14" height="14" rx="2" fill="#ddd"/>
+<text x="946" y="423" fill="#555">1/5</text>
+<text x="20" y="467" font-weight="600">3765</text>
+<circle cx="258" cy="462" r="7" fill="#2e7d32"/>
+<rect x="275" y="453" width="14" height="18" fill="#2e7d32" opacity="0.25"/>
+<text x="280" y="467">42/42 · 8 calls · $0.07</text>
+<rect x="710" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="467" fill="#555">5/5</text>
+<rect x="850" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="886" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="904" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="922" y="455" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="946" y="467" fill="#555">5/5</text>
+<text x="20" y="511" font-weight="600">abc399_e</text>
+<circle cx="258" cy="506" r="7" fill="#c62828"/>
+<rect x="275" y="497" width="82" height="18" fill="#c62828" opacity="0.25"/>
+<text x="280" y="511">32/44 · 35 calls · $0.39</text>
+<rect x="710" y="499" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="728" y="499" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="746" y="499" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="764" y="499" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="782" y="499" width="14" height="14" rx="2" fill="#2e7d32"/>
+<text x="806" y="511" fill="#555">5/5</text>
+<rect x="850" y="499" width="14" height="14" rx="2" fill="#2e7d32"/>
+<rect x="868" y="499" width="14" height="14" rx="2" fill="#ddd"/>
+<rect x="886" y="499" width="14" height="14" rx="2" fill="#ddd"/>
+<rect x="904" y="499" width="14" height="14" rx="2" fill="#ddd"/>
+<rect x="922" y="499" width="14" height="14" rx="2" fill="#ddd"/>
+<text x="946" y="511" fill="#555">1/5</text>
+<line x1="20" y1="560" x2="980" y2="560" stroke="#ccc"/>
+<text x="20" y="588" fill="#000">ours: 7 of 10 solved on all hidden tests, one pass, $4.95 including every failed attempt</text>
+<text x="20" y="610" fill="#555">authors' 27B harness: 9 to 10 of 10 by pass; on their hundred 92 to 94 (their patched grade)</text>
+<text x="20" y="632" fill="#555">authors' 27B single call: 8 to 10 of 10 by pass; on their hundred 82 to 86 (their patched grade)</text>
+<text x="20" y="654" fill="#555">Fable 5 alone: 7 to 10 of 10 by pass; on their hundred 89 to 92 (their patched grade)</text>
+<text x="20" y="684" fill="#888" font-size="11">results/harness-stress-27b.tsv · bench/authors.py over the authors' runs/patched_verdicts.json · generated by bench/chart.py</text>
+</svg>
