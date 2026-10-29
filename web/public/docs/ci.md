@@ -92,8 +92,9 @@ On a runner's CPU janis decodes the 8B at 5.6 tokens a second where Ollama
 does 4.45, and reads a prompt at the same speed. The model is cached per
 branch, and GitHub shares only a cache saved on the default branch: run the
 workflow once on a push to `main` and every pull request starts from it. A
-`workflow_run` job (`explain-failure`) reads that cache but GitHub refused it a
-write, so it downloads the model when `main` has none saved.
+`workflow_run` or `issues` job (`explain-failure`, `issue-triage`) reads that
+cache but GitHub refused both a write, so they download the model when `main`
+has none saved; a `pull_request` job saved it.
 
 ## The built-in workflows
 
