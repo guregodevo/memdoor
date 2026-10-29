@@ -137,6 +137,9 @@ func TestMessageGateThresholdAndUnavailable(t *testing.T) {
 // the person codes with registers the decision provider, marked as the coding
 // key; an explicit decision key wins over it and is not marked.
 func TestTheCodingKeyJudgesByDefault(t *testing.T) {
+	// A machine where `memdoor connect local` ran (Memdoor's pr-triage job on
+	// the runner) has a decision provider in ~/.memdoor/providers.json.
+	t.Setenv("HOME", t.TempDir())
 	for _, name := range []string{"OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY", "MEMDOOR_BYOK", envSystemOneKey, envTypeSafeKey, envSystemOneURL, envSystemOneModel} {
 		t.Setenv(name, "")
 	}
