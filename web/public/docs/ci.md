@@ -90,7 +90,9 @@ the review has to be right.
 On a runner's CPU janis decodes the 8B at 5.6 tokens a second where Ollama
 does 4.45, and reads a prompt at the same speed. The model is cached per
 branch, and GitHub shares only a cache saved on the default branch: run the
-workflow once on a push to `main` and every pull request starts from it.
+workflow once on a push to `main` and every pull request starts from it. A
+`workflow_run` job (`explain-failure`) reads that cache but GitHub refused it a
+write, so it downloads the model when `main` has none saved.
 
 ## The built-in workflows
 
@@ -109,15 +111,24 @@ inside the runner (one model call with everything it needs in the prompt).
 | `fix-tests` | `push`, or by hand | Finds the test command, fixes the code until it passes, leaves the fix in the working tree. | the tests still fail |
 | `release-notes` | a tag push | The commits since the previous tag as Added / Changed / Fixed. | — |
 
-Measured on [llamafit](https://github.com/guregodevo/llamafit) fixtures, each
-both ways: with a key, `write-tests` on a change with a subtle bug failed the
-run with a test showing the bug, and `explain-failure` named the failing test,
-the changed line and the exact bytes missing. On Qwen3-8B, `explain-failure`,
-`pr-description`, `security-review`, `issue-triage` and `release-notes` wrote
-their reports in under a minute each; `fix-tests` fixed an off-by-one with a
-one-line edit. `write-tests` on the 8B kept no test in five tries: its tests
-compile but do not match how the code behaves, and a test that does not pass is
-removed, never kept. Writing tests that pass needs the agent, on a key.
+Measured on GitHub's runners ([llamafit](https://github.com/guregodevo/llamafit)
+#15, #16 and #17), each both ways. A pull request with a path traversal:
+`security-review` red on a key and on the 8B; the same kind of request done
+correctly: green both ways. On the 8B that takes a re-check: each P0 is asked
+once more whether the code after the change lets someone read, write or run
+something they could not before, and a no turns it into a P2. `write-tests` on
+a key left four passing tests on a correct change, and on a change that broke
+an existing test it went red at once, naming that test. `explain-failure` named
+the failing test and the changed loop both ways (the 8B put the line three off).
+`issue-triage` and `pr-description` wrote their reports both ways; on the 8B
+the description has one line per changed file, so a one-line change is never
+left out. A job on the 8B takes two to five minutes with the model cached,
+about one on a key.
+
+`write-tests` on the 8B kept no test in ten tries: its tests compile but do
+not match how the code behaves, and a test that does not pass is removed, never
+kept. The job stays green and says so, after about a quarter of an hour on a
+runner. Writing tests that pass needs the agent, on a key.
 
 Explain a failed CI run (`gh` reads the logs on the job's own token):
 
