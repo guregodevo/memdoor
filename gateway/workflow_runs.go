@@ -188,6 +188,31 @@ func llmTaskMaxTokens(model string, promptChars int) int64 {
 	return cap
 }
 
+// llmTaskReplyCeiling is llmTaskMaxTokens, raised to what the task's named
+// hosts take when it names them (`order a,b`) and they take more than the
+// model's listed figure, which is its top host's; never past the window's
+// room for the reply.
+func llmTaskReplyCeiling(model, order string, promptChars int) int64 {
+	n := llmTaskMaxTokens(model, promptChars)
+	id := strings.TrimPrefix(model, "openrouter:")
+	if order == "" || id == model && strings.Contains(model, ":") {
+		return n
+	}
+	hosts := providers.HostsOutputCeiling(providers.ByokKey(), id, strings.Split(order, ","))
+	if hosts <= n {
+		return n
+	}
+	if l, err := ctxmgmt.GetModelLimits(model); err == nil && l.ContextWindow > 0 {
+		if room := int64(l.ContextWindow) - int64(promptChars)/3 - 1024; room < hosts {
+			hosts = room
+		}
+	}
+	if hosts < n {
+		return n
+	}
+	return hosts
+}
+
 // capped is n under the task's own ceiling when the model line names one.
 func capped(n, ceiling int64) int64 {
 	if ceiling > 0 && ceiling < n {
@@ -208,6 +233,13 @@ var llmTaskCallTimeout = 4 * time.Hour
 const workflowModelAgent = "coder"
 
 func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (string, error) {
+	return c.CompleteWithSystem(ctx, model, "", prompt)
+}
+
+// CompleteWithSystem is mario's SystemCompleter: an llm task's `system:` goes
+// out as the request's system message and the prompt as the user message,
+// the split GVS5H's harness sends every role in.
+func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system, prompt string) (string, error) {
 	if c.s.clientFactory == nil {
 		return "", fmt.Errorf("no model client on this gateway")
 	}
@@ -237,13 +269,17 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 	ctx, cancel := context.WithTimeout(llm.WithUtilityCall(ctx), llmTaskCallTimeout)
 	defer cancel()
 	ask := func(ctx context.Context) (string, llm.StopReason, error) {
-		resp, err := client.Messages().New(ctx, llm.MessageNewParams{
+		params := llm.MessageNewParams{
 			Model:       llm.Model(providers.ModelName),
 			Messages:    []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
-			MaxTokens:   capped(llmTaskMaxTokens(model, len(prompt)), tm.MaxTokens),
+			MaxTokens:   capped(llmTaskReplyCeiling(model, tm.Order, len(system)+len(prompt)), tm.MaxTokens),
 			Temperature: tm.Temperature,
 			Agent:       "workflow",
-		})
+		}
+		if strings.TrimSpace(system) != "" {
+			params.System = []llm.TextBlockParam{{Type: "text", Text: system}}
+		}
+		resp, err := client.Messages().New(ctx, params)
 		if err != nil {
 			return "", "", err
 		}

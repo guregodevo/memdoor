@@ -42,6 +42,7 @@ type Endpoint struct {
 	Tag             string   `json:"tag"`
 	Quantization    string   `json:"quantization"`
 	ContextLength   int      `json:"context_length"`
+	MaxCompletion   int64    `json:"max_completion_tokens"`
 	SupportedParams []string `json:"supported_parameters"`
 	UptimeLast30m   float64  `json:"uptime_last_30m"`
 	Pricing         struct {
@@ -188,4 +189,53 @@ func withStickyHost(policy map[string]any, model string) map[string]any {
 	out["order"] = []string{host}
 	out["allow_fallbacks"] = true
 	return out
+}
+
+// hostCeilings caches, per model, each host's largest reply as OpenRouter
+// lists it (by slug), read at most once an hour.
+var hostCeilings = struct {
+	sync.Mutex
+	by map[string]map[string]int64
+	at map[string]time.Time
+}{by: map[string]map[string]int64{}, at: map[string]time.Time{}}
+
+// HostsOutputCeiling is the largest reply every one of the named hosts takes
+// for model, as OpenRouter lists them; 0 when no named host lists one. The
+// model's own figure is its top host's: Qwen3.8-27B is listed at 65,536
+// while the hosts a bench orders take 235,929, and a task asking for the
+// paper's 128K was held to 65,536 and cut mid-thought (2026-10-29).
+func HostsOutputCeiling(key, model string, order []string) int64 {
+	if key == "" || len(order) == 0 {
+		return 0
+	}
+	hostCeilings.Lock()
+	by, fresh := hostCeilings.by[model], time.Since(hostCeilings.at[model]) < time.Hour
+	hostCeilings.Unlock()
+	if !fresh {
+		eps, err := fetchEndpoints(key, model)
+		if err != nil {
+			logs.New("providers").Warn("host ceilings: the listing did not answer", "model", model, "error", err.Error())
+			return 0
+		}
+		by = map[string]int64{}
+		for _, e := range eps {
+			if e.MaxCompletion > 0 {
+				by[e.Slug()] = e.MaxCompletion
+			}
+		}
+		hostCeilings.Lock()
+		hostCeilings.by[model], hostCeilings.at[model] = by, time.Now()
+		hostCeilings.Unlock()
+	}
+	var ceiling int64
+	for _, h := range order {
+		n, ok := by[strings.ToLower(strings.TrimSpace(h))]
+		if !ok {
+			continue
+		}
+		if ceiling == 0 || n < ceiling {
+			ceiling = n
+		}
+	}
+	return ceiling
 }

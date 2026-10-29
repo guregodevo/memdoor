@@ -1,0 +1,56 @@
+type: command
+# The triage made readable and the verdict made from what was measured: a
+# small model's fences and numbered headings undone, a label or duplicate that
+# does not exist dropped; then the verdict, the worst of the signals measured
+# in checks (failing tests, tests claimed and none changed, functions nothing
+# calls), the title check's answer, and with a key the agent's "claims hold".
+# Advisory: "likely slop" is for a person, never a failed job; only a triage
+# that is not one fails.
+command: |
+  set -e
+  r=.memdoor/runs/pr-triage-{{.partition}}
+  f=$r.md
+  [ -f "$f" ] || { echo "no triage written"; exit 1; }
+  grep -v '^```' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  sed -E 's/^[0-9]+[.)][[:space:]]*(##)/\1/' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  # The labels line first, wherever and however it was written.
+  awk '!found { l = $0; gsub(/[*`_]/, "", l); sub(/^[ \t>#0-9.)-]+/, "", l)
+      if (tolower(substr(l, 1, 7)) == "labels:") { found = 1; first = "labels:" substr(l, 8); next } }
+    { rest[++n] = $0 }
+    END { print (found ? first : "labels:"); s = 1; while (s <= n && rest[s] ~ /^[ \t]*$/) s++; for (i = s; i <= n; i++) print rest[i] }' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  # A duplicate that is not an open item is dropped (a small model invents #12).
+  if grep -q '^#[0-9]' "$r.open"; then
+    awk 'NR==FNR { split($1, a, " "); ok[a[1]] = 1; next }
+      /^- #[0-9]+/ { n = $2; sub(/[^#0-9].*/, "", n); if (!(n in ok)) next }
+      { print }' "$r.open" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  fi
+  awk 'NR==1 { n=split($0, a, ":"); if (n>1) { m=split(a[2], ls, ","); for (i=1;i<=m;i++) { gsub(/^[ \t]+|[ \t]+$/, "", ls[i]); if (ls[i]!="") print ls[i] } } }' "$f" > "$r.asked"
+  keep=$(awk 'NR==FNR { h[$0]=1; next } { gsub(/^[ \t]+|[ \t]+$/, ""); if ($0 in h) print }' "$r.labels" "$r.asked" | awk '{ s = s (NR>1 ? ", " : "") $0 } END { print s }')
+  { if [ -n "$keep" ]; then echo "labels: $keep"; else echo "labels:"; fi; tail -n +2 "$f"; } > "$f.tmp" && mv "$f.tmp" "$f"
+  for s in Summary Missing 'Possible duplicates'; do
+    grep -q "^## $s" "$f" || { echo "no $s section" >&2; exit 1; }
+  done
+  cp "$r.signals" "$r.why"
+  t=$(grep -oE 'YES|NO' "$r.titlecheck" 2>/dev/null | tail -1 || true)
+  [ "$t" = NO ] && echo "likely slop|the diff does not do what the title says" >> "$r.why"
+  grep -qiE '^[-*[:space:]]*claims hold:[*[:space:]]*NO' "$f" && echo "likely slop|a claim in the description is not carried out by the diff (Claims vs diff)" >> "$r.why"
+  if grep -q '^likely slop|' "$r.why"; then verdict="likely slop"
+  elif grep -q '^needs work|' "$r.why"; then verdict="needs work"
+  else verdict="ready for review"; fi
+  {
+    head -1 "$f"
+    echo "## Verdict"
+    echo "**$verdict**"
+    cut -d'|' -f2- "$r.why" | sed 's/^/- /'
+    echo
+    tail -n +2 "$f"
+    echo; echo "## Checked in this job"; cat "$r.facts"
+  } > "$f.tmp" && mv "$f.tmp" "$f"
+  echo "$verdict" > "$r.verdict"
+  echo "pr-triage: $verdict"
+requires:
+  - table_pattern: triage
+  - table_pattern: triage-lean
+  - table_pattern: title-check
+timeout: 1m
+max_retries: 0
