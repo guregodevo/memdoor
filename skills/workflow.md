@@ -20,7 +20,7 @@ the file name is the task's name. Every file:
 type: agent
 prompt: Run `go test ./...` and answer the ok/FAIL line.   # the WORK, as a message to an agent
 agent: coder            # optional: who runs it (coder, verifier, runner …) — default coder
-model: groq:qwen/qwen3.8-27b   # optional: which model answers, as /model names them (also on llm tasks); after it: price|throughput|latency, `order a,b`, `thinking off|low|medium|high`, `max_tokens N` (sent as asked), `temperature T`; an llm task may also carry `system:` (the system message) beside `prompt:`;
+model: groq:qwen/qwen3.8-27b   # optional: which model answers, as /model names them (also on llm tasks); after it: price|throughput|latency, `order a,b`, `thinking off|low|medium|high`, `max_tokens N`;
                         # a host preference after it as /model takes one: `qwen/qwen3.8-27b throughput`, `… order cerebras,deepinfra`,
                         # and `thinking off|low|medium|high` for the step's reasoning (off = no thinking: answers within a host's output cap)
 requires:               # optional: the tasks this one waits for, by name

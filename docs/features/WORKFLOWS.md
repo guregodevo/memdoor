@@ -108,7 +108,7 @@ your message"). A prompt reads a file of the project with `{{ file "path" }}`, a
 
 A task's `model:` is read the way /model reads its line (2026-10-25): the id, then
 an optional host preference (`price`, `throughput`, `latency`, `default`) and an
-optional `order host1,host2`, and an optional `thinking off|low|medium|high`, `max_tokens N` (the reply's limit for the task, sent as asked; a host that cannot take it refuses the call), `temperature T`, and on llm tasks a `system:` field beside `prompt:` (sent as the system message) (the
+optional `order host1,host2`, and an optional `thinking off|low|medium|high`, `max_tokens N` (the reply's ceiling for the task, under the provider's) (the
 step's reasoning effort; `off` sends OpenRouter's `reasoning.enabled=false`), for agent
 and llm tasks alike. The id may be left out: `model: thinking off` is the model that answers here, with thinking off (on a runtime connected with no key, Ollama's `reasoning_effort: none`). The LCB-100 bench needed all of it: Qwen3.8-27B answered at 885
 tokens a second on OpenRouter's throughput host (Cerebras) and at 44 on the cheapest

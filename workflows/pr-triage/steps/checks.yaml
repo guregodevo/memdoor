@@ -1,0 +1,46 @@
+type: command
+# What is checked, not judged: the project's tests run on the pull request's
+# code (in a fork's job that holds no secret), whether a test file changed,
+# and the size. Facts for the triage and for the report; a red test run is a
+# fact here, never this step's failure.
+command: |
+  r=.memdoor/runs/pr-triage-{{.partition}}
+  test_re='(_test\.go|(^|/)test_[^/]*\.py|_test\.py|\.(test|spec)\.[cm]?[jt]sx?|(^|/)(tests?|__tests__|spec)/.*)$'
+  if [ -n "${MEMDOOR_TEST_COMMAND:-}" ]; then c=$MEMDOOR_TEST_COMMAND
+  elif [ -f go.mod ]; then c='go test ./...'
+  elif [ -f Cargo.toml ]; then c='cargo test'
+  elif [ -f package.json ] && grep -q '"test"[[:space:]]*:' package.json; then c='npm test'
+  elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f pytest.ini ]; then c='python3 -m pytest -q'
+  elif [ -f Makefile ] && grep -qE '^test:' Makefile; then c='make test'
+  else c=; fi
+  if [ -n "$c" ]; then
+    if sh -c "$c" > "$r.tests" 2>&1; then tests="pass (\`$c\`)"
+    else tests="FAIL (\`$c\`): $(grep -E -m3 -- '--- FAIL|FAILED|Error|error:' "$r.tests" | tr '\n' ' ' | cut -c1-300)"; fi
+  else tests="no test command found"; fi
+  files=$(wc -l < "$r.numstat" | tr -d ' ')
+  added=$(awk '{a+=$1} END {print a+0}' "$r.numstat"); removed=$(awk '{d+=$2} END {print d+0}' "$r.numstat")
+  code=$(awk '{print $3}' "$r.numstat" | grep -vE "$test_re" | grep -cE '\.(go|py|rs|[cm]?[jt]sx?|java|kt|rb|c|cc|cpp|h|cs|swift|php)$' || true)
+  touched=$(awk '{print $3}' "$r.numstat" | grep -cE "$test_re" || true)
+  {
+    echo "- tests: $tests"
+    echo "- size: $files file(s), +$added −$removed"
+    echo "- test files changed: $touched; source files changed: $code"
+  } > "$r.facts"
+  # Signals that decide the verdict, each measured here, none asked of a model.
+  : > "$r.signals"
+  case "$tests" in FAIL*) echo "needs work|the tests fail with this change" >> "$r.signals" ;; esac
+  if [ "$touched" = 0 ] && sed -n '/^description:/,$p' "$r.pr" | grep -qiE '(add(s|ed|ing)?|new|comprehensive|more)[^.]{0,40}\btests?\b|\btests?\b[^.]{0,20}(added|for (all|every))'; then
+    echo "likely slop|the description says it adds tests, and no test file changed" >> "$r.signals"
+  fi
+  # A function the change adds that nothing in the project calls.
+  for fn in $(grep -E '^\+' "$r.diff" | sed -nE 's/^\+func (\([^)]*\) )?([A-Za-z_][A-Za-z0-9_]*)\(.*/\2/p; s/^\+[[:space:]]*def ([A-Za-z_][A-Za-z0-9_]*)\(.*/\1/p; s/^\+[[:space:]]*(export )?(async )?function ([A-Za-z_][A-Za-z0-9_]*)\(.*/\3/p' | sort -u); do
+    case "$fn" in main|init|Test*|test_*|Benchmark*|Example*) continue ;; esac
+    # Its definition is one line; a comment that names it (Go's doc comment) is no use.
+    [ "$(git grep -wh "$fn" -- . ':!*.md' 2>/dev/null | grep -vE '^[[:space:]]*(//|#|\*|/\*)' | wc -l | tr -d ' ')" -le 1 ] && unused="$unused $fn"
+  done
+  [ -n "${unused:-}" ] && echo "needs work|it adds functions nothing in the project calls:$unused" >> "$r.signals"
+  cat "$r.facts" "$r.signals"
+requires:
+  - table_pattern: diff
+timeout: 20m
+max_retries: 0

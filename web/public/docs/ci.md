@@ -73,8 +73,10 @@ a 3,000-line Go project, each reviewed both ways on `ubuntu-latest`, twice
 | Review | 45–90 s | 35–60 s |
 | Job | 2–3 min, most of it the model's first download | about 1 min |
 
-The local model catches bugs and can fail a correct pull request: read its P0
-before you believe it. Since v1.714.0 each of its P0s gets a second look on
+The local model catches bugs and also files opinions as P0s, so since v1.730.0
+its P0s are advisory: they are in the review, and the job does not fail on
+them (with a key, a P0 still fails the check). Read a local P0 before you
+believe it. Since v1.714.0 each of its P0s gets a second look on
 the same model, one question: is it a problem of the code after the change, or
 of the code before it? One answered "before" is demoted to P2. On the correct
 change that turned one of two runs green; the other run's "P0" was praise
@@ -98,13 +100,14 @@ has none saved; a `pull_request` job saved it.
 
 ## The built-in workflows
 
-Eight, none of them a file in your repository. Each runs on your key (an
+Nine, none of them a file in your repository. Each runs on your key (an
 agent that reads the code around the change and runs it) or on a model
 inside the runner (one model call with everything it needs in the prompt).
 
 | `workflow:` | Run it on, with | What it does | The job fails when |
 |---|---|---|---|
-| `pr-review` | `pull_request` | Reviews the change against its base branch and writes **P0** / P1 / P2 findings. | a P0: something that must not merge |
+| `pr-triage` | `pull_request` | Sorts the pull request for a maintainer: **ready for review**, **needs work** or **likely slop**, with the reasons; the verdict comes from checks run in the job (the tests, tests claimed and none changed, functions nothing calls, and whether the diff does what the title says), plus labels, a summary, what is missing and duplicates. Advisory. | never: the verdict is for a person |
+| `pr-review` | `pull_request` | Reviews the change against its base branch and writes **P0** / P1 / P2 findings. | a P0: something that must not merge (with a key; advisory on a local model) |
 | `security-review` | `pull_request` | The same, for security only: secrets, injection, path traversal, missing authorization, unsafe deserialization, SSRF, weak crypto, an exploitable CI workflow. | an exploitable P0 |
 | `write-tests` | `pull_request` | Writes tests for the functions the change touches and leaves them in the working tree. Never edits an existing test. | an existing test already fails with the change, or a new test shows the change is wrong |
 | `pr-description` | `pull_request` | Writes the pull request's description: title, What, Why, How to test, Risk. | — |

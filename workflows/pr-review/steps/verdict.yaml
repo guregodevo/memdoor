@@ -20,6 +20,16 @@ command: |
   fi
   p0=$(grep -E "$re" "$f" || true)
   others=$(grep -cE '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P[12]([^0-9]|$)' "$f" || true)
+  # A model on the runner's CPU (MEMDOOR_LEAN) runs nothing to check a finding,
+  # and files an opinion as a P0 ("hardcoded to Qwen3-8B-4bit, which may not
+  # be suitable": mario and janis, 2026-10-29) that no question to it told from
+  # a real bug (three wordings, at best 30 of 33 right). Its P0s are advisory:
+  # in the review, never the job's failure.
+  if [ -n "$p0" ] && [ -n "${MEMDOOR_LEAN:-}" ]; then
+    echo "$(printf '%s\n' "$p0" | wc -l | tr -d ' ') P0 finding(s) to check before merging (advisory on a local model):"
+    printf '%s\n' "$p0"
+    exit 0
+  fi
   if [ -n "$p0" ]; then
     echo "$(printf '%s\n' "$p0" | wc -l | tr -d ' ') finding(s) that must not merge:" >&2
     printf '%s\n' "$p0" >&2

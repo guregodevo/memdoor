@@ -51,8 +51,9 @@ jobs:
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
 ```
 
-Eight are built in:
+Nine are built in:
 
+- **`pr-triage`** sorts a pull request for a maintainer: ready for review, needs work, or likely slop, from checks run in the job (the tests, claimed tests that are not there, functions nothing calls).
 - **`pr-review`** reviews the pull request, verifies each finding by running the code, and fails the job only on a blocker.
 - **`security-review`** does the same for security only: secrets, injection, path traversal, missing authorization.
 - **`write-tests`** writes tests for what the change touches, and fails the job when one shows the change is wrong.
