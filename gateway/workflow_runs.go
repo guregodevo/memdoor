@@ -196,8 +196,12 @@ func capped(n, ceiling int64) int64 {
 	return n
 }
 
-// llmTaskCallTimeout is the clock on an llm task's call.
-var llmTaskCallTimeout = 10 * time.Minute
+// llmTaskCallTimeout is the clock on an llm task's call when its task sets
+// none shorter: the task's own `timeout:` is the one that should cut it. Ten
+// minutes killed a 27B worker thinking toward a 128K reply on a hard problem,
+// twice in one round, and the round went on without its answer (2026-10-29);
+// GVS5H's harness gives a call four hours.
+var llmTaskCallTimeout = 4 * time.Hour
 
 // workflowModelAgent is whose ladder an llm task climbs when its YAML names
 // no model: the coder's cheapest rung, as a summary does.
@@ -208,21 +212,21 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 		return "", fmt.Errorf("no model client on this gateway")
 	}
 	ctx = cheapestRung(ctx)
-	var capTokens int64
+	var tm taskModel
 	if model = strings.TrimSpace(model); model != "" {
-		id, sort, order, effort, n := parseTaskModel(model)
-		model, capTokens = id, n
-		if id != "" {
-			ctx = context.WithValue(ctx, sharedctx.ModelKey, id)
+		tm = parseTaskModel(model)
+		model = tm.ID
+		if tm.ID != "" {
+			ctx = context.WithValue(ctx, sharedctx.ModelKey, tm.ID)
 		}
-		if sort != "" {
-			ctx = context.WithValue(ctx, sharedctx.SortKey, sort)
+		if tm.Sort != "" {
+			ctx = context.WithValue(ctx, sharedctx.SortKey, tm.Sort)
 		}
-		if order != "" {
-			ctx = context.WithValue(ctx, sharedctx.OrderKey, order)
+		if tm.Order != "" {
+			ctx = context.WithValue(ctx, sharedctx.OrderKey, tm.Order)
 		}
-		if effort != "" {
-			ctx = context.WithValue(ctx, sharedctx.EffortKey, effort)
+		if tm.Effort != "" {
+			ctx = context.WithValue(ctx, sharedctx.EffortKey, tm.Effort)
 		}
 	}
 	ctx = context.WithValue(ctx, "buddy_agent_name", workflowModelAgent) //nolint:staticcheck // the key the agent runtime reads
@@ -234,10 +238,11 @@ func (c workflowCompleter) Complete(ctx context.Context, model, prompt string) (
 	defer cancel()
 	ask := func(ctx context.Context) (string, llm.StopReason, error) {
 		resp, err := client.Messages().New(ctx, llm.MessageNewParams{
-			Model:     llm.Model(providers.ModelName),
-			Messages:  []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
-			MaxTokens: capped(llmTaskMaxTokens(model, len(prompt)), capTokens),
-			Agent:     "workflow",
+			Model:       llm.Model(providers.ModelName),
+			Messages:    []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
+			MaxTokens:   capped(llmTaskMaxTokens(model, len(prompt)), tm.MaxTokens),
+			Temperature: tm.Temperature,
+			Agent:       "workflow",
 		})
 		if err != nil {
 			return "", "", err
@@ -1532,15 +1537,15 @@ func (r *workflowRun) reviewSince() time.Time {
 // DeepSeek).
 func pinTaskModel(sess *Session, model, actor string) error {
 	if model != "" {
-		id, sort, order, effort, maxTokens := parseTaskModel(model)
-		if err := pinModel(sess, id, sort, order); err != nil {
+		tm := parseTaskModel(model)
+		if err := pinModel(sess, tm.ID, tm.Sort, tm.Order); err != nil {
 			return err
 		}
-		if effort != "" {
-			sess.SetMetadata(sessionEffortKey, effort)
+		if tm.Effort != "" {
+			sess.SetMetadata(sessionEffortKey, tm.Effort)
 		}
-		if maxTokens > 0 {
-			sess.SetMetadata(sessionMaxTokensKey, strconv.FormatInt(maxTokens, 10))
+		if tm.MaxTokens > 0 {
+			sess.SetMetadata(sessionMaxTokensKey, strconv.FormatInt(tm.MaxTokens, 10))
 		}
 		return nil
 	}
@@ -1557,25 +1562,32 @@ func pinTaskModel(sess *Session, model, actor string) error {
 // 885 tokens a second on the throughput host and at 44 on the cheapest, it
 // thought past the host's 32K output cap on a planning prompt and wrote
 // nothing, and an llm task has no window to type /model or Shift+Tab in.
-func parseTaskModel(model string) (id, sort, order, effort string, maxTokens int64) {
+// taskModel is a task's model line, read.
+type taskModel struct {
+	ID, Sort, Order, Effort string
+	MaxTokens               int64
+	Temperature             float64 // 0 = the provider's default
+}
+
+func parseTaskModel(model string) (m taskModel) {
 	fields := strings.Fields(model)
 	if len(fields) == 0 {
-		return "", "", "", "", 0
+		return m
 	}
 	// The id is optional: "thinking off" keeps whatever model answers here
 	// (the built-in pr-review's one-call review, on the model a CI job
 	// connected).
 	start := 0
 	if !taskModelOption(fields[0]) {
-		id, start = fields[0], 1
+		m.ID, start = fields[0], 1
 	}
 	for i := start; i < len(fields); i++ {
 		switch f := strings.ToLower(fields[i]); f {
 		case "price", "throughput", "latency", "default":
-			sort = f
+			m.Sort = f
 		case "order":
 			if i+1 < len(fields) {
-				order = fields[i+1]
+				m.Order = fields[i+1]
 				i++
 			}
 		case "max_tokens", "cap":
@@ -1584,7 +1596,18 @@ func parseTaskModel(model string) (id, sort, order, effort string, maxTokens int
 			// thinks to the host's 235K (one problem cost a dollar, 2026-10-27).
 			if i+1 < len(fields) {
 				if n, err := strconv.ParseInt(fields[i+1], 10, 64); err == nil && n > 0 {
-					maxTokens = n
+					m.MaxTokens = n
+				}
+				i++
+			}
+		case "temperature", "temp":
+			// The sampling temperature for an llm task. GVS5H's harness sets
+			// one per role, 0.2 to 0.4; left out, the host's default answered
+			// (2026-10-29: the authors' 27B solved in five calls what ours
+			// took thirty-five on).
+			if i+1 < len(fields) {
+				if t, err := strconv.ParseFloat(fields[i+1], 64); err == nil && t > 0 && t <= 2 {
+					m.Temperature = t
 				}
 				i++
 			}
@@ -1592,19 +1615,19 @@ func parseTaskModel(model string) (id, sort, order, effort string, maxTokens int
 			if i+1 < len(fields) {
 				switch e := strings.ToLower(fields[i+1]); e {
 				case "off", "low", "medium", "high":
-					effort = e
+					m.Effort = e
 					i++
 				}
 			}
 		}
 	}
-	return id, sort, order, effort, maxTokens
+	return m
 }
 
 // taskModelOption reports whether a model line's word is one of its options.
 func taskModelOption(word string) bool {
 	switch strings.ToLower(word) {
-	case "price", "throughput", "latency", "default", "order", "max_tokens", "cap", "thinking", "effort":
+	case "price", "throughput", "latency", "default", "order", "max_tokens", "cap", "temperature", "temp", "thinking", "effort":
 		return true
 	}
 	return false

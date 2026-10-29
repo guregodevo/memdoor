@@ -168,6 +168,11 @@ type chatStreamChunk struct {
 		Delta struct {
 			Content   string         `json:"content"`
 			ToolCalls []chatToolCall `json:"tool_calls,omitempty"`
+			// The reasoning stream: OpenRouter names it reasoning, vLLM and
+			// DeepSeek reasoning_content. Kept so an answer the model wrote
+			// inside its reasoning is not lost (see the fallback in oai_native).
+			Reasoning        string `json:"reasoning,omitempty"`
+			ReasoningContent string `json:"reasoning_content,omitempty"`
 		} `json:"delta"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`

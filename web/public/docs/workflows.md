@@ -169,7 +169,7 @@ samples passing. On the authors' first ten problems, one pass:
 |---|---|
 | this harness, Qwen3.8-27B, one pass | 7, for $4.95 including every failed attempt |
 | the authors' 27B harness, five passes | 9 to 10 by pass |
-| the authors' 27B single call, five passes | 8 to 10 by pass |
+| the authors' 27B single call, five passes | 4 to 8 by pass |
 | Claude Fable 5 alone, five passes | 7 to 10 by pass |
 
 One miss is the model's: on abc400_g the stress test refused the solution in nine rounds

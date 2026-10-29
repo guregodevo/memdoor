@@ -19,18 +19,18 @@ func TestATaskModelLineNamesTheHostPreference(t *testing.T) {
 		{"Throughput thinking low", "", "throughput", "", "low"},
 	}
 	for _, c := range cases {
-		id, sort, order, effort, _ := parseTaskModel(c.in)
-		if id != c.id || sort != c.sort || order != c.order || effort != c.effort {
-			t.Errorf("parseTaskModel(%q) = %q %q %q %q, want %q %q %q %q", c.in, id, sort, order, effort, c.id, c.sort, c.order, c.effort)
+		m := parseTaskModel(c.in)
+		if m.ID != c.id || m.Sort != c.sort || m.Order != c.order || m.Effort != c.effort {
+			t.Errorf("parseTaskModel(%q) = %q %q %q %q, want %q %q %q %q", c.in, m.ID, m.Sort, m.Order, m.Effort, c.id, c.sort, c.order, c.effort)
 		}
 	}
 }
 
 func TestATaskModelLineCapsTheReply(t *testing.T) {
-	if _, _, _, _, n := parseTaskModel("openrouter:qwen/qwen3.8-27b thinking high max_tokens 128000"); n != 128000 {
+	if n := parseTaskModel("openrouter:qwen/qwen3.8-27b thinking high max_tokens 128000").MaxTokens; n != 128000 {
 		t.Errorf("max_tokens = %d", n)
 	}
-	if _, _, _, _, n := parseTaskModel("qwen/qwen3.8-27b max_tokens lots"); n != 0 {
+	if n := parseTaskModel("qwen/qwen3.8-27b max_tokens lots").MaxTokens; n != 0 {
 		t.Errorf("a non-number cap = %d, want 0", n)
 	}
 	if got := capped(235929, 128000); got != 128000 {
@@ -38,5 +38,22 @@ func TestATaskModelLineCapsTheReply(t *testing.T) {
 	}
 	if got := capped(16384, 128000); got != 16384 {
 		t.Errorf("a cap above the ceiling must not raise it: %d", got)
+	}
+}
+
+// A task's model line may set the sampling temperature, as GVS5H's harness
+// does per role (0.2 to 0.4); a value out of range is ignored.
+func TestATaskModelLineSetsTheTemperature(t *testing.T) {
+	m := parseTaskModel("openrouter:qwen/qwen3.8-27b thinking high temperature 0.2 max_tokens 128000")
+	if m.Temperature != 0.2 || m.MaxTokens != 128000 || m.Effort != "high" || m.ID != "openrouter:qwen/qwen3.8-27b" {
+		t.Errorf("got %+v", m)
+	}
+	if m := parseTaskModel("temperature 0.4"); m.ID != "" || m.Temperature != 0.4 {
+		t.Errorf("no id: %+v", m)
+	}
+	for _, bad := range []string{"qwen temperature hot", "qwen temperature 0", "qwen temperature 7"} {
+		if m := parseTaskModel(bad); m.Temperature != 0 {
+			t.Errorf("%q: temperature %v, want the default", bad, m.Temperature)
+		}
 	}
 }

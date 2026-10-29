@@ -18,7 +18,7 @@ prompt: |
   - **P1** `path:line` — …
   - **P2** `path:line` — …
 
-  P0 is only what must not merge: a bug a user hits, a security hole, data loss, a broken build. P1 is what should be fixed soon; P2 a nit. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
+  P0 is only what must not merge: a bug a user hits, a security hole, data loss, a broken build. P1 is what should be fixed soon; P2 a nit. A finding is a fault in the new code: what the change fixes or improves is never a finding, say it in the Summary. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
 
   ```diff
   {{ file (printf ".memdoor/runs/pr-review-%s.diff" .partition) }}
