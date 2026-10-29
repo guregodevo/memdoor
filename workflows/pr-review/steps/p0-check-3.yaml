@@ -1,0 +1,28 @@
+type: llm
+model: thinking off
+# A second look at the lean review's P0 number 3, on the same model, asked
+# one question it answers well: is it a fault of the code after the change, or
+# of the code before it? A small model files what a change fixes as its fault
+# (Qwen3-8B failed a correct pull request that way, guregodevo/llamafit#11,
+# 2026-10-29); verdict demotes a P0 answered BEFORE to P2. This question: 21
+# of 21 on that model over three false P0s and four real ones.
+when: test -s .memdoor/runs/pr-review-{{.partition}}.p0-3
+prompt: |
+  Here is a code change. Lines starting with - are the code before, lines starting with + the code after.
+
+  ```diff
+  {{ file (printf ".memdoor/runs/pr-review-%s.diff" .partition) }}
+  ```
+
+  A reviewer says:
+  {{ file (printf ".memdoor/runs/pr-review-%s.p0-3" .partition) }}
+
+  Is that a problem of the code AFTER the change (it breaks something that worked before), or a problem of the code BEFORE the change that the change removes?
+
+  Answer with one word: AFTER or BEFORE.
+requires:
+  - table_pattern: p0-list
+target:
+  file: .memdoor/runs/pr-review-{{.partition}}.p0check-3
+timeout: 20m
+max_retries: 0

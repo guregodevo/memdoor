@@ -1,0 +1,15 @@
+type: command
+# The lean review's first three P0s, one per file, for p0-check-1..3 to weigh
+# one by one: a small model asked about several at once answers in a pattern
+# (AFTER, BEFORE) rather than per finding. A fourth is kept unchecked.
+when: test -s .memdoor/runs/pr-review-{{.partition}}.md && [ -n "${MEMDOOR_LEAN:-}" ]
+command: |
+  r=.memdoor/runs/pr-review-{{.partition}}
+  rm -f "$r".p0-1 "$r".p0-2 "$r".p0-3
+  grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P0([^0-9]|$)' "$r".md | head -3 |
+    awk -v r="$r" '{ print > (r ".p0-" NR) }'
+  ls "$r".p0-* 2>/dev/null | wc -l | tr -d ' '
+requires:
+  - table_pattern: review-lean
+timeout: 1m
+max_retries: 0
