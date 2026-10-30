@@ -124,8 +124,8 @@ as actor ids, `link_previews`, `attachments` with `id`, `filename`,
 |---|---|
 | `GET /api/messages/<id>` | `handleGetSingleMessage` |
 | `PUT /api/messages/<id>` | `handleEditMessage`: `{"text"}`, the author only |
-| `GET /api/messages/<id>/replies` | the thread under a message |
-| `POST /api/messages/<id>/replies` | reply in that thread |
+| `GET /api/messages/<id>/replies` | the thread under a message; signed in, and the parent's channel readable |
+| `POST /api/messages/<id>/replies` | reply in that thread; the parent's channel writable |
 | `POST /api/messages/<id>/read` | `handleMarkMessageRead` |
 | `GET /api/messages/unread-mentions` | `handleUnreadMentionCounts`: per-channel counts for the caller |
 | `GET /api/messages/threads?limit=` | `handleListUnreadMentions`: the unread mentions themselves |
@@ -152,7 +152,7 @@ curl -s http://localhost:18789/api/agents -H "Authorization: Bearer $TOKEN"
 | `GET /api/agents/<name>` | `handleAgentByName`: the row plus `description`, `personality`, `system_prompt`, `learning_enabled`, `execution_type` |
 | `PUT /api/agents/<name>` | admin only; any subset of `learning_enabled`, `tools`, `sandbox_scope`, `avatar_emoji`, `description`, `personality`, `system_prompt`, `execution_type`, `endpoint`, `admin_only`, `remote_config`; a remote agent must end up with `remote_config.endpoint` and `.model` |
 | `DELETE /api/agents/<name>` | admin only |
-| `GET`/`POST`/`DELETE /api/agents/<name>/secrets[/<secret>]` | `handleAgentSecrets`, admin only: names the agent's `get_secret` tool can read; `POST {"name","value"}`; values are never returned |
+| `GET`/`POST`/`DELETE /api/agents/<name>/secrets[/<secret>]` | `handleAgentSecrets`, an admin of the gateway's own workspace (the store is keyed by agent name, shared by every workspace): names the agent's `get_secret` tool can read; `POST {"name","value"}`; values are never returned |
 
 ## Users and workspace
 
@@ -183,8 +183,8 @@ ladder, with `sort` and `order` for the host) or `effort` (`low`, `medium`,
 
 ## Logs
 
-`gateway/server_logs.go`, admin only; the structured event store that
-`memdoor logs` reads.
+`gateway/server_logs.go`, an admin of the gateway's own workspace (the log is
+every workspace's); the structured event store that `memdoor logs` reads.
 
 ```bash
 curl -s "http://localhost:18789/api/logs/query?since=5m&regex=coder&limit=20" -H "Authorization: Bearer $TOKEN"
@@ -215,14 +215,17 @@ curl -s "http://localhost:18789/api/fs?op=read&root=/srv/app&path=main.go"  # {"
 ```
 
 `op` is `stat`, `list` or `read`; `path` under `read` must be relative to
-`root`. What is answered is what the coder can read anyway, for the
-authenticated user.
+`root`. What is answered is what the coder can read anyway, for someone
+signed in to the gateway's own workspace (`requireGatewayMember`: the first
+account's; a sign-up's own workspace is refused with 403).
 
 ## The phone's link, hosted by the gateway
 
 `/api/remote/<channel>` (`gateway/remote_host.go remoteHosted.handle`) makes
 the gateway's own process the terminal end of a `/remote` link, so the link
-outlives the window that made it (`~/.memdoor/remote-hosted.json`).
+outlives the window that made it (`~/.memdoor/remote-hosted.json`). Turning
+one on (`PUT`) is the gateway's own workspace's: the host is a TUI on this
+machine.
 
 | Method | Body / answer |
 |---|---|
@@ -238,14 +241,14 @@ the link itself. The relay sockets are `/api/relay` (the terminal end) and
 
 One line each; the handler file has the shape.
 
-- `GET`/`POST /api/cron`, `GET`/`DELETE /api/cron/<id>`, `GET /api/cron-history`, `/api/cron-stats`: scheduled checks (`memdoor cron`).
-- `/api/workflow`, `/api/workflow/<run>`: run, status, stop, approve a DAG on mario (`gateway/workflow_runs.go`).
-- `POST /api/sessions/fresh`, `/compact`, `/handoff`: `/fresh`, `/compact`, `/handoff` in the window (`gateway/session_fresh.go`, `session_compact.go`).
-- `/api/mcp`, `/api/mcp/<…>`: the person's MCP servers (`gateway/mcp_handlers.go`).
-- `GET`/`POST`/`DELETE /api/secrets[/<name>]`: gateway-wide secrets, admin only, values masked.
-- `/api/memory`, `/api/memory/<id>`: an agent's memory store (`gateway/server_memory.go`).
-- `POST /api/agent`, `POST /api/message` (`gateway/server_http.go`): the run-queue RPC the agents' own `sessions_*` tools use; a client posts to `/api/messages` instead.
-- `/sessions`, `/sessions/detail`, `/sessions/history`, `/sessions/clear`, `/sessions/rewind`, `/queue`: admin-only session introspection behind `memdoor sessions`.
+- `GET`/`POST /api/cron`, `GET`/`DELETE /api/cron/<id>`, `GET /api/cron-history`, `/api/cron-stats`: scheduled checks (`memdoor cron`); a job is its workspace's (another's answers 404), history across all jobs is the gateway's own workspace's, and a job's `session_key` must be the caller's.
+- `/api/workflow`, `/api/workflow/<run>`: run, status, stop, approve a DAG on mario (`gateway/workflow_runs.go`); the gateway's own workspace only (`gatewayMember`).
+- `POST /api/sessions/fresh`, `/compact`, `/handoff`: `/fresh`, `/compact`, `/handoff` in the window (`gateway/session_fresh.go`, `session_compact.go`); signed in, and the conversation must be the caller's workspace's (`conversationAllowed`).
+- `/api/mcp`, `/api/mcp/<…>`: the person's MCP servers (`gateway/mcp_handlers.go`); the gateway's own workspace only (`gatewayMember`): a server is a command this machine runs.
+- `GET`/`POST`/`DELETE /api/secrets[/<name>]`: gateway-wide secrets, an admin of the gateway's own workspace, values masked.
+- `/api/memory`, `/api/memory/<id>`: an agent's memory store (`gateway/server_memory.go`); keyed by agent name, so the gateway's own workspace's (writes: its admins).
+- `POST /api/agent`, `POST /api/message` (`gateway/server_http.go`): the run-queue RPC the agents' own `sessions_*` tools use; a client posts to `/api/messages` instead. A `session_key` naming another workspace is refused (`sessionIsCallers`).
+- `/sessions`, `/sessions/detail`, `/sessions/history`, `/sessions/clear`, `/sessions/rewind`, `/queue`: session introspection behind `memdoor sessions`, for an admin of the gateway's own workspace (every workspace's conversations are here).
 - `POST /api/share`: a sealed transcript behind `https://memdoor.ai/s/<id>#k=<key>` (`gateway/share_store.go`).
 
 ## WebSocket: a conversation (`/ws`)
@@ -254,7 +257,9 @@ One line each; the handler file has the shape.
 connection follows one conversation and drives turns on it. The token goes
 in `Authorization: Bearer` or `?token=`; `?workspace=<slug>&channel=<id>`
 names the conversation (the server builds the session key; a channel
-outside the caller's workspace closes the socket). A frame is
+outside the caller's workspace closes the socket, and so does a person's
+`?workspace=` naming another's or a legacy `?session=` key outside their
+own; an empty `?workspace=` is the person's own). A frame is
 `{"type":…,"session_id":…,"data":{…},"error":…}` (`gateway/protocol/types.go
 Message`). The types are the constants in that file:
 
@@ -275,7 +280,8 @@ Events emitted while a client is disconnected are not replayed.
 ## WebSocket: channel events (`/chat/ws`)
 
 `gateway/websocket/handler.go HandleWebSocketWithAuth`, the hub the web page
-uses. Token as above, `?channel=<id>` to follow one channel. Frames are
+uses. Token as above, `?channel=<id>` to follow one channel the caller may
+read (403 otherwise, the same check as `/ws`). Frames are
 `{"type":…,"data":…}` with the `MessageType` constants in
 `gateway/websocket/hub.go`: `message.created`, `message.updated`,
 `message.deleted`, `execution.started`, `execution.event`,

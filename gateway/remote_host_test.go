@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"memdoor/pkg/authorization"
 )
 
 // A host that records what it was told.
@@ -52,6 +54,21 @@ func TestTheGatewayHostsALinkForItsOwner(t *testing.T) {
 	SetRemoteHost(host)
 	t.Cleanup(func() { SetRemoteHost(nil) })
 	h := newRemoteHosted(path)
+	if code, _ := hostedCall(t, h, http.MethodPut, "ch1", "user:a", hostedSpec); code != http.StatusForbidden {
+		t.Fatalf("a gateway told nobody may host hosts nothing: %d", code)
+	}
+	// Only the gateway's own workspace turns a link on (any sign-up got a
+	// TUI on this machine, its files panel reading the disk, until 2026-10-30).
+	h.mayHost = func(w http.ResponseWriter, r *http.Request) bool {
+		if authorization.GetActorID(r.Context()) == "user:stranger" {
+			http.Error(w, "no", http.StatusForbidden)
+			return false
+		}
+		return true
+	}
+	if code, _ := hostedCall(t, h, http.MethodPut, "ch9", "user:stranger", hostedSpec); code != http.StatusForbidden {
+		t.Fatalf("a stranger turns no link on: %d", code)
+	}
 
 	code, out := hostedCall(t, h, http.MethodGet, "ch1", "user:a", "")
 	if code != 200 || out["hosted"] != false {
@@ -112,6 +129,7 @@ func TestTheGatewayHostsALinkForItsOwner(t *testing.T) {
 func TestNoHostMeansTheWindowHosts(t *testing.T) {
 	SetRemoteHost(nil)
 	h := newRemoteHosted(filepath.Join(t.TempDir(), "remote-hosted.json"))
+	h.mayHost = func(http.ResponseWriter, *http.Request) bool { return true }
 	if code, _ := hostedCall(t, h, http.MethodPut, "ch1", "user:a", hostedSpec); code != http.StatusNotFound {
 		t.Fatalf("no host: 404, got %d", code)
 	}

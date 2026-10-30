@@ -15,8 +15,10 @@ func (s *Server) handleMemory(w http.ResponseWriter, r *http.Request) {
 	// Reading an agent's memory requires authentication; writing/deleting
 	// is admin-only — otherwise anyone could poison or wipe an agent's
 	// memory store. In-process agent tools run as system:internal, which
-	// passes both gates.
-	if _, ok := requireAuth(w, r); !ok {
+	// passes both gates. The store is keyed by the agent's name alone, every
+	// workspace's "coder" sharing one, so it is the gateway's own workspace's
+	// (any sign-up read, wrote and deleted it until 2026-10-30).
+	if !s.gatewayMember(w, r) {
 		return
 	}
 	if r.Method != http.MethodGet {

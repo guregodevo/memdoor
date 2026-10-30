@@ -33,11 +33,16 @@ func TestATaskModelLineCapsTheReply(t *testing.T) {
 	if n := parseTaskModel("qwen/qwen3.8-27b max_tokens lots").MaxTokens; n != 0 {
 		t.Errorf("a non-number cap = %d, want 0", n)
 	}
-	if got := capped(235929, 128000); got != 128000 {
-		t.Errorf("capped = %d", got)
+	// The task's number is sent as asked, above or below the gateway's
+	// figure for the model; none named, the gateway's figure.
+	if got := replyLimit(65536, 128000); got != 128000 {
+		t.Errorf("asked above the listed figure: %d", got)
 	}
-	if got := capped(16384, 128000); got != 16384 {
-		t.Errorf("a cap above the ceiling must not raise it: %d", got)
+	if got := replyLimit(235929, 16384); got != 16384 {
+		t.Errorf("asked below: %d", got)
+	}
+	if got := replyLimit(65536, 0); got != 65536 {
+		t.Errorf("none asked: %d", got)
 	}
 }
 

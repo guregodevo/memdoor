@@ -87,6 +87,9 @@ func (s *Server) handleSessionFresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := shared.NewChannelSessionID(scope, in.ChannelID)
+	if !s.conversationAllowed(w, r, key) {
+		return
+	}
 	cancelled, err := startFresh(s.freshSteps(key), key, transcriptKey(key, in.Agent))
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {

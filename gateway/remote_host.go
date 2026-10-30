@@ -77,6 +77,10 @@ type remoteHosted struct {
 	mu    sync.Mutex
 	path  string
 	specs map[string]RemoteHostSpec // by channel id
+	// mayHost says who may turn a link on: the hosted program is a TUI on
+	// this machine, its files panel reading the disk here, and it dials the
+	// relay the body names. Any sign-up could until 2026-10-30. nil: nobody.
+	mayHost func(http.ResponseWriter, *http.Request) bool
 }
 
 const remoteHostedFile = "remote-hosted.json"
@@ -153,6 +157,13 @@ func (h *remoteHosted) handle(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"hosted": true, "id": spec.ID, "key": spec.Key, "relay": spec.Relay})
 	case http.MethodPut:
+		if h.mayHost == nil {
+			http.Error(w, `{"error":"this gateway hosts no links"}`, http.StatusForbidden)
+			return
+		}
+		if !h.mayHost(w, r) {
+			return
+		}
 		var spec RemoteHostSpec
 		if err := json.NewDecoder(r.Body).Decode(&spec); err != nil {
 			http.Error(w, `{"error":"a link: workspace, channel_id, id, key, token, relay"}`, http.StatusBadRequest)

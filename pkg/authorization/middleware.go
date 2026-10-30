@@ -68,9 +68,9 @@ func (m *AuthMiddleware) SetSlugResolver(r WorkspaceSlugResolver) {
 // Handler wraps an HTTP handler with authentication
 func (m *AuthMiddleware) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Internal service calls (tools running inside the gateway process)
-		// Trust X-Internal-Service header only from loopback addresses
-		if r.Header.Get("X-Internal-Service") != "" && isLoopback(r.RemoteAddr) {
+		// Internal service calls (tools running inside the gateway process):
+		// loopback, carrying this process's own secret (shared.InternalServiceToken).
+		if shared.IsInternalServiceToken(r.Header.Get("X-Internal-Service")) && isLoopback(r.RemoteAddr) {
 			// A tool call from inside the gateway names the run's workspace
 			// (X-Forwarded-Workspace, set by tools.agentsAPICall) and is
 			// scoped to it like a user's request; without one it sees the

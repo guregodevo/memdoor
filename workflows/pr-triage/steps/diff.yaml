@@ -52,8 +52,9 @@ command: |
   fi
   gh label list --limit 200 --json name -q '.[].name' > "$r.labels" 2>/dev/null || : > "$r.labels"
   [ -s "$r.labels" ] || echo "(no labels known: write labels: with nothing after it)" > "$r.labels"
-  { gh pr list --state open --limit 100 --json number,title -q '.[] | "#\(.number) \(.title) (pull request)"'
-    gh issue list --state open --limit 100 --json number,title -q '.[] | "#\(.number) \(.title) (issue)"'; } > "$r.open" 2>/dev/null || : > "$r.open"
+  # Each list on its own: a token that may not read issues keeps the pull requests.
+  { gh pr list --state open --limit 100 --json number,title -q '.[] | "#\(.number) \(.title) (pull request)"' || :
+    gh issue list --state open --limit 100 --json number,title -q '.[] | "#\(.number) \(.title) (issue)"' || :; } > "$r.open" 2>/dev/null
   [ -s "$r.open" ] || echo "(no open pull requests or issues known)" > "$r.open"
   echo "the pull request from $src: $(git diff --shortstat "$base" | sed 's/^ //')"
 timeout: 3m

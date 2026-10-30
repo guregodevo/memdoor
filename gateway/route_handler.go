@@ -266,6 +266,11 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := shared.NewChannelSessionID(scope, in.ChannelID)
+	// The caller's own conversation (anyone pinned any conversation to a
+	// costly model, no token needed, until 2026-10-30).
+	if !s.conversationAllowed(w, r, key) {
+		return
+	}
 	re := providers.ActiveRemoteEngine()
 	if r.Method == http.MethodGet {
 		sess, _ := s.sessions.GetSession(key) // nil before the first turn

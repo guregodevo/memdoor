@@ -197,8 +197,10 @@ verifies it, builds the `shared.ExecutionContext` (actor, workspace, role;
 `docs/architecture/EXECUTION_CONTEXT.md`) and puts it on the request; a
 missing or foreign token leaves no actor, and each handler's `requireAuth`
 (`gateway/chat_server.go`) then refuses. The one header trusted without a
-token, `X-Internal-Service`, is accepted from a loopback peer only (a tool
-running inside the process). `/health` and the relay's browser socket (which
+token, `X-Internal-Service`, is accepted from a loopback peer only and only
+with this process's own secret (`shared.InternalServiceToken`, made at start,
+kept in memory): a tool running inside the process. Any value from loopback
+passed until 2026-10-30, so any program on the machine was the gateway itself. `/health` and the relay's browser socket (which
 takes the link's proof instead) are the exceptions.
 
 The first account is made from the machine itself. `Server.handleSetup` in

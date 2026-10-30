@@ -170,6 +170,12 @@ func (s *Server) handleSendInvite(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		inviterName = user.Name
+		// Mail in the gateway's name, with the sender's own words, to any
+		// address: the gateway's own workspace's to send (any sign-up could
+		// until 2026-10-30).
+		if !s.gatewayMember(w, r) {
+			return
+		}
 	}
 
 	var req struct {

@@ -23,6 +23,11 @@ func (cs *ChatServer) handleAgents(w http.ResponseWriter, r *http.Request) {
 		cs.handleCreateAgent(w, r)
 
 	case http.MethodGet:
+		// Signed in: anonymous, requestWorkspace is "" and the list was every
+		// workspace's agents, system prompts included (until 2026-10-30).
+		if _, ok := requireAuth(w, r); !ok {
+			return
+		}
 		// Get agents from repository (DDD model)
 		ctx := r.Context()
 
@@ -133,6 +138,9 @@ func (cs *ChatServer) handleAgentsSubpath(w http.ResponseWriter, r *http.Request
 func (cs *ChatServer) handleAgentByName(w http.ResponseWriter, r *http.Request, agentName string) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
+	if _, ok := requireAuth(w, r); !ok {
+		return
+	}
 
 	buddy, err := cs.buddyRepo.GetByName(ctx, requestWorkspace(ctx), agentName)
 	if err != nil {
@@ -287,8 +295,10 @@ func (cs *ChatServer) handleAgentSecrets(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	// Authorization: admin only
-	if !requireAdmin(w, r, cs.authzService) {
+	// An admin of the gateway's own workspace: the store is keyed by the
+	// agent's name alone, so every workspace's "coder" shares it, and any
+	// sign-up (admin of its own) listed and rewrote it until 2026-10-30.
+	if !requireAdmin(w, r, cs.authzService) || !requireGatewayMember(w, r, cs.repoFactory) {
 		return
 	}
 	actorID := authorization.GetActorID(ctx)
@@ -360,8 +370,9 @@ func (cs *ChatServer) handleSecrets(w http.ResponseWriter, r *http.Request) {
 
 	// Admin only. System secrets are global API keys (LLM, email); any
 	// authenticated user — including guest tokens — must not be able to read,
-	// overwrite, or delete them.
-	if !requireAdmin(w, r, cs.authzService) {
+	// overwrite, or delete them, nor an admin of another workspace (every
+	// sign-up is admin of its own).
+	if !requireAdmin(w, r, cs.authzService) || !requireGatewayMember(w, r, cs.repoFactory) {
 		return
 	}
 	actorID := authorization.GetActorID(ctx)

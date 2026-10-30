@@ -39,11 +39,16 @@ func TestFSAnswersStatListAndReadForTheAuthenticated(t *testing.T) {
 	if code, _ := call("", url.Values{"op": {"stat"}, "path": {root}}); code != http.StatusUnauthorized {
 		t.Fatalf("unauthenticated: %d", code)
 	}
-	code, body := call("human:alice", url.Values{"op": {"stat"}, "path": {root}})
+	// Someone outside the gateway's own workspace reads nothing (any
+	// sign-up read /etc and ~/.memdoor here until 2026-10-30).
+	if code, _ := call("human:stranger", url.Values{"op": {"read"}, "root": {root}, "path": {"pkg/a.go"}}); code != http.StatusForbidden {
+		t.Fatalf("a stranger: %d", code)
+	}
+	code, body := call("system:internal", url.Values{"op": {"stat"}, "path": {root}})
 	if code != 200 || body["dir"] != true || body["exists"] != true {
 		t.Fatalf("stat: %d %v", code, body)
 	}
-	code, body = call("human:alice", url.Values{"op": {"list"}, "root": {root}})
+	code, body = call("system:internal", url.Values{"op": {"list"}, "root": {root}})
 	if code != 200 {
 		t.Fatalf("list: %d %v", code, body)
 	}
@@ -51,15 +56,15 @@ func TestFSAnswersStatListAndReadForTheAuthenticated(t *testing.T) {
 	if len(files) != 2 || files[0] != "pkg/" || files[1] != "pkg/a.go" {
 		t.Fatalf("list files: %v", files)
 	}
-	code, body = call("human:alice", url.Values{"op": {"read"}, "root": {root}, "path": {"pkg/a.go"}})
+	code, body = call("system:internal", url.Values{"op": {"read"}, "root": {root}, "path": {"pkg/a.go"}})
 	lines, _ := body["lines"].([]interface{})
 	if code != 200 || len(lines) != 2 || lines[0] != "   1  package pkg" {
 		t.Fatalf("read: %d %v", code, body)
 	}
-	if code, _ := call("human:alice", url.Values{"op": {"read"}, "root": {root}, "path": {"../etc/passwd"}}); code != http.StatusBadRequest {
+	if code, _ := call("system:internal", url.Values{"op": {"read"}, "root": {root}, "path": {"../etc/passwd"}}); code != http.StatusBadRequest {
 		t.Fatalf("read outside root: %d", code)
 	}
-	if code, _ := call("human:alice", url.Values{"op": {"list"}, "root": {filepath.Join(root, "nowhere")}}); code != http.StatusNotFound {
+	if code, _ := call("system:internal", url.Values{"op": {"list"}, "root": {filepath.Join(root, "nowhere")}}); code != http.StatusNotFound {
 		t.Fatalf("list missing root: %d", code)
 	}
 }

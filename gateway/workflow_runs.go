@@ -188,37 +188,19 @@ func llmTaskMaxTokens(model string, promptChars int) int64 {
 	return cap
 }
 
-// llmTaskReplyCeiling is llmTaskMaxTokens, raised to what the task's named
-// hosts take when it names them (`order a,b`) and they take more than the
-// model's listed figure, which is its top host's; never past the window's
-// room for the reply.
-func llmTaskReplyCeiling(model, order string, promptChars int) int64 {
-	n := llmTaskMaxTokens(model, promptChars)
-	id := strings.TrimPrefix(model, "openrouter:")
-	if order == "" || id == model && strings.Contains(model, ":") {
-		return n
+// replyLimit is the reply limit a task asks for (`max_tokens N` on its
+// model line) when it names one, on any provider and model: the person's
+// number is sent as it is, and a host that cannot take it refuses the call
+// with its own error. With none named, the gateway's figure for the model.
+// It used to be held under the model's listed ceiling, a figure that may be
+// one host's (OpenRouter lists Qwen3.8-27B at 65,536 while the hosts serving
+// it take 235,929): a plan call asking for 128K was cut at 65,536 mid-thought
+// (2026-10-29).
+func replyLimit(gatewayFigure, asked int64) int64 {
+	if asked > 0 {
+		return asked
 	}
-	hosts := providers.HostsOutputCeiling(providers.ByokKey(), id, strings.Split(order, ","))
-	if hosts <= n {
-		return n
-	}
-	if l, err := ctxmgmt.GetModelLimits(model); err == nil && l.ContextWindow > 0 {
-		if room := int64(l.ContextWindow) - int64(promptChars)/3 - 1024; room < hosts {
-			hosts = room
-		}
-	}
-	if hosts < n {
-		return n
-	}
-	return hosts
-}
-
-// capped is n under the task's own ceiling when the model line names one.
-func capped(n, ceiling int64) int64 {
-	if ceiling > 0 && ceiling < n {
-		return ceiling
-	}
-	return n
+	return gatewayFigure
 }
 
 // llmTaskCallTimeout is the clock on an llm task's call when its task sets
@@ -272,7 +254,7 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 		params := llm.MessageNewParams{
 			Model:       llm.Model(providers.ModelName),
 			Messages:    []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
-			MaxTokens:   capped(llmTaskReplyCeiling(model, tm.Order, len(system)+len(prompt)), tm.MaxTokens),
+			MaxTokens:   replyLimit(llmTaskMaxTokens(model, len(system)+len(prompt)), tm.MaxTokens),
 			Temperature: tm.Temperature,
 			Agent:       "workflow",
 		}
@@ -1094,7 +1076,13 @@ type workflowRequest struct {
 	Limit     int    `json:"limit"`     // history: how many runs back (0 = the default)
 }
 
+// handleWorkflow is the gateway's own workspace's alone (gatewayMember): a
+// run starts agents and commands in any directory of this machine. It
+// answered anyone, no token needed, until 2026-10-30.
 func (s *Server) handleWorkflow(w http.ResponseWriter, r *http.Request) {
+	if !s.gatewayMember(w, r) {
+		return
+	}
 	action := strings.TrimPrefix(strings.TrimPrefix(r.URL.Path, "/api/workflow"), "/")
 	var req workflowRequest
 	if r.Method == http.MethodPost {

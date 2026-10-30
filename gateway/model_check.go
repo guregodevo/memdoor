@@ -358,6 +358,11 @@ func (s *Server) handleModelCheck(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "GET or POST"}`, http.StatusMethodNotAllowed)
 		return
 	}
+	// A probe spends the gateway's key: its own workspace's (anyone ran
+	// them, no token needed, until 2026-10-30).
+	if !s.gatewayMember(w, r) {
+		return
+	}
 	ids := []string{}
 	if id := strings.TrimSpace(r.URL.Query().Get("id")); id != "" {
 		ids = append(ids, id)

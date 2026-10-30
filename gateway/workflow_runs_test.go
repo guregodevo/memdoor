@@ -271,14 +271,29 @@ func TestResumeIsANewRunOnTheSamePartition(t *testing.T) {
 // The HTTP surface the TUI, the CLI and the tool share, action by action.
 func TestHandleWorkflowHTTP(t *testing.T) {
 	s, run, dir := workflowServerWithRun(t)
-	call := func(action string, body map[string]interface{}) (int, map[string]interface{}) {
+	asActor := func(actor, action string, body map[string]interface{}) (int, map[string]interface{}) {
 		b, _ := json.Marshal(body)
 		req := httptest.NewRequest(http.MethodPost, "/api/workflow/"+action, bytes.NewReader(b))
+		if actor != "" {
+			req = authenticatedRequest(http.MethodPost, "/api/workflow/"+action, bytes.NewReader(b), actor)
+		}
 		rec := httptest.NewRecorder()
 		s.handleWorkflow(rec, req)
 		var out map[string]interface{}
 		_ = json.Unmarshal(rec.Body.Bytes(), &out)
 		return rec.Code, out
+	}
+	// A run starts agents and commands on this machine: no token, nothing
+	// (any caller ran them until 2026-10-30); someone outside the gateway's
+	// own workspace, nothing either.
+	if code, _ := asActor("", "status", map[string]interface{}{"run_id": "r1"}); code != http.StatusUnauthorized {
+		t.Fatalf("anonymous: %d, want 401", code)
+	}
+	if code, _ := asActor("human:stranger", "status", map[string]interface{}{"run_id": "r1"}); code != http.StatusForbidden {
+		t.Fatalf("a stranger: %d, want 403", code)
+	}
+	call := func(action string, body map[string]interface{}) (int, map[string]interface{}) {
+		return asActor("system:internal", action, body)
 	}
 	if code, out := call("status", map[string]interface{}{"run_id": "r1"}); code != 200 || out["id"] != "r1" || out["total"] != float64(4) {
 		t.Fatalf("status: %d %v", code, out)

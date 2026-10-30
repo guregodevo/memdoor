@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +21,7 @@ func (s stubValidator) ValidateToken(token string) (string, error) {
 // validator was wired. There is no such branch any more: a connection
 // without a token is rejected whatever the query string says.
 func TestHandleWebSocketWithAuth_RejectsQueryUserWithoutToken(t *testing.T) {
-	h := HandleWebSocketWithAuth(NewHub(), stubValidator{userID: "u1"}, nil)
+	h := HandleWebSocketWithAuth(NewHub(), stubValidator{userID: "u1"}, nil, followAny)
 
 	for _, target := range []string{"/chat/ws", "/chat/ws?user=admin", "/chat/ws?user=admin&channel=general"} {
 		rec := httptest.NewRecorder()
@@ -32,7 +33,7 @@ func TestHandleWebSocketWithAuth_RejectsQueryUserWithoutToken(t *testing.T) {
 }
 
 func TestHandleWebSocketWithAuth_RejectsInvalidToken(t *testing.T) {
-	h := HandleWebSocketWithAuth(NewHub(), stubValidator{userID: "u1"}, nil)
+	h := HandleWebSocketWithAuth(NewHub(), stubValidator{userID: "u1"}, nil, followAny)
 
 	rec := httptest.NewRecorder()
 	h(rec, httptest.NewRequest(http.MethodGet, "/chat/ws?token=forged&user=admin", nil))
@@ -47,7 +48,7 @@ func TestHandleWebSocketWithAuth_RequiresValidator(t *testing.T) {
 			t.Fatal("nil validator must panic at wiring time, not silently accept anonymous clients")
 		}
 	}()
-	HandleWebSocketWithAuth(NewHub(), nil, nil)
+	HandleWebSocketWithAuth(NewHub(), nil, nil, followAny)
 }
 
 // The upgrader used to accept ANY Origin (CheckOrigin: return true), so any site
@@ -55,7 +56,7 @@ func TestHandleWebSocketWithAuth_RequiresValidator(t *testing.T) {
 // (Origin host != request Host) must now be rejected before the upgrade — it
 // fails the handshake with 403 rather than reaching the token check.
 func TestHandleWebSocketWithAuth_RejectsCrossOrigin(t *testing.T) {
-	h := HandleWebSocketWithAuth(NewHub(), stubValidator{userID: "u1"}, nil)
+	h := HandleWebSocketWithAuth(NewHub(), stubValidator{userID: "u1"}, nil, followAny)
 
 	req := httptest.NewRequest(http.MethodGet, "/chat/ws?token=good", nil)
 	req.Host = "memdoor.ai"
@@ -84,5 +85,19 @@ func TestHandleWebSocketWithAuth_RejectsCrossOrigin(t *testing.T) {
 	h(rec2, req2)
 	if rec2.Code == http.StatusForbidden {
 		t.Error("same-origin upgrade must not be blocked by the origin gate")
+	}
+}
+
+func followAny(context.Context, string, string) bool { return true }
+
+// A user follows only the channels they may read: until 2026-10-30 any
+// signed-in user streamed any channel by naming it.
+func TestHandleWebSocketWithAuth_RefusesAChannelNotTheirs(t *testing.T) {
+	h := HandleWebSocketWithAuth(NewHub(), stubValidator{userID: "u1"}, nil,
+		func(_ context.Context, user, ch string) bool { return user == "u1" && ch == "mine" })
+	rec := httptest.NewRecorder()
+	h(rec, httptest.NewRequest(http.MethodGet, "/chat/ws?token=good&channel=theirs", nil))
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("another's channel: got %d, want 403", rec.Code)
 	}
 }

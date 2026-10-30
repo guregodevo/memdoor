@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,13 +12,48 @@ import (
 
 	"memdoor/gateway/dto"
 	"memdoor/gateway/websocket"
+	"memdoor/pkg/authorization"
+	"memdoor/pkg/channel"
 	"memdoor/pkg/message"
 	"memdoor/pkg/shared"
 )
 
+// mayUseThread reports whether the actor may read (or, write=true, post in)
+// the channel a thread's parent lives in, and answers the refusal itself.
+// Until 2026-10-30 the replies of any message were anyone's to read, by
+// sequential id, and any sign-up's to post in.
+func (cs *ChatServer) mayUseThread(w http.ResponseWriter, r *http.Request, actorID shared.ActorID, channelID string, write bool) bool {
+	if cs.authzService == nil {
+		return true
+	}
+	check := cs.authzService.CanReadChannel
+	if write {
+		check = cs.authzService.CanWriteToChannel
+	}
+	ok, err := check(r.Context(), actorID, channel.ChannelID(channelID))
+	if errors.Is(err, authorization.ErrNoSuchChannel) {
+		http.Error(w, `{"error": "no such conversation"}`, http.StatusNotFound)
+		return false
+	}
+	if err != nil {
+		http.Error(w, `{"error": "Failed to check permissions"}`, http.StatusInternalServerError)
+		return false
+	}
+	if !ok {
+		http.Error(w, `{"error": "Permission denied"}`, http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
 // handleGetThreadReplies handles GET /api/messages/:id/replies
 func (cs *ChatServer) handleGetThreadReplies(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	actorID, authed := requireAuth(w, r)
+	if !authed {
+		return
+	}
 
 	// Check if MessageService is available
 	if cs.messageService == nil {
@@ -41,6 +77,15 @@ func (cs *ChatServer) handleGetThreadReplies(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	messageID := message.MessageID(messageIDInt)
+
+	parent, err := cs.messageService.GetRepository().FindByID(r.Context(), messageID)
+	if err != nil {
+		http.Error(w, "Message not found", http.StatusNotFound)
+		return
+	}
+	if !cs.mayUseThread(w, r, actorID, parent.ChannelID, false) {
+		return
+	}
 
 	// Fetch thread replies from repository
 	replies, err := cs.messageService.GetRepository().ListReplies(r.Context(), messageID)
@@ -124,6 +169,9 @@ func (cs *ChatServer) handleCreateThreadReply(w http.ResponseWriter, r *http.Req
 			slog.String("parent_id", parentIDStr),
 			slog.String("error", err.Error()))
 		http.Error(w, fmt.Sprintf("Parent message not found: %v", err), http.StatusNotFound)
+		return
+	}
+	if !cs.mayUseThread(w, r, authorID, parentMessage.ChannelID, true) {
 		return
 	}
 

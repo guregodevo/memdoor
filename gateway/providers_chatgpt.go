@@ -47,6 +47,11 @@ func (s *Server) handleProvidersChatGPT(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	ok := func(v any) { _ = json.NewEncoder(w).Encode(v) }
 	fail := func(status int, err error) { http.Error(w, fmt.Sprintf(`{"error": %q}`, err.Error()), status) }
+	// The gateway's ChatGPT sign-in is its provider: the operator's alone
+	// (anyone read its email and could sign it out or swap it until 2026-10-30).
+	if !s.gatewayOperator(w, r) {
+		return
+	}
 	if r.Method == http.MethodGet {
 		email := providers.ChatGPTSignedIn()
 		ok(map[string]any{"signed_in": email != "", "email": email})

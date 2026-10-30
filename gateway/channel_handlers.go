@@ -889,6 +889,22 @@ func (cs *ChatServer) handleDeleteRoom(w http.ResponseWriter, r *http.Request, c
 		return
 	}
 
+	// An admin of the channel's own workspace: the role check above is any
+	// workspace's admin, and every sign-up is one (any sign-up deleted any
+	// workspace's channel until 2026-10-30).
+	if cs.authzService != nil {
+		ch, err := cs.channelRepo.GetByID(r.Context(), channelID)
+		if err != nil || ch == nil {
+			http.Error(w, `{"error": "no such conversation"}`, http.StatusNotFound)
+			return
+		}
+		ok, err := cs.authzService.IsWorkspaceAdminFor(r.Context(), actorID, ch.WorkspaceID)
+		if err != nil || !ok {
+			http.Error(w, `{"error": "Permission denied: workspace admin required"}`, http.StatusForbidden)
+			return
+		}
+	}
+
 	// Delete the channel
 	if err := cs.channelRepo.Delete(r.Context(), channelID); err != nil {
 		getChatLogger().Info("Failed to delete channel", slog.String("channel_id", channelID.String()), slog.String("error", err.Error()))

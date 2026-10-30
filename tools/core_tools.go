@@ -1097,7 +1097,7 @@ func agentsAPICall(workspace, method, url string, body map[string]any) (string, 
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Internal-Service", "agents")
+	req.Header.Set("X-Internal-Service", shared.InternalServiceToken())
 	// The run's workspace: the gateway scopes the call to it like a user's
 	// (one user, one workspace; without it an agent's channel tool listed
 	// every workspace's channels, 2026-10-20).

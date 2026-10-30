@@ -36,6 +36,9 @@ func (s *Server) handleSessionCompact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := shared.NewChannelSessionID(scope, in.ChannelID)
+	if !s.conversationAllowed(w, r, key) {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	if s.runActive(key) {
 		w.WriteHeader(http.StatusConflict)
@@ -79,6 +82,9 @@ func (s *Server) handleSessionHandoff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := shared.NewChannelSessionID(scope, in.ChannelID)
+	if !s.conversationAllowed(w, r, key) {
+		return
+	}
 	transcript := transcriptKey(key, in.Agent)
 	w.Header().Set("Content-Type", "application/json")
 	fail := func(status int, err error) {

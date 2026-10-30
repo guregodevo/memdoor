@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"memdoor/pkg/authorization"
 	"memdoor/pkg/domain"
 	"memdoor/pkg/shared"
 )
@@ -39,6 +40,17 @@ func cronWorkspaceID(ctx context.Context) string {
 		return domain.DefaultWorkspaceID
 	}
 	return ws
+}
+
+// cronJobIsCallers reports whether a scheduled job is the caller's
+// workspace's: ids are names ("nightly"), so any sign-up read and deleted any
+// workspace's job by guessing one until 2026-10-30.
+func (cs *ChatServer) cronJobIsCallers(ctx context.Context, jobID string) bool {
+	if authorization.GetActorID(ctx) == "system:internal" {
+		return true
+	}
+	job, err := cs.cronRepo.GetByID(ctx, jobID)
+	return err == nil && job != nil && job.WorkspaceID == cronWorkspaceID(ctx)
 }
 
 // handleCronJobs handles GET (list) and POST (create) for cron jobs
@@ -86,6 +98,11 @@ func (cs *ChatServer) handleCronJobs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		req.WorkspaceID = cronWorkspaceID(ctx)
+		// Its answers land in the caller's own conversations only.
+		if req.SessionKey != "" && !sessionIsCallers(ctx, cs.repoFactory, req.SessionKey) {
+			http.Error(w, `{"error": "Permission denied: that conversation is another workspace's"}`, http.StatusForbidden)
+			return
+		}
 		// THE HANDLER OWNS THE ROW; THE SCHEDULER OWNS THE TIMER.
 		//
 		// Only this code knows the job's workspace: the scheduler's store is
@@ -139,6 +156,9 @@ func (cs *ChatServer) handleCronJob(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		job, err := cs.cronRepo.GetByID(ctx, jobID)
+		if err == nil && !cs.cronJobIsCallers(ctx, jobID) {
+			err = fmt.Errorf("no job %s", jobID)
+		}
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "%v"}`, err), http.StatusNotFound)
 			return
@@ -147,6 +167,10 @@ func (cs *ChatServer) handleCronJob(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodDelete:
 		if !requireAdmin(w, r, cs.authzService) {
+			return
+		}
+		if !cs.cronJobIsCallers(ctx, jobID) {
+			http.Error(w, fmt.Sprintf(`{"error": "no job %s"}`, jobID), http.StatusNotFound)
 			return
 		}
 		// Stop the timer first, then delete the row: the reverse order can
@@ -183,6 +207,13 @@ func (cs *ChatServer) handleCronHistory(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 
 	jobID := r.URL.Query().Get("job_id")
+	if jobID != "" && !cs.cronJobIsCallers(r.Context(), jobID) {
+		http.Error(w, `{"error": "no such job"}`, http.StatusNotFound)
+		return
+	}
+	if jobID == "" && !requireGatewayMember(w, r, cs.repoFactory) {
+		return
+	}
 	limit := 10
 	if l := r.URL.Query().Get("limit"); l != "" {
 		if n, err := fmt.Sscanf(l, "%d", &limit); n != 1 || err != nil {
@@ -231,6 +262,13 @@ func (cs *ChatServer) handleCronStats(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	jobID := r.URL.Query().Get("job_id")
+	if jobID != "" && !cs.cronJobIsCallers(r.Context(), jobID) {
+		http.Error(w, `{"error": "no such job"}`, http.StatusNotFound)
+		return
+	}
+	if jobID == "" && !requireGatewayMember(w, r, cs.repoFactory) {
+		return
+	}
 
 	log.Debug("Cron stats request",
 		slog.String("job_id", jobID))

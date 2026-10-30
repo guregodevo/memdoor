@@ -14,7 +14,8 @@ import (
 // the gateway is on another machine that directory is there, not where the
 // window runs, so the window asks the gateway: GET /api/fs?op=stat|list|read.
 // What is answered is what the coder can read anyway (reads go anywhere,
-// 2026-10-05), for the authenticated user of this gateway, with the same
+// 2026-10-05), for the gateway's own workspace (requireGatewayMember: any
+// sign-up read /etc and ~/.memdoor here until 2026-10-30), with the same
 // walk, ranking and preview as the local panel (pkg/filelist).
 func (cs *ChatServer) handleFS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -22,7 +23,7 @@ func (cs *ChatServer) handleFS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
 		return
 	}
-	if _, ok := requireAuth(w, r); !ok {
+	if !requireGatewayMember(w, r, cs.repoFactory) {
 		return
 	}
 	q := r.URL.Query()

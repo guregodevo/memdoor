@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"log/slog"
@@ -85,54 +84,6 @@ func (s *Server) handleGetWorkspaceSettings(w http.ResponseWriter, r *http.Reque
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{"settings": settings})
-}
-
-// gatewayOperator reports whether the request is the gateway's operator's —
-// signed in, from the gateway's machine (fromThisMachine: the same line the
-// first account is drawn on), and an admin of the first account's workspace —
-// and answers the refusal itself. The machine alone is no line on a gateway
-// strangers sign up to: a /remote link a sign-up turns on is a program this
-// gateway hosts, and it calls back from loopback with that sign-up's token.
-func (s *Server) gatewayOperator(w http.ResponseWriter, r *http.Request) bool {
-	actorID := authorization.GetActorID(r.Context())
-	if actorID == "" {
-		http.Error(w, `{"error": "Authentication required"}`, http.StatusUnauthorized)
-		return false
-	}
-	if !fromThisMachine(r) {
-		http.Error(w, `{"error": "this is the gateway operator's, on the gateway's machine itself: run memdoor there"}`, http.StatusForbidden)
-		return false
-	}
-	owners := s.firstAccountWorkspace(r.Context())
-	if owners == "" || s.authzService == nil {
-		http.Error(w, `{"error": "the gateway's operator could not be told"}`, http.StatusForbidden)
-		return false
-	}
-	isOperator, err := s.authzService.IsWorkspaceAdminFor(r.Context(), actorID, owners)
-	if err != nil {
-		http.Error(w, `{"error": "Failed to check permissions"}`, http.StatusInternalServerError)
-		return false
-	}
-	if !isOperator {
-		http.Error(w, `{"error": "Permission denied: the gateway's settings are its operator's (an admin of the first account's workspace)"}`, http.StatusForbidden)
-		return false
-	}
-	return true
-}
-
-// firstAccountWorkspace is the workspace of the account setup made from the
-// machine itself: the gateway's operator's. Empty when there is none.
-func (s *Server) firstAccountWorkspace(ctx context.Context) string {
-	if s.repoFactory == nil {
-		return ""
-	}
-	db, ok := s.repoFactory.DB().(*sql.DB)
-	if !ok || db == nil {
-		return ""
-	}
-	var ws string
-	_ = db.QueryRowContext(ctx, `SELECT workspace_id FROM users ORDER BY created_at, rowid LIMIT 1`).Scan(&ws)
-	return ws
 }
 
 // handleUpdateWorkspaceSettings handles PUT /api/workspace/settings

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"memdoor/pkg/authorization"
+	"memdoor/pkg/shared"
 )
 
 // user_handlers_crud: user CRUD + avatar: create, list, get, list-workspace-users.
@@ -245,6 +246,12 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// An admin of the gateway's own workspace: an account made here is
+	// verified, for any address, and every sign-up is admin of its own
+	// workspace (so any sign-up could claim anyone's email until 2026-10-30).
+	if !s.gatewayMember(w, r) {
+		return
+	}
 
 	if s.authAdapter == nil {
 		http.Error(w, `{"error": "Auth service not available"}`, http.StatusInternalServerError)
@@ -335,8 +342,16 @@ func (s *Server) handleListWorkspaceUsers(w http.ResponseWriter, r *http.Request
 		AvatarURL string `json:"avatar_url,omitempty"` // Profile picture URL
 	}
 
-	query := `SELECT id, name, avatar_url FROM users ORDER BY name ASC`
-	rows, err := db.QueryContext(ctx, query)
+	// The caller's own workspace's people (every account on the gateway, to
+	// any sign-up, until 2026-10-30); an in-process call naming none sees all.
+	query, args := `SELECT id, name, avatar_url FROM users WHERE workspace_id = ? ORDER BY name ASC`, []any{""}
+	if ec := shared.GetExecutionContext(ctx); ec != nil {
+		args[0] = ec.WorkspaceID
+	}
+	if actorID == "system:internal" && requestWorkspace(ctx) == "" {
+		query, args = `SELECT id, name, avatar_url FROM users ORDER BY name ASC`, nil
+	}
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to fetch users"}`, http.StatusInternalServerError)
 		return

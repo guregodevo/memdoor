@@ -106,7 +106,7 @@ inside the runner (one model call with everything it needs in the prompt).
 
 | `workflow:` | Run it on, with | What it does | The job fails when |
 |---|---|---|---|
-| `pr-triage` | `pull_request` | Sorts the pull request for a maintainer: **ready for review**, **needs work** or **likely slop**, with the reasons; the verdict comes from checks run in the job (the tests, tests claimed and none changed, functions nothing calls, and whether the diff does what the title says), plus labels, a summary, what is missing and duplicates. Advisory. | never: the verdict is for a person |
+| `pr-triage` | `pull_request`; `pull-requests: read`, `issues: read` | Sorts the pull request for a maintainer: **ready for review**, **needs work** or **likely slop**, with the reasons; the verdict comes from checks run in the job (the tests, tests claimed and none changed, functions nothing calls, and whether the diff does what the title says), plus labels, a summary, what is missing and duplicates. Advisory. | never: the verdict is for a person |
 | `pr-review` | `pull_request` | Reviews the change against its base branch and writes **P0** / P1 / P2 findings. | a P0: something that must not merge (with a key; advisory on a local model) |
 | `security-review` | `pull_request` | The same, for security only: secrets, injection, path traversal, missing authorization, unsafe deserialization, SSRF, weak crypto, an exploitable CI workflow. | an exploitable P0 |
 | `write-tests` | `pull_request` | Writes tests for the functions the change touches and leaves them in the working tree. Never edits an existing test. | an existing test already fails with the change, or a new test shows the change is wrong |
@@ -116,10 +116,27 @@ inside the runner (one model call with everything it needs in the prompt).
 | `fix-tests` | `push`, or by hand | Finds the test command, fixes the code until it passes, leaves the fix in the working tree. | the tests still fail |
 | `release-notes` | a tag push | The commits since the previous tag as Added / Changed / Fixed. | — |
 
-Every one needs `contents: read`; the two that read GitHub (`gh`) do it on the
+Every one needs `contents: read`; the three that read GitHub (`gh`) do it on the
 job's own token, passed as `github-token` (the default), with the permission
-above. Tests, fixes and notes stay in the runner's working tree, and the job
-summary shows them; commit them in a later step if you want them kept.
+above (`pr-triage` reads the labels and the open pull requests and issues for
+duplicates; one it may not read is left out, and the triage goes on). Tests, fixes and
+notes stay in the runner's working tree, and the job summary shows them;
+commit them in a later step if you want them kept.
+
+`pr-triage` runs the project's tests on the pull request's code: `go test
+./...`, `cargo test`, `npm test`, `pytest` or `make test`, found from the
+repository's files, or `MEMDOOR_TEST_COMMAND` in the job's environment. Set up
+what they need (`actions/setup-go`, a build step) before the action. On six
+pull requests on llamafit, three honest and three slop
+([#19](https://github.com/guregodevo/llamafit/pull/19) to
+[#24](https://github.com/guregodevo/llamafit/pull/24)), the 8B asked for a
+verdict called all six slop. With the verdict made from those checks, the
+three honest ones were ready for review and the three slop ones flagged (one
+likely slop: tests claimed, none changed; two needs work: functions nothing
+calls, the tests fail), the same in three runs each on `ubuntu-latest`, 3 to
+4½ minutes a job. On a key the agent also checks each claim of the description
+against the code, and called all three slop ones likely slop. How it got there:
+[Qwen3-8B couldn't judge AI slop PRs, so I let the tests decide](https://guregodevo.github.io/2026/10/30/triage-ai-slop-prs/).
 
 Measured on GitHub's runners ([llamafit](https://github.com/guregodevo/llamafit)
 [#15](https://github.com/guregodevo/llamafit/pull/15),

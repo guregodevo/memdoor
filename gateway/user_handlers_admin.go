@@ -22,8 +22,17 @@ import (
 func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request, userID string) {
 	// Reading a user (incl. their email) requires authentication. The
 	// route is authMiddleware-wrapped, so anonymous callers fail here.
-	if _, ok := requireAuth(w, r); !ok {
+	actorID, ok := requireAuth(w, r)
+	if !ok {
 		return
+	}
+	// Someone in the caller's own workspace (any account's email, to any
+	// sign-up, until 2026-10-30).
+	if string(actorID) != userID {
+		if same, _ := s.sameWorkspaceAsActor(r.Context(), actorID, userID); !same {
+			http.Error(w, `{"error": "User not found"}`, http.StatusNotFound)
+			return
+		}
 	}
 
 	// Get database from repository factory

@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"net/url"
@@ -39,9 +40,16 @@ func sameOriginOnly(r *http.Request) bool {
 // checkOrigin gates cross-origin upgrades (CSWSH protection). The caller passes
 // the gateway's own origin policy; a nil checker falls back to same-origin only.
 // The previous "return true" allowed ANY site to open an authenticated socket.
-func HandleWebSocketWithAuth(hub *Hub, tokenValidator TokenValidator, checkOrigin func(*http.Request) bool) http.HandlerFunc {
+//
+// mayFollow says whether a user may follow a channel: until 2026-10-30 any
+// signed-in user streamed any channel's messages, another workspace's private
+// ones included, by naming it.
+func HandleWebSocketWithAuth(hub *Hub, tokenValidator TokenValidator, checkOrigin func(*http.Request) bool, mayFollow func(ctx context.Context, userID, channelID string) bool) http.HandlerFunc {
 	if tokenValidator == nil {
 		panic("websocket: HandleWebSocketWithAuth requires a TokenValidator")
+	}
+	if mayFollow == nil {
+		panic("websocket: HandleWebSocketWithAuth requires a channel access check")
 	}
 	if checkOrigin == nil {
 		checkOrigin = sameOriginOnly
@@ -82,6 +90,10 @@ func HandleWebSocketWithAuth(hub *Hub, tokenValidator TokenValidator, checkOrigi
 
 		// Get channel from query parameters
 		channelID := r.URL.Query().Get("channel")
+		if channelID != "" && !mayFollow(r.Context(), userID, channelID) {
+			http.Error(w, "Permission denied", http.StatusForbidden)
+			return
+		}
 
 		// Upgrade HTTP connection to WebSocket
 		conn, err := upgrader.Upgrade(w, r, nil)

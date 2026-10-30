@@ -389,9 +389,12 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// admin-only; the agent/message control paths require any authenticated
 	// actor (the in-process loopback "system:internal" actor counts as admin,
 	// so agent tools and the CLI keep working).
+	// adminOnly is an admin of the gateway's own workspace: these list and
+	// rewrite every workspace's conversations, and every sign-up is admin of
+	// a workspace of its own (open to any sign-up until 2026-10-30).
 	adminOnly := func(h http.HandlerFunc) http.Handler {
 		return addCORS(authMiddleware.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !requireAdmin(w, r, server.authzService) {
+			if !requireAdmin(w, r, server.authzService) || !server.gatewayMember(w, r) {
 				return
 			}
 			h(w, r)
@@ -429,7 +432,10 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// Public endpoints (no authentication required)
 
 	// WebSocket endpoint with token authentication (prevents anonymous access and user impersonation)
-	http.Handle("/chat/ws", websocket.HandleWebSocketWithAuth(chatHub, server.authAdapter, checkWebSocketOrigin(server.port)))
+	http.Handle("/chat/ws", websocket.HandleWebSocketWithAuth(chatHub, server.authAdapter, checkWebSocketOrigin(server.port),
+		func(ctx context.Context, userID, channelID string) bool {
+			return server.wsMayFollowChannel(ctx, userID, channelID)
+		}))
 	http.Handle("/api/channels/members", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleRoomMembers))))
 	http.Handle("/api/channels/", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleRoom))))
 	http.Handle("/api/channels", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleRooms))))
@@ -443,6 +449,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	http.Handle("/api/files", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleFileUpload)))) // File upload (multipart)
 	http.Handle("/api/fs", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleFS))))            // The project's files for a window on another machine (stat, list, read)
 	hosted := newRemoteHosted(remoteHostedPath())
+	hosted.mayHost = server.gatewayMember
 	http.Handle("/api/remote/", addCORS(authMiddleware.Handler(http.HandlerFunc(hosted.handle))))                     // The phone's link, hosted by this gateway's own process (remote_host.go)
 	http.Handle("/api/cron-history", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleCronHistory)))) // Cron execution history (GET)
 	http.Handle("/api/cron-stats", addCORS(authMiddleware.Handler(http.HandlerFunc(chatServer.handleCronStats))))     // Cron job statistics (GET)

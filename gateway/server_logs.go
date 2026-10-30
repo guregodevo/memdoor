@@ -12,13 +12,18 @@ import (
 	"memdoor/gateway/logs"
 )
 
+// The event log is the whole gateway's (every workspace's tool inputs,
+// emails, session ids), so every route here is an admin of the gateway's own
+// workspace's: any sign-up, admin of its own, read and pruned it until
+// 2026-10-30.
+
 // handleLogsQuery handles GET /api/logs/query
 func (s *Server) handleLogsQuery(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if !requireAdmin(w, r, s.authzService) {
+	if !requireAdmin(w, r, s.authzService) || !s.gatewayMember(w, r) {
 		return
 	}
 
@@ -103,7 +108,7 @@ func (s *Server) handleLogsPrune(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Pruning/VACUUMing the audit log is destructive — admin only.
-	if !requireAdmin(w, r, s.authzService) {
+	if !requireAdmin(w, r, s.authzService) || !s.gatewayMember(w, r) {
 		return
 	}
 	storage := logs.GetGlobalStorage()
@@ -152,7 +157,7 @@ func (s *Server) handleLogsErrors(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if !requireAdmin(w, r, s.authzService) {
+	if !requireAdmin(w, r, s.authzService) || !s.gatewayMember(w, r) {
 		return
 	}
 
@@ -203,7 +208,7 @@ func (s *Server) handleLogsStats(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if !requireAdmin(w, r, s.authzService) {
+	if !requireAdmin(w, r, s.authzService) || !s.gatewayMember(w, r) {
 		return
 	}
 
@@ -231,7 +236,7 @@ func (s *Server) handleLogsTrace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if !requireAdmin(w, r, s.authzService) {
+	if !requireAdmin(w, r, s.authzService) || !s.gatewayMember(w, r) {
 		return
 	}
 
@@ -265,7 +270,7 @@ func (s *Server) handleLogsSession(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if !requireAdmin(w, r, s.authzService) {
+	if !requireAdmin(w, r, s.authzService) || !s.gatewayMember(w, r) {
 		return
 	}
 

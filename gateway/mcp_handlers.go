@@ -71,8 +71,14 @@ type mcpLogin struct {
 	done   chan error
 }
 
+// handleMCP is the gateway's own workspace's alone (gatewayMember): an MCP
+// server is a command this machine runs, and a URL's ${VAR} is the gateway's
+// own environment. It answered anyone, no token needed, until 2026-10-30.
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if !s.gatewayMember(w, r) {
+		return
+	}
 	mgr := mcpManager()
 	fail := func(code int, err error) {
 		w.WriteHeader(code)

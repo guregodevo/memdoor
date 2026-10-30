@@ -42,8 +42,9 @@ cannot verify, passes through with no context at all: public reads answer anonym
 protected handlers refuse through `requireAuth` / `requireAdmin`.
 
 The same handler has a second door for the gateway's own process: a request with
-`X-Internal-Service` from a loopback address (a tool calling the gateway's API from
-inside a run) gets `ActorID: "system:internal"` and the workspace named in
+`X-Internal-Service` from a loopback address, carrying this process's own secret
+(`shared.InternalServiceToken`; a tool calling the gateway's API from inside a
+run, `tools.agentsAPICall`) gets `ActorID: "system:internal"` and the workspace named in
 `X-Forwarded-Workspace`, `"default"` when none, meaning the whole gateway.
 
 Three smaller sites add or supply one:

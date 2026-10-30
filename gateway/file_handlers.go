@@ -134,6 +134,11 @@ func (cs *ChatServer) handleFileByID(w http.ResponseWriter, r *http.Request) {
 				user, err := cs.tokenVerifier.VerifyToken(tokenParam)
 				if err == nil {
 					actorID = shared.ActorID(user.ID)
+					// The person's own workspace, as the middleware sets for a
+					// header token: without it the channel check below read no
+					// workspace and passed another workspace's public channel
+					// (until 2026-10-30).
+					r = r.WithContext(shared.WithExecutionContext(r.Context(), &shared.ExecutionContext{ActorID: actorID, WorkspaceID: user.WorkspaceID}))
 				}
 			}
 		}

@@ -1,10 +1,12 @@
 package gateway
 
 import (
+	"context"
 	"encoding/json"
 
 	"memdoor/gateway/logs"
 	"memdoor/gateway/rpc"
+	"memdoor/pkg/shared"
 )
 
 // handleAgentRPC handles the "agent" RPC method
@@ -34,6 +36,13 @@ func (s *Server) handleAgentRPC(c *Client, msg *Message) {
 	// Use client's session if not specified
 	if params.SessionKey == "" {
 		params.SessionKey = c.Session.ID
+	}
+	if shared.ActorID(c.Actor).IsHuman() {
+		pctx := s.wsPersonContext(context.Background(), c.Actor)
+		if pctx == nil || !sessionIsCallers(pctx, s.repoFactory, params.SessionKey) {
+			c.sendMessage(Message{Type: "error", Error: "that conversation is another workspace's"})
+			return
+		}
 	}
 
 	// Call RPC handler

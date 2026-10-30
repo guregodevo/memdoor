@@ -310,6 +310,10 @@ func (s *Server) handleAgentExecution(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "session_key is required", http.StatusBadRequest)
 		return
 	}
+	if !sessionIsCallers(r.Context(), s.repoFactory, req.SessionKey) {
+		http.Error(w, `{"error": "Permission denied: that conversation is another workspace's"}`, http.StatusForbidden)
+		return
+	}
 
 	// Generate run ID
 	runID := req.IdempotencyKey

@@ -135,6 +135,36 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// ?workspace=<slug> scopes this connection.
 	scope := strings.TrimSpace(r.URL.Query().Get("workspace"))
 
+	refuse := func(reason string) {
+		s.clientsMu.Lock()
+		delete(s.clients, reserveID)
+		s.clientsMu.Unlock()
+		_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, reason), time.Now().Add(time.Second))
+		conn.Close()
+	}
+	// A person's socket is their own workspace's: until 2026-10-30
+	// ?workspace= could name another's (its chats ran there), an empty one
+	// fell back to the gateway's own, and ?session= followed any key.
+	if shared.ActorID(actor).IsHuman() {
+		pctx := s.wsPersonContext(r.Context(), actor)
+		if pctx == nil {
+			refuse("unknown user")
+			return
+		}
+		ec := shared.GetExecutionContext(pctx)
+		if scope != "" && scope != ec.WorkspaceSlug && scope != ec.WorkspaceID {
+			refuse("not your workspace")
+			return
+		}
+		if scope == "" {
+			scope = ec.WorkspaceSlug
+		}
+		if legacy := r.URL.Query().Get("session"); legacy != "" && r.URL.Query().Get("channel") == "" && !sessionIsCallers(pctx, s.repoFactory, legacy) {
+			refuse("not your conversation")
+			return
+		}
+	}
+
 	// Resolve the conversation session this connection subscribes to. Preferred
 	// form: ?workspace=<slug>&channel=<id> — the server builds the session key
 	// (the SAME key pkg/message's run emits on, both through pkg/shared), so a
@@ -631,6 +661,27 @@ func leadingMention(text string) (name, rest string, ok bool) {
 // REST reads use (authorization.CanReadChannel under the user's workspace,
 // which the auth middleware would have pinned on a REST request). The local
 // listener and the gateway's own callers pass as before.
+// wsPersonContext is a person's own workspace as an execution context, for a
+// socket (which carries an actor, not a request's context). nil for an
+// actor that is not a person, or one the gateway cannot find.
+func (s *Server) wsPersonContext(ctx context.Context, actor string) context.Context {
+	actorID := shared.ActorID(actor)
+	if !actorID.IsHuman() || s.authAdapter == nil {
+		return nil
+	}
+	user, err := s.authAdapter.service.GetUserByID(ctx, actor)
+	if err != nil || user == nil {
+		return nil
+	}
+	ec := &shared.ExecutionContext{ActorID: actorID, WorkspaceID: user.WorkspaceID, WorkspaceSlug: user.WorkspaceID}
+	if db, ok := s.repoFactory.DB().(*sql.DB); ok && db != nil {
+		if slug := (&dbSlugResolver{db: db}).ResolveSlug(user.WorkspaceID); slug != "" {
+			ec.WorkspaceSlug = slug
+		}
+	}
+	return shared.WithExecutionContext(ctx, ec)
+}
+
 func (s *Server) wsMayFollowChannel(ctx context.Context, actor, channelID string) bool {
 	actorID := shared.ActorID(actor)
 	if !actorID.IsHuman() || s.authzService == nil || s.authAdapter == nil {
