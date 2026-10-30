@@ -27,7 +27,10 @@ command: |
   awk 'NR==1 { n=split($0, a, ":"); if (n>1) { m=split(a[2], ls, ","); for (i=1;i<=m;i++) { gsub(/^[ \t]+|[ \t]+$/, "", ls[i]); if (ls[i]!="") print ls[i] } } }' "$f" > "$r.asked"
   keep=$(awk 'NR==FNR { h[$0]=1; next } { gsub(/^[ \t]+|[ \t]+$/, ""); if ($0 in h) print }' "$r.labels" "$r.asked" | awk '{ s = s (NR>1 ? ", " : "") $0 } END { print s }')
   { if [ -n "$keep" ]; then echo "labels: $keep"; else echo "labels:"; fi; tail -n +2 "$f"; } > "$f.tmp" && mv "$f.tmp" "$f"
-  for s in Summary Missing 'Possible duplicates'; do
+  # A model that left out Possible duplicates found none (Qwen3.5-9B, 2026-10-30:
+  # the run then ended with no verdict).
+  grep -q '^## Possible duplicates' "$f" || printf '\n## Possible duplicates\nnone\n' >> "$f"
+  for s in Summary Missing; do
     grep -q "^## $s" "$f" || { echo "no $s section" >&2; exit 1; }
   done
   cp "$r.signals" "$r.why"
