@@ -229,7 +229,10 @@ fails the build on a new one.
 ## Workspace settings, outside the file
 
 The gates are rows in the `workspace_settings` table, read on every call so
-a change needs no restart, written by an admin through
+a change needs no restart, read and written by the gateway's operator (an
+admin of the first account's workspace, signed in on the gateway's machine:
+`gatewayOperator`; every sign-up is admin of a workspace of its own, so an
+admin role alone is refused) through
 `PUT /api/workspace/settings` (`gateway/workspace_settings_handlers.go`;
 `globalSettingKeys` is the whole list and a key not in it is refused):
 

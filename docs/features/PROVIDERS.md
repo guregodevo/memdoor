@@ -87,7 +87,10 @@ provider *and* tests it.
   prefilled in the input line, the token typed into it but drawn as dots,
   a model asked only for a gateway or a custom endpoint, "Probing …", then
   the ✓ line in the conversation with the sample of models and what to do
-  next; a refusal with its advice; Esc cancels at any step. Greg: "omp
+  next; a refusal with its advice; Esc cancels at any step. Connecting is
+  the gateway operator's alone, on the gateway's machine (`gatewayOperator`,
+  2026-10-30: the route answered anyone, and a `!command` key runs there);
+  a window on a laptop connects through the ssh door. Greg: "omp
   does it with a slash command right?" — omp's `/login`, with the probe
   omp lacks. Receipt in a tmux window on Greg's gateway: `/connect` → 5 →
   `orx` → OpenRouter's base → the key as `OPEN_ROUTER_API_KEY` (shown as

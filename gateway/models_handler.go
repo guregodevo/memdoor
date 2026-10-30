@@ -122,6 +122,9 @@ func providerModelsResponse(ctx context.Context, q string, limit int) (map[strin
 func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if r.Method == http.MethodPost && r.URL.Query().Get("refresh") == "1" {
+		if !s.gatewayOperator(w, r) {
+			return
+		}
 		providers.ForgetAllModels()
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "refreshed": true})
 		return

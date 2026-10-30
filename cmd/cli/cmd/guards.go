@@ -198,7 +198,8 @@ func writeGuards(c *Client, rules []guardRule) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("setting guards takes an admin's sign-in (memdoor auth login-direct); the gateway said %s", resp.Status)
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("setting guards takes an admin's sign-in on the gateway's machine (memdoor auth login-direct there); the gateway said %s (%s)", resp.Status, strings.TrimSpace(string(body)))
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

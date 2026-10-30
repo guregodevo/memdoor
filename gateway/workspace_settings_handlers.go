@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"log/slog"
@@ -16,11 +17,19 @@ import (
 // Split out of user_handlers.go (2026-08-28), one concern per file;
 // Pattern: OpenClaw one-file-per-concern. Same package, same behavior.
 
-// handleWorkspaceSettings handles GET/PUT /api/workspace/settings
-// GET: Returns workspace settings (any authenticated user can read)
-// PUT: Updates workspace settings (admin only)
+// handleWorkspaceSettings handles GET/PUT /api/workspace/settings: the
+// gateway's own settings (tool_guards, approve, the decision switches) and
+// every workspace's rows, so both ways are the gateway operator's alone
+// (gatewayOperator). Every sign-up is admin of a
+// workspace of its own, so an admin role alone is no line (2026-10-26: a
+// stranger's probe on memdoor.ai read every workspace's settings with no
+// token at all, and its own sign-up could have rewritten tool_guards for all).
 func (s *Server) handleWorkspaceSettings(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	if !s.gatewayOperator(w, r) {
+		return
+	}
 
 	switch r.Method {
 	case http.MethodGet:
@@ -78,28 +87,57 @@ func (s *Server) handleGetWorkspaceSettings(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(map[string]interface{}{"settings": settings})
 }
 
-// handleUpdateWorkspaceSettings handles PUT /api/workspace/settings
-// Updates workspace settings (admin only)
-func (s *Server) handleUpdateWorkspaceSettings(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	actorID := authorization.GetActorID(ctx)
+// gatewayOperator reports whether the request is the gateway's operator's —
+// signed in, from the gateway's machine (fromThisMachine: the same line the
+// first account is drawn on), and an admin of the first account's workspace —
+// and answers the refusal itself. The machine alone is no line on a gateway
+// strangers sign up to: a /remote link a sign-up turns on is a program this
+// gateway hosts, and it calls back from loopback with that sign-up's token.
+func (s *Server) gatewayOperator(w http.ResponseWriter, r *http.Request) bool {
+	actorID := authorization.GetActorID(r.Context())
 	if actorID == "" {
 		http.Error(w, `{"error": "Authentication required"}`, http.StatusUnauthorized)
-		return
+		return false
 	}
+	if !fromThisMachine(r) {
+		http.Error(w, `{"error": "this is the gateway operator's, on the gateway's machine itself: run memdoor there"}`, http.StatusForbidden)
+		return false
+	}
+	owners := s.firstAccountWorkspace(r.Context())
+	if owners == "" || s.authzService == nil {
+		http.Error(w, `{"error": "the gateway's operator could not be told"}`, http.StatusForbidden)
+		return false
+	}
+	isOperator, err := s.authzService.IsWorkspaceAdminFor(r.Context(), actorID, owners)
+	if err != nil {
+		http.Error(w, `{"error": "Failed to check permissions"}`, http.StatusInternalServerError)
+		return false
+	}
+	if !isOperator {
+		http.Error(w, `{"error": "Permission denied: the gateway's settings are its operator's (an admin of the first account's workspace)"}`, http.StatusForbidden)
+		return false
+	}
+	return true
+}
 
-	if s.authzService != nil {
-		isAdmin, err := s.authzService.IsWorkspaceAdmin(ctx, actorID)
-		if err != nil {
-			http.Error(w, `{"error": "Failed to check permissions"}`, http.StatusInternalServerError)
-			return
-		}
-		if !isAdmin {
-			http.Error(w, `{"error": "Permission denied: admin access required"}`, http.StatusForbidden)
-			return
-		}
+// firstAccountWorkspace is the workspace of the account setup made from the
+// machine itself: the gateway's operator's. Empty when there is none.
+func (s *Server) firstAccountWorkspace(ctx context.Context) string {
+	if s.repoFactory == nil {
+		return ""
 	}
+	db, ok := s.repoFactory.DB().(*sql.DB)
+	if !ok || db == nil {
+		return ""
+	}
+	var ws string
+	_ = db.QueryRowContext(ctx, `SELECT workspace_id FROM users ORDER BY created_at, rowid LIMIT 1`).Scan(&ws)
+	return ws
+}
+
+// handleUpdateWorkspaceSettings handles PUT /api/workspace/settings
+func (s *Server) handleUpdateWorkspaceSettings(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
 	var body map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

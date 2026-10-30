@@ -162,7 +162,7 @@ curl -s http://localhost:18789/api/agents -H "Authorization: Bearer $TOKEN"
 | `GET /api/users/available-for-dm` | `handleAvailableUsersForDM`: the people and agents sharing a channel with the caller (`id`, `name`, `avatar_emoji`, `icon`) |
 | `POST /api/users/avatar` | `handleAvatarUpload` |
 | `GET /api/workspace/users` | `handleListWorkspaceUsers`, for mention completion |
-| `GET`/`PUT /api/workspace/settings` | `handleWorkspaceSettings` (`gateway/workspace_settings_handlers.go`): `{"settings":{key:value}}`; `PUT` is admin only and accepts the keys in `globalSettingKeys` (`tool_guards`, `approve`, `edit_format`, the `decision_*` switches) |
+| `GET`/`PUT /api/workspace/settings` | `handleWorkspaceSettings` (`gateway/workspace_settings_handlers.go`): `{"settings":{key:value}}`; both ways are the gateway operator's alone (an admin of the first account's workspace, signed in on the gateway's machine, `gatewayOperator`; anyone else, or from the network or through a proxy: 403; the same for `/api/providers/connect` and `POST /api/providers?refresh=1`), and `PUT` accepts the keys in `globalSettingKeys` (`tool_guards`, `approve`, `edit_format`, the `decision_*` switches) |
 | `GET /api/workspace/settings/public` (public) | the `language` setting |
 | `GET`/`POST /api/admin/users`, `PUT /api/admin/users/<id>` | admin: list, create, change a role |
 | `DELETE /api/workspaces/<slug>` | admin cascade delete |

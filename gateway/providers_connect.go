@@ -86,9 +86,15 @@ type connectResult struct {
 }
 
 // handleProvidersConnect is POST /api/providers/connect and DELETE
-// /api/providers/connect?id=.
+// /api/providers/connect?id=. The gateway operator's alone: a "!command" key
+// runs on this machine and an env var's NAME sends the gateway's own key to
+// the base URL given, and the route answered anyone, no token needed, until
+// 2026-10-30.
 func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if !s.gatewayOperator(w, r) {
+		return
+	}
 	switch r.Method {
 	case http.MethodDelete:
 		id := r.URL.Query().Get("id")
