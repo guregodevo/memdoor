@@ -8,10 +8,10 @@ success, not a model. It is the method of
 [GVS5H](https://github.com/slee-persis/GVS5H) (Lee, 2026: five Qwen3.8-27B
 models match Fable 5 on LiveCodeBench Hard).
 
-On GVS5H's 100 hardest LiveCodeBench problems, with Qwen3.8-27B and thinking
-off, the team solved **47** against **35** for a single call of the same
-model, for $3.27 in all ([`bench/`](bench/) has the harness, every problem's
-result and what the numbers do not show).
+Rebuilt with the authors' exact prompts on Qwen3.8-27B, their loop scored a
+mean of **9.8 of 10** over five passes on the first ten LiveCodeBench Hard
+problems, against 9.6 for their own harness and 8.0 for Fable 5 alone
+([below](#five-passes-on-the-authors-ten-2026-10-31), every run published).
 
 The coder wrote these files itself from a description of the method
 (2026-10-25). Nobody hand-wrote them.
@@ -169,19 +169,3 @@ through OpenRouter:
 - The first attempts failed every step in 0 s with "no agent named coder": a
   run looked its agent up only in its own workspace. That was fixed in the
   gateway the same day (v1.692.0).
-
-## On the benchmark
-
-[`bench/`](bench/) runs the same method with every role as one model call
-(`team-llm-lcb`) against a single call (`single-lcb`). Both are Memdoor
-workflows on the same model and host, graded on every public and hidden test
-with LiveCodeBench's own checker:
-
-| arm | solved | AtCoder (73) | LeetCode (27) |
-|---|---|---|---|
-| single call | 35 / 100 | 32.9% | 40.7% |
-| team workflow | 47 / 100 | 42.5% | 59.3% |
-
-These are thinking-off numbers, not the paper's setting (66.8% → 92.4% with
-128K tokens of thinking). The finding is the gap between the two arms. The
-bench README says why, and how to run it again for about four dollars.
