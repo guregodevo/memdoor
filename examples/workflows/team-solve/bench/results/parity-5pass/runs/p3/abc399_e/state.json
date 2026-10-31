@@ -1,0 +1,48 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Implement and verify the complete Python solution: read N,S,T; check consistency; build mapping; count changed; detect cycles; count isolated cycles; output 0, -1, or changed + isolated_cycles.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement and verify the complete Python solution: read N,S,T; check that every letter in S maps to a single letter in T; build edge[c]=target[c] for appearing c with target[c]!=c and count changed; detect cycles in this 26-node functional graph; count cycles with no incoming edge from a non-cycle changed vertex; set free_exists if any letter is absent from S and tree_exists if any changed vertex is not in a cycle; if changed==0 print 0, else if not (free_exists or tree_exists) print -1, else print changed + isolated_cycles.",
+ "iters": 1,
+ "task": "Implement and verify the complete Python solution: read N,S,T; check that every letter in S maps to a single letter in T; build edge[c]=target[c] for appearing c with target[c]!=c and count changed; detect cycles in this 26-node functional graph; count cycles with no incoming edge from a non-cycle changed vertex; set free_exists if any letter is absent from S and tree_exists if any changed vertex is not in a cycle; if changed==0 print 0, else if not (free_exists or tree_exists) print -1, else print changed + isolated_cycles.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 4,
+  "total": 4,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

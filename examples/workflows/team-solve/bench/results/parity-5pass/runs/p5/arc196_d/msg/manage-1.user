@@ -1,0 +1,132 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+def build_pref(coords, b):
+    order = sorted(range(b), key=coords.__getitem__)
+    cs = [coords[i] for i in order]
+    pref = [0]*(b+1)
+    # precompute bits? maybe [1<<i for i in range(b)] memory 2KB*? 16000 ints of varying size ~16MB? Could avoid by shifting each time.
+    for k,i in enumerate(order):
+        pref[k+1] = pref[k] | (1 << i)
+    return cs, pref
+
+NOTES:
+
+## ideation
+The natural state to reason about is the array of prefix sums of road strengths. If the prefix value at town boundary \(i\) is \(P_i\), then a person from \(S\) to \(T\) becomes an interval \([l,r]\) with \(l=\min(S,T)-1\), \(r=\max(S,T)-1\), plus a sign: rightward if \(S<T\), leftward if \(S>T\). The requirement is that \(P_l=P_r\), and every intermediate prefix value \(P_x\) for \(l<x<r\) is strictly greater than \(P_l\) for a rightward person, or strictly less than \(P_l\) for a leftward person. Thus each person imposes equalities and strict unit inequalities on prefix variables.
+
+This is a difference-constraint feasibility problem. Since road strengths may be negative and unbounded, feasibility is equivalent to the absence of a positive-weight cycle after contracting equality constraints. The important structural fact is that, because all constraints come from intervals on a line, any infeasibility can be witnessed by a forbidden pair of people. The forbidden pairs are: identical interval with opposite signs; same left endpoint but different right endpoints; same right endpoint but different left endpoints; and crossing intervals with the same sign. If this pairwise characterization holds, then a subset of people is feasible exactly when it contains no forbidden pair.
+
+Once the problem is reduced to forbidden pairs, queries become easy in principle. If \(bad[j]\) is the largest index \(i<j\) such that people \(i\) and \(j\) form a forbidden pair, then a query \([L,R]\) is feasible iff the maximum of \(bad[j]\) over \(j\le R\) is smaller than \(L\). This works because \(bad[j]<j\), so any value at least \(L\) automatically corresponds to a pair fully inside \([L,R]\).
+
+The core difficulty is therefore computing \(bad[j]\) for all \(j\). The endpoint-based forbidden pairs are relatively easy with hash maps, but one must be careful to keep the best two distinct opposite endpoints for each left or right endpoint, not just the latest one. The hard part is same-sign crossing pairs. This is a two-dimensional offline problem coupled with the input order: for each interval \(j\), we need the largest earlier interval \(i\) whose endpoints interleave with \(j\) and whose sign is the same. Different algorithmic frameworks are possible here, and their tradeoffs matter a lot for Python.
+
+Major pitfalls:
+- The forbidden-pair lemma is the central correctness assumption. If longer cycles can exist without containing one of the listed pairs, all pair-based approaches fail.
+- Off-by-one errors are likely: prefix indices are town minus one, and crossing/interior conditions are strict.
+- Identical opposite-sign intervals must be handled separately from same-left/same-right conflicts to avoid double counting or missing them.
+- For same-left or same-right conflicts, the latest previous interval may have the same opposite endpoint, so the second-best distinct endpoint is needed.
+- Crossing computation is the performance bottleneck. CDQ, 2D range trees, sliding windows, and block decompositions have very different constants and memory behavior in Python.
+- Sign matters: crossing is forbidden only for equal signs; opposite signs may cross.
+- The query reduction using prefix maxima of \(bad\) is valid only if \(bad[j]\) stores the maximum previous conflicting index, not merely any previous conflict.
+
+
+CURRENT TASK LIST:
+- [todo] Implement the complete solution using the forbidden-pair reduction and block-bitset same-sign conflict computation: parse to (l,r,sign), compute endpoint bad pairs (identical opposite, same l diff r, same r diff l; allow end-start sharing), then for each sign use blocks of size ~16000 and prefix bitmasks over L/R to assign the largest previous same-sign conflicting index with mask `(L in [a,b) and R >= b) or (R in (a,b] and L <= a)`, build prefix max of bad, and answer queries; run on the provided samples.
+- [todo] Validate the forbidden-pair characterization and implementation on small random/constructed cases with a brute-force difference-constraint feasibility checker, explicitly checking end-start sharing, same-sign crossing/endpoint, and identical opposite-sign intervals.
+- [todo] Optimize memory/time if needed: free endpoint dictionaries/arrays before bitset phase, store queries compactly, choose block size around 16000, avoid storing complement bitmasks if memory is tight, and ensure O(M * K) bitset operations with K ~ M / block_size.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: FAILED -- passed 0/2. The current solution is WRONG. First failing case: input='5 4 2\n4 2\n1 3\n3 5\n2 4\n1 3\n2 4\n' expected='Yes\nNo' got=''. Fix the bug or, if this approach keeps failing, switch to a DIFFERENT approach.] worker EXCEEDED THE TOKEN LIMIT and was cut off before finishing task: Implement the complete solution using the forbidden-pair reduction and block-bit. No complete solution was produced -- the approach was too long to finish in one call, so prefer a simpler or different approach next. Summary of its partial thinking: The worker was pursuing the specified forbidden-pair reduction plus block-bitset same-sign conflict algorithm, starting by modeling the problem with prefix-sum variables \(P_i\) and translating each person into endpoint equalities and strict internal inequalities for sign \(+\) or \(-\). It established the endpoint bad pairs—identical interval with opposite signs, same left endpoint with different right endpoints, and same right endpoint with different left endpoints—and began proving that the r
+
+PROPOSED NEW STEPS:
+(none)

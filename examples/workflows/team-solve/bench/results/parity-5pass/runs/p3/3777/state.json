@@ -1,0 +1,59 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideation: select zero/positive decomposition approach",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the full zero/positive decomposition solution in the starter code: early return -1 if abs(k) > sum(nums); positive-product DP over products 1..limit with parity and sum bitsets (ignore zeros and x>limit, use old/new arrays and active product lists, mask shifts to the valid sum range); zero-product feasibility DP with four sum bitsets (no-zero/zero, even/odd parity), where zeros flip parity and set the zero flag and positives shift sums by +/-x; return the largest positive product with sum k, else 0 if zero-feasible, else -1, and run sample/edge tests.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Product-indexed bitset DP, matching the supplied plan: maintain, for each parity and capped product, a bitset of achievable alternating sums; process each number with skip and take transitions; seed single-element subsequences separately; keep an overflow product state; scan products downward at the end. Pitfalls: in-place updates can let the same element be taken twice; overflow must be retained because a later zero can turn it into valid product zero; zero product must be handled as absorbing; the empty subsequence must not create a false answer for k = 0; bitsets must be masked to the valid sum range; looping over all product states may need active-state pruning or special handling for values 0 and 1 for speed.",
+  "Zero/positive decomposition: split the problem into product-zero feasibility and positive-product optimization. For product zero, run a cheap parity/sum DP with a flag indicating whether a zero has been selected. For positive product, ignore zeros entirely and DP over products 1..limit, since any positive final product cannot include a zero and any prefix product exceeding limit cannot later become a valid positive product. Pitfalls: the zero-feasibility DP must distinguish empty, non-empty without zero, and has-zero states; zeros can change parity without changing sum, so they must be allowed to flip parity; the positive DP must not use zeros as parity-changing elements; the final answer is the best positive product if one exists, otherwise zero if zero-feasible, otherwise -1.",
+  "Sum-indexed DP with product sets or product bitsets: maintain, for each parity and alternating sum, the set of capped products that can achieve it. Updating with a number multiplies each stored product by the number and caps it, with zero collapsing all products to zero. Pitfalls: multiplication is not a simple bitset shift over product indices, so updates are more awkward than sum shifts; Python sets may become memory-heavy; product bitsets require precomputed mappings or per-bit extraction; dominance pruning is unsafe unless carefully justified because smaller products can avoid overflow and zero can reset overflow.",
+  "Pareto-frontier or dominance-pruned DP: for each parity and sum, store only a reduced collection of product states believed to be nondominated, hoping to cut the product dimension. Pitfalls: simple \u201clarger product dominates smaller product\u201d is false under a cap because a larger product may overflow on a future multiplication while a smaller one stays valid; zero further complicates dominance because an overflow state can become zero while a positive state cannot; a safe dominance relation may require knowledge of the remaining suffix, which can make the pruning as hard as the original problem.",
+  "Meet-in-the-middle over two halves: compute reachable parity/sum/product states for a prefix half and a suffix half, then combine them. When concatenating, if the prefix subsequence length is odd, the signs of the suffix alternating sum are flipped; products are multiplied with capping and zero handling. Pitfalls: even with n = 150, half-state sets can be large; combining states can become quadratic unless carefully indexed; the parity-dependent sign flip is easy to get wrong; zero and overflow interactions must be handled in both halves and in the combination; memory for two large state tables may be high.",
+  "Top-down memoized search or branch-and-bound: recursively decide skip/take for each index, memoizing by position, parity, current alternating sum, and current capped product or remaining product capacity, and pruning using bounds on remaining possible sum and product. Pitfalls: the state space can still be enormous because both sum and product dimensions are large; recursion depth is manageable but memoization may blow memory; strong pruning is needed to avoid exponential behavior; exactness is hard to preserve if bounds are too aggressive; product-zero and overflow-reset cases need special treatment.",
+  "Candidate-product feasibility or factor-exponent DP: enumerate candidate final products from limit down to 0 and test whether any subsequence has that exact product and alternating sum k, or represent positive products by prime-exponent vectors for values 2..12 with a numeric cap. Pitfalls: testing products separately repeats work; exact positive product forbids zeros, while product zero is a separate feasibility problem; ones do not change product but affect sum and parity, so they must still be handled; exponent-vector states may be numerous and cap checks are needed; order-dependent subsequence feasibility remains the hard part."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the full zero/positive decomposition solution in the starter code: early return -1 if abs(k) > sum(nums); positive-product DP over products 1..limit with parity and sum bitsets (ignore zeros and x>limit, use old/new arrays and active product lists, mask shifts to the valid sum range); zero-product feasibility DP with four sum bitsets (no-zero/zero, even/odd parity), where zeros flip parity and set the zero flag and positives shift sums by +/-x; return the largest positive product with sum k, else 0 if zero-feasible, else -1, and run sample/edge tests.",
+ "iters": 1,
+ "task": "Implement the full zero/positive decomposition solution in the starter code: early return -1 if abs(k) > sum(nums); positive-product DP over products 1..limit with parity and sum bitsets (ignore zeros and x>limit, use old/new arrays and active product lists, mask shifts to the valid sum range); zero-product feasibility DP with four sum bitsets (no-zero/zero, even/odd parity), where zeros flip parity and set the zero flag and positives shift sums by +/-x; return the largest positive product with sum k, else 0 if zero-feasible, else -1, and run sample/edge tests.",
+ "wrote": true,
+ "res": {
+  "ran": false
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

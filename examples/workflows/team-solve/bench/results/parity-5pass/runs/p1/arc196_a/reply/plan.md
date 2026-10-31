@@ -1,0 +1,8 @@
+### PLAN
+Model each valid removal order as a noncrossing matching of the original positions, with one unmatched element when N is odd. For absolute differences, any crossing pair can be uncrossed by one of the two noncrossing alternatives without decreasing the total score, so an optimal solution can be assumed noncrossing and the adjacency restriction does not change the maximum over arbitrary pairings. The maximum arbitrary pairing of a multiset is obtained by sorting the values and pairing the smallest with the largest, second smallest with second largest, and so on, leaving the median unmatched if N is odd. Therefore the answer is the sum of the differences between symmetric elements of the sorted array. This can be computed in O(N log N) time using 64-bit integer arithmetic.
+
+### TASKS
+- Prove the uncrossing lemma: for four elements in position order i<j<k<l, max(|A_i-A_j|+|A_k-A_l|, |A_i-A_l|+|A_j-A_k|) >= |A_i-A_k|+|A_j-A_l|, and use it to show a maximum-score removal sequence corresponds to a noncrossing matching.
+- Prove the sorted-pairing formula: if x_1 <= ... <= x_N, the maximum score is sum_{i=1}^{floor(N/2)} (x_{N+1-i}-x_i), with the median left unmatched for odd N; include an exchange or induction argument for even and odd cases.
+- Implement the Python solution: read N and A from stdin, sort A, compute ans = sum(A[N-1-i] - A[i] for i in range(N//2)), and print ans.
+- Verify correctness and performance: brute-force small N against exhaustive removals or interval DP, test edge cases (N=2, all equal, odd/even, large values), and confirm O(N log N) time for N=3e5.

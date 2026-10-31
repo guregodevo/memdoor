@@ -1,0 +1,8 @@
+### PLAN
+Represent each person as an interval [l, r] and a direction (right if S<T, left otherwise). The stamina conditions mean endpoints of the interval have equal prefix height and all interior towns are strictly higher for right-moving people or strictly lower for left-moving people. A set of people is feasible exactly when it has no incompatible pair: two same-direction intervals whose open intervals overlap and neither strictly contains the other, and two opposite-direction intervals with the same left endpoint or the same right endpoint. For range queries, if `prev[j]` is the largest index i<j incompatible with j, then `bad[R]=max_{j<=R} prev[j]` and a query [L,R] is Yes iff L>bad[R]. Compute `prev[j]` online: same-direction conflicts are handled by two 2D range-update/point-query structures (original and reversed coordinates) storing the maximum index, while opposite-direction conflicts are handled by endpoint arrays. This yields O(M log^2 N + Q) time and O(M log N) memory.
+
+### TASKS
+- Parse input and convert each person to (l, r, dir); build the update rectangles for the original and reversed 2D structures, using a direction block offset so queries only see the same direction.
+- Implement a flat 2D segment-tree/Fenwick structure: for each x-node compress y-values from the rectangles, support range-x point-y max update and point (x,y) prefix-y max query.
+- Sweep persons in index order: query the original and reversed structures for same-direction conflicts, query opposite-direction endpoint max arrays, take the maximum as `prev[j]`, then insert person j into the structures and endpoint arrays.
+- Build prefix maximum `bad[R]` from `prev` and answer each query [L,R] by printing Yes iff L > bad[R].

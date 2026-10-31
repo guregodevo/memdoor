@@ -1,0 +1,8 @@
+- **Reduction:** The required subarrays can be treated as chosen disjoint length-x windows. Operations on disjoint windows add independently. For one fixed window, the cheapest common value is a median, so its cost is the sum of absolute deviations to a median. Since all window costs are nonnegative, "at least k" is equivalent to "exactly k".
+- **Window costs:** Coordinate-compress all values. Maintain the current sliding window in one Fenwick tree storing both counts and sums. The lower median is the kth order statistic with k=(x+1)//2. Prefix count/sum up to the median gives cost = med*left_count-left_sum + (total_sum-left_sum)-med*(x-left_count).
+- **Sliding:** Initialize the first x elements, then for each slide remove the left element and add the new right element, updating counts, sums, and total_sum. Each window cost is computed in O(log n).
+- **Fenwick details:** The kth query uses binary lifting on the count tree. The combined prefix query returns count and sum in one loop, keeping the sliding phase efficient with small constants.
+- **DP:** dp[j][i] is the minimum cost for j chosen windows inside the first i elements. Transition: skip position i-1 or take the window ending at i-1, which starts at i-x: dp[j][i]=min(dp[j][i-1], dp[j-1][i-x]+cost[i-x]). Rolling arrays over j are used; the inner loop starts at i=j*x.
+- **Complexity:** O(n log n + k n) time and O(n) memory, well within n=1e5 and k<=15.
+- **Edge cases:** Negative values, duplicates, even x using the lower median, adjacent windows allowed, and k*x<=n feasibility are handled.
+- **Testing:** The file includes a guarded main block that checks the two examples and 200 small random cases against a brute-force enumerator of non-overlapping start positions.

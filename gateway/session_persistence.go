@@ -122,6 +122,13 @@ func (sp *SessionPersistence) resolveSessionStorePath(sessionID string) (string,
 	// Format: "workspace:{workspaceID}:channel:{channelID}" (uses "channel" for backward compatibility)
 	if strings.HasPrefix(sessionID, "workspace:") {
 		parts := strings.Split(sessionID, ":")
+		// Each part becomes a directory name: a caller's channel_id of
+		// "../../<another workspace>/channels/<id>" reached another
+		// workspace's transcript, and could make directories anywhere,
+		// until 2026-10-30.
+		if !safePathParts(parts[1:]...) {
+			return "", fmt.Errorf("session key %q: a part is not a plain name", sessionID)
+		}
 		// Per-agent channel transcript (session isolation):
 		// workspace:{ws}:channel:{ch}:agent:{agent} → its OWN store, so each agent's
 		// reasoning transcript is isolated from the shared channel log.
@@ -178,8 +185,22 @@ func (sp *SessionPersistence) resolveSessionStorePath(sessionID string) (string,
 		storeTemplate = shared.MemdoorHome("agents", "{agentId}", "sessions.json")
 	}
 
+	if !safePathParts(agentID) {
+		return "", fmt.Errorf("session key %q: the agent is not a plain name", sessionID)
+	}
 	storePath = workspace.ExpandTemplate(storeTemplate, agentID)
 	return sp.ensureDirectoryExists(storePath)
+}
+
+// safePathParts reports whether no part can leave its directory: not "." or
+// "..", no separator, no NUL (an empty part is dropped by filepath.Join).
+func safePathParts(parts ...string) bool {
+	for _, p := range parts {
+		if p == "." || p == ".." || strings.ContainsAny(p, "/\\\x00") {
+			return false
+		}
+	}
+	return true
 }
 
 // ensureDirectoryExists ensures the parent directory of filePath exists

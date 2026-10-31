@@ -1,0 +1,77 @@
+PROBLEM:
+### Question
+You are given a length-N sequence A = (A_1, A_2, \ldots, A_N).
+You will repeatedly perform the following operation until the sequence has length at most 1: choose two adjacent numbers and remove both from the sequence.
+The score obtained in one operation is the absolute difference of the two chosen numbers.
+Find the maximum possible total score obtained.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+A_1 A_2 \ldots A_N
+
+Output
+
+Print the maximum possible total score obtained.
+
+Constraints
+
+
+- 2 \le N \le 3 \times 10^5
+- 1 \le A_i \le 10^9
+- All input values are integers.
+
+Sample Input 1
+
+4
+1 2 5 3
+
+Sample Output 1
+
+5
+
+First, remove A_2 and A_3. The score obtained is |A_2 - A_3| = 3.
+Next, remove A_1 and A_4. Note that, because of the previous operation, these two numbers are now adjacent. The score obtained is |A_1 - A_4| = 2.
+Hence, the total score obtained is 5.
+It is impossible to achieve a total score of 6 or greater, so print 5.
+
+Sample Input 2
+
+7
+3 1 4 1 5 9 2
+
+Sample Output 2
+
+14
+
+Sample Input 3
+
+5
+1 1 1 1 1
+
+Sample Output 3
+
+0
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Model a complete removal order as a non-crossing matching of the original positions, and note that for any matching the best orientation of each pair makes the larger value positive, so the score is a signed sum with one + and one - per pair. For an even-length block, the upper bound is obtained by assigning + to the largest half and - to the smallest half; this sign pattern can be realized by repeatedly deleting adjacent opposite signs, and every + is at least every -, so the realized absolute differences sum to that bound. Thus an even block's optimal value is sum(largest half) - sum(smallest half). If N is even, apply this to the whole array. If N is odd, one element remains; it must be at an odd 1-indexed position and splits the array into two independent even blocks, so the answer is the maximum over such positions of the left block value plus the right block value. Compute all even-prefix and even-suffix block values in O(N log N) using two heaps that maintain the smallest and largest halves.
+
+NOTES:
+
+## ideation
+The repeated adjacent-removal process is equivalent to choosing a non-crossing matching on the original positions. When two original positions are finally removed together, every original position between them must have been removed earlier, so matched intervals are either disjoint or nested and never cross. Also, the number of original positions between a matched pair is even, hence the two positions have opposite parity. If N is odd, parity counting leaves exactly one unmatched position, and it must have odd 1-indexed parity. No matched interval can cross that unmatched position, because it would have to remove the unmatched position to become adjacent, so the array is split into two independent even-length blocks.
+
+For an even block of 2m numbers, each removed pair contributes the larger value minus the smaller value. Therefore the total is the sum of m positive values minus the sum of m negative values. The largest possible such signed sum is obtained by taking the m largest numbers as positive and the m smallest as negative, giving sum(largest half) minus sum(smallest half). This upper bound is attainable: mark the largest half plus and the smallest half minus. The sign sequence has equal numbers of plus and minus, so one can repeatedly delete adjacent opposite signs; this gives a valid non-crossing removal order. Since every plus value is at least every minus value, each deleted pair contributes exactly its plus value minus its minus value, so the total reaches the bound. Thus the matching problem collapses to a purely order-statistic block value.
+
+The core difficulty is computing this block value for many contiguous even-length blocks: the whole array when N is even, or all even prefixes and even suffixes when N is odd. The block value for an even-length multiset is total sum minus twice the sum of the smallest half, or equivalently sum of largest half minus sum of smallest half. Naively sorting each prefix or suffix is far too slow for N up to 300000. We need a linearithic method that can maintain or query the sum of the lower half, or upper half, as the block grows. The answer can be as large as roughly 1.5e14, so 64-bit integer arithmetic is required. Indexing is a minor but real pitfall: odd 1-indexed remaining positions correspond to even 0-indexed split lengths, and empty blocks must have value zero. The supplied plan appears sound; the main choice is the data structure or offline method for the prefix/suffix half-sums.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement and verify the final Python program using streaming two-heap median maintenance: compute pref[t] for even prefix length 2t (value = total - 2*sum_lower); if N is even output pref[N//2]; if N is odd scan right-to-left with an initially empty heap and for each even 0-index i combine pref[i//2] with the current suffix value to the right of i, then insert A[i]; use fast stdin and Python ints; run the three samples and small random brute-force tests (N<=8).

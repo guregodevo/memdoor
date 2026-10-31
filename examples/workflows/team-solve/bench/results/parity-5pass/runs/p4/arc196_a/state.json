@@ -1,0 +1,66 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Derive the structural formula and select the two-heap prefix/suffix approach",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the full Python solution: two-heap `even_prefix_scores` returning even-prefix values, even N full value, odd N max over `pref[t] + suff[m-t]`; samples and small brute force pass",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Ensure the final submitted code is clean, O(N log N) time, O(N) memory, reads stdin/writes stdout, and is enclosed in the required code delimiters",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the two-heap prefix/suffix order-statistic approach first, since it matches the structural formula and is O(N log N).",
+  "Use a Fenwick tree over compressed values as an alternative if maintaining two heaps for both prefixes and suffixes is too error-prone.",
+  "Build a small brute-force checker for tiny N to validate the even-block formula and odd-split rule, and to test edge cases.",
+  "Investigate the greedy adjacent-maximum heuristic only as a sanity check, and use the known counterexample to confirm it is not final.",
+  "If correctness proof is needed, develop the uncrossing/exchange argument and the sign-cancellation achievability argument before coding."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the full Python solution: two-heap `even_prefix_scores` returning even-prefix values, even N full value, odd N max over `pref[t] + suff[m-t]` with `m=N//2`; run samples and brute force N<=8.",
+ "iters": 1,
+ "task": "Implement the full Python solution: two-heap `even_prefix_scores` returning even-prefix values, even N full value, odd N max over `pref[t] + suff[m-t]` with `m=N//2`; run samples and brute force N<=8.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 3,
+  "total": 3,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "desc": "Ideate and select the row/column gauge reduction to a weighted XOR DSU on H+W nodes.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the primary solver: fast input, row/column prefix parity checks, weighted XOR DSU on H+W nodes with B-edge weight 1^row_prefix^col_prefix, and output 0 or pow(2, components, 998244353).",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Validate the implementation on the public samples (passed) and confirm key edge cases: odd row/column A parity, inconsistent B cycles, torus wrap, and component counting.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "No fallback to a full edge-midpoint DSU is needed.",
+    "status": "done",
+    "result": ""
+  }
+]

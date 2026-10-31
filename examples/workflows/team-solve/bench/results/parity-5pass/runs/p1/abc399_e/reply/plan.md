@@ -1,0 +1,8 @@
+### PLAN
+Treat each distinct letter in S as a box whose initial color is the letter it must become in T; a successful sequence can only move a box into an empty box or a box of the same color, because merging different final colors is irreversible. First verify that every source letter has a unique target letter; if not, the answer is -1. The unique targets form a functional graph on at most 26 letters, with an edge v -> target[v] for every non-fixed source letter. The base cost is the number of non-fixed source letters, and each nontrivial cycle that has no incoming edge from outside the cycle (a bare cycle) needs one additional operation to break it. Such a bare cycle is possible only if there is a spare empty letter (some letter absent from S) or a duplicate initial color (two source letters that must become the same letter); otherwise output -1.
+
+### TASKS
+- Read N, S, and T; build target[26] and present[26] by scanning positions, and immediately mark impossible if a source letter is assigned two different target letters.
+- For each present source letter v, increment color_freq[target[v]]; if target[v] != v, increment bad_count and add directed edge v -> target[v] (also increment indegree[target[v]] for bad edges).
+- Detect all directed cycles of length at least 2 in this functional graph; for each cycle, count it as bare if every vertex in the cycle has indegree exactly 1 from bad edges, meaning no outside edge enters the cycle.
+- Let spare = (number of present source letters < 26) or (any color_freq[c] >= 2); if the mapping was inconsistent, or (bare_cycles > 0 and not spare), print -1; otherwise print bad_count + bare_cycles.

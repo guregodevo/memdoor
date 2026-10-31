@@ -1,0 +1,80 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Prove the even-block lemma: for 2m elements, max score = sum largest m - sum smallest m, using a sign upper bound and an adjacent opposite-color pairing construction.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Prove the odd-N structure: the final remaining element must have odd 1-based index, no pair can cross it, and for a fixed odd separator the optimum is the sum of the even-block optima of the left and right parts.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Implement a complete runnable Python 3 program that reads stdin and prints the answer, using the proven formula and a two-heap half-maintainer for even-block scores, with O(N log N) time and fast I/O.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "Validate the implementation on the provided samples; the sample tests passed and the heap invariant/indexing matches the proven formula.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Pursue the non-crossing-matching-to-half-sum reduction and compute prefix and suffix half-sums with two heaps as the primary implementation.",
+  "Implement a Fenwick-tree order-statistic version with coordinate compression and kth-rank search as an alternative or cross-check for the same prefix and suffix values.",
+  "Consider an offline wavelet tree or persistent segment tree for range top-k sum queries if a more general query structure is desired and memory allows.",
+  "Build a small-N interval DP or brute-force matcher to validate the even-block half-sum formula and the odd-index separator rule on random tests.",
+  "Keep the sign-assignment, convex L1, threshold-integral, and greedy ideas as conceptual checks or sanity tests only, since they have serious pitfalls and are less likely to yield the clean scalable solution."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement a complete runnable Python 3 program that reads stdin and prints the answer, using the proven formula: even N = sum largest N/2 - sum smallest N/2; odd N = max over even prefix length l of even-block score of a[0:l] plus even-block score of a[l+1:n], using a two-heap half-maintainer and suffix scores; then run it on the three samples to confirm outputs 5, 14, 0.",
+ "iters": 2,
+ "task": "Implement a complete runnable Python 3 program that reads stdin and prints the answer, using the proven formula: even N = sum largest N/2 - sum smallest N/2; odd N = max over even prefix length l of even-block score of a[0:l] plus even-block score of a[l+1:n], using a two-heap half-maintainer and suffix scores; then run it on the three samples to confirm outputs 5, 14, 0.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 3,
+  "total": 3,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-2",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-2",
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,343 @@
+PROBLEM:
+### Question
+There is a directed graph with 2N vertices and 2N-1 edges.
+The vertices are numbered 1, 2, \ldots, 2N, and the i-th edge is a directed edge from vertex i to vertex i+1.
+You are given a length-2N string S = S_1 S_2 \ldots S_{2N} consisting of N Ws and N Bs.
+Vertex i is colored white if S_i is W, and black if S_i is B.
+You will perform the following series of operations:
+
+- Partition the 2N vertices into N pairs, each consisting of one white vertex and one black vertex.
+- For each pair, add a directed edge from the white vertex to the black vertex.
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs such that the final graph is strongly connected.
+ Notes on strongly connectedness
+A directed graph is strongly connected if and only if it is possible to travel from any vertex to any vertex by following edges.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+
+Output
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs so that the final graph is strongly connected.
+
+Constraints
+
+
+- 1 \le N \le 2\times 10^5
+- S is a length 2N string consisting of N Ws and N Bs.
+- N is an integer.
+
+Sample Input 1
+
+2
+BWBW
+
+Sample Output 1
+
+1
+
+Vertices 2,4 are white, and vertices 1,3 are black.
+Let (u,v) denote an edge from vertex u to vertex v.
+If we pair up vertices as (2,1), (4,3), the final graph have the edges (1,2), (2,3), (3,4), (2,1), (4,3). In this case, for example, it is impossible to travel from vertex 3 to vertex 1 by following edges, so this graph is not strongly connected.
+If we pair up vertices as (2,3), (4,1), the final graph have the edges (1,2), (2,3), (3,4), (2,3), (4,1). This graph is strongly connected.
+Therefore, there is exactly 1 way to pair up the vertices that satisfies the condition.
+
+Sample Input 2
+
+4
+BWWBWBWB
+
+Sample Output 2
+
+0
+
+No matter how you pair up the vertices, you cannot satisfy the condition.
+
+Sample Input 3
+
+9
+BWWBWBBBWWBWBBWWBW
+
+Sample Output 3
+
+240792
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+
+MOD = 998244353
+G = 3
+
+
+def main():
+    data = sys.stdin.read().split()
+    if not data:
+        return
+    N = int(data[0])
+    S = data[1]
+
+    if S[0] != 'B' or S[-1] != 'W':
+        print(0)
+        return
+
+    fact = [1] * (N + 1)
+    for i in range(1, N + 1):
+        fact[i] = fact[i - 1] * i % MOD
+
+    bs = []
+    ms = []
+    wb = 0
+    mb = 0
+    for i, ch in enumerate(S):
+        if ch == 'W':
+            wb += 1
+        else:
+            if i == 0 or S[i - 1] != 'B':
+                if mb > 0 and wb >= mb:
+                    bs.append(wb)
+                    ms.append(mb)
+            mb += 1
+
+    K = len(bs)
+    if K == 0:
+        print(fact[N])
+        return
+
+    invfact = [1] * (N + 1)
+    invfact[N] = pow(fact[N], MOD - 2, MOD)
+    for i in range(N, 0, -1):
+        invfact[i - 1] = invfact[i] * i % MOD
+
+    if K <= 2000:
+        g = [0] * K
+        mod = MOD
+        for i in range(K):
+            bi = bs[i]
+            acc = 0
+            for j in range(i):
+                acc += g[j] * fact[bi - ms[j]]
+            acc %= mod
+            val = fact[bi] + acc
+            if val >= mod:
+                val -= mod
+            g[i] = (mod - val) * invfact[bi - ms[i]] % mod
+
+        ans = fact[N]
+        for i in range(K):
+            ans = (ans + g[i] * fact[N - ms[i]]) % mod
+        print(ans)
+        return
+
+    try:
+        from atcoder.convolution import convolution as conv
+    except Exception:
+        conv = None
+
+    if conv is None or not callable(conv):
+        max_n = 1
+        while max_n <= 2 * N:
+            max_n <<= 1
+        max_log = max_n.bit_length() - 1
+
+        root_pw = [0] * (max_log + 1)
+        iroot_pw = [0] * (max_log + 1)
+        inv_pow2 = [1] * (max_log + 1)
+
+        for lg in range(1, max_log + 1):
+            length = 1 << lg
+            root_pw[lg] = pow(G, (MOD - 1) // length, MOD)
+            iroot_pw[lg] = pow(root_pw[lg], MOD - 2, MOD)
+
+        inv2 = (MOD + 1) // 2
+        for lg in range(1, max_log + 1):
+            inv_pow2[lg] = inv_pow2[lg - 1] * inv2 % MOD
+
+        def ntt(a):
+            n = len(a)
+            mod = MOD
+            roots = root_pw
+            lg = (n - 1).bit_length()
+            length = n
+            while length > 1:
+                half = length >> 1
+                wlen = roots[lg]
+                for i in range(0, n, length):
+                    w = 1
+                    end = i + half
+                    for j in range(i, end):
+                        u = a[j]
+                        v = a[j + half]
+                        x = u + v
+                        if x >= mod:
+                            x -= mod
+                        y = u - v
+                        if y < 0:
+                            y += mod
+                        a[j] = x
+                        a[j + half] = y * w % mod
+                        w = w * wlen % mod
+                length = half
+                lg -= 1
+
+        def intt(a):
+            n = len(a)
+            mod = MOD
+            roots = iroot_pw
+            length = 2
+            lg = 1
+            while length <= n:
+                half = length >> 1
+                wlen = roots[lg]
+                for i in range(0, n, length):
+                    w = 1
+                    end = i + half
+                    for j in range(i, end):
+                        u = a[j]
+                        v = a[j + half] * w % mod
+                        x = u + v
+                        if x >= mod:
+                            x -= mod
+                        y = u - v
+                        if y < 0:
+                            y += mod
+                        a[j] = x
+                        a[j + half] = y
+                        w = w * wlen % mod
+                length <<= 1
+                lg += 1
+
+        def conv(a, b):
+            la = len(a)
+            lb = len(b)
+            if la == 0 or lb == 0:
+                return []
+            need = la + lb - 1
+            mod = MOD
+
+            if la * lb <= 16384:
+                res = [0] * need
+                if la < lb:
+                    for i, ai in enumerate(a):
+                        if ai:
+                            for j, bj in enumerate(b):
+                                res[i + j] += ai * bj
+                else:
+                    for j, bj in enumerate(b):
+                        if bj:
+                            for i, ai in enumerate(a):
+                                res[i + j] += ai * bj
+                for i in range(need):
+                    res[i] %= mod
+                return res
+
+            n = 1
+            while n < need:
+                n <<= 1
+
+            fa = a + [0] * (n - la)
+            fb = b + [0] * (n - lb)
+            ntt(fa)
+            ntt(fb)
+            for i in range(n):
+                fa[i] = fa[i] * fb[i] % mod
+            del fb
+            intt(fa)
+
+            inv_n = inv_pow2[(n - 1).bit_length()]
+            for i in range(need):
+                fa[i] = fa[i] * inv_n % mod
+            return fa[:need]
+
+    sys.setrecursionlimit(1000000)
+
+    g = [0] * K
+    add = [0] * K
+    DIRECT = 8192
+    mod = MOD
+
+    def cdq(l, r, bs=bs, ms=ms, fact=fact, invfact=invfact,
+            g=g, add=add, conv=conv, mod=mod, DIRECT=DIRECT):
+        if r - l == 1:
+            i = l
+            bi = bs[i]
+            val = fact[bi] + add[i]
+            if val >= mod:
+                val -= mod
+            g[i] = (mod - val) * invfact[bi - ms[i]] % mod
+            return
+
+        mid = (l + r) >> 1
+        cdq(l, mid)
+
+        left_len = mid - l
+        right_len = r - mid
+
+        if left_len * right_len <= DIRECT:
+            for i in range(mid, r):
+                bi = bs[i]
+                acc = 0
+                for j in range(l, mid):
+                    acc += g[j] * fact[bi - ms[j]]
+                add[i] = (add[i] + acc) % mod
+        else:
+            ml = ms[l]
+            shift = bs[mid] - ms[mid - 1]
+            lenA = ms[mid - 1] - ml + 1
+            lenB = bs[r - 1] - ml - shift + 1
+
+            A = [0] * lenA
+            for idx in range(left_len):
+                A[ms[l + idx] - ml] = g[l + idx]
+
+            B = fact[shift:shift + lenB]
+            C = conv(A, B)
+            del A, B
+
+            for i in range(mid, r):
+                add[i] = (add[i] + C[bs[i] - ml - shift]) % mod
+            del C
+
+        cdq(mid, r)
+
+    cdq(0, K)
+
+    ans = fact[N]
+    for i in range(K):
+        ans = (ans + g[i] * fact[N - ms[i]]) % mod
+    print(ans)
+
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Reduction:** Strong connectivity is equivalent to every nonempty proper prefix receiving at least one added edge from outside. Path edges only go forward, so a prefix has an incoming added edge iff some black inside it is paired to a white outside it. Vertex 1 must be black and vertex 2N white; otherwise the answer is 0.
+- **Prefix events:** For each B-run start, let b be the number of whites before it and m the number of blacks before it. If m > 0 and b >= m, keep event (b, m). For a fixed m, b is maximal just before the next black, so avoiding this event avoids all earlier prefixes with the same m. Inside a B-run, larger m at the same b is dominated by the run-start event.
+- **Permutation model:** Pairings are permutations assigning white ranks to black ranks. Event (b, m) means the first m black ranks are all assigned white ranks <= b. Strong connectivity means avoiding all kept events.
+- **Inclusion-exclusion recurrence:** With events sorted by increasing b and m, define g_i by g_i = -(fact[b_i] + sum_{j<i} g_j fact[b_i - m_j]) * invfact[b_i - m_i] mod. The final answer is fact[N] + sum_i g_i fact[N - m_i]. This follows from counting intersections of step-shaped forbidden conditions and factoring by the largest selected event.
+- **CDQ online convolution:** add[i] stores sum_{j<i} g_j fact[b_i - m_j]. cdq(l, r) solves the left half, adds left-to-right contributions, then solves the right half. Leaves compute g. For NTT cross, set ml = m[l], shift = b[mid] - m[mid-1], A[m_j - ml] = g_j, B[k] = fact[shift + k]. The coefficient at b_i - ml - shift gives the needed sum.
+- **NTT fallback:** The fallback uses radix-2 DIF forward and DIT inverse without explicit bit-reversal. Forward output is bit-reversed, inverse expects that order and outputs natural order. Roots are precomputed up to the next power of two greater than 2N. Convolution uses direct multiplication for small products and NTT otherwise.
+- **Atcoder convolution:** If available, atcoder.convolution.convolution is used directly; otherwise the manual fallback is defined. This keeps the file standalone while taking advantage of the ACL Python library when present.
+- **Implementation choices:** Factorials and inverse factorials are precomputed up to N. K <= 2000 uses O(K^2) direct recurrence. Larger K uses CDQ with direct cross when left_len * right_len <= 8192, otherwise convolution. All add values are kept modulo.
+- **Edge cases:** N=1 gives 1 for BW and 0 for WB. No events gives fact[N]. b = m is allowed and uses invfact[0]. All factorial indices remain in [0, N].
+- **Validation:** Sample 1 gives 1, sample 2 returns 0 because the last character is B, and sample 3 direct recurrence over events (2,1), (3,2), (5,5), (6,6), (8,8) yields 240792.
+
+
+CURRENT TASK LIST:
+- [done] Derive reduction to prefix events and inclusion-exclusion/renewal recurrence.
+- [todo] Write a complete standalone Python baseline solver (input, factorials, event extraction, endpoint/no-event, O(K^2) for small K, CDQ+NTT for large K) that passes samples.
+- [todo] Add arithmetic-progression fast path (constant b-m and constant step) using polynomial inverse, and try import atcoder.convolution for speed.
+- [todo] Validate against brute force for all small N and random small event lists; fix any mismatches.
+- [todo] Run N=200000 performance smoke tests (alternating, regular arithmetic, B^N W^N, random/near-alternating) and tune CDQ/NTT thresholds or add specialized fast paths if needed.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 3 public samples -- the solution looks correct.] worker reported 'solved' on: Discard the current fragment and write a complete standalone Python 3 solution (. - **Reduction:** Strong connectivity is equivalent to every nonempty proper prefix receiving at least one added edge from outside. Path edges only go forward, so a prefix has an incoming added edge if
+
+PROPOSED NEW STEPS:
+(none)

@@ -1,0 +1,127 @@
+PROBLEM:
+### Question
+There is a directed graph with 2N vertices and 2N-1 edges.
+The vertices are numbered 1, 2, \ldots, 2N, and the i-th edge is a directed edge from vertex i to vertex i+1.
+You are given a length-2N string S = S_1 S_2 \ldots S_{2N} consisting of N Ws and N Bs.
+Vertex i is colored white if S_i is W, and black if S_i is B.
+You will perform the following series of operations:
+
+- Partition the 2N vertices into N pairs, each consisting of one white vertex and one black vertex.
+- For each pair, add a directed edge from the white vertex to the black vertex.
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs such that the final graph is strongly connected.
+ Notes on strongly connectedness
+A directed graph is strongly connected if and only if it is possible to travel from any vertex to any vertex by following edges.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+
+Output
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs so that the final graph is strongly connected.
+
+Constraints
+
+
+- 1 \le N \le 2\times 10^5
+- S is a length 2N string consisting of N Ws and N Bs.
+- N is an integer.
+
+Sample Input 1
+
+2
+BWBW
+
+Sample Output 1
+
+1
+
+Vertices 2,4 are white, and vertices 1,3 are black.
+Let (u,v) denote an edge from vertex u to vertex v.
+If we pair up vertices as (2,1), (4,3), the final graph have the edges (1,2), (2,3), (3,4), (2,1), (4,3). In this case, for example, it is impossible to travel from vertex 3 to vertex 1 by following edges, so this graph is not strongly connected.
+If we pair up vertices as (2,3), (4,1), the final graph have the edges (1,2), (2,3), (3,4), (2,3), (4,1). This graph is strongly connected.
+Therefore, there is exactly 1 way to pair up the vertices that satisfies the condition.
+
+Sample Input 2
+
+4
+BWWBWBWB
+
+Sample Output 2
+
+0
+
+No matter how you pair up the vertices, you cannot satisfy the condition.
+
+Sample Input 3
+
+9
+BWWBWBBBWWBWBBWWBW
+
+Sample Output 3
+
+240792
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+def fps_inverse(f, n):
+    g=[1]
+    m=1
+    while m<n:
+        m2 = min(2*m, n)
+        L = 1 << (2*m).bit_length()? 2*m is power of two if m power of two, so L=2*m.
+        fa = f[:m2] + [0]*(L - m2)
+        gb = g + [0]*(L - m)
+        ntt(fa); ntt(gb)
+        for i in range(L): fa[i]=fa[i]*gb[i]%MOD
+        intt(fa)
+        # high error e = fa[m:m2]
+        e_len = m2 - m
+        eb = fa[m:m2] + [0]*(L - e_len)
+        ntt(eb)
+        for i in range(L): gb[i]=gb[i]*eb[i]%MOD
+        intt(gb)
+        # gb[0:e_len] = g*e low
+        g.extend([0]*e_len)
+        for i in range(e_len):
+            g[m+i] = (-gb[i]) % MOD
+        m = m2
+    return g[:n]
+
+NOTES:
+- **Strong connectivity reduction:** The fixed path edges go forward. A proper prefix is closed iff no added edge enters it. Since added edges go white to black, an entering edge exists iff some black in the prefix is paired with a white outside the prefix.
+- **Boundary `h`:** For `a=1..N-1`, `h[a]` is the number of whites before the `(a+1)`-st black. A prefix with `a` blacks is closed iff `max(pi(1..a)) <= h[a]`. Strong connectivity is equivalent to `max(pi(1..a)) > h[a]` for all `a=1..N-1`, plus early exits: first vertex white or last vertex black gives 0.
+- **Inclusion-exclusion recurrence:** Let `R[j]` be the signed inclusion-exclusion contribution for subsets whose maximum selected event is `j`, normalized by `(N-j)!` for `j<N`, and `R[N]` itself for the sentinel `h[N]=N`. The answer is `-R[N] mod MOD`. For good `j` (`h[j]>=j`):
+  `R[j] = -(fact[h[j]] + sum_{i<j} R[i] fact[h[j]-i]) * invfact[h[j]-j]`.
+  If `h[j] < j`, then `R[j]=0`.
+- **Automatic case:** If no `j=1..N-1` is good, no proper prefix can be closed, so the answer is `N!`. This early return avoids unnecessary NTT setup.
+- **CDQ structure:** `T[j]` accumulates `fact[h[j]] + sum_{i<j} R[i] fact[h[j]-i]`. CDQ solves left half, adds left-to-right contributions, then solves right half. At a leaf, `R[j]` is computed from `T[j]`.
+- **Contribution mapping:** For node `[l,r]`, `mid`, left length `L=mid-l+1`, and good right indices with `Hmin=h[first_good]`, `Hmax=h[last_good]`, use
+  `A[p]=R[l+p]`, `B[q]=fact[Hmin-mid+q]` for `q=0..Hspan+L-1`.
+  The needed contribution for right `j` is convolution coefficient `L-1 + (h[j]-Hmin)`. This was re-verified algebraically and against the sample 3 recurrence by hand.
+- **Off-by-one fix:** `good_pref` now has length `n+2` because the loop writes `good_pref[j+1]` for `j=n`. Audited lengths: `next_good` length `n+2`, `prev_good` length `n+1`, `T/R/h` length `n+1`, `fact/invfact` length `n+1`. In NTT, `B` slice end is `Hmax-l+1 <= N`, so it stays inside `fact`.
+- **Good-index helpers:** `good_pref[k]` counts good indices `1..k-1`. `next_good[x]` is the first good index `>=x`, `prev_good[x]` is the last good index `<=x`. CDQ skips intervals with no good indices, and apply skips if the left half has no good indices or the right half has no good indices.
+- **NTT implementation:** Modulo `998244353`, primitive root `3`. Forward transform is decimation-in-frequency, inverse is decimation-in-time, so the paired transforms need no explicit bit reversal. Root tables are precomputed up to the next power of two at least `2N-1`, which is safely above the maximum convolution length.
+- **Hybrid direct/NTT:** For each CDQ apply, if `Hspan==0` use a scalar sum. Otherwise estimate direct cost by iterating over good right indices or over the `H` span, and use direct for small/sparse cases; otherwise use NTT. This avoids many tiny NTTs and handles sparse/gapped boundaries.
+- **Selftest:** The program supports `--selftest` or first stdin token `SELFTEST`. It checks the three samples, exhaustive small `N<=5` against brute force, and random medium `N` against the O(N^2) solver. Small stress cases use `force_ntt=True` to exercise the NTT path.
+
+
+CURRENT TASK LIST:
+- [done] Derive and lock the black-index recurrence: `h[a]=#W before (a+1)-st B`, sentinel `h[N]=N`, `R[j]=(-fact[h[j]] - sum_{i<j} R[i] fact[h[j]-i]) * invfact[h[j]-j]` for possible `j`, answer `=-R[N]`, with early exits first W / last B.
+- [done] Implement factorial/inv-factorial precomputation up to `N` modulo 998244353.
+- [done] Implement an O(N^2) reference solver for the recurrence and a brute-force matcher for small `N`; validate on samples and small/random strings.
+- [done] Fix the `good_pref` off-by-one in `solve_fast` (length `n + 2`), audit array lengths, and make the built-in selftest (samples, exhaustive N<=5, random medium, forced NTT) pass.
+- [todo] Replace the current CDQ/NTT solver with the simplified 1-D recurrence derived from the inclusion-exclusion/Cartesian-right-spine reduction: compute `h[a]` for `a=1..N-1`, then for `t=1..N-1` with `h[t] >= t` compute `A[t] = -invfact[h[t]-t] * (fact[h[t]] + sum_{u<t} A[u] * fact[h[t]-u])` (otherwise `A[t]=0`), and output `fact[N] + sum_{t=1}^{N-1} A[t] * fact[N-t]` modulo 998244353.
+- [todo] Validate the new simplified solver on the three samples, exhaustive small `N` against brute force, and random medium cases.
+- [todo] Tune/optimize the online convolution for the simplified recurrence for `N=2e5` (special-case constant `h[t]-t`, e.g. `h[t]=t`, with FPS inverse or a faster CDQ/relaxed convolution); run a large performance test and finalize the submitted code.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: FAILED -- passed 0/3. The current solution is WRONG. First failing case: input='2\nBWBW\n' expected='1' got='<runtime error:   File "<scratch>/onecall/p5/arc196_c/solution.py", line 6\n    L = 1 << (2*m).bit_length()? 2*m is power of tw>'. Fix the bug or, if this approach keeps failing, switch to a DIFFERENT approach.] worker EXCEEDED THE TOKEN LIMIT and was cut off before finishing task: Replace the current CDQ/NTT solver with the simplified 1-D recurrence derived fr. No complete solution was produced -- the approach was too long to finish in one call, so prefer a simpler or different approach next. Summary of its partial thinking: The worker was implementing the simplified 1-D recurrence for `A[t]` (only when `h[t] >= t`) and the final `fact[N] + sum A[t]*fact[N-t]` output, using a CDQ/NTT online convolution rather than the old per-index CDQ. It had drafted a Python structure with `solve_slow`/brute-force validation, `solve_fast` with CDQ, NTT roots, an FPS special-case for the all-`h[t]=t` situation, and a `run_selftest` covering samples, exhaustive small `N`, and random medium cases. It found that the default `small_cnt
+
+PROPOSED NEW STEPS:
+(none)

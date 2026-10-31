@@ -1,0 +1,72 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideate and select the row/column gauge reduction to a weighted XOR DSU on H+W nodes.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the primary solver: fast input, row/column prefix parity checks, weighted XOR DSU on H+W nodes with B-edge weight 1^row_prefix^col_prefix, and output 0 or pow(2, components, 998244353).",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Validate the implementation on the public samples (passed) and confirm key edge cases: odd row/column A parity, inconsistent B cycles, torus wrap, and component counting.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "No fallback to a full edge-midpoint DSU is needed.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Try the row/column reduction with a parity DSU on H+W nodes as the primary implementation: stream rows, maintain column prefix parities, add one weighted edge per B tile, and check row/column parity.",
+  "Implement the full edge-midpoint parity DSU as a simpler fallback and as a small-grid cross-checker, using 2HW variables and all local XOR equations.",
+  "Prototype an orientation-bit XOR graph, with two bits per A tile and one bit per B tile, to independently verify the local endpoint-to-XOR translation on small cases.",
+  "For very small min(H,W), build a row-transfer DP over vertical edge states to validate the linear-algebra result, including torus wrap-around and weights for free row choices.",
+  "Keep general sparse GF(2) rank, Pfaffian/FKT, and tensor-network methods only as conceptual alternatives; do not pursue them unless the XOR-DSU reductions reveal a hidden nonlinearity or inconsistency."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the primary solver using the left/top edge gauge: for each test case, scan rows left-to-right maintaining row_prefix (parity of A to the left) and col_prefix[j] (parity of A above); for each B cell union row i with column W+j in a weighted XOR DSU with weight 1 ^ row_prefix ^ col_prefix[j]; check that every row and column has even A parity; if any parity is odd or the DSU is inconsistent output 0, otherwise output pow(2, components, 998244353). Use fast buffered I/O and a path-compressing weighted DSU, and report the sample test verdict.",
+ "iters": 1,
+ "task": "Implement the primary solver using the left/top edge gauge: for each test case, scan rows left-to-right maintaining row_prefix (parity of A to the left) and col_prefix[j] (parity of A above); for each B cell union row i with column W+j in a weighted XOR DSU with weight 1 ^ row_prefix ^ col_prefix[j]; check that every row and column has even A parity; if any parity is odd or the DSU is inconsistent output 0, otherwise output pow(2, components, 998244353). Use fast buffered I/O and a path-compressing weighted DSU, and report the sample test verdict.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 1,
+  "total": 1,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

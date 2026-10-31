@@ -1,0 +1,114 @@
+PROBLEM:
+### Question
+A positive integer N is a 400 number if and only if it satisfies both of the following two conditions:
+
+- N has exactly 2 distinct prime factors.
+- For each prime factor p of N, p divides N an even number of times. More formally, the maximum non-negative integer k such that p^k divides N is even.
+
+Process Q queries. Each query gives you an integer A, so find the largest 400 number not exceeding A. Under the constraints of this problem, a 400 number not exceeding A always exists.
+
+Input
+
+The input is given from Standard Input in the following format:
+Q
+\text{query}_1
+\text{query}_2
+\vdots
+\text{query}_Q
+
+Here, \text{query}_i is the i-th query, given in the following format:
+A
+
+Output
+
+Print Q lines. The i-th line should contain the answer to the i-th query.
+
+Constraints
+
+
+- 1 \leq Q \leq 2 \times 10^5
+- For each query, 36 \leq A \leq 10^{12}.
+- All input values are integers.
+
+Sample Input 1
+
+5
+404
+36
+60
+1000000000000
+123456789
+
+Sample Output 1
+
+400
+36
+36
+1000000000000
+123454321
+
+Let us explain the first query.
+There are exactly 2 prime factors of 400: 2 and 5. Also, 2 divides 400 four times and 5 divides it twice, so 400 is a 400 number. None of 401, 402, 403, and 404 is a 400 number, so the answer is 400.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+import math
+from bisect import bisect_right
+
+def main():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    q = int(data[0])
+    queries = [int(x) for x in data[1:1 + q]]
+    del data
+
+    max_a = max(queries)
+    m = math.isqrt(max_a)
+
+    # cnt[x] = number of distinct prime factors of x
+    cnt = [0] * (m + 1)
+    for p in range(2, m + 1):
+        if cnt[p] == 0:  # p is prime
+            for j in range(p, m + 1, p):
+                cnt[j] += 1
+
+    # A 400 number is exactly x^2 where x has exactly 2 distinct prime factors.
+    values = [i * i for i in range(2, m + 1) if cnt[i] == 2]
+
+    br = bisect_right
+    out = []
+    append = out.append
+    for a in queries:
+        idx = br(values, a) - 1
+        append(str(values[idx]))
+
+    sys.stdout.write("\n".join(out))
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Form:** A 400 number has exactly two distinct prime factors and all exponents even, so it is always of the form `(p^a q^b)^2`. Equivalently, it is a square of an integer `x` whose number of distinct prime factors is exactly 2.
+- **Bound:** Since `A <= 10^12`, any relevant square root `x` satisfies `x <= 10^6`. Using `math.isqrt(max_query)` gives the exact needed bound and can be smaller for small inputs.
+- **Sieve:** Maintain `cnt[n]` as the count of distinct prime divisors of `n`. Iterate `p` from 2 to `M`. If `cnt[p] == 0`, then `p` has no smaller prime divisor, so it is prime. Increment `cnt[j]` for every multiple `j` of `p`. This counts each distinct prime factor exactly once.
+- **Collection:** For every `i` with `cnt[i] == 2`, append `i * i`. Because `i` is iterated in increasing order, the resulting list of squares is already sorted.
+- **Queries:** For each query `A`, use `bisect_right(values, A) - 1` to get the largest precomputed 400 number not exceeding `A`. The constraints guarantee at least one valid number, and `A >= 36`, so the index is valid.
+- **Complexity:** Preprocessing is `O(M log log M)` with `M <= 10^6`, which is very small. Memory is `O(M + K)`, where `K` is the number of valid squares. Each query is answered in `O(log K)`.
+- **Edge cases:** `A = 36` gives `M = 6` and the only value `36`. `A = 10^12` includes `10^6 = 2^6 * 5^6`, so `10^12` itself is a valid 400 number and is included.
+
+
+CURRENT TASK LIST:
+- [done] Formalize the characterization: 400 numbers are exactly squares of integers with exactly two distinct prime factors, and the square root is at most 10^6.
+- [todo] Implement the full Python solution: read all queries, compute the maximum square root bound 10^6, build a smallest-prime-factor or distinct-prime-count sieve up to 10^6, collect x^2 for every x with exactly 2 distinct prime factors, sort the list, and answer each query with binary search for the largest value <= A; ensure fast I/O and correct handling of A=36 and A=10^12.
+- [todo] Verify the implementation against the sample cases and edge cases, especially 36, 400, 60, 10^12, and 123456789.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 1 public samples -- the solution looks correct.] worker reported 'solved' on: Implement the full Python solution: read all queries, compute the maximum square. - **Form:** A 400 number has exactly two distinct prime factors and all exponents even, so it is always of the form `(p^a q^b)^2`. Equivalently, it is a square of an integer `x` whose number of distin
+
+PROPOSED NEW STEPS:
+(none)

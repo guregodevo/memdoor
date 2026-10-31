@@ -1,0 +1,66 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Derive the reduced edge-bit parity model and the row/column xor-equation/DSU counting formula.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the primary reduced parity union-find solution in Python and verify it on the sample plus small brute-force/random grids.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Finalize the code for performance and formatting: O(sum HW alpha(H+W)) time, O(H+W) memory per case, no hardcoded sample behavior, output one answer per test case.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the reduced parity union-find solution as the primary method, streaming rows and maintaining column prefix parities.",
+  "Implement a full-edge parity union-find variant as a heavier independent sanity check on small cases.",
+  "Implement a generic sparse GF(2) rank checker on the reduced row/column equations for small random instances to verify consistency and component counts.",
+  "Implement a transfer-matrix DP for very small min(H,W) to cross-check the behavior on tiny tori.",
+  "Implement a brute-force enumerator for tiny grids to generate edge-case tests such as all A, all B, and dimensions equal to 2."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the primary reduced parity union-find solution in Python and verify it on the sample plus small brute-force/random grids: use fast tokenized input, an iterative parity DSU over H+W row/column nodes, maintain col_pref and row_pref, union row i with column W+j for each B cell with weight 1 ^ col_pref[j] ^ row_pref, update prefixes for A cells, check all row and column A counts are even and DSU consistency, and output pow(2, components, 998244353) or 0; provide the final code in the required delimiters.",
+ "iters": 1,
+ "task": "Implement the primary reduced parity union-find solution in Python and verify it on the sample plus small brute-force/random grids: use fast tokenized input, an iterative parity DSU over H+W row/column nodes, maintain col_pref and row_pref, union row i with column W+j for each B cell with weight 1 ^ col_pref[j] ^ row_pref, update prefixes for A cells, check all row and column A counts are even and DSU consistency, and output pow(2, components, 998244353) or 0; provide the final code in the required delimiters.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 1,
+  "total": 1,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

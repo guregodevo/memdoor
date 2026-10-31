@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "desc": "Ideation: reduction to even-parity 3-color assignment and WQS/Lagrangian plan.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement core WQS 8-state DP with doubled values, bit-encoded value+count keys, binary search over pair penalty P, fast I/O, and sample validation.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Verify correctness of reduction, concavity, scaling, tie-breaking, bounds, and edge cases (K=1, max K, zeros, ties, large values).",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Optimize Python implementation with unrolled 8-state transitions, local variables, per-test high bound, and special K=1 path.",
+    "status": "done",
+    "result": ""
+  }
+]

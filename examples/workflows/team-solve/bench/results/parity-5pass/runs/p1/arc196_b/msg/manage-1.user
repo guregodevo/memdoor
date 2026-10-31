@@ -1,0 +1,209 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+
+MOD = 998244353
+A_ORD = 65
+
+
+def find(parent, xpar, x):
+    acc = 0
+    while True:
+        p = parent[x]
+        if p < 0:
+            return x, acc
+        acc ^= xpar[x]
+        gp = parent[p]
+        if gp >= 0:
+            xpar[x] ^= xpar[p]
+            parent[x] = gp
+        x = p
+
+
+def solve():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    t = int(data[0])
+    idx = 1
+    out = []
+    append = out.append
+    find_func = find
+    mod = MOD
+    a_ord = A_ORD
+
+    for _ in range(t):
+        H = int(data[idx])
+        W = int(data[idx + 1])
+        idx += 2
+
+        n = H + W
+        parent = [-1] * n
+        xpar = [0] * n
+        comp = n
+        col = [0] * W
+        valid = True
+
+        for i in range(H):
+            s = data[idx]
+            idx += 1
+            prefix = 0
+
+            for j, c in enumerate(s):
+                if c == a_ord:
+                    prefix ^= 1
+                    col[j] ^= 1
+                else:
+                    w = 1 ^ col[j] ^ prefix
+                    ra, pa = find_func(parent, xpar, i)
+                    rb, pb = find_func(parent, xpar, H + j)
+
+                    if ra == rb:
+                        if (pa ^ pb) != w:
+                            valid = False
+                            break
+                    else:
+                        tpar = pa ^ pb ^ w
+                        if parent[ra] > parent[rb]:
+                            ra, rb = rb, ra
+                        parent[ra] += parent[rb]
+                        parent[rb] = ra
+                        xpar[rb] = tpar
+                        comp -= 1
+
+            if valid and prefix:
+                valid = False
+
+            if not valid:
+                idx += H - i - 1
+                break
+
+        if valid and 1 in col:
+            valid = False
+
+        if valid:
+            append(str(pow(2, comp, mod)))
+        else:
+            append("0")
+
+    sys.stdout.write("\n".join(out))
+
+
+if __name__ == "__main__":
+    solve()
+
+NOTES:
+- **Edge-bit model:** After identifying endpoints on each shared torus edge, let V_{i,j} be the bit on the top edge of cell (i,j) and H_{i,j} the bit on its left edge. A tile gives V_{i,j} xor V_{i+1,j}=1 and H_{i,j} xor H_{i,j+1}=1. B tile gives V_{i,j}=V_{i+1,j}, H_{i,j}=H_{i,j+1}, and V_{i,j} xor H_{i,j}=1.
+- **Torus parity:** Summing the A-flip equations around a column/row forces every column and every row to contain an even number of A's. The code maintains column parity while scanning and checks row parity from the row prefix at the end of each row.
+- **Reduced variables:** When parities are even, all vertical bits in column j are determined by x_j=V_{0,j} and the column A-prefix; all horizontal bits in row i are determined by y_i=H_{i,0} and the row A-prefix.
+- **B-cell constraints:** For a B at (i,j), V_{i,j} xor H_{i,j}=1 becomes x_j xor y_i = 1 xor col_parity[j] xor row_prefix. This is a parity edge between row node i and column node H+j.
+- **Counting:** If any row/column parity is odd or a DSU parity contradiction occurs, answer is 0. Otherwise the H+W variables form a labeled bipartite graph; each connected component has one free bit, so answer is 2^{components} mod 998244353. Isolated all-A rows/columns are isolated components and correctly contribute factors of 2.
+- **Implementation details:** Read all tokens. For each case allocate parent (negative size) and xor-to-parent arrays of length H+W, and comp=H+W. DSU find uses path halving and returns (root, xor to root). Union by size; on same root check stored parity. Process rows as bytes; A=65 toggles prefix and col[j], B unions. If invalid, skip remaining row tokens by advancing idx. Final column check uses `1 in col`.
+- **Complexity:** O(HW alpha(H+W)) per case, total O(1e6 alpha) over input; memory O(H+W) per case plus the token list.
+- **Sample check:** Manual trace of the three samples gives 2, 0, 2, matching the expected output.
+
+
+CURRENT TASK LIST:
+- [done] Derive GF(2) reduction: even A count in every row/column; B cells impose row-variable xor column-variable = 1 xor A-above xor A-left; count is 2^{connected components} if consistent.
+- [todo] Implement fast Python program with parity DSU over H+W nodes, row/column parity checks, and modular power output.
+- [todo] Verify implementation on sample input and small brute-force cases for convention/off-by-one errors.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 1 public samples -- the solution looks correct.] worker reported 'solved' on: Implement the full Python solution using the derived reduction: for each test ca. - **Edge-bit model:** After identifying endpoints on each shared torus edge, let V_{i,j} be the bit on the top edge of cell (i,j) and H_{i,j} the bit on its left edge. A tile gives V_{i,j} xor V_{i+1,
+
+PROPOSED NEW STEPS:
+(none)

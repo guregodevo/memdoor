@@ -104,7 +104,18 @@ opens it too) runs the Bubble Tea program in `cmd/tui/ui`.
 `gateway/client/websocket.go` (`client.New`), with the session token and the
 launch directory; `cmd/cli/cmd/tui_wiring.go` builds the URL. The gateway
 validates the token before upgrading the socket
-(`Server.handleWebSocket` in `gateway/server_websocket.go`).
+(`Server.handleWebSocket` in `gateway/server_websocket.go`). A person's socket
+is their own workspace's, and so is the conversation it follows. Anything else
+is closed with 1008 and a reason: "not your workspace (yours is <slug>)", "not
+your channel", "not your conversation" or "unknown user". The gateway logs each
+refusal at WARN (`WebSocket refused`). The client treats a 1008 as final
+(`client.EventRefused`, with control characters stripped from the reason): it
+does not reconnect, the window shows the reason and the next command
+(`ui.RefusalAdvice`), and `memdoor run` ends with the same text. Before
+2026-10-30 a refused window reconnected every few seconds and never said why.
+A directory pinned to a workspace the account doesn't own opens the account's
+own (`ownWorkspace` in `cmd/cli/cmd/workspace_discovery.go`), so that pin is
+never what refuses it.
 
 **The window on a laptop, the project on a box.** `--gateway <box>` (or
 `MEMDOOR_GATEWAY`; `cmd/cli/cmd/root.go` accepts a URL, `host:port`, a bare
@@ -215,6 +226,22 @@ reading that file over ssh (`sshRenewSession` → `loginLocal` →
 `/api/auth/login`) and saves the session for the box's http address too, so
 whoever may ssh in as that user may use every door onto that box without a
 password being typed.
+
+That first account's workspace is the gateway's own (`gateway/gateway_owner.go`).
+Sign-up stays open once it exists (`/api/auth/register` refuses before it, so
+a stranger cannot become the owner of a freshly installed box), and each
+sign-up gets a workspace of its own, but the gateway's model, keys and machine
+are its own workspace's: a turn for any other workspace is refused when it
+starts (`executeAgentJob`, `isOwnWorkspace`), the decision model is asked
+only about the gateway's own channels, and creating a cron job, MCP servers,
+workflows, files (`/api/fs`), logs, memory, secrets and `/remote` hosting are
+`gatewayMember`'s (anyone signed in to that workspace, from any door). What
+changes the gateway for everyone (its settings, providers, the ChatGPT
+sign-in) is `gatewayOperator`'s: an admin of it, on the machine itself. An
+admin role alone is no line, since every sign-up is admin of its own
+workspace (2026-10-30). Password sign-in is limited per account (five tries
+in 15 minutes from the network, the machine itself not counted) as well as
+per address, and memdoor.ai's nginx caps it for the whole site.
 
 A phone link carries its own gate. The key after `#` never reaches a server:
 `web/src/remoteCrypto.ts` and `tui_remote.go` derive the frame key and the

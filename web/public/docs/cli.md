@@ -195,6 +195,8 @@ commands are not listed in `memdoor --help`; every one runs when typed, and
 
 Workspace resolution order: `-w` → `$MEMDOOR_WORKSPACE` → a `.memdoor/workspace` file walked up from the current directory → `workspace_id` in `~/.memdoor/config.json`.
 
+Your account has one workspace. If a `.memdoor/workspace` file or the config names a different one, the window, `memdoor run` and `memdoor acp` open yours and say so in one line. `memdoor workspace use <slug>` updates the pin. A workspace you name with `-w` or `$MEMDOOR_WORKSPACE` is used as given.
+
 ## Next
 
 - **[Configuration](/docs/configuration)** — environment variables and file locations.

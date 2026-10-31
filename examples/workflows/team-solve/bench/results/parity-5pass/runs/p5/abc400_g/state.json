@@ -1,0 +1,74 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideation: reduce to choosing 2K cakes and 3 colors with even color counts; baseline top-2K m_i gives an upper bound and parity correction by at most two operations.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the primary solver using the baseline parity-correction method with top-3 candidate operation lists and brute-force one/two-operation disjointness check.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Validate the current solver on small random tests (N <= 8, all K, values 0..3 plus tie-heavy, all-zero, N=2K, and K=1 cases) against a brute-force exhaustive pairing or subset DP; no mismatch found.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the baseline top-2K plus parity-correction exchange algorithm: compute baseline parity, then minimum loss for one direct operation or two operations through the third color, using top-two candidates per directed recolor, per selected-color swap-out, and per unselected-attribute swap-in, with explicit cake-id conflict checks.",
+  "Implement the same reduction as a small candidate-pool DP over parity mask and selection balance as a cross-check or alternative primary implementation, ensuring the pool includes top-two candidates for all relevant roles and handles negative intermediate losses.",
+  "Prototype a Lagrangian/Aliens-trick solver with an 8-state parity DP and binary search on a per-cake penalty, and validate it against brute force on small random cases to see whether exact cardinality recovery is reliable.",
+  "Develop a small-N brute-force checker, using DP over cakes, selected count, and parity mask or exhaustive pairing for tiny N, to generate random tests and verify the main solution, especially tie-heavy cases.",
+  "Optionally explore a min-cost flow or fixed-color-count assignment formulation for small N or as a theoretical sanity check, but avoid it for the final large-N solution unless a specialized greedy/flow optimization is found."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Validate the current solver on small random tests (N <= 8, all K, values 0..3 plus tie-heavy, all-zero, N=2K, and K=1 cases) against a brute-force exhaustive pairing or subset DP; if any mismatch is found, debug and fix the top-3 parity-correction implementation.",
+ "iters": 2,
+ "task": "Validate the current solver on small random tests (N <= 8, all K, values 0..3 plus tie-heavy, all-zero, N=2K, and K=1 cases) against a brute-force exhaustive pairing or subset DP; if any mismatch is found, debug and fix the top-3 parity-correction implementation.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 2,
+  "total": 2,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-2",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-2",
+   "finish": "stop"
+  }
+ ]
+}

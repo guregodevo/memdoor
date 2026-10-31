@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "desc": "Derive the GF(2) row/column reduction and parity-DSU counting formula.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Write a compact Python 3 code block (no derivation) implementing the formula with fast input, iterative parity DSU, bytearray parity/col, and pow(2, components, MOD).",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Run the code on the sample and small edge cases (all A, all B, odd row/col parity, 2x2) and fix any failures.",
+    "status": "pending",
+    "result": ""
+  }
+]

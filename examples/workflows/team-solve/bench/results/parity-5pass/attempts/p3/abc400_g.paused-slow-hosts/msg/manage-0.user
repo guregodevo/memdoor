@@ -1,0 +1,138 @@
+PROBLEM:
+### Question
+Takahashi, a patissier working at the ABC pastry shop, decided to sell assorted cakes to commemorate AtCoder Beginner Contest 400.
+The shop sells N kinds of cakes: cake 1, cake 2, \ldots, cake N.
+Each cake has three non-negative integer values: beauty, tastiness, and popularity. Specifically, cake i has beauty X_i, tastiness Y_i, and popularity Z_i.
+He considers pairing up these cakes into K pairs without overlaps.
+Formally, he will choose 2K distinct integers a_1,b_1,a_2,b_2,\ldots,a_K,b_K between 1 and N (inclusive), and pair cake a_i with cake b_i.
+The price of a pair formed by cakes a_i and b_i is \max(X_{a_i} + X_{b_i},\, Y_{a_i} + Y_{b_i},\, Z_{a_i} + Z_{b_i}).
+Here, \max(P,Q,R) denotes the greatest value among P,Q,R.
+Find the maximum possible total price of the K pairs.
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+\mathrm{case}_1
+\mathrm{case}_2
+\vdots
+\mathrm{case}_T
+
+\mathrm{case}_i represents the i-th test case. Each test case is given in the following format:
+N K
+X_1 Y_1 Z_1
+X_2 Y_2 Z_2
+\vdots
+X_N Y_N Z_N
+
+Output
+
+Print T lines. The i-th line (1\leq i\leq T) should contain the answer to the i-th test case.
+
+Constraints
+
+
+- 1\leq T\leq 1000
+- 2\leq N \leq 10^5
+- The sum of N over all test cases in each input file is at most 10^5.
+- 1\leq K \leq \lfloor \frac{N}{2}\rfloor (For a real number x, \lfloor x\rfloor denotes the greatest integer not exceeding x.)
+- 0\leq X_i,Y_i,Z_i \leq 10^9
+- All input values are integers.
+
+Sample Input 1
+
+1
+3 1
+6 3 8
+3 5 0
+2 7 3
+
+Sample Output 1
+
+12
+
+We form one pair out of three cakes.
+If we pair cake 1 with cake 2, the price is \max(6+3,\,3+5,\,8+0) = 9.
+If we pair cake 1 with cake 3, the price is \max(6+2,\,3+7,\,8+3) = 11.
+If we pair cake 2 with cake 3, the price is \max(3+2,\,5+7,\,0+3) = 12.
+Hence, pairing cake 2 with cake 3 gives the highest price, which is 12.
+
+Sample Input 2
+
+2
+5 2
+1 2 3
+1 2 3
+1 2 3
+1 2 3
+100 100 200
+6 2
+21 74 25
+44 71 80
+46 28 96
+1 74 24
+81 83 16
+55 31 1
+
+Sample Output 2
+
+209
+333
+
+Note that each cake can appear in at most one pair.
+Also note that there can be different cakes with identical values of beauty, tastiness, and popularity.
+For the first test case, pairing cake 1 with cake 2 gives a price of 6, pairing cake 3 with cake 5 gives a price of 203, and choosing these two pairs yields a total price of 209, which is the maximum.  
+For the second test case, pairing cake 2 with cake 3 gives a price of 176, pairing cake 4 with cake 5 gives a price of 157, and choosing these two pairs yields a total price of 333, which is the maximum.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+<analysis>
+
+
+CURRENT TASK LIST:
+- [todo] Parse all test cases; for each, store the three coordinate arrays (pre-scaled by 2*SHIFT if desired) and set the binary-search upper bound to 2*max(maxX,maxY,maxZ) or 2_000_000_000.
+- [todo] Implement `calc(lambda)` using 8 packed DP states `(value*SHIFT + count)` with `SHIFT=N+1`; for each cake update each parity mask by max(skip, previous mask^1 + (2X-lambda)*SHIFT+1, mask^2 + ..., mask^4 + ...), and return `dp[0]//SHIFT` and `(dp[0]%SHIFT)//2`.
+- [todo] Binary search the largest `lambda` in `[0, hi]` such that `calc(lambda)` returns at least K pairs; use unrolled state updates and a large negative sentinel for speed.
+- [todo] After finding `lambda`, call `calc(lambda)` once more and output `(scaled_value + 2*lambda*K)//2` for that test case.
+- [todo] Check edge cases: all zero values, N=2, odd N, K=floor(N/2), ties at zero penalty, and maximum 1e9 coordinates.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Parity DP + Lagrangian/Aliens trick (given plan). DP over 8 parity masks with value and count, binary search penalty per cake or per pair. Pitfalls: concavity? Need prove; integer penalty; tie-breaking; scaling; large values; count recovery; O(N log V) maybe okay; but DP with pairs? Need ensure objective concave in K for this parity selection? Is it? Maximum weight b-matching? Need check. The set of feasible selections with even color counts and total 2K. Weight of selecting item in color c is v_{i,c}. We want max weight of size 2K with parity constraints. Is f(K) concave? For matroids? This is not simply matroid intersection? Parity constraints plus cardinality. Maximum weight of cardinality k in a parity matroid? Maybe M-convex? Need verify. The plan assumes concave. Is it true? Let's test small? We can select items with colors. Feasible sets: even counts in each of 3 colors, total 2K. This is a delta-matroid? Weighted rank? The maximum weight as function of cardinality may be concave for matroids, but parity constraints? It might be M-convex? Need be cautious. Actually we can transform: each cake can be chosen in one of 3 states or not. Parity constraints. The feasible selected colored items form a binary linear code (sum mod2 =0 for each color) and total count even automatically if 3 parities zero? Sum of counts mod2 =0. We need exactly 2K. Max weight over affine subspace with cardinality. The value as function of cardinality may not be concave? Let's investigate. For general weights, maximum weight subset of size k with parity constraints can have non-concave sequence? Example two colors even? Let's try. If no parity, max weight size k is concave (choose top k). With parity constraints, maybe still concave? Consider colors X,Y. Need even X and even Y. Items: weights for X/Y. Could f(0)=0, f(2)=? f(4)=? Need f(2)-f(0) >= f(4)-f(2) for concave? Not necessarily? Let's search mentally. Feasible size 2: one item color X twice? But each item can choose one color. Suppose items: A can be X=100 or Y=0; B X=100 or Y=0; C X=0 or Y=100; D X=0 or Y=100. Feasible size2: choose A,B as X =>200; or C,D as Y=>200; or A as X,C as Y parities odd no. f2=200. Size4: all items choose X for A,B and Y for C,D =>400. f4-f2=200 equal. Need violation: f2 small, f4 large? Feasible size4 maybe combine high weights not available size2 due parity. Example 4 items each high in different? Only 3 colors. Need even each. Size2 feasible only pairs same color (two items both color c) or all? Actually size2 with even parities: either both same color, or? If two items assigned colors c,d, parities c,d odd not allowed. So size2 must both same color. Size4 can have 2 of color A, 2 of B, etc. If high weights are split: two items high X, two high Y. f2 = max(2*max X pair, 2*max Y pair). f4 = sum top two X + top two Y. Could f4 - f2 > f2? Suppose X high: 100,1; Y high:100,1. f2=200 (two X or two Y). f4=202. increment 2 <200. Need f2 low but f4 high: If each color has one very high and one low? Size2 requires two in same color, so f2 = 2*second? Actually top two in a color. If X: 100,0; Y:100,0; Z:100,0. f2=0? Need two same color: each color top two sum 100? Wait if one high one zero, top two sum 100. f2=100. f4 choose two colors: 200. increment 100 equal. If three colors each high 100, low 0, f2=100, f4=200, f6=300 linear. Concave okay.
+- Direct maximum weight matching in complete graph with edge weights w_{ij}=max(X_i+X_j, Y_i+Y_j, Z_i+Z_j). Need K pairs. General maximum weight K matching in complete graph with special edge weights. Could use blossom? N 1e5 impossible. But special structure may allow reduction. Edge weight = max_c (u_{i,c}+u_{j,c}). This is maximum over 3 of additive weights. This is a "maximum weight matching with edge weights as max of few additive terms". Could formulate as choose for each edge a color, then as above. So same parity selection.
+- Binary search answer per pair? Maybe total price threshold? Could decide if total >= S? Hard.
+- Min-cost max-flow on small state? Since only 3 attributes, maybe construct flow with N items and 3 bins? Need exact K. Could be min-cost flow with convex costs? But N large.
+- Sort by one coordinate and use DP? Since max of sums, maybe optimal pair can be characterized by sorting by one of coordinates? For K=1, answer max over pairs max of sums = max_c sum of top two c? Wait for one pair, max over pairs max_c (c_i+c_j) = max_c (top two c sum). Because choose pair maximizing c sum for some c. For K>1, maybe choose top 2K by some coordinate? Not enough because can mix coordinates. But maybe optimal pairs can be formed by sorting by one of coordinates? Need explore.
+- Dynamic programming over counts? K up to N/2 impossible. But only 3 attributes, parity. Could use generating functions? Need exact K. The Lagrangian approach is natural.
+- Transform to maximum weight closure / min-cut? Choose 2K items with parity constraints. Parity constraints are mod 2, not linear inequality. Could double state and use min-cut? Maybe not.
+- Use top candidates pruning: Since only 3 attributes, optimal selected cakes likely among top O(K?) in each coordinate? But K large. Could maybe reduce to top 2K per coordinate? N=1e5, 2K up to N. Not helpful. But maybe for each coordinate, only top 2K matter; union size <=6K <=3N. Still N.
+- Use maximum weight 2-matching? Each cake can be selected at most once, assigned color. This is like 3-partite? Actually each item has 3 possible weights. We need choose color for selected items. Could be solved by min-cost max-flow in a graph with 3 color nodes and item nodes? Selecting item in color c gives profit. Parity constraints even per color. If ignore parity, choose top 2K values among all (i,c) with at most one per item: that's assignment/matching in bipartite graph item-color (3 colors) with cardinality 2K, solvable greedily? Since each item can choose one color, top 2K of all 3N values with at most one per item is not simply top values due item conflict; but with 3 colors can DP per item (choose none or one color) and Lagrangian. Parity adds 8 states.
+- Use DP with polynomial in K? O(N K * 8) impossible. But maybe K small? No.
+- Use divide and conquer optimization? DP over items and count with 8 states; transition max-plus convolution with small choices. Need exact K. Could use max-plus convolution optimized? Each item transition is max of skip or add one to one color. This is like selecting items with weights depending on color. For each parity mask, dp[mask][k]. Need compute for all k? Could use generating functions and max-plus? Since each item contributes either 0 or one of three weights. The parity constraint means we need coefficient of x^{2K} in max-plus product of polynomials (1 + x a_i y1 + x b_i y2 + x c_i y3) with y variables mod2? Could use FFT? Max-plus not ordinary. But weights nonnegative, maybe top values.
+- Use Lagrangian with DP over parity only (no count) and recover count. This is plan. Need ensure integer lambda and concavity. Could binary search lambda (penalty per selected cake) or per pair. Since objective scaled by 2? Let's formalize: Original reduced problem: choose 2K items, assign color, each color even, maximize sum w_{i,color}. Let g(m) = max weight selecting m items with parity even. We need g(2K). g is concave in m? If yes, Lagrangian: for penalty p per item, h(p)=max_m (g(m)-p m), DP returns value and max m among opt. Binary search p to get m around 2K. Then answer = h(p)+p*2K if p chosen with crossing and concavity. Since weights integers, p integer? g concave integer, slopes integer? We can binary search p in [0, max weight]. Tie-breaking max count. Pitfalls: if flat segments, need choose p where count >=2K and previous? Standard aliens: if DP maximizes value - lambda*count and tie max count, find largest lambda with count >= K? Then ans = val + lambda*K. Need scaling. If penalty per pair, subtract lambda for every selected cake? Plan says scale objective by 2 and subtract λ for every selected cake. Why scale? Pair count = selected/2. If penalize λ per pair, subtract λ/2 per cake; to keep integer, scale objective by 2 and subtract λ per cake. Then DP value scaled. Recover (scaled + 2λK)/2. Need ensure integer division? Original answer integer. Scaled value + 2λK even? Should be if consistent. Pitfalls: λ range up to 2e9? Values up to 1e9, pair price up to 2e9, total up to 1e14. λ per pair up to 2e9 maybe. Binary search 31 iterations. DP O(8*4*N*31) ~ 1e8? N total 1e5, 31*1e5*32 ~ 100M, Python maybe high but possible optimized? Need note.
+- Alternative to Aliens: Since only 3 colors, maybe compute g(2K) exactly by selecting top values after adjusting parities. Could derive formula using top 2K+O(1) candidates? Let's explore. For no parity, max weight select 2K items each choose best color? Actually each item can choose color, no parity: choose 2K items and color maximizing sum. This is equivalent to choose 2K values from 3N with at most one per item. Can solve by sorting all 3N values? Conflict: if top two values same item, choose one and next. But with 3 colors, can maybe choose top 2K+2? Because each item has 3 values; to resolve conflicts need at most 2 extra? For selecting m items with each item at most one color, the optimal set of items is among top m+? values? Suppose item A has values 100,99,98; many items have 97. For m=1, top item A. For m=2, choose A (100) and next item 97; top m+? enough. In general, if an item has multiple top values, only one can be used, so need consider alternatives. The number of extra candidates maybe 2m? Not good. But with 3 colors, maybe top 2m values per item? Hmm.
+- Use maximum closure with 3 parity states? Maybe convert parity to choosing pairs of items per color? Since each color count even, we can group selected items of same color into pairs. For each color, total contribution is sum of values of items in that color. Pairing within color arbitrary. So we need partition selected items into K pairs, each pair assigned a color, and both items in pair get that color's value. Wait original pair price max coordinate sum; if pair assigned color c, both cakes contribute c value. Thus each pair is two cakes both colored c. So we can think choose K pairs, each pair has a color, and profit = sum of color values of two cakes. This is like choose K disjoint pairs from 3N colored copies? Each cake has 3 colored copies; a pair of same color copies from two distinct cakes. Need choose K edges in complete 3-partite? Actually color c graph on cakes with edge weight v_{i,c}+v_{j,c}. Need choose K edges no shared vertices, edge can be in one of 3 graphs. This is maximum weight K-matching in union of 3 complete graphs with edge weights additive per vertex. For a fixed color, best matching of size m is just top 2m vertex weights paired arbitrarily. Union with vertex conflicts. This is a "3-color matching" problem. Could be solved by min-cost flow with vertex capacities and color pair nodes? Since edges within color complete additive, we don't need explicit edges: for each color, selecting 2m vertices gives sum weights. So again parity selection.
+- Maybe use matroid intersection: Partition matroid (each cake at most once) and parity matroid (even counts per color) with cardinality 2K. Maximum weight common independent set of size 2K. Matroid intersection can be O(r^2 E) too big, but special small rank? Parity matroid rank? Not.
+- Use randomized / heuristic? Need exact.
+- Use branch and bound over parity masks? Since only 8 masks, maybe compute top values for each mask and count using selection algorithms. For each mask, we need max weight of selecting m items with final parity mask. This is like each item has 4 options (none, X,Y,Z). We can compute for all m? Maybe use "k maximum sums" with small state via priority queue (Eppstein) to get top values for each count? Need exact count 2K. Could generate top feasible selections by weight? K large, not.
+- Use dual / linear programming. The reduced problem is integer program:
+- Use top K per color and min-cost max-flow with successive shortest augmenting? N 1e5, K 5e4, flow units 1e5, edges 3N, maybe O(K N log N) too high. But network is small treewidth? Could use cost-scaling? Not for Python.
+- Use maximum weight matching in general graph with edge weights max additive. There are algorithms for "maximum weight matching with edge weights as sum of vertex weights after choosing label" maybe reduce to maximum weight closure. The parity DP + Aliens seems most promising.
+- Lagrangian/parity DP (plan) as one.
+- Exact DP over counts with max-plus convolution / generating functions maybe using SMAWK? But distinct? It's dynamic programming in K, not Lagrangian. Could note impossible but maybe optimize with concavity/convex hull? Hmm.
+- Min-cost flow / assignment to color capacities, with 2D Lagrangian or convex optimization.
+- Reduction to top candidates + local parity correction (exact combinatorial formula) maybe distinct.
+- Direct matching / blossom or general K-matching (theoretical, infeasible) maybe distinct but pitfall.
+- Binary search on total answer with feasibility via max flow? Maybe distinct.
+- Use maximum weight 3-uniform? Not.
+- Need prove/ensure concavity of F(k) (max weight even parity selection of 2k items). If not concave, Aliens fails. It may be true due to valuated matroid/M-convex? Need verify. Let's test possible counterexample. This is crucial. We should maybe analyze to see if plan is valid. If invalid, notes should flag. Let's attempt to find counterexample for concavity of g(m) where m even, parity even per 3 colors. We can brute force mentally small. g(0)=0. Need g(2), g(4), g(6) maybe violation g(4)-g(2) > g(2)-g(0) or g(6)-g(4) > g(4)-g(2). Since weights nonnegative, g increasing. Concavity means marginal decreases.

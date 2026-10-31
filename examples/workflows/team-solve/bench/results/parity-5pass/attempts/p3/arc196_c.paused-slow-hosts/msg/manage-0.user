@@ -1,0 +1,135 @@
+PROBLEM:
+### Question
+There is a directed graph with 2N vertices and 2N-1 edges.
+The vertices are numbered 1, 2, \ldots, 2N, and the i-th edge is a directed edge from vertex i to vertex i+1.
+You are given a length-2N string S = S_1 S_2 \ldots S_{2N} consisting of N Ws and N Bs.
+Vertex i is colored white if S_i is W, and black if S_i is B.
+You will perform the following series of operations:
+
+- Partition the 2N vertices into N pairs, each consisting of one white vertex and one black vertex.
+- For each pair, add a directed edge from the white vertex to the black vertex.
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs such that the final graph is strongly connected.
+ Notes on strongly connectedness
+A directed graph is strongly connected if and only if it is possible to travel from any vertex to any vertex by following edges.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+
+Output
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs so that the final graph is strongly connected.
+
+Constraints
+
+
+- 1 \le N \le 2\times 10^5
+- S is a length 2N string consisting of N Ws and N Bs.
+- N is an integer.
+
+Sample Input 1
+
+2
+BWBW
+
+Sample Output 1
+
+1
+
+Vertices 2,4 are white, and vertices 1,3 are black.
+Let (u,v) denote an edge from vertex u to vertex v.
+If we pair up vertices as (2,1), (4,3), the final graph have the edges (1,2), (2,3), (3,4), (2,1), (4,3). In this case, for example, it is impossible to travel from vertex 3 to vertex 1 by following edges, so this graph is not strongly connected.
+If we pair up vertices as (2,3), (4,1), the final graph have the edges (1,2), (2,3), (3,4), (2,3), (4,1). This graph is strongly connected.
+Therefore, there is exactly 1 way to pair up the vertices that satisfies the condition.
+
+Sample Input 2
+
+4
+BWWBWBWB
+
+Sample Output 2
+
+0
+
+No matter how you pair up the vertices, you cannot satisfy the condition.
+
+Sample Input 3
+
+9
+BWWBWBBBWWBWBBWWBW
+
+Sample Output 3
+
+240792
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The central difficulty is that strong connectivity of the final graph is not a local property of the matching, but a global “coverage” property of the line order. Because the original edges form the directed path 1→2→…→2N, a directed graph obtained by adding white→black edges is strongly connected exactly when every cut between k and k+1 is crossed by at least one added edge going from the right side to the left side, i.e. by a backward edge from a white vertex >k to a black vertex ≤k. Forward added edges never help for strong connectivity. Thus the problem becomes: count perfect white-black matchings such that the intervals of backward edges cover all 2N−1 cuts.
+
+A useful first observation is that a cut k can be “bad” (uncovered by backward edges) only when the prefix balance D_k = #W_prefix − #B_prefix is nonnegative. If D_k < 0, every matching must have at least one backward edge across that cut. Also, if the first vertex is W or the last vertex is B, the answer is immediately 0.
+
+A promising reduction is via inclusion-exclusion over bad cuts. If a set T of cuts is forced to be bad, the matching constraints become block-triangular: a white in an earlier block may match a black in the same or a later block, but not an earlier block. The number of matchings satisfying a given T has a product form over the blocks. Summing over all T with alternating signs gives a DP over selected cuts. Reindexing by the number of whites seen so far and the number of blacks before the current white simplifies the transition to a factorial kernel. If consecutive whites have the same black-count b, only the total sum of their DP coefficients matters; for a run ending at white-index R, the total S_b is determined by a single query of the form sum over previous runs S_t * fact[R − t], divided by fact[R − b]. This reduces the original problem to an online lower-triangular recurrence with a factorial convolution kernel.
+
+The remaining hard part is evaluating these online factorial-convolution queries for up to O(N) runs. The kernel fact[n] does not admit a simple finite-moment update, so naive scanning is too slow. This is where the main algorithmic choices diverge.
+
+Candidate approaches and pitfalls:
+
+1. Inclusion-exclusion DP + run-total recurrence + CDQ divide-and-conquer with NTT.  
+   This is the most structurally faithful approach. It computes the run totals S_b in order, and uses divide-and-conquer over the run sequence to add contributions from left-half runs to right-half queries by one convolution per CDQ node.  
+   Pitfalls: O(N log^2 N) NTT work can be heavy in Python; many small NTTs have high overhead; need careful truncation of convolution lengths; invalid runs and zero-length gaps in b must be handled; modulo arithmetic and inverse factorials must be precomputed; recursion depth and memory can be issues.
+
+2. Inclusion-exclusion DP + run-total recurrence + sqrt/block online convolution.  
+   Process runs in blocks. Maintain an accumulated contribution array from all previous blocks, brute-force contributions inside the current block, and after finishing a block rebuild or add its contribution to future queries. The rebuild can be done by direct loops or by NTT per block.  
+   Pitfalls: direct rebuild is O(N^2); NTT per block may still be too many transforms; choosing block size is delicate; memory for the accumulated array is O(N); Python speed may be poor unless the number of NTTs is very small.
+
+3. Search for a closed-form or fast Hankel/Toeplitz inversion of the run recurrence.  
+   The recurrence is a triangular system with entries fact[R_r − b_s]. In special cases, such as R_r = b_r for all runs, it becomes a standard Toeplitz convolution and can be solved by inverting the generating function of factorials. For arbitrary run endpoints R_r, one might try a product formula, generating-function method, or fast Hankel-matrix algorithm.  
+   Pitfalls: a general closed form may not exist; proving correctness is difficult; fast Hankel methods are complex to implement; the arbitrary increasing sequences R_r and b_s may break simple Toeplitz structure.
+
+4. Direct first-bad-cut decomposition and prefix DP.  
+   Count matchings whose smallest bad cut is a particular white position. This requires counting partial matchings inside the prefix that cover all earlier cuts, with some extra whites left to match to the suffix. One can try to maintain a small state describing “open” unmatched black vertices.  
+   Pitfalls: multiple unmatched blacks can appear, and the state may need to track more than a single open gap; the number of open gaps may grow, leading to exponential state; the partial-matching count may be as hard as the original problem.
+
+5. Moment/aggregate scanning DP.  
+   Scan the string or white-index sequence and maintain aggregates of previous contributions so that queries can be updated in O(1) or O(log N). The factorial kernel suggests maintaining factorial moments, and valid black positions may cause resets.  
+   Pitfalls: updating fact[n] to fact[n+1] introduces a new moment, leading to an infinite hierarchy; resets may not eliminate the need for higher moments; it is easy to undercount or overcount if the aggregate does not capture the full distribution of previous b-values.
+
+6. Determinant/integral or matrix-tree style formulation.  
+   Since fact[n] is a moment integral, the triangular system or the inclusion-exclusion sum might be expressible as a determinant or Selberg-type integral. Alternatively, one might try to count connected matchings via a graph-theoretic determinant.  
+   Pitfalls: the original object is a permanent/matching count, not naturally a determinant; negative factorial arguments and boundary conditions complicate integral representations; matrix-tree theorem counts spanning trees, not matchings with strong connectivity; this route may be elegant but not directly implementable.
+
+
+CURRENT TASK LIST:
+- [todo] positions < q: q-1 (all available)
+- [todo] position q: if q<=N, occupied (by some larger value), not available. If q=N+1, none.
+- [todo] positions > q: total available - (q-1) = N-v+1 - (q-1) = N-v-q+2, if q<=N; if q=N+1, total = N-v+1.
+- [todo] choose p < q: new q'=p, 1 way each, p=1..q-1.
+- [todo] choose p > q: new q'=q, number v - (q-1) ways (if q<=N; if q=N+1, 0).
+- [todo] q=(1,1,1,4): blocks (1,1,3) weight2.
+- [todo] q=(1,1,2,4): blocks (1,1,2),(2,3,3) weight1.
+- [todo] q=(1,2,2,4): blocks (1,1,1),(2,2,3) weight1.
+- [todo] q=(1,2,3,4): blocks (1,1,1),(2,2,2),(3,3,3) weight1.
+- [todo] q=(1,1,3,4)? Is q nondecreasing with q3=3, q4=4, q2=1: blocks (1,1,2),(3,3,3) but p2=3 > p1=1, a2=3, p2=3 <=a2. Weight block1 (2-1)!/(1-1)!=1, block2 (3-3)!/(3-3)!=1. Does this correspond to permutation? q1=1,q2=1,q3=3 means values>=2 min pos1, value3 pos3. Value2 at pos1, value3 pos3, value1 pos2 => permutation 2,1,3. Yes weight1. I missed. Total weights 2+1+1+1+1=6.
+- [todo] q=(1,2,? q3=3) included. q=(1,3,3,4)? q2=3 but q2<=? q2 min of values2,3 position3, but q1=1, q2=3, q3=3. Blocks (1,1,1),(3,2,3) but p2=3, a2=2, p2>a2 impossible (weight denominator (2-3)! invalid). No permutation? q2=3 means values2,3 both after pos3? only pos3, impossible two values. So not valid.
+- [todo] q=(1,1,1): q3=1<=2 yes weight2.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the inclusion-exclusion/run-total DP and solve the resulting factorial-convolution recurrence with CDQ divide-and-conquer plus NTT, using naive convolution for small segments to reduce overhead.
+- Try a block/sqrt online-convolution version of the same recurrence: maintain accumulated contributions from previous blocks, brute-force within a block, and rebuild block contributions either directly or with NTT; tune block size for Python performance.
+- Investigate whether the run recurrence has a closed-form solution or can be solved by a fast Hankel/Toeplitz/generating-function method, especially by studying special cases such as all R_r = b_r and then generalizing.
+- Develop a direct first-bad-cut DP over prefixes, attempting to count good partial matchings with a compact state for open unmatched black vertices; verify whether a single open gap suffices or whether multiple gaps are necessary.
+- Explore a moment-based scanning DP, checking whether valid black positions provide enough resets to avoid an infinite moment hierarchy.
+- Consider determinant/integral formulations of the triangular factorial system or of the inclusion-exclusion sum, and determine whether the permanent/determinant gap or boundary conditions block a practical implementation.

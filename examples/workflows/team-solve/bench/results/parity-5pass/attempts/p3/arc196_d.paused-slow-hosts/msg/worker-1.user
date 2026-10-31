@@ -1,0 +1,128 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Represent each person as a signed interval \([l_i,r_i]\) (\(l_i=\min(S_i,T_i)\), \(r_i=\max(S_i,T_i)\)), where sign \(+\) means interior values must be above the endpoints and sign \(-\) means below. A set is feasible iff it has no bad pair: intervals sharing the same left or same right endpoint, or same-sign intervals that strictly cross; this follows because same-sign intervals must be laminar and opposite-sign overlaps only force \(+\) endpoint values below \(-\) endpoint values, yielding an acyclic partial order. Thus for each \(i\) compute the smallest \(j>i\) that is bad with \(i\), and a query \([L,R]\) is Yes iff \(R < \text{suffix\_min}_{i\ge L} \text{earliest}[i]\). Same-endpoint earliest partners are obtained by scanning \(i\) backwards with last seen left and right endpoint arrays. Same-sign crossing earliest partners are obtained in two passes (original and reversed coordinates) by processing \(j\) increasing and maintaining, per sign, a segment tree over \(r\) with per-\(r\) min-heaps of \(l\) for active earlier intervals; the query removes all active \(i\) with \(l_i<l_j<r_i<r_j\) and assigns \(j\). Combine the two crossing passes with same-endpoint answers, build the suffix minima, and answer the \(Q\) queries.
+
+NOTES:
+
+## ideation
+The first useful reformulation is to replace road strengths by a potential on towns. If \(P_v\) is the cumulative strength from town 1 to town \(v\), then a person moving from \(S\) to \(T\) only sees differences of \(P\). For \(S<T\), the requirements are \(P_S=P_T\) and \(P_x>P_S\) for every interior town \(S<x<T\). For \(S>T\), they are \(P_S=P_T\) and \(P_x<P_S\) for every interior town \(T<x<S\). Thus each person can be represented as a signed interval \([l,r]\), where \(l=\min(S,T)\), \(r=\max(S,T)\), plus means “interior must be above the endpoint value,” and minus means “interior must be below the endpoint value.” Since road strengths are integers, strict inequalities mean “at least 1 above/below,” but if the resulting equality/inequality system is acyclic, integer values can always be assigned by topological ranking.
+
+The core difficulty is answering many queries over consecutive blocks of people. We need a compact certificate of infeasibility. The natural certificate is a bad pair of people that cannot be satisfied together. If infeasibility is pairwise, then a query \([L,R]\) is Yes exactly when no bad pair has both indices inside \([L,R]\). Then it is enough to compute, for each person \(i\), the smallest \(j>i\) that is bad with \(i\); a suffix minimum over these earliest bad partners answers all queries in constant time.
+
+The candidate bad pairs are:
+- two intervals with the same left endpoint;
+- two intervals with the same right endpoint;
+- two same-sign intervals that strictly cross.
+
+Same-side endpoint conflicts are immediate: the shorter interval forces its far endpoint to equal the shared endpoint, while the longer interval requires that town to be strictly above or below. Same-sign crossing gives a strict cycle through the two endpoint equalities. Opposite-sign overlaps only impose an order from the plus interval’s endpoint class to the minus interval’s endpoint class, and same-sign nested intervals are laminar, so they should not create contradictions. A subtle theoretical pitfall is that endpoint equality classes can merge when one interval’s right endpoint equals another interval’s left endpoint; the pairwise criterion must be checked against such chains. Also, sharing an endpoint in opposite sides, such as one interval’s right endpoint equal to another’s left endpoint, is not automatically bad.
+
+Candidate approaches and pitfalls:
+
+1. Earliest-bad-pair sweep plus suffix minima, which matches the given plan. Compute same-left and same-right earliest partners by scanning indices backward. For same-sign crossing, process indices increasing and maintain active earlier intervals that have not yet been assigned a crossing partner. For each sign, use a segment tree over right endpoints; each leaf keeps a min-heap of left endpoints for active intervals with that right endpoint, and internal nodes keep the minimum left endpoint in their subtree. For the current interval, repeatedly extract active intervals whose left endpoint is smaller and whose right endpoint lies strictly between the current left and right endpoints, assigning the current index as their earliest crossing partner. Run the same sweep on mirrored coordinates to catch the opposite crossing orientation. Pitfalls: strict open ranges, separate structures for plus and minus signs, mirrored coordinates, ensuring each interval is removed only after assignment, and not treating right-left endpoint touching as bad.
+
+2. Sliding-window dynamic conflict maintenance. Feasibility is monotone: if a set is infeasible, every superset is infeasible. Therefore the minimal infeasible right endpoint for each left endpoint is nondecreasing. Maintain a window \([L,R]\) and a data structure that reports whether the active set contains any bad pair. Endpoint conflicts can be maintained with counts of left endpoints and right endpoints. Crossing conflicts can be maintained by dynamically counting same-sign crossing pairs: when inserting or deleting an interval, query two 2D rectangles to count active intervals crossing it. Pitfalls: dynamic 2D range counting is heavy, likely \(O(\log^2 N)\) per update; total crossing counts can be large and need 64-bit arithmetic; deletions must subtract the correct number of pairs; and the monotonicity of the minimal infeasible right endpoint must be handled carefully.
+
+3. Offline descending-index 2D range minimum. Process people from largest index to smallest. Insert later intervals into a 2D structure keyed by \((l,r)\) that can return the minimum index in a rectangle. For the current interval, query the two crossing rectangles to find the earliest later interval that crosses it. This avoids the deletion/enumeration logic of the heap sweep but requires a true 2D range-minimum structure. Pitfalls: memory can be \(O(M\log M)\); range minimum is not invertible, so a simple 1D Fenwick tree over one coordinate is not enough; strict rectangle boundaries and per-sign separation are easy to get wrong.
+
+4. CDQ divide-and-conquer or parallel binary search on the index. Use divide-and-conquer over person indices to find, for each left-half interval, the first bad partner in the right half, using a temporary sweep data structure at each level. Alternatively, binary search the answer for each person and answer existence predicates offline as 3D dominance queries. Pitfalls: higher asymptotic cost, rebuilding temporary structures at many levels, managing intervals that already have a smaller known partner, and the parallel-binary-search version becomes a delicate 3D offline dominance problem.
+
+5. Mo’s algorithm over queries. Maintain the current query range and a dynamic conflict structure similar to the sliding-window approach. This is conceptually simple but likely too slow for the full constraints because the number of add/remove operations is large and each update may require 2D range counting. Pitfalls: update count around \((M+Q)\sqrt M\), high constant factors, memory for dynamic 2D counting, and strict interval boundaries.
+
+6. Direct difference-constraints checking per query. For a fixed range, build a graph of equalities and strict inequalities, using segment-tree edges to represent “all interior towns” constraints, then check for cycles or positive-weight cycles. This is a good brute-force verification method for the bad-pair characterization, but it is far too slow for the full input. Pitfalls: per-query graph construction, range inequality compression, strict integer weights, and equality contraction.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the complete Python program for the pairwise-bad-pair solution and verify it. Use l=min(S,T), r=max(S,T), sign=0 if S<T else 1. Compute the earliest later bad partner for each person: (1) backward scan for same l or same r; (2) for same-sign crossing, run an increasing-index sweep for each sign on original coordinates and on mirrored coordinates (l'=N+1-r, r'=N+1-l). In each sweep maintain a segment tree over right endpoints where each leaf is a min-heap of encoded (left,index) for active earlier intervals of that sign; for current interval [L,R], extract all active earlier intervals with L < r_i < R and l_i < L, set their crossing partner to the current index, then insert the current interval. Take the elementwise minimum of all partner sources, build a suffix minimum, and answer query [L,R] with Yes iff suffix[L] > R. Use strict open ranges, separate signs, and test on both samples plus a separate small random brute-force difference-constraints checker that includes touching endpoints.

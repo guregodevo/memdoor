@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "desc": "Ideation: identify noncrossing matching model, even-block sorted-half-difference formula, and odd-N survivor split at odd original positions.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement standalone Python 3 two-heap prefix/suffix solution with correct stdin/stdout.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Validate samples and small brute-force cases; confirm O(N log N) complexity for N up to 3e5.",
+    "status": "done",
+    "result": ""
+  }
+]

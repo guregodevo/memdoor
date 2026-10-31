@@ -1,0 +1,51 @@
+{
+ "pending": "ideate",
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Read \\(N,S\\); if \\(S[0]\\ne B\\) or \\(S[-1]\\ne W\\), print \\(0\\). Otherwise scan \\(S\\), maintaining white index \\(a\\) and black count \\(b\\); for \\(a=1\\ldots N-1\\), if \\(b\\le a\\), set \\(last[b]=a\\). Build sorted arrays \\(B_i, A_i=last[B_i], D_i=A_i-B_i\\) for \\(B_i=1\\ldots N-1\\) with \\(last[B_i]>0\\).",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Precompute \\(fact[0..N]\\) and \\(invfact[0..N]\\) modulo \\(998244353\\). Initialize an array \\(S_i=fact[A_i]\\) (the contribution of the virtual \\(j=0\\) term) and base answer \\(=fact[N]\\).",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Implement a CDQ solver over the constraint indices: at a leaf set \\(dp_i=-S_i\\cdot invfact[D_i]\\bmod MOD\\); after solving the left half, propagate its \\(dp_j\\) to the right half by convolving an array indexed by \\(B_j\\) with the factorial series \\(fact[t]\\), and add \\(conv[A_i-\\text{offset}]\\) to \\(S_i\\) for each right \\(i\\). Use NTT for large blocks and a direct loop for small blocks.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "After CDQ completes, for each constraint add \\(dp_i\\cdot fact[N-B_i]\\) to the answer modulo \\(998244353\\), then print the answer.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 5,
+   "desc": "Verify edge cases (\\(N=1\\), no constraints, invalid endpoints, all constraints automatic) and the provided samples, checking NTT offsets and modulo signs.",
+   "status": "pending",
+   "result": ""
+  }
+ ],
+ "proposals": [],
+ "nexts": [],
+ "status": "continue",
+ "next": "",
+ "prev": null,
+ "iters": 0,
+ "task": "",
+ "wrote": false,
+ "res": null,
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  }
+ ]
+}

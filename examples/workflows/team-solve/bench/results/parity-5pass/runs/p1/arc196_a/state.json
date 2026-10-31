@@ -1,0 +1,76 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideation: identify noncrossing matching model, even-block sorted-half-difference formula, and odd-N survivor split at odd original positions.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement standalone Python 3 two-heap prefix/suffix solution with correct stdin/stdout.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Validate samples and small brute-force cases; confirm O(N log N) complexity for N up to 3e5.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Validate the odd-N counterexample and the survivor-split idea with small-N brute force or interval DP.",
+  "Pursue the matching reduction: even blocks reduce to sorted-half-difference; odd N reduces to maximizing left-block value plus right-block value over valid survivor positions.",
+  "Implement prefix and suffix half-difference values using two heaps that maintain the smallest half and largest half of the current multiset.",
+  "Consider an alternative Fenwick-tree implementation over compressed values, querying the sum of the k smallest elements for each even prefix and suffix.",
+  "Use the sign-assignment/rearrangement view to double-check the proof and to ensure no cross-survivor pairing is being counted.",
+  "Test greedy adjacent-max only as a heuristic or counterexample generator, not as the final algorithm.",
+  "Keep optimized interval DP or Monge analysis as a fallback only if the split reduction fails on small cases."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Write a fresh, complete Python 3 program (not a patch) that reads stdin, computes the answer with the validated formula: for every even prefix/suffix maintain lower/upper halves with two heaps and record sum_upper - sum_lower; for even N print pref[N//2]; for odd N print max_{t=0..N//2} pref[t] + suff[N//2-t]; ensure it writes the integer to stdout with a newline; then run the three samples and a brute-force interval DP for all N<=9 random arrays to verify, and include the final code in the required delimiters.",
+ "iters": 2,
+ "task": "Write a fresh, complete Python 3 program (not a patch) that reads stdin, computes the answer with the validated formula: for every even prefix/suffix maintain lower/upper halves with two heaps and record sum_upper - sum_lower; for even N print pref[N//2]; for odd N print max_{t=0..N//2} pref[t] + suff[N//2-t]; ensure it writes the integer to stdout with a newline; then run the three samples and a brute-force interval DP for all N<=9 random arrays to verify, and include the final code in the required delimiters.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 3,
+  "total": 3,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-2",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-2",
+   "finish": "stop"
+  }
+ ]
+}

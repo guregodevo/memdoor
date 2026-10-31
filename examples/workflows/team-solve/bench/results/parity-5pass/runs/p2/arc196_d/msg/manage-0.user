@@ -1,0 +1,149 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The key is to replace road strengths by town potentials. Let \(P_1=0\) and \(P_{v+1}=P_v+w_v\). For a person from \(S\) to \(T\), if \(S<T\), the stamina at town \(x\) is \(P_x-P_S\), so the requirements are \(P_S=P_T\) and \(P_x>P_S\) for all \(S<x<T\). If \(S>T\), the stamina is \(P_S-P_x\), so the requirements are \(P_S=P_T\) and \(P_x<P_S\) for all \(T<x<S\). Thus each person becomes an interval \([l,r]\) with sign \(+\) if \(S<T\) and sign \(-\) if \(S>T\).
+
+A pair of people is incompatible exactly in the following cases:
+1. They have the same left endpoint or the same right endpoint, regardless of sign.
+2. They have the same sign and their endpoints interleave: \(l_1<l_2<r_1<r_2\), or symmetrically.
+
+Same-sign strict containment and opposite-sign overlap/nesting are pairwise compatible; touching at an endpoint is compatible. The reduction to pairwise incompatibility relies on a Helly/acyclicity property: under these pairwise conditions the resulting strict-inequality graph is acyclic. Same-sign intervals form laminar families, and opposite-sign constraints orient from plus-endpoint components to minus-endpoint components; touching chains can merge components but should not create a directed cycle. This should be verified before relying on it; if a longer cycle exists, checking only pairs would be insufficient.
+
+Once pairwise incompatibility is accepted, a range \([L,R]\) is feasible iff it contains no incompatible pair. Therefore it suffices to compute  
+\[
+\text{prev}[i]=\max\{j<i \mid j \text{ is incompatible with } i\}.
+\]
+Then query \([L,R]\) is Yes iff  
+\[
+\max_{i\in[L,R]} \text{prev}[i] < L.
+\]
+The endpoint part of `prev` is easy by scanning indices and keeping the last seen left endpoint and right endpoint. The hard part is same-sign crossing: for each \(i\), find the latest previous same-sign interval satisfying either  
+\[
+l_j<l_i<r_j<r_i
+\]
+or  
+\[
+l_i<l_j<r_i<r_j.
+\]
+This is a 3-dimensional offline problem: index order plus two endpoint coordinates, with strict inequalities.
+
+Pitfalls:
+- Strict versus non-strict endpoint comparisons are critical. A right endpoint equal to another interval’s left endpoint is allowed; same left endpoint or same right endpoint is forbidden.
+- Integer strictness in nested opposite-sign intervals is satisfiable with gaps, but it must not be mistaken for a pairwise conflict.
+- The two crossing orientations must be handled separately.
+- CDQ/sweep implementations need careful segment-tree clearing across recursive nodes.
+- Python performance and memory for \(O(M\log M\log N)\) operations may be tight.
+- Query answering over `prev` must use 1-based indices and treat `prev[i]=0` as “no previous incompatible person”.
+
+
+CURRENT TASK LIST:
+- [todo] Parse the input, normalize each person to \((l,r,dir)\), store all queries, and implement the \(O(1)\) pairwise incompatibility predicate for base cases and validation.
+- [todo] Implement a CDQ divide-and-conquer over person indices with a small brute-force threshold; for each recursive segment maintain two lists of indices sorted by \(l\) ascending and by \(r\) descending for the sweep steps.
+- [todo] In the CDQ cross step, update `prev` for right-half indices using left-half endpoint maxima for same-direction same-\(l\) conflicts and opposite-direction same-\(l\) or same-\(r\) conflicts.
+- [todo] Implement the two same-direction crossing sweeps: one sorted by \(r\) adding left intervals with \(r_j \le r_i\) and range-updating \((l_j+1, r_j-1)\) then point-querying at \(l_i\); the other sorted by \(l\) descending adding left intervals with \(l_j > l_i\) and range-updating \((l_j+1, r_j)\) then point-querying at \(r_i\), using separate max segment trees for the two directions and efficient clearing.
+- [todo] After computing `prev`, build an iterative range-maximum segment tree or sparse table over it and output Yes/No for each query based on whether the range maximum is less than the query’s left endpoint.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the provided CDQ + `prev` + range-max query approach: normalize intervals, compute endpoint `prev` with `last_left`/`last_right`, run CDQ separately on plus and minus subsequences; in each cross step use two monotone sweeps (by \(r\) ascending for \(l_j<l_i<r_j<r_i\), and by \(l\) descending for \(l_i<l_j<r_i<r_j\)) with a range-chmax/point-query segment tree over town coordinates; then answer queries with a segment tree or sparse table over `prev`. Pitfalls: sorting at every CDQ node may be too slow; use presorted/merged coordinate lists or accept a high constant; use timestamps or touched-node lists to reset the segment tree; keep all comparisons strict.
+- Try a one-pass online 2D range-maximum structure per sign: process people in index order, insert \((l,r)\) with value index, and for each new interval query the two crossing rectangles (prefix in \(l\) with \(r\) in a range, and range in \(l\) with suffix in \(r\)) to get the latest previous crossing. Use a segment tree over one coordinate with compressed Fenwick/segment trees over the other, or run the first rectangle on reversed coordinates for the second. Pitfalls: \(O(M\log N)\) memory for coordinate compression, max cannot be obtained by prefix subtraction, high implementation complexity, and likely Python MLE/TLE.
+- Try a sliding-window / two-pointer method that computes, for every \(L\), the minimal \(R\) making \([L,R]\) infeasible, then answers queries by \(R < \text{badR}[L]\). Maintain the current window’s total number of incompatible pairs under add/remove: endpoint conflicts with \(O(1)\) counters, same-sign crossing conflicts with a dynamic 2D range-counting structure (Fenwick of Fenwick trees or coordinate sqrt decomposition). Pitfalls: deletions make the data structure harder; \(O(M\log^2 N)\) updates with large constants; must carefully restore the window when the first infeasible \(R\) is found; Python may not handle the dynamic 2D counts within limits.
+- Try Mo’s algorithm over the query ranges, maintaining the current person-index interval and the same dynamic conflict count; answer Yes iff the count is zero. Pitfalls: the operation count is roughly \((M+Q)\sqrt{M}\) times a 2D update/query cost, which is far too high for the given limits; it is mainly a fallback if a very cheap conflict-maintenance structure is discovered.
+- Try a segment tree over person indices whose nodes store compact certificates of feasibility (infeasible flag, used endpoints, laminar interval structures for each sign) and combine \(O(\log M)\) nodes for a query. Pitfalls: there is no obvious small monoid; checking cross conflicts between two certificates may require scanning or 2D queries, certificate size may blow up, and handling mixed components from touching intervals is subtle; likely less practical than the `prev`-array reduction.
+- Try parallel binary search or divide-and-conquer on the answer to compute `prev[i]` or `badR[L]`: binary search the latest previous incompatible index or minimal bad \(R\), and test batches of candidate ranges with offline 2D/3D dominance sweeps. Pitfalls: each iteration still needs a robust offline conflict-existence test, the method adds multiple passes and synchronization overhead, and it is essentially as hard as the CDQ computation but with more off-by-one risk.

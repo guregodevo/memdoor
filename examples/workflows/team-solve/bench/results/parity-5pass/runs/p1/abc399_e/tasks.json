@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "desc": "Implement the functional-graph counting solution in Python and run the provided samples.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Review edge cases (conflicts, bare/non-bare cycles, spare labels) and finalize the stdin/stdout code.",
+    "status": "done",
+    "result": ""
+  }
+]

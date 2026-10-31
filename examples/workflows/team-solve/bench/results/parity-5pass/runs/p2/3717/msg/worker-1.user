@@ -1,0 +1,72 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, x and k. You can perform the following operation any number of times (including zero):
+
+Increase or decrease any element of nums by 1.
+
+Return the minimum number of operations needed to have at least k non-overlapping subarrays of size exactly x in nums, where all elements within each subarray are equal.
+ 
+Example 1:
+
+Input: nums = [5,-2,1,3,7,3,6,4,-1], x = 3, k = 2
+Output: 8
+Explanation:
+
+Use 3 operations to add 3 to nums[1] and use 2 operations to subtract 2 from nums[3]. The resulting array is [5, 1, 1, 1, 7, 3, 6, 4, -1].
+Use 1 operation to add 1 to nums[5] and use 2 operations to subtract 2 from nums[6]. The resulting array is [5, 1, 1, 1, 7, 4, 4, 4, -1].
+Now, all elements within each subarray [1, 1, 1] (from indices 1 to 3) and [4, 4, 4] (from indices 5 to 7) are equal. Since 8 total operations were used, 8 is the output.
+
+
+Example 2:
+
+Input: nums = [9,-2,-2,-2,1,5], x = 2, k = 2
+Output: 3
+Explanation:
+
+Use 3 operations to subtract 3 from nums[4]. The resulting array is [9, -2, -2, -2, -2, 5].
+Now, all elements within each subarray [-2, -2] (from indices 1 to 2) and [-2, -2] (from indices 3 to 4) are equal. Since 3 operations were used, 3 is the output.
+
+
+ 
+Constraints:
+
+2 <= nums.length <= 10^5
+-10^6 <= nums[i] <= 10^6
+2 <= x <= nums.length
+1 <= k <= 15
+2 <= k * x <= nums.length
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def minOperations(self, nums: List[int], x: int, k: int) -> int:
+        
+```
+
+
+
+PLAN:
+Compute the minimum operations needed to make every possible length-x window constant, then select k non-overlapping windows with minimum total cost. For a fixed window, the optimal constant is a median, so maintain a sliding median and the sums of the lower/upper halves to get the sum of absolute deviations in logarithmic time per shift. Use DP over the number of selected windows and array prefix: dp[t][i] is the minimum cost to form t valid windows inside the first i positions. Transition by skipping position i or taking the window ending at i, which forces the previous t-1 windows to lie in the first i-x positions. Because costs are nonnegative, satisfying at least k windows is equivalent to choosing exactly k windows, and k is small enough for O(kn) DP.
+
+NOTES:
+
+## ideation
+The problem separates into two main pieces. First, for any fixed length-x window, the cheapest way to make all elements in that window equal is to choose a median of the window values; the cost is the sum of absolute deviations from that median. Second, once the cost of every possible length-x window is known, the task becomes selecting k non-overlapping windows with minimum total cost.
+
+Because the selected windows are disjoint, their costs add independently. Also, since all window costs are nonnegative, an optimal solution for “at least k” windows can be treated as choosing exactly k windows: if a final array contains more than k valid non-overlapping windows, choosing any k of them gives a lower bound on the total operations, and the independent minimum costs for those k windows are achievable.
+
+The selection part is straightforward under the constraints: k is at most 15 and n is up to 10^5, so a prefix DP over positions and number of chosen windows is efficient. The hard part is computing the median-based cost for all sliding windows of length x in near-linear time. Naively sorting or scanning each window is too slow when x is large.
+
+Important subtleties include:
+- For even x, any value between the two middle values is optimal; using the lower median is sufficient.
+- Duplicates around the median must be counted consistently when computing the sum of absolute deviations.
+- Values can be negative, so intermediate sums and products may be negative even though final costs are nonnegative.
+- Total cost can exceed 32-bit integer range.
+- Sliding-window data structures must support deletion of the outgoing element, which is awkward with plain heaps.
+- The DP must allow adjacent windows but not overlapping windows.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the complete solution in the starter code using a Fenwick tree over compressed values: slide a length-x window, maintain combined count and sum BITs, find the lower median rank (x+1)//2, compute each window's minimum equalization cost as median*count_le - sum_le + (total_sum - sum_le) - median*(x - count_le), store it by 1-indexed end position; then run the rolling O(kn) DP with cur[p] = min(cur[p-1], prev[p-x] + cost[p]) for p >= x and return prev[n]. Run the two provided examples and small random brute-force tests, and report the sample test verdict.

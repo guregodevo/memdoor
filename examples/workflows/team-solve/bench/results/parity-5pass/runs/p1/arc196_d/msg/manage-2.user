@@ -1,0 +1,348 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+import gc
+from bisect import bisect_left, bisect_right
+
+
+def process_mode(ids, L, R, prev, idxs, N, mode, shift, mask):
+    """
+    mode 0:
+      compressed coordinates = left endpoints l
+      update interior l-positions in (l, r) with key = r
+      query at l with threshold r
+      finds earlier i with l_i < l_j < r_i < r_j
+
+    mode 1:
+      compressed coordinates = right endpoints r
+      update interior r-positions in (l, r) with key = N - l
+      query at r with threshold N - l
+      finds earlier i with l_j < l_i < r_j < r_i
+    """
+    if len(ids) < 2:
+        return
+
+    if mode == 0:
+        positions = sorted({L[pid] for pid in ids})
+    else:
+        positions = sorted({R[pid] for pid in ids})
+
+    k = len(positions)
+    if k < 2:
+        return
+
+    size = 1
+    while size < k:
+        size <<= 1
+
+    tree = [None] * (size << 1)
+    bl = bisect_left
+    br = bisect_right
+
+    for pid in ids:
+        l = L[pid]
+        r = R[pid]
+
+        if mode == 0:
+            qpos = bl(positions, l)
+            x = r
+        else:
+            qpos = bl(positions, r)
+            x = N - l
+
+        base = x << shift
+        idx = idxs[pid]
+
+        # Point query: max index among records covering this point with key < x.
+        q = qpos + size
+        res = 0
+        while q:
+            lst = tree[q]
+            if lst:
+                if lst[-1] < base:
+                    v = lst[-1] & mask
+                elif lst[0] < base:
+                    v = lst[bl(lst, base) - 1] & mask
+                else:
+                    v = 0
+                if v > res:
+                    res = v
+            q >>= 1
+
+        if res > prev[pid]:
+            prev[pid] = res
+
+        # Range update over compressed positions strictly between l and r.
+        a = br(positions, l)
+        b = bl(positions, r)
+        if a < b:
+            val = base | idx
+            left = a + size
+            right = b + size
+
+            while left < right:
+                if left & 1:
+                    lst = tree[left]
+                    if lst is None:
+                        tree[left] = [val]
+                    else:
+                        while lst and lst[-1] >= base:
+                            lst.pop()
+                        lst.append(val)
+                    left += 1
+
+                if right & 1:
+                    right -= 1
+                    lst = tree[right]
+                    if lst is None:
+                        tree[right] = [val]
+                    else:
+                        while lst and lst[-1] >= base:
+                            lst.pop()
+                        lst.append(val)
+
+                left >>= 1
+                right >>= 1
+
+    del tree, positions
+
+
+def main():
+    input = sys.stdin.buffer.readline
+    line = input()
+    if not line:
+        return
+
+    N, M, Q = map(int, line.split())
+
+    L = [0] * M
+    R = [0] * M
+    Dir = bytearray(M)
+    right = []
+    left = []
+
+    for i in range(M):
+        s, t = map(int, input().split())
+        if s < t:
+            l, r, d = s, t, 0
+            right.append(i)
+        else:
+            l, r, d = t, s, 1
+            left.append(i)
+        L[i] = l
+        R[i] = r
+        Dir[i] = d
+
+    idxs = list(range(1, M + 1))
+    prev = [0] * M
+
+    shift = (M + 1).bit_length()
+    mask = (1 << shift) - 1
+
+    use_gc = sys.implementation.name == "cpython"
+    if use_gc:
+        gc.disable()
+
+    # Endpoint conflicts:
+    # - same direction, same l or same r
+    # - opposite direction, same l or same r
+    ll0 = [0] * (N + 2)
+    lr0 = [0] * (N + 2)
+    ll1 = [0] * (N + 2)
+    lr1 = [0] * (N + 2)
+
+    for pid in range(M):
+        l = L[pid]
+        r = R[pid]
+        idx = idxs[pid]
+        p = prev[pid]
+
+        if Dir[pid] == 0:
+            v = ll0[l]
+            if v > p:
+                p = v
+            v = lr0[r]
+            if v > p:
+                p = v
+            v = ll1[l]
+            if v > p:
+                p = v
+            v = lr1[r]
+            if v > p:
+                p = v
+
+            ll0[l] = idx
+            lr0[r] = idx
+        else:
+            v = ll1[l]
+            if v > p:
+                p = v
+            v = lr1[r]
+            if v > p:
+                p = v
+            v = ll0[l]
+            if v > p:
+                p = v
+            v = lr0[r]
+            if v > p:
+                p = v
+
+            ll1[l] = idx
+            lr1[r] = idx
+
+        prev[pid] = p
+
+    Dir = None
+    ll0 = lr0 = ll1 = lr1 = None
+
+    # Crossing same-direction conflicts.
+    process_mode(right, L, R, prev, idxs, N, 0, shift, mask)
+    process_mode(right, L, R, prev, idxs, N, 1, shift, mask)
+    right = None
+
+    process_mode(left, L, R, prev, idxs, N, 0, shift, mask)
+    process_mode(left, L, R, prev, idxs, N, 1, shift, mask)
+    left = None
+
+    if use_gc:
+        gc.enable()
+
+    L = R = idxs = None
+
+    # bad[x] = max prev[i] for i <= x
+    bad = [0] * (M + 1)
+    cur = 0
+    for i in range(1, M + 1):
+        p = prev[i - 1]
+        if p > cur:
+            cur = p
+        bad[i] = cur
+
+    prev = None
+
+    out = []
+    append = out.append
+    for _ in range(Q):
+        Lq, Rq = map(int, input().split())
+        append("Yes" if bad[Rq] < Lq else "No")
+
+    sys.stdout.write("\n".join(out))
+
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Model:** Use prefix heights H_1..H_N. For a normalized interval [l,r], right-moving people require H_l=H_r and H_x>H_l for l<x<r; left-moving people require H_l=H_r and H_x<H_l for l<x<r. Integer road strengths exist exactly when the resulting equality/strict-inequality system is feasible.
+- **Pairwise rule:** A set is feasible iff it contains no incompatible pair. Same direction: incompatible iff open intervals overlap and neither strictly contains the other; shared left or shared right endpoints are conflicts. Opposite direction: incompatible iff normalized left endpoints are equal or normalized right endpoints are equal. This rule was validated by the previous brute-force harness.
+- **Range query reduction:** Let prev[j] be the largest index i<j incompatible with j. Then bad[R]=max_{j<=R} prev[j], and query [L,R] is Yes iff bad[R]<L.
+- **Endpoint prev:** Maintain latest index arrays for each direction and each endpoint type: last_l[dir][l], last_r[dir][r]. For each person in input order, query same-direction same l/r and opposite-direction same l/r, then update its own direction arrays.
+- **Crossing prev:** For each direction, process two modes sequentially. Mode A compresses all l-values; update the segment-tree range of l-positions in (l,r) with key=r, and point-query at l with threshold r. This finds earlier intervals with l_i<l_j<r_i<r_j. Mode B compresses all r-values; update r-positions in (l,r) with key=N-l, and point-query at r with threshold N-l (equivalent to N-l-1). This finds earlier intervals with l_j<l_i<r_j<r_i.
+- **Monotonic segment tree:** Each segment-tree node stores records packed as (key<<SHIFT)|idx, where SHIFT=(M+1).bit_length(). Records in a node are kept with strictly increasing key and increasing idx. A new record pops the suffix with key >= new key because it has a larger idx and no larger key, so it dominates those records for all future threshold queries. A point query checks the O(log K) nodes on the path and takes the last record with key < threshold in each node.
+- **Compression:** Coordinates are compressed to only the endpoint values that are actually queried in that mode (l-values for mode A, r-values for mode B). This reduces the segment-tree size to at most the number of people in that direction.
+- **Memory/time:** One mode is processed at a time, so only one monotonic segment tree is live. The packed record int is shared across all segment-tree nodes touched by one person. Overall complexity is O(M log^2 M + Q) time and O(M log M) memory per mode.
+- **Implementation details:** Input is read line by line; queries are read after prev/bad are computed. CPython GC is disabled during the heavy monotonic-tree phase because no reference cycles are created.
+
+
+CURRENT TASK LIST:
+- [done] Build a small brute-force validation harness: generate random small instances (N<=8, M up to all valid directed pairs, unique (S,T), |S-T|>1), decide feasibility by DSU equality contraction + directed cycle detection, and compare it with the proposed pairwise rule (same direction: open intervals overlap and neither strictly contains the other; opposite direction: same left endpoint or same right endpoint, while opposite-side touching is compatible) for all ranges/subsets.
+- [todo] Replace the validation harness with the actual solver: read the real input, normalize each person to (l,r,dir), compute prev[i] for all incompatible earlier pairs using (a) opposite-direction same l/r last-index arrays, (b) same-direction same l/r last-index arrays, and (c) two online monotonic segment trees per direction for crossing same-direction intervals (mode A: range-update interior [l+1,r-1] with key=r, point-query at l with threshold r; mode B: range-update interior with key=N-l, point-query at r with threshold N-l-1), then build prefix max bad and answer each query [L,R] with Yes iff bad[R] < L; test on samples and random small cases against the brute-force oracle.
+- [todo] Test the final solver on the provided samples and on random small instances against the brute-force oracle, including edge cases: touching endpoints, shared endpoints, nested intervals, opposite directions, and length-2 intervals.
+- [todo] Optimize memory/time for N=4e5, M=Q=2e5: process one direction and one tree mode at a time, use packed ints and bisect, fast I/O, free trees between passes, and verify runtime/memory.
+- [todo] If random tests fail, analyze the minimal counterexample and revise the incompatibility characterization or data structure before finalizing.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 2 public samples -- the solution looks correct.] worker reported 'solved' on: Replace the validation harness with the actual solver: read the real input, norm. - **Model:** Use prefix heights H_1..H_N. For a normalized interval [l,r], right-moving people require H_l=H_r and H_x>H_l for l<x<r; left-moving people require H_l=H_r and H_x<H_l for l<x<r. Integer 
+
+PROPOSED NEW STEPS:
+(none)

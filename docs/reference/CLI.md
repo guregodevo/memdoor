@@ -77,10 +77,18 @@ Every workspace-scoped command needs to know which workspace to talk to. The CLI
 
 1. **`-w/--workspace` flag** — explicit override.
 2. **`$MEMDOOR_WORKSPACE` env var** — for shell sessions and CI.
-3. **`.memdoor/workspace` file** — single line containing the slug. Discovered by walking up from the current directory to `$HOME` (or filesystem root, whichever comes first). Pinning per-project is the recommended idiom; commit `.memdoor/` so collaborators inherit it.
+3. **`.memdoor/workspace` file** — single line containing the slug. Discovered by walking up from the current directory to `$HOME` (or filesystem root, whichever comes first).
 4. **`workspace_id` in `~/.memdoor/config.json`** — per-install default written by `memdoor setup`.
 
 Use `memdoor workspace use <slug>` to write `./.memdoor/workspace` in the current directory, and `memdoor workspace which` to print the resolved slug + the source string.
+
+An account has one workspace, and the gateway closes a window's socket on any other. So the window, `memdoor run` and `memdoor acp` check a pin from steps 3–4 against the signed-in account (`/api/auth/whoami`'s `workspace_slug`). When the pin names a workspace that isn't the account's, they open the account's own instead and say so in one stderr line:
+
+```
+Workspace "hackernews" (file /Users/you/work/.memdoor/workspace) is not you@example.com's: opening theirs, "memdoor". `memdoor workspace use memdoor` updates the pin.
+```
+
+A slug you typed (`-w`, `$MEMDOOR_WORKSPACE`) or a resumed conversation's recorded workspace is kept. If the gateway refuses it, the window says why and what to type, once, and does not reconnect.
 
 When verbose mode is on (`-v`) and the slug came from anywhere other than `-w`, the CLI prints one stderr line at startup so debugging "wait, which workspace am I in?" is one flag away:
 

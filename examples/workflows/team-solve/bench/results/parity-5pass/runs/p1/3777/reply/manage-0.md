@@ -1,0 +1,9 @@
+### STATUS
+continue
+
+### NEXT
+Implement the full Python solution (enclosed in the required delimiters) using product-major positive DP with sum bitsets and four-state zero DP: offset = max(nums)*((n+1)//2), early exit if abs(k)>offset, mask, target bit; for x>0 snapshot old zero states and old pos lists, update zero no-zero/has-zero states by skip plus parity-flipping sum shifts, iterate p=1..limit//x for positive transitions, update opposite parity product p*x with left/right sum shifts, and add start state odd[x]; for x==0 update has-zero even/odd as old_has_even | old_no_odd | old_has_odd and old_has_odd | old_no_even | old_has_even; after all nums scan products limit..1 for target bit, else return 0 if has-zero even/odd has target, else -1; run provided examples and a small brute-force random test.
+
+### TASKS
+- [todo] Implement the full Python solution (enclosed in the required delimiters) using product-major positive DP with sum bitsets and four-state zero DP: offset = max(nums)*((n+1)//2), early exit if abs(k)>offset, mask, target bit; for x>0 snapshot old zero states and old pos lists, update zero no-zero/has-zero states by skip plus parity-flipping sum shifts, iterate p=1..limit//x for positive transitions, update opposite parity product p*x with left/right sum shifts, and add start state odd[x]; for x==0 update has-zero even/odd as old_has_even | old_no_odd | old_has_odd and old_has_odd | old_no_even | old_has_even; after all nums scan products limit..1 for target bit, else return 0 if has-zero even/odd has target, else -1; run provided examples and a small brute-force random test.
+- [todo] If the implementation fails sample/brute-force tests or is too slow, switch to a different approach (sum-major product bitsets or meet-in-the-middle) instead of continuing to patch the same DP.

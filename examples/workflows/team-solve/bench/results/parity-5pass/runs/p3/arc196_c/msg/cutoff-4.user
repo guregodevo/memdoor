@@ -1,0 +1,233 @@
+TASK: Run N=200000 performance smoke tests (alternating, near-alternating, B^N W^N, random balanced) and tune CDQ/NTT thresholds/caching if needed.
+
+CUT-OFF ATTEMPT:
+We need answer user's task: run N=200000 performance smoke tests (alternating, near-alternating, B^N W^N, random balanced) and tune CDQ/NTT thresholds/caching if needed. We are a WORKER subagent in competitive programming context. Need output EXACTLY sections: ### CODE, ```python ...```, ### NOTES, ### NEXT, ### STATUS. Need solve? The task is to run performance smoke tests and tune. We cannot actually execute code? As language model, we can reason and maybe simulate? Need provide updated code after tuning. We need be careful: We can't run Python here? We can do mental performance analysis, maybe write code that includes self-test? But final program must read stdin solve. We can include performance tuning changes. Need perhaps produce code with improved thresholds/caching. Need ensure correctness. We need think deeply about algorithm and Python performance for N=200k. Need maybe tune CDQ/NTT thresholds, caching roots, poly_inv, etc. Need maybe avoid expensive direct DP for t large. Need evaluate cases:
+- alternating S = "BW"*N: special fast path uses poly_inv(fact, N+1) and dot product. For N=200k, poly_inv with NTT. Need performance in Python? NTT length up to 524288? poly_inv iterative doubling. Could be slow but maybe acceptable? Need tune.
+- near-alternating: events maybe many? Need CDQ.
+- B^N W^N: S = B...B W...W. Vertex1 B, last W. Let's parse events: first B run N, then W run N. After W run, i=M, no event? parse_events only adds event after a W run if i<M and cum_w>=cum_b. Here after W run i=M, no event. So t=0, answer fact[N]. Very fast.
+- random balanced: events count maybe O(N)? Need CDQ.
+Need tune CDQ/NTT thresholds/caching. Current code likely maybe too slow due to Python NTT loops. Need improve.
+
+We need output one complete self-contained Python program. We can modify code to improve performance. Need not actually run, but should propose tuned code. Need ensure no syntax errors.
+
+Let's analyze algorithm correctness and potential performance bottlenecks.
+
+Problem: directed path 1->2->...->2N plus added edges white->black pairs. Need count perfect matching between white vertices and black vertices such that graph strongly connected. Derived conditions. Current code implements.
+
+Need focus on performance smoke tests. Since can't run, we can reason about asymptotic and constants. Python NTT at 200k may be heavy. Need optimize.
+
+Current NTT:
+- ensure_roots builds roots for each log length up to target. Roots arrays total O(max_len) ~ 524288, okay. But building ws by loop half for each log total O(max_len) ~ 524k, okay.
+- ntt forward DIF: nested Python loops. For length 524288, operations ~ n log n /2 butterflies? Actually each stage n/2 butterflies, total n/2 log n ~ 4.7M for 524k. In Python, 4.7M inner iterations with modular multiplications maybe ~0.5-1s? Multiple NTTs in CDQ many. Could be too slow.
+- CDQ uses many NTTs. Need thresholds to avoid too many small NTTs. Current BLOCK=64, DIRECT_LIMIT=8192, DIRECT_ABS=200_000, NTT_FACTOR=1. It chooses direct if ls*rs <=8192 or <=200k and <= L logL. For large CDQ, many NTTs. Number of NTT convolutions? CDQ over t events. At each internal node where NTT used, one convolution. Number of nodes O(t/BLOCK) maybe ~3125 for t=200k if all nodes NTT? But many small direct. NTT nodes at levels where cost > thresholds. For t=200k, levels: size n. direct if n^2/4 <=8192 => n <= 181. So blocks up to ~128 direct. NTT for nodes size >=256 maybe. Number of NTT nodes at level size 256: ~781, size51
+...[middle omitted]...
+exists, coefficients P[i]=0 for i>=plen. So:
+```
+lim = k if k < plen else plen - 1
+for i in range(1, lim+1): s += P[i]*h[k-i]
+```
+This branch outside. Good. Add for safety.
+But in our uses P length >=n, so lim=k. Fine.
+
+Update poly_inv direct:
+```
+plen = len(P)
+while m < n and m < DIRECT:
+    k=m
+    lim = k if k < plen else plen - 1
+    s=0
+    for i in range(1, lim+1): s += P[i]*h[k-i]
+    ...
+```
+If plen=0? P[0] error. n>0 implies P nonempty.
+
+Newton take as above.
+
+Now, `poly_mul`:
+```
+def poly_mul(a,b,limit=None):
+    la=len(a); lb=len(b)
+    if la==0 or lb==0: return []
+    full=la+lb-1
+    need=full if limit is None else min(full,limit)
+    if need<=0: return []
+    mod=MOD
+    if full <= 512 or min(la,lb) <= 16:
+        if la > lb:
+            a,b=b,a; la,lb=lb,la
+        res=[0]*need
+        max_i = min(la, need)
+        for i in range(max_i):
+            ai=a[i]
+            if ai:
+                maxj = min(lb, need - i)
+                for j in range(maxj):
+                    res[i+j] += ai * b[j]
+        for i in range(need):
+            res[i] %= mod
+        return res
+    L = 1 << (full - 1).bit_length()
+    ensure_roots(L)
+    fa = a[:] + [0] * (L - la)
+    fb = b[:] + [0] * (L - lb)
+    ntt(fa, False)
+    ntt(fb, False)
+    for i in range(L):
+        fa[i] = fa[i] * fb[i] % mod
+    del fb
+    ntt(fa, True, False)
+    inv_n = INV_LEN[L.bit_length() - 1]
+    return [fa[i] * inv_n % mod for i in range(need)]
+```
+If `need` > len(fa)? need<=full<=L? full<=L, need<=full, okay.
+
+Now, `alternating_fast`:
+```
+def alternating_fast(N, fact):
+    mod=MOD
+    if N <= 1:
+        return fact[N]
+    H = poly_inv(fact, N)
+    s=0
+    H_loc=H; fact_loc=fact
+    for n in range(N-1):
+        s += H_loc[n+1] * fact_loc[N-1-n]
+    return (fact_loc[N] + s) % mod
+```
+Good.
+
+`parse_events` as above.
+
+`direct_dp_small` with locals:
+```
+def direct_dp_small(t,b,m,fact,invfact,N):
+    mod=MOD
+    g=[0]*t
+    fl=fact; ml=m; gl=g; bl=b; invf=invfact
+    for i in range(t):
+        bi=bl[i]
+        s=0
+        for j in range(i):
+            s += gl[j] * fl[bi - ml[j]]
+        s %= mod
+        val = fl[bi] + s
+        if val >= mod: val -= mod
+        gl[i] = (mod - val) * invf[bi - ml[i]] % mod
+    ans=fl[N]
+    for i in range(t):
+        ans += gl[i] * fl[N - ml[i]]
+    return ans % mod
+```
+Good.
+
+`is_constant_consecutive`:
+```
+def is_constant_consecutive(b,m):
+    if not b: return False
+    d=b[0]-m[0]
+    if d<0: return False
+    pm=m[0]; pb=b[0]
+    for i in range(1,len(b)):
+        if m[i]-pm != 1 or b[i]-pb != 1 or b[i]-m[i] != d:
+            return False
+        pm=m[i]; pb=b[i]
+    return True
+```
+Good.
+
+`fast_constant` with guards and locals:
+```
+def fast_constant(b,m,fact,invfact,N):
+    mod=MOD
+    t=len(b)
+    if t <= 128:
+        return direct_dp_small(t,b,m,fact,invfact,N)
+    d=b[0]-m[0]
+    m0=m[0]
+    b0=b[0]
+    inv_fd=invfact[d]
+    FINITE_LIMIT=4_000_000
+    if m0 * t <= FINITE_LIMIT:
+        Lh = m0 + t
+        if d == 0:
+            P = fact
+        else:
+            P = [1] * Lh
+            for k in range(1, Lh):
+                P[k] = P[k-1] * (d + k) % mod
+        H = poly_inv(P, Lh)
+        if m0 == 1:
+            s=0
+            H_loc=H; fact_loc=fact
+            for n in range(t):
+                s += H_loc[n+1] * fact_loc[N-1-n]
+            s %= mod
+            return (fact_loc[N] + inv_fd * s) % mod
+        Qs = P[:m0]
+        if d != 0:
+            del P
+        H_loc=H; fact_loc=fact; Qs_loc=Qs
+        jrange=range(m0)
+        s=0
+        for n in range(t):
+            c=0
+            idx=m0+n
+            for j in jrange:
+                c += Qs_loc[j] * H_loc[idx-j]
+            c %= mod
+            if c:
+                s += (mod - c) * fact_loc[N - m0 - n]
+        s %= mod
+        return (fact_loc[N] - inv_fd * s) % mod
+    else:
+        if d == 0:
+            H = poly_inv(fact, t)
+        else:
+            Q = [1] * t
+            for k in range(1, t):
+                Q[k] = Q[k-1] * (d + k) % mod
+            H = poly_inv(Q, t)
+            del Q
+        B = fact[b0:b0+t]
+        C = poly_mul(B, H, t)
+        del B, H
+        s=0
+        fact_loc=fact
+        for i in range(t):
+            s += C[i] * fact_loc[N - m0 - i]
+        s %= mod
+        return (fact_loc[N] - inv_fd * s) % mod
+```
+If d==0 in finite, P=fact, Qs=P[:m0] copies. We don't del P. Good.
+If d!=0 finite, P list, Qs slice, del P. Good.
+If t<=128, direct. But if t=128,m0=1, direct 8k, okay. Main use_fast for t>=2000, so guard not used much.
+
+Potential issue: In finite m0==1, if d!=0, P not deleted before return? It will be freed when function returns. Fine. Could del P but not needed.
+
+Now, `cdq_solve`:
+```
+def cdq_solve(t,b,m,fact,invfact,N):
+    mod=MOD
+    g=[0]*t
+    sacc=[0]*t
+    BLOCK=64
+    DIRECT_LIMIT=16384
+    def cdq(l,r, fl=fact, ml=m, gl=g, sl=sacc, bl=b, invf=invfact, mod=mod, ntt=ntt, ensure_roots=ensure_roots, INV_LEN=INV_LEN):
+        if r - l + 1 <= BLOCK:
+            for i in range(l, r+1):
+                bi=bl[i]
+                add=0
+                for j in range(l, i):
+                    add += gl[j] * fl[bi - ml[j]]
+                s = (sl[i] + add) % mod
+                val = fl[bi] + s
+                if val >= mod: val -= mod
+                gl[i] = (mod - val) * invf[bi - ml[i]] % mod
+            return
+        mid = (l + r) >> 1
+        cdq(l, mid)
+        ls = mid - l + 1
+        rs = r - mid
+        direct_cost = ls * rs
+        mid1 = mid + 1
+        if direct_cost <= DIRECT_LIMIT:

@@ -1,0 +1,87 @@
+TASK: Replace the current CDQ/NTT solver with the simplified 1-D recurrence derived from the inclusion-exclusion/Cartesian-right-spine reduction: compute `h[a]` for `a=1..N-1`, then for `t=1..N-1` with `h[t] >= t` compute `A[t] = -invfact[h[t]-t] * (fact[h[t]] + sum_{u<t} A[u] * fact[h[t]-u])` (otherwise `A[t]=0`), and output `fact[N] + sum_{t=1}^{N-1} A[t] * fact[N-t]` modulo 998244353. Validate this new implementation on the three samples, exhaustive small `N` against brute force, and random medium cases; if performance for `N=2e5` is still inadequate, optimize the online convolution for this recurrence (e.g., special-case `h[t]=t` with FPS inverse, or use a faster CDQ/relaxed convolution) rather than the previous per-index CDQ.
+
+CUT-OFF ATTEMPT:
+We need solve programming problem. Need output code, notes, next, status. We must think thoroughly. User provides current work with complex CDQ/NTT solver. Task: replace with simplified 1-D recurrence derived from inclusion-exclusion/Cartesian-right-spine reduction: compute h[a], then for t=1..N-1 with h[t]>=t compute A[t] = -invfact[h[t]-t] * (fact[h[t]] + sum_{u<t} A[u] * fact[h[t]-u]) (otherwise 0), output fact[N] + sum_{t=1}^{N-1} A[t] * fact[N-t] mod. Validate samples, exhaustive small, random medium; if performance N=2e5 inadequate, optimize online convolution (e.g., special-case h[t]=t with FPS inverse, or faster CDQ/relaxed convolution) rather than previous per-index CDQ.
+
+Need produce final Python program. Need understand math to ensure recurrence correct and efficient.
+
+We need solve original problem. Let's derive/verify recurrence.
+
+Original: 2N vertices path 1->2->...->2N. Colors N W, N B. Pair each W to B (perfect matching directed W->B). Count matchings such that final graph strongly connected.
+
+Known reduction: prefix closed condition. Let's define black vertices ordered b_1<...<b_N, white w_1<...<w_N. Pairing is permutation pi: black i paired to white pi(i) (white index). Strong connectivity iff for every proper prefix of vertices, there is added edge entering prefix. Since path edges only forward, no edge leaving? Actually path edges from i to i+1, so from prefix to next is leaving, not entering. Strong connectivity requires no nonempty proper subset closed under outgoing? For directed graph, strongly connected iff no nonempty proper subset with no outgoing edges? For path plus edges, any closed set? Since path edges forward, if a set is prefix? Need condition: For strong connectivity, every proper prefix must have an edge entering it (from outside to inside), because path edges from prefix to outside exist, but to reach earlier from later need entering edges. A set that is not prefix maybe? With path edges, if a set has no incoming edges maybe? The known reduction says proper prefix closed iff no added edge enters it. But is it sufficient to check prefixes? In a directed graph with path 1->2->...->m, if every proper prefix has an incoming edge, then strongly connected? Need check. Path gives reachability forward. To go from later to earlier, need for each cut between k and k+1 an edge crossing from >k to <=k. Added edges W->B. An edge crosses cut backward if white > k and black <= k. So condition for each k=1..2N-1: exists paired (w,b) with w>k>=b. If all cuts have backward edge, then graph strongly connected? In a directed graph that has path forward, yes if every cut has at least one backward edge, then for any i<j, path i->...->j; to go j->i, need cross cuts? Not individually? If for each cut k between i and j-1 there is some backward edge crossing that cut, but may not be usable in sequence? However with path forward and backward edges, condition every cut has backward edge is sufficient for strong connectivity in such "interval" graph? Let's test: vertices 1,2,3, edges 1->2,2->3, backward 3->1. Cuts: k=1 edge 3->1 enters prefix {1}; k=2 edge 3->1 enters {1,2}. Strong yes. If backward edges 3->2 and 2->1? path plus those strong. If cut1 edge 3->1, cut2 edge 2? edge entering prefix {1,2} from 3 maybe 3->2. Strong? 3->2->1, yes. In general, for j to i, need sequence of backward edges that decrease index. If every cut has at least one backward edge, can we always find decreasing path? Suppose j=5,i=1. There is edge cr
+...[middle omitted]...
+ in `brute_count_direct`, for each perm, inner cuts and blacks. It breaks early if not found. Good.
+
+Now, let's think about if in selftest, `brute != slow % MOD` but slow returns mod. Good.
+
+Now, let's consider if in `run_selftest`, for samples, `slow = solve_slow(n, s)` computes fact each time. Fine.
+
+Now, let's think about if in `run_selftest`, after exhaustive small, random medium with n=1024 force False uses `solve_slow` O(500k) and `solve_fast` maybe NTT. Good.
+
+Now, potential issue: In `run_selftest`, for random medium force True, `base=1`, `use_fps=False`. For n=8, CDQ with base1 and force_ntt True. But `solve_fast` has SMALL_CNT=8. If cnt<=8, it will call solve_block and not use NTT! For n=8, total good count maybe up to8 (including N), cnt<=8, so force_ntt not exercised. Oops. In selftest, to exercise NTT with base=1, we need SMALL_CNT not bypass. Our cdq has `if cnt <= SMALL_CNT or size <= base: solve_block`. For n=8, cnt<=8, so no NTT. For n=16, cnt may >8, some NTT. But for small force cases, maybe not enough. We can add a parameter `small_cnt` to solve_fast, and in selftest force_ntt set small_cnt=1 to force CDQ NTT. Or set base=1 and small_cnt=0. Let's add parameter `small_cnt=8` to solve_fast. In main default8. In selftest force True, pass `small_cnt=1` (or 0) to avoid small-cnt bypass. For use_fps False and force True, we want NTT. Add to signature: `def solve_fast(..., small_cnt=8):`. In cdq default `small_cnt=small_cnt`. In selftest force True: `solve_fast(..., force_ntt=True, base=1, use_fps=False, small_cnt=1)`. If small_cnt=1, cnt==1 still bypass (no NTT for single good), but for cnt>1 NTT. To force all, small_cnt=0. But cnt==0 return. Use small_cnt=0. However if cnt==1, no apply needed; NTT not exercised for intervals with one good. Fine. For all good n=8, cnt=8>0, will split and apply. Good.
+
+In main, small_cnt=8.
+
+Modify solve_fast signature and cdq.
+
+In cdq:
+```
+if cnt <= small_cnt or r-l+1 <= base: solve_block(...)
+```
+If small_cnt=0, cnt<=0 false (cnt>0). Good.
+
+In selftest exhaustive with force_ntt=True, pass small_cnt=0. For fast1 with use_fps=True default small_cnt=8, okay.
+
+In random force True, pass small_cnt=0.
+
+Now, in `solve_fast`, `small_cnt` local, pass to cdq default.
+
+Now, let's think about if small_cnt=0 and base=1, cdq will recurse to leaves and apply for all internal nodes, using NTT if force. Good.
+
+Now, let's consider if in `apply` with force_ntt=True and Hspan==0, it will NTT even for scalar. Good for testing.
+
+Now, let's update selftest calls accordingly.
+
+Now, let's think about if in main, small_cnt=8 could cause an interval with cnt=8 but size large to be solved sequentially, which is correct and faster. Good.
+
+Now, let's consider if in `solve_block`, for cnt=8 but interval large, T includes outside contributions. Good.
+
+Now, let's think about if in `apply`, left good count could be 0, return. Good.
+
+Now, let's consider if in `solve_fast`, `SMALL_CNT` variable name. Use `small_cnt` parameter.
+
+Now, let's draft final code with these updates.
+
+Potential syntax issue in `run_selftest`: passing many keyword args. Ensure names match.
+
+```
+fast1 = solve_fast(n, s, fact, invfact, roots, force_ntt=False, base=1, use_fps=True, fps_min=2)
+fast2 = solve_fast(n, s, fact, invfact, roots, force_ntt=True, base=1, use_fps=False, small_cnt=0)
+```
+Good.
+
+Random:
+```
+if force:
+    fast = solve_fast(n, s, fact, invfact, roots, force_ntt=True, base=1, use_fps=False, small_cnt=0)
+else:
+    fast = solve_fast(n, s, fact, invfact, roots, force_ntt=False, base=128, use_fps=True, fps_min=256)
+```
+Good.
+
+Now, let's think about if in selftest samples, `solve_fast(n,s)` default small_cnt8, base128. For n=9, cnt maybe? It may use solve_block if cnt<=8. Sample3 N=9, good count maybe? If good count <=8, solve_block whole interval, correct. If >8, size9<=base128, solve_block. Good.
+
+Now, let's consider if in `solve_fast`, for n<=base but cnt>small_cnt, solve_block whole interval O(n^2). For n=128, 16k, fine. For n=200000, not.
+
+Now, let's think about if in `solve_fast`, for n=200000 and good count small (<=8), solve_block whole interval O(64) and returns, no roots? Wait we prepare roots before cdq after good_pref. If good count small but >0, we still prepare roots before cdq. We could avoid roots if the entire problem can be solved by solve_block (cnt<=small_cnt or n<=base). But roots prep O(N) maybe okay. For N=200000 with only 2 good, roots prep 524k unnecessary but okay. Could optimize: after good_pref, if `good_pref[n+1] <= small_cnt or n <= base`, we can compute directly without roots. But need T/A. We can do this before roots to save. Let's add? It requires T and A. We can build T/A and if total good count <= small_cnt or n <= base, solve_block and return. But solve_block defined after roots? We can define a simple direct solver before roots. Maybe not necessary. Roots prep 524k ~0.1s, fine. But for no proper good we return before roots. For few good, roots prep wasted. Could optimize but code complexity. Not needed.
+
+However, if good count <=small_cnt, CDQ would call solve_block and not use NTT, but roots prepared. Fine.
+
+Now, let's think about if in `solve_fast`, all_id branch before roots uses FPS roots smaller. Good.
+
+Now, let's consider if in `solve_fast`, general branch prepares roots even if n small and no NTT. Fine.
+
+Now, let's think about if in `prepare_roots`, for max_size=524288, loops 524k, okay.
+
+Now, let's consider if in `make_ntt`, the nested functions close over

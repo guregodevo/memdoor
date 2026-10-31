@@ -1,0 +1,7 @@
+### STATUS
+continue
+### NEXT
+Implement the full `Solution.maxProduct` with the product-major positive bitset DP and separate zero-product reachability DP, then run the provided examples. Use `total=sum(nums)`, early return -1 if `abs(k)>total`; set `offset=total`, `mask=(1<<(2*offset+1))-1`, `target_bit=1<<(k+offset)`. For positive products, maintain `pos0/pos1` lists length `limit+1`; for each `x` with `0<x<=limit`, take `old0/old1` snapshots, loop `p=1..limit//x`, OR `(old0[p]<<x)&mask` into `pos1[p*x]` and `(old1[p]>>x)` into `pos0[p*x]`, then add single state `pos1[x] |= 1<<(offset+x)`. Scan `p` from `limit` down to 1 and return `p` if `(pos0[p]|pos1[p]) & target_bit`. If none, run zero DP: `no0=1<<offset`, `no1=z0=z1=0`; for each `x`, snapshot old states; if `x>0`, update `no0/no1` and `z0/z1` with the same parity shifts; if `x==0`, keep `no` unchanged and set `z0=old_z0|old_z1|old_no1`, `z1=old_z1|old_z0|old_no0`. Return 0 if `(z0|z1)&target_bit`, else -1.
+### TASKS
+- [todo] Implement the full `Solution.maxProduct` using product-major positive bitset DP (snapshot per positive x, mask shifts, add single states) and separate zero-product reachability DP (no-zero/has-zero parity bitsets), with final scan for highest positive product then zero fallback.
+- [todo] Run the provided examples and edge cases: all zeros, k=0, repeated ones, zeros enabling sums not reachable by positive-only subsequences, |k|>sum(nums), limit smaller than positive elements, and product 0 fallback.

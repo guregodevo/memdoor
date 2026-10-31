@@ -1,0 +1,136 @@
+### CODE
+```python
+from typing import List
+
+class Solution:
+    def minimumCost(self, nums: List[int], cost: List[int], k: int) -> int:
+        n = len(nums)
+        pref_num = [0] * (n + 1)
+        pref_cost = [0] * (n + 1)
+
+        for i in range(n):
+            pref_num[i + 1] = pref_num[i] + nums[i]
+            pref_cost[i + 1] = pref_cost[i] + cost[i]
+
+        total_cost = pref_cost[n]
+
+        # penalty[p] is the k-term added when p is an internal previous cut.
+        penalty = [0] * (n + 1)
+        for p in range(1, n + 1):
+            penalty[p] = k * (total_cost - pref_cost[p])
+
+        dp = [0] * (n + 1)
+
+        for r in range(1, n + 1):
+            nr = pref_num[r]
+            cr = pref_cost[r]
+
+            # p = 0 case:
+            # dp[0] + pref_num[r] * (pref_cost[r] - pref_cost[0])
+            best = nr * cr
+
+            # p >= 1 cases
+            for p in range(1, r):
+                val = dp[p] + nr * (cr - pref_cost[p]) + penalty[p]
+                if val < best:
+                    best = val
+
+            dp[r] = best
+
+        return dp[n] + k * total_cost
+
+
+if __name__ == "__main__":
+    sol = Solution()
+
+    # Provided examples.
+    assert sol.minimumCost([3, 1, 4], [4, 6, 6], 1) == 110
+    assert sol.minimumCost(
+        [4, 8, 5, 1, 14, 2, 2, 12, 1],
+        [7, 2, 8, 4, 2, 2, 1, 1, 2],
+        7,
+    ) == 985
+
+    # n = 1.
+    assert sol.minimumCost([5], [2], 3) == (5 + 3) * 2
+
+    # A case where one subarray is optimal.
+    nums = [1000, 1]
+    cost = [1, 1000]
+    k = 1000
+    assert sol.minimumCost(nums, cost, k) == (sum(nums) + k) * sum(cost)
+
+    # A case where all singletons are optimal.
+    nums = [1, 1000]
+    cost = [1000, 1]
+    k = 1
+    expected_singletons = (1 + 1) * 1000 + (1 + 1000 + 2 * 1) * 1
+    assert sol.minimumCost(nums, cost, k) == expected_singletons
+
+    def brute_force(nums: List[int], cost: List[int], k: int) -> int:
+        n = len(nums)
+        pref_num = [0] * (n + 1)
+        pref_cost = [0] * (n + 1)
+
+        for i in range(n):
+            pref_num[i + 1] = pref_num[i] + nums[i]
+            pref_cost[i + 1] = pref_cost[i] + cost[i]
+
+        best = 10**30
+
+        def dfs(pos: int, pieces: int, total: int) -> None:
+            nonlocal best
+            if pos == n:
+                if total < best:
+                    best = total
+                return
+
+            for end in range(pos + 1, n + 1):
+                add = (
+                    (pref_num[end] + k * (pieces + 1))
+                    * (pref_cost[end] - pref_cost[pos])
+                )
+                dfs(end, pieces + 1, total + add)
+
+        dfs(0, 0, 0)
+        return best
+
+    # Cross-check on small deterministic cases.
+    small_cases = [
+        ([5], [2], 3),
+        ([1000, 1], [1, 1000], 1000),
+        ([1, 1000], [1000, 1], 1),
+        ([3, 1, 4], [4, 6, 6], 1),
+        ([1, 2, 3], [4, 5, 6], 10),
+        ([1, 2, 3, 4], [1, 1, 1, 1], 1),
+        ([4, 8, 5, 1, 14, 2, 2, 12, 1], [7, 2, 8, 4, 2, 2, 1, 1, 2], 7),
+    ]
+
+    for nums, cost, k in small_cases:
+        assert sol.minimumCost(nums, cost, k) == brute_force(nums, cost, k)
+
+    # Deterministic random cross-check.
+    import random
+    rng = random.Random(12345)
+
+    for _ in range(300):
+        n = rng.randint(1, 8)
+        nums = [rng.randint(1, 10) for _ in range(n)]
+        cost = [rng.randint(1, 10) for _ in range(n)]
+        k = rng.randint(1, 10)
+        assert sol.minimumCost(nums, cost, k) == brute_force(nums, cost, k)
+```
+
+### NOTES
+- **Chosen solution:** one-dimensional O(n^2) cut-path DP exactly as requested. Prefix sums `prefNum[i]` and `prefCost[i]` store sums of the first `i` elements. `dp[0] = 0`. For each right cut `r`, compute `dp[r] = min_{p<r} dp[p] + prefNum[r] * (prefCost[r] - prefCost[p]) + (k * (prefCost[n] - prefCost[p]) if p > 0 else 0)`. The final answer is `dp[n] + k * prefCost[n]`.
+- **Why it works:** For a partition with cuts `0 = c0 < c1 < ... < cm = n`, the nums contribution is `sum_j prefNum[cj] * (prefCost[cj] - prefCost[c_{j-1}])`. The k contribution is `k * sum_j j * (prefCost[cj] - prefCost[c_{j-1}])`, which telescopes to `k * (m * prefCost[n] - sum_{i=1}^{m-1} prefCost[c_i])`. The DP edge penalty `k * (prefCost[n] - prefCost[p])` for every internal previous cut `p > 0`, plus the final `k * prefCost[n]`, reproduces exactly that telescoped k contribution.
+- **Implementation details:** The `p = 0` transition is handled separately as `best = prefNum[r] * prefCost[r]`, avoiding a branch inside the inner loop. The term `k * (prefCost[n] - prefCost[p])` is precomputed as `penalty[p]`. Python integers are used, so overflow is not a concern. Time complexity is O(n^2), with about 500k inner iterations for n = 1000, and memory is O(n).
+- **Validation included:** The main block asserts the two provided examples, n = 1, a case where one subarray is optimal, a case where all singletons are optimal, and deterministic small random cases against a brute-force partition enumerator. The brute force uses the original cost formula directly, which helps catch off-by-one and k-index mistakes.
+- **Pitfalls avoided:** Do not add the internal-cut k penalty when `p = 0`. Do not forget the final `k * prefCost[n]`. Do not use the segment sum of nums instead of the prefix sum up to `r`. Require `p < r`. Use prefix lengths consistently: element index `i` corresponds to prefix index `i + 1`.
+- **Alternatives not needed:** A two-dimensional DP over the number of subarrays with convex hull trick or divide-and-conquer optimization is possible, but the one-dimensional cut-path DP is simpler and already comfortably within the constraints. A naive O(n^3) DP would be too slow for n = 1000.
+
+### NEXT
+- none
+
+### STATUS
+solved

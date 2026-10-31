@@ -102,7 +102,7 @@ its id is printed at the end, and memdoor resume <id> opens it in a window.
 		// A turn that opens with "@name " runs as that agent, as the window
 		// routes it: a peer's agent (@box:coder) included.
 		agent, text := ui.RouteByMention(acpAgentName, text)
-		runner := &gatewayRunner{c: c, workspace: workspaceSlug, agent: agent, feeds: map[string]*client.Client{}}
+		runner := &gatewayRunner{c: c, workspace: ownWorkspace(c, workspaceSlug), agent: agent, feeds: map[string]*client.Client{}}
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		conv := runConversationFlag

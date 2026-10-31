@@ -1,0 +1,127 @@
+PROBLEM:
+### Question
+Takahashi, a patissier working at the ABC pastry shop, decided to sell assorted cakes to commemorate AtCoder Beginner Contest 400.
+The shop sells N kinds of cakes: cake 1, cake 2, \ldots, cake N.
+Each cake has three non-negative integer values: beauty, tastiness, and popularity. Specifically, cake i has beauty X_i, tastiness Y_i, and popularity Z_i.
+He considers pairing up these cakes into K pairs without overlaps.
+Formally, he will choose 2K distinct integers a_1,b_1,a_2,b_2,\ldots,a_K,b_K between 1 and N (inclusive), and pair cake a_i with cake b_i.
+The price of a pair formed by cakes a_i and b_i is \max(X_{a_i} + X_{b_i},\, Y_{a_i} + Y_{b_i},\, Z_{a_i} + Z_{b_i}).
+Here, \max(P,Q,R) denotes the greatest value among P,Q,R.
+Find the maximum possible total price of the K pairs.
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+\mathrm{case}_1
+\mathrm{case}_2
+\vdots
+\mathrm{case}_T
+
+\mathrm{case}_i represents the i-th test case. Each test case is given in the following format:
+N K
+X_1 Y_1 Z_1
+X_2 Y_2 Z_2
+\vdots
+X_N Y_N Z_N
+
+Output
+
+Print T lines. The i-th line (1\leq i\leq T) should contain the answer to the i-th test case.
+
+Constraints
+
+
+- 1\leq T\leq 1000
+- 2\leq N \leq 10^5
+- The sum of N over all test cases in each input file is at most 10^5.
+- 1\leq K \leq \lfloor \frac{N}{2}\rfloor (For a real number x, \lfloor x\rfloor denotes the greatest integer not exceeding x.)
+- 0\leq X_i,Y_i,Z_i \leq 10^9
+- All input values are integers.
+
+Sample Input 1
+
+1
+3 1
+6 3 8
+3 5 0
+2 7 3
+
+Sample Output 1
+
+12
+
+We form one pair out of three cakes.
+If we pair cake 1 with cake 2, the price is \max(6+3,\,3+5,\,8+0) = 9.
+If we pair cake 1 with cake 3, the price is \max(6+2,\,3+7,\,8+3) = 11.
+If we pair cake 2 with cake 3, the price is \max(3+2,\,5+7,\,0+3) = 12.
+Hence, pairing cake 2 with cake 3 gives the highest price, which is 12.
+
+Sample Input 2
+
+2
+5 2
+1 2 3
+1 2 3
+1 2 3
+1 2 3
+100 100 200
+6 2
+21 74 25
+44 71 80
+46 28 96
+1 74 24
+81 83 16
+55 31 1
+
+Sample Output 2
+
+209
+333
+
+Note that each cake can appear in at most one pair.
+Also note that there can be different cakes with identical values of beauty, tastiness, and popularity.
+For the first test case, pairing cake 1 with cake 2 gives a price of 6, pairing cake 3 with cake 5 gives a price of 203, and choosing these two pairs yields a total price of 209, which is the maximum.  
+For the second test case, pairing cake 2 with cake 3 gives a price of 176, pairing cake 4 with cake 5 gives a price of 157, and choosing these two pairs yields a total price of 333, which is the maximum.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The key reduction is to replace each pair by the attribute that attains its maximum. If a pair is assigned to color c, both cakes contribute their c-value, and each color must be used an even number of times. Conversely, any even-color selection can be paired by color and gives at least that sum, while the pair's true maximum gives an equal coloring, so the two formulations are equivalent. Let m_i be the maximum of the three values of cake i. Ignoring parity, the best total is the sum B of the largest 2K values m_i, and this is also a global upper bound for the original pairing problem. The core difficulty is therefore not the pairing itself but the parity constraint on the three colors, especially because the unconstrained optimum may be non-unique due to ties in m_i at the cutoff and ties among the attributes attaining m_i.
+
+The provided plan is the most direct: choose any canonical top-2K baseline, color each selected cake by one maximizing attribute, compute the parity mask. If it is zero, answer B. Otherwise two colors are odd; a recolor of a selected cake or a swap of a selected cake with an unselected cake toggles exactly two color parities. With three colors, any needed parity correction can be reduced to either one direct toggle or two toggles through the third color; extra operations form a parity-zero cycle and can be removed because all losses relative to the baseline are nonnegative. The remaining task is to compute the cheapest one- or two-operation correction.
+
+Pitfalls for this exchange approach: first, ties. A fixed arbitrary baseline may have odd parity even though another top-2K choice or another choice of maximizing attribute has even parity and loss zero. The candidate search must include zero-cost recolors to tied maximizing attributes and zero-cost swaps among cakes with equal cutoff m. Second, candidate ranking. Recolor candidates must be ranked by m_i minus the new attribute value, not by m_i alone. Swap candidates separate into the selected side, needing the smallest m among selected cakes of the old baseline color, and the unselected side, needing the largest value in the new color among unselected cakes. Third, item conflicts. The cheapest operation of type A-C and the cheapest of type B-C may use the same cake; a naive sum of independent minima can be invalid. Top-two candidates per relevant role and explicit cake-id conflict checks, or a small DP, are needed. Fourth, edge cases such as N=2K where no unselected cakes exist, K=1, all zero values, and 64-bit totals.
+
+A second implementation of the same reduction is to collect a small pool of candidate cakes: for each baseline color, top two selected cakes by smallest m for swaps out; for each ordered recolor, top two selected cakes by smallest recolor loss; for each attribute, top two unselected cakes by largest attribute value. Then run a tiny DP over the pool items, tracking parity change and the net change in the number of selected cakes, and require final parity even and net selected change zero. This automatically handles conflicts and ties. Its pitfalls are that the pool must be proven sufficient, and that unselected items can have negative individual loss, so the DP must allow negative intermediate values while the final loss is nonnegative.
+
+A genuinely different approach is Lagrangian relaxation: add a penalty lambda per selected cake and solve, for each lambda, an 8-state parity DP over all cakes to maximize adjusted value with even color counts. Binary search lambda to force about 2K selections and recover the exact answer. Pitfalls: the value as a function of selected count may not be concave once parity and per-cake color choices are present; tie-breaking counts may not give exactly 2K; recovering the exact optimum from the Lagrangian upper bound is subtle. It is fast to prototype but risky as the final solution.
+
+Another conceptual formulation is a min-cost flow or fixed-count assignment: choose even counts for the three colors and assign cakes to colors. For fixed counts this is a 3-color b-matching, but enumerating counts is too large, and a generic flow with 2K units is too slow. Parity constraints are not ordinary capacities and would need parity-state nodes. This is useful mainly for small-N validation or theoretical understanding.
+
+Finally, a brute-force exact solver for very small N, such as DP over cakes, selected count, and parity mask, or exhaustive pairing for tiny N, is valuable for random testing of the main approaches, but it is not scalable to 1e5.
+
+
+CURRENT TASK LIST:
+- [todo] Parse all test cases; for each, compute M_i, sort cakes by M_i descending, mark the first S = 2K cakes as selected, compute baseline total W0, assign each selected cake one maximizing attribute as its initial color, and compute parity p by XORing color codes X=1, Y=2, Z=3 over selected cakes.
+- [todo] Build top-two candidate tables: selected_minM[color] (two smallest M among selected cakes with that initial color), selected_reassign[color][target] (two smallest M_i - value_i[target] for selected initial color color and target != color), and unselected_max[target] (two largest value_i[target] among unselected cakes).
+- [todo] Implement small helpers: pair_min(t1, t2) returning the minimum sum of one candidate from each top-two list with different cake ids, pair_max(t1, t2) returning the maximum sum with different ids, and forms[parity] listing ordered (old_color, new_color) pairs whose XOR is that parity.
+- [todo] If p != 0, compute min_loss by checking one reassignment or one swap with parity p, then for every q in {1,2,3} with r = p ^ q nonzero, check two-operation combinations R+R, R+S, S+R, and S+S using the tables, enforcing distinct selected/unselected ids via pair_min/pair_max and using INF for infeasible cases.
+- [todo] Output W0 - min_loss for each test case; use fast input and ensure total complexity O(N log N) over all test cases.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the baseline top-2K plus parity-correction exchange algorithm: compute baseline parity, then minimum loss for one direct operation or two operations through the third color, using top-two candidates per directed recolor, per selected-color swap-out, and per unselected-attribute swap-in, with explicit cake-id conflict checks.
+- Implement the same reduction as a small candidate-pool DP over parity mask and selection balance as a cross-check or alternative primary implementation, ensuring the pool includes top-two candidates for all relevant roles and handles negative intermediate losses.
+- Prototype a Lagrangian/Aliens-trick solver with an 8-state parity DP and binary search on a per-cake penalty, and validate it against brute force on small random cases to see whether exact cardinality recovery is reliable.
+- Develop a small-N brute-force checker, using DP over cakes, selected count, and parity mask or exhaustive pairing for tiny N, to generate random tests and verify the main solution, especially tie-heavy cases.
+- Optionally explore a min-cost flow or fixed-color-count assignment formulation for small N or as a theoretical sanity check, but avoid it for the final large-N solution unless a specialized greedy/flow optimization is found.

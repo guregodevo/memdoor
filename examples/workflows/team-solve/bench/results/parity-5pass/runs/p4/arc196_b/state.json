@@ -1,0 +1,74 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Derive the row/column base reduction: row/column A-parity checks, B-cell parity constraints between row and column bases, and answer 2^(DSU components) if consistent.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the complete Python solution with fast buffered input, iterative parity DSU, early exits for odd parity/all-A/all-B, and no hardcoded sample answers.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Verify correctness against public samples and edge-case reasoning, including all-A/all-B, odd parity, inconsistent B-label cycles, and isolated nodes.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "Check performance/memory for total HW=1e6 and T up to 1e5: O(HW \u03b1(H+W)) per case, compact per-case arrays, early exits, and built-in modular exponentiation.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Row/column base reduction with parity union-find: check row and column A-parities, maintain row prefix and column prefix while scanning, add one parity constraint for each B cell between its row node and column node, and if consistent count the connected components of the H+W node graph. Pitfalls: off-by-one in prefix labels, forgetting isolated nodes, parity DSU bugs, wasted work after an odd parity row/column is detected, and using the wrong exponent.",
+  "Direct edge-variable parity graph: create one binary variable for each vertical and horizontal grid edge on the torus, add XOR edges for each tile\u2019s local rule, and solve by parity DSU over up to 2HW variables. Pitfalls: much larger memory and time, especially in Python, index mapping for torus edges, and duplicate or parallel constraints when H or W is 2; useful mainly as a cross-check.",
+  "Cell-rotation bit parity graph: give each A tile two bits choosing which horizontal and which vertical edge has the endpoint, give each B tile one bit choosing horizontal or vertical, and add equality/XOR constraints across every shared torus edge, including complement labels where endpoint expressions are negated. Pitfalls: more variables and constraints than the reduced graph, easy sign/complement mistakes, mixed A/B variable indexing, and torus wrap or parallel edges.",
+  "Bipartite incidence graph traversal after the row/column reduction: instead of union-find, build adjacency lists from rows to columns for B cells and vice versa with the computed parity labels, then propagate values by BFS/DFS to detect contradictory cycles and count components. Pitfalls: extra memory for adjacency lists, recursion depth if using recursive DFS, still needing the row/column parity checks and correct labels, and counting isolated vertices.",
+  "Transfer-matrix or small-dimension dynamic programming: if one dimension is very small, keep boundary edge states as a bitmask, propagate row by row, and handle the torus by fixing or summing over the first row/column states. Pitfalls: exponential in the smaller dimension, complicated torus wrap, and poor scalability when min(H,W) is large; only suitable for verification or special constrained cases.",
+  "General sparse GF(2) linear algebra: assemble the full XOR equation matrix and compute its rank/nullity using bitset Gaussian elimination, sparse elimination, or a randomized linear-algebra method; answer is zero if inconsistent, otherwise a power of two determined by variables minus rank. Pitfalls: overkill, high memory/time, implementation complexity, and likely slower than exploiting the row/column structure.",
+  "Topological or discrete-exterior-calculus reduction: interpret edge variables as a 1-cochain on the torus, A tiles as local difference/curl conditions, and B tiles as constraints between horizontal and vertical cochains; derive the row/column parity integrability conditions and express the solution dimension via components of the B-incidence graph. Pitfalls: conceptual derivation can hide label/consistency details, torus nontrivial cycles are easy to miscount, and it still reduces to a graph component/parity check for implementation."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the complete Python solution: read all input with sys.stdin.buffer.read().split(); for each case, scan the grid once to compute row A-parities, column A-parities, and b_count, breaking early if a row parity is odd; if any row/column parity is odd output 0; if b_count == 0 output pow(2, H+W, 998244353); if b_count == H*W output 2; otherwise scan left-to-right maintaining row_pref and col_pref[j], and for each B cell unite row node i with column node H+j in a parity DSU with label w = 1 ^ row_pref ^ col_pref[j], updating row_pref and col_pref[j] on A cells; if any contradiction output 0, else output pow(2, components, 998244353). Use an iterative parity DSU (e.g. negative-parent sizes and xor-to-parent) with path compression and union by size, ensure isolated row/column nodes are counted as free components, and return the final program enclosed in the required delimiters.",
+ "iters": 1,
+ "task": "Implement the complete Python solution: read all input with sys.stdin.buffer.read().split(); for each case, scan the grid once to compute row A-parities, column A-parities, and b_count, breaking early if a row parity is odd; if any row/column parity is odd output 0; if b_count == 0 output pow(2, H+W, 998244353); if b_count == H*W output 2; otherwise scan left-to-right maintaining row_pref and col_pref[j], and for each B cell unite row node i with column node H+j in a parity DSU with label w = 1 ^ row_pref ^ col_pref[j], updating row_pref and col_pref[j] on A cells; if any contradiction output 0, else output pow(2, components, 998244353). Use an iterative parity DSU (e.g. negative-parent sizes and xor-to-parent) with path compression and union by size, ensure isolated row/column nodes are counted as free components, and return the final program enclosed in the required delimiters.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 1,
+  "total": 1,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,179 @@
+PROBLEM:
+### Question
+There is a directed graph with 2N vertices and 2N-1 edges.
+The vertices are numbered 1, 2, \ldots, 2N, and the i-th edge is a directed edge from vertex i to vertex i+1.
+You are given a length-2N string S = S_1 S_2 \ldots S_{2N} consisting of N Ws and N Bs.
+Vertex i is colored white if S_i is W, and black if S_i is B.
+You will perform the following series of operations:
+
+- Partition the 2N vertices into N pairs, each consisting of one white vertex and one black vertex.
+- For each pair, add a directed edge from the white vertex to the black vertex.
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs such that the final graph is strongly connected.
+ Notes on strongly connectedness
+A directed graph is strongly connected if and only if it is possible to travel from any vertex to any vertex by following edges.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+
+Output
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs so that the final graph is strongly connected.
+
+Constraints
+
+
+- 1 \le N \le 2\times 10^5
+- S is a length 2N string consisting of N Ws and N Bs.
+- N is an integer.
+
+Sample Input 1
+
+2
+BWBW
+
+Sample Output 1
+
+1
+
+Vertices 2,4 are white, and vertices 1,3 are black.
+Let (u,v) denote an edge from vertex u to vertex v.
+If we pair up vertices as (2,1), (4,3), the final graph have the edges (1,2), (2,3), (3,4), (2,1), (4,3). In this case, for example, it is impossible to travel from vertex 3 to vertex 1 by following edges, so this graph is not strongly connected.
+If we pair up vertices as (2,3), (4,1), the final graph have the edges (1,2), (2,3), (3,4), (2,3), (4,1). This graph is strongly connected.
+Therefore, there is exactly 1 way to pair up the vertices that satisfies the condition.
+
+Sample Input 2
+
+4
+BWWBWBWB
+
+Sample Output 2
+
+0
+
+No matter how you pair up the vertices, you cannot satisfy the condition.
+
+Sample Input 3
+
+9
+BWWBWBBBWWBWBBWWBW
+
+Sample Output 3
+
+240792
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+
+MOD = 998244353
+
+def main():
+    data = sys.stdin.read().split()
+    if not data:
+        return
+
+    N = int(data[0])
+    S = data[1].strip()
+
+    # Vertex 1 must be black and vertex 2N must be white.
+    if S[0] != 'B' or S[-1] != 'W':
+        print(0)
+        return
+
+    # Factorials and inverse factorials up to N.
+    fact = [1] * (N + 1)
+    for i in range(1, N + 1):
+        fact[i] = fact[i - 1] * i % MOD
+
+    invfact = [1] * (N + 1)
+    invfact[N] = pow(fact[N], MOD - 2, MOD)
+    for i in range(N, 0, -1):
+        invfact[i - 1] = invfact[i] * i % MOD
+
+    # Collect active cuts.
+    # For i = 1..N-1, c_i = number of W before black i+1.
+    # Keep cuts where c_i strictly increases and c_i >= i.
+    active_u = []
+    active_t = []
+
+    white = 0
+    black = 0
+    prev_c = 0
+
+    for ch in S:
+        if ch == 'W':
+            white += 1
+        else:  # 'B'
+            black += 1
+            if black >= 2:
+                i = black - 1
+                c = white
+                if c > prev_c and c >= i:
+                    active_u.append(i)
+                    active_t.append(c)
+            prev_c = white
+
+    K = len(active_u)
+    u = [0] + active_u
+    t = [0] + active_t
+
+    dp = [0] * (K + 1)
+    dp[0] = 1
+
+    f = fact
+    inv = invfact
+    uu = u
+    tt = t
+    d = dp
+    mod = MOD
+
+    # O(K^2) baseline DP.
+    for i in range(1, K + 1):
+        ti = tt[i]
+        s = 0
+        for j in range(i):
+            s += d[j] * f[ti - uu[j]]
+        s %= mod
+        d[i] = (-s * inv[ti - uu[i]]) % mod
+
+    ans = 0
+    for j in range(K + 1):
+        ans += d[j] * f[N - uu[j]]
+
+    print(ans % mod)
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Strong connectivity criterion:** The original path edges only go from smaller to larger vertices. Therefore the final graph is strongly connected iff every prefix cut k=1..2N-1 has at least one added edge from a white vertex >k to a black vertex <=k. This immediately forces S[0]='B' and S[-1]='W'; otherwise the answer is 0.
+- **Relevant cuts:** It is enough to inspect cuts just before black vertices. For i=1..N-1, let c_i be the number of white vertices before black i+1. A cut with c_i < i is automatically covered because the left side has more black vertices than white vertices, so some left black must be matched to a right white.
+- **Active cut selection:** c_i is nondecreasing. Within a run where c_i is constant, later cuts are nested in the inclusion-exclusion sense and only the first cut of the run contributes. The scan keeps exactly the first non-forced cut of each run: c_i > c_{i-1} and c_i >= i. Stored pairs are (u=i, t=c_i).
+- **DP recurrence:** With u[0]=t[0]=0 and dp[0]=1, for i=1..K compute s = sum_{j=0}^{i-1} dp[j] * fact[t[i]-u[j]] modulo MOD, then dp[i] = -s * invfact[t[i]-u[i]] modulo MOD. The final answer is sum_{j=0}^{K} dp[j] * fact[N-u[j]] modulo MOD. This is the compressed inclusion-exclusion/Möbius form over active cuts.
+- **Implementation details:** Precompute fact and invfact up to N using Fermat inverse. In the O(K^2) loop, accumulate the inner sum as a Python integer and take modulo once per i to reduce overhead. All indices t[i]-u[j] and N-u[j] are nonnegative for the active list.
+- **Sample verification:** Sample 1 gives 1, sample 2 gives 0, and sample 3 gives 240792 with this recurrence.
+- **Complexity:** Time O(N + K^2), memory O(N + K), where K <= N-1. This baseline is correct but too slow for worst-case N=2e5; NTT/CDQ is still needed.
+- **Edge cases:** N=1 works: BW gives 1, WB is rejected by the endpoint check. If there are no active cuts, the answer is N!, which matches cases like all black vertices before all white vertices.
+
+
+CURRENT TASK LIST:
+- [todo] Implement baseline O(K^2) active-pair DP solver (no NTT) as a complete stdin/stdout program: precheck, active extraction, factorials/invfact, DP, and answer; pass samples 1-3.
+- [todo] Verify baseline against brute force for all/random small N (N<=7) and edge cases (N=1, S[0]!='B' or S[-1]!='W', all B then all W, alternating small).
+- [todo] Implement fast NTT convolution modulo 998244353 (iterative, power-of-two length, direct fallback for tiny sizes) and unit-test it against naive convolution on small random cases.
+- [todo] Implement CDQ divide-and-conquer optimization for the active-pair DP: recursive solve(l,r), accumulated contribution array, left-to-right contributions via direct loops or NTT with a cost model, including dummy contribution and safe index bounds.
+- [todo] Test optimized solution on samples, small brute-force cases, and large performance cases (N=2e5 alternating, all B then all W, random large sanity), fixing any failures or TLE.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 3 public samples -- the solution looks correct.] worker reported 'continue' on: Implement a complete Python 3 baseline solver (no NTT) for the problem using the. - **Strong connectivity criterion:** The original path edges only go from smaller to larger vertices. Therefore the final graph is strongly connected iff every prefix cut k=1..2N-1 has at least one ad
+
+PROPOSED NEW STEPS:
+- Replace the O(K^2) recurrence with CDQ divide-and-conquer plus NTT modulo 998244353.
+- Use factorial convolution to add contributions from solved left halves to right halves in O(N log^2 N) or O(N log N).
+- Add randomized brute-force tests for small N against exhaustive matchings.
+- Run performance tests near N=2e5 after the NTT implementation.

@@ -84,6 +84,28 @@ func WithUtilityCall(ctx context.Context) context.Context {
 	return context.WithValue(ctx, utilityCallKey{}, true)
 }
 
+type ownClockKey struct{}
+
+// WithOwnClock marks a call whose context deadline is its whole time bound:
+// the providers' total per request (20 minutes, for a turn) does not apply,
+// the silence between bytes still does. A workflow's llm task carries its
+// own clock; a 27B thinking on a hard problem answered in 30 to 50 minutes,
+// and the 20-minute bound cut those calls mid-answer and asked again from
+// the start (2026-10-30), where GVS5H's harness waits up to four hours.
+func WithOwnClock(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ownClockKey{}, true)
+}
+
+// HasOwnClock reports whether a call's own deadline bounds it alone.
+func HasOwnClock(ctx context.Context) bool {
+	own, _ := ctx.Value(ownClockKey{}).(bool)
+	if !own {
+		return false
+	}
+	_, has := ctx.Deadline()
+	return has
+}
+
 // StreamGuard is the mid-stream circuit breaker a caller can attach to a
 // request context, mirroring StreamCallback's duck-typed wire. The provider
 // consults it as the reply streams — byteCount is how much text has arrived,

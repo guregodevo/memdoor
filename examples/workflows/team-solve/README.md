@@ -16,6 +16,80 @@ result and what the numbers do not show).
 The coder wrote these files itself from a description of the method
 (2026-10-25). Nobody hand-wrote them.
 
+## Five passes on the authors' ten (2026-10-31)
+
+GVS5H's own harness, rebuilt as a Memdoor workflow on the same model:
+Qwen3.8-27B, a 128K reply cap, the authors' prompts and loop. The first ten
+problems of their LiveCodeBench Hard list, five passes, every program graded
+on every public and hidden test with their corrected grader.
+
+| pass | Memdoor workflow | authors' 27B harness | Fable 5 alone |
+|---|---|---|---|
+| 1 | **10** / 10 | 9 | 7 |
+| 2 | **10** / 10 | 10 | 8 |
+| 3 | **10** / 10 | 10 | 10 |
+| 4 | **10** / 10 | 9 | 8 |
+| 5 | **9** / 10 | 10 | 7 |
+| mean | **9.8** | 9.6 | 8.0 |
+
+The authors' columns are their repository's regraded result files
+(`q38_multiagent_pN`, `fable5_single_pN`), the numbers in their paper.
+[`bench/results/parity-5pass/`](bench/results/parity-5pass/) holds all 50
+runs: every request and reply, the program, the grader's full output, each
+call's cost and the host that served it, and every attempt that did not count.
+49 of 50 solved; the 50 runs cost $35.79 (15.3M output tokens), $38.77 with
+the 16 attempts that were cut by a clock, stopped for a fix or paused.
+
+<sub>Note: ten problems, five passes each, not the authors' 100. The contests
+date from 29 March to 6 April 2025, and the model may have seen them in
+training: contamination cannot be ruled out. Fable 5's column is a single call per
+problem from the authors' files; it was not run in this harness. The loop
+sees only the public samples; the score is the hidden tests. A run took a
+median of 40 minutes of model time (the longest 4 hours) and $0.39. All on
+OpenRouter, not a local machine; Modal does not publish its precision.
+Local paths in the run scripts and in four tracebacks a manager was shown
+read `<scratch>` and `$HOME`; nothing else in the runs is edited.</sub>
+
+**Same as the authors'.** Every message, byte for byte:
+[`lib/test_parity.py`](bench/results/parity-5pass/workflow/lib/test_parity.py)
+runs their `multiagent_solve` and our workflow against one scripted model and
+compares each request (four cases, all identical; a one-character change makes
+them differ). The temperatures (plan 0.3, ideation 0.4, manager and worker
+0.2), top_p 0.95 and top_k 20 (what their vLLM applied from the model's own
+config), the 128K cap, up to 10 rounds, a cut-off worker summarized, and a
+reply with no text answered by its reasoning.
+
+**Different.** The host. Theirs was their own vLLM in FP8. Ours is
+OpenRouter, asked in the order Modal, CoreWeave, Parasail, Wafer until Modal
+slowed to 14 tokens/s, then the FP8 hosts only (Wafer, Parasail, CoreWeave):
+203 calls were served by Modal, 27 by CoreWeave and 115 by Wafer, every one
+of the FP8 order's calls by Wafer. Three runs were moved mid-run, their
+finished steps kept (`log/host-switch.txt`).
+
+**What it took.** The problem text was the mismatch: our first version wrote
+its own task file around each problem, and the 27B planned worse from it than
+from the authors' exact LiveCodeBench text (arc196_c's plan: 0 of 2 against 2
+of 2). Four Memdoor changes let a workflow ask what their harness asks: a task
+answers with the model's reasoning when it wrote no text, `top_p`/`top_k` on a
+model line, `mark_cutoff` for a reply cut at the cap, and a call that runs on
+its own four-hour clock.
+
+**Where it lost.** Twice, the same two gaps in the authors' loop:
+
+- Pass 5, abc399_e (32 of 44 hidden): round 1's program was right; the
+  manager invented a counterexample with a wrong expected answer, the team
+  rewrote it, and the new program passed the samples, which do not cover the
+  case.
+- Pass 4, arc196_c and arc196_d: a program passing every hidden test was
+  overwritten by a later round because the manager did not say done; both
+  got a correct program back before the loop's end (arc196_d at round 8,
+  arc196_c through the final call), at $3.44 and $4.24, the two most
+  expensive runs.
+
+Both are fixable without changing the method (check a manager's counterexample
+against a brute force on small inputs; keep the last program that passed the
+samples). Neither is in these numbers.
+
 ## Run it
 
     curl -fsSL https://memdoor.ai/install.sh | bash

@@ -1,0 +1,7 @@
+### STATUS
+continue
+### NEXT
+Implement the complete Python 3 solution using the row/column reduction: read all input fast; for each case compute row and column parities of 'A' and count B; if any row or column parity is odd print 0; if there are no B tiles print pow(2, H+W, MOD); otherwise initialize a parity DSU over H+W nodes (negative-size parent and parity arrays), scan the grid row-major maintaining row_pref and col_pref, for each B at (i,j) union node i with node H+j using val = 1 ^ row_pref ^ col_pref[j], update row_pref and col_pref[j] for A cells, and print 0 if a contradiction is found or pow(2, components, MOD) otherwise; verify the code on the sample tests and basic edge cases.
+### TASKS
+- [done] Derive the GF(2) row/column reduction and parity-DSU counting formula.
+- [todo] Implement the complete Python 3 solution using the row/column reduction: read all input fast; for each case compute row and column parities of 'A' and count B; if any row or column parity is odd print 0; if there are no B tiles print pow(2, H+W, MOD); otherwise initialize a parity DSU over H+W nodes (negative-size parent and parity arrays), scan the grid row-major maintaining row_pref and col_pref, for each B at (i,j) union node i with node H+j using val = 1 ^ row_pref ^ col_pref[j], update row_pref and col_pref[j] for A cells, and print 0 if a contradiction is found or pow(2, components, MOD) otherwise; verify the code on the sample tests and basic edge cases.

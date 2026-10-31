@@ -248,7 +248,7 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 	if err != nil {
 		return "", err
 	}
-	ctx, cancel := context.WithTimeout(llm.WithUtilityCall(ctx), llmTaskCallTimeout)
+	ctx, cancel := context.WithTimeout(llm.WithOwnClock(llm.WithUtilityCall(ctx)), llmTaskCallTimeout)
 	defer cancel()
 	ask := func(ctx context.Context) (string, llm.StopReason, error) {
 		params := llm.MessageNewParams{
@@ -256,6 +256,8 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 			Messages:    []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock(prompt))},
 			MaxTokens:   replyLimit(llmTaskMaxTokens(model, len(system)+len(prompt)), tm.MaxTokens),
 			Temperature: tm.Temperature,
+			TopP:        tm.TopP,
+			TopK:        tm.TopK,
 			Agent:       "workflow",
 		}
 		if strings.TrimSpace(system) != "" {
@@ -271,23 +273,18 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 				b.WriteString(part.Text)
 			}
 		}
-		return strings.TrimSpace(b.String()), resp.StopReason, nil
+		text := strings.TrimSpace(b.String())
+		if text == "" {
+			// Workflow tasks keep the model's work even when it spends the
+			// reply cap on reasoning. Downstream tasks can extract code or
+			// summarize the partial result; chat turns are unchanged.
+			text = strings.TrimSpace(resp.Thinking)
+		}
+		return text, resp.StopReason, nil
 	}
 	text, stop, err := ask(ctx)
 	if err != nil {
 		return "", err
-	}
-	if text == "" && stop != llm.StopReasonMaxTokens {
-		if effort, _ := ctx.Value(sharedctx.EffortKey).(string); effort != "off" {
-			// The model closed its reasoning and stopped without an answer: a
-			// 27B on a hard statement did it four times out of four on one
-			// problem, 19K to 51K tokens of thought each (2026-10-28). The
-			// same prompt without thinking answers.
-			logs.New("workflow").Warn("the model reasoned and wrote nothing; asking again without thinking", "model", model)
-			if text, stop, err = ask(context.WithValue(ctx, sharedctx.EffortKey, "off")); err != nil {
-				return "", err
-			}
-		}
 	}
 	// The client keeps what streamed before the clock ran out (a window
 	// shows it); a task's answer cut there is not its answer. A 4B on a CI
@@ -295,6 +292,9 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 	// passed as the review (2026-10-28).
 	if ctx.Err() != nil {
 		return "", fmt.Errorf("the model's answer was cut off after %s, unfinished", llmTaskCallTimeout)
+	}
+	if tm.MarkCutoff && stop == llm.StopReasonMaxTokens {
+		return strings.TrimSpace(cutoffMark + "\n" + text), nil
 	}
 	if text != "" {
 		return text, nil
@@ -1586,11 +1586,18 @@ func pinTaskModel(sess *Session, model, actor string) error {
 // 885 tokens a second on the throughput host and at 44 on the cheapest, it
 // thought past the host's 32K output cap on a planning prompt and wrote
 // nothing, and an llm task has no window to type /model or Shift+Tab in.
+// cutoffMark is the first line of a reply cut at the reply cap, on a task
+// whose model line says mark_cutoff.
+const cutoffMark = "[cut off at the reply limit]"
+
 // taskModel is a task's model line, read.
 type taskModel struct {
 	ID, Sort, Order, Effort string
 	MaxTokens               int64
 	Temperature             float64 // 0 = the provider's default
+	TopP                    float64 // 0 = the provider's default
+	TopK                    int     // 0 = the provider's default
+	MarkCutoff              bool    // a reply cut at the cap starts with cutoffMark
 }
 
 func parseTaskModel(model string) (m taskModel) {
@@ -1635,6 +1642,31 @@ func parseTaskModel(model string) (m taskModel) {
 				}
 				i++
 			}
+		case "top_p":
+			// Nucleus and top-k sampling: a model's own generation config
+			// sets them (Qwen3.8-27B: top_p 0.95, top_k 20) and vLLM applies
+			// it to a request that names none, while a hosted API applies its
+			// host's. GVS5H's 27B ran on vLLM: a plan of 1 KB where ours,
+			// temperature alone, thought to the 128K cap (2026-10-30).
+			if i+1 < len(fields) {
+				if v, err := strconv.ParseFloat(fields[i+1], 64); err == nil && v > 0 && v <= 1 {
+					m.TopP = v
+				}
+				i++
+			}
+		case "top_k":
+			if i+1 < len(fields) {
+				if n, err := strconv.Atoi(fields[i+1]); err == nil && n > 0 {
+					m.TopK = n
+				}
+				i++
+			}
+		case "mark_cutoff":
+			// The next task can tell a reply cut at the cap from a finished
+			// one: GVS5H's harness summarizes a worker's cut-off attempt for
+			// the manager and keeps its notes, and an llm task's answer is
+			// only text.
+			m.MarkCutoff = true
 		case "thinking", "effort":
 			if i+1 < len(fields) {
 				switch e := strings.ToLower(fields[i+1]); e {
@@ -1651,7 +1683,7 @@ func parseTaskModel(model string) (m taskModel) {
 // taskModelOption reports whether a model line's word is one of its options.
 func taskModelOption(word string) bool {
 	switch strings.ToLower(word) {
-	case "price", "throughput", "latency", "default", "order", "max_tokens", "cap", "temperature", "temp", "thinking", "effort":
+	case "price", "throughput", "latency", "default", "order", "max_tokens", "cap", "temperature", "temp", "top_p", "top_k", "mark_cutoff", "thinking", "effort":
 		return true
 	}
 	return false

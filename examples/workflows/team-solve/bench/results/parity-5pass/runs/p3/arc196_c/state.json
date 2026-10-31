@@ -1,0 +1,104 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Derive reduction to prefix events and inclusion-exclusion/renewal recurrence.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement standalone solver with event extraction, small-K direct recurrence, and CDQ+NTT/atcoder convolution fallback.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Validate against the three public samples (all passed).",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Inclusion-exclusion over minimal prefix events, then evaluate the triangular recurrence with an online convolution structure such as CDQ divide-and-conquer plus NTT or a relaxed convolution. Treat each event as an update at black-count m with coefficient x and a query at white-count b, contributing x * fact[b - m]. Pitfalls: the coefficient is delayed until b is reached; naive CDQ over event order may need very long NTT ranges when b - m is large; must exclude current and future events; duplicate A_k must be collapsed to the smallest k; endpoint and no-event cases must be handled separately.",
+  "Direct DP over the current prefix maximum. Process black vertices one by one, with state equal to the maximum white rank used so far; transitions use the number of unused smaller whites to keep the maximum and prefix sums to jump to a larger maximum. Pitfalls: this is naturally O(N^2) in time; boundary zeroing when the maximum is too small must be applied carefully; optimizing it to near-linear time is nontrivial and may require a non-obvious transform.",
+  "Polynomial or falling-factorial representation of the prefix-maximum DP. Express the DP vector as coefficients of a polynomial in falling factorials; the unconstrained transition becomes bidiagonal, while the boundary condition contributes a single dot product involving the current lower limit. Potentially batch steps or use generating functions. Pitfalls: the polynomial degree grows to N; the boundary dot product may be O(degree) unless maintained cleverly; deriving a correct fast closed form for blocks is subtle and error-prone.",
+  "Inverse-permutation / right-to-left minima reformulation. Assign each white vertex a black position, turning the condition into suffix-minimum constraints: for each relevant white-count b, the minimum position among whites greater than b must be at most m_b. Count by enumerating right-to-left minima or by a DP over the current minimum position. Pitfalls: the constraints are OR-type rather than simple per-position bounds; record enumeration has many cases; the natural DP is O(N^2), and a fast acceleration is not obvious.",
+  "Determinant, rook-polynomial, or nonintersecting-paths reduction. Try to express the count as a determinant of a matrix of binomial or factorial coefficients, or via a combinatorial correspondence such as RSK, then exploit the matrix structure for fast computation. Pitfalls: finding the correct determinant formula is difficult; a generic O(N^3) determinant is too slow; the matrix may be dense and only triangular/Hankel-like, possibly leading back to the same online convolution problem.",
+  "Sqrt/block decomposition for the online sum. Keep a buffer of recent event coefficients and answer queries by naive summation over the buffer; periodically flush the buffer by convolving it with the factorial kernel or by precomputing block contributions. Pitfalls: complexity is roughly O(N sqrt N log N) or worse; flushing with full-length NTT per block can be expensive; choosing a block size suitable for Python is delicate; delayed updates and large index gaps still need careful handling.",
+  "Balance/run-length segmentation. Decompose the event sequence into segments where the balance b - m is constant or slowly varying; within a segment the kernel is a shifted factorial and standard online convolution may apply, with transitions between segments handled by precomputed contributions. Pitfalls: the balance can change at almost every event, making segments length one; worst-case behavior may degenerate to O(N^2) or many small NTTs; a robust fallback is needed."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Discard the current fragment and write a complete standalone Python 3 solution (single file, no explanations) that passes the three samples. Implement: read N,S; if S[0]!='B' or S[-1]!='W' print 0; precompute fact/invfact up to N; scan S to extract events (b,m) immediately before each B-run (i==0 or S[i-1]!='B') with b>=m and b>0; if no events print fact[N]. For K events, compute g[0..K-1] by g[i]=-(fact[b[i]]+add[i])*invfact[b[i]-m[i]] mod 998244353, where add[i]=sum_{j<i} g[j]*fact[b[i]-m[j]]; answer=fact[N]+sum g[i]*fact[N-m[i]]. Use O(K^2) direct when K<=2000. For larger K use CDQ divide-and-conquer over event index: after solving left half, add its contributions to right half either directly for small left_len*right_len or by NTT convolution with F[m_j-m_l]=g[j], Ga[k]=fact[shift+k], shift=b[mid]-m[mid-1], and add coefficient at x=b[i]-m_l-shift to add[i]. Include a compact correct NTT (radix-2 DIF forward / DIT inverse, no bit-reversal, precomputed stage roots) or try `from atcoder.convolution import convolution` with a manual fallback. Do not add the arithmetic fast path or performance tuning yet; keep the code concise and ensure samples 1,2,3 print 1,0,240792.",
+ "iters": 5,
+ "task": "Discard the current fragment and write a complete standalone Python 3 solution (single file, no explanations) that passes the three samples. Implement: read N,S; if S[0]!='B' or S[-1]!='W' print 0; precompute fact/invfact up to N; scan S to extract events (b,m) immediately before each B-run (i==0 or S[i-1]!='B') with b>=m and b>0; if no events print fact[N]. For K events, compute g[0..K-1] by g[i]=-(fact[b[i]]+add[i])*invfact[b[i]-m[i]] mod 998244353, where add[i]=sum_{j<i} g[j]*fact[b[i]-m[j]]; answer=fact[N]+sum g[i]*fact[N-m[i]]. Use O(K^2) direct when K<=2000. For larger K use CDQ divide-and-conquer over event index: after solving left half, add its contributions to right half either directly for small left_len*right_len or by NTT convolution with F[m_j-m_l]=g[j], Ga[k]=fact[shift+k], shift=b[mid]-m[mid-1], and add coefficient at x=b[i]-m_l-shift to add[i]. Include a compact correct NTT (radix-2 DIF forward / DIT inverse, no bit-reversal, precomputed stage roots) or try `from atcoder.convolution import convolution` with a manual fallback. Do not add the arithmetic fast path or performance tuning yet; keep the code concise and ensure samples 1,2,3 print 1,0,240792.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 3,
+  "total": 3,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-2",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-2",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-3",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-3",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-4",
+   "finish": "length"
+  },
+  {
+   "call": "cutoff-4",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-4",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-5",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-5",
+   "finish": "stop"
+  }
+ ]
+}

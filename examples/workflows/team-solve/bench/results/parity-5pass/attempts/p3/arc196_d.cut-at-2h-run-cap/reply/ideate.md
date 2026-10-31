@@ -1,0 +1,40 @@
+### NOTES
+The road strengths can be eliminated by using prefix sums. Let P_1 = 0 and P_{x+1} = P_x + w_x. For a person whose route covers the interval [l, r] with l = min(S_i, T_i) and r = max(S_i, T_i):
+
+- If S_i < T_i, the stamina at town x is P_x - P_l. The requirement becomes P_l = P_r and P_x > P_l for every l < x < r.
+- If S_i > T_i, the stamina at town x is P_l - P_x. The requirement becomes P_l = P_r and P_x < P_l for every l < x < r.
+
+Thus each person is an interval with a sign: “up” means the interior must be strictly above the endpoint value, and “down” means the interior must be strictly below the endpoint value.
+
+For one fixed set of people, the feasibility problem is a system of equalities and strict inequalities over integer prefix values. Contract towns that are forced equal by endpoint equalities. Each person then imposes strict inequalities between equality components: an “up” person makes every internal component greater than its endpoint component, and a “down” person makes every internal component smaller. Because the values are integers, such a system is feasible exactly when the resulting directed graph of strict inequalities is acyclic; a topological order can be turned into integer prefix values, and shifting makes P_1 = 0.
+
+The real difficulty is answering many interval queries over the people. A per-query construction of the equality/inequality graph is far too slow. The promising reduction is that infeasibility may be detectable by forbidden pairs of people. The natural forbidden pairs are:
+
+1. The same interval with opposite signs.
+2. Two intervals with the same left endpoint but different right endpoints.
+3. Two intervals with the same right endpoint but different left endpoints.
+4. Two same-sign intervals that strictly cross.
+
+If this pairwise characterization is valid, then a query [L, R] is bad exactly when it contains at least one forbidden pair. Then define p[j] as the largest index i < j such that i and j form a forbidden pair. A query [L, R] is Yes iff max p[j] over j in [L, R] is less than L. This reduces the problem to computing p[j] for all j and answering static range-maximum queries.
+
+Computing endpoint-based conflicts is easy with last-occurrence maps. The hard part is same-sign crossing conflicts. For each j, we need the maximum earlier i with the same sign and either:
+
+- l_i < l_j < r_i < r_j, or
+- l_j < l_i < r_j < r_i.
+
+This is a 3D dominance / range-maximum problem because of the index constraint i < j plus the two endpoint coordinates.
+
+A major risk is the pairwise characterization itself. In principle, a set could be infeasible because of a directed cycle of length three or more even if every pair is feasible. Any pair-based approach should be validated by proof or small random brute-force checks. If the characterization fails, the whole reduction to forbidden pairs is invalid, and one would need a much heavier general partial-order feasibility method.
+
+### NEXT
+- Forbidden-pair p[j] with CDQ divide-and-conquer on person index. Use last-occurrence maps for same left endpoint, same right endpoint, and opposite-sign same interval. For crossing conflicts, recursively split the index range; conflicts from the left half to the right half automatically satisfy i < j. For each sign, perform two 1D sweeps: sort right-side queries by l_j and add left-side intervals with l_i < l_j into a range-max structure over r_i, querying r_i in (l_j, r_j); then sort right-side queries by r_j descending and add left-side intervals with r_i > r_j into a range-max structure over l_i, querying l_i in (l_j, r_j). Update p[j] with the maximum left index found. Clear or rollback the structure after each node. Answer queries with a static range-max structure over p. Pitfalls: the two crossing orientations are easy to mix up; bounds must be strict; signs must be processed separately; max structures are not invertible, so clearing/rollback must be careful; O(M log M log N) may be near the limit in Python; the method depends on the pairwise characterization being true.
+
+- Forbidden-pair p[j] with an online 2D range-max structure. Process people in input order. For each sign, maintain a 2D range tree over (l, r) storing the maximum inserted index. For current j, query the rectangle l_i < l_j and l_j < r_i < r_j, and the rectangle l_j < l_i < r_j and r_i > r_j; take the maximum as a crossing conflict. Then insert (l_j, r_j) with value j. Endpoint conflicts are handled by last-occurrence maps. Finally answer queries by range maximum over p. Pitfalls: memory O(M log N) for the 2D structure; coordinate compression per node; max cannot be handled by a simple 2D Fenwick with inclusion-exclusion, so a segment tree over one dimension is safer; Python performance and memory may be problematic; rectangle bounds must be strict.
+
+- Dual next-conflict range-min approach. Instead of p[j], compute nxt[i] = smallest j > i that conflicts with i. This can be done by a right-to-left CDQ with range-min sweeps, or by a 2D range-min structure processed from right to left. Endpoint conflicts use next occurrence of same left endpoint, same right endpoint, or opposite-sign same interval. A query [L, R] is Yes iff the minimum nxt[i] over i in [L, R] is greater than R, or no such conflict exists. Pitfalls: crossing rectangles are mirrored; need to use minimum rather than maximum; values with no conflict must be treated as infinity; static range minimum over nxt is required; this is symmetric to the p[j] method and may not be easier, but it can be useful if a right-to-left sweep is more natural.
+
+- Sliding window / two-pointer over L with dynamic conflict count. Since adding people cannot turn an infeasible set feasible, the minimal bad R for each L is nondecreasing. Maintain the current window [L, R] and the total number of forbidden pairs inside it. Endpoint conflicts are maintained by counts of left endpoints, right endpoints, and plus/minus counts for each exact interval. Crossing conflicts are maintained by a dynamic 2D count structure: when inserting or deleting an interval, count how many existing same-sign intervals cross it using rectangle sums, and add or subtract that from the total. Increase R until the total becomes positive, record bad[L] = R, then remove L. Answer a query by checking whether R_k < bad[L_k]. Pitfalls: dynamic 2D counts with deletions are complex; total conflict count can be quadratic, so use 64-bit integers; strict crossing rectangles are important; the deletion order matters; performance may be high, and this approach is more intricate than the p[j] method.
+
+- Sqrt decomposition over person indices. Partition people into blocks. Precompute whether ranges made of whole blocks are feasible, either by scanning block ranges with a dynamic conflict counter or by using a precomputed p array if one is available. For a query, use the precomputed answer for the middle full blocks and separately check conflicts involving the left and right partial blocks, using 2D queries to test whether a partial interval conflicts with any interval in the middle or with the other partial block. Pitfalls: partial-middle interactions are the main difficulty; precomputing whole-block feasibility may itself require dynamic 2D conflict maintenance; block size tuning is delicate; worst-case time can be worse than CDQ; this approach is more heuristic and likely slower.
+
+- General partial-order feasibility with offline dynamic data structures. For each query, contract endpoint equalities and check whether the strict-inequality graph is acyclic. To handle many queries, try Mo’s algorithm or a segment-tree-over-queries approach with rollback DSU for equalities and a rollbackable directed cycle detector. Pitfalls: directed cycle detection under rollback is much harder than undirected connectivity; equality components change nontrivially; maintaining a topological order dynamically is difficult; this is likely too slow or too complex for the constraints; useful mainly as a fallback if the pairwise characterization is false.

@@ -1,0 +1,116 @@
+PROBLEM:
+### Question
+You are given a positive integer N and two strings S and T, each of length N and consisting of lowercase English letters.
+Determine whether it is possible to make S identical to T by repeating the operation below any number of times (possibly zero). If it is possible, also find the minimum number of operations required.
+
+- Choose two lowercase English letters x, y and replace every occurrence of x in S with y.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+T
+
+Output
+
+If it is possible to make S identical to T, print the minimum number of operations required. Otherwise, print -1.
+
+Constraints
+
+
+- 1\leq N \leq 2\times 10^5
+- N is an integer.
+- Each of S and T is a string of length N, consisting of lowercase English letters.
+
+Sample Input 1
+
+6
+afbfda
+bkckbb
+
+Sample Output 1
+
+4
+
+By performing the operation four times in the following way, you can make S identical to T:
+
+- Choose x= b and y= c. S becomes afcfda.
+- Choose x= a and y= b. S becomes bfcfdb.
+- Choose x= f and y= k. S becomes bkckdb.
+- Choose x= d and y= b. S becomes bkckbb, which is identical to T.
+
+It cannot be done with fewer than four operations, so the minimum number of operations required is 4.
+
+Sample Input 2
+
+4
+abac
+abac
+
+Sample Output 2
+
+0
+
+S and T are already identical, so no operations are required.
+
+Sample Input 3
+
+4
+abac
+abrc
+
+Sample Output 3
+
+-1
+
+No matter how you repeat the operation, it is impossible to make S identical to T.
+
+Sample Input 4
+
+4
+abac
+bcba
+
+Sample Output 4
+
+4
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The central difficulty is that the operation is a global, irreversible merge of letter classes. Once two initial letters ever become the same current letter, they can never be separated again. Therefore, any intermediate label may contain only initial letters whose required final letter is the same. This makes the problem less about individual positions and more about the 26 letter classes.
+
+The first necessary condition is consistency: every occurrence of the same letter in S must correspond to the same letter in T. If some S-letter is required to become two different T-letters, the answer is immediately impossible. After this check, each present S-letter has a unique required target.
+
+A second key observation is that each present letter that must change needs at least one operation in which its current class is the source. Thus a natural lower bound is the number of distinct present letters whose required target differs from themselves. The subtle part is ordering. If a letter a must become b, and b is still present with a different final target, renaming a to b would merge incompatible classes. So b must first be moved away, or the label b must be empty, or b’s class must already have the same final target as a. These dependencies form a small functional graph on at most 26 letters, with an edge from each present nonfixed letter to its required target.
+
+Acyclic parts of this graph can be resolved by processing in reverse dependency order: move letters closer to their final targets first, then move their predecessors. Directed cycles of length at least 2 are the hard part. A cycle has no safe internal first move. It can be resolved without an extra operation only if some present letter outside the cycle has an edge into the cycle; that outside letter can serve as a temporary holder because it shares the final target of the cycle node just before the entry point. If a cycle is isolated, meaning no present letter outside it maps into it, then one extra operation is needed to introduce a temporary label and rotate the cycle.
+
+The temporary label can be an absent letter, or a label freed by processing another component. Fixed present letters cannot serve as temporary labels because they must remain at their own label. If all 26 letters are present and the required mapping is injective, meaning no two present letters share the same target, then there is no absent letter and no outside nonfixed letter that can be moved to free a label. In that case, any nontrivial cycle is impossible. If S is already equal to T, the answer is 0 even in that all-26 injective situation.
+
+Important pitfalls include: counting distinct present letters rather than positions; ignoring self-loops; treating absent letters as possible buffers but not as counted sources; recognizing that an indirect chain into a cycle counts because its last node maps directly into the cycle; applying the all-26 injective impossibility only when there is at least one required change; and remembering that multiple isolated cycles each need their own extra operation even if the same buffer is reused.
+
+
+CURRENT TASK LIST:
+- [todo] Read N, S, and T; build req[26] by setting req[S[i]] = T[i] for every position, and immediately mark the case impossible if a letter is assigned two different targets.
+- [todo] Record the set of present letters and the number of present letters mapping to each target; compute C as the count of present letters a with req[a] != a, and return 0 if C == 0.
+- [todo] Apply the feasibility rule: if C > 0, no letter is absent from S, and every target has at most one present preimage, output -1; otherwise continue.
+- [todo] Find all directed cycles of length at least 2 in the graph a -> req[a] over present letters, and count a cycle as bad if every node in the cycle has indegree exactly 1 from present letters.
+- [todo] Output C + (number of bad cycles).
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Functional-graph counting approach: build the required map from S-letters to T-letters, reject conflicts, create edges from present nonfixed letters to their targets, count directed cycles of length at least 2, add one extra operation for each cycle with no incoming edge from a present letter outside the cycle, and apply the all-26 injective impossibility exception. Pitfalls: self-loops, absent targets, indirect incoming chains, and the already-identical case.
+- Constructive topological scheduling approach: treat a rename as safe when the target label is empty or already contains only letters with the same final target, process safe letters in reverse dependency order, and when a remaining cycle has no safe move, rotate it through a buffer label. Pitfalls: choosing and reserving buffers, tracking current merged classes rather than original letters, and avoiding greedy choices that fill the only available buffer too early.
+- State-space search or A* over current label assignments: represent a state by the current label of each initial letter, branch over all possible global replacements, and use lower bounds such as remaining changed letters plus remaining isolated cycles for pruning. Pitfalls: the state space is enormous because it involves partitions and labels of up to 26 letters, branching is large, and this is likely only viable for tiny alphabets or validation tests.
+- Subset DP or bitmask approach over empty and finalized labels: since the alphabet has only 26 letters, track which labels are currently empty or already finalized using bitmasks, possibly decomposing by connected components. Pitfalls: 2 to the 26th is too large for Python in the worst case, and the abstraction may be insufficient because intermediate labels and merge compatibility matter.
+- Transformation-monoid or bidirectional search reduction: view each operation as a transformation on the 26-letter alphabet and search for the shortest composition that maps S to T. Pitfalls: the full transformation space is huge, reverse operations are not simple global replacements, and this is mainly a theoretical reduction rather than a practical full-constraint solution.

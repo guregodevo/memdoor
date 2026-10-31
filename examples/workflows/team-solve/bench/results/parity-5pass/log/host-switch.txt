@@ -1,0 +1,2 @@
+2026-10-31 15:50 runs started from now use gvs5h-parity-fp8 (order wafer,parasail,coreweave; Modal dropped). Running at switch: p3/arc196_c p3/arc196_b p5/abc400_g p5/arc196_b (old order).
+2026-10-31 16:01-16:02 moved to fp8 mid-run (stopped old run, outputs copied, resumed same partition on gvs5h-parity-fp8; the call in flight was redone): p3/arc196_b (2026-10-31T133536, at worker-1), p3/arc196_c (101905, at manage-0), p5/abc400_g (121335, at worker-1). p5/arc196_b finished on the old order (2/2). Empty lines in batch.tsv at 16:01 = the killed runners.

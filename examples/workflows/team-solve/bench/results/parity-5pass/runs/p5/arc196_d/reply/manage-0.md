@@ -1,0 +1,8 @@
+### STATUS
+continue
+### NEXT
+Implement the complete solution using the forbidden-pair reduction and block-bitset same-sign conflict computation: parse to (l,r,sign), compute endpoint bad pairs (identical opposite, same l diff r, same r diff l; allow end-start sharing), then for each sign use blocks of size ~16000 and prefix bitmasks over L/R to assign the largest previous same-sign conflicting index with mask `(L in [a,b) and R >= b) or (R in (a,b] and L <= a)`, build prefix max of bad, and answer queries; run on the provided samples.
+### TASKS
+- [todo] Implement the complete solution using the forbidden-pair reduction and block-bitset same-sign conflict computation: parse to (l,r,sign), compute endpoint bad pairs (identical opposite, same l diff r, same r diff l; allow end-start sharing), then for each sign use blocks of size ~16000 and prefix bitmasks over L/R to assign the largest previous same-sign conflicting index with mask `(L in [a,b) and R >= b) or (R in (a,b] and L <= a)`, build prefix max of bad, and answer queries; run on the provided samples.
+- [todo] Validate the forbidden-pair characterization and implementation on small random/constructed cases with a brute-force difference-constraint feasibility checker, explicitly checking end-start sharing, same-sign crossing/endpoint, and identical opposite-sign intervals.
+- [todo] Optimize memory/time if needed: free endpoint dictionaries/arrays before bitset phase, store queries compactly, choose block size around 16000, avoid storing complement bitmasks if memory is tight, and ensure O(M * K) bitset operations with K ~ M / block_size.

@@ -1,0 +1,51 @@
+{
+ "pending": "ideate",
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Parse all test cases and precompute doubled X, Y, Z values for each cake.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement calc(C): an 8-state parity DP over cakes, where skipping keeps the state and choosing a coordinate adds 2*value-C and flips the corresponding bit; tie-break equal values by larger selected-cake count, and return (doubled penalized value for mask 0, selected_count//2).",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "For each test case, binary search the largest integer C in [0, 2_000_000_001) such that calc(C) gives at least K pairs.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "After the search, run calc(C) once more and output (value + 2*C*K)//2.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 5,
+   "desc": "Handle edge cases (all zero values, N odd, ties, large coordinates) and ensure the negative infinity is far below any possible adjusted score.",
+   "status": "pending",
+   "result": ""
+  }
+ ],
+ "proposals": [],
+ "nexts": [],
+ "status": "continue",
+ "next": "",
+ "prev": null,
+ "iters": 0,
+ "task": "",
+ "wrote": false,
+ "res": null,
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  }
+ ]
+}

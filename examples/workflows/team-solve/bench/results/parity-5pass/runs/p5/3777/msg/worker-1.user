@@ -1,0 +1,101 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, k and limit. Your task is to find a non-empty subsequence of nums that:
+
+Has an alternating sum equal to k.
+Maximizes the product of all its numbers without the product exceeding limit.
+
+Return the product of the numbers in such a subsequence. If no subsequence satisfies the requirements, return -1.
+The alternating sum of a 0-indexed array is defined as the sum of the elements at even indices minus the sum of the elements at odd indices.
+ 
+Example 1:
+
+Input: nums = [1,2,3], k = 2, limit = 10
+Output: 6
+Explanation:
+The subsequences with an alternating sum of 2 are:
+
+[1, 2, 3]
+
+Alternating Sum: 1 - 2 + 3 = 2
+Product: 1 * 2 * 3 = 6
+
+
+[2]
+
+Alternating Sum: 2
+Product: 2
+
+
+
+The maximum product within the limit is 6.
+
+Example 2:
+
+Input: nums = [0,2,3], k = -5, limit = 12
+Output: -1
+Explanation:
+A subsequence with an alternating sum of exactly -5 does not exist.
+
+Example 3:
+
+Input: nums = [2,2,3,3], k = 0, limit = 9
+Output: 9
+Explanation:
+The subsequences with an alternating sum of 0 are:
+
+[2, 2]
+
+Alternating Sum: 2 - 2 = 0
+Product: 2 * 2 = 4
+
+
+[3, 3]
+
+Alternating Sum: 3 - 3 = 0
+Product: 3 * 3 = 9
+
+
+[2, 2, 3, 3]
+
+Alternating Sum: 2 - 2 + 3 - 3 = 0
+Product: 2 * 2 * 3 * 3 = 36
+
+
+
+The subsequence [2, 2, 3, 3] has the greatest product with an alternating sum equal to k, but 36 > 9. The next greatest product is 9, which is within the limit.
+
+ 
+Constraints:
+
+1 <= nums.length <= 150
+0 <= nums[i] <= 12
+-10^5 <= k <= 10^5
+1 <= limit <= 5000
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        
+```
+
+
+
+PLAN:
+The alternating sum is bounded by `12 * len(nums)`, so we can represent achievable sums for each parity as compact bitsets. Split the problem into positive-product subsequences and zero-product subsequences, because a zero can make an otherwise over-limit positive product valid as product `0`. Maintain an unconstrained feasibility DP for all subsequences so that a zero can be selected after any previous subsequence, even if its product exceeded `limit`. For positive products, track only products up to `limit`, multiplying only when the new product stays within `limit`; for zero products, track only sum/parity feasibility. At the end, return the largest positive product achieving `k`, else `0` if a zero-product subsequence achieves `k`, else `-1`.
+
+NOTES:
+
+## ideation
+The core difficulty is that the subsequence constraint couples three things: the inherited order of elements, the parity of how many elements have already been chosen (which determines whether the next chosen element is added or subtracted), and the product objective, which is bounded by `limit`. The alternating-sum dimension is small because each value is at most 12 and at most 150 elements can be chosen, so reachable sums lie in a range of roughly a few thousand. The product dimension is also small because products above `limit` are useless for positive final products. However, the state space is still large if represented naively as position, parity, sum, and product.
+
+A major subtlety is that a larger product for the same sum and parity does not always dominate a smaller product. A smaller product may remain under `limit` after future multiplications, while a larger product may exceed it. Therefore, storing only the maximum product per sum/parity is generally unsafe.
+
+Zeros create another special case. Once a zero is selected, the product becomes 0 and stays 0. A zero can be appended after a prefix whose product already exceeded `limit`, so a DP that only keeps positive products up to `limit` may miss valid zero-product subsequences unless it also tracks uncapped sum/parity feasibility. Also, the empty subsequence has sum 0 and product 1, but the answer must come from a non-empty subsequence, so this edge case must be handled explicitly.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the complete product-major bitset DP solution in the provided starter class: set max_sum=12*len(nums), offset=max_sum, mask=(1<<(2*max_sum+1))-1, return -1 if abs(k)>max_sum; maintain F0/F1 all-subsequence feasibility including empty, P0/P1 bitsets for non-empty positive products 1..limit, and Z0/Z1 zero-product bitsets; for each x snapshot old F/P/Z, add singleton P1[x] at sum x if x>0 and x<=limit, extend old P[p] to P[p*x] with parity flip and sum +x/-x only when p*x<=limit, extend old Z states for every x, when x==0 seed Z1 from old F0 and Z0 from old F1, update F0/F1 with skip/take shifts, then scan p from limit down to 1 for target bit k in P0/P1 and return p, else return 0 if target bit in Z0/Z1 else -1; run the three examples and edge cases.

@@ -1,0 +1,65 @@
+{
+ "pending": "worker-2",
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Derive the GF(2) row/column reduction and parity-DSU counting formula.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Write a compact Python 3 code block (no derivation) implementing the formula with fast input, iterative parity DSU, bytearray parity/col, and pow(2, components, MOD).",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Run the code on the sample and small edge cases (all A, all B, odd row/col parity, 2x2) and fix any failures.",
+   "status": "pending",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Row/column elimination plus parity DSU on a signed bipartite graph: check that every row and every column has an even number of A cells; introduce one bit per row and one bit per column; for each B cell add an XOR equation between its row bit and column bit with a constant derived from the parity of A cells to the left and above; use a parity union-find to detect contradictions and count connected components; answer is 2 to the number of components if consistent. Pitfalls: prefix parity off-by-one on the torus, updating column parity before or after processing the current cell, counting isolated row/column vertices, and keeping memory and initialization fast across many test cases.",
+  "Direct parity DSU on all edge variables: create one variable for every horizontal adjacency and one for every vertical adjacency; for each cell add local XOR equations encoding whether it is A or B; count connected components of the resulting constraint graph. Pitfalls: this uses up to twice as many variables as the row/column reduction and adds more redundant constraints, so it may be slower and more memory-intensive in Python; edge indexing around the torus is still error-prone; if dimensions of size 1 were allowed, self-adjacency would need special care.",
+  "Sparse linear algebra over GF(2): formulate the entire affine system as a sparse matrix with constants, compute its rank and consistency, and return 2 to the nullity if consistent. Pitfalls: generic sparse elimination can suffer from fill-in and is difficult to implement efficiently in Python at this scale; it is likely overkill compared with union-find; consistency with the constant vector must be handled separately; the approach may not meet time limits unless it exploits the grid structure heavily.",
+  "Transfer-matrix dynamic programming over the smaller dimension: process the grid row by row or column by column, keeping as state the assignment of edge variables crossing the frontier; enforce local tile constraints as cells are added; close the torus by ensuring the final state matches the initial state. Pitfalls: the state space is exponential in the smaller of H and W, so this is only viable when one dimension is very small; torus wraparound makes the DP more complicated because the first row or column state must be remembered or handled by cycle consistency; memory and time blow up for roughly square grids.",
+  "Cycle-cover or perfect-matching reduction: interpret valid placements as 2-regular subgraphs or cycle covers of the toroidal grid with local gadgets enforcing A-turn and B-straight behavior, then count them using a Pfaffian or Kasteleyn-type determinant. Pitfalls: the torus is non-planar and requires careful sector/sign handling; constructing correct gadgets for A and B tiles is subtle; determinant-based methods are much heavier than the linear XOR structure suggests; this approach is likely far more complex than necessary and may be slower in practice."
+ ],
+ "nexts": [],
+ "status": "continue",
+ "next": "Write only a compact Python 3 code block (no derivation) implementing the already-derived row/column parity-DSU formula: parse with sys.stdin.buffer.read().split(); for each case set parent=[-1]*(H+W), parity=bytearray(H+W), col=bytearray(W), comps=H+W; scan rows, maintain row_pref, on 'A' flip row_pref and col[j], on 'B' union row i with column H+j with w=1^row_pref^col[j] using the prefix values before the current cell; use an iterative parity find returning (root, xor_to_root) and union by negative size, checking pu^pv==w for same root and setting parity[child]=pu^pv^w when merging; if any contradiction, any row_pref odd at row end, or any col parity odd at case end, output 0, else output pow(2, comps, 998244353); skip DSU after a case is bad but still consume its rows; then verify on the sample and basic edge cases without hardcoding them.",
+ "prev": "Write only a compact Python 3 code block (no derivation) implementing the already-derived row/column parity-DSU formula: parse with sys.stdin.buffer.read().split(); for each case set parent=[-1]*(H+W), parity=bytearray(H+W), col=bytearray(W), comps=H+W; scan rows, maintain row_pref, on 'A' flip row_pref and col[j], on 'B' union row i with column H+j with w=1^row_pref^col[j] using the prefix values before the current cell; use an iterative parity find returning (root, xor_to_root) and union by negative size, checking pu^pv==w for same root and setting parity[child]=pu^pv^w when merging; if any contradiction, any row_pref odd at row end, or any col parity odd at case end, output 0, else output pow(2, comps, 998244353); skip DSU after a case is bad but still consume its rows; then verify on the sample and basic edge cases without hardcoding them.",
+ "iters": 2,
+ "task": "Write only a compact Python 3 code block (no derivation) implementing the already-derived row/column parity-DSU formula: parse with sys.stdin.buffer.read().split(); for each case set parent=[-1]*(H+W), parity=bytearray(H+W), col=bytearray(W), comps=H+W; scan rows, maintain row_pref, on 'A' flip row_pref and col[j], on 'B' union row i with column H+j with w=1^row_pref^col[j] using the prefix values before the current cell; use an iterative parity find returning (root, xor_to_root) and union by negative size, checking pu^pv==w for same root and setting parity[child]=pu^pv^w when merging; if any contradiction, any row_pref odd at row end, or any col parity odd at case end, output 0, else output pow(2, comps, 998244353); skip DSU after a case is bad but still consume its rows; then verify on the sample and basic edge cases without hardcoding them.",
+ "wrote": false,
+ "res": null,
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "length"
+  },
+  {
+   "call": "cutoff-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

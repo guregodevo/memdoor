@@ -1,0 +1,129 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The central difficulty is that the local tile rotations are exponentially many, while the torus no-dead-end condition couples every neighboring pair of cells. The key structural observation is that endpoint existence on each grid edge can be represented by a bit, and every tile type imposes affine linear constraints over GF(2) on the four bits around the cell. The challenge is to eliminate the large number of edge bits without losing the wrap-around consistency of the torus.
+
+First approach: reduced edge-bit parity system. This is the approach in the supplied plan and is the most scalable. Take the top-edge bit and left-edge bit of each cell as variables. For an A cell, the top and bottom bits must differ, and the left and right bits must differ. For a B cell, top and bottom are equal, left and right are equal, and top differs from left. Summing the A difference equations around a column forces the number of A cells in that column to be even; summing around a row forces the number of A cells in that row to be even. If any parity is odd, no placement exists. When all parities are even, the vertical bits in a column are determined by one free column bit plus the parity of A cells above; the horizontal bits in a row are determined by one free row bit plus the parity of A cells to the left. Each B cell then gives one xor equation between its row bit and column bit. The resulting system is a set of xor equations on a bipartite graph of row and column vertices. A parity union-find can check consistency and count connected components; if consistent, each component contributes one free bit, so the answer is 2 to the number of components modulo 998244353. Pitfalls: the prefix parity must be taken before the current cell; using right-edge or bottom-edge variables shifts the prefix and can cause off-by-one errors; the torus wrap is exactly where the row/column parity conditions come from; isolated row and column vertices must still be counted as components; the parity union-find must maintain the xor from each node to its root carefully; if an inconsistency or odd parity is found early, the input for the rest of the case must still be consumed; dimensions 2 are valid and create parallel adjacencies, but the edge-bit model still works; the constraints assume H and W are at least 2. A less reduced but simpler variant is to keep all edge bits and run parity union-find directly on them; it avoids prefix derivation but uses more memory and time.
+
+Second approach: generic sparse linear algebra over GF(2). Build the affine system explicitly, either on the original edge bits or on the reduced row/column bits, and compute its rank and consistency using sparse Gaussian elimination, bitset rows, or randomized Wiedemann. Pitfalls: the original system has up to twice the number of cells as variables and many equations; dense bitsets are too large; sparse elimination can be complex; randomized methods have a small failure probability; this is likely overkill for the final solution but useful for independent verification on small instances.
+
+Third approach: topological 2-factor or cycle-space interpretation. View the selected boundary edges as a 2-regular spanning subgraph of the cell-adjacency torus, where A cells are forced to turn and B cells are forced to go straight. One could study the cycle space of the adjacency graph and the linear map that records the turn/straight parity at each cell, then count cycle-space elements satisfying the prescribed values. Pitfalls: the graph has parallel edges when H=2 or W=2; even-degree cycle space alone allows degree 0 or 4, so extra local equations are needed; torus homology makes a cycle basis subtle; deriving the final component formula is nontrivial and may be more error-prone than the direct parity reduction.
+
+Fourth approach: transfer-matrix dynamic programming. Process one row at a time with a state consisting of the vertical edge bits entering the row, or process columns with horizontal bits. For each row, enforce the tile constraints and produce the next state; the torus condition requires the state after H rows to equal the initial state. Pitfalls: the state space has size exponential in the chosen dimension; the torus closure requires taking a trace or matching the first state; this is only feasible when the smaller dimension is very small and is not a scalable solution.
+
+Fifth approach: brute force or backtracking. For tiny grids, enumerate all rotations or use backtracking/SAT and directly check the two torus conditions. Pitfalls: exponential in HW; useful only for generating tests and validating the algebraic approaches, not for the given constraints.
+
+
+CURRENT TASK LIST:
+- [todo] Read all test cases with fast input; for each case, initialize a parity-weighted DSU with H+W nodes, a column-prefix parity array of length W, and a component counter.
+- [todo] Scan each row left to right, maintaining row_pref (xor of A cells to the left) and col_pref[j] (xor of A cells above); for a B cell compute w = 1 ^ col_pref[j] ^ row_pref and union row i with column j under xor w, while for an A cell update row_pref and col_pref[j].
+- [todo] After finishing a row, check row_pref is 0; after the grid, check all col_pref[j] are 0, and mark the case invalid if any row or column has an odd number of A cells.
+- [todo] If the DSU reports an inconsistent xor constraint, mark the case invalid; otherwise compute the number of DSU components among all H+W row/column nodes.
+- [todo] Output pow(2, components, 998244353) for valid cases and 0 for invalid cases, ensuring total O(HW alpha(H+W)) time and O(H+W) memory per test case.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the reduced parity union-find solution as the primary method, streaming rows and maintaining column prefix parities.
+- Implement a full-edge parity union-find variant as a heavier independent sanity check on small cases.
+- Implement a generic sparse GF(2) rank checker on the reduced row/column equations for small random instances to verify consistency and component counts.
+- Implement a transfer-matrix DP for very small min(H,W) to cross-check the behavior on tiny tori.
+- Implement a brute-force enumerator for tiny grids to generate edge-case tests such as all A, all B, and dimensions equal to 2.

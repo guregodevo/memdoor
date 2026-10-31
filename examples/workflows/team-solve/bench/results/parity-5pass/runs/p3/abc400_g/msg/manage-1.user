@@ -1,0 +1,364 @@
+PROBLEM:
+### Question
+Takahashi, a patissier working at the ABC pastry shop, decided to sell assorted cakes to commemorate AtCoder Beginner Contest 400.
+The shop sells N kinds of cakes: cake 1, cake 2, \ldots, cake N.
+Each cake has three non-negative integer values: beauty, tastiness, and popularity. Specifically, cake i has beauty X_i, tastiness Y_i, and popularity Z_i.
+He considers pairing up these cakes into K pairs without overlaps.
+Formally, he will choose 2K distinct integers a_1,b_1,a_2,b_2,\ldots,a_K,b_K between 1 and N (inclusive), and pair cake a_i with cake b_i.
+The price of a pair formed by cakes a_i and b_i is \max(X_{a_i} + X_{b_i},\, Y_{a_i} + Y_{b_i},\, Z_{a_i} + Z_{b_i}).
+Here, \max(P,Q,R) denotes the greatest value among P,Q,R.
+Find the maximum possible total price of the K pairs.
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+\mathrm{case}_1
+\mathrm{case}_2
+\vdots
+\mathrm{case}_T
+
+\mathrm{case}_i represents the i-th test case. Each test case is given in the following format:
+N K
+X_1 Y_1 Z_1
+X_2 Y_2 Z_2
+\vdots
+X_N Y_N Z_N
+
+Output
+
+Print T lines. The i-th line (1\leq i\leq T) should contain the answer to the i-th test case.
+
+Constraints
+
+
+- 1\leq T\leq 1000
+- 2\leq N \leq 10^5
+- The sum of N over all test cases in each input file is at most 10^5.
+- 1\leq K \leq \lfloor \frac{N}{2}\rfloor (For a real number x, \lfloor x\rfloor denotes the greatest integer not exceeding x.)
+- 0\leq X_i,Y_i,Z_i \leq 10^9
+- All input values are integers.
+
+Sample Input 1
+
+1
+3 1
+6 3 8
+3 5 0
+2 7 3
+
+Sample Output 1
+
+12
+
+We form one pair out of three cakes.
+If we pair cake 1 with cake 2, the price is \max(6+3,\,3+5,\,8+0) = 9.
+If we pair cake 1 with cake 3, the price is \max(6+2,\,3+7,\,8+3) = 11.
+If we pair cake 2 with cake 3, the price is \max(3+2,\,5+7,\,0+3) = 12.
+Hence, pairing cake 2 with cake 3 gives the highest price, which is 12.
+
+Sample Input 2
+
+2
+5 2
+1 2 3
+1 2 3
+1 2 3
+1 2 3
+100 100 200
+6 2
+21 74 25
+44 71 80
+46 28 96
+1 74 24
+81 83 16
+55 31 1
+
+Sample Output 2
+
+209
+333
+
+Note that each cake can appear in at most one pair.
+Also note that there can be different cakes with identical values of beauty, tastiness, and popularity.
+For the first test case, pairing cake 1 with cake 2 gives a price of 6, pairing cake 3 with cake 5 gives a price of 203, and choosing these two pairs yields a total price of 209, which is the maximum.  
+For the second test case, pairing cake 2 with cake 3 gives a price of 176, pairing cake 4 with cake 5 gives a price of 157, and choosing these two pairs yields a total price of 333, which is the maximum.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+
+SHIFT = 17                 # 2**SHIFT > 100000
+STORE_SHIFT = SHIFT + 1    # store (2 * value) << SHIFT
+MASK = (1 << SHIFT) - 1
+NEG = -1 << 80             # far below any real encoded DP value
+
+
+def calc(pk, cakes, NEG=NEG):
+    # pk = (P << SHIFT) - 1.
+    # For a stored value vkey = (2 * attr) << SHIFT, the encoded add is:
+    # vkey - pk = ((2 * attr - P) << SHIFT) + 1.
+    a0 = 0
+    a1 = NEG
+    a2 = NEG
+    a3 = NEG
+    a4 = NEG
+    a5 = NEG
+    a6 = NEG
+    a7 = NEG
+
+    for x0, y0, z0 in cakes:
+        ax = x0 - pk
+        ay = y0 - pk
+        az = z0 - pk
+
+        b0 = a0
+        c = a1 + ax
+        if c > b0:
+            b0 = c
+        c = a2 + ay
+        if c > b0:
+            b0 = c
+        c = a4 + az
+        if c > b0:
+            b0 = c
+
+        b1 = a1
+        c = a0 + ax
+        if c > b1:
+            b1 = c
+        c = a3 + ay
+        if c > b1:
+            b1 = c
+        c = a5 + az
+        if c > b1:
+            b1 = c
+
+        b2 = a2
+        c = a0 + ay
+        if c > b2:
+            b2 = c
+        c = a3 + ax
+        if c > b2:
+            b2 = c
+        c = a6 + az
+        if c > b2:
+            b2 = c
+
+        b3 = a3
+        c = a1 + ay
+        if c > b3:
+            b3 = c
+        c = a2 + ax
+        if c > b3:
+            b3 = c
+        c = a7 + az
+        if c > b3:
+            b3 = c
+
+        b4 = a4
+        c = a0 + az
+        if c > b4:
+            b4 = c
+        c = a5 + ax
+        if c > b4:
+            b4 = c
+        c = a6 + ay
+        if c > b4:
+            b4 = c
+
+        b5 = a5
+        c = a1 + az
+        if c > b5:
+            b5 = c
+        c = a4 + ax
+        if c > b5:
+            b5 = c
+        c = a7 + ay
+        if c > b5:
+            b5 = c
+
+        b6 = a6
+        c = a2 + az
+        if c > b6:
+            b6 = c
+        c = a4 + ay
+        if c > b6:
+            b6 = c
+        c = a7 + ax
+        if c > b6:
+            b6 = c
+
+        b7 = a7
+        c = a3 + az
+        if c > b7:
+            b7 = c
+        c = a5 + ay
+        if c > b7:
+            b7 = c
+        c = a6 + ax
+        if c > b7:
+            b7 = c
+
+        a0 = b0
+        a1 = b1
+        a2 = b2
+        a3 = b3
+        a4 = b4
+        a5 = b5
+        a6 = b6
+        a7 = b7
+
+    return a0
+
+
+def main():
+    data = list(map(int, sys.stdin.buffer.read().split()))
+    if not data:
+        return
+
+    t = data[0]
+    idx = 1
+    out = []
+
+    shift = SHIFT
+    store_shift = STORE_SHIFT
+    mask = MASK
+
+    for _ in range(t):
+        n = data[idx]
+        k = data[idx + 1]
+        idx += 2
+
+        top1x = -1
+        top2x = -1
+        top1y = -1
+        top2y = -1
+        top1z = -1
+        top2z = -1
+
+        # K = 1 can be solved directly:
+        # max over pairs of max(Xsum, Ysum, Zsum) = max attribute-wise top-two sum.
+        if k == 1:
+            for _ in range(n):
+                x = data[idx]
+                y = data[idx + 1]
+                z = data[idx + 2]
+                idx += 3
+
+                if x > top1x:
+                    top2x = top1x
+                    top1x = x
+                elif x > top2x:
+                    top2x = x
+
+                if y > top1y:
+                    top2y = top1y
+                    top1y = y
+                elif y > top2y:
+                    top2y = y
+
+                if z > top1z:
+                    top2z = top1z
+                    top1z = z
+                elif z > top2z:
+                    top2z = z
+
+            ans = max(top1x + top2x, top1y + top2y, top1z + top2z)
+            out.append(str(ans))
+            continue
+
+        cakes = []
+        append = cakes.append
+
+        for _ in range(n):
+            x = data[idx]
+            y = data[idx + 1]
+            z = data[idx + 2]
+            idx += 3
+
+            if x > top1x:
+                top2x = top1x
+                top1x = x
+            elif x > top2x:
+                top2x = x
+
+            if y > top1y:
+                top2y = top1y
+                top1y = y
+            elif y > top2y:
+                top2y = y
+
+            if z > top1z:
+                top2z = top1z
+                top1z = z
+            elif z > top2z:
+                top2z = z
+
+            append((x << store_shift, y << store_shift, z << store_shift))
+
+        max_pair = max(top1x + top2x, top1y + top2y, top1z + top2z)
+        need = k << 1
+
+        lo = 0
+        hi = max_pair + 1
+        best_key = None
+
+        while hi - lo > 1:
+            mid = (lo + hi) >> 1
+            key = calc((mid << shift) - 1, cakes)
+            if (key & mask) >= need:
+                lo = mid
+                best_key = key
+            else:
+                hi = mid
+
+        if best_key is None:
+            key = calc((lo << shift) - 1, cakes)
+        else:
+            key = best_key
+
+        val = key >> shift
+        ans = (val >> 1) + lo * k
+        out.append(str(ans))
+
+    sys.stdout.write("\n".join(out))
+
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Reduction:** Choose 2K cakes and color each chosen cake by one of X/Y/Z. Require each color count to be even. This is equivalent to the original pairing: from any optimal pairing, color both cakes in a pair by an attribute attaining the pair’s max; conversely, any even-colored selection can be paired inside each color, and the true pair price is at least the colored sum. Hence the optimum values are equal.
+- **WQS/Aliens trick:** Let F(k) be the optimum colored value for k pairs. F(k) is concave in k (equivalently, maximum-weight k-matching value concavity). Binary search an integer pair penalty P. In doubled scale, each selected cake contributes `2*attr - P`; a pair therefore loses `2P`, i.e. original pair penalty `P`.
+- **DP state:** 8 parity masks for X/Y/Z counts. For fixed P, maximize encoded `(doubled_adjusted_value, selected_count)` lexicographically. The final mask 0 gives the best adjusted value and, among ties, maximum selected count.
+- **Encoding:** Use one integer key `value << 17 | count`. Since N <= 100000 < 2^17, value dominates count. This avoids tuple comparisons and makes tie-breaking automatic.
+- **Transition:** For each cake, skip or add one color. Unrolled target-wise updates:
+  - mask 0: from 1+X, 2+Y, 4+Z, or skip
+  - mask 1: from 0+X, 3+Y, 5+Z, or skip
+  - etc.
+  This uses only old states, so each cake is used at most once.
+- **Fast storage:** Store `(2*x) << SHIFT` as `x << 18`. For penalty P, `pk = (P << SHIFT) - 1`, so the encoded add is simply `stored - pk`.
+- **Bounds:** P=0 is feasible because nonnegative values allow padding to 2K cakes without decreasing optimal value. P = max_pair + 1 is infeasible because every same-color pair has doubled adjusted value negative. `max_pair` is the maximum attribute-wise top-two sum.
+- **Reconstruction:** If `val` is the doubled adjusted value at the largest feasible P, then `val/2 = max_k (F(k) - P*k)`. Concavity and tie-breaking imply `F(K) = val/2 + P*K`.
+- **Special case K=1:** Direct answer is max of top-two sums for X, Y, Z, avoiding DP.
+- **Pitfalls:** Do not use tuple assignment inside the DP loop (it allocates). Do not confuse per-cake penalty with per-pair penalty. The final division by 2 is exact because final selected count is even.
+- **NEG safety:** `NEG = -1 << 80` is far below any real key even after adding all maximum possible gains, so unreachable states can be updated without validity checks and will never beat real states.
+- **Verification:** Samples match by hand; a small brute-force checker over all pairings for N <= 8 and an exact count DP for small N should agree on random tests.
+
+
+CURRENT TASK LIST:
+- [done] Ideation: reduction to even-parity 3-color assignment and WQS/Lagrangian plan.
+- [todo] Implement core WQS 8-state DP with doubled values, bit-encoded value+count keys, binary search over pair penalty P, fast I/O, and sample validation.
+- [todo] Validate the WQS formula and concavity assumption on random small cases against exact count/parity DP or brute force; diagnose any mismatch in scaling, tie-breaking, or binary-search predicate.
+- [todo] Add exact DP for small min(2K, N-2K), especially N-2K=0, to avoid 31 passes in extreme cases and provide a fallback/cross-check.
+- [todo] Optimize worst-case middle regime for Python (unrolled 8-state updates, per-test high bound, local variables) and finalize edge-case checks: all zeros, N odd, K=N//2, tied values, maximum 1e9 values, many test cases.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 2 public samples -- the solution looks correct.] worker reported 'solved' on: Implement the core Python solution using the 8-state WQS/Lagrangian DP for the e. - **Reduction:** Choose 2K cakes and color each chosen cake by one of X/Y/Z. Require each color count to be even. This is equivalent to the original pairing: from any optimal pairing, color both cakes
+
+PROPOSED NEW STEPS:
+(none)

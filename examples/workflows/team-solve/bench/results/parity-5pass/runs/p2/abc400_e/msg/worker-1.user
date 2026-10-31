@@ -1,0 +1,71 @@
+PROBLEM:
+### Question
+A positive integer N is a 400 number if and only if it satisfies both of the following two conditions:
+
+- N has exactly 2 distinct prime factors.
+- For each prime factor p of N, p divides N an even number of times. More formally, the maximum non-negative integer k such that p^k divides N is even.
+
+Process Q queries. Each query gives you an integer A, so find the largest 400 number not exceeding A. Under the constraints of this problem, a 400 number not exceeding A always exists.
+
+Input
+
+The input is given from Standard Input in the following format:
+Q
+\text{query}_1
+\text{query}_2
+\vdots
+\text{query}_Q
+
+Here, \text{query}_i is the i-th query, given in the following format:
+A
+
+Output
+
+Print Q lines. The i-th line should contain the answer to the i-th query.
+
+Constraints
+
+
+- 1 \leq Q \leq 2 \times 10^5
+- For each query, 36 \leq A \leq 10^{12}.
+- All input values are integers.
+
+Sample Input 1
+
+5
+404
+36
+60
+1000000000000
+123456789
+
+Sample Output 1
+
+400
+36
+36
+1000000000000
+123454321
+
+Let us explain the first query.
+There are exactly 2 prime factors of 400: 2 and 5. Also, 2 divides 400 four times and 5 divides it twice, so 400 is a 400 number. None of 401, 402, 403, and 404 is a 400 number, so the answer is 400.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Precompute every 400 number up to 10^12 once, because Q is large and A is bounded. A 400 number has the form p^{2a}q^{2b}=(p^a q^b)^2 with distinct primes p<q, so it is enough to enumerate pairs of prime powers with product at most 10^6. Since p<q and pq<=10^6, the smaller prime p is below 1000, which makes the outer enumeration tiny. Sieve primes up to 10^6, then for each small p enumerate p^a, and for each larger prime q up to 10^6/p^a enumerate q^b up to that limit, storing the square. Sort the stored values and answer each query with a binary search for the largest value not exceeding A.
+
+NOTES:
+
+## ideation
+The key reduction is that the even-exponent condition forces every 400 number to be a perfect square. If N = p^{2a} q^{2b} with distinct primes p and q and a,b >= 1, then x = p^a q^b is an integer at most 10^6 and has exactly two distinct prime factors. Conversely, any x <= 10^6 with exactly two distinct prime factors produces a valid 400 number x^2. Therefore the problem over values up to 10^12 becomes a predecessor problem over bases x up to 10^6.
+
+The core difficulty is not the number theory itself, but answering 2e5 predecessor queries quickly. We need a compact precomputation up to 10^6 and a fast way to find the largest valid base not exceeding floor(sqrt(A)). Important pitfalls include using floating-point square roots near 10^12, counting total prime factors instead of distinct prime factors, accidentally allowing one prime factor or p = q, missing the boundary value 10^6, generating duplicates, and Python memory/time issues for large arrays or repeated big-integer operations.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the full Python solution using an omega sieve: precompute the number of distinct prime factors for every integer up to 1_000_000, build the sorted list of all 400 numbers as squares of bases with exactly 2 distinct prime factors, then read all queries and answer each with bisect_right on that list.

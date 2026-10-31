@@ -1,0 +1,147 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Implement brute-force verifier, baseline open-arc DP, inclusion-exclusion DP, and CDQ/NTT solver.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Run self-test and medium random stress tests (N up to 20) comparing all solvers; fix any mismatches in CDQ/NTT or DP.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Handle edge cases (N=1, first vertex must be B, last vertex must be W, automatic N! when R[t]<t).",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "Force DIRECT_M small and stress-test solve_large against solve_direct on random and structured N=3000-10000 cases with active m>2000; fix any correctness mismatches.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 5,
+   "desc": "Run timed N=200000 benchmarks for alternating, long-run, and random strings; fix performance bottlenecks.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 6,
+   "desc": "Finalize solver selection, remove fallbacks/debug code, and ensure final program reads stdin and writes stdout.",
+   "status": "pending",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement and test the inclusion-exclusion DP over bad black-prefix cuts, with early zero checks, and first validate it by brute force for small N.",
+  "Try to evaluate the DP using divide-and-conquer with NTT, but carefully bound convolution lengths and consider grouping equal C_t values; in many strings only the first occurrence of each C_t can contribute.",
+  "Investigate whether the worst-case alternating pattern can be handled by a faster formal-power-series inversion for the factorial-kernel recurrence, and whether other patterns can be decomposed into simpler segments.",
+  "Explore the inverse-permutation prefix-maximum formulation and see if it leads to a determinant, rook-polynomial, or ballot/reflection formula that avoids online convolution.",
+  "Explore the open-arc sweep DP and possible run-length or generating-function optimizations, especially for long runs of the same color, while keeping the boundary condition at nonnegative balance in mind."
+ ],
+ "nexts": [],
+ "status": "continue",
+ "next": "Run timed N=200000 benchmarks for alternating, long-run, and random strings; fix performance bottlenecks.",
+ "prev": "Run timed N=200000 benchmarks for alternating, long-run, and random strings; fix performance bottlenecks.",
+ "iters": 8,
+ "task": "Run timed N=200000 benchmarks for alternating, long-run, and random strings; fix performance bottlenecks.",
+ "wrote": true,
+ "res": null,
+ "stopped": "reissued",
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-2",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-2",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-3",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-3",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-4",
+   "finish": "length"
+  },
+  {
+   "call": "cutoff-4",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-4",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-5",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-5",
+   "finish": "length"
+  },
+  {
+   "call": "worker-6",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-6",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-7",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-7",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-8",
+   "finish": "length"
+  },
+  {
+   "call": "cutoff-8",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-8",
+   "finish": "length"
+  },
+  {
+   "call": "finalize",
+   "finish": "stop"
+  }
+ ]
+}

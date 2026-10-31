@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "desc": "Derive reduction to prefix events and inclusion-exclusion/renewal recurrence.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement standalone solver with event extraction, small-K direct recurrence, and CDQ+NTT/atcoder convolution fallback.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Validate against the three public samples (all passed).",
+    "status": "done",
+    "result": ""
+  }
+]

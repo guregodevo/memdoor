@@ -18,6 +18,15 @@ import (
 // gateway restart, which is fine for an abuse-prevention layer.
 var loginRateLimiter = ratelimit.NewPerClientLimiter(10, 1*time.Minute)
 
+// accountLoginLimiter throttles sign-in by the account named, whatever the
+// IP: the 2026-10-29 guessing on memdoor.ai rotated through 28 addresses, so
+// a per-IP limit alone let it run. Five tries per account per 15 minutes from
+// the network, refilled by a sign-in that succeeds (only failures add up);
+// the gateway's own machine (a local session renewing) is not counted, so a
+// stranger cannot lock the owner out of their own machine. Keyed by the
+// address typed, account or not, so it says nothing about which exist.
+var accountLoginLimiter = ratelimit.NewPerClientLimiter(5, 15*time.Minute)
+
 // Anyone can sign up (Greg, 2026-10-18: "no invite gate please", "anyone can
 // signup"); the limiter is what stands between the form and a script.
 var registerRateLimiter = ratelimit.NewPerClientLimiter(5, 10*time.Minute)
@@ -78,6 +87,18 @@ func (a *AuthGatewayAdapter) HandleRegister(w http.ResponseWriter, r *http.Reque
 	if ip := guestClientIP(r); !registerRateLimiter.Allow(ip) {
 		http.Error(w, `{"error":"too many sign-ups from here, slow down"}`, http.StatusTooManyRequests)
 		return
+	}
+
+	// The first account is the gateway's owner (gatewayOperator, isOwnWorkspace)
+	// and is made on the machine itself (POST /api/setup, the first run): a
+	// sign-up before it, from a freshly installed box on the network, would
+	// have made a stranger the owner.
+	if a.db != nil {
+		var users int
+		if err := a.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&users); err != nil || users == 0 {
+			http.Error(w, `{"error": "the first account is created on the gateway's machine itself: run memdoor there"}`, http.StatusForbidden)
+			return
+		}
 	}
 
 	var req RegisterRequest
@@ -192,10 +213,20 @@ func (a *AuthGatewayAdapter) HandleLogin(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	account := strings.ToLower(strings.TrimSpace(req.Email))
+	fromNetwork := !fromThisMachine(r)
+	if fromNetwork && !accountLoginLimiter.Allow(account) {
+		http.Error(w, `{"error":"too many attempts for this account, try again in a few minutes"}`, http.StatusTooManyRequests)
+		return
+	}
+
 	user, token, err := a.service.Login(r.Context(), req.Email, req.Password)
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusUnauthorized)
 		return
+	}
+	if fromNetwork {
+		accountLoginLimiter.Reset(account)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -226,9 +257,16 @@ func (a *AuthGatewayAdapter) HandleWhoami(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// The slug is what a window names its workspace by (?workspace=, the
+	// session key): the CLI checks a directory's pin against it.
+	slug := ""
+	if a.db != nil {
+		slug = (&dbSlugResolver{db: a.db}).ResolveSlug(user.WorkspaceID)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"user": user,
+		"user":           user,
+		"workspace_slug": slug,
 	})
 }
 

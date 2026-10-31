@@ -1,0 +1,109 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, k and limit. Your task is to find a non-empty subsequence of nums that:
+
+Has an alternating sum equal to k.
+Maximizes the product of all its numbers without the product exceeding limit.
+
+Return the product of the numbers in such a subsequence. If no subsequence satisfies the requirements, return -1.
+The alternating sum of a 0-indexed array is defined as the sum of the elements at even indices minus the sum of the elements at odd indices.
+ 
+Example 1:
+
+Input: nums = [1,2,3], k = 2, limit = 10
+Output: 6
+Explanation:
+The subsequences with an alternating sum of 2 are:
+
+[1, 2, 3]
+
+Alternating Sum: 1 - 2 + 3 = 2
+Product: 1 * 2 * 3 = 6
+
+
+[2]
+
+Alternating Sum: 2
+Product: 2
+
+
+
+The maximum product within the limit is 6.
+
+Example 2:
+
+Input: nums = [0,2,3], k = -5, limit = 12
+Output: -1
+Explanation:
+A subsequence with an alternating sum of exactly -5 does not exist.
+
+Example 3:
+
+Input: nums = [2,2,3,3], k = 0, limit = 9
+Output: 9
+Explanation:
+The subsequences with an alternating sum of 0 are:
+
+[2, 2]
+
+Alternating Sum: 2 - 2 = 0
+Product: 2 * 2 = 4
+
+
+[3, 3]
+
+Alternating Sum: 3 - 3 = 0
+Product: 3 * 3 = 9
+
+
+[2, 2, 3, 3]
+
+Alternating Sum: 2 - 2 + 3 - 3 = 0
+Product: 2 * 2 * 3 * 3 = 36
+
+
+
+The subsequence [2, 2, 3, 3] has the greatest product with an alternating sum equal to k, but 36 > 9. The next greatest product is 9, which is within the limit.
+
+ 
+Constraints:
+
+1 <= nums.length <= 150
+0 <= nums[i] <= 12
+-10^5 <= k <= 10^5
+1 <= limit <= 5000
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        
+```
+
+
+
+PLAN:
+Use a left-to-right DP over subsequence parity and alternating sum, representing all achievable sums as bitsets with an offset of max(nums) * ceil(n/2). For non-empty positive products, maintain two arrays of length limit+1 (even/odd parity), where each product entry stores a sum bitset; process each positive number by carrying old states, starting a new subsequence, and extending old states only when the product stays <= limit. Because a zero can make the final product 0 even if earlier positive products exceed limit, run a separate four-state bitset DP that tracks whether a zero has been selected. At the end, return the largest positive product whose bitset contains k; if none exists, return 0 if the zero DP can form k, otherwise -1. Early reject when |k| exceeds the sum offset.
+
+NOTES:
+
+## ideation
+The core difficulty is that the subsequence constraint couples three dimensions at once: original order determines which chosen elements get plus or minus signs, the alternating sum must match an exact target, and the product must be maximized while staying under a small cap. The array is too long for exponential search, but the numeric ranges are favorable: values are at most 12, so the absolute alternating sum is bounded by roughly max_value * ceil(n/2) (at most 900 under the constraints), and the product cap is only 5000. Because all numbers are nonnegative, every valid product is either positive (no zero chosen) or exactly zero (at least one zero chosen). Positive products are always better than zero, so the problem can be split into finding the best positive product and separately deciding whether a zero-product subsequence can achieve the target sum. A major subtlety is that a prefix whose positive product already exceeds the limit can still lead to a valid zero product if a zero is chosen later, so over-limit positive states cannot be used for positive answers but their sums must still be remembered for zero feasibility.
+
+Candidate approaches:
+
+- Product-major bitset DP for positive products, plus a separate zero-feasibility DP. Maintain, for each parity and each product up to limit, a bitset of achievable alternating sums. Process positive numbers left to right, carrying old states for skipping, starting new one-element subsequences, and extending old even-parity states with a plus shift and old odd-parity states with a minus shift while multiplying the product. For zero products, maintain a small boolean DP over parity and whether a zero has been selected, using bitsets of sums only. Pitfalls: must snapshot states before processing each element to avoid reusing the same element; product 1 can leave the product unchanged while changing parity and sum; bitsets need an offset and masking; zero handling must include prefixes whose positive product exceeded the limit; the empty subsequence must not be counted as a valid positive answer.
+
+- Sum-major product bitset DP. Maintain, for each parity and each achievable sum, a bitset of achievable positive products. Process positive numbers by shifting sums and transforming the product bitset by multiplication with the current value. Zero feasibility can still be handled separately. Pitfalls: multiplying a product bitset by a value is not a simple bit shift, so it requires iterating set bits or precomputed mapping tables; this can be much slower than shifting sum bitsets; memory is acceptable but transition cost is the main risk; product 1 and limit boundaries still need careful handling.
+
+- Pareto or max-product pruning per sum and parity. Store only a subset of products for each parity and sum, attempting to discard products that cannot lead to a better final answer. Pitfalls: simple “keep only the maximum product” is incorrect because a larger product may overflow the limit after future multiplications while a smaller product could remain valid; exact dominance is subtle under a product cap; aggressive pruning can easily become unsound, and weak pruning degenerates into storing the full product set anyway.
+
+- Meet-in-the-middle. Split the array into two halves, compute achievable parity/sum/product states for each half, then combine them. When concatenating a first-half subsequence and a second-half subsequence, the parity of the first half determines whether the second half’s alternating sum is added or subtracted, and the products multiply. Pitfalls: combining product pairs can become expensive even though the product cap is small; zeros require special handling because product zero can arise from either half; the empty subsequence must be excluded from the final answer; the sign-flip rule during concatenation is easy to get wrong; for n=150 this may not beat a full left-to-right DP.
+
+- Full state bitset or factor-exponent representation. Encode all states consisting of parity, sum, and product into one or more large bitsets, or represent products by prime-exponent vectors since values are small. Each item transition would shift sum blocks and map product blocks. Pitfalls: the product transition is not a simple shift and may require expensive precomputed masks or tables; the full state space is large, around parity times sum-range times product-cap; zeros create an absorbing product-zero state that complicates the representation; this approach may be overkill and harder to optimize in practice.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the full Python solution (enclosed in the required delimiters) using product-major positive DP with sum bitsets and four-state zero DP: offset = max(nums)*((n+1)//2), early exit if abs(k)>offset, mask, target bit; for x>0 snapshot old zero states and old pos lists, update zero no-zero/has-zero states by skip plus parity-flipping sum shifts, iterate p=1..limit//x for positive transitions, update opposite parity product p*x with left/right sum shifts, and add start state odd[x]; for x==0 update has-zero even/odd as old_has_even | old_no_odd | old_has_odd and old_has_odd | old_no_even | old_has_even; after all nums scan products limit..1 for target bit, else return 0 if has-zero even/odd has target, else -1; run provided examples and a small brute-force random test.

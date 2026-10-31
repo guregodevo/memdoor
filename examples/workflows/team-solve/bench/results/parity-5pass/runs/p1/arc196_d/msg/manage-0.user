@@ -1,0 +1,135 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The core difficulty is to turn a global choice of road strengths into a fast combinatorial feasibility test for many contiguous ranges of people. If we define prefix stamina values H_x for towns, with H_1 = 0 and H_{x+1} = H_x + w_x, then each person becomes a signed interval constraint. For a person with normalized interval [l, r] and direction right if S < T, left otherwise, the requirements are: H_l = H_r, and for every interior town x, H_x > H_l for a right-moving person, or H_x < H_l for a left-moving person. Since any integer assignment of H_x can be converted to integer road strengths by differences, the problem is purely about equalities and strict inequalities on a line.
+
+The main theoretical reduction is that a set of people is feasible exactly when it contains no incompatible pair. The incompatible pairs appear to be:
+- Same direction: their open intervals overlap and neither interval strictly contains the other. This includes crossing intervals and intervals sharing a left endpoint or sharing a right endpoint. Touching intervals, where one right endpoint equals the other left endpoint, are compatible. Strict containment is compatible.
+- Opposite direction: they have the same normalized left endpoint or the same normalized right endpoint. Merely touching at opposite endpoints, where one interval’s right endpoint equals the other’s left endpoint, is compatible.
+
+If this pairwise characterization is correct, then a range [L, R] is feasible iff it contains no incompatible pair. Then one can compute, for each person j, the largest earlier index i < j that is incompatible with j. A query [L, R] is Yes iff no such earlier index inside the range is at least L. Equivalently, a prefix maximum over these latest-bad indices answers all queries in O(1). The dual approach computes, for each i, the smallest later incompatible index j > i, and uses a suffix minimum to answer queries.
+
+The computational core is therefore to compute these bad-pair indices efficiently under interval crossing/nesting and endpoint-sharing rules.
+
+Candidate approaches and pitfalls:
+
+1. Latest-previous with online 2D range-max stabbing, which is essentially the supplied plan. Process people in input order. Endpoint conflicts are handled by simple arrays storing the latest index for each normalized left/right endpoint and direction. Same-direction crossing conflicts are handled by inserting, for each processed person, two strict rectangles in the (l, r) space that describe future people that would cross it. A point query at the current person’s (l, r) returns the maximum previous index causing a crossing conflict. Pitfalls: strict boundary handling is easy to get wrong; touching must be excluded from crossing rectangles; shared endpoints must be handled separately; max updates are not invertible, so inner structures need segment-tree-like behavior rather than simple difference arrays; a 2D structure per direction is needed; memory and time in Python may be high because of O(M log^2 N) behavior and coordinate compression.
+
+2. Earliest-future with reverse sweep and 2D point-update/range-min. Process people from M down to 1. Maintain a 2D structure per direction containing only future same-direction people. For the current person, query two strict crossing rectangles to find the minimum future index that crosses it. Then insert the current person into its direction structure. Endpoint conflicts are handled by right-to-left arrays storing the minimum future index for each normalized left/right endpoint and direction. A suffix minimum over the resulting next-bad indices answers queries in O(1). Pitfalls: this is dual to the previous approach and has similar 2D memory/time costs, but point updates and range-min queries may be slightly simpler than range-max updates and point queries. One must be careful that the structure contains only future indices, that self is not counted, and that identical same-direction intervals are not falsely treated as conflicts, although the input uniqueness avoids this case.
+
+3. Sliding window with dynamic conflict counting. Feasibility is hereditary: if a range is infeasible, any larger range containing it is also infeasible. Maintain a window [L, R] and the total number of incompatible pairs inside it. Increase R while the window remains feasible, record the maximum feasible R for each L, then remove L and continue. Adding or removing a person requires counting its conflicts with the current set: endpoint counts for same/opposite side endpoints, and 2D rectangle counting for same-direction crossing. Pitfalls: this uses 2D range counting with insertions and deletions, which can be implemented with a 2D BIT because sums support inclusion-exclusion, but the constant factor is larger than the latest-previous or earliest-future methods. Endpoint conflicts that share both endpoints may be double-counted; this is harmless for zero/nonzero if done consistently, but exact counting is cleaner. Python performance may be poor due to many rectangle-sum queries per add/remove.
+
+4. Offline parallel binary search or 3D dominance. For each person, binary search the latest previous or earliest future incompatible index. Each check asks whether there exists an incompatible person in a given index interval and geometric rectangle. This can be reduced to offline 3D orthogonal range emptiness/counting using CDQ divide-and-conquer or 2D BITs with index as an extra dimension. Pitfalls: this adds a logarithmic factor over the number of people, making it likely too slow in Python. Event sorting and coordinate compression become complex. It is conceptually different because it uses existence/counting rather than direct max/min 2D structures, but it is probably overkill unless the direct 2D max/min structures are too difficult.
+
+5. Block/sqrt decomposition or direct constraint solving as fallbacks. One can block person indices or coordinates and precompute summaries, or use bitsets to represent conflict sets. Directly solving each query by building equality components and checking strict inequality cycles is also possible for tiny cases. Pitfalls: block methods have awkward partial-block handling and can approach quadratic precomputation if not designed carefully; bitsets for 2e5 people are large; direct per-query solving is O(QM) and only useful for brute-force validation of the pairwise rule, not for the final solution.
+
+
+CURRENT TASK LIST:
+- [todo] Parse input and convert each person to (l, r, dir); build the update rectangles for the original and reversed 2D structures, using a direction block offset so queries only see the same direction.
+- [todo] Implement a flat 2D segment-tree/Fenwick structure: for each x-node compress y-values from the rectangles, support range-x point-y max update and point (x,y) prefix-y max query.
+- [todo] Sweep persons in index order: query the original and reversed structures for same-direction conflicts, query opposite-direction endpoint max arrays, take the maximum as `prev[j]`, then insert person j into the structures and endpoint arrays.
+- [todo] Build prefix maximum `bad[R]` from `prev` and answer each query [L,R] by printing Yes iff L > bad[R].
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- First validate the pairwise incompatibility rule on small random instances with a brute-force constraint solver using equality contraction and topological ordering or cycle detection.
+- Try the supplied latest-previous method: endpoint arrays plus two strict crossing rectangles in a 2D range-max update / point-query structure per direction, then prefix maximum over latest-bad indices for O(1) queries.
+- Try the dual reverse-sweep method: endpoint minimum arrays plus a 2D point-update / range-min structure per direction to compute earliest-future bad indices, then suffix minimum for O(1) queries.
+- If max-based 2D structures are too heavy, try the sliding-window method with 2D BIT range counting and two-pointer over L/R, maintaining conflict counts under add/remove.
+- Keep offline parallel binary search with 3D dominance, or a carefully designed block/sqrt decomposition, as fallbacks, but expect them to be more complex or slower in Python.

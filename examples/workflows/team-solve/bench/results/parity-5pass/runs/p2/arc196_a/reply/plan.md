@@ -1,0 +1,10 @@
+### PLAN
+Model a complete removal order as a non-crossing matching of the original positions, and note that for any matching the best orientation of each pair makes the larger value positive, so the score is a signed sum with one + and one - per pair. For an even-length block, the upper bound is obtained by assigning + to the largest half and - to the smallest half; this sign pattern can be realized by repeatedly deleting adjacent opposite signs, and every + is at least every -, so the realized absolute differences sum to that bound. Thus an even block's optimal value is sum(largest half) - sum(smallest half). If N is even, apply this to the whole array. If N is odd, one element remains; it must be at an odd 1-indexed position and splits the array into two independent even blocks, so the answer is the maximum over such positions of the left block value plus the right block value. Compute all even-prefix and even-suffix block values in O(N log N) using two heaps that maintain the smallest and largest halves.
+
+### TASKS
+- Derive the reduction and edge cases: removal orders correspond to non-crossing matchings; an even block's optimum is sum of its largest half minus sum of its smallest half; for odd N the unmatched element must be at an odd 1-indexed index and separates left/right even blocks.
+- Implement the even-N case by sorting A and returning sum(A[N//2:]) - sum(A[:N//2]).
+- Implement a reusable two-heap structure (max-heap for the lower half, min-heap for the upper half, with running sums) that supports insert(x) and returns the current difference after an even number of insertions.
+- Compute pref[k] for every even k from 0 to N-1 by scanning left to right, inserting elements one by one, and storing the structure's difference when the prefix length is even.
+- Compute suffix values by scanning right to left with a second structure; whenever the current suffix length is even, combine it with pref[start-1] and update the maximum for the odd-N case.
+- Write the final Python program with fast stdin/stdout, 64-bit integer arithmetic, and handle edge cases such as N=2, N=3, and all equal values.

@@ -1,0 +1,8 @@
+- **Core reduction:** A 400 number has every prime exponent even, so it is a perfect square. If N = m^2, then N has exactly two distinct prime factors exactly when m has exactly two distinct prime factors. Thus the answer for A is the square of the largest m <= isqrt(A) with omega(m) = 2.
+- **Limit:** Since A <= 10^12, m <= 10^6. The code reads all queries, computes max_a, and sieves only up to isqrt(max_a), which is at most 10^6 and at least 6 under the constraints.
+- **Sieve:** omega is a bytearray of length n+1. For i from 2 to n, if omega[i] == 0 then i is prime; increment omega[j] for all multiples j of i. This counts distinct prime factors because each prime is applied once to its multiples. Total inner iterations are sum_{p<=n} n/p, about 2.9 million for n=10^6.
+- **Prefix array:** best is an array of unsigned ints where best[i] is the largest integer <= i with omega == 2. Scan i from 6 to n, keep last valid value, and store it in best[i]. Values below 6 remain 0.
+- **Query handling:** For each A, r = isqrt(A), b = best[r], output b*b. Squaring is monotone, so this is the largest valid square not exceeding A. Use math.isqrt for exact integer square roots.
+- **I/O and memory:** Read all tokens with sys.stdin.buffer.read().split(), convert queries to ints, delete token list before preprocessing. Build output list and join once. bytearray and array keep memory low; Python ints handle 10^12 without overflow.
+- **Complexity:** Preprocessing O(n log log n + n) time and O(n) memory; queries O(Q) time. With n <= 10^6 and Q <= 2e5 this is fast.
+- **Edge cases:** Smallest valid base is 6, giving 36. For r < 6 best[r] = 0, but the constraints guarantee A >= 36. Distinct prime factors are counted, not exponents; squares of primes are not valid.

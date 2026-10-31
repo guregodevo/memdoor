@@ -1,0 +1,530 @@
+PROBLEM:
+### Question
+There is a directed graph with 2N vertices and 2N-1 edges.
+The vertices are numbered 1, 2, \ldots, 2N, and the i-th edge is a directed edge from vertex i to vertex i+1.
+You are given a length-2N string S = S_1 S_2 \ldots S_{2N} consisting of N Ws and N Bs.
+Vertex i is colored white if S_i is W, and black if S_i is B.
+You will perform the following series of operations:
+
+- Partition the 2N vertices into N pairs, each consisting of one white vertex and one black vertex.
+- For each pair, add a directed edge from the white vertex to the black vertex.
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs such that the final graph is strongly connected.
+ Notes on strongly connectedness
+A directed graph is strongly connected if and only if it is possible to travel from any vertex to any vertex by following edges.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+
+Output
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs so that the final graph is strongly connected.
+
+Constraints
+
+
+- 1 \le N \le 2\times 10^5
+- S is a length 2N string consisting of N Ws and N Bs.
+- N is an integer.
+
+Sample Input 1
+
+2
+BWBW
+
+Sample Output 1
+
+1
+
+Vertices 2,4 are white, and vertices 1,3 are black.
+Let (u,v) denote an edge from vertex u to vertex v.
+If we pair up vertices as (2,1), (4,3), the final graph have the edges (1,2), (2,3), (3,4), (2,1), (4,3). In this case, for example, it is impossible to travel from vertex 3 to vertex 1 by following edges, so this graph is not strongly connected.
+If we pair up vertices as (2,3), (4,1), the final graph have the edges (1,2), (2,3), (3,4), (2,3), (4,1). This graph is strongly connected.
+Therefore, there is exactly 1 way to pair up the vertices that satisfies the condition.
+
+Sample Input 2
+
+4
+BWWBWBWB
+
+Sample Output 2
+
+0
+
+No matter how you pair up the vertices, you cannot satisfy the condition.
+
+Sample Input 3
+
+9
+BWWBWBBBWWBWBBWWBW
+
+Sample Output 3
+
+240792
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+import random
+import gc
+from itertools import combinations, permutations
+
+MOD = 998244353
+G = 3
+
+
+def prepare_fact(n):
+    fact = [1] * (n + 1)
+    for i in range(1, n + 1):
+        fact[i] = fact[i - 1] * i % MOD
+    invfact = [1] * (n + 1)
+    invfact[n] = pow(fact[n], MOD - 2, MOD)
+    for i in range(n, 0, -1):
+        invfact[i - 1] = invfact[i] * i % MOD
+    return fact, invfact
+
+
+def compute_h(n, s):
+    h = [0] * (n + 1)
+    w = 0
+    b = 0
+    for ch in s:
+        if ch == 'W':
+            w += 1
+        else:
+            b += 1
+            a = b - 1
+            if 1 <= a <= n - 1:
+                h[a] = w
+    h[n] = n
+    return h
+
+
+def solve_slow(n, s, fact=None, invfact=None):
+    if n == 0:
+        return 1
+    if s[0] == 'W' or s[-1] == 'B':
+        return 0
+    if n == 1:
+        return 1
+    if fact is None:
+        fact, invfact = prepare_fact(n)
+    h = compute_h(n, s)
+    r = [0] * (n + 1)
+    mod = MOD
+    f = fact
+    inv = invfact
+    for j in range(1, n + 1):
+        hj = h[j]
+        if hj < j:
+            continue
+        total = f[hj]
+        for i in range(1, j):
+            ri = r[i]
+            if ri:
+                total += ri * f[hj - i]
+        r[j] = (-total % mod) * inv[hj - j] % mod
+    return (-r[n]) % mod
+
+
+def prepare_roots(max_size):
+    max_log = max_size.bit_length() - 1
+    f_roots = [None] * (max_log + 1)
+    i_roots = [None] * (max_log + 1)
+    inv_pow2 = [1] * (max_log + 1)
+    inv2 = (MOD + 1) // 2
+    for k in range(1, max_log + 1):
+        inv_pow2[k] = inv_pow2[k - 1] * inv2 % MOD
+
+    mod = MOD
+    for k in range(1, max_log + 1):
+        length = 1 << k
+        half = length >> 1
+        wlen = pow(G, (mod - 1) // length, mod)
+        iwlen = pow(wlen, mod - 2, mod)
+        roots = [1] * half
+        iroots = [1] * half
+        for j in range(1, half):
+            roots[j] = roots[j - 1] * wlen % mod
+            iroots[j] = iroots[j - 1] * iwlen % mod
+        f_roots[k] = roots
+        i_roots[k] = iroots
+    return f_roots, i_roots, inv_pow2
+
+
+def solve_fast(n, s, fact=None, invfact=None, roots=None,
+               force_ntt=False, direct_threshold=20000):
+    if n == 0:
+        return 1
+    if s[0] == 'W' or s[-1] == 'B':
+        return 0
+    if n == 1:
+        return 1
+
+    if fact is None:
+        fact, invfact = prepare_fact(n)
+
+    if roots is None:
+        max_size = 1 << (2 * n - 1).bit_length()
+        f_roots, i_roots, inv_pow2 = prepare_roots(max_size)
+    else:
+        f_roots, i_roots, inv_pow2 = roots
+        max_size = 1 << (2 * n - 1).bit_length()
+        cur_size = 1 << (len(f_roots) - 1)
+        if cur_size < max_size:
+            f_roots, i_roots, inv_pow2 = prepare_roots(max_size)
+
+    mod = MOD
+    h = compute_h(n, s)
+
+    T = [0] * (n + 1)
+    is_good = bytearray(n + 1)
+    good_pref = [0] * (n + 1)
+    for j in range(1, n + 1):
+        hj = h[j]
+        if hj >= j:
+            is_good[j] = 1
+            T[j] = fact[hj]
+        good_pref[j + 1] = good_pref[j] + is_good[j]
+
+    next_good = [n + 1] * (n + 2)
+    nxt = n + 1
+    for j in range(n, 0, -1):
+        if is_good[j]:
+            nxt = j
+        next_good[j] = nxt
+
+    prev_good = [0] * (n + 1)
+    prv = 0
+    for j in range(1, n + 1):
+        if is_good[j]:
+            prv = j
+        prev_good[j] = prv
+
+    R = [0] * (n + 1)
+
+    def ntt(a, f_roots=f_roots, mod=MOD):
+        ntt_n = len(a)
+        length = ntt_n
+        k = ntt_n.bit_length() - 1
+        while length > 1:
+            half = length >> 1
+            roots = f_roots[k]
+            for i in range(0, ntt_n, length):
+                base = i
+                for j in range(half):
+                    idx = base + j
+                    u = a[idx]
+                    v = a[idx + half]
+                    x = u + v
+                    if x >= mod:
+                        x -= mod
+                    y = u - v
+                    if y < 0:
+                        y += mod
+                    a[idx] = x
+                    a[idx + half] = (y * roots[j]) % mod
+            length = half
+            k -= 1
+
+    def intt(a, i_roots=i_roots, inv_pow2=inv_pow2, mod=MOD):
+        intt_n = len(a)
+        length = 2
+        k = 1
+        while length <= intt_n:
+            half = length >> 1
+            roots = i_roots[k]
+            for i in range(0, intt_n, length):
+                base = i
+                for j in range(half):
+                    idx = base + j
+                    u = a[idx]
+                    v = (a[idx + half] * roots[j]) % mod
+                    x = u + v
+                    if x >= mod:
+                        x -= mod
+                    y = u - v
+                    if y < 0:
+                        y += mod
+                    a[idx] = x
+                    a[idx + half] = y
+            length <<= 1
+            k += 1
+        inv_n = inv_pow2[intt_n.bit_length() - 1]
+        if inv_n != 1:
+            for i in range(intt_n):
+                a[i] = (a[i] * inv_n) % mod
+
+    def apply(l, mid, r):
+        h_loc = h
+        T_loc = T
+        R_loc = R
+        fact_loc = fact
+        good_loc = is_good
+
+        first = next_good[mid + 1]
+        if first > r:
+            return
+        last = prev_good[r]
+        Hmin = h_loc[first]
+        Hmax = h_loc[last]
+        good_count = good_pref[r + 1] - good_pref[mid + 1]
+
+        nz_count = 0
+        for i in range(l, mid + 1):
+            if R_loc[i]:
+                nz_count += 1
+        if nz_count == 0:
+            return
+
+        L = mid - l + 1
+        Hspan = Hmax - Hmin
+
+        if Hspan == 0 and not force_ntt:
+            val = 0
+            for i in range(l, mid + 1):
+                ri = R_loc[i]
+                if ri:
+                    val += ri * fact_loc[Hmin - i]
+            val %= mod
+            if val:
+                for j in range(mid + 1, r + 1):
+                    if good_loc[j]:
+                        x = T_loc[j] + val
+                        if x >= mod:
+                            x -= mod
+                        T_loc[j] = x
+            return
+
+        cost_j = nz_count * good_count
+        cost_h = nz_count * (Hspan + 1)
+        direct_cost = cost_j if cost_j <= cost_h else cost_h
+        use_j = cost_j <= cost_h
+
+        conv_len = 2 * L + Hspan - 1
+        ntt_len = 1 << (conv_len - 1).bit_length()
+
+        if not force_ntt:
+            ntt_cost = ntt_len * (ntt_len.bit_length() - 1) * 3
+            if direct_cost <= direct_threshold or direct_cost * 2 <= ntt_cost:
+                nz = []
+                for i in range(l, mid + 1):
+                    ri = R_loc[i]
+                    if ri:
+                        nz.append((i, ri))
+
+                if use_j:
+                    if nz_count == 1:
+                        i0, ri0 = nz[0]
+                        for j in range(mid + 1, r + 1):
+                            if good_loc[j]:
+                                T_loc[j] = (T_loc[j] + ri0 * fact_loc[h_loc[j] - i0]) % mod
+                    else:
+                        for j in range(mid + 1, r + 1):
+                            if good_loc[j]:
+                                hj = h_loc[j]
+                                total = 0
+                                for i, ri in nz:
+                                    total += ri * fact_loc[hj - i]
+                                T_loc[j] = (T_loc[j] + total) % mod
+                else:
+                    hspan1 = Hspan + 1
+                    vals = [0] * hspan1
+                    for i, ri in nz:
+                        base = Hmin - i
+                        for d in range(hspan1):
+                            vals[d] += ri * fact_loc[base + d]
+                    for d in range(hspan1):
+                        vals[d] %= mod
+                    for j in range(mid + 1, r + 1):
+                        if good_loc[j]:
+                            add = vals[h_loc[j] - Hmin]
+                            if add:
+                                x = T_loc[j] + add
+                                if x >= mod:
+                                    x -= mod
+                                T_loc[j] = x
+                return
+
+        A = R_loc[l:mid + 1] + [0] * (ntt_len - L)
+        start = Hmin - mid
+        length_b = Hspan + L
+        B = fact_loc[start:start + length_b] + [0] * (ntt_len - length_b)
+
+        ntt(A)
+        ntt(B)
+        for i in range(ntt_len):
+            A[i] = (A[i] * B[i]) % mod
+        intt(A)
+        del B
+
+        base_idx = L - 1
+        for j in range(mid + 1, r + 1):
+            if good_loc[j]:
+                add = A[base_idx + h_loc[j] - Hmin]
+                if add:
+                    x = T_loc[j] + add
+                    if x >= mod:
+                        x -= mod
+                    T_loc[j] = x
+
+    def cdq(l, r):
+        if l == r:
+            hj = h[l]
+            if hj >= l:
+                R[l] = (-T[l] * invfact[hj - l]) % mod
+            return
+        mid = (l + r) >> 1
+        cdq(l, mid)
+        apply(l, mid, r)
+        cdq(mid + 1, r)
+
+    cdq(1, n)
+    return (-R[n]) % mod
+
+
+def brute_count_direct(n, s):
+    whites = [i for i, ch in enumerate(s, 1) if ch == 'W']
+    blacks = [i for i, ch in enumerate(s, 1) if ch == 'B']
+    cnt = 0
+    for perm in permutations(whites):
+        ok = True
+        for k in range(1, 2 * n):
+            found = False
+            for t, b in enumerate(blacks):
+                if b <= k < perm[t]:
+                    found = True
+                    break
+            if not found:
+                ok = False
+                break
+        if ok:
+            cnt += 1
+    return cnt % MOD
+
+
+def run_selftest():
+    sys.setrecursionlimit(1_000_000)
+    gc.disable()
+
+    samples = [
+        (2, 'BWBW', 1),
+        (4, 'BWWBWBWB', 0),
+        (9, 'BWWBWBBBWWBWBBWWBW', 240792),
+    ]
+    for n, s, expected in samples:
+        slow = solve_slow(n, s)
+        fast = solve_fast(n, s)
+        if slow != expected % MOD or fast != expected % MOD:
+            print(f"FAIL sample n={n} s={s} slow={slow} fast={fast} expected={expected}")
+            return
+
+    for n in range(1, 6):
+        fact, invfact = prepare_fact(n)
+        max_size = 1 << (2 * n - 1).bit_length()
+        roots = prepare_roots(max_size)
+        length = 2 * n
+        for combo in combinations(range(length), n):
+            arr = ['B'] * length
+            for pos in combo:
+                arr[pos] = 'W'
+            s = ''.join(arr)
+            brute = brute_count_direct(n, s)
+            slow = solve_slow(n, s, fact, invfact)
+            fast = solve_fast(n, s, fact, invfact, roots, force_ntt=True)
+            if brute != slow % MOD or brute != fast % MOD:
+                print(f"FAIL exhaustive n={n} s={s} brute={brute} slow={slow} fast={fast}")
+                return
+
+    random.seed(123456789)
+    stress_cases = [
+        (8, 30, True),
+        (16, 20, True),
+        (32, 10, True),
+        (64, 10, False),
+        (128, 5, False),
+        (256, 3, False),
+        (512, 2, False),
+        (1024, 1, False),
+    ]
+    for n, trials, force in stress_cases:
+        fact, invfact = prepare_fact(n)
+        max_size = 1 << (2 * n - 1).bit_length()
+        roots = prepare_roots(max_size)
+        for _ in range(trials):
+            while True:
+                chars = ['W'] * n + ['B'] * n
+                random.shuffle(chars)
+                s = ''.join(chars)
+                if s[0] == 'B' and s[-1] == 'W':
+                    break
+            slow = solve_slow(n, s, fact, invfact)
+            fast = solve_fast(n, s, fact, invfact, roots, force_ntt=force)
+            if slow != fast % MOD:
+                print(f"FAIL random n={n} s={s} slow={slow} fast={fast}")
+                return
+
+    print("SELFTEST PASSED")
+
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == '--selftest':
+        run_selftest()
+        return
+
+    data = sys.stdin.read().split()
+    if not data:
+        return
+
+    if data[0] == 'SELFTEST':
+        run_selftest()
+        return
+
+    sys.setrecursionlimit(1_000_000)
+    gc.disable()
+
+    n = int(data[0])
+    s = data[1].strip()
+    print(solve_fast(n, s))
+
+
+if __name__ == '__main__':
+    main()
+
+NOTES:
+- **Strong connectivity reduction:** The fixed edges are the directed path `1 -> 2 -> ... -> 2N`. The final graph is strongly connected iff every proper prefix `[1..k]` has at least one added edge entering it from the suffix. Added edges go from white to black, so an entering edge exists exactly when some black in the prefix is paired with a white outside the prefix.
+- **Pairing as permutation:** Order black vertices `b_1 < ... < b_N` and white vertices `w_1 < ... < w_N`. A pairing is a permutation `pi` where black `b_j` is paired with white `w_{pi(j)}`. A prefix containing `a` blacks and `c` whites is closed iff `max(pi(1..a)) <= c`.
+- **Boundary `h`:** For `a=1..N-1`, let `h[a]` be the number of whites before the `(a+1)`-st black. The hardest prefix with `a` blacks is just before that black, so strong connectivity is equivalent to `M_a > h[a]` for all `a=1..N-1`, where `M_a = max(pi(1..a))`. Set `h[N]=N` as a sentinel. Early exits: if `S[0]=='W'` or `S[-1]=='B'`, answer is 0. For `N=1`, the only non-early string is `BW`, answer 1.
+- **Inclusion-exclusion recurrence:** Let `R[0]=1`. For `j>=1`, if `h[j] < j` then `R[j]=0`; otherwise
+  `R[j] = - ( fact[h[j]] + sum_{i=1}^{j-1} R[i] fact[h[j]-i] ) * invfact[h[j]-j]`.
+  The answer is `-R[N] mod MOD`. The initial `fact[h[j]]` is the `i=0` contribution.
+- **CDQ structure:** Maintain `T[j]` as the accumulated sum `fact[h[j]] + sum_{i<j} R[i] fact[h[j]-i]`. In `cdq(l,r)`, solve left half, add all left-to-right contributions, then solve right half. At a leaf, compute `R[j]` from `T[j]`.
+- **CDQ convolution mapping:** For node `[l,r]` with `mid`, let `L=mid-l+1`. Consider only good right indices `j` with `h[j]>=j`. Let `Hmin=h[first_good]`, `Hmax=h[last_good]`, `Hspan=Hmax-Hmin`. Use
+  `A[0..L-1] = R[l..mid]`,
+  `B[0..Hspan+L-1] = fact[Hmin-mid .. Hmax-l]`.
+  Then the needed contribution for a right index with `h[j]=H` is the convolution coefficient at index `L-1 + (H-Hmin)`. The convolution length is `2L+Hspan-1`, so NTT size is the next power of two at least that.
+- **Hybrid direct/NTT:** If `Hspan==0`, compute one scalar `sum R[i] fact[Hmin-i]` and add it to all good right indices. Otherwise estimate direct costs: over good indices `nz_count*good_count`, or over H-values `nz_count*(Hspan+1)`. Use direct when the estimated cost is small or much smaller than the estimated NTT cost; otherwise use NTT. This avoids many tiny NTTs and handles sparse/gapped `h` cases efficiently.
+- **NTT implementation:** Use modulo `998244353` with primitive root `3`. Precompute forward and inverse root powers up to the next power of two `>= 2N`. Use decimation-in-frequency forward NTT and decimation-in-time inverse NTT, which avoids explicit bit reversal when the two forward transforms and inverse transform are paired. Inverse scales by the precomputed inverse power of two.
+- **Good-index preprocessing:** `is_good[j] = (h[j] >= j)`. Prefix counts give `good_count` in any interval. `next_good` and `prev_good` give the first and last good index in a right interval in O(1), hence `Hmin` and `Hmax`.
+- **Complexity and memory:** Worst-case CDQ/NTT is `O(N log^2 N)` with a direct fallback for small/sparse nodes. Memory is `O(N + max_ntt_size)` for factorials, DP arrays, good-index arrays, root tables, and temporary NTT arrays.
+- **Self-test:** The program supports `--selftest` or `SELFTEST` as the first stdin token. It checks the three samples, exhaustive small `N<=5` against direct brute force, and random medium `N` against the O(N^2) solver. `force_ntt=True` is used on small stress cases to exercise the NTT path.
+
+
+CURRENT TASK LIST:
+- [done] Derive and lock the black-index recurrence: `h[a]=#W before (a+1)-st B`, sentinel `h[N]=N`, `R[j]=(-fact[h[j]] - sum_{i<j} R[i] fact[h[j]-i]) * invfact[h[j]-j]` for possible `j`, answer `=-R[N]`, with early exits first W / last B.
+- [done] Implement factorial/inv-factorial precomputation up to `N` modulo 998244353.
+- [done] Implement an O(N^2) reference solver for the recurrence and a brute-force matcher for small `N`; validate on samples and small/random strings.
+- [todo] Implement the CDQ/NTT accelerated solver with reduced factorial segment, direct fallback, and DIF/DIT root tables; stress-test against the O(N^2) reference.
+- [todo] Tune the direct/NTT threshold and optimize the Python NTT implementation for `N=2e5` (memory, transform sizes, root precomputation).
+- [todo] Run final validation on samples, exhaustive small cases, random medium cases, and a large performance test, then finalize the submitted code.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: FAILED -- passed 1/3. The current solution is WRONG. First failing case: input='2\nBWBW\n' expected='1' got='<runtime error: Traceback (most recent call last):\n  File "<scratch>/onecall/p5/arc196_c/solution.py", line 426, in <module>\n >'. Fix the bug or, if this approach keeps failing, switch to a DIFFERENT approach.] worker reported 'solved' on: Implement the CDQ/NTT acceleration for the recurrence: in each CDQ node, add con. - **Strong connectivity reduction:** The fixed edges are the directed path `1 -> 2 -> ... -> 2N`. The final graph is strongly connected iff every proper prefix `[1..k]` has at least one added edge ent
+
+PROPOSED NEW STEPS:
+(none)

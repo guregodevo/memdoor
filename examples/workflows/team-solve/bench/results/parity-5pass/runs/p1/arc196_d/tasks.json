@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "desc": "Validate the pairwise incompatibility rule with a brute-force harness.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the actual solver: normalize intervals, compute prev via endpoint arrays and two monotonic segment-tree modes per direction, build prefix max, and answer queries.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Verify the solver on the provided samples (passed) and edge cases covered by the prior brute-force validation.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Optimize for the constraints: process one mode at a time, use packed ints/bisect, fast I/O, and free structures between passes.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 5,
+    "desc": "Finalize the solution; no failing samples or counterexamples remain.",
+    "status": "done",
+    "result": ""
+  }
+]

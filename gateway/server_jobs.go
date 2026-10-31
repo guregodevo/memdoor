@@ -30,6 +30,11 @@ func (s *Server) executeAgentJob(ctx context.Context, job *queue.AgentJob) error
 	queueLog := logs.New("Queue")
 	sessionLog := queueLog.WithSession(job.SessionKey)
 
+	if ws := turnWorkspace(job); ws != "" && !s.isOwnWorkspace(ctx, ws) {
+		sessionLog.Warn("Turn refused: not the gateway's own workspace", slog.String("workspace", ws))
+		return fmt.Errorf("this gateway runs turns for its own workspace only: its model and machine are its owner's")
+	}
+
 	// Make this turn cancellable so a client "cancel" message (Esc) can interrupt
 	// it mid-generation. The cancel propagates through ctx → ProcessMessage →
 	// the LLM call → the engine's per-token check.

@@ -536,6 +536,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				// OFFLINE: never let a prompt vanish into a dead connection — queue
 				// it; the reconnect handler flushes the queue when the link is back.
+				if m.refused != "" {
+					m.note(refusalNote(m.refused))
+					m.viewport.SetContent(m.renderMessages())
+					m.gotoBottom()
+					return m, nil
+				}
 				if !m.connected {
 					m.queued = append(m.queued, text)
 					m.note(fmt.Sprintf("⚠ offline — queued (%d); will send when reconnected.", len(m.queued)))
@@ -601,6 +607,10 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.input.SetWidth(msg.Width - 4)
 
 	case websocketConnectedMsg:
+		if m.refused != "" {
+			// The dial answered before the refusal closed it.
+			return m, nil
+		}
 		wasDown := m.everConnected && !m.connected
 		m.connected = true
 		m.everConnected = true
@@ -638,6 +648,14 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.connected = false
 		m.err = msg.err
+		return m, nil
+
+	case websocketRefusedMsg:
+		m.connected = false
+		m.refused = msg.reason
+		m.note(refusalNote(msg.reason))
+		m.viewport.SetContent(m.renderMessages())
+		m.gotoBottom()
 		return m, nil
 
 	case assistantThinkingMsg:

@@ -5,9 +5,14 @@ import (
 	"database/sql"
 	"net/http"
 
+	"github.com/google/uuid"
+
+	"memdoor/gateway/queue"
 	"memdoor/pkg/authorization"
 	"memdoor/pkg/repository"
+	"memdoor/pkg/sandbox"
 	"memdoor/pkg/shared"
+	sharedctx "memdoor/pkg/shared/context"
 )
 
 // Who the gateway is. Every sign-up is admin of a workspace of its own
@@ -101,6 +106,55 @@ func sessionIsCallers(ctx context.Context, rf repository.RepositoryFactory, key 
 	}
 	owners := firstAccountWorkspace(ctx, rf)
 	return owners != "" && ec.WorkspaceID == owners
+}
+
+// THE GATEWAY'S MODEL AND MACHINE ARE ITS OWN WORKSPACE'S (2026-10-30). Sign-up
+// stays open (each sign-up a workspace of its own, its people kept apart), but
+// a turn runs on the gateway's keys and as the gateway's user, so only the
+// first account's workspace runs one: anyone who reached a gateway on the
+// network could sign up and have its coder run bash on the owner's key.
+
+// turnWorkspace is the workspace a queued turn runs for: its sandbox
+// context's, else its conversation key's; "" when it names none (a spawned
+// run, a scheduled check — started only from the gateway's own workspace).
+func turnWorkspace(job *queue.AgentJob) string {
+	if job.Context != nil {
+		if sc, ok := job.Context.Value(sharedctx.SandboxContextKey).(sandbox.SandboxContext); ok {
+			if sc.WorkspaceID != "" {
+				return sc.WorkspaceID
+			}
+			if sc.WorkspaceSlug != "" {
+				return sc.WorkspaceSlug
+			}
+		}
+	}
+	return shared.ParseSessionID(job.SessionKey).WorkspaceID
+}
+
+// isOwnWorkspace reports whether ws, an id or a slug, is the first account's.
+// Before any account there is no one else's workspace.
+func (s *Server) isOwnWorkspace(ctx context.Context, ws string) bool {
+	owner := firstAccountWorkspace(ctx, s.repoFactory)
+	if owner == "" || ws == owner {
+		return true
+	}
+	if db, ok := s.repoFactory.DB().(*sql.DB); ok && db != nil {
+		if slug := (&dbSlugResolver{db: db}).ResolveSlug(owner); slug != "" && ws == slug {
+			return true
+		}
+	}
+	return false
+}
+
+// isOwnChannel reports whether a channel belongs to the gateway's own
+// workspace (a channel that cannot be found is not).
+func (s *Server) isOwnChannel(ctx context.Context, channelID string) bool {
+	id, err := uuid.Parse(channelID)
+	if err != nil || s.repoFactory == nil {
+		return false
+	}
+	ch, err := s.repoFactory.Channels().GetByID(ctx, id)
+	return err == nil && ch != nil && s.isOwnWorkspace(ctx, ch.WorkspaceID)
 }
 
 // conversationAllowed is sessionIsCallers for a request: signed in, and the

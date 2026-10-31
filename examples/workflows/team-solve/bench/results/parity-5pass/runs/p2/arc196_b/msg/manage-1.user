@@ -1,0 +1,221 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+
+def main():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+    t = int(data[0])
+    idx = 1
+    out = []
+    append = out.append
+    mod = 998244353
+    a = 65
+    ab = b'A'
+
+    for _ in range(t):
+        h = int(data[idx])
+        w = int(data[idx + 1])
+        idx += 2
+
+        n = h + w
+        parent = [-1] * n
+        parity = [0] * n
+        comps = n
+        col_pref = [0] * w
+
+        valid = True
+        base = h
+        cp = col_pref
+        par = parent
+        parit = parity
+        cols = range(w)
+
+        for i in range(h):
+            s = data[idx]
+            idx += 1
+
+            if s.count(ab) & 1:
+                valid = False
+                idx += h - i - 1
+                break
+
+            row_pref = 0
+            for j in cols:
+                if s[j] == a:
+                    row_pref ^= 1
+                    cp[j] ^= 1
+                else:
+                    label = 1 ^ row_pref ^ cp[j]
+
+                    x = i
+                    accx = 0
+                    while par[x] >= 0:
+                        p = par[x]
+                        accx ^= parit[x]
+                        gp = par[p]
+                        if gp >= 0:
+                            parit[x] ^= parit[p]
+                            par[x] = gp
+                        x = p
+                    rx = x
+                    px = accx
+
+                    y = base + j
+                    accy = 0
+                    while par[y] >= 0:
+                        p = par[y]
+                        accy ^= parit[y]
+                        gp = par[p]
+                        if gp >= 0:
+                            parit[y] ^= parit[p]
+                            par[y] = gp
+                        y = p
+                    ry = y
+                    py = accy
+
+                    if rx == ry:
+                        if (px ^ py) != label:
+                            valid = False
+                            idx += h - i - 1
+                            break
+                    else:
+                        val = px ^ py ^ label
+                        if par[rx] > par[ry]:
+                            rx, ry = ry, rx
+                        par[rx] += par[ry]
+                        par[ry] = rx
+                        parit[ry] = val
+                        comps -= 1
+
+            if not valid:
+                break
+
+        if valid and 1 in col_pref:
+            valid = False
+
+        if valid:
+            append(str(pow(2, comps, mod)))
+        else:
+            append("0")
+
+    sys.stdout.write("\n".join(out))
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Edge variables:** Put one binary variable on each torus grid edge. No dead ends means the two sides of a shared edge use the same variable. For a cell, type A is equivalent to left xor right = 1 and top xor bottom = 1. Type B is equivalent to left xor right = 0, top xor bottom = 0, and left xor top = 1.
+- **Row and column parity:** Xoring all horizontal equations around a row forces the number of A cells in that row to be even. Xoring vertical equations around a column forces the number of A cells in that column to be even. If any row or column parity is odd, the answer is 0. Rows are checked quickly with bytes.count before processing; columns are checked from the final col_pref array.
+- **Free bits:** When a row has even A parity, all horizontal edges in that row are determined by one free bit, chosen as the left edge of column 0, plus the parity of A cells before each column. When a column has even A parity, all vertical edges in that column are determined by one free bit, chosen as the top edge of row 0, plus the parity of A cells before each row.
+- **B-cell equations:** For a B cell at (i, j), the condition left xor top = 1 becomes row_bit_i xor col_bit_j = 1 xor row_prefix_before_j xor col_prefix_before_i. A cells add no cross-row/column equation beyond the parity conditions.
+- **Counting:** There are H + W variables and one labeled XOR equation for each B cell. A parity union-find checks consistency and counts connected components. If consistent, the number of assignments is 2^(number of components), including isolated row and column variables, modulo 998244353.
+- **Implementation details:** Read all input tokens at once. The union-find parent array stores negative sizes for roots; parity[x] is the xor from x to its parent. The find operation is inlined with path halving and returns the root and xor-to-root. Union by size attaches the smaller root to the larger root, and the attached root parity is px xor py xor label. col_pref[j] stores the parity of A cells above the current row, and row_pref stores the parity of A cells left of the current column. Once a case becomes invalid, remaining row tokens for that case are skipped.
+- **Complexity:** O(sum HW alpha(H + W)) time and O(H + W + input) memory per case, well within the 1e6 total cell limit.
+- **Sample check:** The three sample cases evaluate to 2, 0, and 2.
+
+
+CURRENT TASK LIST:
+- [done] Derive the XOR/parity reduction and identify the DSU formulation and pitfalls.
+- [todo] Implement the full solution with fast input, weighted DSU, prefix parity scanning, row/column parity checks, and modular power output.
+- [todo] Verify on the sample and on edge cases (all A with odd row/col parity, all B, inconsistent B-label cycles, many small cases, and total HW=1e6 performance).
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 1 public samples -- the solution looks correct.] worker reported 'solved' on: Implement the complete Python solution using the parity/DSU reduction: read all . - **Edge variables:** Put one binary variable on each torus grid edge. No dead ends means the two sides of a shared edge use the same variable. For a cell, type A is equivalent to left xor right = 1 a
+
+PROPOSED NEW STEPS:
+(none)

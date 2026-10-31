@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "desc": "Implement the complete Python program: parse input, build l/r/sign, compute earliest later bad partner via backward same-left/right scan and four sign/original-mirrored crossing sweeps using a segment tree over right endpoints with min-heaps of left endpoints, combine partners, build suffix minima, and answer queries.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Verify correctness and performance: run the provided samples, and run a separate small random brute-force difference-constraints checker (including touching endpoints, opposite-sign crossings, and duplicate reversed intervals) to confirm the pairwise bad-pair characterization and debug any mismatches.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "If the pairwise certificate is disproved or the implementation is too slow, switch to a different approach (offline descending 2D range minimum or sliding-window dynamic conflict maintenance) and re-verify.",
+    "status": "pending",
+    "result": ""
+  }
+]

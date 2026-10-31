@@ -1,0 +1,51 @@
+{
+ "pending": "ideate",
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Read N, S, and T; initialize mapping, present, and indegree arrays for the 26 lowercase letters.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Scan S and T to fill the mapping; if a source letter is assigned two different targets, output -1; otherwise mark present letters and, after the scan, increment indegree[map[a]] once for each present a.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Compute B as the count of present letters a with map[a] != a.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "Detect cycles in the 26-node functional graph restricted to present letters; for each cycle of length > 1, count it as closed if indegree[v] == 1 for every v in that cycle.",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 5,
+   "desc": "Determine spare = (number of present letters < 26) or (any indegree[d] >= 2); if closed_cycles > 0 and not spare, print -1, otherwise print B + closed_cycles.",
+   "status": "pending",
+   "result": ""
+  }
+ ],
+ "proposals": [],
+ "nexts": [],
+ "status": "continue",
+ "next": "",
+ "prev": null,
+ "iters": 0,
+ "task": "",
+ "wrote": false,
+ "res": null,
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  }
+ ]
+}

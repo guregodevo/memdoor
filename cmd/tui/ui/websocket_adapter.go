@@ -21,6 +21,12 @@ type websocketDisconnectedMsg struct {
 	err error
 }
 
+// websocketRefusedMsg: the gateway closed this window's socket as policy,
+// for the reason it gives. The client does not retry.
+type websocketRefusedMsg struct {
+	reason string
+}
+
 type toolCallStartMsg struct {
 	// toolID is the tool_use id. It is what lets a RESULT find the frame that
 	// asked for it; matching on toolName alone cannot tell three concurrent
@@ -118,6 +124,8 @@ func (a *WebSocketAdapter) Connect() error {
 			a.program.Send(websocketDisconnectedMsg{err: event.Error})
 		case client.EventError:
 			a.program.Send(websocketDisconnectedMsg{err: event.Error})
+		case client.EventRefused:
+			a.program.Send(websocketRefusedMsg{reason: event.Error.Error()})
 		}
 	})
 
@@ -404,4 +412,24 @@ func sameDir(a, b string) bool {
 		return filepath.Clean(a) == filepath.Clean(b)
 	}
 	return ra == rb
+}
+
+// RefusalAdvice is the gateway's reason for closing a socket and what to type
+// next: the reasons are server_websocket.go's refuse(). The window and
+// `memdoor run` both say it.
+func RefusalAdvice(reason string) string {
+	next := "`memdoor auth whoami` shows who this machine is signed in as; `memdoor auth login-direct --email <email> --password <pass>` switches account, then start memdoor again."
+	switch {
+	case strings.HasPrefix(reason, "unknown user"):
+		next = "This machine's sign-in is for an account the gateway does not have: `memdoor auth login-direct --email <email> --password <pass>`, then start memdoor again."
+	case strings.HasPrefix(reason, "not your workspace"):
+		next = "Start memdoor again without -w or $MEMDOOR_WORKSPACE: it opens your own workspace. To work in that one, `memdoor auth login-direct --email <email> --password <pass>` as its owner."
+	case strings.HasPrefix(reason, "not your conversation"), strings.HasPrefix(reason, "not your channel"):
+		next = "That conversation is another account's: start a new one, or `memdoor auth login-direct --email <email> --password <pass>` as its owner."
+	}
+	return reason + ". " + next
+}
+
+func refusalNote(reason string) string {
+	return "⚠ the gateway refused this window: " + RefusalAdvice(reason)
 }

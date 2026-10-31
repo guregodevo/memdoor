@@ -1,0 +1,8 @@
+### STATUS
+continue
+### NEXT
+Implement the functional-graph counting solution in Python: read N, S, T; build target[26] and present[26], rejecting any source letter with two different target letters; compute bad_count, color_freq, and original indegree for bad edges to present targets; use Kahn topological removal to find nontrivial cycles and count a cycle as bare iff every vertex has original indegree 1; set spare = (present_count < 26) or (any color_freq[c] >= 2); print -1 if inconsistent or (bare_cycles > 0 and not spare), otherwise print bad_count + bare_cycles; run the provided samples.
+### TASKS
+- [todo] Implement the functional-graph counting solution in Python: read N, S, T; build target[26] and present[26], rejecting any source letter with two different target letters; compute bad_count, color_freq, and original indegree for bad edges to present targets; use Kahn topological removal to find nontrivial cycles and count a cycle as bare iff every vertex has original indegree 1; set spare = (present_count < 26) or (any color_freq[c] >= 2); print -1 if inconsistent or (bare_cycles > 0 and not spare), otherwise print bad_count + bare_cycles; run the provided samples.
+- [todo] Build an exhaustive small-alphabet BFS validator (alphabets of size 3 to 4 exhaustively, and size 5 on random mappings, both with an extra empty letter and closed alphabets) that computes exact minimum operations for all consistent mappings and compares them to the formula.
+- [todo] If the validator or samples reveal a discrepancy, debug the cycle/bare/spare definitions or switch to a constructive topological simulation approach; otherwise finalize the stdin/stdout code.

@@ -49,7 +49,7 @@ func TestDecisionsEvaluateWireShape(t *testing.T) {
 	  "dept":{"type":"choice","instructions":"Team?","criteria":{"billing":"Payments","tech":"Bugs"}},
 	  "mood":{"type":"score","instructions":"Mood?","criteria":["calm","annoyed","furious"]}
 	},"options":{"agentId":"writer","purpose":"test","timeoutMs":500}}`
-	rr := postDecision(t, s, body, "u1")
+	rr := postDecision(t, s, body, "system:internal")
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status %d: %s", rr.Code, rr.Body.String())
 	}
@@ -83,11 +83,12 @@ func TestDecisionsEvaluateRefusals(t *testing.T) {
 		want        int
 	}{
 		"anonymous":      {`{"state":"x","questions":{"q":{"type":"boolean","instructions":"?"}}}`, "", http.StatusUnauthorized},
-		"bad json":       {`{`, "u1", http.StatusBadRequest},
-		"no questions":   {`{"state":"x","questions":{}}`, "u1", http.StatusBadRequest},
-		"unknown type":   {`{"state":"x","questions":{"q":{"type":"maybe","instructions":"?"}}}`, "u1", http.StatusBadRequest},
-		"score too deep": {`{"state":"x","questions":{"q":{"type":"score","instructions":"?","criteria":["a","b","c","d","e","f","g","h","i","j","k"]}}}`, "u1", http.StatusBadRequest},
-		"one option":     {`{"state":"x","questions":{"q":{"type":"choice","instructions":"?","criteria":["a"]}}}`, "u1", http.StatusBadRequest},
+		"a sign-up":      {`{"state":"x","questions":{"q":{"type":"boolean","instructions":"?"}}}`, "human:stranger", http.StatusForbidden}, // spends the owner's decision key
+		"bad json":       {`{`, "system:internal", http.StatusBadRequest},
+		"no questions":   {`{"state":"x","questions":{}}`, "system:internal", http.StatusBadRequest},
+		"unknown type":   {`{"state":"x","questions":{"q":{"type":"maybe","instructions":"?"}}}`, "system:internal", http.StatusBadRequest},
+		"score too deep": {`{"state":"x","questions":{"q":{"type":"score","instructions":"?","criteria":["a","b","c","d","e","f","g","h","i","j","k"]}}}`, "system:internal", http.StatusBadRequest},
+		"one option":     {`{"state":"x","questions":{"q":{"type":"choice","instructions":"?","criteria":["a"]}}}`, "system:internal", http.StatusBadRequest},
 	}
 	for name, c := range cases {
 		if rr := postDecision(t, s, c.body, c.actor); rr.Code != c.want {
@@ -96,7 +97,7 @@ func TestDecisionsEvaluateRefusals(t *testing.T) {
 	}
 	// Unavailable is a 200 with a status, never an HTTP error: the consumer decides.
 	s = &Server{decisions: &fakeDecisionService{res: decision.Unavailable(decision.ReasonNotConfigured, "none")}}
-	rr := postDecision(t, s, `{"state":"x","questions":{"q":{"type":"boolean","instructions":"?"}}}`, "u1")
+	rr := postDecision(t, s, `{"state":"x","questions":{"q":{"type":"boolean","instructions":"?"}}}`, "system:internal")
 	if rr.Code != http.StatusOK || !strings.Contains(rr.Body.String(), `"reason":"not-configured"`) {
 		t.Fatalf("unavailable: %d %s", rr.Code, rr.Body.String())
 	}
@@ -130,6 +131,26 @@ func TestMessageGateThresholdAndUnavailable(t *testing.T) {
 	g = &decisionMessageGate{svc: fake, read: read}
 	if respond, ok := g.ShouldRespond(context.Background(), agent, msg, recent); ok || respond {
 		t.Fatal("gate off must be undecided without calling the model")
+	}
+}
+
+// The decision model is the owner's key: a message in a channel that is not
+// the gateway's own workspace's is undecided, and the model is never asked
+// (a sign-up's every message spent the owner's decision calls until 2026-10-30).
+func TestMessageGateAsksOnlyForTheGatewaysOwnChannels(t *testing.T) {
+	read := func(k string) string { return map[string]string{settingDecisionGate: "on"}[k] }
+	msg := &message.Message{ID: 7, AuthorID: shared.ActorID("user:stranger"), ChannelID: "theirs", Content: message.MessageContent{Text: "run this"}}
+	fake := &fakeDecisionService{res: okBoolean("reply", 0.99)}
+	g := &decisionMessageGate{svc: fake, read: read, ownChannel: func(_ context.Context, ch string) bool { return ch == "ours" }}
+	if respond, ok := g.ShouldRespond(context.Background(), shared.ActorID("agent:coder"), msg, nil); ok || respond {
+		t.Fatalf("another workspace's channel: %v %v, want undecided", respond, ok)
+	}
+	if fake.last.State != "" {
+		t.Fatal("the decision model was asked about another workspace's channel")
+	}
+	msg.ChannelID = "ours"
+	if respond, ok := g.ShouldRespond(context.Background(), shared.ActorID("agent:coder"), msg, nil); !ok || !respond {
+		t.Fatalf("the gateway's own channel: %v %v, want decided", respond, ok)
 	}
 }
 

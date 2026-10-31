@@ -1,0 +1,51 @@
+pass	problem	run	samples	hidden	calls	capped	rounds	manager_done	cost_usd	output_tokens	hosts	workflow
+1	arc196_a	gvs5h-parity-20261030-160034	arc196_a: 3/3 tests passed (samples)	arc196_a: 43/43 tests passed (all tests)	7	0	2	True	0.5595	241878	Modal	gvs5h-parity
+1	arc196_b	gvs5h-parity-20261030-144205	arc196_b: 1/1 tests passed (samples)	arc196_b: 2/2 tests passed (all tests)	5	0	1	True	0.3367	146211	Modal	gvs5h-parity
+1	arc196_c	gvs5h-parity-20261030-115543	arc196_c: 3/3 tests passed (samples)	arc196_c: 43/43 tests passed (all tests)	9	0	3	True	1.7902	777798	Modal	gvs5h-parity
+1	arc196_d	gvs5h-parity-20261030-142618	arc196_d: 2/2 tests passed (samples)	arc196_d: 42/42 tests passed (all tests)	7	0	2	True	1.0156	441224	Modal	gvs5h-parity
+1	3777	gvs5h-parity-20261030-142620	3777: 3/3 tests passed (samples)	3777: 43/43 tests passed (all tests)	5	0	1	True	0.3174	137849	Modal	gvs5h-parity
+1	abc400_e	gvs5h-parity-20261030-160216	abc400_e: 1/1 tests passed (samples)	abc400_e: 5/5 tests passed (all tests)	5	0	1	True	0.1248	54166	Modal	gvs5h-parity
+1	abc400_g	gvs5h-parity-20261030-145947	abc400_g: 2/2 tests passed (samples)	abc400_g: 6/6 tests passed (all tests)	7	0	2	True	0.6323	266243	CoreWeave,Modal	gvs5h-parity
+1	3717	gvs5h-parity-20261030-142622	3717: 2/2 tests passed (samples)	3717: 42/42 tests passed (all tests)	7	0	2	True	0.1922	82534	CoreWeave,Modal	gvs5h-parity
+1	3765	gvs5h-parity-20261030-160638	3765: 2/2 tests passed (samples)	3765: 42/42 tests passed (all tests)	5	0	1	True	0.1319	57199	Modal	gvs5h-parity
+1	abc399_e	gvs5h-parity-20261030-151150	abc399_e: 4/4 tests passed (samples)	abc399_e: 44/44 tests passed (all tests)	5	0	1	True	0.4793	208239	Modal	gvs5h-parity
+2	arc196_a	gvs5h-parity-20261030-171731	arc196_a: 3/3 tests passed (samples)	arc196_a: 43/43 tests passed (all tests)	5	0	1	True	0.1999	86772	Modal	gvs5h-parity
+2	arc196_b	gvs5h-parity-20261030-163703	arc196_b: 1/1 tests passed (samples)	arc196_b: 2/2 tests passed (all tests)	5	0	1	True	0.3814	165640	Modal	gvs5h-parity
+2	arc196_c	gvs5h-parity-20261030-162154	arc196_c: 3/3 tests passed (samples)	arc196_c: 43/43 tests passed (all tests)	7	2	2	False	1.2028	522742	Modal	gvs5h-parity
+2	arc196_d	gvs5h-parity-20261030-162156	arc196_d: 2/2 tests passed (samples)	arc196_d: 42/42 tests passed (all tests)	5	0	1	True	0.8253	358588	Modal	gvs5h-parity
+2	3777	gvs5h-parity-20261030-162158	3777: 3/3 tests passed (samples)	3777: 43/43 tests passed (all tests)	7	0	2	True	0.5158	223960	Modal	gvs5h-parity
+2	abc400_e	gvs5h-parity-20261030-173133	abc400_e: 1/1 tests passed (samples)	abc400_e: 5/5 tests passed (all tests)	5	0	1	True	0.0802	34742	Modal	gvs5h-parity
+2	abc400_g	gvs5h-parity-20261030-165906	abc400_g: 2/2 tests passed (samples)	abc400_g: 6/6 tests passed (all tests)	5	0	1	True	0.5602	243342	Modal	gvs5h-parity
+2	3717	gvs5h-parity-20261030-162200	3717: 2/2 tests passed (samples)	3717: 42/42 tests passed (all tests)	5	0	1	True	0.1434	62190	Modal	gvs5h-parity
+2	3765	gvs5h-parity-20261030-173235	3765: 2/2 tests passed (samples)	3765: 42/42 tests passed (all tests)	5	0	1	True	0.1241	53804	Modal	gvs5h-parity
+2	abc399_e	gvs5h-parity-20261030-170208	abc399_e: 4/4 tests passed (samples)	abc399_e: 44/44 tests passed (all tests)	5	0	1	True	0.413	179430	Modal	gvs5h-parity
+3	arc196_a	gvs5h-parity-fp8-20261031-155019	arc196_a: 3/3 tests passed (samples)	arc196_a: 43/43 tests passed (all tests)	5	0	1	True	0.3599	156254	Wafer	gvs5h-parity-fp8
+3	arc196_b	gvs5h-parity-20261031-133536 gvs5h-parity-fp8-20261031-160131	arc196_b: 1/1 tests passed (samples)	arc196_b: 2/2 tests passed (all tests)	5	0	1	True	0.4687	203542	Modal,Wafer	moved to fp8 mid-run
+3	arc196_c	gvs5h-parity-20261031-101905 gvs5h-parity-fp8-20261031-160224	arc196_c: 3/3 tests passed (samples)	arc196_c: 43/43 tests passed (all tests)	14	1	5	True	2.6235	1121521	CoreWeave,Modal,Wafer	moved to fp8 mid-run
+3	arc196_d	gvs5h-parity-20261031-101907	arc196_d: 2/2 tests passed (samples)	arc196_d: 42/42 tests passed (all tests)	7	0	2	True	0.7975	322748	CoreWeave,Modal	gvs5h-parity
+3	3777	gvs5h-parity-20261030-173942	3777: 3/3 tests passed (samples)	3777: 43/43 tests passed (all tests)	5	0	1	True	0.3161	115896	CoreWeave,Modal	gvs5h-parity
+3	abc400_e	gvs5h-parity-20261031-055620	abc400_e: 1/1 tests passed (samples)	abc400_e: 5/5 tests passed (all tests)	5	0	1	True	0.0557	20081	CoreWeave,Modal	gvs5h-parity
+3	abc400_g	gvs5h-parity-fp8-20261031-155017	abc400_g: 2/2 tests passed (samples)	abc400_g: 6/6 tests passed (all tests)	5	0	1	True	0.8275	359468	Wafer	gvs5h-parity-fp8
+3	3717	gvs5h-parity-20261030-182206	3717: 2/2 tests passed (samples)	3717: 42/42 tests passed (all tests)	5	0	1	True	0.2256	83406	CoreWeave,Modal	gvs5h-parity
+3	3765	gvs5h-parity-20261031-055622	3765: 2/2 tests passed (samples)	3765: 42/42 tests passed (all tests)	5	0	1	True	0.138	57973	CoreWeave,Modal	gvs5h-parity
+3	abc399_e	gvs5h-parity-20261031-055618	abc399_e: 4/4 tests passed (samples)	abc399_e: 44/44 tests passed (all tests)	5	0	1	True	0.3812	153513	CoreWeave,Modal	gvs5h-parity
+4	arc196_a	gvs5h-parity-fp8-20261031-155029	arc196_a: 3/3 tests passed (samples)	arc196_a: 43/43 tests passed (all tests)	5	0	1	True	0.2883	125141	Wafer	gvs5h-parity-fp8
+4	arc196_b	gvs5h-parity-fp8-20261031-155025	arc196_b: 1/1 tests passed (samples)	arc196_b: 2/2 tests passed (all tests)	5	0	1	True	0.4952	215002	Wafer	gvs5h-parity-fp8
+4	arc196_c	gvs5h-parity-fp8-20261031-155021	arc196_c: 3/3 tests passed (samples)	arc196_c: 43/43 tests passed (all tests)	22	4	8	False	4.2359	1838854	Wafer	gvs5h-parity-fp8
+4	arc196_d	gvs5h-parity-fp8-20261031-155023	arc196_d: 2/2 tests passed (samples)	arc196_d: 42/42 tests passed (all tests)	21	2	8	True	3.4404	1493811	Wafer	gvs5h-parity-fp8
+4	3777	gvs5h-parity-20261031-055624	3777: 3/3 tests passed (samples)	3777: 43/43 tests passed (all tests)	12	1	4	True	1.007	394368	CoreWeave,Modal	gvs5h-parity
+4	abc400_e	gvs5h-parity-20261031-065913	abc400_e: 1/1 tests passed (samples)	abc400_e: 5/5 tests passed (all tests)	5	0	1	True	0.0807	34977	Modal	gvs5h-parity
+4	abc400_g	gvs5h-parity-fp8-20261031-155027	abc400_g: 2/2 tests passed (samples)	abc400_g: 6/6 tests passed (all tests)	5	0	1	True	0.7912	343651	Wafer	gvs5h-parity-fp8
+4	3717	gvs5h-parity-20261031-060446	3717: 2/2 tests passed (samples)	3717: 42/42 tests passed (all tests)	5	0	1	True	0.1338	58044	Modal	gvs5h-parity
+4	3765	gvs5h-parity-20261031-072636	3765: 2/2 tests passed (samples)	3765: 42/42 tests passed (all tests)	5	0	1	True	0.1264	54801	Modal	gvs5h-parity
+4	abc399_e	gvs5h-parity-20261031-064250	abc399_e: 4/4 tests passed (samples)	abc399_e: 44/44 tests passed (all tests)	5	0	1	True	0.3993	163236	CoreWeave,Modal	gvs5h-parity
+5	arc196_a	gvs5h-parity-20261031-121333	arc196_a: 3/3 tests passed (samples)	arc196_a: 43/43 tests passed (all tests)	7	0	2	True	0.4651	183856	CoreWeave,Modal	gvs5h-parity
+5	arc196_b	gvs5h-parity-20261031-135321	arc196_b: 1/1 tests passed (samples)	arc196_b: 2/2 tests passed (all tests)	5	0	1	True	0.3551	145122	CoreWeave,Modal	gvs5h-parity
+5	arc196_c	gvs5h-parity-fp8-20261031-155031	arc196_c: 3/3 tests passed (samples)	arc196_c: 43/43 tests passed (all tests)	16	1	6	True	3.1766	1379554	Wafer	gvs5h-parity-fp8
+5	arc196_d	gvs5h-parity-fp8-20261031-155033	arc196_d: 2/2 tests passed (samples)	arc196_d: 42/42 tests passed (all tests)	13	2	4	True	2.1884	950550	Wafer	gvs5h-parity-fp8
+5	3777	gvs5h-parity-20261031-075059	3777: 3/3 tests passed (samples)	3777: 43/43 tests passed (all tests)	7	0	2	True	0.3574	155157	Modal	gvs5h-parity
+5	abc400_e	gvs5h-parity-20261031-094850	abc400_e: 1/1 tests passed (samples)	abc400_e: 5/5 tests passed (all tests)	5	0	1	True	0.0656	27656	CoreWeave,Modal	gvs5h-parity
+5	abc400_g	gvs5h-parity-20261031-121335 gvs5h-parity-fp8-20261031-160224-2	abc400_g: 2/2 tests passed (samples)	abc400_g: 6/6 tests passed (all tests)	7	0	2	True	0.8713	355710	CoreWeave,Modal,Wafer	moved to fp8 mid-run
+5	3717	gvs5h-parity-20261031-083403	3717: 2/2 tests passed (samples)	3717: 42/42 tests passed (all tests)	6	0	1	False	0.2913	115149	CoreWeave,Modal	gvs5h-parity
+5	3765	gvs5h-parity-20261031-100853	3765: 2/2 tests passed (samples)	3765: 42/42 tests passed (all tests)	5	0	1	True	0.1441	62509	Modal	gvs5h-parity
+5	abc399_e	gvs5h-parity-20261031-090247	abc399_e: 4/4 tests passed (samples)	abc399_e: 32/44 tests passed (all tests)	7	0	2	True	0.6586	273577	CoreWeave,Modal	gvs5h-parity

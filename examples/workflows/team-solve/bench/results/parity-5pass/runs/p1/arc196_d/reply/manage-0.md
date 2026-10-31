@@ -1,0 +1,10 @@
+### STATUS
+continue
+### NEXT
+Build a small brute-force validation harness: generate random small instances (N<=8, M up to all valid directed pairs, unique (S,T), |S-T|>1), decide feasibility by DSU equality contraction + directed cycle detection, and compare it with the proposed pairwise rule (same direction: open intervals overlap and neither strictly contains the other; opposite direction: same left endpoint or same right endpoint, while opposite-side touching is compatible) for all ranges/subsets.
+### TASKS
+- [todo] Build a small brute-force validation harness: generate random small instances (N<=8, M up to all valid directed pairs, unique (S,T), |S-T|>1), decide feasibility by DSU equality contraction + directed cycle detection, and compare it with the proposed pairwise rule (same direction: open intervals overlap and neither strictly contains the other; opposite direction: same left endpoint or same right endpoint, while opposite-side touching is compatible) for all ranges/subsets.
+- [todo] Implement and unit-test the monotonic segment tree for point update (x,b,idx) and range query [l,r-1] at r returning max idx with x in range and b>=r, using packed step-function lists per node; validate against a naive 2D list on small random update/query sequences.
+- [todo] Implement the full fast solution: normalize intervals, compute prev[j] with side-specific endpoint arrays for opposite same-left/same-right conflicts and two passes (original and reversed) of direction-specific monotonic segment trees for same-direction conflicts, then prefix max bad[R] and answer queries Yes iff L>bad[R].
+- [todo] If the brute-force validation finds a counterexample, analyze the minimal infeasible set and revise the incompatibility characterization before proceeding to the fast solution.
+- [todo] Run the final program on the provided samples and on random small cases against the brute-force harness; then optimize memory/time for N=4e5, M=Q=2e5 (fast I/O, one orientation at a time, packed lists, gc between passes).

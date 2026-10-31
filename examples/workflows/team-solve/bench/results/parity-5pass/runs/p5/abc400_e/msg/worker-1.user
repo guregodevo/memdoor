@@ -1,0 +1,71 @@
+PROBLEM:
+### Question
+A positive integer N is a 400 number if and only if it satisfies both of the following two conditions:
+
+- N has exactly 2 distinct prime factors.
+- For each prime factor p of N, p divides N an even number of times. More formally, the maximum non-negative integer k such that p^k divides N is even.
+
+Process Q queries. Each query gives you an integer A, so find the largest 400 number not exceeding A. Under the constraints of this problem, a 400 number not exceeding A always exists.
+
+Input
+
+The input is given from Standard Input in the following format:
+Q
+\text{query}_1
+\text{query}_2
+\vdots
+\text{query}_Q
+
+Here, \text{query}_i is the i-th query, given in the following format:
+A
+
+Output
+
+Print Q lines. The i-th line should contain the answer to the i-th query.
+
+Constraints
+
+
+- 1 \leq Q \leq 2 \times 10^5
+- For each query, 36 \leq A \leq 10^{12}.
+- All input values are integers.
+
+Sample Input 1
+
+5
+404
+36
+60
+1000000000000
+123456789
+
+Sample Output 1
+
+400
+36
+36
+1000000000000
+123454321
+
+Let us explain the first query.
+There are exactly 2 prime factors of 400: 2 and 5. Also, 2 divides 400 four times and 5 divides it twice, so 400 is a 400 number. None of 401, 402, 403, and 404 is a 400 number, so the answer is 400.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+A 400 number has exactly two distinct prime factors, each with an even exponent, so it is exactly the square of an integer that has exactly two distinct prime factors. Since \(A \le 10^{12}\), the square root of any answer is at most \(10^6\). We can precompute all integers up to \(10^6\) that have exactly two distinct prime factors, then square them to obtain all possible 400 numbers. The resulting list is naturally sorted, so each query can be answered by binary search for the largest precomputed square not exceeding \(A\). This gives a fast solution with about \(10^6\) preprocessing and \(O(\log 10^6)\) per query.
+
+NOTES:
+
+## ideation
+A 400 number has the form \(p^{2a}q^{2b}\) where \(p\) and \(q\) are distinct primes and \(a,b \ge 1\). Therefore it is always a perfect square, and its square root has the form \(p^a q^b\), meaning the root has exactly two distinct prime factors. Since \(A \le 10^{12}\), any relevant root is at most \(10^6\). Thus the problem reduces to a static predecessor problem: for each query, take the integer square root \(r\) of \(A\), find the largest integer \(m \le r\) with exactly two distinct prime factors, and return \(m^2\).
+
+The main difficulty is handling \(Q\) up to \(2 \times 10^5\) efficiently. Factoring each query individually or scanning downward from \(\sqrt A\) is risky because the total work could become too large. The limit \(10^6\) is small enough for precomputation, so the practical challenge is to build a fast and memory-efficient structure that can answer predecessor queries among numbers up to \(10^6\) that have exactly two distinct prime factors. A subtle correctness point is that we need distinct prime factors, not total prime multiplicity: for example, \(12\) is valid as a root because its distinct prime factors are \(2\) and \(3\), while \(8\) is invalid because it has only one distinct prime factor.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the full Python solution: read all queries, compute L = isqrt(max(A)); sieve primes up to L; use a bytearray distinct-prime-factor counter incremented once for each multiple of each prime; build sorted list vals = [i*i for i in range(L+1) if cnt[i] == 2]; answer each A with vals[bisect_right(vals, A) - 1]; print all answers with fast I/O.

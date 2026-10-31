@@ -1,0 +1,67 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Derive GF(2) reduction: even A count in every row/column; B cells impose row-variable xor column-variable = 1 xor A-above xor A-left; count is 2^{connected components} if consistent.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement fast Python program with parity DSU over H+W nodes, row/column parity checks, and modular power output.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Verify implementation on sample input and small brute-force cases for convention/off-by-one errors.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Use the row/column variable reduction and solve the resulting labeled bipartite graph with a parity union-find, or equivalently with an offline DFS/BFS consistency check. Check even A counts per row and column; for each B cell add an edge between its row node and column node with a label derived from the A-prefix above and to the left; if all cycles are consistent, the number of solutions is a power of two determined by connected components. Pitfalls: off-by-one in prefix parities, wrong complement label, forgetting isolated all-A rows/columns, DSU parity merge errors, and I/O/reset overhead for many small cases.",
+  "Use an affine-subspace transfer DP: keep the vector of vertical edge bits as a state, let each row apply a deterministic xor mask and impose an affine validity condition from the horizontal cycle and B cells, and maintain the feasible state set as an affine subspace using a linear basis. Enforce the torus return condition after all rows. Pitfalls: basis operations can be quadratic in width, the torus closure is easy to miss, and the method is less direct than the graph reduction for the full 1e6 size.",
+  "Use an explicit transfer matrix over the smaller dimension when min(H,W) is small: enumerate all states of the smaller edge direction, build row/column transition matrices, and take the trace or product around the torus. Pitfalls: exponential state space, memory blow-up, and it is only useful as a brute-force oracle or for tiny subcases, not the full constraints.",
+  "Use generic sparse GF(2) linear algebra: write all endpoint-bit variables and local XOR equations, including torus wrap equations, and compute rank and consistency with sparse elimination or a black-box linear algebra method. Pitfalls: up to 2HW variables and many equations, sparse elimination in Python is likely too slow, implementation complexity is high, and it does not exploit the simple row/column structure enough.",
+  "Use a loop-model / dimer / Pfaffian reduction: interpret valid placements as loop covers where A cells are turns and B cells are straight segments, then map to perfect matchings on an auxiliary graph and count with FKT/Pfaffian over the given modulus. Pitfalls: constructing the correct cell gadgets, handling torus boundary conditions and nonplanarity, Pfaffian orientation, and high bug risk; likely overkill.",
+  "Use a Fourier / inclusion-exclusion partition-function approach: express local tile constraints as products of linear indicators over edge bits and try to sum over edge bits by factorization or transforms. Pitfalls: B cells couple vertical and horizontal bits, shared edges prevent naive factorization, transforms are exponential in grid size, and any successful factorization probably collapses to the same linear system."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the full Python solution using the derived reduction: for each test case, maintain column A-parity and row prefix; if any row has odd A count mark invalid; for each B cell union row node i and column node H+j with parity w = 1 ^ col_parity[j] ^ row_prefix; after all rows require all column parities zero and no DSU contradiction; output 0 if invalid else pow(2, components, 998244353), where components is the number of DSU components among H+W nodes; then run the sample tests to verify.",
+ "iters": 1,
+ "task": "Implement the full Python solution using the derived reduction: for each test case, maintain column A-parity and row prefix; if any row has odd A count mark invalid; for each B cell union row node i and column node H+j with parity w = 1 ^ col_parity[j] ^ row_prefix; after all rows require all column parities zero and no DSU contradiction; output 0 if invalid else pow(2, components, 998244353), where components is the number of DSU components among H+W nodes; then run the sample tests to verify.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 1,
+  "total": 1,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

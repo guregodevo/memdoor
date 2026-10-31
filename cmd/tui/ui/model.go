@@ -19,7 +19,8 @@ type Model struct {
 	token         string            // bearer token for the /ws handshake (empty = rely on loopback)
 	ws            *WebSocketAdapter // Now using common client via adapter
 	connected     bool
-	everConnected bool // distinguishes first connect from a RECONNECT after a drop
+	everConnected bool   // distinguishes first connect from a RECONNECT after a drop
+	refused       string // the gateway's reason for closing this window's socket; final
 	sessionKey    string
 	// The conversation lives in a workspace's channel. poster posts the
 	// user's turn through POST /api/messages ("@agent …"), so the run loads

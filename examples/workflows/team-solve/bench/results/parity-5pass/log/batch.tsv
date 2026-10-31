@@ -1,0 +1,83 @@
+3717	2/2	42/42	$0.192	82534 tokens
+3777	3/3	43/43	$0.317	137849 tokens
+arc196_b	1/1	2/2	$0.337	146211 tokens
+abc399_e	4/4	44/44	$0.479	208239 tokens
+abc400_g	2/2	6/6	$0.632	266243 tokens
+arc196_d	2/2	42/42	$1.016	441224 tokens
+abc400_e	1/1	5/5	$0.125	54166 tokens
+3765	2/2	42/42	$0.132	57199 tokens
+arc196_a	3/3	43/43	$0.560	241878 tokens
+p2	3717	2/2	42/42	$0.143	62190 tokens
+p2	3777	3/3	43/43	$0.516	223960 tokens
+p2	arc196_b	1/1	2/2	$0.381	165640 tokens
+p2	arc196_d	2/2	42/42	$0.825	358588 tokens
+p2	abc399_e	4/4	44/44	$0.413	179430 tokens
+p2	arc196_a	3/3	43/43	$0.200	86772 tokens
+p2	abc400_e	1/1	5/5	$0.080	34742 tokens
+p2	abc400_g	2/2	6/6	$0.560	243342 tokens
+p2	3765	2/2	42/42	$0.124	53804 tokens
+p2	arc196_c	3/3	43/43	$1.203	522742 tokens
+p3	3777	3/3	43/43	$0.316	115896 tokens
+p3	3717	2/2	42/42	$0.226	83406 tokens
+p3	arc196_c	-	no code	$0.206	89677 tokens
+p3	arc196_c	network failure (ideation dropped twice, 2h limit): rerun
+p3	arc196_d	-	no code	$0.244	93935 tokens
+note	the runs marked cut-at-2h-run-cap hit memdoor workflow run's default 2h clock on the whole run (one-call.sh passed no --timeout); rerun with --timeout 12h; the earlier "network failure" note on p3 arc196_c is that cut
+p3	arc196_c	-	no code	$0.000	0 tokens
+note	runs marked stopped-for-20min-client-fix were stopped mid-run to restart the gateway with workflow calls on their own clock (the providers' 20-minute total per request cut long thinking calls); rerun
+p2	arc196_c	-	no code	$0.000	0 tokens
+p2	arc196_c	verdict from the run cut at the 2h run clock after worker 2: its solution passed 43/43 hidden; not rerun (Greg: no need to rerun a cut run that passed)
+note	p3 arc196_c arc196_d arc196_b abc400_g stopped at 23:15 (Greg: pause; slow hosts), kept as *.paused-slow-hosts, rerun later
+p3	abc400_e	1/1	5/5	$0.056	20081 tokens
+p3	3765	2/2	42/42	$0.138	57973 tokens
+p4	3717	2/2	42/42	$0.134	58044 tokens
+p4	abc400_e	1/1	5/5	$0.081	34977 tokens
+p4	3765	2/2	42/42	$0.126	54801 tokens
+p4	abc399_e	4/4	44/44	$0.399	163236 tokens
+p3	abc399_e	4/4	44/44	$0.381	153513 tokens
+p5	3717	2/2	42/42	$0.291	115149 tokens
+p4	3777	3/3	43/43	$1.007	394368 tokens
+p5	abc400_e	1/1	5/5	$0.066	27656 tokens
+p5	3765	2/2	42/42	$0.144	62509 tokens
+p5	3777	3/3	43/43	$0.357	155157 tokens
+p5	abc399_e	4/4	32/44	$0.659	273577 tokens
+p3	arc196_d	2/2	42/42	$0.798	322748 tokens
+p5	arc196_a	3/3	43/43	$0.465	183856 tokens
+p5	arc196_b	1/1	2/2	$0.355	145122 tokens
+p5	arc196_d	skip (claimed by the other batch)
+p5	arc196_c	skip (claimed by the other batch)
+p4	arc196_a	skip (claimed by the other batch)
+p4	abc400_g	skip (claimed by the other batch)
+p4	arc196_b	skip (claimed by the other batch)
+p3	
+p4	arc196_d	skip (claimed by the other batch)
+p3	abc400_g	skip (claimed by the other batch)
+p4	arc196_c	skip (claimed by the other batch)
+p3	arc196_a	skip (claimed by the other batch)
+p5	
+p3	arc196_a	skip (claimed by the other batch)
+p3	
+p4	arc196_c	skip (claimed by the other batch)
+p3	abc400_g	skip (claimed by the other batch)
+p3	arc196_b	skip (claimed by the other batch)
+p4	arc196_d	skip (claimed by the other batch)
+p4	arc196_b	skip (claimed by the other batch)
+p4	abc400_g	skip (claimed by the other batch)
+p4	arc196_a	skip (claimed by the other batch)
+p5	arc196_c	skip (claimed by the other batch)
+p5	arc196_d	skip (claimed by the other batch)
+p5	arc196_b	skip (claimed by the other batch)
+p5	abc400_g	skip (claimed by the other batch)
+p5	arc196_a	skip (claimed by the other batch)
+p4	arc196_a	3/3	43/43	$0.288	125141 tokens
+p3	arc196_b	1/1	2/2	$0.256	111104 tokens	moved to fp8 hosts mid-run
+p3	arc196_a	3/3	43/43	$0.360	156254 tokens
+p4	arc196_b	1/1	2/2	$0.495	215002 tokens
+p5	abc400_g	2/2	6/6	$0.871	355710 tokens	moved to fp8 hosts mid-run
+p4	abc400_g	2/2	6/6	$0.791	343651 tokens
+p3	abc400_g	2/2	6/6	$0.828	359468 tokens
+p5	arc196_d	2/2	42/42	$2.188	950550 tokens
+p3	arc196_c	3/3	43/43	$2.624	1121521 tokens	moved to fp8 hosts mid-run
+p5	arc196_c	3/3	43/43	$3.177	1379554 tokens
+p4	arc196_d	2/2	42/42	$3.440	1493811 tokens
+p4	arc196_c	3/3	43/43	$4.236	1838854 tokens

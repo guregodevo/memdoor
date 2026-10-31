@@ -1,0 +1,144 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Model each tile by binary state variables: for type A use P for the north endpoint and Q for the east endpoint, so south and west are forced to 1-P and 1-Q; for type B use R for the north/south endpoints, so east/west are forced to 1-R.  
+The no-dead-end condition on the torus is exactly equality of endpoint bits on every shared edge, which becomes a set of xor equations between variables of adjacent cells.  
+Build a parity constraint graph whose nodes are these state variables and whose edges are those equations, with constants determined by the A/B types of the two cells.  
+Use a weighted union-find with xor parity to detect contradictions and count the connected components of this graph.  
+If consistent, each component has one free bit, so the answer is 2^{components} modulo 998244353; otherwise it is 0.
+
+NOTES:
+
+## ideation
+The core difficulty is that the number of raw tile rotations is exponential, but the “no dead ends on a torus” condition couples every tile to its neighbors across all four directions, including wrap-around edges. The key structural observation is that the allowed endpoint patterns of both tile types are affine over GF(2): a Type-A tile can be described by two independent bits, for example whether its north edge and east edge are used, with south and west forced to be the complements; a Type-B tile can be described by one bit, for example whether its north/south pair is used, with east/west forced to be the complement. The no-dead-end condition then says that for every shared edge, the endpoint bit seen from one side equals the endpoint bit seen from the other side. This turns the whole counting problem into counting solutions of a large sparse system of pairwise XOR equations on a torus.
+
+The main algorithmic challenge is therefore not local tile enumeration, but efficiently representing and solving these parity constraints at scale: up to 10^6 cells total, many test cases, toroidal wrap-around, and careful handling of the constants in the XOR equations. A correct solution should run in near-linear time in the total grid size and should avoid exponential state spaces.
+
+Several genuinely different directions are possible:
+
+1. Cell-state parity constraints with a weighted union-find.  
+   Create one or two binary variables per cell depending on whether it is Type B or Type A. For each horizontal and vertical adjacency, write an XOR equation between the relevant variables of the two cells. Use a parity/weighted DSU to detect contradictions and count connected components of the constraint graph. If consistent, the number of solutions is a power of two, one free bit per component.  
+   Pitfalls: the endpoint bit for some directions is the complement of the chosen variable, so the XOR constant can easily be wrong; torus wrap-around must be included; Type-A cells have two variables while Type-B cells have one; for H=2 or W=2 there are parallel torus edges and both must be treated as distinct constraints; memory and recursion depth can be issues in Python if DSU arrays are large.
+
+2. Edge-state parity constraints, a dual formulation.  
+   Instead of variables inside tiles, put one binary variable on each grid edge midpoint indicating whether that edge is “active.” Then the no-dead-end condition is automatic because both neighboring cells share the same edge variable. Each cell imposes local parity constraints among its four incident edge variables: Type-A forces opposite edges to differ, while Type-B forces opposite edges to be equal and the two opposite pairs to be complementary. Again this is a sparse XOR system, solvable by parity DSU or BFS propagation.  
+   Pitfalls: this formulation has more variables, roughly two per cell, and Type-B cells require three independent local parity constraints; forgetting the cross-axis complement for Type-B overcounts; indexing torus edges correctly is more delicate, especially with parallel edges when H=2 or W=2.
+
+3. Signed two-layer graph / signed graph balance reduction.  
+   View the problem as a signed graph whose nodes are “ports” of cells: a vertical port and a horizontal port. Type-A cells keep the two ports separate; Type-B cells identify them. Adjacent cells contribute signed edges between the appropriate ports, with signs determined by whether the relevant endpoint is a complement. A valid placement exists exactly when every cycle in each signed component has even total sign, and the number of free bits is the number of balanced components. This can be implemented by parity DSU or by iterative graph traversal.  
+   Pitfalls: this is conceptually clean but still requires deriving the edge signs correctly; global torus cycles must be checked, not just local adjacencies; identifying the two ports of a Type-B cell is an equality constraint and must not be omitted.
+
+4. Sparse linear algebra over GF(2).  
+   Build the full system of XOR equations as a sparse matrix and compute its rank or nullity. If consistent, the answer is 2 raised to the number of variables minus the rank. This is a more general linear-algebraic approach and can use sparse elimination, bitset elimination for small instances, or randomized rank methods with verification.  
+   Pitfalls: the matrix can have up to about two million variables and several million equations; dense bitsets are impossible; sparse GF(2) elimination can suffer from fill-in and implementation complexity; randomized methods are not exact unless carefully verified; this is likely overkill compared with parity DSU.
+
+5. Transfer matrix / row DP / tensor-network contraction.  
+   Process the grid row by row or column by column, keeping the boundary endpoint bits as state. For each row, count compatible internal tile rotations given the top and bottom boundary states, then multiply transfer matrices. Equivalently, contract the 2D binary tensor network by variable elimination.  
+   Pitfalls: the state space is exponential in the width or height, so this is only viable if one dimension is very small; the torus wrap-around couples the first and last row/column and must be handled explicitly; with HW up to 10^6 and no guarantee that min(H,W) is small, this is not a general solution.
+
+6. Loop, homology, or FKT-style reduction.  
+   Interpret valid placements as fully packed loop configurations on a torus where Type-A cells are turn sites and Type-B cells are straight sites. One could try to relate the count to cycle space, homology classes, or a dimer/Pfaffian model.  
+   Pitfalls: this is conceptually appealing but subtle; torus boundary conditions introduce multiple global cycle constraints; mapping to a standard dimer or FKT model may be nontrivial and error-prone; signs, weights, and global loop parity can be easy to miss; it is likely much more complex than the direct parity-constraint solution.
+
+7. Brute force on tiny grids for validation.  
+   For very small H and W, enumerate all rotations and check the no-dead-end condition directly. This is not a scalable solution, but it is useful for validating variable encodings, XOR constants, torus wrap handling, and component counting.  
+   Pitfalls: exponential blowup makes it useful only for tiny cases; it must include all torus wrap edges; it should be used as a test oracle, not as the main algorithm.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the cell-state parity DSU solver: A cells get variables P (N/S) and Q (E/W), B cells get one variable R; store hvar/vvar and flip (1 for A, 0 for B); for each horizontal torus edge k->right unite hvar[k] with hvar[right] using constant flip[k], and for each vertical torus edge k->down unite vvar[k] with vvar[down] using constant flip[k]; output 0 on contradiction, otherwise pow(2, component_count, 998244353).

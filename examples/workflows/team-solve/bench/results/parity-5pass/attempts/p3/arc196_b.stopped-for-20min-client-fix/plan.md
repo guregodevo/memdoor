@@ -1,0 +1,5 @@
+Model each tile by binary state variables: for type A use P for the north endpoint and Q for the east endpoint, so south and west are forced to 1-P and 1-Q; for type B use R for the north/south endpoints, so east/west are forced to 1-R.  
+The no-dead-end condition on the torus is exactly equality of endpoint bits on every shared edge, which becomes a set of xor equations between variables of adjacent cells.  
+Build a parity constraint graph whose nodes are these state variables and whose edges are those equations, with constants determined by the A/B types of the two cells.  
+Use a weighted union-find with xor parity to detect contradictions and count the connected components of this graph.  
+If consistent, each component has one free bit, so the answer is 2^{components} modulo 998244353; otherwise it is 0.

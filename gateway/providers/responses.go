@@ -63,6 +63,7 @@ type responsesRequest struct {
 	Tools           []responsesTool `json:"tools,omitempty"`
 	MaxOutputTokens int64           `json:"max_output_tokens,omitempty"`
 	Temperature     float64         `json:"temperature,omitempty"`
+	TopP            float64         `json:"top_p,omitempty"` // the Responses API takes no top_k
 	Stream          bool            `json:"stream"`
 	Store           *bool           `json:"store,omitempty"`
 	// ToolChoice is "required" on a retry that must open on a call
@@ -121,21 +122,26 @@ func responsesInput(msgs []llm.MessageParam) []any {
 	return items
 }
 
+type responsesText struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type responsesOutput struct {
+	Type    string          `json:"type"`
+	Role    string          `json:"role"`
+	CallID  string          `json:"call_id"`
+	Name    string          `json:"name"`
+	Args    string          `json:"arguments"`
+	Content []responsesText `json:"content"`
+	Summary []responsesText `json:"summary"`
+}
+
 type responsesResponse struct {
-	ID     string `json:"id"`
-	Model  string `json:"model"`
-	Status string `json:"status"`
-	Output []struct {
-		Type    string `json:"type"`
-		Role    string `json:"role"`
-		CallID  string `json:"call_id"`
-		Name    string `json:"name"`
-		Args    string `json:"arguments"`
-		Content []struct {
-			Type string `json:"type"`
-			Text string `json:"text"`
-		} `json:"content"`
-	} `json:"output"`
+	ID                string            `json:"id"`
+	Model             string            `json:"model"`
+	Status            string            `json:"status"`
+	Output            []responsesOutput `json:"output"`
 	IncompleteDetails *struct {
 		Reason string `json:"reason"`
 	} `json:"incomplete_details"`
@@ -155,13 +161,13 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		model = m.client.model
 	}
 	req := responsesRequest{Model: model, Instructions: systemText(params.System), Input: responsesInput(params.Messages),
-		MaxOutputTokens: params.MaxTokens, Temperature: params.Temperature, Stream: true}
+		MaxOutputTokens: params.MaxTokens, Temperature: params.Temperature, TopP: params.TopP, Stream: true}
 	if m.client.plan {
 		// developers.openai.com/siwc/token-sharing-open-source/preview-limitations:
 		// store false, stream true, and no temperature, max_output_tokens,
 		// top_p, truncation, metadata, user … on a plan's request.
 		noStore := false
-		req.Store, req.MaxOutputTokens, req.Temperature = &noStore, 0, 0
+		req.Store, req.MaxOutputTokens, req.Temperature, req.TopP = &noStore, 0, 0, 0
 	}
 	token := m.client.token
 	if m.client.tokenSource != nil {
@@ -269,6 +275,17 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 	toolCalls := 0
 	for _, item := range rr.Output {
 		switch item.Type {
+		case "reasoning":
+			for _, c := range item.Summary {
+				if c.Type == "summary_text" {
+					out.Thinking += c.Text
+				}
+			}
+			for _, c := range item.Content {
+				if c.Type == "reasoning_text" {
+					out.Thinking += c.Text
+				}
+			}
 		case "message":
 			for _, c := range item.Content {
 				if c.Type == "output_text" && c.Text != "" {
@@ -327,6 +344,7 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 	type item struct {
 		typ, id, callID, name string
 		text, args            strings.Builder
+		summary               []responsesText
 	}
 	items := map[int]*item{}
 	order := []int{}
@@ -343,13 +361,15 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 	guarded, textBytes, sawTool := false, 0, false
 	err := readEvents(r, func(event string, data []byte) error {
 		var ev struct {
-			Type        string          `json:"type"`
-			OutputIndex int             `json:"output_index"`
-			Delta       string          `json:"delta"`
-			Arguments   string          `json:"arguments"`
-			Item        json.RawMessage `json:"item"`
-			Response    json.RawMessage `json:"response"`
-			Error       *struct {
+			Type         string          `json:"type"`
+			OutputIndex  int             `json:"output_index"`
+			SummaryIndex int             `json:"summary_index"`
+			Text         string          `json:"text"`
+			Delta        string          `json:"delta"`
+			Arguments    string          `json:"arguments"`
+			Item         json.RawMessage `json:"item"`
+			Response     json.RawMessage `json:"response"`
+			Error        *struct {
 				Code    string `json:"code"`
 				Message string `json:"message"`
 			} `json:"error"`
@@ -360,11 +380,12 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 		switch ev.Type {
 		case "response.output_item.added", "response.output_item.done":
 			var it struct {
-				Type      string `json:"type"`
-				ID        string `json:"id"`
-				CallID    string `json:"call_id"`
-				Name      string `json:"name"`
-				Arguments string `json:"arguments"`
+				Type      string          `json:"type"`
+				ID        string          `json:"id"`
+				CallID    string          `json:"call_id"`
+				Name      string          `json:"name"`
+				Arguments string          `json:"arguments"`
+				Summary   []responsesText `json:"summary"`
 				Content   []struct {
 					Type string `json:"type"`
 					Text string `json:"text"`
@@ -388,6 +409,9 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 				sawTool = true
 			}
 			if ev.Type == "response.output_item.done" {
+				if len(it.Summary) > 0 {
+					x.summary = it.Summary
+				}
 				// The done item is definitive: its arguments whole, its
 				// text whole when no delta carried it.
 				if it.Arguments != "" {
@@ -396,12 +420,30 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 				}
 				if x.text.Len() == 0 {
 					for _, c := range it.Content {
-						if c.Type == "output_text" {
+						if c.Type == "output_text" || c.Type == "reasoning_text" {
 							x.text.WriteString(c.Text)
 						}
 					}
 				}
 			}
+		case "response.reasoning_summary_text.delta", "response.reasoning_summary_text.done":
+			x := at(ev.OutputIndex)
+			x.typ = "reasoning"
+			if ev.SummaryIndex < 0 {
+				break
+			}
+			for len(x.summary) <= ev.SummaryIndex {
+				x.summary = append(x.summary, responsesText{Type: "summary_text"})
+			}
+			if ev.Type == "response.reasoning_summary_text.done" {
+				x.summary[ev.SummaryIndex].Text = ev.Text
+			} else {
+				x.summary[ev.SummaryIndex].Text += ev.Delta
+			}
+		case "response.reasoning_text.delta":
+			x := at(ev.OutputIndex)
+			x.typ = "reasoning"
+			x.text.WriteString(ev.Delta)
 		case "response.output_text.delta":
 			x := at(ev.OutputIndex)
 			x.typ = "message"
@@ -453,36 +495,16 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 		x := items[i]
 		switch x.typ {
 		case "message":
-			built.Output = append(built.Output, struct {
-				Type    string `json:"type"`
-				Role    string `json:"role"`
-				CallID  string `json:"call_id"`
-				Name    string `json:"name"`
-				Args    string `json:"arguments"`
-				Content []struct {
-					Type string `json:"type"`
-					Text string `json:"text"`
-				} `json:"content"`
-			}{Type: "message", Role: "assistant", Content: []struct {
-				Type string `json:"type"`
-				Text string `json:"text"`
-			}{{Type: "output_text", Text: x.text.String()}}})
+			built.Output = append(built.Output, responsesOutput{Type: "message", Role: "assistant", Content: []responsesText{{Type: "output_text", Text: x.text.String()}}})
+		case "reasoning":
+			built.Output = append(built.Output, responsesOutput{Type: "reasoning", Summary: x.summary, Content: []responsesText{{Type: "reasoning_text", Text: x.text.String()}}})
 		case "function_call":
-			built.Output = append(built.Output, struct {
-				Type    string `json:"type"`
-				Role    string `json:"role"`
-				CallID  string `json:"call_id"`
-				Name    string `json:"name"`
-				Args    string `json:"arguments"`
-				Content []struct {
-					Type string `json:"type"`
-					Text string `json:"text"`
-				} `json:"content"`
-			}{Type: "function_call", CallID: x.callID, Name: x.name, Args: x.args.String()})
+			built.Output = append(built.Output, responsesOutput{Type: "function_call", CallID: x.callID, Name: x.name, Args: x.args.String()})
 		}
 	}
 	if final != nil {
 		built.ID, built.Model, built.Usage, built.Status = final.ID, final.Model, final.Usage, final.Status
+		built.IncompleteDetails = final.IncompleteDetails
 	}
 	return built, guarded, nil
 }

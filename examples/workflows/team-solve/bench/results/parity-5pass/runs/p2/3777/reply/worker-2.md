@@ -1,0 +1,255 @@
+### CODE
+```python
+from typing import List
+import random
+
+
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        max_sum = sum(nums)
+        if k > max_sum or k < -max_sum:
+            return -1
+
+        offset = max_sum
+        size = 2 * max_sum + 1
+        mask = (1 << size) - 1
+        target = 1 << (k + offset)
+
+        # dp0[p] / dp1[p]: reachable alternating sums for non-empty zero-free
+        # subsequences with product p and even / odd length.
+        dp0 = [0] * (limit + 1)
+        dp1 = [0] * (limit + 1)
+
+        # free0 / free1: all zero-free subsequences, including the empty one.
+        # zero0 / zero1: subsequences containing at least one zero.
+        free0 = 1 << offset
+        free1 = 0
+        zero0 = 0
+        zero1 = 0
+
+        for x in nums:
+            if x == 0:
+                oz0, oz1 = zero0, zero1
+                of0, of1 = free0, free1
+
+                # Taking a zero flips parity and does not change the sum.
+                zero0 = (oz0 | oz1 | of1) & mask
+                zero1 = (oz1 | oz0 | of0) & mask
+            else:
+                old0 = dp0[:]
+                old1 = dp1[:]
+
+                # Start a new positive-product subsequence with this element.
+                if x <= limit:
+                    dp1[x] |= 1 << (x + offset)
+
+                # Extend existing positive-product subsequences.
+                max_p = limit // x
+                m = mask
+                for p in range(1, max_p + 1):
+                    np = p * x
+
+                    b0 = old0[p]
+                    if b0:
+                        # Even length -> next index is even -> add x.
+                        dp1[np] |= (b0 << x) & m
+
+                    b1 = old1[p]
+                    if b1:
+                        # Odd length -> next index is odd -> subtract x.
+                        dp0[np] |= b1 >> x
+
+                # Update zero-free reachability, ignoring product limits.
+                of0, of1 = free0, free1
+                free0 = (of0 | (of1 >> x)) & m
+                free1 = (of1 | (of0 << x)) & m
+
+                # Update zero-containing reachability, ignoring product limits.
+                oz0, oz1 = zero0, zero1
+                zero0 = (oz0 | (oz1 >> x)) & m
+                zero1 = (oz1 | (oz0 << x)) & m
+
+        # Prefer any positive product over product 0.
+        for p in range(limit, 0, -1):
+            if (dp0[p] & target) or (dp1[p] & target):
+                return p
+
+        if (zero0 & target) or (zero1 & target):
+            return 0
+
+        return -1
+
+
+def brute_force(nums: List[int], k: int, limit: int) -> int:
+    n = len(nums)
+    best = -1
+
+    for mask in range(1, 1 << n):
+        prod = 1
+        s = 0
+        parity = 0
+
+        for i in range(n):
+            if mask & (1 << i):
+                if parity == 0:
+                    s += nums[i]
+                else:
+                    s -= nums[i]
+                prod *= nums[i]
+                parity ^= 1
+
+        if s == k and prod <= limit:
+            if prod > best:
+                best = prod
+
+    return best
+
+
+def main() -> None:
+    sol = Solution()
+    failures = []
+    test_count = 0
+
+    def check(nums: List[int], k: int, limit: int, expected=None) -> None:
+        nonlocal test_count
+        test_count += 1
+        actual = sol.maxProduct(nums, k, limit)
+        bf = brute_force(nums, k, limit)
+
+        if expected is not None and actual != expected:
+            failures.append((nums, k, limit, expected, actual, bf))
+        if actual != bf:
+            failures.append((nums, k, limit, bf, actual, bf))
+
+    # Provided examples.
+    check([1, 2, 3], 2, 10, 6)
+    check([0, 2, 3], -5, 12, -1)
+    check([2, 2, 3, 3], 0, 9, 9)
+
+    # Targeted edge cases.
+    targeted = [
+        ([12, 12, 0, 12], 24, 5000),
+        ([12, 12, 0, 12], -12, 100),
+        ([12, 12, 0, 12], 0, 100),
+        ([12, 12, 0, 12], 0, 200),
+        ([2, 0, 3], 5, 1),
+        ([2, 0, 3], -1, 5),
+        ([2, 0, 3], -1, 6),
+        ([0, 2, 3], 1, 1),
+        ([2, 2, 3, 3], 0, 36),
+        ([2, 2, 3, 3], 0, 5000),
+        ([12, 12], 0, 100),
+        ([12, 12], 0, 144),
+        ([12, 12, 0], 0, 100),
+        ([12, 12, 0], 0, 143),
+        ([12, 12, 0], 0, 144),
+        ([1, 1, 1, 1], 0, 1),
+        ([1, 1, 1, 1], 1, 1),
+        ([0, 1, 0], 0, 1),
+        ([0, 1, 0], 1, 1),
+        ([0, 1, 0], -1, 1),
+    ]
+    for nums, k, limit in targeted:
+        check(nums, k, limit)
+
+    # Deterministic edge sweeps.
+    edge_nums = [
+        [0],
+        [0, 0],
+        [1],
+        [1, 1],
+        [1, 1, 1],
+        [2, 2],
+        [2, 2, 3, 3],
+        [12, 12],
+        [12, 12, 0],
+        [0, 2, 3],
+        [2, 0, 3],
+        [0, 0, 2],
+    ]
+    for nums in edge_nums:
+        for k in range(-12, 13):
+            for limit in (1, 2, 4, 9, 10, 12, 36, 100, 200, 5000):
+                check(nums, k, limit)
+
+    # Random tiny cases.
+    random.seed(12345)
+
+    for _ in range(1000):
+        n = random.randint(1, 8)
+        nums = [random.randint(0, 12) for _ in range(n)]
+        k = random.randint(-30, 30)
+        limit = random.randint(1, 50)
+        check(nums, k, limit)
+
+    for _ in range(1000):
+        n = random.randint(1, 8)
+        nums = [random.randint(0, 6) for _ in range(n)]
+        if 0 not in nums:
+            nums[random.randrange(n)] = 0
+        k = random.randint(-10, 10)
+        limit = random.randint(1, 10)
+        check(nums, k, limit)
+
+    for _ in range(500):
+        n = random.randint(1, 8)
+        nums = [random.randint(0, 1) for _ in range(n)]
+        k = random.randint(-2, 2)
+        limit = 1
+        check(nums, k, limit)
+
+    for _ in range(500):
+        n = random.randint(1, 8)
+        nums = [random.randint(0, 12) for _ in range(n)]
+        k = 0
+        limit = random.randint(1, 20)
+        check(nums, k, limit)
+
+    for _ in range(500):
+        n = random.randint(1, 8)
+        nums = [random.randint(0, 12) for _ in range(n)]
+        k = random.randint(-10, 10)
+        limit = 1
+        check(nums, k, limit)
+
+    for _ in range(500):
+        n = random.randint(1, 8)
+        nums = [random.randint(2, 12) for _ in range(n)]
+        k = random.randint(-20, 20)
+        limit = random.randint(1, 10)
+        check(nums, k, limit)
+
+    # Larger sanity calls, not brute-forced.
+    sol.maxProduct([12] * 150, 0, 5000)
+    sol.maxProduct([0] * 150, 0, 5000)
+    sol.maxProduct([1] * 150, 0, 5000)
+    sol.maxProduct([12, 0, 12, 0, 12], 0, 5000)
+
+    if failures:
+        print(f"FAILURES: {len(failures)}")
+        for item in failures[:20]:
+            print(item)
+    else:
+        print(f"No failing cases found in {test_count} tests.")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### NOTES
+- **State encoding:** Use one Python int as a bitset for alternating sums. `offset = sum(nums)`, `size = 2 * offset + 1`, bit `i` represents sum `i - offset`. Adding `x` is a left shift by `x`; subtracting `x` is a right shift by `x`. Left shifts are masked to the valid sum range.
+- **Positive product DP:** `dp0[p]` and `dp1[p]` store sum bitsets for non-empty zero-free subsequences with product `p <= limit` and even/odd length. For each positive `x`, snapshot the old lists, add singleton `[x]` to `dp1[x]` if `x <= limit`, then extend old even states by `+x` to odd and old odd states by `-x` to even when `p*x <= limit`. Snapshots prevent reusing the same element, important for `x = 1`.
+- **Zero product DP:** `free0`/`free1` store all zero-free subsequences including empty; `zero0`/`zero1` store subsequences containing at least one zero. For positive `x`, zero states only extend: even zero states add `x`, odd zero states subtract `x`. For `x = 0`, taking the zero flips parity with no sum change and can start from any zero-free state, so `zero0` gets old `zero0`, old `zero1`, old `free1`; `zero1` gets old `zero1`, old `zero0`, old `free0`.
+- **Why free DP is needed:** A zero-free prefix whose product exceeds `limit` is discarded from positive-product DP, but a later zero makes final product 0 and valid. `free`/`zero` DP ignores product limits, so it captures all zero-containing subsequences, including those built from over-limit positive prefixes.
+- **Final answer:** If `|k| > sum(nums)`, return `-1`. Otherwise scan products from `limit` down to 1; the first product whose even or odd bitset contains the target sum is the maximum valid positive product. If none exists, return 0 if the zero DP reaches the target, otherwise -1. Empty subsequence is not considered because positive DP has no empty state and zero DP only starts by taking a zero.
+- **Examples:** The three provided examples pass: `[1,2,3] k=2 limit=10` returns 6; `[0,2,3] k=-5 limit=12` returns -1; `[2,2,3,3] k=0 limit=9` returns 9.
+- **Testing harness:** The program includes a brute-force checker that enumerates all non-empty masks and compares with `Solution.maxProduct`. It runs the examples, targeted edge cases, deterministic edge loops over zeros, ones, k=0, limit=1, and over-limit products, plus 4000 seeded random tiny cases with n up to 8. It also runs a few n=150 sanity calls without brute force.
+- **Test result:** No failing cases found in the harness. Targeted cases include `[12,12,0]` with limits 100/143/144 to check over-limit positive prefixes becoming zero, `[2,0,3]` for zero parity, all zeros, all ones, and limit=1.
+- **Complexity:** Bitset length is at most 3601 bits because `12 * 150 = 1800`. The positive-product loop performs at most about `150 * 5000 = 750000` iterations, each with small big-int shifts when a state is non-empty. Memory is `O(limit)` big ints plus four additional bitsets.
+
+### NEXT
+- none
+
+### STATUS
+solved

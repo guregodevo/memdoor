@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "desc": "Derive and lock the black-index recurrence, active event reduction, and answer formula.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the full-constraint fast solver with CDQ/NTT, direct cutoffs, optimized NTT, and alternating/consecutive FPS fast paths.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Validate the solution on the public samples and finalize the submitted Python code.",
+    "status": "done",
+    "result": ""
+  }
+]

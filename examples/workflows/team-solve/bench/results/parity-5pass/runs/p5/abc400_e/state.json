@@ -1,0 +1,67 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Reduce the problem to a predecessor query over squares of integers up to 10^6 that have exactly two distinct prime factors.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the full Python solution using the maximum query root limit, a bytearray prime sieve, distinct-prime-factor counting, a sorted list of valid squares, and bisect_right.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Verify sample cases and edge cases such as A=36, A=400, A=10^12, and non-square A, and confirm performance for Q=2e5.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Additive distinct-prime sieve: generate primes up to \\(10^6\\), maintain a small counter for each integer, and increment the counter for every multiple of each prime. Then collect the squares of all integers whose counter is exactly two, in increasing order, and answer each query by binary searching for the largest square not exceeding \\(A\\). Pitfalls: using large Python integer lists can waste memory, so compact arrays or byte-sized counters are preferable; the sieve must count each prime divisor only once, not once per exponent; binary search must correctly handle the case where \\(A\\) itself is a 400 number.",
+  "Precomputed predecessor table: after determining which roots up to \\(10^6\\) have exactly two distinct prime factors, build an array where each position stores the largest valid root not exceeding that position. Then each query becomes an integer square root followed by one table lookup and one squaring operation. Pitfalls: this uses extra memory for about one million entries, so a compact integer array is important; the table must be filled carefully so that positions before the first valid root have a safe sentinel value, although the constraints guarantee a valid answer for all given queries.",
+  "Direct constructive enumeration of valid roots: iterate over ordered pairs of distinct primes \\(p < q\\) and over positive exponents \\(a,b\\) such that \\(p^a q^b \\le 10^6\\), recording the resulting roots or their squares. This avoids computing a distinct-prime-factor count for every number up to \\(10^6\\). Pitfalls: the smaller prime is bounded by the condition \\(p q \\le 10^6\\), so it is at most around \\(1000\\); prime powers must be generated efficiently; the generated list may not be sorted, so sorting is required; careless exponent or prime-order handling can create duplicates or miss valid numbers.",
+  "Block bitset predecessor structure: build a bitset of length \\(10^6\\) where bit \\(i\\) is set exactly when \\(i\\) has two distinct prime factors, stored in fixed-size blocks such as 64-bit words. For a query, mask the block containing \\(r = \\lfloor \\sqrt A \\rfloor\\), find the highest set bit in that masked block, and if none exists scan earlier blocks. Return the found root squared. Pitfalls: bit indexing and masking must be exact; scanning many blocks could become slow if gaps between valid roots are unexpectedly large, though they are likely small; building the bitset still requires some way to identify valid roots.",
+  "Per-query downward search with cached factorization: compute \\(r = \\lfloor \\sqrt A \\rfloor\\) and decrement \\(r\\) until finding a number with exactly two distinct prime factors, using trial division by small primes or a precomputed smallest-prime-factor table to test candidates. Pitfalls: there is no guaranteed small gap between valid roots, so worst-case total work over many queries can be too high; trial division up to the square root of each candidate is slow unless a stronger precomputation is already available, in which case direct predecessor lookup is usually better.",
+  "Counting-based binary search: define a function counting how many integers up to \\(x\\) have exactly two distinct prime factors, then use binary search per query to locate the last valid root not exceeding \\(\\lfloor \\sqrt A \\rfloor\\). Pitfalls: an exact counting function for arbitrary \\(x\\) is nontrivial without precomputing an array; a combinatorial formula over prime pairs and powers may be complex and potentially slow per query; this approach is likely overkill compared with simple precomputation up to \\(10^6\\)."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the full Python solution: read all queries, compute L = isqrt(max(A)); sieve primes up to L; use a bytearray distinct-prime-factor counter incremented once for each multiple of each prime; build sorted list vals = [i*i for i in range(L+1) if cnt[i] == 2]; answer each A with vals[bisect_right(vals, A) - 1]; print all answers with fast I/O.",
+ "iters": 1,
+ "task": "Implement the full Python solution: read all queries, compute L = isqrt(max(A)); sieve primes up to L; use a bytearray distinct-prime-factor counter incremented once for each multiple of each prime; build sorted list vals = [i*i for i in range(L+1) if cnt[i] == 2]; answer each A with vals[bisect_right(vals, A) - 1]; print all answers with fast I/O.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 1,
+  "total": 1,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

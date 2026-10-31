@@ -237,6 +237,16 @@ Mouse wheel and `PgUp`/`PgDn` scroll; while the command list is open they move t
 
 The TUI reconnects on its own and sends anything you typed while it was away. A step that was mid-flight may have finished during the gap — its events aren't replayed, so check the folder rather than assuming it was lost.
 
+## If the gateway refuses the window
+
+A gateway only opens your own workspace and your own conversations to you. If the window asks for someone else's, the gateway refuses it, and the TUI doesn't keep retrying. It shows the reason once, with what to do:
+
+```
+⚠ the gateway refused this window: not your workspace (yours is acme). Start memdoor again without -w or $MEMDOOR_WORKSPACE: it opens your own workspace. …
+```
+
+`memdoor auth whoami` shows which account this machine is signed in as; `memdoor auth login-direct --email <email> --password <pass>` switches to another.
+
 ## From your phone
 
 `/remote` prints a link and a QR code. The page it opens on your phone is this

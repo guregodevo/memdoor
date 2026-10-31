@@ -1,0 +1,9 @@
+### PLAN
+Model a placement by binary variables on the midpoints of cell edges, where 1 means the tile has an endpoint there; the no-dead-end condition makes the two variables on each shared edge equal. For each cell, type A forces exactly one vertical and one horizontal endpoint, while type B forces either both vertical or both horizontal endpoints. This gives a vertical propagation rule: moving down a column, the vertical edge bit flips on A and stays on B, so every column must contain an even number of A's. For a fixed row, the horizontal edge bits form a cycle with xor difference 1 at A cells and 0 at B cells; hence each row must also have an even number of A's. If a row is all A it has two independent horizontal choices; otherwise its B cells fix the horizontal cycle and impose xor constraints among the initial vertical bits of the columns at those B positions. Maintain column parities while scanning rows, add the row constraints to a parity DSU over the W initial vertical bits, and if all parities and DSU are consistent the answer is 2^{components + all-A rows} modulo 998244353.
+
+### TASKS
+- Parse all test cases; for each, initialize a parity DSU on W variables, an array of column A-parities, and counters for components, all-A rows, and validity.
+- Scan each row left to right, maintaining the prefix parity of A's in that row; count A's and, for every B cell, compute R = column_parity[j] xor row_prefix.
+- For all B cells in the current row, union the first B cell with each other B cell using weight R_first xor R_j; update column_parity[j] for A cells.
+- If a row has an odd number of A's, mark the case invalid; after all rows, also require every column parity to be zero and the DSU to have no contradiction.
+- Output 0 for invalid cases; otherwise output pow(2, components + allA_rows, 998244353).

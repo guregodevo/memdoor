@@ -1,0 +1,138 @@
+PROBLEM:
+### Question
+A positive integer N is a 400 number if and only if it satisfies both of the following two conditions:
+
+- N has exactly 2 distinct prime factors.
+- For each prime factor p of N, p divides N an even number of times. More formally, the maximum non-negative integer k such that p^k divides N is even.
+
+Process Q queries. Each query gives you an integer A, so find the largest 400 number not exceeding A. Under the constraints of this problem, a 400 number not exceeding A always exists.
+
+Input
+
+The input is given from Standard Input in the following format:
+Q
+\text{query}_1
+\text{query}_2
+\vdots
+\text{query}_Q
+
+Here, \text{query}_i is the i-th query, given in the following format:
+A
+
+Output
+
+Print Q lines. The i-th line should contain the answer to the i-th query.
+
+Constraints
+
+
+- 1 \leq Q \leq 2 \times 10^5
+- For each query, 36 \leq A \leq 10^{12}.
+- All input values are integers.
+
+Sample Input 1
+
+5
+404
+36
+60
+1000000000000
+123456789
+
+Sample Output 1
+
+400
+36
+36
+1000000000000
+123454321
+
+Let us explain the first query.
+There are exactly 2 prime factors of 400: 2 and 5. Also, 2 divides 400 four times and 5 divides it twice, so 400 is a 400 number. None of 401, 402, 403, and 404 is a 400 number, so the answer is 400.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+import math
+from array import array
+
+
+def main():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    q = int(data[0])
+    queries = [0] * q
+    max_a = 0
+
+    for i in range(q):
+        a = int(data[i + 1])
+        queries[i] = a
+        if a > max_a:
+            max_a = a
+
+    del data
+
+    if q == 0:
+        return
+
+    isqrt = math.isqrt
+    n = isqrt(max_a)
+
+    if n < 6:
+        sys.stdout.write("\n".join("0" for _ in range(q)))
+        return
+
+    n1 = n + 1
+
+    # omega[x] = number of distinct prime factors of x
+    omega = bytearray(n1)
+    for i in range(2, n1):
+        if omega[i] == 0:  # i is prime
+            for j in range(i, n1, i):
+                omega[j] += 1
+
+    # best[x] = largest y <= x such that omega[y] == 2
+    best = array("I", [0]) * n1
+    last = 0
+    for i in range(6, n1):
+        if omega[i] == 2:
+            last = i
+        best[i] = last
+
+    out = []
+    append = out.append
+    for a in queries:
+        b = best[isqrt(a)]
+        append(str(b * b))
+
+    sys.stdout.write("\n".join(out))
+
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Core reduction:** A 400 number has every prime exponent even, so it is a perfect square. If N = m^2, then N has exactly two distinct prime factors exactly when m has exactly two distinct prime factors. Thus the answer for A is the square of the largest m <= isqrt(A) with omega(m) = 2.
+- **Limit:** Since A <= 10^12, m <= 10^6. The code reads all queries, computes max_a, and sieves only up to isqrt(max_a), which is at most 10^6 and at least 6 under the constraints.
+- **Sieve:** omega is a bytearray of length n+1. For i from 2 to n, if omega[i] == 0 then i is prime; increment omega[j] for all multiples j of i. This counts distinct prime factors because each prime is applied once to its multiples. Total inner iterations are sum_{p<=n} n/p, about 2.9 million for n=10^6.
+- **Prefix array:** best is an array of unsigned ints where best[i] is the largest integer <= i with omega == 2. Scan i from 6 to n, keep last valid value, and store it in best[i]. Values below 6 remain 0.
+- **Query handling:** For each A, r = isqrt(A), b = best[r], output b*b. Squaring is monotone, so this is the largest valid square not exceeding A. Use math.isqrt for exact integer square roots.
+- **I/O and memory:** Read all tokens with sys.stdin.buffer.read().split(), convert queries to ints, delete token list before preprocessing. Build output list and join once. bytearray and array keep memory low; Python ints handle 10^12 without overflow.
+- **Complexity:** Preprocessing O(n log log n + n) time and O(n) memory; queries O(Q) time. With n <= 10^6 and Q <= 2e5 this is fast.
+- **Edge cases:** Smallest valid base is 6, giving 36. For r < 6 best[r] = 0, but the constraints guarantee A >= 36. Distinct prime factors are counted, not exponents; squares of primes are not valid.
+
+
+CURRENT TASK LIST:
+- [done] Reduce the problem to finding the largest square of a base ≤ 10^6 with exactly two distinct prime factors.
+- [todo] Implement the complete Python solution and run it on the sample input: sieve up to 1,000,000 counting distinct prime factors, build a prefix array of the largest base with exactly two distinct prime factors, and for each query output best[isqrt(A)]**2 using fast I/O.
+- [todo] Validate edge cases and performance: A=36, A=400, A=10^12, random small brute-force checks, and Q=200,000 input.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 1 public samples -- the solution looks correct.] worker reported 'solved' on: Implement the complete Python solution and run it on the sample input: sieve up . - **Core reduction:** A 400 number has every prime exponent even, so it is a perfect square. If N = m^2, then N has exactly two distinct prime factors exactly when m has exactly two distinct prime fac
+
+PROPOSED NEW STEPS:
+(none)

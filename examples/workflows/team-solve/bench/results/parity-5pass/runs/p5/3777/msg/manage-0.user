@@ -1,0 +1,113 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, k and limit. Your task is to find a non-empty subsequence of nums that:
+
+Has an alternating sum equal to k.
+Maximizes the product of all its numbers without the product exceeding limit.
+
+Return the product of the numbers in such a subsequence. If no subsequence satisfies the requirements, return -1.
+The alternating sum of a 0-indexed array is defined as the sum of the elements at even indices minus the sum of the elements at odd indices.
+ 
+Example 1:
+
+Input: nums = [1,2,3], k = 2, limit = 10
+Output: 6
+Explanation:
+The subsequences with an alternating sum of 2 are:
+
+[1, 2, 3]
+
+Alternating Sum: 1 - 2 + 3 = 2
+Product: 1 * 2 * 3 = 6
+
+
+[2]
+
+Alternating Sum: 2
+Product: 2
+
+
+
+The maximum product within the limit is 6.
+
+Example 2:
+
+Input: nums = [0,2,3], k = -5, limit = 12
+Output: -1
+Explanation:
+A subsequence with an alternating sum of exactly -5 does not exist.
+
+Example 3:
+
+Input: nums = [2,2,3,3], k = 0, limit = 9
+Output: 9
+Explanation:
+The subsequences with an alternating sum of 0 are:
+
+[2, 2]
+
+Alternating Sum: 2 - 2 = 0
+Product: 2 * 2 = 4
+
+
+[3, 3]
+
+Alternating Sum: 3 - 3 = 0
+Product: 3 * 3 = 9
+
+
+[2, 2, 3, 3]
+
+Alternating Sum: 2 - 2 + 3 - 3 = 0
+Product: 2 * 2 * 3 * 3 = 36
+
+
+
+The subsequence [2, 2, 3, 3] has the greatest product with an alternating sum equal to k, but 36 > 9. The next greatest product is 9, which is within the limit.
+
+ 
+Constraints:
+
+1 <= nums.length <= 150
+0 <= nums[i] <= 12
+-10^5 <= k <= 10^5
+1 <= limit <= 5000
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        
+```
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The core difficulty is that the subsequence constraint couples three things: the inherited order of elements, the parity of how many elements have already been chosen (which determines whether the next chosen element is added or subtracted), and the product objective, which is bounded by `limit`. The alternating-sum dimension is small because each value is at most 12 and at most 150 elements can be chosen, so reachable sums lie in a range of roughly a few thousand. The product dimension is also small because products above `limit` are useless for positive final products. However, the state space is still large if represented naively as position, parity, sum, and product.
+
+A major subtlety is that a larger product for the same sum and parity does not always dominate a smaller product. A smaller product may remain under `limit` after future multiplications, while a larger product may exceed it. Therefore, storing only the maximum product per sum/parity is generally unsafe.
+
+Zeros create another special case. Once a zero is selected, the product becomes 0 and stays 0. A zero can be appended after a prefix whose product already exceeded `limit`, so a DP that only keeps positive products up to `limit` may miss valid zero-product subsequences unless it also tracks uncapped sum/parity feasibility. Also, the empty subsequence has sum 0 and product 1, but the answer must come from a non-empty subsequence, so this edge case must be handled explicitly.
+
+
+CURRENT TASK LIST:
+- [todo] Compute `max_sum = 12 * len(nums)`, an offset, and a bitmask; initialize an all-subsequence feasibility DP with the empty state, an empty positive-product DP, and empty zero-product parity bitsets.
+- [todo] Implement the all-subsequence DP update: for each `x`, skip it or select it, shifting parity `0` sums by `+x` into parity `1` and parity `1` sums by `-x` into parity `0`.
+- [todo] Implement the positive-product DP: for each `x > 0`, add singleton state product `x` if `x <= limit`, and extend existing products `p` to `p * x` only when `p * x <= limit`, using the same parity-based sum shifts.
+- [todo] Implement the zero-product DP: extend existing zero-product states by every `x` with parity-based sum shifts, and when `x == 0`, also create zero-product states from the old all-subsequence DP, including the empty state.
+- [todo] Use old snapshots for all DP updates to prevent reusing the current element, then scan products from `limit` down to `1` for target sum `k`; if none exists, check the zero-product bitsets and return `0` or `-1`.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Product-major bitset DP: for each product value from 0 to `limit` and each parity, keep a bitset of reachable alternating sums. Process each number once, shifting sum bitsets by `+x` or `-x` and moving product `p` to `p*x` when taking the element. Pitfalls: need snapshots to avoid reusing the same element, careful masking for negative sums, special handling of `x = 1`, and zero-product seeding from uncapped feasibility to catch prefixes that exceeded `limit` before a zero.
+- Sum-major product-set DP: for each alternating sum and parity, keep a set or bitset of reachable products. Taking an element shifts the sum and multiplies the product set by the element value. Pitfalls: multiplication of product sets is less natural than bitset shifting, many sum states can be expensive, zero handling still requires uncapped feasibility or separate zero tracking, and the empty subsequence can contaminate sum 0/product 1.
+- Feasibility-first plus product validation: first compute reachable sums and parities ignoring product, and separately compute zero-product reachability. Then enumerate candidate positive products in descending order and test whether a candidate product can achieve the target sum, using an exact-product DP or memoized search. Pitfalls: product enumeration may be large, exact-product checks can be costly, and binary search over product is not valid because achievability is not monotone in product.
+- Prime-exponent or multiplicative-lattice DP: represent products by exponent vectors of the primes appearing in values 1 through 12, or by generated product values, and combine that multiplicative state with sum/parity bitsets. Pitfalls: the exponent-state space can still be sizable, products must be capped by value, zeros and ones need special treatment, and this approach may be structurally similar to product-major DP but with more complex state mapping.
+- Block-summary or divide-and-conquer composition: split the array into blocks, precompute for each block the possible parity changes, sum deltas, and product multipliers, then combine block summaries into a global DP. Pitfalls: block summaries can grow quickly, product multipliers above `limit` must be handled carefully because a later zero can still make the final product 0, and composing parity and sum deltas across blocks requires careful bookkeeping.
+- Top-down memoized search with suffix feasibility pruning: recursively choose or skip elements, using precomputed suffix reachability of sums/parities to prune impossible branches, and search for high products first or use branch-and-bound. Pitfalls: the search can still be exponential, memoization may approach the full DP state space, zero-product paths require special pruning, and proving that the search finds the maximum product without missing smaller intermediate products is delicate.

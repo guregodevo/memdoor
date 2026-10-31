@@ -1,0 +1,75 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Implement a small brute-force oracle and random/exhaustive tester to validate the forbidden-pair characterization and query reduction on tiny cases.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the complete real solver (replacing the stress tester) using the bad-pair characterization: normalize to (l,r,sign), compute earliest bad partner for same l, same r, opposite same interval, and same-sign strict crossings via four orientation sweeps, build suffix minima, and answer queries.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Test the real solver on the provided samples, edge cases (touching endpoints, identical opposite, strict crossing, 1-indexing), and max-constraint performance.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the supplied plan as an online range-reporting sweep. For each sign separately, scan people in input order and keep only previous intervals that have not yet been assigned a crossing partner. Maintain two reporting structures: one keyed by right endpoint with the minimum left endpoint in each node and a min-heap of left endpoints at leaves, and one keyed by left endpoint with the maximum right endpoint in each node and a max-heap of right endpoints at leaves. For the current interval, query the right-keyed structure over the open right-endpoint range and report/delete all entries whose left endpoint is smaller than the current left endpoint; query the left-keyed structure over the open left-endpoint range and report/delete all entries whose right endpoint is larger than the current right endpoint. Each reported interval receives the current index as its earliest crossing partner. Combine these partners with next occurrences of the same left or right endpoint, then take suffix minima to answer queries. Pitfalls: strict open ranges, sign separation, lazy deletion across the two structures, updating node extrema after deletions, memory for many leaf heaps, and ensuring each tree descent is charged to a reported or lazily removed interval so the total work stays near \\(O(M\\log N)\\).",
+  "Use CDQ divide-and-conquer over the person index to compute, for each right endpoint \\(j\\), the largest earlier index \\(i\\) forming a bad pair. Handle same-left and same-right endpoint conflicts with a linear last-occurrence pass. In each CDQ cross step, for each sign, process the two crossing orientations with one-dimensional sweeps: for the case where the left-half interval starts before the right-half interval, sort left intervals by left endpoint and right queries by left endpoint, add left intervals to a Fenwick tree over right endpoints storing the maximum index, and query the open right-endpoint interval; for the case where the left-half interval starts inside the right-half interval, sort by right endpoint descending and use a Fenwick tree over left endpoints. Take the maximum over all cross steps, then use prefix maxima to answer queries. Pitfalls: \\(O(M\\log M\\log N)\\) time, possible extra log factor from sorting at every node, clearing Fenwick trees efficiently, strict inequalities, recursion overhead, and Python performance.",
+  "Scan people backwards and use a true 2D range-minimum structure. For each sign separately, insert later intervals as points \\((l,r)\\) with value equal to their index. For the current interval, query the minimum index in the rectangle \\(l\\) in \\((l_i,r_i)\\) and \\(r>r_i\\), and also in the rectangle \\(r\\) in \\((l_i,r_i)\\) and \\(l<l_i\\). A segment tree over one coordinate with a Fenwick tree or segment tree over the other coordinate, storing minimum index and using offline coordinate compression, can answer these queries. Combine the results with next same-endpoint occurrences and suffix minima. Pitfalls: large memory \\(O(M\\log N)\\), minimum is not invertible so a segment tree over the first coordinate is usually needed, two structures or separate sign runs, and \\(O(M\\log^2 N)\\) time may be heavy in Python.",
+  "Use parallel binary search on the earliest bad partner. For a batch of midpoints, insert all people up to each midpoint into a 2D range-maximum structure that stores the maximum index in a rectangle. For each left index, check whether any same-sign crossing interval with index greater than the left index exists in the two crossing rectangles, and also check shared-endpoint conflicts. Iterate until the answers converge. Pitfalls: conceptually simple but high complexity, repeated rebuilding or complex offline processing, still requires a 2D structure, and likely slower than direct nearest-partner methods.",
+  "Use Mo\u2019s algorithm over query ranges, maintaining the active set of people and a dynamic conflict detector. Shared-endpoint conflicts are easy with counts of left endpoints, right endpoints, and signed intervals. For same-sign crossing, maintain per-sign dynamic interval structures, for example segment trees over left endpoints with maximum right endpoint and over right endpoints with minimum left endpoint, augmented with heaps or other deletion-capable structures, that can tell whether any two active intervals cross. Pitfalls: \\(O((M+Q)\\sqrt M\\log N)\\) is probably too slow, deletions make exact crossing detection difficult, and the high constant may be prohibitive.",
+  "Before committing to a scalable method, run a small brute-force verifier: enumerate all pairs in a range, test the bad-pair conditions, and compare with direct feasibility by building the equality/inequality graph for tiny \\(N\\) and \\(M\\). This validates the pairwise characterization and the query reduction, and provides an oracle for the final implementation. Pitfalls: it is only useful for small random tests and is not a scalable solution."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the complete real solver (replacing the stress tester) using the bad-pair characterization: normalize to (l,r,sign), compute earliest bad partner for same l, same r, opposite same interval, and same-sign strict crossings via four orientation sweeps, build suffix minima, and answer queries.",
+ "iters": 2,
+ "task": "Implement the complete real solver (replacing the stress tester) using the bad-pair characterization: normalize to (l,r,sign), compute earliest bad partner for same l, same r, opposite same interval, and same-sign strict crossings via four orientation sweeps, build suffix minima, and answer queries.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 2,
+  "total": 2,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-2",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-2",
+   "finish": "stop"
+  }
+ ]
+}

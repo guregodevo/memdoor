@@ -1,0 +1,99 @@
+PROBLEM:
+### Question
+You are given a length-N sequence A = (A_1, A_2, \ldots, A_N).
+You will repeatedly perform the following operation until the sequence has length at most 1: choose two adjacent numbers and remove both from the sequence.
+The score obtained in one operation is the absolute difference of the two chosen numbers.
+Find the maximum possible total score obtained.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+A_1 A_2 \ldots A_N
+
+Output
+
+Print the maximum possible total score obtained.
+
+Constraints
+
+
+- 2 \le N \le 3 \times 10^5
+- 1 \le A_i \le 10^9
+- All input values are integers.
+
+Sample Input 1
+
+4
+1 2 5 3
+
+Sample Output 1
+
+5
+
+First, remove A_2 and A_3. The score obtained is |A_2 - A_3| = 3.
+Next, remove A_1 and A_4. Note that, because of the previous operation, these two numbers are now adjacent. The score obtained is |A_1 - A_4| = 2.
+Hence, the total score obtained is 5.
+It is impossible to achieve a total score of 6 or greater, so print 5.
+
+Sample Input 2
+
+7
+3 1 4 1 5 9 2
+
+Sample Output 2
+
+14
+
+Sample Input 3
+
+5
+1 1 1 1 1
+
+Sample Output 3
+
+0
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Model each valid removal order as a noncrossing matching of the original positions, with one unmatched element when N is odd. For absolute differences, any crossing pair can be uncrossed by one of the two noncrossing alternatives without decreasing the total score, so an optimal solution can be assumed noncrossing and the adjacency restriction does not change the maximum over arbitrary pairings. The maximum arbitrary pairing of a multiset is obtained by sorting the values and pairing the smallest with the largest, second smallest with second largest, and so on, leaving the median unmatched if N is odd. Therefore the answer is the sum of the differences between symmetric elements of the sorted array. This can be computed in O(N log N) time using 64-bit integer arithmetic.
+
+NOTES:
+
+## ideation
+The core difficulty is that the deletion process is not the same as freely pairing numbers. Each removed pair corresponds to an interval between two original positions, and all original positions inside that interval must have been removed earlier. Therefore two pairs cannot cross: if pairs (i,k) and (j,l) had i < j < k < l, each pair would need the other’s inside element to disappear first, which is impossible. Thus the process is a noncrossing matching on the original indices.
+
+When N is even, this noncrossing restriction does not reduce the maximum value. For any four involved values, one of the two noncrossing re-pairings is at least as good as the crossing pairing. Repeated uncrossing shows that the best noncrossing perfect matching has the same value as the best arbitrary pairing. For an even multiset, the best arbitrary pairing is obtained by sorting and pairing smallest with largest, second smallest with second largest, etc. Equivalently, the value is the sum of the largest half minus the sum of the smallest half.
+
+When N is odd, however, the supplied plan is not generally correct. There is one surviving element, and no pair may span that survivor, because the survivor would forever remain between the endpoints. Hence the survivor splits the sequence into a left part and a right part, both of even length, and the two parts must be paired independently. Only positions with odd 1-based index (even 0-based index) can be the survivor. For a fixed survivor position, the best score is the even-half-difference value of the left prefix plus the even-half-difference value of the right suffix. The answer is the maximum over all valid survivor positions.
+
+A concrete pitfall: the global sorted-symmetric formula can overestimate for odd N. For example, the sequence 1 2 2 100 3 gives 100 by pairing sorted symmetric elements, but no legal adjacent-removal order achieves 100; the best legal score is 99. The overestimate comes from an arbitrary pairing that would require a pair spanning the final surviving element.
+
+Candidate approaches and pitfalls:
+
+1. Exact interval dynamic programming or brute force over removal orders.  
+   This is conceptually simple: define a value for each interval and try pairing the left endpoint with possible partners of the correct parity. It is useful for validating formulas on tiny N. Pitfalls: the state space is quadratic or worse, the recurrence is expensive, and it cannot handle N up to 300,000. It should be used only for testing and insight, not as the final algorithm.
+
+2. Noncrossing-matching reduction plus survivor split plus prefix/suffix half-sum computation.  
+   Prove that every even block can achieve the sorted-half-difference value, then handle odd N by maximizing over valid survivor positions. The remaining computational task is to compute, for every even-length prefix and suffix, the sum of its largest half minus the sum of its smallest half. Pitfalls: forgetting the parity restriction on the survivor, allowing pairs to cross the survivor, misaligning prefix and suffix indices, and using a data structure that cannot maintain the lower/upper half sums efficiently.
+
+3. Sign-assignment / rearrangement formulation.  
+   Orient each pair from smaller to larger. For an even set, the total is a sum of some k positive values minus k negative values, so the upper bound is largest half minus smallest half. For odd N, one element gets a zero sign, but the zero element must split the sequence; positive and negative elements on each side must balance independently. Pitfalls: a global sign assignment can choose positives and negatives across the survivor and overestimate the true legal score. The formulation is useful for proof and sanity checks, but it still needs the split constraint to become an algorithm.
+
+4. Greedy adjacent removal.  
+   Repeatedly remove an adjacent pair with maximum current difference, updating neighboring differences. Pitfalls: this is a local heuristic and is very likely not globally optimal. It may be useful for generating counterexamples to simpler formulas, but it should not be relied on for the final solution. It also introduces implementation complexity with dynamic adjacency and priority-queue updates.
+
+5. Optimized interval DP / Monge-style optimization.  
+   Try to optimize the interval recurrence directly using quadrangle inequality, divide-and-conquer DP, or Knuth-like optimization. Pitfalls: there are still O(N^2) interval states, which is too large for 300,000. Also, the weight |A_i - A_j| is not naturally Monge in the original index order because the values are arbitrary. This route is a fallback only if the simpler reduction is found to be invalid.
+
+6. Planar matching / flow / context-free parsing view.  
+   Model noncrossing matchings as a planar structure or grammar and use a maximum-weight matching or parsing DP. Pitfalls: this is conceptually heavy and typically quadratic or cubic. It is not suitable for the given constraints unless it collapses to the simpler prefix/suffix structure.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement and validate the correct O(N log N) Python solution and produce final code in ```python delimiters: compute f for every even prefix and suffix using two heaps (f = sum largest half - sum smallest half); for even N print f(N); for odd N print max_{k=0}^{N//2} pref[k] + suff[N//2-k]; run the provided samples (without hardcoding), brute-force random N<=8 against exhaustive adjacent-removal DP, and check performance for N=3e5.

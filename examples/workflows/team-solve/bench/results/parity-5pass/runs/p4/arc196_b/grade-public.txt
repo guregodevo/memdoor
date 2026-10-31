@@ -1,0 +1,1 @@
+arc196_b: 1/1 tests passed (samples)

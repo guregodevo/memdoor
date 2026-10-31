@@ -1,0 +1,102 @@
+PROBLEM:
+### Question
+You are given a length-N sequence A = (A_1, A_2, \ldots, A_N).
+You will repeatedly perform the following operation until the sequence has length at most 1: choose two adjacent numbers and remove both from the sequence.
+The score obtained in one operation is the absolute difference of the two chosen numbers.
+Find the maximum possible total score obtained.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+A_1 A_2 \ldots A_N
+
+Output
+
+Print the maximum possible total score obtained.
+
+Constraints
+
+
+- 2 \le N \le 3 \times 10^5
+- 1 \le A_i \le 10^9
+- All input values are integers.
+
+Sample Input 1
+
+4
+1 2 5 3
+
+Sample Output 1
+
+5
+
+First, remove A_2 and A_3. The score obtained is |A_2 - A_3| = 3.
+Next, remove A_1 and A_4. Note that, because of the previous operation, these two numbers are now adjacent. The score obtained is |A_1 - A_4| = 2.
+Hence, the total score obtained is 5.
+It is impossible to achieve a total score of 6 or greater, so print 5.
+
+Sample Input 2
+
+7
+3 1 4 1 5 9 2
+
+Sample Output 2
+
+14
+
+Sample Input 3
+
+5
+1 1 1 1 1
+
+Sample Output 3
+
+0
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The core difficulty is that the removal process is not an arbitrary pairing problem: choosing adjacent pairs to remove defines a noncrossing matching on the original indices, and if N is odd the single remaining element imposes a parity split. The absolute-difference objective is also tricky because it depends on which endpoint of a pair is larger, but it can be bounded by a signed sum: orient each matched pair from the larger value to the smaller value, giving one plus sign and one minus sign per pair. Thus every achievable score is a signed sum with equal numbers of plus and minus signs on each independent side of the eventual leftover.
+
+The key structural observation is that, for any even-length segment, the maximum possible score is the sum of the largest half of the values minus the sum of the smallest half. The upper bound follows from the signed-sum orientation. The lower bound follows because if the largest half are marked plus and the smallest half are marked minus, any balanced plus/minus sequence on a line can be realized by repeatedly deleting adjacent opposite-colored pairs, which produces a valid noncrossing matching and hence a valid removal order.
+
+For even N, this reduces the whole problem to computing that value for the entire array. For odd N, the leftover element must have odd original index, because removing adjacent pairs preserves the parity of an element’s original position. No pair can cross the leftover, so the answer is the maximum over odd positions m of the even-segment value on the left of m plus the even-segment value on the right of m. Therefore the main computational task is to compute, for many even-length prefixes and suffixes, the difference between the sum of the largest half and the sum of the smallest half. The main practical challenges are correct parity indexing, maintaining half-sums efficiently for O(N) nested prefixes/suffixes, and using 64-bit integer arithmetic.
+
+Candidate approaches and pitfalls:
+
+1. Noncrossing-matching/sign reduction with online half-sum maintenance. Derive the even-segment formula, then scan left to right and right to left, maintaining the sum of the largest half of the current even prefix/suffix using two heaps or equivalent balanced structures. Pitfalls: rebalancing when the target half-size increases after each pair of insertions, duplicate values, updating sums correctly, suffix indexing, and off-by-one errors on odd positions.
+
+2. Range top-k sum queries with a persistent segment tree or wavelet tree. Coordinate-compress values and build prefix versions or a wavelet structure so that for each even prefix length 2k one can query the sum of the k largest values in that prefix; suffixes can be queried similarly or by building the structure on the reversed array. Pitfalls: high memory usage, especially in Python, more complex implementation than heaps, careful handling of duplicate values during quantile queries, and possible overkill for the actual constraints.
+
+3. Offline value-threshold queries with Fenwick trees or parallel binary search. Treat each prefix as a query asking for the kth largest value and the sum of values above that threshold. Use offline sweeps over value ranks to answer count and sum queries for many prefixes. Pitfalls: O(N log^2 N) complexity, complicated synchronization of parallel binary search, duplicate threshold handling, and a higher bug surface than the online heap approach.
+
+4. General interval DP or noncrossing matching algorithms. Formulate dp[l][r] as the maximum score obtainable from a segment and try to optimize using divide-and-conquer, Monge properties, or other structural shortcuts. Pitfalls: the natural DP is O(N^3) or at best O(N^2), which is far too slow for N = 3e5; the weight |A_i - A_j| in arbitrary input order is unlikely to give a simple Monge optimization; parity and noncrossing constraints add further complexity.
+
+5. Greedy adjacent removal. Repeatedly remove the adjacent pair with the largest current absolute difference, update the sequence, and continue. Pitfalls: there is no clear exchange argument, a locally best adjacent pair can block a better nested pairing, and this approach is likely incorrect; it is useful only as a heuristic or for generating small test cases.
+
+6. Brute force or exhaustive search for small N. Enumerate all valid removal orders or all noncrossing matchings for small N to validate the structural formula and catch indexing mistakes. Pitfalls: exponential growth, only suitable for testing, and the generator must correctly enforce noncrossing matching and odd-leftover parity.
+
+
+CURRENT TASK LIST:
+- [todo] Implement a MedianSplit class using a max-heap for the smallest half and a min-heap for the largest half, with add(x) rebalancing to lower size total//2 and score() returning sum_upper - sum_lower.
+- [todo] Handle even N by inserting all A_i into one MedianSplit and printing score().
+- [todo] For odd N=2K+1, build pref[0..K] where pref[i] is the score after inserting the first 2i elements, with pref[0]=0.
+- [todo] Build suff[0..K] where suff[i] is the score of the suffix starting after index 2i by inserting pairs from right to left, with suff[K]=0.
+- [todo] Output max(pref[i]+suff[i] for i=0..K), corresponding to leaving the odd-indexed element A[2i] unmatched.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the noncrossing-matching sign reduction with two heaps for prefix and suffix half-sums, paying close attention to parity and rebalancing.
+- Use a persistent segment tree or wavelet tree as an alternative range top-k sum method if heap maintenance becomes error-prone.
+- Develop an offline Fenwick/parallel-binary-search approach for prefix top-k sums as a fallback data-structure strategy.
+- Explore interval DP or general noncrossing matching formulations only to confirm that they are too slow or lack the needed optimization.
+- Build small brute-force validators and test greedy adjacent removal to identify counterexamples and verify the structural formula.

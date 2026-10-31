@@ -1,0 +1,84 @@
+PROBLEM:
+### Question
+You are given a positive integer N and two strings S and T, each of length N and consisting of lowercase English letters.
+Determine whether it is possible to make S identical to T by repeating the operation below any number of times (possibly zero). If it is possible, also find the minimum number of operations required.
+
+- Choose two lowercase English letters x, y and replace every occurrence of x in S with y.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+T
+
+Output
+
+If it is possible to make S identical to T, print the minimum number of operations required. Otherwise, print -1.
+
+Constraints
+
+
+- 1\leq N \leq 2\times 10^5
+- N is an integer.
+- Each of S and T is a string of length N, consisting of lowercase English letters.
+
+Sample Input 1
+
+6
+afbfda
+bkckbb
+
+Sample Output 1
+
+4
+
+By performing the operation four times in the following way, you can make S identical to T:
+
+- Choose x= b and y= c. S becomes afcfda.
+- Choose x= a and y= b. S becomes bfcfdb.
+- Choose x= f and y= k. S becomes bkckdb.
+- Choose x= d and y= b. S becomes bkckbb, which is identical to T.
+
+It cannot be done with fewer than four operations, so the minimum number of operations required is 4.
+
+Sample Input 2
+
+4
+abac
+abac
+
+Sample Output 2
+
+0
+
+S and T are already identical, so no operations are required.
+
+Sample Input 3
+
+4
+abac
+abrc
+
+Sample Output 3
+
+-1
+
+No matter how you repeat the operation, it is impossible to make S identical to T.
+
+Sample Input 4
+
+4
+abac
+bcba
+
+Sample Output 4
+
+4
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+First verify that every character of S has a single consistent target in T; if any character maps to two different characters, output -1. Build a 26-node directed graph where each source character c that appears in S points to its required target req[c]. Count changed characters C where req[c] != c; each such character must be used as the source of at least one operation. Find all directed cycles of length at least two, and mark a cycle closed if no character outside the cycle points into it; open cycles can be resolved without extra operations, while each closed cycle needs one temporary letter and adds one operation. If a closed cycle exists but no temporary letter is available (all 26 letters appear in S and every changed character lies in closed cycles), output -1; otherwise the answer is C plus the number of closed cycles.

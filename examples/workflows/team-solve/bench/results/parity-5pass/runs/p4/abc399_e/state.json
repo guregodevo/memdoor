@@ -1,0 +1,54 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Implement and test the complete Python program using the functional-graph formula: consistency check, K, all-26 injective feasibility, isolated-cycle count, output K+bad_cycles; samples passed and edge cases validated, no debug/alternative approach needed.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Functional-graph counting approach: build the required map from S-letters to T-letters, reject conflicts, create edges from present nonfixed letters to their targets, count directed cycles of length at least 2, add one extra operation for each cycle with no incoming edge from a present letter outside the cycle, and apply the all-26 injective impossibility exception. Pitfalls: self-loops, absent targets, indirect incoming chains, and the already-identical case.",
+  "Constructive topological scheduling approach: treat a rename as safe when the target label is empty or already contains only letters with the same final target, process safe letters in reverse dependency order, and when a remaining cycle has no safe move, rotate it through a buffer label. Pitfalls: choosing and reserving buffers, tracking current merged classes rather than original letters, and avoiding greedy choices that fill the only available buffer too early.",
+  "State-space search or A* over current label assignments: represent a state by the current label of each initial letter, branch over all possible global replacements, and use lower bounds such as remaining changed letters plus remaining isolated cycles for pruning. Pitfalls: the state space is enormous because it involves partitions and labels of up to 26 letters, branching is large, and this is likely only viable for tiny alphabets or validation tests.",
+  "Subset DP or bitmask approach over empty and finalized labels: since the alphabet has only 26 letters, track which labels are currently empty or already finalized using bitmasks, possibly decomposing by connected components. Pitfalls: 2 to the 26th is too large for Python in the worst case, and the abstraction may be insufficient because intermediate labels and merge compatibility matter.",
+  "Transformation-monoid or bidirectional search reduction: view each operation as a transformation on the 26-letter alphabet and search for the shortest composition that maps S to T. Pitfalls: the full transformation space is huge, reverse operations are not simple global replacements, and this is mainly a theoretical reduction rather than a practical full-constraint solution."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement and test the complete Python program using the functional-graph formula: consistency check, K, all-26 injective feasibility, isolated-cycle count, output K+bad_cycles; run the four samples and edge cases (S=T, all-26 non-identity permutation, non-isolated cycle, multiple isolated cycles, absent buffer that is a final target).",
+ "iters": 1,
+ "task": "Implement and test the complete Python program using the functional-graph formula: consistency check, K, all-26 injective feasibility, isolated-cycle count, output K+bad_cycles; run the four samples and edge cases (S=T, all-26 non-identity permutation, non-isolated cycle, multiple isolated cycles, absent buffer that is a final target).",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 4,
+  "total": 4,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

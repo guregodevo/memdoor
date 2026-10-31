@@ -1,0 +1,78 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, x and k. You can perform the following operation any number of times (including zero):
+
+Increase or decrease any element of nums by 1.
+
+Return the minimum number of operations needed to have at least k non-overlapping subarrays of size exactly x in nums, where all elements within each subarray are equal.
+ 
+Example 1:
+
+Input: nums = [5,-2,1,3,7,3,6,4,-1], x = 3, k = 2
+Output: 8
+Explanation:
+
+Use 3 operations to add 3 to nums[1] and use 2 operations to subtract 2 from nums[3]. The resulting array is [5, 1, 1, 1, 7, 3, 6, 4, -1].
+Use 1 operation to add 1 to nums[5] and use 2 operations to subtract 2 from nums[6]. The resulting array is [5, 1, 1, 1, 7, 4, 4, 4, -1].
+Now, all elements within each subarray [1, 1, 1] (from indices 1 to 3) and [4, 4, 4] (from indices 5 to 7) are equal. Since 8 total operations were used, 8 is the output.
+
+
+Example 2:
+
+Input: nums = [9,-2,-2,-2,1,5], x = 2, k = 2
+Output: 3
+Explanation:
+
+Use 3 operations to subtract 3 from nums[4]. The resulting array is [9, -2, -2, -2, -2, 5].
+Now, all elements within each subarray [-2, -2] (from indices 1 to 2) and [-2, -2] (from indices 3 to 4) are equal. Since 3 operations were used, 3 is the output.
+
+
+ 
+Constraints:
+
+2 <= nums.length <= 10^5
+-10^6 <= nums[i] <= 10^6
+2 <= x <= nums.length
+1 <= k <= 15
+2 <= k * x <= nums.length
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def minOperations(self, nums: List[int], x: int, k: int) -> int:
+        
+```
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The central simplification is that the operation cost is additive over disjoint chosen blocks. For any final array containing at least k disjoint constant length-x blocks, pick k of them. The cost spent inside each picked block is at least the minimum cost to make that original block constant, which is achieved by changing all elements in the block to a median of the original values. Conversely, choosing k disjoint blocks and changing each block to its own median achieves exactly the sum of those individual minimum costs. Therefore the problem reduces to choosing k non-overlapping fixed-length intervals with minimum total weight, where each interval weight is the sum of absolute deviations from the window median.
+
+The interval selection part is relatively easy because k is at most 15. Once all interval weights are known, a dynamic program over prefix position and number of chosen intervals can solve it in linear time per count: either skip the current position, or take the length-x window ending at the current position and add its weight to the best solution for one fewer interval ending before that window starts. Since all interval weights are nonnegative, requiring at least k intervals is equivalent to requiring exactly k intervals: any solution with more intervals can be restricted to k of them without increasing the cost.
+
+The main difficulty is computing the weight for every length-x window efficiently. There can be up to 100,000 windows, and each weight requires a range median plus the sum of values below and above that median. Naively sorting or selecting each window separately is too slow. Values can be negative and as large as one million in magnitude, so accumulated sums need 64-bit integer arithmetic. The main algorithmic risk is therefore the sliding or range median structure, not the final dynamic program.
+
+
+CURRENT TASK LIST:
+- [todo] Build a Fenwick tree over compressed nums values that maintains window counts and value sums, with methods to add/remove a value and find the lower median by kth order statistic.
+- [todo] Slide a length-x window across nums, compute each window's median cost as median*count_le - sum_le + (total_sum - sum_le) - median*(x - count_le), and store cost_by_end[i] for the window ending at i.
+- [todo] Implement DP with dp[0][i]=0 and dp[c][i]=min(dp[c][i-1], dp[c-1][i-x]+cost_by_end[i]) for c=1..k and i=1..n, using INF for impossible states and 1-indexed positions.
+- [todo] Test edge cases including x=n, k=1, even x, negative values, duplicate medians, and the non-overlap boundary where one window ends at i-x and the next starts at i-x+1.
+- [todo] Verify final complexity is O(n log n + nk) time and O(n) memory with rolling DP arrays, and return dp[k][n] as an integer.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Sliding median with coordinate compression and Fenwick trees: maintain counts and sums of the current x-window, query the lower median by order statistic, compute the absolute-deviation cost from prefix counts and sums, then run the prefix dynamic program. Pitfalls: kth-order query implementation, choosing the correct median for even window sizes, update order when sliding, negative sums, Python overhead, and off-by-one errors in the transition that takes a window.
+- Two balanced multisets or treaps split around the median, each storing size and sum: insert and delete arbitrary values, rebalance the two halves, and read the median and half sums directly. Pitfalls: implementing a correct treap in Python, handling duplicate values, recursion depth, sum updates during rebalancing, and potentially slower performance than a Fenwick-based solution.
+- Persistent segment tree over value prefixes: build one segment tree root per array prefix, represent each window as the difference between two roots, descend to the median, and obtain the needed sums. Pitfalls: large node count and memory usage in Python, need for array-based node storage, slower build time, and complexity that may be unnecessary for a simple sliding window.
+- Wavelet tree or merge-sort tree for range quantile and range sum queries: answer each length-x window independently by querying the median and the sum of values below or above it. Pitfalls: complex implementation, high memory usage, Python speed concerns, and the need to support both count and sum queries; this may be overkill for fixed sliding windows.
+- Layered shortest-path formulation: create layers for the number of chosen blocks and positions, with zero-cost edges that skip a position and cost edges that jump by x and increase the layer; find the shortest path to the final position in layer k. Pitfalls: this is essentially the same as the dynamic program, the graph is large, Dijkstra is unnecessary because the graph is a directed acyclic graph, and exact layer enforcement must be handled carefully.
+- Lagrangian relaxation or penalty per chosen block: for a given penalty, run a one-dimensional dynamic program that minimizes adjusted cost and tracks how many blocks are chosen, then binary search the penalty to target k blocks. Pitfalls: exact-k recovery, tie-breaking, possible non-convex or flat cost-count behavior, still requiring all window costs, and direct k-layer dynamic programming is simpler when k is small.
+- Bucketed value-domain sliding median: keep counts and sums in value buckets, possibly with a Fenwick tree over buckets and per-bucket counts, to find the median and prefix sums faster than scanning the whole value range. Pitfalls: the value range is about two million, bucket size tuning is important, scanning inside buckets can dominate, and a poor design can become slower than a plain Fenwick tree.
+- Hybrid direct computation for small cases: if x or n is small enough, compute each window cost by sorting or quickselect; otherwise fall back to a Fenwick or treap method. Pitfalls: worst-case time is high, threshold selection is risky, and quickselect in Python may be slow; this is useful only as a practical fallback, not as a guaranteed main solution.

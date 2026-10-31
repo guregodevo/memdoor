@@ -1,0 +1,9 @@
+### STATUS
+continue
+### NEXT
+Implement the full solution using coordinate-compressed Fenwick trees: compute cost[start] for every length-x window by maintaining count/sum trees and lower-median rank (x+1)//2, then run two-row prefix DP dp[t][i] = min(dp[t][i-1], dp[t-1][i-x] + cost[i-x]) to return dp[k][n]; include tests on the provided examples and small random brute force.
+### TASKS
+- [done] Ideation: select coordinate-compressed Fenwick + O(kn) prefix DP as primary; two-heaps as fallback.
+- [todo] Implement the full solution using coordinate-compressed Fenwick trees: compute cost[start] for every length-x window by maintaining count/sum trees and lower-median rank (x+1)//2, then run two-row prefix DP dp[t][i] = min(dp[t][i-1], dp[t-1][i-x] + cost[i-x]) to return dp[k][n]; include tests on the provided examples and small random brute force.
+- [todo] Verify correctness on edge cases: x = n, k = 1, adjacent non-overlapping windows, duplicate values, negative values, and large costs.
+- [todo] If the Fenwick implementation fails or is too slow, switch to a two-heaps sliding-median implementation with lazy deletion and reuse the same DP.

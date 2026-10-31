@@ -46,6 +46,8 @@ type anthropicRequest struct {
 	Messages    []anthropicMessage   `json:"messages"`
 	Tools       []llm.ToolUnionParam `json:"tools,omitempty"`
 	Temperature float64              `json:"temperature,omitempty"`
+	TopP        float64              `json:"top_p,omitempty"`
+	TopK        int                  `json:"top_k,omitempty"`
 	StopSeqs    []string             `json:"stop_sequences,omitempty"`
 	Stream      bool                 `json:"stream"`
 }
@@ -118,7 +120,7 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 	}
 	body, err := json.Marshal(anthropicRequest{
 		Model: model, MaxTokens: maxTokens, System: params.System, Messages: msgs,
-		Tools: anthropicTools(params.Tools), Temperature: params.Temperature, StopSeqs: params.StopSeqs, Stream: true,
+		Tools: anthropicTools(params.Tools), Temperature: params.Temperature, TopP: params.TopP, TopK: params.TopK, StopSeqs: params.StopSeqs, Stream: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("anthropic request: %w", err)
@@ -182,7 +184,10 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 		}
 		acc = &anthropicStream{id: ar.ID, model: ar.Model, stopReason: ar.StopReason, inputTokens: ar.Usage.InputTokens, outputTokens: ar.Usage.OutputTokens, cacheRead: ar.Usage.CacheReadInputTokens, cacheWrite: ar.Usage.CacheCreationInputTokens}
 		for _, rb := range ar.Content {
-			var b llm.ContentBlockUnion
+			var b struct {
+				llm.ContentBlockUnion
+				Thinking string `json:"thinking"`
+			}
 			if json.Unmarshal(rb, &b) != nil {
 				continue
 			}
@@ -191,6 +196,8 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 				blk.text.WriteString(b.Text)
 			} else if b.Type == "tool_use" {
 				blk.text.Write(b.Input)
+			} else if b.Type == "thinking" {
+				acc.thinking.WriteString(b.Thinking)
 			}
 			acc.blocks = append(acc.blocks, blk)
 		}
@@ -286,10 +293,11 @@ func consumeAnthropicStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 				} `json:"usage"`
 			} `json:"message"`
 			ContentBlock struct {
-				Type string `json:"type"`
-				ID   string `json:"id"`
-				Name string `json:"name"`
-				Text string `json:"text"`
+				Type     string `json:"type"`
+				ID       string `json:"id"`
+				Name     string `json:"name"`
+				Text     string `json:"text"`
+				Thinking string `json:"thinking"`
 			} `json:"content_block"`
 			Delta struct {
 				Type        string `json:"type"`
@@ -316,6 +324,9 @@ func consumeAnthropicStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 		case "content_block_start":
 			b := acc.block(ev.Index)
 			b.kind, b.id, b.name = ev.ContentBlock.Type, ev.ContentBlock.ID, ev.ContentBlock.Name
+			if ev.ContentBlock.Type == "thinking" {
+				acc.thinking.WriteString(ev.ContentBlock.Thinking)
+			}
 			if ev.ContentBlock.Type == "tool_use" {
 				sawTool = true
 			}

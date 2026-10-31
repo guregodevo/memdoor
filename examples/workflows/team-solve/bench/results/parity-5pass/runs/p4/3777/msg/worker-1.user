@@ -1,0 +1,107 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, k and limit. Your task is to find a non-empty subsequence of nums that:
+
+Has an alternating sum equal to k.
+Maximizes the product of all its numbers without the product exceeding limit.
+
+Return the product of the numbers in such a subsequence. If no subsequence satisfies the requirements, return -1.
+The alternating sum of a 0-indexed array is defined as the sum of the elements at even indices minus the sum of the elements at odd indices.
+ 
+Example 1:
+
+Input: nums = [1,2,3], k = 2, limit = 10
+Output: 6
+Explanation:
+The subsequences with an alternating sum of 2 are:
+
+[1, 2, 3]
+
+Alternating Sum: 1 - 2 + 3 = 2
+Product: 1 * 2 * 3 = 6
+
+
+[2]
+
+Alternating Sum: 2
+Product: 2
+
+
+
+The maximum product within the limit is 6.
+
+Example 2:
+
+Input: nums = [0,2,3], k = -5, limit = 12
+Output: -1
+Explanation:
+A subsequence with an alternating sum of exactly -5 does not exist.
+
+Example 3:
+
+Input: nums = [2,2,3,3], k = 0, limit = 9
+Output: 9
+Explanation:
+The subsequences with an alternating sum of 0 are:
+
+[2, 2]
+
+Alternating Sum: 2 - 2 = 0
+Product: 2 * 2 = 4
+
+
+[3, 3]
+
+Alternating Sum: 3 - 3 = 0
+Product: 3 * 3 = 9
+
+
+[2, 2, 3, 3]
+
+Alternating Sum: 2 - 2 + 3 - 3 = 0
+Product: 2 * 2 * 3 * 3 = 36
+
+
+
+The subsequence [2, 2, 3, 3] has the greatest product with an alternating sum equal to k, but 36 > 9. The next greatest product is 9, which is within the limit.
+
+ 
+Constraints:
+
+1 <= nums.length <= 150
+0 <= nums[i] <= 12
+-10^5 <= k <= 10^5
+1 <= limit <= 5000
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        
+```
+
+
+
+PLAN:
+Treat positive and zero products separately because a zero can make the final product 0 even if earlier positive product exceeds limit. For positive products, ignore zeros and run a DP over parity, product up to limit, and alternating sum represented as a bitset; each positive x shifts sums by +x or -x depending on parity and multiplies product by x. Maintain only non-empty states to avoid returning the empty subsequence when k=0. For product 0, run a second bitset DP over parity and sum with no-zero/has-zero flags to test whether any subsequence containing a zero reaches k. Finally scan products from limit down to 1 for a reachable k, return the first found, else return 0 if the zero-product DP is reachable, else -1.
+
+NOTES:
+
+## ideation
+The core difficulty is that the subsequence constraint couples three different dimensions at once: the alternating sum depends on the order in which elements are chosen, so the DP must know the current length parity; the product must be maximized but capped, so the DP must either track exact products or an equivalent capacity notion; and zeros create a separate product-zero class while still affecting parity and the alternating sum. A naive state over index, parity, sum, and product is far too large, but the constraints make a compressed state space possible: the absolute alternating sum is bounded by the sum of all positive numbers, at most 150 * 12 = 1800, and the product cap is only 5000.
+
+The provided plan is essentially a product-major DP with bitsets over sums, which is very promising. Positive-product subsequences can ignore zeros because any zero would make the product zero. For positive products, the product is monotone nondecreasing as more positive numbers are appended, so it is safe to discard intermediate products that exceed the limit. The main subtleties are:
+
+- The empty subsequence has alternating sum 0 and product 1, so it must not be counted when k = 0.
+- Each array element may be used at most once. In-place updates are dangerous, especially for value 1, where the product does not change, and for zeros, where the sum does not change but parity flips.
+- Zeros cannot be handled by merely checking whether a single zero can produce k. A zero can appear before later positive elements and flip the sign pattern, enabling sums that are not reachable by positive-only subsequences.
+- The sum bitset needs an offset to represent negative sums and a mask to keep the bitset bounded.
+- If |k| exceeds the total sum of positive numbers, no subsequence can reach k, so an early impossibility check is useful.
+
+The zero-product case can be separated cleanly: run a reachability DP over parity and sum with a flag indicating whether at least one zero has been taken. This DP does not need product information because once a zero is included, the product is fixed at 0. Since 0 is smaller than every positive product, it should only be returned if no positive product within the limit reaches k.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the full `Solution.maxProduct` with the product-major positive bitset DP and separate zero-product reachability DP, then run the provided examples. Use `total=sum(nums)`, early return -1 if `abs(k)>total`; set `offset=total`, `mask=(1<<(2*offset+1))-1`, `target_bit=1<<(k+offset)`. For positive products, maintain `pos0/pos1` lists length `limit+1`; for each `x` with `0<x<=limit`, take `old0/old1` snapshots, loop `p=1..limit//x`, OR `(old0[p]<<x)&mask` into `pos1[p*x]` and `(old1[p]>>x)` into `pos0[p*x]`, then add single state `pos1[x] |= 1<<(offset+x)`. Scan `p` from `limit` down to 1 and return `p` if `(pos0[p]|pos1[p]) & target_bit`. If none, run zero DP: `no0=1<<offset`, `no1=z0=z1=0`; for each `x`, snapshot old states; if `x>0`, update `no0/no1` and `z0/z1` with the same parity shifts; if `x==0`, keep `no` unchanged and set `z0=old_z0|old_z1|old_no1`, `z1=old_z1|old_z0|old_no0`. Return 0 if `(z0|z1)&target_bit`, else -1.

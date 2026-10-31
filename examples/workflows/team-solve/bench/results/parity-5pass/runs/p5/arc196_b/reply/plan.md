@@ -1,0 +1,9 @@
+### PLAN
+Model the endpoints as binary variables on the torus grid edges, where a valid placement is a 2-regular subgraph respecting each tile's allowed edge pair. For an A tile, the selected vertical edges across the cell differ and the selected horizontal edges across the cell differ; for a B tile, each pair is equal and the vertical and horizontal bits are complementary. Summing the A-induced difference constraints around each row and column shows that every row and column must contain an even number of A tiles, otherwise the answer is 0. After eliminating the edge variables, the remaining choices are one bit per row and one bit per column, and every B cell imposes an xor constraint of the form R_i xor C_j = 1 xor (A above in that column) xor (A left in that row). Use a parity-weighted DSU over the H row vertices and W column vertices to check these xor constraints and count connected components; if consistent, the answer is 2^{components} modulo 998244353.
+
+### TASKS
+- Read all test cases with fast input; for each case, initialize a parity-weighted DSU with H+W nodes, a column-prefix parity array of length W, and a component counter.
+- Scan each row left to right, maintaining row_pref (xor of A cells to the left) and col_pref[j] (xor of A cells above); for a B cell compute w = 1 ^ col_pref[j] ^ row_pref and union row i with column j under xor w, while for an A cell update row_pref and col_pref[j].
+- After finishing a row, check row_pref is 0; after the grid, check all col_pref[j] are 0, and mark the case invalid if any row or column has an odd number of A cells.
+- If the DSU reports an inconsistent xor constraint, mark the case invalid; otherwise compute the number of DSU components among all H+W row/column nodes.
+- Output pow(2, components, 998244353) for valid cases and 0 for invalid cases, ensuring total O(HW alpha(H+W)) time and O(H+W) memory per test case.

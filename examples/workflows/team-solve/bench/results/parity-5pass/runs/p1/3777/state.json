@@ -1,0 +1,51 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Implement and verify the full Python solution using product-major positive DP with sum bitsets and four-state zero DP, including examples and brute-force checks.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the product-major positive-product DP with sum bitsets, together with a separate four-state zero-feasibility DP, as the primary solution candidate.",
+  "Implement the sum-major product-bitset DP as an alternative if product-major transitions are too slow or for cross-validation.",
+  "Implement an exact per-sum product-set DP with safe pruning, or full product bitsets per sum, to test whether any max-product-only simplification is possible.",
+  "Implement a meet-in-the-middle state-combination approach for smaller cases or as a correctness oracle on random small inputs.",
+  "Implement brute-force enumeration for very small arrays to validate edge cases involving zeros, ones, negative targets, and limit boundaries."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the full Python solution (enclosed in the required delimiters) using product-major positive DP with sum bitsets and four-state zero DP: offset = max(nums)*((n+1)//2), early exit if abs(k)>offset, mask, target bit; for x>0 snapshot old zero states and old pos lists, update zero no-zero/has-zero states by skip plus parity-flipping sum shifts, iterate p=1..limit//x for positive transitions, update opposite parity product p*x with left/right sum shifts, and add start state odd[x]; for x==0 update has-zero even/odd as old_has_even | old_no_odd | old_has_odd and old_has_odd | old_no_even | old_has_even; after all nums scan products limit..1 for target bit, else return 0 if has-zero even/odd has target, else -1; run provided examples and a small brute-force random test.",
+ "iters": 1,
+ "task": "Implement the full Python solution (enclosed in the required delimiters) using product-major positive DP with sum bitsets and four-state zero DP: offset = max(nums)*((n+1)//2), early exit if abs(k)>offset, mask, target bit; for x>0 snapshot old zero states and old pos lists, update zero no-zero/has-zero states by skip plus parity-flipping sum shifts, iterate p=1..limit//x for positive transitions, update opposite parity product p*x with left/right sum shifts, and add start state odd[x]; for x==0 update has-zero even/odd as old_has_even | old_no_odd | old_has_odd and old_has_odd | old_no_even | old_has_even; after all nums scan products limit..1 for target bit, else return 0 if has-zero even/odd has target, else -1; run provided examples and a small brute-force random test.",
+ "wrote": true,
+ "res": {
+  "ran": false
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

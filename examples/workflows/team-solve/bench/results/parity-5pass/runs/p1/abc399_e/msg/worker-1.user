@@ -1,0 +1,127 @@
+PROBLEM:
+### Question
+You are given a positive integer N and two strings S and T, each of length N and consisting of lowercase English letters.
+Determine whether it is possible to make S identical to T by repeating the operation below any number of times (possibly zero). If it is possible, also find the minimum number of operations required.
+
+- Choose two lowercase English letters x, y and replace every occurrence of x in S with y.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+T
+
+Output
+
+If it is possible to make S identical to T, print the minimum number of operations required. Otherwise, print -1.
+
+Constraints
+
+
+- 1\leq N \leq 2\times 10^5
+- N is an integer.
+- Each of S and T is a string of length N, consisting of lowercase English letters.
+
+Sample Input 1
+
+6
+afbfda
+bkckbb
+
+Sample Output 1
+
+4
+
+By performing the operation four times in the following way, you can make S identical to T:
+
+- Choose x= b and y= c. S becomes afcfda.
+- Choose x= a and y= b. S becomes bfcfdb.
+- Choose x= f and y= k. S becomes bkckdb.
+- Choose x= d and y= b. S becomes bkckbb, which is identical to T.
+
+It cannot be done with fewer than four operations, so the minimum number of operations required is 4.
+
+Sample Input 2
+
+4
+abac
+abac
+
+Sample Output 2
+
+0
+
+S and T are already identical, so no operations are required.
+
+Sample Input 3
+
+4
+abac
+abrc
+
+Sample Output 3
+
+-1
+
+No matter how you repeat the operation, it is impossible to make S identical to T.
+
+Sample Input 4
+
+4
+abac
+bcba
+
+Sample Output 4
+
+4
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Treat each distinct letter in S as a box whose initial color is the letter it must become in T; a successful sequence can only move a box into an empty box or a box of the same color, because merging different final colors is irreversible. First verify that every source letter has a unique target letter; if not, the answer is -1. The unique targets form a functional graph on at most 26 letters, with an edge v -> target[v] for every non-fixed source letter. The base cost is the number of non-fixed source letters, and each nontrivial cycle that has no incoming edge from outside the cycle (a bare cycle) needs one additional operation to break it. Such a bare cycle is possible only if there is a spare empty letter (some letter absent from S) or a duplicate initial color (two source letters that must become the same letter); otherwise output -1.
+
+NOTES:
+
+## ideation
+The core difficulty is that the operation is a global, irreversible merge of current letters, not a swap or a per-position edit. Once two original letters become the same current letter, they can never be separated again. Therefore the problem has two distinct layers:
+
+1. Feasibility: every original letter in S must have exactly one corresponding letter in T. If the same character of S appears in T as two different characters, no sequence can work.
+2. Optimization: after that mapping is fixed, the problem becomes a scheduling/merging problem on at most 26 “boxes” (one for each letter present in S), where each box must end at its target letter.
+
+A key lower bound is that every non-fixed source letter must be used as the source x of at least one operation, because its box must leave its initial label. This gives a base cost equal to the number of present source letters whose target differs from themselves.
+
+The subtle part is cycles of dependencies. If letters form a directed cycle a1 -> a2 -> ... -> ak -> a1, then every label in the cycle is occupied by a box that must leave, and boxes in the cycle cannot be merged with each other because their final targets differ. To rotate such a cycle, a temporarily empty label is needed. If some outside letter maps into the cycle, then that outside letter has the same final target as the predecessor of the cycle vertex it maps to, so the cycle can be broken using the outside letter’s required operation, without extra cost. If no outside letter maps into the cycle, the cycle is “bare” and needs one additional operation to bring an empty label back into the cycle.
+
+A bare cycle is possible only if there is some way to obtain an empty label: either a letter absent from S, or two present source letters that must become the same letter, because merging those two can free one label. If a bare cycle exists and no such buffer exists, the answer is impossible.
+
+The supplied plan is very close to this line of reasoning. The main risks are not the high-level idea but the exact definitions and edge cases:
+
+- Letters absent from S are empty buffers, but they should not be treated as having outgoing edges.
+- Edges to absent target letters are sinks and do not create cycles.
+- Fixed letters are self-loops but should not be counted as nontrivial cycles.
+- A cycle is bare only if no present source outside the cycle maps into any vertex of the cycle.
+- If using indegrees to detect cycles, one must distinguish original indegree from indegree after topological removal, or explicitly scan for outside incoming edges.
+- A duplicate target can involve a fixed letter or an absent target; if the target is absent, an empty buffer already exists.
+- One buffer can be reused for multiple bare cycles, but each bare cycle still contributes one extra operation.
+- The all-26-letters-present, no-duplicate-target case is a permutation; any nontrivial cycle is bare and impossible.
+
+Candidate approaches:
+
+1. Functional-graph counting approach. Build the target mapping from S letters to T letters, reject conflicts, count non-fixed source letters, detect nontrivial cycles among present letters, count bare cycles, and check for a buffer. This is the most direct O(N) approach. Pitfalls: cycle detection must ignore fixed self-loops, handle absent targets correctly, and use the correct definition of “bare”; buffer detection must include both absent letters and duplicate targets.
+
+2. Constructive greedy/topological simulation. Maintain the current grouping of boxes by final target and repeatedly perform safe operations: move a box into an empty target, merge boxes with the same final target, process acyclic dependencies in reverse topological order, and handle cycles with a chosen buffer. This can produce an actual sequence and verify the counting formula. Pitfalls: order matters, merging different final targets is fatal, choosing the wrong same-target merge can consume a needed buffer, and a naive greedy may accidentally use the only empty target before a source that needs it as its final destination.
+
+3. Exhaustive small-alphabet search for validation. Restrict the alphabet to 3, 4, or 5 letters and perform BFS over states representing which final-target group occupies which current letter. Compare the exact minimum from search with the functional-graph formula. Pitfalls: the state space grows exponentially, the state must capture target groups rather than only the current string, and the test alphabet must either include an extra empty letter to model the real 26-letter setting or be treated as a closed alphabet for no-buffer cases.
+
+4. State-compressed DP or A* search over label-to-target states. Represent a state by which final-target group occupies each of the 26 current labels, with empty labels allowed, and search for the shortest sequence using an admissible heuristic such as remaining non-fixed boxes plus remaining bare cycles. Pitfalls: the state space is far larger than 2^26 because multiple labels can share the same final target before merging; Python may struggle with exhaustive DP; and the heuristic must be carefully proven admissible to be useful.
+
+5. Token-swapping / blank reduction. Treat each final-target group as a token or set of tokens, empty letters as blanks, and derive cycle costs from the need to rotate tokens using blanks. This gives an independent reduction and can help prove the lower bound. Pitfalls: standard token-swapping assumptions do not directly apply because moving into an occupied label is allowed only when the final targets match, and such a move merges tokens and changes the token count; also, blanks can be created by merges, not only initially present.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the functional-graph counting solution in Python: read N, S, T; build target[26] and present[26], rejecting any source letter with two different target letters; compute bad_count, color_freq, and original indegree for bad edges to present targets; use Kahn topological removal to find nontrivial cycles and count a cycle as bare iff every vertex has original indegree 1; set spare = (present_count < 26) or (any color_freq[c] >= 2); print -1 if inconsistent or (bare_cycles > 0 and not spare), otherwise print bad_count + bare_cycles; run the provided samples.

@@ -62,3 +62,20 @@ func TestATaskModelLineSetsTheTemperature(t *testing.T) {
 		}
 	}
 }
+
+// A task's model line may set top_p and top_k, the sampling a model's own
+// generation config names (Qwen3.8-27B: 0.95 and 20); out of range is ignored.
+func TestATaskModelLineSetsTopPAndTopK(t *testing.T) {
+	m := parseTaskModel("openrouter:qwen/qwen3.8-27b temperature 0.3 top_p 0.95 top_k 20 max_tokens 128000")
+	if m.TopP != 0.95 || m.TopK != 20 || m.Temperature != 0.3 || m.MaxTokens != 128000 || m.ID != "openrouter:qwen/qwen3.8-27b" {
+		t.Errorf("got %+v", m)
+	}
+	if m := parseTaskModel("top_k 40"); m.ID != "" || m.TopK != 40 {
+		t.Errorf("no id: %+v", m)
+	}
+	for _, bad := range []string{"qwen top_p 0", "qwen top_p 1.5", "qwen top_p high", "qwen top_k 0", "qwen top_k -3", "qwen top_k 0.5"} {
+		if m := parseTaskModel(bad); m.TopP != 0 || m.TopK != 0 {
+			t.Errorf("%q: top_p %v top_k %d, want the defaults", bad, m.TopP, m.TopK)
+		}
+	}
+}

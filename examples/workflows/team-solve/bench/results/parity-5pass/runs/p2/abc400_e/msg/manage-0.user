@@ -1,0 +1,84 @@
+PROBLEM:
+### Question
+A positive integer N is a 400 number if and only if it satisfies both of the following two conditions:
+
+- N has exactly 2 distinct prime factors.
+- For each prime factor p of N, p divides N an even number of times. More formally, the maximum non-negative integer k such that p^k divides N is even.
+
+Process Q queries. Each query gives you an integer A, so find the largest 400 number not exceeding A. Under the constraints of this problem, a 400 number not exceeding A always exists.
+
+Input
+
+The input is given from Standard Input in the following format:
+Q
+\text{query}_1
+\text{query}_2
+\vdots
+\text{query}_Q
+
+Here, \text{query}_i is the i-th query, given in the following format:
+A
+
+Output
+
+Print Q lines. The i-th line should contain the answer to the i-th query.
+
+Constraints
+
+
+- 1 \leq Q \leq 2 \times 10^5
+- For each query, 36 \leq A \leq 10^{12}.
+- All input values are integers.
+
+Sample Input 1
+
+5
+404
+36
+60
+1000000000000
+123456789
+
+Sample Output 1
+
+400
+36
+36
+1000000000000
+123454321
+
+Let us explain the first query.
+There are exactly 2 prime factors of 400: 2 and 5. Also, 2 divides 400 four times and 5 divides it twice, so 400 is a 400 number. None of 401, 402, 403, and 404 is a 400 number, so the answer is 400.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The key reduction is that the even-exponent condition forces every 400 number to be a perfect square. If N = p^{2a} q^{2b} with distinct primes p and q and a,b >= 1, then x = p^a q^b is an integer at most 10^6 and has exactly two distinct prime factors. Conversely, any x <= 10^6 with exactly two distinct prime factors produces a valid 400 number x^2. Therefore the problem over values up to 10^12 becomes a predecessor problem over bases x up to 10^6.
+
+The core difficulty is not the number theory itself, but answering 2e5 predecessor queries quickly. We need a compact precomputation up to 10^6 and a fast way to find the largest valid base not exceeding floor(sqrt(A)). Important pitfalls include using floating-point square roots near 10^12, counting total prime factors instead of distinct prime factors, accidentally allowing one prime factor or p = q, missing the boundary value 10^6, generating duplicates, and Python memory/time issues for large arrays or repeated big-integer operations.
+
+
+CURRENT TASK LIST:
+- [todo] Build a prime sieve up to 1,000,000 and store the primes; also identify primes <=1000 for the smaller factor.
+- [todo] Generate all candidates: for each small prime p, iterate pp=p, p^2, ... <=10^6; for each prime q>p with q<=10^6//pp, iterate qq=q, q^2, ... <=10^6//pp and append (pp*qq)^2.
+- [todo] Sort the candidate list, optionally deduplicating, so it is ready for binary search.
+- [todo] Read Q and the Q values of A, then for each A compute idx=bisect_right(candidates, A)-1 and output candidates[idx].
+- [todo] Verify correctness on edge cases: A=36, A=10^12, queries just below generated values, and ensure q is never equal to p.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Use a smallest-prime-factor sieve up to 1,000,000 to compute the number of distinct prime factors for every base. Keep bases with count exactly 2 in an ascending list. For each query, take the integer square root B of A, binary search the list for the largest base <= B, and square it. Pitfalls: the distinct-count recurrence must not increment when the same prime divides the quotient again; the list must include 6 and 1,000,000; binary search must handle B below the first valid base even though constraints avoid it; storing bases rather than squares keeps numbers smaller and makes the square step explicit.
+- Build a direct predecessor table over the base range: after marking valid bases, fill an array where each position stores the nearest valid base at or before it. Then each query is answered in constant time by looking up B = integer square root of A. Pitfalls: a Python list of one million integers may use significant memory; a compact integer array or a sorted-list fallback may be preferable; the table must be filled correctly through the invalid prefix below 6; this approach trades memory for query speed.
+- Enumerate prime-power pairs directly: sieve primes up to 1,000,000, iterate smaller prime p only up to below 1000, generate powers p^a, and for each power generate powers q^b for primes q > p while p^a q^b <= 1,000,000. Store the square of each product, sort and optionally unique, then binary search for queries. Pitfalls: both exponents must be at least 1; q must be strictly larger than p; the outer p bound follows from p < q and pq <= 1,000,000; generation order is not sorted; large q values near 500,000 must be available; boundary cases such as 2^6 * 5^6 = 1,000,000 must be included.
+- Use a bitset of valid bases and a word-level predecessor search. Mark bit x if x has exactly two distinct prime factors. For a query limit B, find the highest set bit not exceeding B by inspecting the current word, masking off higher bits, and if empty using a summary bitset of nonempty words to jump backward. Square the found index. Pitfalls: naive big-integer masking per query may allocate large temporary integers and be too slow; scanning words downward without a summary can be slow if gaps are large; masking and bit-index arithmetic are easy to get wrong; implementation is more complex than a sorted list but memory is small.
+- Process queries offline: sort queries by their square-root limit B, generate or sort all valid bases in increasing order, scan both lists, and maintain the last valid base seen to assign answers. Pitfalls: original query order must be preserved via indices; sorting 200,000 queries adds overhead but is usually fine; if the valid bases are generated unsorted, they must be sorted first; this avoids per-query binary search but is less straightforward than online binary search.
+- For each query, search downward from B = integer square root of A until a base with exactly two distinct prime factors is found, using a precomputed factor-count array. Pitfalls: the worst-case gap between valid bases is not given and could make this too slow for many adversarial queries; it may be acceptable only if combined with a proven small maximum gap or a fallback to a predecessor structure; generally this is the least robust approach.
+- Treat each prime power p^a <= 1,000,000 as an item with value and prime label, and answer each query as a constrained two-item product problem: choose two items with distinct primes whose product is at most B. Use range maximum or persistent segment tree structures over prime labels to find the best compatible second item for candidate first items. Pitfalls: the distinct-prime exclusion makes the query nontrivial; iterating over many first prime powers per query may be too slow; building and querying 2D structures is complex and likely overkill compared with precomputing all products or bases.

@@ -1,0 +1,129 @@
+### CODE
+```python
+from typing import List
+
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        total = sum(nums)
+        if abs(k) > total:
+            return -1
+
+        offset = total
+        size = 2 * total + 1
+        mask = (1 << size) - 1
+        k_bit = 1 << (offset + k)
+
+        # Positive-product DP: subsequences with no zeros.
+        # even[p] / odd[p] are bitsets of achievable alternating sums
+        # for non-empty zero-free subsequences with product p and even/odd length.
+        even = [0] * (limit + 1)
+        odd = [0] * (limit + 1)
+        active = []
+        products_range = range(1, limit + 1)
+
+        for x in nums:
+            if x == 0 or x > limit:
+                continue
+
+            new_even = even[:]
+            new_odd = odd[:]
+
+            # Start a new subsequence with this element.
+            new_odd[x] |= (1 << (offset + x)) & mask
+
+            # Append this element to previous zero-free subsequences.
+            max_p = limit // x
+            for p in active:
+                if p > max_p:
+                    break
+
+                be = even[p]
+                if be:
+                    # even length -> odd length, next sign is +x
+                    new_odd[p * x] |= (be << x) & mask
+
+                bo = odd[p]
+                if bo:
+                    # odd length -> even length, next sign is -x
+                    new_even[p * x] |= (bo >> x)
+
+            even, odd = new_even, new_odd
+            active = [p for p in products_range if even[p] or odd[p]]
+
+        # Any positive product is better than product 0.
+        for p in reversed(active):
+            if (even[p] & k_bit) or (odd[p] & k_bit):
+                return p
+
+        # Zero-product feasibility DP: subsequences containing at least one zero.
+        # no_even/no_odd: zero-free subsequences, including the empty subsequence.
+        # z_even/z_odd: subsequences that already contain at least one zero.
+        no_even = 1 << offset
+        no_odd = 0
+        z_even = 0
+        z_odd = 0
+
+        for x in nums:
+            if x == 0:
+                # Taking zero does not change sum, flips parity, and sets zero flag.
+                nz_even = z_even | z_odd | no_odd
+                nz_odd = z_odd | z_even | no_even
+                z_even, z_odd = nz_even, nz_odd
+            else:
+                # Positive x: skip it, or append it with +/-x sum shift.
+                nn_even = no_even | (no_odd >> x)
+                nn_odd = no_odd | ((no_even << x) & mask)
+
+                nz_even = z_even | (z_odd >> x)
+                nz_odd = z_odd | ((z_even << x) & mask)
+
+                no_even, no_odd = nn_even, nn_odd
+                z_even, z_odd = nz_even, nz_odd
+
+        if (z_even & k_bit) or (z_odd & k_bit):
+            return 0
+
+        return -1
+
+
+if __name__ == "__main__":
+    sol = Solution()
+
+    # Provided examples.
+    assert sol.maxProduct([1, 2, 3], 2, 10) == 6
+    assert sol.maxProduct([0, 2, 3], -5, 12) == -1
+    assert sol.maxProduct([2, 2, 3, 3], 0, 9) == 9
+
+    # Edge cases.
+    assert sol.maxProduct([0], 0, 1) == 0
+    assert sol.maxProduct([0], 1, 1) == -1
+    assert sol.maxProduct([0, 0], 0, 1) == 0
+    assert sol.maxProduct([1, 1], 0, 1) == 1
+    assert sol.maxProduct([2], 0, 10) == -1
+    assert sol.maxProduct([0, 1], -1, 10) == 0
+    assert sol.maxProduct([1, 0], -1, 10) == -1
+    assert sol.maxProduct([1, 0], 1, 10) == 1
+    assert sol.maxProduct([2, 1], 1, 100) == 2
+    assert sol.maxProduct([1, 2], -1, 100) == 2
+    assert sol.maxProduct([2, 2], 0, 1) == -1
+    assert sol.maxProduct([0, 2, 2], 0, 1) == 0
+    assert sol.maxProduct([0, 12], -12, 10) == 0
+```
+
+### NOTES
+- **Decomposition:** Split the problem into zero-free subsequences, whose product is positive, and subsequences containing at least one zero, whose product is exactly 0. Since every positive product is greater than 0, check positive products first, then zero feasibility, then return -1.
+- **Early bound:** All nums are nonnegative, so any alternating sum lies in [-sum(nums), sum(nums)]. If abs(k) > sum(nums), no subsequence can work.
+- **Bitset encoding:** Use offset = total = sum(nums). Bit i represents alternating sum i - offset. Adding x is a left shift by x, masked to the valid range. Subtracting x is a right shift by x. The mask has 2*total + 1 bits.
+- **Positive DP:** Maintain even[p] and odd[p] bitsets for non-empty zero-free subsequences with product p and even/odd length. Seed each valid x <= limit as a one-element subsequence. For each x, copy old arrays, then append x only to old active products p where p*x <= limit. Even parity shifts sums +x into odd parity; odd parity shifts sums -x into even parity. Ignore x > limit in this DP because a zero-free positive product containing it would exceed limit and cannot later shrink without a zero.
+- **Active product list:** Keep a sorted list of products with nonzero bitsets. Recompute it after each processed positive x. During transitions, break once p > limit // x because active is sorted.
+- **Zero DP:** Maintain four bitsets: no_even/no_odd for zero-free subsequences, including the empty subsequence, and z_even/z_odd for subsequences that already contain a zero. For x = 0, taking it leaves the sum unchanged, flips parity, and moves no -> z or z -> z. For x > 0, skip it or append it with +/-x shifts in both no and z groups. This correctly allows large positives > limit to appear before or after zeros, since the final product is 0.
+- **Non-empty handling:** Positive DP never seeds the empty subsequence, so product 1 for sum 0 is only returned from a real subsequence. Zero states are created only by taking an actual zero, so product 0 is never returned for the empty subsequence.
+- **Complexity:** total <= 150 * 12 = 1800, so bitsets have at most 3601 bits. Positive DP is O(n * A * bitset_words), where A is the number of active products <= limit; in practice A is small because products are built from factors 1..12, and worst-case A <= 5000. Zero DP is O(n * bitset_words). Memory is O(limit * bitset_words) for the positive DP arrays.
+- **Edge cases covered:** all zeros, k = 0; no zeros and k = 0 where empty subsequence must not count; limit = 1 with only 1s; x > limit usable only in zero-product subsequences; order-dependent signs such as [0, 1] giving -1 but [1, 0] not giving -1.
+- **Tests:** The included __main__ block runs the provided examples plus targeted edge cases for zeros, order, product cap, and x > limit.
+
+### NEXT
+- none
+
+### STATUS
+solved

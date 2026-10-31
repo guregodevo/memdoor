@@ -1,0 +1,5 @@
+For any pair, color both cakes with a coordinate attaining the pair's maximum; conversely, any selection of 2K cakes colored X/Y/Z with even counts per color can be paired inside each color to form a valid matching whose price is at least the colored sum, so the problem is exactly the even-parity coordinate-selection problem.  
+The optimum as a function of K is concave (it is a maximum-weight matching/M-concave selection problem), so a Lagrangian penalty on the number of pairs can be used.  
+For an integer penalty beta per pair, double all coordinate values and subtract beta for every selected cake; the best penalized even-parity selection is computed by an 8-state parity DP over cakes, where each cake is unused or toggles one of the three color parity bits.  
+Tie-break equal penalized values by maximizing the selected count, e.g. by encoding (value, count) as value*(N+1)+count.  
+Binary search the largest beta whose optimal selected count is at least 2K; then K is an optimal cardinality and the answer is DP_value/2 + beta*K.

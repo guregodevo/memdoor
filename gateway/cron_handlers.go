@@ -72,8 +72,11 @@ func (cs *ChatServer) handleCronJobs(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]interface{}{"jobs": jobs})
 
 	case http.MethodPost:
-		// Creating a scheduled job runs an agent on a timer — admin only.
-		if !requireAdmin(w, r, cs.authzService) {
+		// Creating a scheduled job runs an agent (or a workflow) on a timer, on
+		// the gateway's model and machine: an admin of its own workspace (the
+		// scheduler's job carries no workspace, so a sign-up's job would have
+		// run as the gateway's own until 2026-10-30).
+		if !requireAdmin(w, r, cs.authzService) || !requireGatewayMember(w, r, cs.repoFactory) {
 			return
 		}
 		var req domain.CronJob

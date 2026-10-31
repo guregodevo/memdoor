@@ -1,0 +1,125 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The key modeling step is to replace tile rotations by binary variables on the shared edges of the torus: one variable for each horizontal adjacency between neighboring cells and one for each vertical adjacency. A variable is 1 exactly when the line segment has an endpoint on that shared edge, which is equivalent to both neighboring tiles having endpoints there. With this representation, the no-dead-end condition is built in automatically.
+
+Each tile type then becomes a small set of XOR constraints over GF(2). For an A cell, exactly one of its two horizontal incident edge variables must be 1, and exactly one of its two vertical incident edge variables must be 1. For a B cell, its two horizontal variables must be equal, its two vertical variables must be equal, and the horizontal value must differ from the vertical value. Therefore the whole problem is an affine linear system over GF(2), so the number of valid placements is either 0 or a power of 2.
+
+The core difficulty is global consistency on the torus. Horizontal constraints around each row force the number of A cells in every row to be even; otherwise the horizontal edge variables cannot be assigned consistently around the cycle. Similarly, every column must contain an even number of A cells. After these parity conditions are satisfied, each row contributes one free bit determining its horizontal edge variables, and each column contributes one free bit determining its vertical edge variables. B cells then impose XOR equations between the corresponding row bit and column bit. Thus the remaining counting problem is to count assignments to row and column bits satisfying a signed bipartite graph of B-cell constraints.
+
+Major pitfalls include off-by-one errors in prefix parities on the torus, especially deciding whether the current cell’s A has already been included in the prefix used for a B constraint. Another pitfall is forgetting that isolated rows and columns still contribute free bits, so the exponent is the number of connected components in the B-cell graph, including isolated vertices. A third pitfall is performance: the total grid size is up to 10^6 and T can be as large as 10^5, so the algorithm must be nearly linear, use fast input, and avoid heavy per-test overhead. A fourth pitfall is using a general-purpose method that is too slow or memory-heavy in Python, such as dense linear algebra or a very large direct constraint graph, when the structure can be exploited.
+
+
+CURRENT TASK LIST:
+- [todo] Implement a weighted union-find (parity DSU) over H+W variables that supports union(x, y, val) enforcing value[x] xor value[y] = val, detects contradictions, and maintains the number of connected components.
+- [todo] For each test case, read the grid and compute the parity of A tiles in every row and column; if any row or column has odd parity, output 0 and skip further processing for that case.
+- [todo] For valid cases, scan the grid once to evaluate B-cell constraints, maintaining cyclic prefix parities: for each row, the parity of A cells before the left edge of the current column, and for each column, the parity of A cells before the top edge of the current row.
+- [todo] For every B cell (i,j), compute constant c = 1 xor leftParity xor topParity and union row node i with column node H+j using c; if a contradiction occurs, mark the answer 0.
+- [todo] After the scan, if no contradiction occurred, output pow(2, component_count, 998244353); otherwise output 0, using fast input/output for all test cases.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Row/column elimination plus parity DSU on a signed bipartite graph: check that every row and every column has an even number of A cells; introduce one bit per row and one bit per column; for each B cell add an XOR equation between its row bit and column bit with a constant derived from the parity of A cells to the left and above; use a parity union-find to detect contradictions and count connected components; answer is 2 to the number of components if consistent. Pitfalls: prefix parity off-by-one on the torus, updating column parity before or after processing the current cell, counting isolated row/column vertices, and keeping memory and initialization fast across many test cases.
+- Direct parity DSU on all edge variables: create one variable for every horizontal adjacency and one for every vertical adjacency; for each cell add local XOR equations encoding whether it is A or B; count connected components of the resulting constraint graph. Pitfalls: this uses up to twice as many variables as the row/column reduction and adds more redundant constraints, so it may be slower and more memory-intensive in Python; edge indexing around the torus is still error-prone; if dimensions of size 1 were allowed, self-adjacency would need special care.
+- Sparse linear algebra over GF(2): formulate the entire affine system as a sparse matrix with constants, compute its rank and consistency, and return 2 to the nullity if consistent. Pitfalls: generic sparse elimination can suffer from fill-in and is difficult to implement efficiently in Python at this scale; it is likely overkill compared with union-find; consistency with the constant vector must be handled separately; the approach may not meet time limits unless it exploits the grid structure heavily.
+- Transfer-matrix dynamic programming over the smaller dimension: process the grid row by row or column by column, keeping as state the assignment of edge variables crossing the frontier; enforce local tile constraints as cells are added; close the torus by ensuring the final state matches the initial state. Pitfalls: the state space is exponential in the smaller of H and W, so this is only viable when one dimension is very small; torus wraparound makes the DP more complicated because the first row or column state must be remembered or handled by cycle consistency; memory and time blow up for roughly square grids.
+- Cycle-cover or perfect-matching reduction: interpret valid placements as 2-regular subgraphs or cycle covers of the toroidal grid with local gadgets enforcing A-turn and B-straight behavior, then count them using a Pfaffian or Kasteleyn-type determinant. Pitfalls: the torus is non-planar and requires careful sector/sign handling; constructing correct gadgets for A and B tiles is subtle; determinant-based methods are much heavier than the linear XOR structure suggests; this approach is likely far more complex than necessary and may be slower in practice.

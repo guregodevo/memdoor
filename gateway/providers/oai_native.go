@@ -93,6 +93,8 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		Messages:      messages,
 		MaxTokens:     int(params.MaxTokens),
 		Temperature:   params.Temperature,
+		TopP:          params.TopP,
+		TopK:          params.TopK,
 		Tools:         tools,
 		Stream:        true,
 		StreamOptions: &chatStreamOptions{IncludeUsage: true},
@@ -171,6 +173,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 	// (2026-09-26, DeepSeek at Fireworks, 63 tokens, cost 0).
 	var (
 		acc          *streamAccumulator
+		jsonReply    *chatResponse
 		consumeErr   error
 		requestStart time.Time
 	)
@@ -257,6 +260,19 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		// hook the agent runtime uses for AssistantStreamer broadcasts.
 		acc = &streamAccumulator{}
 		body := newIdleTimeoutReader(resp.Body, stall)
+		if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			// Some hosts ignore stream:true and return a complete object.
+			// Keep their legacy reasoning-only answer fallback confined to
+			// this path; streamed chat reasoning is not an answer.
+			var one chatResponse
+			err := json.NewDecoder(body).Decode(&one)
+			body.Close()
+			if err != nil {
+				return nil, fmt.Errorf("chat reply was not JSON: %w", err)
+			}
+			jsonReply = &one
+			break
+		}
 		consumeErr = acc.consume(body, cb, llm.StreamGuardFromContext(ctx))
 		body.Close()
 		if errors.Is(consumeErr, errStreamIdle) && ctx.Err() == nil {
@@ -326,6 +342,9 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		}
 	}
 	oaiResp := acc.build()
+	if jsonReply != nil {
+		oaiResp = *jsonReply
+	}
 	// Time-to-first-token, measured at the OAI client layer because
 	// that's where the SSE chunks actually arrive. Zero when the
 	// stream produced no content (tool-call-only round, for example).
@@ -339,10 +358,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 	}
 
 	choice := oaiResp.Choices[0]
-	// Reasoning models (DeepSeek R1/V4) sometimes leave content empty
-	// and put the final answer in reasoning_content. Fall back to it so
-	// the agent has something to post.
-	if choice.Message.Content == "" && choice.Message.ReasoningContent != "" {
+	if jsonReply != nil && strings.TrimSpace(choice.Message.Content) == "" && len(choice.Message.ToolCalls) == 0 {
 		choice.Message.Content = choice.Message.ReasoningContent
 	}
 	// Normalize cache-hit tokens across provider shapes: DeepSeek

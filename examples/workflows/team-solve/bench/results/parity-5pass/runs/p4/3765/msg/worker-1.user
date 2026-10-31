@@ -1,0 +1,71 @@
+PROBLEM:
+### Question
+You are given two integer arrays, nums and cost, of the same size, and an integer k.
+You can divide nums into subarrays. The cost of the i^th subarray consisting of elements nums[l..r] is:
+
+(nums[0] + nums[1] + ... + nums[r] + k * i) * (cost[l] + cost[l + 1] + ... + cost[r]).
+
+Note that i represents the order of the subarray: 1 for the first subarray, 2 for the second, and so on.
+Return the minimum total cost possible from any valid division.
+ 
+Example 1:
+
+Input: nums = [3,1,4], cost = [4,6,6], k = 1
+Output: 110
+Explanation:
+The minimum total cost possible can be achieved by dividing nums into subarrays [3, 1] and [4].
+
+
+The cost of the first subarray [3,1] is (3 + 1 + 1 * 1) * (4 + 6) = 50.
+The cost of the second subarray [4] is (3 + 1 + 4 + 1 * 2) * 6 = 60.
+
+
+Example 2:
+
+Input: nums = [4,8,5,1,14,2,2,12,1], cost = [7,2,8,4,2,2,1,1,2], k = 7
+Output: 985
+Explanation:
+The minimum total cost possible can be achieved by dividing nums into subarrays [4, 8, 5, 1], [14, 2, 2], and [12, 1].
+
+
+The cost of the first subarray [4, 8, 5, 1] is (4 + 8 + 5 + 1 + 7 * 1) * (7 + 2 + 8 + 4) = 525.
+The cost of the second subarray [14, 2, 2] is (4 + 8 + 5 + 1 + 14 + 2 + 2 + 7 * 2) * (2 + 2 + 1) = 250.
+The cost of the third subarray [12, 1] is (4 + 8 + 5 + 1 + 14 + 2 + 2 + 12 + 1 + 7 * 3) * (1 + 2) = 210.
+
+
+ 
+Constraints:
+
+1 <= nums.length <= 1000
+cost.length == nums.length
+1 <= nums[i], cost[i] <= 1000
+1 <= k <= 1000
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def minimumCost(self, nums: List[int], cost: List[int], k: int) -> int:
+        
+```
+
+
+
+PLAN:
+Use DP where `dp[t][i]` is the minimum cost to partition the first `i` elements into exactly `t` nonempty subarrays. Let `S` and `C` be prefix sums of `nums` and `cost`; the last segment `p..i-1` has cost `(S[i] + k*t) * (C[i] - C[p])`. Thus `dp[t][i] = (S[i] + k*t) * C[i] + min_{p<i} (dp[t-1][p] - (S[i] + k*t) * C[p])`. For a fixed `t`, each candidate `p` defines a line `y = -C[p] * x + dp[t-1][p]`, and the query point is `x = S[i] + k*t`. Because `C[p]` is strictly increasing and `x` is nondecreasing, maintain a lower convex hull with a deque to answer each transition in amortized `O(1)`, giving `O(n^2)` total. Iterate `t` from `1` to `n` using rolling arrays and return the minimum `dp[t][n]` over all valid `t`.
+
+NOTES:
+
+## ideation
+The core difficulty is that the cost of a segment is not local: it depends on the prefix sum of `nums` up to the segment’s right end and on the segment’s ordinal position in the partition. Therefore, choosing a cut changes the cost of all later segments, and a naive state must remember both the current prefix length and how many segments have already been formed. The straightforward DP over “number of segments” and “prefix length” has a transition over all previous cut points, which becomes cubic for `n = 1000`. The useful structure is monotonicity: prefix sums of `nums` and `cost` are increasing, and for a fixed number of segments the transition can be viewed as a minimum of lines evaluated at increasing query points. This suggests convex hull, Monge, or divide-and-conquer style optimizations.
+
+A particularly important alternative is to telescope the total cost over a partition. If the partition boundaries are `b0 = 0 < b1 < ... < bm = n`, the part involving the segment index `k*i` can be rewritten so that it becomes a per-edge constant plus penalties at internal boundaries, and the `nums`-prefix part also telescopes into a final constant plus terms depending only on consecutive boundaries. If this transformation is done correctly, the segment count disappears entirely and the problem becomes a shortest path from `0` to `n` in a directed acyclic graph whose edge weights depend only on the two endpoints. For `n = 1000`, even a plain quadratic dynamic program over this DAG is likely fast enough, and a single online convex hull can reduce it further. This is much simpler than maintaining a separate hull for every segment count.
+
+The provided segment-count convex-hull plan is sound, but it may be more complex than necessary for the given constraints. The main pitfalls there are: rebuilding the hull for each segment count, inserting only finite and valid previous states, restricting cuts to the valid triangular range, handling the decreasing negative slopes correctly, and finally taking the minimum over all possible segment counts. For any convex-hull approach, intersection tests should use integer arithmetic or be replaced by a Li Chao tree to avoid precision and sign mistakes.
+
+For the transformed shortest-path formulation, the main pitfalls are different: the edge weights can be negative, so Dijkstra is not appropriate; the DAG topological order is simply increasing prefix index. One must also be careful with the final constant, with the per-edge constant, and with prefix-array off-by-one errors. Intermediate values can be negative, so the “infinity” sentinel must be chosen carefully. Python integers are safe for the given limits, but in other languages one should use 64-bit integers and be mindful of large products in hull intersection tests.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Write the final Python class Solution method in the required delimiters, implementing the telescoped O(n^2) DAG DP: compute prefix sums S and C, set dp[0]=0, for v=1..n compute dp[v]=min_{u<v} dp[u] + (S[u]-S[v])*C[u] + k*(C[n]-C[u]), return S[n]*C[n]+dp[n]; run the provided sample tests and a small brute-force random validation.

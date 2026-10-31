@@ -1,0 +1,119 @@
+PROBLEM:
+### Question
+Takahashi, a patissier working at the ABC pastry shop, decided to sell assorted cakes to commemorate AtCoder Beginner Contest 400.
+The shop sells N kinds of cakes: cake 1, cake 2, \ldots, cake N.
+Each cake has three non-negative integer values: beauty, tastiness, and popularity. Specifically, cake i has beauty X_i, tastiness Y_i, and popularity Z_i.
+He considers pairing up these cakes into K pairs without overlaps.
+Formally, he will choose 2K distinct integers a_1,b_1,a_2,b_2,\ldots,a_K,b_K between 1 and N (inclusive), and pair cake a_i with cake b_i.
+The price of a pair formed by cakes a_i and b_i is \max(X_{a_i} + X_{b_i},\, Y_{a_i} + Y_{b_i},\, Z_{a_i} + Z_{b_i}).
+Here, \max(P,Q,R) denotes the greatest value among P,Q,R.
+Find the maximum possible total price of the K pairs.
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+\mathrm{case}_1
+\mathrm{case}_2
+\vdots
+\mathrm{case}_T
+
+\mathrm{case}_i represents the i-th test case. Each test case is given in the following format:
+N K
+X_1 Y_1 Z_1
+X_2 Y_2 Z_2
+\vdots
+X_N Y_N Z_N
+
+Output
+
+Print T lines. The i-th line (1\leq i\leq T) should contain the answer to the i-th test case.
+
+Constraints
+
+
+- 1\leq T\leq 1000
+- 2\leq N \leq 10^5
+- The sum of N over all test cases in each input file is at most 10^5.
+- 1\leq K \leq \lfloor \frac{N}{2}\rfloor (For a real number x, \lfloor x\rfloor denotes the greatest integer not exceeding x.)
+- 0\leq X_i,Y_i,Z_i \leq 10^9
+- All input values are integers.
+
+Sample Input 1
+
+1
+3 1
+6 3 8
+3 5 0
+2 7 3
+
+Sample Output 1
+
+12
+
+We form one pair out of three cakes.
+If we pair cake 1 with cake 2, the price is \max(6+3,\,3+5,\,8+0) = 9.
+If we pair cake 1 with cake 3, the price is \max(6+2,\,3+7,\,8+3) = 11.
+If we pair cake 2 with cake 3, the price is \max(3+2,\,5+7,\,0+3) = 12.
+Hence, pairing cake 2 with cake 3 gives the highest price, which is 12.
+
+Sample Input 2
+
+2
+5 2
+1 2 3
+1 2 3
+1 2 3
+1 2 3
+100 100 200
+6 2
+21 74 25
+44 71 80
+46 28 96
+1 74 24
+81 83 16
+55 31 1
+
+Sample Output 2
+
+209
+333
+
+Note that each cake can appear in at most one pair.
+Also note that there can be different cakes with identical values of beauty, tastiness, and popularity.
+For the first test case, pairing cake 1 with cake 2 gives a price of 6, pairing cake 3 with cake 5 gives a price of 203, and choosing these two pairs yields a total price of 209, which is the maximum.  
+For the second test case, pairing cake 2 with cake 3 gives a price of 176, pairing cake 4 with cake 5 gives a price of 157, and choosing these two pairs yields a total price of 333, which is the maximum.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The core difficulty is that the objective is a maximum-weight K-matching on a complete graph with edge weight defined as the maximum of three additive attribute sums. A direct matching approach is impossible for N up to 10^5. The key structural simplification is that each pair can be charged to one of the three attributes that attains its maximum. Then each attribute is charged by an even number of cakes, because every pair contributes two cakes to the attribute chosen for that pair. Conversely, if we select 2K cakes and assign each selected cake to one of the three attributes with an even number of selected cakes per attribute, then pairing cakes assigned to the same attribute gives total price at least the assigned sum. Choosing the maximizing attribute for each resulting pair shows that the original maximum equals the maximum over such parity-feasible colored selections.
+
+Thus the problem becomes: choose exactly 2K cakes, color each with one of three colors, require each color count to be even, and maximize the sum of the chosen color’s value. This is a selection problem with one cardinality constraint and only three parity bits. The unconstrained optimum is obtained by taking the 2K cakes with largest max-attribute value and coloring each by a maximizing attribute. Its parity mask has weight 0 or 2. If it is zero, it is already optimal. If not, the proposed exchange argument is promising: because selected cakes have max-value at least as large as unselected cakes, and recoloring away from a maximizing attribute never increases value, all local correction costs are nonnegative. Since parity lives in a two-dimensional XOR space, any feasible solution can be converted from the unconstrained optimum by recolor/swap operations whose XOR is the bad parity mask, and a subcollection of at most two operations has the same XOR and no larger total cost.
+
+The main implementation risks are not the high-level reduction but the details: tie-breaking at the 2K boundary, choosing baseline colors only among maximizing attributes, handling empty unselected sets, using 64-bit arithmetic, and especially computing the minimum 0/1/2-operation correction without missing conflicts where two operations use the same selected or unselected cake. Storing only the single cheapest operation per parity mask is likely insufficient; a small conflict-aware candidate pool or direct top-two underlying candidates is needed.
+
+
+CURRENT TASK LIST:
+- [todo] For each test case, compute b_i = max(X_i,Y_i,Z_i) and a base color attaining it, sort cakes by b_i descending, take the first 2K as selected, and compute the baseline sum and the parity mask of selected base colors.
+- [todo] Build selected-side tables: for each base color, the two smallest b_i among selected cakes; for each of the three nonzero parity masks, the two cheapest recolor operations (change a selected cake to another color) with their selected-cake ids.
+- [todo] Build unselected-side tables: for each color, the two largest attribute values among unselected cakes with ids; for each nonzero parity mask, the two cheapest swap operations (remove a selected cake of one base color and add an unselected cake of another color) using the best unselected value, with selected-cake ids.
+- [todo] If the baseline parity mask is nonzero, compute the minimum loss to make it zero by trying the best one operation and the four two-operation combinations of the other two masks (recolor+recolor, recolor+swap, swap+recolor, swap+swap), enforcing distinct selected cakes and, for two swaps, distinct selected and unselected cakes via the top-two tables.
+- [todo] Output baseline sum minus the minimum loss for every test case, using 64-bit integers and O(N log N) total time over all test cases.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the baseline parity-exchange method: sort by max-attribute value, take any 2K as the baseline, compute baseline total and odd-color mask, then compute the minimum loss using 0, 1, or 2 disjoint local operations. For each of the three nonzero parity masks, precompute candidate recolor operations from selected cakes and candidate swap operations from selected-to-unselected exchanges. For recolors, keep the two cheapest candidates for each source-target color pair. For swaps, keep candidates formed from the two smallest baseline-max selected cakes of the source color and the two largest unselected values of the target color. Evaluate one operation matching the bad mask and pairs of operations whose masks XOR to the bad mask, rejecting pairs that share a selected cake or an unselected cake. Pitfalls: arbitrary tie-breaking is safe only if selected max-values are never smaller than unselected max-values; baseline colors must be true maximizers; global cheapest-per-mask is not enough due to conflicts; handle cases where unselected set is empty or a color class has fewer than two candidates; totals require 64-bit integers.
+- Try a Lagrangian relaxation / Aliens-trick approach: add a penalty λ for selecting a cake, and for fixed λ solve a tiny DP over the 8 parity masks where each cake independently chooses not-selected or one of the three colors with adjusted value. Track selected counts, especially min/max counts among optimal adjusted values, then binary search λ to force the count to cross 2K and recover the exact answer. Pitfalls: the value-as-a-function-of-count may not be concave once parity constraints are imposed; ties can produce multiple counts at the same λ; parity gaps may make exact 2K recovery nontrivial; proving correctness is harder than for the exchange method, and integer λ ranges with large values require careful handling.
+- Try a fixed-quota assignment / min-cost flow formulation: enumerate or optimize over even numbers of cakes assigned to each attribute, say 2a, 2b, 2c with a+b+c=K, and for each quota triple solve a 3-color plus dummy assignment problem maximizing the sum. This can be viewed as a bipartite b-matching or transportation problem between cakes and color slots. Pitfalls: naive enumeration over quota triples is O(K^2) and too large; a full min-cost flow with up to 10^5 units is too slow; evenness is a modular constraint not directly handled by ordinary flow; taking top lists per attribute independently is invalid because the same cake cannot be assigned to multiple attributes; a practical version would need a strong convexity or greedy-exchange proof.
+- Try attacking the original maximum-weight K-matching directly: edge weight is the maximum of three additive terms, so one might prune to a small candidate set of cakes or edges and run a matching or dynamic program on that candidate set. Pitfalls: general maximum-weight K-matching is far too expensive for N=10^5; there is no obvious constant-size candidate guarantee without essentially proving the parity-exchange property; a cake can be useful because of one attribute even if its max-attribute rank is not extreme; disjointness and parity can force using non-top cakes, so naive top-edge pruning is likely incorrect.
+- Try an algebraic reformulation using the identity max(a,b,c) = (a+b+c+|a-b|+|b-c|+|c-a|)/2: rewrite the total as a vertex-selection term plus a matching term involving absolute values of sums of one-dimensional differences between attributes. Then explore whether the remaining pairing problem can be solved by sorting or geometric matching. Pitfalls: the pairing term is not additive over vertices and couples three absolute-value terms; optimal pairing for such convex pair-sum objectives is nontrivial and may still require general matching; differences can be negative, complicating simple sorting arguments; this route may not lead to a simple O(N log N) algorithm.

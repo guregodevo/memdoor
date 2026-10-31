@@ -345,6 +345,8 @@ type MessageNewParams struct {
 	System      []TextBlockParam       `json:"system,omitempty"`
 	MaxTokens   int64                  `json:"max_tokens"`
 	Temperature float64                `json:"temperature,omitempty"` // 0 = provider default
+	TopP        float64                `json:"top_p,omitempty"`       // 0 = provider default
+	TopK        int                    `json:"top_k,omitempty"`       // 0 = provider default
 	Agent       string                 `json:"-"`                     // log-only, never serialized
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	Extras      map[string]interface{} `json:"-"`

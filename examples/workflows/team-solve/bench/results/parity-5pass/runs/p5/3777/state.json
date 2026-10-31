@@ -1,0 +1,72 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideate and select product-major bitset DP with separate feasibility and zero-product tracking.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the complete product-major bitset DP solution in the provided starter class.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Run the provided examples and a brute-force random cross-check (n <= 12, nums values 0..12, k in [-20,20], limit <= 50) against the current Solution.maxProduct; if any mismatch, fix the DP or switch to a different approach.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Product-major bitset DP: for each product value from 0 to `limit` and each parity, keep a bitset of reachable alternating sums. Process each number once, shifting sum bitsets by `+x` or `-x` and moving product `p` to `p*x` when taking the element. Pitfalls: need snapshots to avoid reusing the same element, careful masking for negative sums, special handling of `x = 1`, and zero-product seeding from uncapped feasibility to catch prefixes that exceeded `limit` before a zero.",
+  "Sum-major product-set DP: for each alternating sum and parity, keep a set or bitset of reachable products. Taking an element shifts the sum and multiplies the product set by the element value. Pitfalls: multiplication of product sets is less natural than bitset shifting, many sum states can be expensive, zero handling still requires uncapped feasibility or separate zero tracking, and the empty subsequence can contaminate sum 0/product 1.",
+  "Feasibility-first plus product validation: first compute reachable sums and parities ignoring product, and separately compute zero-product reachability. Then enumerate candidate positive products in descending order and test whether a candidate product can achieve the target sum, using an exact-product DP or memoized search. Pitfalls: product enumeration may be large, exact-product checks can be costly, and binary search over product is not valid because achievability is not monotone in product.",
+  "Prime-exponent or multiplicative-lattice DP: represent products by exponent vectors of the primes appearing in values 1 through 12, or by generated product values, and combine that multiplicative state with sum/parity bitsets. Pitfalls: the exponent-state space can still be sizable, products must be capped by value, zeros and ones need special treatment, and this approach may be structurally similar to product-major DP but with more complex state mapping.",
+  "Block-summary or divide-and-conquer composition: split the array into blocks, precompute for each block the possible parity changes, sum deltas, and product multipliers, then combine block summaries into a global DP. Pitfalls: block summaries can grow quickly, product multipliers above `limit` must be handled carefully because a later zero can still make the final product 0, and composing parity and sum deltas across blocks requires careful bookkeeping.",
+  "Top-down memoized search with suffix feasibility pruning: recursively choose or skip elements, using precomputed suffix reachability of sums/parities to prune impossible branches, and search for high products first or use branch-and-bound. Pitfalls: the search can still be exponential, memoization may approach the full DP state space, zero-product paths require special pruning, and proving that the search finds the maximum product without missing smaller intermediate products is delicate."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Run the provided examples and a brute-force random cross-check (n <= 12, nums values 0..12, k in [-20,20], limit <= 50) against the current Solution.maxProduct; if any mismatch, fix the DP or switch to a different approach.",
+ "iters": 2,
+ "task": "Run the provided examples and a brute-force random cross-check (n <= 12, nums values 0..12, k in [-20,20], limit <= 50) against the current Solution.maxProduct; if any mismatch, fix the DP or switch to a different approach.",
+ "wrote": true,
+ "res": {
+  "ran": false
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-2",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-2",
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,235 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, x and k. You can perform the following operation any number of times (including zero):
+
+Increase or decrease any element of nums by 1.
+
+Return the minimum number of operations needed to have at least k non-overlapping subarrays of size exactly x in nums, where all elements within each subarray are equal.
+ 
+Example 1:
+
+Input: nums = [5,-2,1,3,7,3,6,4,-1], x = 3, k = 2
+Output: 8
+Explanation:
+
+Use 3 operations to add 3 to nums[1] and use 2 operations to subtract 2 from nums[3]. The resulting array is [5, 1, 1, 1, 7, 3, 6, 4, -1].
+Use 1 operation to add 1 to nums[5] and use 2 operations to subtract 2 from nums[6]. The resulting array is [5, 1, 1, 1, 7, 4, 4, 4, -1].
+Now, all elements within each subarray [1, 1, 1] (from indices 1 to 3) and [4, 4, 4] (from indices 5 to 7) are equal. Since 8 total operations were used, 8 is the output.
+
+
+Example 2:
+
+Input: nums = [9,-2,-2,-2,1,5], x = 2, k = 2
+Output: 3
+Explanation:
+
+Use 3 operations to subtract 3 from nums[4]. The resulting array is [9, -2, -2, -2, -2, 5].
+Now, all elements within each subarray [-2, -2] (from indices 1 to 2) and [-2, -2] (from indices 3 to 4) are equal. Since 3 operations were used, 3 is the output.
+
+
+ 
+Constraints:
+
+2 <= nums.length <= 10^5
+-10^6 <= nums[i] <= 10^6
+2 <= x <= nums.length
+1 <= k <= 15
+2 <= k * x <= nums.length
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def minOperations(self, nums: List[int], x: int, k: int) -> int:
+        
+```
+
+
+
+CURRENT SOLUTION:
+from typing import List
+
+
+class Fenwick:
+    __slots__ = ("n", "cnt", "sm", "top")
+
+    def __init__(self, n: int):
+        self.n = n
+        self.cnt = [0] * (n + 1)
+        self.sm = [0] * (n + 1)
+        self.top = 1 << (n.bit_length() - 1)
+
+    def add(self, i: int, dc: int, ds: int) -> None:
+        n = self.n
+        cnt = self.cnt
+        sm = self.sm
+        while i <= n:
+            cnt[i] += dc
+            sm[i] += ds
+            i += i & -i
+
+    def prefix(self, i: int) -> tuple:
+        cnt = self.cnt
+        sm = self.sm
+        c = 0
+        s = 0
+        while i > 0:
+            c += cnt[i]
+            s += sm[i]
+            i -= i & -i
+        return c, s
+
+    def kth(self, k: int) -> int:
+        idx = 0
+        cnt = self.cnt
+        n = self.n
+        bitmask = self.top
+        while bitmask:
+            nxt = idx + bitmask
+            if nxt <= n and cnt[nxt] < k:
+                idx = nxt
+                k -= cnt[nxt]
+            bitmask >>= 1
+        return idx + 1
+
+
+class Solution:
+    def minOperations(self, nums: List[int], x: int, k: int) -> int:
+        n = len(nums)
+
+        vals = sorted(set(nums))
+        comp = {v: i + 1 for i, v in enumerate(vals)}
+        comp_nums = [comp[v] for v in nums]
+        del comp
+
+        m = len(vals)
+        bit = Fenwick(m)
+
+        total_sum = sum(nums[:x])
+        for i in range(x):
+            bit.add(comp_nums[i], 1, nums[i])
+
+        costs = [0] * (n - x + 1)
+        target = (x + 1) // 2
+
+        for start in range(n - x + 1):
+            med_idx = bit.kth(target)
+            med_val = vals[med_idx - 1]
+
+            left_count, left_sum = bit.prefix(med_idx)
+            right_count = x - left_count
+            right_sum = total_sum - left_sum
+
+            costs[start] = (
+                med_val * left_count - left_sum
+                + right_sum - med_val * right_count
+            )
+
+            if start + x < n:
+                out_val = nums[start]
+                bit.add(comp_nums[start], -1, -out_val)
+
+                in_val = nums[start + x]
+                bit.add(comp_nums[start + x], 1, in_val)
+
+                total_sum += in_val - out_val
+
+        INF = 10 ** 30
+        prev = [0] * (n + 1)
+
+        for j in range(1, k + 1):
+            curr = [INF] * (n + 1)
+            best = INF
+
+            prev_local = prev
+            costs_local = costs
+            x_local = x
+
+            for i in range(j * x, n + 1):
+                idx = i - x_local
+                cand = prev_local[idx] + costs_local[idx]
+                if cand < best:
+                    best = cand
+                curr[i] = best
+
+            prev = curr
+
+        return prev[n]
+
+
+def _brute(nums: List[int], x: int, k: int) -> int:
+    n = len(nums)
+    costs = []
+    for s in range(n - x + 1):
+        window = nums[s:s + x]
+        best_window = min(sum(abs(v - t) for v in window) for t in set(window))
+        costs.append(best_window)
+
+    m = len(costs)
+    INF = 10 ** 18
+    best = INF
+
+    def dfs(last_start: int, chosen: int, total: int) -> None:
+        nonlocal best
+        if total >= best:
+            return
+        if chosen == k:
+            best = total
+            return
+
+        start = max(0, last_start + x)
+        remaining = m - start
+        if remaining <= 0:
+            return
+        if chosen + (remaining + x - 1) // x < k:
+            return
+
+        for s in range(start, m):
+            dfs(s, chosen + 1, total + costs[s])
+
+    dfs(-10 ** 9, 0, 0)
+    return best
+
+
+if __name__ == "__main__":
+    import random
+
+    sol = Solution()
+
+    assert sol.minOperations([5, -2, 1, 3, 7, 3, 6, 4, -1], 3, 2) == 8
+    assert sol.minOperations([9, -2, -2, -2, 1, 5], 2, 2) == 3
+
+    random.seed(12345)
+    for _ in range(200):
+        n = random.randint(2, 8)
+        x = random.randint(2, n)
+        max_k = min(15, n // x)
+        if max_k < 1:
+            continue
+        k = random.randint(1, max_k)
+        nums = [random.randint(-5, 5) for _ in range(n)]
+
+        expected = _brute(nums, x, k)
+        got = sol.minOperations(nums, x, k)
+        assert got == expected, (nums, x, k, got, expected)
+
+NOTES:
+- **Reduction:** The required subarrays can be treated as chosen disjoint length-x windows. Operations on disjoint windows add independently. For one fixed window, the cheapest common value is a median, so its cost is the sum of absolute deviations to a median. Since all window costs are nonnegative, "at least k" is equivalent to "exactly k".
+- **Window costs:** Coordinate-compress all values. Maintain the current sliding window in one Fenwick tree storing both counts and sums. The lower median is the kth order statistic with k=(x+1)//2. Prefix count/sum up to the median gives cost = med*left_count-left_sum + (total_sum-left_sum)-med*(x-left_count).
+- **Sliding:** Initialize the first x elements, then for each slide remove the left element and add the new right element, updating counts, sums, and total_sum. Each window cost is computed in O(log n).
+- **Fenwick details:** The kth query uses binary lifting on the count tree. The combined prefix query returns count and sum in one loop, keeping the sliding phase efficient with small constants.
+- **DP:** dp[j][i] is the minimum cost for j chosen windows inside the first i elements. Transition: skip position i-1 or take the window ending at i-1, which starts at i-x: dp[j][i]=min(dp[j][i-1], dp[j-1][i-x]+cost[i-x]). Rolling arrays over j are used; the inner loop starts at i=j*x.
+- **Complexity:** O(n log n + k n) time and O(n) memory, well within n=1e5 and k<=15.
+- **Edge cases:** Negative values, duplicates, even x using the lower median, adjacent windows allowed, and k*x<=n feasibility are handled.
+- **Testing:** The file includes a guarded main block that checks the two examples and 200 small random cases against a brute-force enumerator of non-overlapping start positions.
+
+
+CURRENT TASK LIST:
+- [done] Reduce the problem to selecting k disjoint length-x windows with weights equal to the minimum cost to make each window equal (median-deviation cost).
+- [todo] Implement the complete Python solution in the starter class: coordinate-compress nums, compute all length-x window costs by sliding two Fenwick trees (counts and sums), finding the lower median with a kth-order query and calculating sum of absolute deviations; then run a rolling DP over prefix length and number of chosen windows using dp[j][i] = min(dp[j][i-1], dp[j-1][i-x] + cost[i-x]); test on the two provided examples and a brute-force checker for small random inputs.
+- [todo] Debug any failing sample or brute-force case, focusing on Fenwick kth query, compression/indexing, negative sums, DP row updates, and non-overlap off-by-one errors.
+- [todo] If the Fenwick approach is incorrect or too slow, switch to a different approach such as two-heap lazy deletion or a static range-median structure, rather than continuing to patch the same implementation.
+
+LATEST WORKER RESULT: worker reported 'solved' on: Implement the complete Python solution in the starter class: coordinate-compress. - **Reduction:** The required subarrays can be treated as chosen disjoint length-x windows. Operations on disjoint windows add independently. For one fixed window, the cheapest common value is a media
+
+PROPOSED NEW STEPS:
+(none)

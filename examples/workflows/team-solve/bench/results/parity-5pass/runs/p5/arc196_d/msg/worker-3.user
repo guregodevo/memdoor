@@ -1,0 +1,190 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Convert each person to a prefix interval (l, r) and sign: l = min(S, T) - 1, r = max(S, T) - 1, sign + if S < T and - if S > T. A set of people is feasible iff no two converted intervals form a bad pair: identical interval with opposite signs, same left endpoint with different right endpoints, same right endpoint with different left endpoints, or crossing intervals with the same sign. This follows because contracting equal endpoint prefix nodes turns the requirements into strict inequalities, and the resulting directed graph is acyclic exactly when no such pair exists. For queries, let bad[j] be the largest index i < j that forms a bad pair with j; then [L, R] is feasible iff max_{j ≤ R} bad[j] < L. Compute bad[j] with hash maps for the endpoint/identical cases and with an offline CDQ divide-and-conquer plus range-max sweeps for same-sign crossing pairs. Finally answer all queries in O(1) using prefix maxima of bad.
+
+NOTES:
+- **Transformation:** Let P_i be the prefix sum of road strengths up to road i, with town t corresponding to P_{t-1}. A person (S,T) becomes l=min(S,T)-1, r=max(S,T)-1, and sign=+1 if S<T else -1. The requirement is P_l=P_r, and for every l<x<r, P_x>P_l if sign is +1, or P_x<P_l if sign is -1.
+- **Forbidden pairs:** Under the adopted characterization, a set of people is feasible iff it contains no forbidden pair. Forbidden pairs are: identical (l,r) with opposite signs; same l with different r; same r with different l; and same-sign strict crossing, meaning l_i<l_j<r_i<r_j or l_j<l_i<r_j<r_i. Nested or touching intervals are not conflicts by themselves.
+- **Baseline algorithm:** Store 1-indexed arrays L, R, sign. For each j, scan i from j-1 down to 1 and stop at the first conflict. That i is bad[j]. This gives the maximum conflicting previous index directly, but is O(M^2) worst-case.
+- **Conflict test details:** If L_i==L_j, conflict iff R_i!=R_j or sign_i!=sign_j. Else if R_i==R_j, conflict because the left endpoints differ. Otherwise, conflict only when signs are equal and one of the two strict crossing chains holds.
+- **Query answering:** Build pref[j]=max(pref[j-1], bad[j]). For query [L,R], answer Yes iff pref[R]<L. This works because bad[j]<j, so any prefix maximum >=L must come from a pair fully inside [L,R].
+- **Sample traces:** Sample 1 gives bad[4]=3 from the crossing same-sign pair persons 3 and 4, so [1,3] is Yes and [2,4] is No. Sample 2 gives bad[3]=1, bad[4]=1, bad[5]=1, bad[6]=4, producing No, Yes, Yes.
+- **Pitfalls:** Use town-1 prefix indices. Sign is the travel direction, not the left/right endpoint. Crossing comparisons must be strict. Identical same-sign intervals are allowed, but identical opposite-sign intervals are forbidden. Same-endpoint conflicts apply regardless of sign. The prefix-max query reduction depends on bad[j]<j.
+- **Performance:** The current program is intentionally a baseline. M up to 2e5 makes the nested loop infeasible for full constraints. Parsing and array storage are fine; the pair-check loop is the bottleneck.
+- **Next design notes:** Endpoint conflicts can be computed online with hash maps per endpoint, keeping top two distinct keys of the form (opposite endpoint, sign) to find the latest conflicting index. Same-sign crossing needs an offline method such as CDQ divide-and-conquer with Fenwick-tree sweeps, handling type A l_i<l_j<r_i<r_j and type B l_j<l_i<r_j<r_i separately for each sign.
+
+
+CURRENT WORK:
+import sys
+
+def main():
+    data = list(map(int, sys.stdin.buffer.read().split()))
+    if not data:
+        return
+
+    it = iter(data)
+    N = next(it)
+    M = next(it)
+    Q = next(it)
+
+    L = [0] * (M + 1)
+    R = [0] * (M + 1)
+    sign = [0] * (M + 1)
+
+    for i in range(1, M + 1):
+        s = next(it)
+        t = next(it)
+        if s < t:
+            L[i] = s - 1
+            R[i] = t - 1
+            sign[i] = 1
+        else:
+            L[i] = t - 1
+            R[i] = s - 1
+            sign[i] = -1
+
+    # Baseline O(M^2) computation of bad[j]:
+    # bad[j] = max i < j such that persons i and j form a forbidden pair.
+    bad = [0] * (M + 1)
+
+    for j in range(1, M + 1):
+        lj = L[j]
+        rj = R[j]
+        sj = sign[j]
+
+        # Scan backwards so the first conflict found is the largest i.
+        for i in range(j - 1, 0, -1):
+            li = L[i]
+            ri = R[i]
+
+            if li == lj:
+                # Same left endpoint:
+                # - different right endpoints always conflict
+                # - identical interval with opposite sign conflicts
+                if ri != rj or sign[i] != sj:
+                    bad[j] = i
+                    break
+            elif ri == rj:
+                # Same right endpoint and different left endpoint:
+                # always conflicts.
+                bad[j] = i
+                break
+            else:
+                # Strict crossing is forbidden only for the same sign.
+                if sign[i] == sj:
+                    if (li < lj < ri < rj) or (lj < li < rj < ri):
+                        bad[j] = i
+                        break
+
+    # Prefix maximum of bad.
+    pref = [0] * (M + 1)
+    mx = 0
+    for i in range(1, M + 1):
+        if bad[i] > mx:
+            mx = bad[i]
+        pref[i] = mx
+
+    out = []
+    for _ in range(Q):
+        lq = next(it)
+        rq = next(it)
+        # A query [L, R] is feasible iff no bad[j] for j <= R is >= L.
+        out.append("Yes" if pref[rq] < lq else "No")
+
+    sys.stdout.write("\n".join(out))
+
+if __name__ == "__main__":
+    main()
+
+YOUR TASK: Complete this task: Implement the efficient production solution: compute endpoint conflicts in O(M) with top-two distinct keys per L and per R; for each sign compute same-sign crossing conflicts with a CDQ divide-and-conquer over the sign-ordered list (brute force segments <=128, otherwise left-to-right contributions using an L-ascending sweep + segment tree over R and an R-descending sweep + segment tree over L, strict inequalities, precomputed compressed coordinates/lo-hi, touched-node reset, and skip queries when the local bad value is already >= max index in the left half); then build prefix max of bad and answer queries. Before finalizing, run a small random validator (N<=8, M<=10, all ranges) comparing the forbidden-pair oracle/efficient bad against a brute-force difference-constraint feasibility checker, and stress-test the efficient bad computation against the O(M^2) baseline on small random cases.

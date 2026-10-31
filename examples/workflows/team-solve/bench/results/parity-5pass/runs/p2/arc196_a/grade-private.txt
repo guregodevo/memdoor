@@ -1,0 +1,1 @@
+arc196_a: 43/43 tests passed (all tests)

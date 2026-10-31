@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "desc": "Derive the row/column base reduction: row/column A-parity checks, B-cell parity constraints between row and column bases, and answer 2^(DSU components) if consistent.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the complete Python solution with fast buffered input, iterative parity DSU, early exits for odd parity/all-A/all-B, and no hardcoded sample answers.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Verify correctness against public samples and edge-case reasoning, including all-A/all-B, odd parity, inconsistent B-label cycles, and isolated nodes.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Check performance/memory for total HW=1e6 and T up to 1e5: O(HW \u03b1(H+W)) per case, compact per-case arrays, early exits, and built-in modular exponentiation.",
+    "status": "done",
+    "result": ""
+  }
+]

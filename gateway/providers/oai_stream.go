@@ -36,6 +36,7 @@ import (
 //   - finish_reason: last non-empty value wins
 type streamAccumulator struct {
 	content      strings.Builder
+	thinking     strings.Builder
 	toolCalls    map[int]*chatToolCall // keyed by .index; nil before first tool delta
 	finishReason string
 	errMsg       string // the provider's mid-stream error, if it sent one
@@ -98,6 +99,13 @@ func (a *streamAccumulator) consume(r io.Reader, cb llm.StreamCallback, guard ll
 
 		// Reconstruct the message body from delta fragments.
 		for _, ch := range chunk.Choices {
+			// Hosts use either name; prefer reasoning_content when both
+			// aliases are present so the same fragment is not kept twice.
+			thinking := ch.Delta.ReasoningContent
+			if thinking == "" {
+				thinking = ch.Delta.Reasoning
+			}
+			a.thinking.WriteString(thinking)
 			if ch.Delta.Content != "" {
 				if a.firstTokenAt.IsZero() {
 					a.firstTokenAt = time.Now()
@@ -174,6 +182,7 @@ func (a *streamAccumulator) build() chatResponse {
 		FinishReason: a.finishReason,
 	}
 	choice.Message.Content = a.content.String()
+	choice.Message.ReasoningContent = a.thinking.String()
 	if len(a.toolCalls) > 0 {
 		// Emit tool calls in index order so downstream tool dispatchers
 		// see them the same shape OpenAI does in a non-stream response.

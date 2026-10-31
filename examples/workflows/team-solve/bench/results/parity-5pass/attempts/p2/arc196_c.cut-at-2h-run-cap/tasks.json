@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "desc": "Implement baseline O(K^2) active-pair DP solver (no NTT) as a complete stdin/stdout program: precheck, active extraction, factorials/invfact, DP, and answer; pass samples 1-3.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Verify baseline against brute force for all/random small N (N<=7) and edge cases (N=1, S[0]!='B' or S[-1]!='W', all B then all W, alternating small).",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Implement fast NTT convolution modulo 998244353 (iterative, power-of-two length, direct fallback for tiny sizes) and unit-test it against naive convolution on small random cases.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Implement CDQ divide-and-conquer optimization for the active-pair DP: recursive solve(l,r), accumulated contribution array, left-to-right contributions via direct loops or NTT with a cost model, including dummy contribution and safe index bounds.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 5,
+    "desc": "Test optimized solution on samples, small brute-force cases, and large performance cases (N=2e5 alternating, all B then all W, random large sanity), fixing any failures or TLE.",
+    "status": "pending",
+    "result": ""
+  }
+]

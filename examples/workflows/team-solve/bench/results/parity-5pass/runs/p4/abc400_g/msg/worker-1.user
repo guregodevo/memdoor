@@ -1,0 +1,138 @@
+PROBLEM:
+### Question
+Takahashi, a patissier working at the ABC pastry shop, decided to sell assorted cakes to commemorate AtCoder Beginner Contest 400.
+The shop sells N kinds of cakes: cake 1, cake 2, \ldots, cake N.
+Each cake has three non-negative integer values: beauty, tastiness, and popularity. Specifically, cake i has beauty X_i, tastiness Y_i, and popularity Z_i.
+He considers pairing up these cakes into K pairs without overlaps.
+Formally, he will choose 2K distinct integers a_1,b_1,a_2,b_2,\ldots,a_K,b_K between 1 and N (inclusive), and pair cake a_i with cake b_i.
+The price of a pair formed by cakes a_i and b_i is \max(X_{a_i} + X_{b_i},\, Y_{a_i} + Y_{b_i},\, Z_{a_i} + Z_{b_i}).
+Here, \max(P,Q,R) denotes the greatest value among P,Q,R.
+Find the maximum possible total price of the K pairs.
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+\mathrm{case}_1
+\mathrm{case}_2
+\vdots
+\mathrm{case}_T
+
+\mathrm{case}_i represents the i-th test case. Each test case is given in the following format:
+N K
+X_1 Y_1 Z_1
+X_2 Y_2 Z_2
+\vdots
+X_N Y_N Z_N
+
+Output
+
+Print T lines. The i-th line (1\leq i\leq T) should contain the answer to the i-th test case.
+
+Constraints
+
+
+- 1\leq T\leq 1000
+- 2\leq N \leq 10^5
+- The sum of N over all test cases in each input file is at most 10^5.
+- 1\leq K \leq \lfloor \frac{N}{2}\rfloor (For a real number x, \lfloor x\rfloor denotes the greatest integer not exceeding x.)
+- 0\leq X_i,Y_i,Z_i \leq 10^9
+- All input values are integers.
+
+Sample Input 1
+
+1
+3 1
+6 3 8
+3 5 0
+2 7 3
+
+Sample Output 1
+
+12
+
+We form one pair out of three cakes.
+If we pair cake 1 with cake 2, the price is \max(6+3,\,3+5,\,8+0) = 9.
+If we pair cake 1 with cake 3, the price is \max(6+2,\,3+7,\,8+3) = 11.
+If we pair cake 2 with cake 3, the price is \max(3+2,\,5+7,\,0+3) = 12.
+Hence, pairing cake 2 with cake 3 gives the highest price, which is 12.
+
+Sample Input 2
+
+2
+5 2
+1 2 3
+1 2 3
+1 2 3
+1 2 3
+100 100 200
+6 2
+21 74 25
+44 71 80
+46 28 96
+1 74 24
+81 83 16
+55 31 1
+
+Sample Output 2
+
+209
+333
+
+Note that each cake can appear in at most one pair.
+Also note that there can be different cakes with identical values of beauty, tastiness, and popularity.
+For the first test case, pairing cake 1 with cake 2 gives a price of 6, pairing cake 3 with cake 5 gives a price of 203, and choosing these two pairs yields a total price of 209, which is the maximum.  
+For the second test case, pairing cake 2 with cake 3 gives a price of 176, pairing cake 4 with cake 5 gives a price of 157, and choosing these two pairs yields a total price of 333, which is the maximum.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+For any pair, color both cakes with a coordinate attaining the pair's maximum; conversely, any selection of 2K cakes colored X/Y/Z with even counts per color can be paired inside each color to form a valid matching whose price is at least the colored sum, so the problem is exactly the even-parity coordinate-selection problem.  
+The optimum as a function of K is concave (it is a maximum-weight matching/M-concave selection problem), so a Lagrangian penalty on the number of pairs can be used.  
+For an integer penalty beta per pair, double all coordinate values and subtract beta for every selected cake; the best penalized even-parity selection is computed by an 8-state parity DP over cakes, where each cake is unused or toggles one of the three color parity bits.  
+Tie-break equal penalized values by maximizing the selected count, e.g. by encoding (value, count) as value*(N+1)+count.  
+Binary search the largest beta whose optimal selected count is at least 2K; then K is an optimal cardinality and the answer is DP_value/2 + beta*K.
+
+NOTES:
+
+## ideation
+The core difficulty is that the natural formulation is a maximum-weight K-matching in a complete graph, where the edge weight of cakes i and j is max(X_i+X_j, Y_i+Y_j, Z_i+Z_j). General maximum-weight matching is far too slow for N up to 1e5, so the special “max of three additive coordinates” structure must be exploited.
+
+The key structural simplification is to move the max from the pair level to a color choice. For any chosen pair, pick one coordinate that attains the pair’s maximum and color both cakes with that coordinate. Then each color class has even size, and the total price is exactly the sum of the chosen coordinate values over the 2K selected cakes. Conversely, any selection of 2K cakes with colors X/Y/Z such that each color appears an even number of times can be paired inside each color, and the true pair price is at least the colored sum. Therefore the problem is equivalent to: choose exactly 2K cakes, assign each chosen cake to one of three colors, require even counts per color, and maximize the sum of assigned coordinate values.
+
+After this reduction, the remaining hard part is the exact cardinality constraint 2K together with three parity constraints. A direct DP over count and parity is O(NK), which is impossible for K up to N/2. The provided plan attacks this with Lagrangian relaxation: penalize selected cakes, solve the unconstrained parity problem by an 8-state DP, binary search the penalty, and recover the exact K-pair value. This is the most promising route, but its correctness hinges on concavity/M-concavity of the value as a function of K, and its Python implementation needs careful tie-breaking and performance tuning.
+
+Candidate approaches and pitfalls:
+
+1. Lagrangian / Aliens-trick 8-state parity DP, i.e. the given plan.  
+   For an integer penalty beta per pair, double all coordinate values and subtract beta for every selected cake. Run an 8-state parity DP where each cake is either unused or toggles one of the three color parity bits. Among optimal penalized values, tie-break by maximum selected count. Binary search the largest beta whose optimal selected count is at least 2K, then recover the answer as dp_value/2 + beta*K.  
+   Pitfalls: the concavity/M-concavity claim must be trusted or proven; tie-breaking by maximum count is essential for monotonicity; integer scaling with doubled values is important to avoid half-integer penalties; the DP value can be negative for large beta; the answer formula can be off by one if the penalty is applied per cake instead of per pair; Python performance is a major concern because roughly 31 passes over all cakes with 8 states and 3 transitions each can be tens of millions of operations.
+
+2. Direct max-plus / slope-trick DP over the full concave value function.  
+   Instead of binary searching a penalty, maintain for each of the 8 parity states the entire concave sequence of best values by selected count, represented by marginal gains or a similar structure. Updating with one cake is a max-plus convolution with a very small 2-point function. If the sequences remain concave, one could extract the value at count 2K without 31 full passes.  
+   Pitfalls: this is much more complex to implement; it still relies on the same concavity/M-concavity property; closure under the required max-of-shifted-concave-functions updates is nontrivial; storing marginal sequences for all states may use O(N) memory; Python overhead for heap or balanced-tree style updates may be high.
+
+3. Three-color assignment / min-cost flow formulation.  
+   View the problem as assigning selected cakes to three color bins, with at most one color per cake and even flow into each bin. For fixed numbers of X/Y/Z pairs, this is a small-bin assignment problem. One could try min-cost flow, specialized 3-bin greedy algorithms, or optimize the three pair counts with additional Lagrange multipliers.  
+   Pitfalls: a flow network with N item nodes and K augmentations is likely too slow; even-count constraints are parity constraints, not ordinary capacities; optimizing over the three color counts introduces a 2D search; this route may ultimately collapse back to the same 8-state Lagrangian DP.
+
+4. General maximum-weight matching algorithms, e.g. Edmonds blossom.  
+   Build the complete graph with edge weights max(X_i+X_j, Y_i+Y_j, Z_i+Z_j) and compute a maximum-weight K-matching directly.  
+   Pitfalls: this is O(N^3) time and O(N^2) memory in practice, completely infeasible for N=1e5; it is only useful for brute-force validation on very small random tests.
+
+5. Top-max-coordinate plus bounded parity-loss correction.  
+   Let m_i = max(X_i,Y_i,Z_i). Any solution’s value is the sum of m_i over selected cakes minus a nonnegative loss needed to make the color counts even. With only three colors, the minimum loss to fix parity may be expressible as a small T-join on the three color nodes, possibly involving at most two positively lost recolorings. This suggests an algorithm that starts from the top 2K cakes by m_i and tries only a bounded number of swaps to fix parity or reduce loss.  
+   Pitfalls: proving that only a constant number of swaps is sufficient is subtle, especially with ties for the maximum coordinate and zero-loss recolorings; the candidate set of “special” items is not obvious; computing the exact parity-loss for candidate sets efficiently may be as hard as the original problem; this approach risks becoming heuristic unless a rigorous bounded-swap theorem is established.
+
+6. Hybrid small-K or small-unselected DP, and brute-force validation.  
+   For very small K, an O(NK*8) DP is possible. For cases where N-2K is very small, one might try a complement formulation, though it is not straightforward because unselected cakes do not carry colors. Exhaustive matching or O(NK) parity DP on tiny N can be used to validate the main approach.  
+   Pitfalls: this does not solve the middle range where both K and N-2K are large; the complement formulation is not symmetric; brute force is only a testing tool, not a full solution.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the Lagrangian 8-state parity DP solution in Python: for each test case, double all X/Y/Z values, precompute them scaled by M=N+1, run an unrolled 8-mask max-plus DP maximizing encoded (score,count) with transitions new[m]=max(old[m], old[m^1]+(2X-beta)*M+1, old[m^2]+(2Y-beta)*M+1, old[m^4]+(2Z-beta)*M+1), binary search the largest beta in [0, 2*max_coord+1) whose final state 0 selected count is at least 2K, then output score//2 + beta*K; validate on the provided samples and small random brute-force cases.

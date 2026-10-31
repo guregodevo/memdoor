@@ -1,0 +1,64 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, x and k. You can perform the following operation any number of times (including zero):
+
+Increase or decrease any element of nums by 1.
+
+Return the minimum number of operations needed to have at least k non-overlapping subarrays of size exactly x in nums, where all elements within each subarray are equal.
+ 
+Example 1:
+
+Input: nums = [5,-2,1,3,7,3,6,4,-1], x = 3, k = 2
+Output: 8
+Explanation:
+
+Use 3 operations to add 3 to nums[1] and use 2 operations to subtract 2 from nums[3]. The resulting array is [5, 1, 1, 1, 7, 3, 6, 4, -1].
+Use 1 operation to add 1 to nums[5] and use 2 operations to subtract 2 from nums[6]. The resulting array is [5, 1, 1, 1, 7, 4, 4, 4, -1].
+Now, all elements within each subarray [1, 1, 1] (from indices 1 to 3) and [4, 4, 4] (from indices 5 to 7) are equal. Since 8 total operations were used, 8 is the output.
+
+
+Example 2:
+
+Input: nums = [9,-2,-2,-2,1,5], x = 2, k = 2
+Output: 3
+Explanation:
+
+Use 3 operations to subtract 3 from nums[4]. The resulting array is [9, -2, -2, -2, -2, 5].
+Now, all elements within each subarray [-2, -2] (from indices 1 to 2) and [-2, -2] (from indices 3 to 4) are equal. Since 3 operations were used, 3 is the output.
+
+
+ 
+Constraints:
+
+2 <= nums.length <= 10^5
+-10^6 <= nums[i] <= 10^6
+2 <= x <= nums.length
+1 <= k <= 15
+2 <= k * x <= nums.length
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def minOperations(self, nums: List[int], x: int, k: int) -> int:
+        
+```
+
+
+
+PLAN:
+Compute the minimum cost to make every length-x window internally equal, using a sliding median structure (two heaps or Fenwick tree) to obtain each window's sum of absolute deviations in O(log n) per slide. Then the problem becomes choosing k non-overlapping windows with minimum total cost. Use DP over prefix length and number of chosen windows: for each position, either skip it or take the window ending there, adding its precomputed cost. Because all costs are nonnegative, minimizing for exactly k windows also minimizes for at least k windows. Return the DP value for k windows over the full array.
+
+NOTES:
+
+## ideation
+The problem has two separable layers. For a fixed length-x window, the cheapest way to make its elements equal is to move every element to a median of that window; the cost is the sum of absolute deviations from that median. Because the required subarrays must be non-overlapping, different chosen windows share no indices, so their optimal costs add independently. Therefore the original editing problem is equivalent to selecting k disjoint length-x intervals from the line, where each interval has a weight equal to its median-deviation cost, and minimizing total weight. Since all weights are nonnegative, "at least k" can be replaced by "exactly k".
+
+The core difficulty is computing the weight for every sliding window of length x quickly. This is a dynamic range median plus range sum of absolute deviations problem over n - x + 1 windows. The selection part is comparatively easy because k is at most 15: a prefix DP over number of chosen windows and prefix length runs in linear time in n for each count. The main implementation risks are off-by-one indexing in the DP, using an updated DP row instead of the previous one, and the data structure for sliding medians. Negative values and duplicates are fine for median logic but require careful sum handling. Even-length windows can use either middle value; choosing the lower median is convenient.
+
+A straightforward and likely best approach is to precompute all window costs with a coordinate-compressed Fenwick tree or segment tree, then run the DP. A two-heap sliding median is possible but more error-prone when maintaining sums and lazy deletions. Static range-query structures such as persistent segment trees or wavelet trees are conceptually clean but heavier. A layered shortest-path view is useful for validating the DP, but a naive multi-flow model on the original timeline can incorrectly allow overlapping intervals.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the complete Python solution in the starter class: coordinate-compress nums, compute all length-x window costs by sliding two Fenwick trees (counts and sums), finding the lower median with a kth-order query and calculating sum of absolute deviations; then run a rolling DP over prefix length and number of chosen windows using dp[j][i] = min(dp[j][i-1], dp[j-1][i-x] + cost[i-x]); test on the two provided examples and a brute-force checker for small random inputs.

@@ -129,6 +129,8 @@ func runTUI(opts tuiOptions) error {
 		ws := workspaceSlug
 		if opts.workspace != "" {
 			ws = opts.workspace
+		} else {
+			ws = ownWorkspace(c, ws)
 		}
 		wsID := strings.TrimSpace(ws)
 		if wsID == "" {

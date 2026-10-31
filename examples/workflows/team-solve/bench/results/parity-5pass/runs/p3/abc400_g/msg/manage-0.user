@@ -1,0 +1,124 @@
+PROBLEM:
+### Question
+Takahashi, a patissier working at the ABC pastry shop, decided to sell assorted cakes to commemorate AtCoder Beginner Contest 400.
+The shop sells N kinds of cakes: cake 1, cake 2, \ldots, cake N.
+Each cake has three non-negative integer values: beauty, tastiness, and popularity. Specifically, cake i has beauty X_i, tastiness Y_i, and popularity Z_i.
+He considers pairing up these cakes into K pairs without overlaps.
+Formally, he will choose 2K distinct integers a_1,b_1,a_2,b_2,\ldots,a_K,b_K between 1 and N (inclusive), and pair cake a_i with cake b_i.
+The price of a pair formed by cakes a_i and b_i is \max(X_{a_i} + X_{b_i},\, Y_{a_i} + Y_{b_i},\, Z_{a_i} + Z_{b_i}).
+Here, \max(P,Q,R) denotes the greatest value among P,Q,R.
+Find the maximum possible total price of the K pairs.
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+\mathrm{case}_1
+\mathrm{case}_2
+\vdots
+\mathrm{case}_T
+
+\mathrm{case}_i represents the i-th test case. Each test case is given in the following format:
+N K
+X_1 Y_1 Z_1
+X_2 Y_2 Z_2
+\vdots
+X_N Y_N Z_N
+
+Output
+
+Print T lines. The i-th line (1\leq i\leq T) should contain the answer to the i-th test case.
+
+Constraints
+
+
+- 1\leq T\leq 1000
+- 2\leq N \leq 10^5
+- The sum of N over all test cases in each input file is at most 10^5.
+- 1\leq K \leq \lfloor \frac{N}{2}\rfloor (For a real number x, \lfloor x\rfloor denotes the greatest integer not exceeding x.)
+- 0\leq X_i,Y_i,Z_i \leq 10^9
+- All input values are integers.
+
+Sample Input 1
+
+1
+3 1
+6 3 8
+3 5 0
+2 7 3
+
+Sample Output 1
+
+12
+
+We form one pair out of three cakes.
+If we pair cake 1 with cake 2, the price is \max(6+3,\,3+5,\,8+0) = 9.
+If we pair cake 1 with cake 3, the price is \max(6+2,\,3+7,\,8+3) = 11.
+If we pair cake 2 with cake 3, the price is \max(3+2,\,5+7,\,0+3) = 12.
+Hence, pairing cake 2 with cake 3 gives the highest price, which is 12.
+
+Sample Input 2
+
+2
+5 2
+1 2 3
+1 2 3
+1 2 3
+1 2 3
+100 100 200
+6 2
+21 74 25
+44 71 80
+46 28 96
+1 74 24
+81 83 16
+55 31 1
+
+Sample Output 2
+
+209
+333
+
+Note that each cake can appear in at most one pair.
+Also note that there can be different cakes with identical values of beauty, tastiness, and popularity.
+For the first test case, pairing cake 1 with cake 2 gives a price of 6, pairing cake 3 with cake 5 gives a price of 203, and choosing these two pairs yields a total price of 209, which is the maximum.  
+For the second test case, pairing cake 2 with cake 3 gives a price of 176, pairing cake 4 with cake 5 gives a price of 157, and choosing these two pairs yields a total price of 333, which is the maximum.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The core difficulty is the combination of a global cardinality constraint (exactly K disjoint pairs) with a pair weight that is the maximum of three additive terms. The key reduction is to stop thinking about the actual pairings and instead color each selected cake by one of the three attributes. For any feasible pairing, color both cakes in a pair by an attribute that attains the pair's maximum. Then each color class consists of whole pairs, so each color is used an even number of times, and the total price is exactly the sum of the colored attribute values. Conversely, any selection of 2K cakes colored X/Y/Z with each color used an even number of times can be paired inside each color, and the true price of each same-color pair is at least the sum of that color's values. Therefore the original maximum equals the maximum over such even-parity colored selections.
+
+After this reduction, the problem becomes: for each cake choose none, X, Y, or Z; gain the corresponding attribute value; require exactly 2K chosen cakes; require the three color counts to be even. A direct DP over parity and count is O(N K 8), which is too large for the worst case. The parity dimension is only 8, so the natural exact method is to relax the exact count with a Lagrangian penalty and rely on concavity of the optimal value as a function of the number of pairs.
+
+The supplied plan is therefore the most promising approach. Binary search an integer penalty P per pair. Double all attribute values and subtract P from every chosen cake, so a pair of two chosen cakes loses 2P in doubled scale, which corresponds to losing P in the original scale. For fixed P, an 8-state DP over parity masks computes the best doubled adjusted value and, among equal adjusted values, the maximum number of chosen cakes. If the value function F(k) is concave (this is the maximum-weight k-matching value function, equivalently an M-concave parity-assignment family), the largest P for which the DP returns at least 2K chosen cakes gives the answer by (dp_value + P * 2K) // 2. The complexity is about 31 * N * 24 state transitions over all test cases.
+
+Important pitfalls for this approach: concavity must be true; otherwise the Aliens trick returns only the concave envelope. The scaling by 2 and the per-cake penalty are easy to mix up, and the final division by 2 must be exact. Tie-breaking must prefer the larger chosen count when adjusted values are equal; otherwise the binary-search predicate is not the correct one. The high penalty bound must be infeasible, for example one more than the maximum possible pair price. Negative adjusted gains cannot be discarded, because a few negative items may be needed to fix parity while keeping many positive items. Implementation performance matters: roughly 75 million state updates for total N = 100000, so naive tuple/list DP may be slow. Use fresh state arrays per item to avoid using the same cake multiple times, keep state updates unrolled or very tight, and consider hybrid exact DP for very small K or very small N - 2K.
+
+Other candidate directions have different tradeoffs. Exact count DP or complement DP is straightforward and avoids concavity, but is quadratic in the worst case. A quota-based min-cost flow formulation fixes even quotas for X, Y, Z and an unselected quota, reducing to a 4-color assignment, but optimizing over quotas or doing a 2D Lagrangian search is complex and generic flow is too slow. A slope-trick or max-plus concave-sequence DP could avoid binary search, but intermediate parity-state functions may not be ordinary concave sequences, and the implementation is delicate. Greedy or sparse-candidate matching is tempting but not correct; for example, four cakes with values (100,99,0), (100,0,0), (0,99,0), (99,0,0) show that taking the best pair first gives 299 while the optimum is 198 + 199 = 397. General parametric blossom matching is theoretically related but far too slow for N = 100000.
+
+
+CURRENT TASK LIST:
+- [todo] Prove the reduction to even-parity 3-color assignment and the concavity needed for WQS; fix the integer scaling (values ×2, penalty P per selected cake) and the answer reconstruction formula.
+- [todo] Implement the fixed-penalty DP: 8 parity states, initial state 0 with value 0/count 0, transitions skip or assign to X/Y/Z toggling the corresponding bit and adding 2*value-P; keep the maximum selected count whenever adjusted values tie.
+- [todo] Implement binary search for each test case over P in [0, 2*10^9+1], using the DP's max selected count >= 2K as the feasibility condition, and store the DP value at the final low.
+- [todo] Optimize for the total N limit (sum 1e5): precompute scaled triples, unroll or tightly loop the 8-state DP, use fast input, and use a large negative sentinel for unreachable states.
+- [todo] Validate on the samples and edge cases such as all zero values, N odd, K=N//2, tied attribute values, and maximum 1e9 values; print one answer per test case.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the Aliens/WQS 8-state parity DP with doubled values, per-cake penalty, max-count tie-breaking, and binary search over P; use fast I/O and tight state updates.
+- Add hybrid exact DP for small K and complement DP for small N - 2K to handle extremes faster and to cross-check the WQS result.
+- Explore a quota-based 4-color assignment formulation with min-cost flow or 2D Lagrange multipliers as an alternative, but only if it can be made near-linear and tie/parity handling is robust.
+- Investigate a slope-trick / max-plus representation of the 8 parity value functions to compute the K-th value directly, focusing on whether intermediate functions remain concave/M-concave.
+- Test and likely discard greedy or sparse-candidate matching ideas using small counterexamples; consider them only if a provable sparse certificate can be found.
+- Use small random brute-force matchings to validate the concavity assumption and the WQS answer formula before finalizing.

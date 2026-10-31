@@ -1,0 +1,105 @@
+PROBLEM:
+### Question
+You are given a length-N sequence A = (A_1, A_2, \ldots, A_N).
+You will repeatedly perform the following operation until the sequence has length at most 1: choose two adjacent numbers and remove both from the sequence.
+The score obtained in one operation is the absolute difference of the two chosen numbers.
+Find the maximum possible total score obtained.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+A_1 A_2 \ldots A_N
+
+Output
+
+Print the maximum possible total score obtained.
+
+Constraints
+
+
+- 2 \le N \le 3 \times 10^5
+- 1 \le A_i \le 10^9
+- All input values are integers.
+
+Sample Input 1
+
+4
+1 2 5 3
+
+Sample Output 1
+
+5
+
+First, remove A_2 and A_3. The score obtained is |A_2 - A_3| = 3.
+Next, remove A_1 and A_4. Note that, because of the previous operation, these two numbers are now adjacent. The score obtained is |A_1 - A_4| = 2.
+Hence, the total score obtained is 5.
+It is impossible to achieve a total score of 6 or greater, so print 5.
+
+Sample Input 2
+
+7
+3 1 4 1 5 9 2
+
+Sample Output 2
+
+14
+
+Sample Input 3
+
+5
+1 1 1 1 1
+
+Sample Output 3
+
+0
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The central difficulty is the gap between the local deletion rule and the global objective. Repeatedly deleting adjacent pairs is equivalent to choosing a non-crossing matching of the original positions, with one unmatched position when N is odd. The score of each pair is the absolute difference of its two values, which suggests pairing large values with small values, but the non-crossing and parity constraints could in principle prevent the ideal pairing. The key question is whether, for a contiguous even block, the ideal multiset pairing is always realizable by some deletion order. If yes, the problem becomes an order-statistics problem; if not, one needs a much heavier non-crossing matching dynamic program.
+
+For an even block of length 2m, an upper bound is clear: each pair contributes its larger element minus its smaller element, so the total is the sum of m winning elements minus the sum of m losing elements, and this cannot exceed the sum of the m largest values minus the sum of the m smallest values. The non-crossing constraint does not lower this bound: color the m largest values as high and the m smallest as low. As long as both colors remain, there is an adjacent high-low pair at a color boundary; deleting such a pair preserves equal numbers of high and low and produces a valid non-crossing deletion sequence. Every deletion then scores high minus low, so the upper bound is attainable. Thus an even block's optimum depends only on its multiset.
+
+When N is odd, the survivor cannot be crossed by any pair. Also its original index must be odd, because a survivor's current position parity never changes: operations remove two elements entirely before or entirely after it. Hence an odd instance is a choice of an odd separator, with independent even blocks on the left and right. The computational core is therefore to evaluate the upper-half-minus-lower-half value for many even prefixes and suffixes.
+
+Candidate approaches and pitfalls:
+
+1. Online median or two-heap half-sum maintenance. Maintain the lower half and upper half of the current prefix or suffix, with their sums, and rebalance after each insertion. For even sizes, the desired block value is the upper-half sum minus the lower-half sum. Pitfalls: keeping the invariant that every lower-half value is at most every upper-half value, handling ties, recording only even lengths, treating empty blocks as zero, using the correct parity for the odd separator, resetting or separating the heaps for suffix scans, and using sufficiently large integer arithmetic.
+
+2. Fenwick-tree order statistics over compressed values. Maintain counts and sums over value ranks, and answer the sum of the smallest half or largest half by finding the relevant rank threshold and adding a partial contribution. Pitfalls: coordinate compression, correct kth-rank search, duplicate values, partial-sum edge cases, resetting the tree for suffix scans, and a larger implementation and constant-factor burden than heaps.
+
+3. Offline range top-k sum queries with a wavelet tree or persistent segment tree. Treat each needed prefix or suffix as a range query asking for the sum of the largest half or smallest half. Pitfalls: memory usage, especially in Python for a persistent segment tree with many nodes; complexity of range queries using two versions; recursion depth; coordinate compression; and the fact that this is powerful but heavier than online heaps for this particular set of queries.
+
+4. Interval dynamic programming for non-crossing matchings. Define states for contiguous intervals and transition over the pair removed last, splitting the interval into independent even subintervals. Pitfalls: the state space is quadratic and the transitions are cubic or worse; memory is too large for the given constraints; a naive first-removed-pair recurrence is wrong because the left and right parts become adjacent and can interact; and the absolute-difference weight is not obviously amenable to standard DP optimizations. This approach is mainly useful for small-N validation or for deriving the simpler formula.
+
+5. Sign-assignment or balanced-parentheses formulation. Assign each element a sign meaning it is the larger in its pair, the smaller in its pair, or the odd survivor. For even blocks, any balanced sign assignment is feasible; for odd N, one odd zero and balanced signs on both sides are needed. This turns the problem into a weighted selection problem. Pitfalls: the feasible sign sets are not a simple matroid; a dynamic program over balance has too many states; a greedy selection by sorted values with quota constraints is subtle and may collapse back to prefix order statistics.
+
+6. Convex L1 or threshold-integral formulations. For an even block, the half-sum difference equals the minimum over a threshold of the sum of absolute deviations from that threshold. One could maintain these convex piecewise-linear functions for prefixes and suffixes. Pitfalls: maintaining the full function is overkill; the minimum is again maintained most simply by median heaps; for odd N one needs the maximum over separators of a sum of two minima, which is not separable; a threshold sweep has a max-of-sums issue and nontrivial range updates.
+
+7. Greedy deletion heuristics. For example, repeatedly remove the adjacent pair with maximum absolute difference. Pitfalls: this is not exact. A small counterexample is 100, 90, 1, 0: greedy removes 100 and 90 first and gets 11, while the optimum is 189 by removing 90 and 1 first and then 100 and 0.
+
+
+CURRENT TASK LIST:
+- [todo] Prove the even-block lemma: for 2m elements, max score = sum largest m - sum smallest m, using a sign upper bound and an adjacent opposite-color pairing construction.
+- [todo] Prove the odd-N structure: the final remaining element must have odd original index, no pair can cross it, and for a fixed odd u the optimum is the sum of the even-block optima of A[1..u-1] and A[u+1..N].
+- [todo] Implement a two-heap half-maintainer (max-heap lower, min-heap upper, running sums) that reports the even-block score after each even-sized insertion.
+- [todo] For odd N, scan right to left to compute suff[j] for even j, the even-block score of suffix A[j..N], with suff[N+1]=0.
+- [todo] For odd N, scan left to right maintaining the prefix score and update the answer with prefix + suff[i+2] for each even prefix length i; for even N, output the full prefix score.
+- [todo] Implement stdin/stdout and use 64-bit integer arithmetic, ensuring O(N log N) time and O(N) memory for N up to 3e5.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Pursue the non-crossing-matching-to-half-sum reduction and compute prefix and suffix half-sums with two heaps as the primary implementation.
+- Implement a Fenwick-tree order-statistic version with coordinate compression and kth-rank search as an alternative or cross-check for the same prefix and suffix values.
+- Consider an offline wavelet tree or persistent segment tree for range top-k sum queries if a more general query structure is desired and memory allows.
+- Build a small-N interval DP or brute-force matcher to validate the even-block half-sum formula and the odd-index separator rule on random tests.
+- Keep the sign-assignment, convex L1, threshold-integral, and greedy ideas as conceptual checks or sanity tests only, since they have serious pitfalls and are less likely to yield the clean scalable solution.

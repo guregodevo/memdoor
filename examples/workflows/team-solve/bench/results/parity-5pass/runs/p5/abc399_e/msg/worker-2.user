@@ -1,0 +1,203 @@
+PROBLEM:
+### Question
+You are given a positive integer N and two strings S and T, each of length N and consisting of lowercase English letters.
+Determine whether it is possible to make S identical to T by repeating the operation below any number of times (possibly zero). If it is possible, also find the minimum number of operations required.
+
+- Choose two lowercase English letters x, y and replace every occurrence of x in S with y.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+T
+
+Output
+
+If it is possible to make S identical to T, print the minimum number of operations required. Otherwise, print -1.
+
+Constraints
+
+
+- 1\leq N \leq 2\times 10^5
+- N is an integer.
+- Each of S and T is a string of length N, consisting of lowercase English letters.
+
+Sample Input 1
+
+6
+afbfda
+bkckbb
+
+Sample Output 1
+
+4
+
+By performing the operation four times in the following way, you can make S identical to T:
+
+- Choose x= b and y= c. S becomes afcfda.
+- Choose x= a and y= b. S becomes bfcfdb.
+- Choose x= f and y= k. S becomes bkckdb.
+- Choose x= d and y= b. S becomes bkckbb, which is identical to T.
+
+It cannot be done with fewer than four operations, so the minimum number of operations required is 4.
+
+Sample Input 2
+
+4
+abac
+abac
+
+Sample Output 2
+
+0
+
+S and T are already identical, so no operations are required.
+
+Sample Input 3
+
+4
+abac
+abrc
+
+Sample Output 3
+
+-1
+
+No matter how you repeat the operation, it is impossible to make S identical to T.
+
+Sample Input 4
+
+4
+abac
+bcba
+
+Sample Output 4
+
+4
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+First verify that every character of S has a single consistent target in T; if any character maps to two different characters, output -1. Build a 26-node directed graph where each source character c that appears in S points to its required target req[c]. Count changed characters C where req[c] != c; each such character must be used as the source of at least one operation. Find all directed cycles of length at least two, and mark a cycle closed if no character outside the cycle points into it; open cycles can be resolved without extra operations, while each closed cycle needs one temporary letter and adds one operation. If a closed cycle exists but no temporary letter is available (all 26 letters appear in S and every changed character lies in closed cycles), output -1; otherwise the answer is C plus the number of closed cycles.
+
+NOTES:
+- **Invariant:** For every letter c appearing in S, all positions with S[i]=c must have the same T[i]; otherwise the pile of c would have to split, so print -1. Store req[c] as that target.
+- **Token model:** Treat each current letter as a position holding a label equal to the final letter required by the original pile(s) there. A move x->y is valid only if y is empty or has the same label as x. This model is exact because piles with different final labels can never be merged.
+- **Base count:** Let changed_count be the number of appearing letters c with req[c] != c. Each such original letter must be the source of its first move, so at least changed_count operations are needed. All acyclic components and open cycles can be resolved with exactly that many moves by processing from sinks/cycle breakers outward.
+- **Graph:** Build out[c] = req[c] only for appearing changed letters. Non-appearing letters and fixed letters are sinks. Find directed cycles of length at least 2 in this 26-node functional graph. Ignore self-loops.
+- **Closed cycles:** A cycle is closed if no changed appearing letter outside the cycle has an edge into any node of the cycle. Such a cycle has no duplicate label entering it, so its labels are unique and it cannot be rotated without an empty buffer. Each closed cycle adds exactly one extra operation.
+- **Open cycles:** If a cycle has an incoming edge from outside, the outside node has the same final label as one cycle node. That duplicate label breaks the cyclic precedence, so the whole component can be resolved with only the mandatory changed_count moves.
+- **Buffer availability:** If there is at least one closed cycle, an empty position is needed. It exists if some letter does not appear in S, or if some changed appearing letter is not inside a closed cycle. In the latter case, resolving that non-closed component with its mandatory moves leaves a leaf position empty, and that empty position can be reused for every closed cycle.
+- **Impossible case:** If closed cycles exist, all 26 letters appear in S, and every changed letter lies in a closed cycle, then every position is occupied by a unique label and no valid move is possible; print -1. Fixed letters cannot serve as buffers because their labels do not match any cycle label and they cannot be moved without extra operations.
+- **Implementation notes:** Scan S and T once for consistency. Use state 0/1/2 traversal on 26 nodes to collect cycles. For each cycle, scan all 26 nodes to see if an outside edge enters it. Count closed cycles. Check buffer as above. Output changed_count + closed_count, or -1 in the impossible case.
+- **Pitfalls:** Do not count self-loops as cycles. Do not treat fixed appearing letters as buffers. Do not require a distinct buffer per closed cycle; one empty letter is reused. Edges from non-appearing letters do not exist, so they do not make a cycle open, but absent letters do provide buffers.
+
+
+CURRENT WORK:
+import sys
+
+
+def solve() -> None:
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    s = data[1]
+    t = data[2]
+
+    appears = [False] * 26
+    req = [-1] * 26
+
+    # Consistency: every original letter must have one fixed target letter.
+    for cs, ct in zip(s, t):
+        a = cs - 97
+        b = ct - 97
+        if not appears[a]:
+            appears[a] = True
+            req[a] = b
+        elif req[a] != b:
+            print(-1)
+            return
+
+    changed_count = 0
+    out = [-1] * 26
+
+    # Functional graph on appearing letters that actually need to move.
+    for i in range(26):
+        if appears[i] and req[i] != i:
+            changed_count += 1
+            out[i] = req[i]
+
+    # Find all directed cycles of length at least 2.
+    state = [0] * 26  # 0 = unvisited, 1 = visiting, 2 = done
+    pos = [-1] * 26
+    cycles = []
+
+    for i in range(26):
+        if out[i] == -1 or state[i] != 0:
+            continue
+
+        stack = []
+        cur = i
+        while cur != -1 and state[cur] == 0:
+            state[cur] = 1
+            pos[cur] = len(stack)
+            stack.append(cur)
+            cur = out[cur]
+
+        if cur != -1 and state[cur] == 1:
+            cycles.append(stack[pos[cur]:])
+
+        for v in stack:
+            state[v] = 2
+
+    in_closed_cycle = [False] * 26
+    closed_cycle_count = 0
+
+    # A cycle is closed if no changed appearing letter outside it points into it.
+    for cyc in cycles:
+        cyc_set = set(cyc)
+        closed = True
+
+        for u in range(26):
+            if out[u] != -1 and out[u] in cyc_set and u not in cyc_set:
+                closed = False
+                break
+
+        if closed:
+            closed_cycle_count += 1
+            for v in cyc:
+                in_closed_cycle[v] = True
+
+    if closed_cycle_count > 0:
+        has_buffer = False
+
+        # An absent letter is an initially empty buffer.
+        for i in range(26):
+            if not appears[i]:
+                has_buffer = True
+                break
+
+        # Otherwise, any changed letter outside closed cycles can be freed
+        # by resolving its own non-closed component.
+        if not has_buffer:
+            for i in range(26):
+                if appears[i] and req[i] != i and not in_closed_cycle[i]:
+                    has_buffer = True
+                    break
+
+        if not has_buffer:
+            print(-1)
+        else:
+            print(changed_count + closed_cycle_count)
+    else:
+        print(changed_count)
+
+
+if __name__ == "__main__":
+    solve()
+
+YOUR TASK: Complete this task: Update the Python solution to the corrected formula: count every directed cycle of length >=2 in the functional graph of changed appearing letters; a buffer exists iff some letter is absent from S or some letter appears in S but not in T (equivalently, not both S and T use all 26 letters); if cycles exist and no buffer, print -1, otherwise print changed_count + cycle_count. Verify S=abcd, T=bcaa outputs 5.

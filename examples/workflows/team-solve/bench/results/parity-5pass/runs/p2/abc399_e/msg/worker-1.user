@@ -1,0 +1,111 @@
+PROBLEM:
+### Question
+You are given a positive integer N and two strings S and T, each of length N and consisting of lowercase English letters.
+Determine whether it is possible to make S identical to T by repeating the operation below any number of times (possibly zero). If it is possible, also find the minimum number of operations required.
+
+- Choose two lowercase English letters x, y and replace every occurrence of x in S with y.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+T
+
+Output
+
+If it is possible to make S identical to T, print the minimum number of operations required. Otherwise, print -1.
+
+Constraints
+
+
+- 1\leq N \leq 2\times 10^5
+- N is an integer.
+- Each of S and T is a string of length N, consisting of lowercase English letters.
+
+Sample Input 1
+
+6
+afbfda
+bkckbb
+
+Sample Output 1
+
+4
+
+By performing the operation four times in the following way, you can make S identical to T:
+
+- Choose x= b and y= c. S becomes afcfda.
+- Choose x= a and y= b. S becomes bfcfdb.
+- Choose x= f and y= k. S becomes bkckdb.
+- Choose x= d and y= b. S becomes bkckbb, which is identical to T.
+
+It cannot be done with fewer than four operations, so the minimum number of operations required is 4.
+
+Sample Input 2
+
+4
+abac
+abac
+
+Sample Output 2
+
+0
+
+S and T are already identical, so no operations are required.
+
+Sample Input 3
+
+4
+abac
+abrc
+
+Sample Output 3
+
+-1
+
+No matter how you repeat the operation, it is impossible to make S identical to T.
+
+Sample Input 4
+
+4
+abac
+bcba
+
+Sample Output 4
+
+4
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+First verify that each character in S has a single corresponding character in T; if any S character maps to two different T characters, the answer is -1. Build a 26-node functional graph for characters present in S, with edge c -> its target, and count C, the number of present characters whose target differs from themselves. Find all directed cycles of length at least 2, and mark a cycle as closed if every vertex has indegree exactly 1, meaning no outside character maps into that cycle. A closed cycle requires one extra temporary operation, while a cycle with an incoming edge can be resolved using that incoming character's required move. If a closed cycle exists, feasibility requires a spare label (a letter absent from S or a present letter not on any directed cycle); otherwise the minimum is C plus the number of closed cycles.
+
+NOTES:
+
+## ideation
+The core difficulty is that the operation is global and irreversible: it can merge two current letter classes but can never split them. Therefore the problem is not really about the length-N strings position by position, but about the mapping from each original letter in S to its required final letter in T.
+
+First, a necessary condition is that every character appearing in S must correspond to exactly one character in T. If the same S-character is required to become two different T-characters, the answer is impossible. After this check, the whole problem can be compressed to a 26-letter directed graph: for each letter present in S, draw an edge to its required target letter. Letters absent from S have no constrained outgoing edge.
+
+In acyclic parts of this graph, the natural lower bound is one operation for every present letter whose target differs from itself, and this bound is usually attainable by processing in a reverse topological order, i.e. moving targets before sources. The subtle part is nontrivial cycles. If a cycle has an incoming edge from outside, the outside node can serve as a buffer: the cycle predecessor can be moved into that outside node because both have the same final target, then the cycle can be rotated, and finally the buffer can be moved to its own target. This uses only the mandatory operations.
+
+If a cycle is closed, meaning no outside present letter maps into it, then the first move involving a cycle node must go to an empty label outside the cycle. That requires a temporary/spare label, and resolving the cycle adds one extra operation beyond the mandatory moves for the cycle nodes.
+
+The most delicate point is when such a spare label exists. A clean way to think about it is that a closed cycle needs a label that can be made empty. A letter absent from T is final-empty; if it is present in S, its own mandatory move can empty it, and if it is absent from S it is already empty. If T contains all 26 letters, no final-empty label exists, and a closed nontrivial cycle makes the transformation impossible because the number of distinct letters cannot increase. If T does not contain all 26 letters, at least one final-empty label exists and can be prepared without extra cost.
+
+Pitfalls to watch:
+- Self-loops should not be counted as problematic cycles. A fixed letter is not a free temporary unless it is absent from T, which a fixed present letter is not.
+- The phrase “present letter not on any directed cycle” must be interpreted carefully. Fixed letters are on self-loops, so they should not be treated as free buffers. Usable buffers are absent letters or tree nodes that can be made empty.
+- Indegree for detecting closed cycles should count only edges from letters that actually appear in S. Edges to letters absent from S terminate the walk and cannot form cycles.
+- Chains feeding into a cycle do not by themselves require an extra operation, but the constructive order matters: use the node directly feeding the cycle as the buffer, then process the rest of the chain.
+- Multiple closed cycles can reuse the same spare label, but each closed cycle still contributes one extra operation.
+- A lower-bound argument should note that every nonfixed present letter must be the source of at least one operation, and a closed cycle forces one additional source use.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the complete Python solution using the derived formula: read N, S, and T; check that each S character maps to a single T character; compute C = number of present S letters c with target[c] != c; compute indeg from present sources; count closed directed cycles of length >= 2 (all vertices have indeg == 1); compute image_count = number of letters with indeg > 0; output -1 if closed_cycles > 0 and image_count == 26, otherwise C + closed_cycles. Run the four samples and basic edge cases to verify.

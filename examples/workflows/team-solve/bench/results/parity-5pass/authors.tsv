@@ -1,0 +1,16 @@
+pass	arm	arc196_a	arc196_b	arc196_c	arc196_d	3777	abc400_e	abc400_g	3717	3765	abc399_e	solved
+1	multiagent	1	1	0	1	1	1	1	1	1	1	9
+2	multiagent	1	1	1	1	1	1	1	1	1	1	10
+3	multiagent	1	1	1	1	1	1	1	1	1	1	10
+4	multiagent	1	1	0	1	1	1	1	1	1	1	9
+5	multiagent	1	1	1	1	1	1	1	1	1	1	10
+1	single	1	1	1	0	0	1	1	1	1	1	8
+2	single	0	1	1	0	1	1	0	0	1	1	6
+3	single	1	1	1	0	0	0	0	0	1	0	4
+4	single	1	0	1	0	1	1	1	1	0	1	7
+5	single	1	1	1	0	0	1	1	0	1	0	6
+1	fable5-single	0	1	1	1	1	1	1	0	1	0	7
+2	fable5-single	1	1	1	1	1	1	1	0	1	0	8
+3	fable5-single	1	1	1	1	1	1	1	1	1	1	10
+4	fable5-single	1	1	1	1	1	1	1	0	1	0	8
+5	fable5-single	0	1	1	1	1	1	1	0	1	0	7

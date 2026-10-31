@@ -18,34 +18,29 @@ type Entry = {
   run: string;
   cast?: { src: string; poster: string };
   source?: { label: string; href: string };
+  results?: { label: string; href: string };
 };
 
 const CATALOG: Entry[] = [
   {
-    name: 'ship',
-    kind: 'This repo',
-    what: 'How Memdoor itself is released: build, vet, the Go suite, the unused-code check and the web type check in parallel, a red one blocking the rest; push; your yes; deploy; then memdoor.ai read back — the served version, the health routes, a screenshot of the home page. It never commits: it ships what is committed.',
-    steps: 'clean → build + vet + tests + unused + web → push → approve → deploy → verify → page',
-    gate: 'Nothing is deployed until you approve.',
-    run: 'memdoor workflow run ship --partition $(git rev-parse --short HEAD)',
-    cast: { src: '/workflow-ship.cast', poster: 'npt:0:14' },
+    name: 'team-solve',
+    kind: 'From a paper',
+    what: "GVS5H's multi-agent harness for hard programming problems: a planner, ideators, a manager and workers, each from a fresh context, talking only through files, with a script that runs the samples deciding success. The authors' own loop, rebuilt as a workflow with their exact prompts on Qwen3.8-27B, solved 49 of 50 runs on the first ten LiveCodeBench Hard problems over five passes (10, 10, 10, 10, 9): a mean of 9.8 against 9.6 for the authors' own harness and 8.0 for Fable 5 alone, every run published.",
+    steps: 'plan → ideate-a + ideate-b → solve → test → review → repair → verify',
+    run: 'memdoor workflow run team-solve --wait',
+    cast: { src: '/team-solve.cast', poster: 'npt:8:25' },
+    source: { label: 'GVS5H: five Qwen3.8-27B models match Fable 5 on LiveCodeBench Hard', href: 'https://github.com/slee-persis/GVS5H' },
+    results: { label: 'All 50 runs: every request, reply, program, grade and cost', href: 'https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve/bench/results/parity-5pass' },
   },
   {
-    name: 'review',
-    kind: 'This repo',
-    what: 'The review loop on one commit: findings cited file:line and verified by running, the untouched files swept for the same class of claim, written to a review you read at the gate; then the fixes applied and committed, and vet plus the suite on the result. Its first run found a real defect in a commit shipped an hour before.',
-    steps: 'review → approve → fix → check',
-    gate: 'You read the review before anything is changed.',
-    run: 'memdoor workflow run review --partition <commit>',
-    cast: { src: '/workflow-review.cast', poster: 'npt:0:48' },
-  },
-  {
-    name: 'tui-check',
-    kind: 'This repo',
-    what: 'The real terminal, tested: a tmux pane runs memdoor tui against the gateway, types a prompt in a scratch project, keeps the screen, and the assertion is on the file the turn made — never on the echoed prompt, which is how its own first run passed falsely.',
-    steps: 'tui → assert',
-    run: 'memdoor workflow run tui-check',
-    cast: { src: '/workflow-tui-check.cast', poster: 'npt:0:25' },
+    name: 'karpathy-recipe',
+    kind: 'From an article',
+    what: 'Karpathy\'s recipe for training neural networks, on CIFAR-10: the data, a skeleton whose loss at init must be −log(10), baselines, an 8-image overfit, then plans for the GPU run. Built by article-to-workflow.',
+    steps: 'fetch → data → skeleton → baselines → regularize → tune · plans → approve → squeeze',
+    gate: 'You read the GPU and data plans and approve the spend.',
+    run: 'memdoor workflow run karpathy-recipe',
+    cast: { src: '/workflow-karpathy.cast', poster: 'npt:0:31' },
+    source: { label: 'A Recipe for Training Neural Networks', href: 'https://karpathy.github.io/2019/04/25/recipe/' },
   },
   {
     name: 'issue-to-pr',
@@ -74,14 +69,30 @@ const CATALOG: Entry[] = [
     cast: { src: '/workflow-digest.cast', poster: 'npt:0:30' },
   },
   {
-    name: 'karpathy-recipe',
-    kind: 'From an article',
-    what: 'Karpathy\'s recipe for training neural networks, on CIFAR-10: the data, a skeleton whose loss at init must be −log(10), baselines, an 8-image overfit, then plans for the GPU run. Built by article-to-workflow.',
-    steps: 'fetch → data → skeleton → baselines → regularize → tune · plans → approve → squeeze',
-    gate: 'You read the GPU and data plans and approve the spend.',
-    run: 'memdoor workflow run karpathy-recipe',
-    cast: { src: '/workflow-karpathy.cast', poster: 'npt:0:31' },
-    source: { label: 'A Recipe for Training Neural Networks', href: 'https://karpathy.github.io/2019/04/25/recipe/' },
+    name: 'ship',
+    kind: 'This repo',
+    what: 'How Memdoor itself is released: build, vet, the Go suite, the unused-code check and the web type check in parallel, a red one blocking the rest; push; your yes; deploy; then memdoor.ai read back — the served version, the health routes, a screenshot of the home page. It never commits: it ships what is committed.',
+    steps: 'clean → build + vet + tests + unused + web → push → approve → deploy → verify → page',
+    gate: 'Nothing is deployed until you approve.',
+    run: 'memdoor workflow run ship --partition $(git rev-parse --short HEAD)',
+    cast: { src: '/workflow-ship.cast', poster: 'npt:0:14' },
+  },
+  {
+    name: 'review',
+    kind: 'This repo',
+    what: 'The review loop on one commit: findings cited file:line and verified by running, the untouched files swept for the same class of claim, written to a review you read at the gate; then the fixes applied and committed, and vet plus the suite on the result. Its first run found a real defect in a commit shipped an hour before.',
+    steps: 'review → approve → fix → check',
+    gate: 'You read the review before anything is changed.',
+    run: 'memdoor workflow run review --partition <commit>',
+    cast: { src: '/workflow-review.cast', poster: 'npt:0:48' },
+  },
+  {
+    name: 'tui-check',
+    kind: 'This repo',
+    what: 'The real terminal, tested: a tmux pane runs memdoor tui against the gateway, types a prompt in a scratch project, keeps the screen, and the assertion is on the file the turn made — never on the echoed prompt, which is how its own first run passed falsely.',
+    steps: 'tui → assert',
+    run: 'memdoor workflow run tui-check',
+    cast: { src: '/workflow-tui-check.cast', poster: 'npt:0:25' },
   },
 ];
 
@@ -90,7 +101,7 @@ export function WorkflowCatalogPage() {
     setMeta({
       title: 'Workflows — a catalog of agent workflows that have run, each with its real session',
       description:
-        'Every entry is a workflow that exists as task files and has run: ship, review, tui-check, issue-to-pr, release-check, digest, karpathy-recipe. A graph of steps with a proof per step and a gate where a person decides, recorded live.',
+        'Every entry is a workflow that exists as task files and has run: team-solve, karpathy-recipe, issue-to-pr, release-check, digest, ship, review, tui-check. A graph of steps with a proof per step and a gate where a person decides, recorded live.',
       path: '/workflows',
     });
   }, []);
@@ -127,6 +138,16 @@ export function WorkflowCatalogPage() {
                     <dd>
                       <a href={w.source.href} className="text-neutral-700 underline underline-offset-4 hover:text-neutral-900">
                         {w.source.label}
+                      </a>
+                    </dd>
+                  </>
+                )}
+                {w.results && (
+                  <>
+                    <dt className="text-neutral-400">Results</dt>
+                    <dd>
+                      <a href={w.results.href} className="text-neutral-700 underline underline-offset-4 hover:text-neutral-900">
+                        {w.results.label}
                       </a>
                     </dd>
                   </>

@@ -1,0 +1,63 @@
+### CODE
+```python
+import sys
+import math
+from bisect import bisect_right
+
+def main():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    q = int(data[0])
+    queries = [int(x) for x in data[1:1 + q]]
+    if not queries:
+        return
+
+    max_a = max(queries)
+    m = math.isqrt(max_a)
+
+    distinct = bytearray(m + 1)
+    for p in range(2, m + 1):
+        if distinct[p] == 0:
+            for multiple in range(p, m + 1, p):
+                distinct[multiple] += 1
+
+    roots = [i for i in range(2, m + 1) if distinct[i] == 2]
+
+    out = []
+    isqrt = math.isqrt
+    br = bisect_right
+
+    for a in queries:
+        r = isqrt(a)
+        idx = br(roots, r) - 1
+        if idx >= 0:
+            root = roots[idx]
+            out.append(str(root * root))
+        else:
+            out.append("0")
+
+    sys.stdout.write("\n".join(out))
+
+if __name__ == "__main__":
+    main()
+```
+
+### NOTES
+- **Reduction:** A 400 number has exactly two distinct prime factors and every exponent is even. Therefore it is exactly a perfect square whose square root has exactly two distinct prime factors.
+- **Bounds:** Since A <= 10^12, any relevant square root is at most 10^6. The smallest valid root is 6, giving 36, matching the minimum query bound.
+- **Precomputation:** Use a bytearray to count distinct prime factors up to M = isqrt(max A). For each p, if distinct[p] == 0 then p is prime; increment distinct[multiple] for all multiples of p. This counts distinct prime factors, not total prime factors.
+- **Sieve complexity:** The inner loop runs over prime multiples only, about M * sum_{p <= M} 1/p, roughly 3 million increments for M = 10^6. The outer loop is 10^6, easily fast in Python.
+- **Bytearray safety:** The maximum number of distinct prime factors for n <= 10^6 is small, at most 7, so bytearray values never overflow.
+- **Query answering:** For each A, compute r = isqrt(A). The answer is the largest valid root <= r, squared. Use bisect_right on the sorted roots list for O(log R) per query.
+- **Integer square root:** Use math.isqrt to avoid floating-point precision issues near perfect squares.
+- **Input handling:** Read all tokens at once. Store queries because the maximum query determines the sieve limit. Output with a single joined string for speed.
+- **Edge cases:** Constraints guarantee a valid answer exists, but the code includes an idx >= 0 guard for robustness. Empty input returns silently.
+- **Sample consistency:** 400 = 20^2, 36 = 6^2, 10^12 = 10^6^2, and 123454321 = 11111^2, all matching roots with exactly two distinct prime factors.
+
+### NEXT
+none
+
+### STATUS
+solved

@@ -1,0 +1,9 @@
+### PLAN
+Model each placement by binary variables on the horizontal and vertical edges of the torus, where 1 means a tile endpoint lies on that edge. The no-dead-end condition makes every cell degree 2; an A cell must choose exactly one horizontal and one vertical edge, while a B cell must choose either both horizontal or both vertical edges. The horizontal variables in each row are forced to flip at A cells and stay equal at B cells, so a row is solvable iff it contains an even number of A cells, and then it is described by one free bit. The vertical variables similarly require each column to contain an even number of A cells and are described by one free bit per column. Substituting these row/column bits into the B-cell condition gives XOR constraints row_bit xor column_bit = constant on the bipartite graph whose edges are B cells; the answer is 0 if any parity or XOR consistency fails, otherwise 2^{components} modulo 998244353.
+
+### TASKS
+- Implement a weighted union-find (parity DSU) over H+W variables that supports union(x, y, val) enforcing value[x] xor value[y] = val, detects contradictions, and maintains the number of connected components.
+- For each test case, read the grid and compute the parity of A tiles in every row and column; if any row or column has odd parity, output 0 and skip further processing for that case.
+- For valid cases, scan the grid once to evaluate B-cell constraints, maintaining cyclic prefix parities: for each row, the parity of A cells before the left edge of the current column, and for each column, the parity of A cells before the top edge of the current row.
+- For every B cell (i,j), compute constant c = 1 xor leftParity xor topParity and union row node i with column node H+j using c; if a contradiction occurs, mark the answer 0.
+- After the scan, if no contradiction occurred, output pow(2, component_count, 998244353); otherwise output 0, using fast input/output for all test cases.

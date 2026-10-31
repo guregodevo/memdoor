@@ -1,0 +1,9 @@
+### PLAN
+The alternating sum is bounded by `12 * len(nums)`, so we can represent achievable sums for each parity as compact bitsets. Split the problem into positive-product subsequences and zero-product subsequences, because a zero can make an otherwise over-limit positive product valid as product `0`. Maintain an unconstrained feasibility DP for all subsequences so that a zero can be selected after any previous subsequence, even if its product exceeded `limit`. For positive products, track only products up to `limit`, multiplying only when the new product stays within `limit`; for zero products, track only sum/parity feasibility. At the end, return the largest positive product achieving `k`, else `0` if a zero-product subsequence achieves `k`, else `-1`.
+
+### TASKS
+- Compute `max_sum = 12 * len(nums)`, an offset, and a bitmask; initialize an all-subsequence feasibility DP with the empty state, an empty positive-product DP, and empty zero-product parity bitsets.
+- Implement the all-subsequence DP update: for each `x`, skip it or select it, shifting parity `0` sums by `+x` into parity `1` and parity `1` sums by `-x` into parity `0`.
+- Implement the positive-product DP: for each `x > 0`, add singleton state product `x` if `x <= limit`, and extend existing products `p` to `p * x` only when `p * x <= limit`, using the same parity-based sum shifts.
+- Implement the zero-product DP: extend existing zero-product states by every `x` with parity-based sum shifts, and when `x == 0`, also create zero-product states from the old all-subsequence DP, including the empty state.
+- Use old snapshots for all DP updates to prevent reusing the current element, then scan products from `limit` down to `1` for target sum `k`; if none exists, check the zero-product bitsets and return `0` or `-1`.

@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "desc": "Implement initial Python solution using closed-cycle formula (passed public samples but open-cycle case incorrect).",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Derive corrected formula: all cycles require +1; impossible only when cycles exist and no buffer exists.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Update the Python solution to the corrected formula: count every directed cycle of length >=2 in the functional graph of changed appearing letters; a buffer exists iff not both S and T use all 26 letters; if cycles exist and no buffer, print -1, otherwise print changed_count + cycle_count.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Validate corrected solution on samples and edge cases: open cycle with incoming edge, multiple cycles, full 26-letter permutations, full S but T not full, acyclic chains, inconsistent mapping.",
+    "status": "done",
+    "result": ""
+  }
+]

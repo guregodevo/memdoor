@@ -1,0 +1,365 @@
+[cut off at the reply limit]
+### CODE
+```python
+import sys
+
+sys.setrecursionlimit(1_000_000)
+
+MOD = 998244353
+G = 3
+
+DIRECT_M = 2000
+BASE = 64
+DIRECT_ADD = 50000
+DIRECT_SPARSE = 2_000_000
+DIRECT_CONV = 60000
+DIRECT_FORCE = 100000
+RUN_MIN = 1024
+
+
+def precompute_fact(n):
+    fact = [1] * (n + 1)
+    for i in range(1, n + 1):
+        fact[i] = fact[i - 1] * i % MOD
+    invfact = [1] * (n + 1)
+    invfact[n] = pow(fact[n], MOD - 2, MOD)
+    for i in range(n, 0, -1):
+        invfact[i - 1] = invfact[i] * i % MOD
+    return fact, invfact
+
+
+_roots_cache = {}
+_inv_n_cache = {}
+
+
+def _get_roots(length, invert):
+    key = (length, invert)
+    roots = _roots_cache.get(key)
+    if roots is None:
+        if invert:
+            wlen = pow(G, MOD - 1 - (MOD - 1) // length, MOD)
+        else:
+            wlen = pow(G, (MOD - 1) // length, MOD)
+        half = length >> 1
+        roots = [1] * half
+        w = 1
+        for i in range(1, half):
+            w = w * wlen % MOD
+            roots[i] = w
+        _roots_cache[key] = roots
+    return roots
+
+
+def _get_inv_n(n):
+    v = _inv_n_cache.get(n)
+    if v is None:
+        v = pow(n, MOD - 2, MOD)
+        _inv_n_cache[n] = v
+    return v
+
+
+def ntt_forward(a):
+    n = len(a)
+    if n == 1:
+        return
+    mod = MOD
+    length = n
+    while length > 1:
+        half = length >> 1
+        roots = _get_roots(length, False)
+        for i in range(0, n, length):
+            k = 0
+            end = i + half
+            for j in range(i, end):
+                u = a[j]
+                v = a[j + half]
+                x = u + v
+                if x >= mod:
+                    x -= mod
+                y = u - v
+                if y < 0:
+                    y += mod
+                a[j] = x
+                a[j + half] = y * roots[k] % mod
+                k += 1
+        length = half
+
+
+def ntt_inverse(a):
+    n = len(a)
+    if n == 1:
+        return
+    mod = MOD
+    length = 2
+    while length <= n:
+        half = length >> 1
+        roots = _get_roots(length, True)
+        if length == n:
+            inv_n = _get_inv_n(n)
+            for i in range(0, n, length):
+                k = 0
+                end = i + half
+                for j in range(i, end):
+                    u = a[j]
+                    v = a[j + half] * roots[k] % mod
+                    x = u + v
+                    if x >= mod:
+                        x -= mod
+                    y = u - v
+                    if y < 0:
+                        y += mod
+                    a[j] = x * inv_n % mod
+                    a[j + half] = y * inv_n % mod
+                    k += 1
+        else:
+            for i in range(0, n, length):
+                k = 0
+                end = i + half
+                for j in range(i, end):
+                    u = a[j]
+                    v = a[j + half] * roots[k] % mod
+                    x = u + v
+                    if x >= mod:
+                        x -= mod
+                    y = u - v
+                    if y < 0:
+                        y += mod
+                    a[j] = x
+                    a[j + half] = y
+                    k += 1
+        length <<= 1
+
+
+def convolution(a, b):
+    if not a or not b:
+        return []
+    la = len(a)
+    lb = len(b)
+    need = la + lb - 1
+
+    if la * lb <= DIRECT_CONV:
+        res = [0] * need
+        if la <= lb:
+            for i, ai in enumerate(a):
+                if ai:
+                    for j, bj in enumerate(b):
+                        if bj:
+                            res[i + j] += ai * bj
+        else:
+            for j, bj in enumerate(b):
+                if bj:
+                    for i, ai in enumerate(a):
+                        if ai:
+                            res[i + j] += ai * bj
+        mod = MOD
+        for i in range(need):
+            res[i] %= mod
+        return res
+
+    n = 1
+    while n < need:
+        n <<= 1
+
+    fa = [0] * n
+    fb = [0] * n
+    fa[:la] = a
+    fb[:lb] = b
+
+    ntt_forward(fa)
+    ntt_forward(fb)
+    mod = MOD
+    for i in range(n):
+        fa[i] = fa[i] * fb[i] % mod
+    del fb
+    ntt_inverse(fa)
+    return fa
+
+
+def convolve_fact(a, j0, kmax, fact):
+    la = len(a)
+    lb = kmax - j0 + 1
+    if la == 0 or lb <= 0:
+        return []
+    need = la + lb - 1
+
+    if la * lb <= DIRECT_CONV:
+        res = [0] * need
+        if la <= lb:
+            for i, ai in enumerate(a):
+                if ai:
+                    for j in range(lb):
+                        res[i + j] += ai * fact[j0 + j]
+        else:
+            for j in range(lb):
+                bj = fact[j0 + j]
+                for i, ai in enumerate(a):
+                    if ai:
+                        res[i + j] += ai * bj
+        mod = MOD
+        for i in range(need):
+            res[i] %= mod
+        return res
+
+    n = 1
+    while n < need:
+        n <<= 1
+
+    fa = [0] * n
+    fb = [0] * n
+    fa[:la] = a
+    fb[:lb] = fact[j0:kmax + 1]
+
+    ntt_forward(fa)
+    ntt_forward(fb)
+    mod = MOD
+    for i in range(n):
+        fa[i] = fa[i] * fb[i] % mod
+    del fb
+    ntt_inverse(fa)
+    return fa
+
+
+def poly_inv(p, n):
+    """Inverse of p modulo x^n.  p[0] must be invertible (here p[0]=1)."""
+    if n == 0:
+        return []
+    q = [1]
+    m = 1
+    mod = MOD
+    while m < n:
+        m2 = m << 1
+
+        p0 = p[:m]
+        p1 = p[m:m2]
+
+        c1 = convolution(p0, q)
+        c2 = convolution(p1, q) if p1 else []
+
+        e = [0] * m
+        nz = False
+        len_c1 = len(c1)
+        len_c2 = len(c2)
+        for i in range(m):
+            val = 0
+            idx = m + i
+            if idx < len_c1:
+                val += c1[idx]
+            if i < len_c2:
+                val += c2[i]
+            if val >= mod:
+                val -= mod
+            if val:
+                e[i] = mod - val
+                nz = True
+
+        del c1
+        if c2:
+            del c2
+
+        if nz:
+            c3 = convolution(q, e)
+            del e
+            q += c3[:m]
+            del c3
+        else:
+            q += [0] * m
+
+        m = m2
+
+    return q[:n]
+
+
+def make_P(c, L):
+    P = [1] * L
+    val = 1
+    mod = MOD
+    for k in range(1, L):
+        val = val * (c + k) % mod
+        P[k] = val
+    return P
+
+
+def solve_direct(N, at, ar, fact, invfact):
+    m = len(at)
+    H = [0] * m
+    H[0] = 1
+    nz = [0]
+    ans = fact[N]
+    mod = MOD
+
+    for i in range(1, m):
+        ri = ar[i]
+        s = 0
+        for j in nz:
+            s += H[j] * fact[ri - at[j]]
+        h = (-s % mod) * invfact[ri - at[i]] % mod
+        H[i] = h
+        if h:
+            nz.append(i)
+        ans = (ans + h * fact[N - at[i]]) % mod
+
+    return ans
+
+
+def solve_large(N, at, ar, fact, invfact):
+    m = len(at)
+    H = [0] * m
+    contrib = [0] * m
+    H[0] = 1
+
+    bal = [0] * m
+    for i in range(1, m):
+        bal[i] = ar[i] - at[i]
+
+    mod = MOD
+    direct_add = DIRECT_ADD
+    direct_sparse = DIRECT_SPARSE
+    direct_force = DIRECT_FORCE
+    run_min = RUN_MIN
+    base = BASE
+
+    def add_contrib(l, mid, r, H=H, contrib=contrib, at=at, ar=ar, fact=fact, mod=mod):
+        nz = []
+        for j in range(l, mid + 1):
+            if H[j]:
+                nz.append(j)
+        if not nz:
+            return
+
+        cnt = len(nz)
+        right_len = r - mid
+
+        if cnt == 1:
+            j0 = nz[0]
+            hj = H[j0]
+            tj = at[j0]
+            for i in range(mid + 1, r + 1):
+                total = hj * fact[ar[i] - tj] % mod
+                v = contrib[i] + total
+                if v >= mod:
+                    v -= mod
+                contrib[i] = v
+            return
+
+        direct_cost = cnt * right_len
+        if direct_cost <= direct_add:
+            for i in range(mid + 1, r + 1):
+                ri = ar[i]
+                total = 0
+                for j in nz:
+                    total += H[j] * fact[ri - at[j]]
+                total %= mod
+                v = contrib[i] + total
+                if v >= mod:
+                    v -= mod
+                contrib[i] = v
+            return
+
+        first = nz[0]
+        last = nz[-1]
+        t_min = at[first]
+        t_max = at[last]
+        wlen = t_max - t_min + 1
+
+        k_min = ar[mid + 1] - t_min
+        k_max = ar[r] - t_min

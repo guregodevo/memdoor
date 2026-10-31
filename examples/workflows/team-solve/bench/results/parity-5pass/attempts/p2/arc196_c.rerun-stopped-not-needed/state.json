@@ -1,0 +1,15 @@
+{
+ "pending": "plan",
+ "tasks": [],
+ "proposals": [],
+ "nexts": [],
+ "status": "continue",
+ "next": "",
+ "prev": null,
+ "iters": 0,
+ "task": "",
+ "wrote": false,
+ "res": null,
+ "stopped": null,
+ "calls": []
+}

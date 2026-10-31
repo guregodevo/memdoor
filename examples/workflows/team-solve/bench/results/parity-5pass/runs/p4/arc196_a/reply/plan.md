@@ -1,0 +1,8 @@
+### PLAN
+Represent any valid removal order as a noncrossing matching of original indices, leaving one index unmatched when N is odd. For an even-length segment, the optimum depends only on the multiset and equals the sum of the largest half minus the sum of the smallest half: orient each pair from smaller to larger for an upper bound, and achieve it by labeling the largest half +, smallest half -, then cancelling adjacent opposite labels. For odd N, the unmatched index cannot be crossed by any pair, so it must be at an odd position and the left and right parts are independent even segments. Compute the even-segment value for every even prefix and suffix in O(N log N) using two heaps that maintain the lower and upper halves. Then return the whole value for even N, or the maximum over odd split points of prefix value plus suffix value for odd N.
+
+### TASKS
+- Implement `even_prefix_scores(arr)`: scan left to right, maintain a max-heap `low` (smallest half, stored as negatives) and a min-heap `high` (largest half) with their sums; after each insertion rebalance so `len(low) = (current_length + 1)//2` and all `low` values are <= all `high` values, and append `sum_high - sum_low` to the result only when `current_length` is even, starting with 0.
+- For even `N`, read input, call `even_prefix_scores(A)`, and print the entry corresponding to the full length (index `N//2`).
+- For odd `N`, set `m = N//2`, compute `pref = even_prefix_scores(A)` and `suff = even_prefix_scores(A[::-1])`, then print `max(pref[t] + suff[m-t] for t in range(m+1))`.
+- Validate the implementation on edge cases (N=2, N=3, all equal, and random small N compared with brute force) and confirm it uses O(N log N) time, O(N) memory, and Python integers for sums.

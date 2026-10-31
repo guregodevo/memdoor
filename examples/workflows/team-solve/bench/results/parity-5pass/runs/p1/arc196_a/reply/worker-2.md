@@ -1,0 +1,116 @@
+### CODE
+```python
+import sys
+from heapq import heappush, heappop
+
+
+def compute_scores(a, reverse=False):
+    """
+    Returns res where res[t] is the maximum pairing score for the first/last
+    2*t elements, depending on reverse.
+    """
+    n = len(a)
+    m = n // 2
+    res = [0] * (m + 1)
+
+    low = []   # max-heap via negative values: smallest floor(count/2) values
+    high = []  # min-heap: largest ceil(count/2) values
+    sum_low = 0
+    sum_high = 0
+
+    push = heappush
+    pop = heappop
+
+    count = 0
+    it = reversed(a) if reverse else a
+
+    for x in it:
+        count += 1
+
+        if low and x <= -low[0]:
+            push(low, -x)
+            sum_low += x
+        else:
+            push(high, x)
+            sum_high += x
+
+        desired_low_size = count >> 1
+
+        if len(low) > desired_low_size:
+            v = -pop(low)
+            sum_low -= v
+            push(high, v)
+            sum_high += v
+        elif len(low) < desired_low_size:
+            v = pop(high)
+            sum_high -= v
+            push(low, -v)
+            sum_low += v
+
+        # Safety guard; normally the invariant already holds.
+        if low and high and -low[0] > high[0]:
+            v1 = -pop(low)
+            sum_low -= v1
+            v2 = pop(high)
+            sum_high -= v2
+            push(low, -v2)
+            sum_low += v2
+            push(high, v1)
+            sum_high += v1
+
+        if (count & 1) == 0:
+            res[count >> 1] = sum_high - sum_low
+
+    return res
+
+
+def solve(a):
+    n = len(a)
+    m = n // 2
+
+    pref = compute_scores(a, False)
+
+    if n % 2 == 0:
+        return pref[m]
+
+    suff = compute_scores(a, True)
+
+    best = 0
+    for t in range(m + 1):
+        candidate = pref[t] + suff[m - t]
+        if candidate > best:
+            best = candidate
+
+    return best
+
+
+def main():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    n = int(data[0])
+    a = [int(x) for x in data[1:1 + n]]
+
+    print(solve(a))
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### NOTES
+- **Matching model:** A removal order is a noncrossing matching of original positions. If N is odd, the single remaining position cannot be enclosed by any pair, so all pairs are entirely to its left or right. Any noncrossing matching of this form is realizable by repeatedly deleting an innermost adjacent pair.
+- **Uncrossing:** For crossing pairs (i,k) and (j,l) with i<j<k<l, one of the noncrossing alternatives (i,j),(k,l) or (i,l),(j,k) has absolute-difference score at least the crossing score. Hence the best score inside any contiguous even segment equals the best arbitrary pairing of its multiset.
+- **Even segment value:** For 2t sorted values b1<=...<=b2t, the maximum pairing sum is sum_{i=t+1}^{2t} b_i - sum_{i=1}^t b_i, achieved by pairing b_i with b_{2t+1-i}. This is exactly sum_upper - sum_lower.
+- **Odd case correction:** Sorting the whole odd array and leaving the median is not valid, because the unmatched original position must separate all pairs. Example [100,1,2,3,4] has global sorted value 101 but true answer 100. The correct odd answer maximizes over the possible unmatched position.
+- **Final formula:** Let m=N//2, pref[t] be the even-segment value of the first 2t elements, suff[t] the value of the last 2t elements. If N is even, answer=pref[m]. If N is odd, answer=max_{t=0..m} pref[t]+suff[m-t], where the unmatched element is at 0-index 2t.
+- **Heap computation:** compute_scores scans left-to-right or right-to-left. It keeps low as a max-heap (stored negated) of the smallest floor(count/2) values and high as a min-heap of the largest ceil(count/2) values, with max(low)<=min(high). Insert x into low if x<=max(low), else high; then move one top to make len(low)=count//2; a final swap guard restores order if needed. At even count 2t, record sum_high - sum_low.
+- **Verification:** The three samples produce 5, 14, and 0. A brute-force interval DP was used for small random arrays (N<=9): E[l][r] for even length maximizes over the last pair i<j with even left/inside/right lengths, and O[l][r] for odd length maximizes over the remaining k of E[l][k]+E[k+1][r]. It agrees with the heap formula on all tested cases.
+- **Complexity:** O(N log N) time and O(N) memory. Python integers handle the 64-bit range of the answer.
+
+### NEXT
+- none
+
+### STATUS
+solved

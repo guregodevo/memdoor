@@ -1,0 +1,134 @@
+### CODE
+```python
+import sys
+
+MOD = 998244353
+
+
+def solve():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    t = int(data[0])
+    idx = 1
+    out = []
+
+    for _ in range(t):
+        H = int(data[idx])
+        W = int(data[idx + 1])
+        idx += 2
+
+        n = H + W
+        parent = list(range(n))
+        size = [1] * n
+        diff = [0] * n
+        col_pref = [0] * W
+
+        par = parent
+        sz = size
+        dif = diff
+        cp = col_pref
+
+        comps = n
+        ok = True
+        cols = range(W)
+
+        for i in range(H):
+            if not ok:
+                idx += H - i
+                break
+
+            s = data[idx]
+            idx += 1
+            rp = 0
+
+            for j in cols:
+                c = s[j]
+                if c == 65:  # 'A'
+                    rp ^= 1
+                    cp[j] ^= 1
+                else:
+                    w = 1 ^ cp[j] ^ rp
+
+                    # find row vertex i
+                    rx = i
+                    px = 0
+                    while True:
+                        p = par[rx]
+                        if p == rx:
+                            break
+                        gp = par[p]
+                        if gp != p:
+                            dif[rx] ^= dif[p]
+                            par[rx] = gp
+                            p = gp
+                        px ^= dif[rx]
+                        rx = p
+
+                    # find column vertex H + j
+                    ry = H + j
+                    py = 0
+                    while True:
+                        p = par[ry]
+                        if p == ry:
+                            break
+                        gp = par[p]
+                        if gp != p:
+                            dif[ry] ^= dif[p]
+                            par[ry] = gp
+                            p = gp
+                        py ^= dif[ry]
+                        ry = p
+
+                    if rx == ry:
+                        if (px ^ py) != w:
+                            ok = False
+                            break
+                    else:
+                        if sz[rx] < sz[ry]:
+                            par[rx] = ry
+                            dif[rx] = px ^ py ^ w
+                            sz[ry] += sz[rx]
+                        else:
+                            par[ry] = rx
+                            dif[ry] = px ^ py ^ w
+                            sz[rx] += sz[ry]
+                        comps -= 1
+
+            if ok and rp:
+                ok = False
+
+            if not ok:
+                idx += H - i - 1
+                break
+
+        if ok and any(cp):
+            ok = False
+
+        if ok:
+            out.append(str(pow(2, comps, MOD)))
+        else:
+            out.append("0")
+
+    sys.stdout.write("\n".join(out))
+
+
+if __name__ == "__main__":
+    solve()
+```
+
+### NOTES
+- **Model:** Let `t[i][j]` and `l[i][j]` be endpoint bits on the top and left edges of cell `(i,j)`. On the torus, the bottom edge of `(i,j)` is the top edge of `(i+1,j)`, and the right edge of `(i,j)` is the left edge of `(i,j+1)`. Type A gives `t[i][j] xor t[i+1][j] = 1` and `l[i][j] xor l[i+1][j] = 1`. Type B gives `t[i][j] = t[i+1][j]`, `l[i][j] = l[i+1][j]`, and `t[i][j] xor l[i][j] = 1`.
+- **Parity conditions:** Xoring the vertical A-equations around a column forces the number of A tiles in that column to be even. Xoring the horizontal A-equations around a row forces the number of A tiles in that row to be even. The code checks row parity immediately after each row and column parity from `col_pref` at the end.
+- **Elimination:** When all row/column A-parities are even, `t[i][j] = C_j xor col_pref[j]`, where `col_pref[j]` is the parity of A cells above `(i,j)`. Also `l[i][j] = R_i xor row_pref`, where `row_pref` is the parity of A cells to the left in the same row. The row prefix is local per row and starts at 0; `col_pref` is maintained while scanning rows.
+- **B constraints:** For a B cell, `t xor l = 1` becomes `R_i xor C_j = 1 xor col_pref[j] xor row_pref`. This is an xor equation between row vertex `i` and column vertex `H+j`.
+- **DSU:** Use a parity union-find over `H+W` vertices. `diff[x]` stores `value[x] xor value[parent[x]]`. The find is iterative with path halving: when jumping to a grandparent, xor the node’s diff with the parent’s diff and accumulate the same value. Union attaches the smaller root to the larger root and sets the new root diff to `px xor py xor w`.
+- **Counting:** If all equations are consistent, each connected component of the equation graph has one free bit, so the answer is `2^components` modulo `998244353`. Isolated row/column vertices are included in the component count.
+- **Implementation notes:** Use `sys.stdin.buffer.read().split()` and bytes indexing; `c == 65` identifies `'A'`. Prefixes must be read before the current cell; A updates prefixes, B does not. If an inconsistency or odd row parity is found, skip the remaining row tokens by advancing `idx` before breaking. Sample outputs are `2, 0, 2`; tiny brute-force enumeration of all rotations agrees with this linear-system count.
+
+### NEXT
+none
+
+### STATUS
+solved

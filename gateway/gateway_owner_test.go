@@ -6,8 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"memdoor/gateway/queue"
 	"memdoor/pkg/authorization"
+	"memdoor/pkg/sandbox"
 	"memdoor/pkg/shared"
+	sharedctx "memdoor/pkg/shared/context"
 )
 
 // A conversation's key is the caller's when it names the caller's own
@@ -34,6 +37,28 @@ func TestSessionIsCallersOnlyInTheirOwnWorkspace(t *testing.T) {
 	} {
 		if got := sessionIsCallers(c.ctx, nil, c.key); got != c.want {
 			t.Errorf("%s: %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// A queued turn says whose it is: its sandbox context's workspace (id, else
+// slug), else its conversation key's; a spawned run names none.
+func TestTurnWorkspaceIsWhatTheTurnSays(t *testing.T) {
+	sb := func(id, slug string) context.Context {
+		return context.WithValue(context.Background(), sharedctx.SandboxContextKey, sandbox.SandboxContext{WorkspaceID: id, WorkspaceSlug: slug})
+	}
+	for _, c := range []struct {
+		name string
+		job  *queue.AgentJob
+		want string
+	}{
+		{"chat: sandbox id", &queue.AgentJob{Context: sb("ws-s", "s"), SessionKey: "workspace:x:channel:c"}, "ws-s"},
+		{"chat: sandbox slug", &queue.AgentJob{Context: sb("", "s"), SessionKey: "workspace:x:channel:c"}, "s"},
+		{"/api/agent: the key", &queue.AgentJob{SessionKey: "workspace:stranger:channel:c"}, "stranger"},
+		{"a spawned run", &queue.AgentJob{SessionKey: "agent:coder:subagent:run-1"}, ""},
+	} {
+		if got := turnWorkspace(c.job); got != c.want {
+			t.Errorf("%s: %q, want %q", c.name, got, c.want)
 		}
 	}
 }

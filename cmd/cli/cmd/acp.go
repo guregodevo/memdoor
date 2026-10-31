@@ -13,6 +13,7 @@ import (
 	"github.com/coder/acp-go-sdk"
 	"github.com/spf13/cobra"
 
+	"memdoor/cmd/tui/ui"
 	"memdoor/gateway/client"
 	"memdoor/gateway/protocol"
 )
@@ -47,7 +48,7 @@ machine up like memdoor tui does.`,
 				workspaceSlug = only
 			}
 		}
-		runner := &gatewayRunner{c: c, workspace: workspaceSlug, feeds: map[string]*client.Client{}}
+		runner := &gatewayRunner{c: c, workspace: ownWorkspace(c, workspaceSlug), feeds: map[string]*client.Client{}}
 		agent := newACPAgent(runner)
 		conn := acp.NewAgentSideConnection(agent, os.Stdout, os.Stdin)
 		agent.SetAgentConnection(conn)
@@ -206,6 +207,11 @@ func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string,
 			}
 		}
 		return nil
+	})
+	feed.OnEvent(func(ev client.Event) {
+		if ev.Type == client.EventRefused {
+			end(runEnd{err: fmt.Errorf("the gateway refused this run: %s", ui.RefusalAdvice(ev.Error.Error()))})
+		}
 	})
 	if err := feed.Connect(); err != nil {
 		return fmt.Errorf("the gateway's event stream: %w", err)

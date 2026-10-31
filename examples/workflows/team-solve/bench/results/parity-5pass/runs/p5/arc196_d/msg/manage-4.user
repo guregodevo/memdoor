@@ -1,0 +1,485 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+import heapq
+from bisect import bisect_left, bisect_right
+
+
+def solve():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    p = 0
+    N = int(data[p]); p += 1
+    M = int(data[p]); p += 1
+    Q = int(data[p]); p += 1
+
+    L = [0] * M
+    R = [0] * M
+    sign = bytearray(M)  # 0: left-to-right, 1: right-to-left
+
+    for i in range(M):
+        s = int(data[p])
+        t = int(data[p + 1])
+        p += 2
+        if s < t:
+            L[i] = s - 1
+            R[i] = t - 1
+        else:
+            L[i] = t - 1
+            R[i] = s - 1
+            sign[i] = 1
+
+    ql = [0] * Q
+    qr = [0] * Q
+    for k in range(Q):
+        ql[k] = int(data[p]) - 1
+        qr[k] = int(data[p + 1]) - 1
+        p += 2
+
+    del data
+
+    bad = [-1] * M
+
+    # Endpoint conflicts:
+    # same L with different (R, sign), same R with different (L, sign).
+    shift_e = (2 * N).bit_length()
+    mask_e = (1 << shift_e) - 1
+
+    left1 = [-1] * N
+    left2 = [-1] * N
+    right1 = [-1] * N
+    right2 = [-1] * N
+
+    for j in range(M):
+        lj = L[j]
+        rj = R[j]
+        sj = sign[j]
+        bj = bad[j]
+        enc = j << shift_e
+
+        # same left endpoint
+        k = (rj << 1) | sj
+        v = left1[lj]
+        if v != -1:
+            vk = v & mask_e
+            if vk != k:
+                cand = v >> shift_e
+            else:
+                v2 = left2[lj]
+                cand = v2 >> shift_e if v2 != -1 else -1
+            if cand > bj:
+                bj = cand
+
+            if vk == k:
+                left1[lj] = enc | k
+            else:
+                left2[lj] = v
+                left1[lj] = enc | k
+        else:
+            left1[lj] = enc | k
+
+        # same right endpoint
+        k = (lj << 1) | sj
+        v = right1[rj]
+        if v != -1:
+            vk = v & mask_e
+            if vk != k:
+                cand = v >> shift_e
+            else:
+                v2 = right2[rj]
+                cand = v2 >> shift_e if v2 != -1 else -1
+            if cand > bj:
+                bj = cand
+
+            if vk == k:
+                right1[rj] = enc | k
+            else:
+                right2[rj] = v
+                right1[rj] = enc | k
+        else:
+            right1[rj] = enc | k
+
+        bad[j] = bj
+
+    del left1, left2, right1, right2
+
+    # Same-sign strict crossing conflicts.
+    shift = M.bit_length()
+    mask = (1 << shift) - 1
+    N1 = N - 1
+    INF = N
+
+    def process_sign(s):
+        setL = set()
+        setR = set()
+        Lloc = L
+        Rloc = R
+        signloc = sign
+        Mloc = M
+
+        for i in range(Mloc):
+            if signloc[i] == s:
+                setL.add(Lloc[i])
+                setR.add(Rloc[i])
+
+        if not setL:
+            return
+
+        uniqueL = sorted(setL)
+        uniqueR = sorted(setR)
+
+        mapL = {v: i for i, v in enumerate(uniqueL)}
+        mapR = {v: i for i, v in enumerate(uniqueR)}
+
+        compL = [-1] * Mloc
+        compR = [-1] * Mloc
+        for i in range(Mloc):
+            if signloc[i] == s:
+                compL[i] = mapL[Lloc[i]]
+                compR[i] = mapR[Rloc[i]]
+
+        del mapL, mapR, setL, setR
+
+        U = len(uniqueL)
+        V = len(uniqueR)
+
+        S_A = 1 << (U - 1).bit_length()
+        S_B = 1 << (V - 1).bit_length()
+
+        # A: keyed by L, stores max R.
+        segA = [-1] * (2 * S_A)
+        # B: keyed by R, stores min L.
+        segB = [INF] * (2 * S_B)
+
+        heapsA = [[] for _ in range(U)]
+        heapsB = [[] for _ in range(V)]
+        dead = bytearray(Mloc)
+
+        badloc = bad
+        heappush = heapq.heappush
+        heappop = heapq.heappop
+        bl = bisect_left
+        br = bisect_right
+
+        mask_loc = mask
+        shift_loc = shift
+        N1_loc = N1
+        INF_loc = INF
+
+        def set_A(pos, val, segA=segA, S_A=S_A):
+            p = pos + S_A
+            if segA[p] == val:
+                return
+            segA[p] = val
+            p >>= 1
+            while p:
+                left = segA[p << 1]
+                right = segA[(p << 1) | 1]
+                nv = left if left >= right else right
+                if segA[p] == nv:
+                    break
+                segA[p] = nv
+                p >>= 1
+
+        def set_B(pos, val, segB=segB, S_B=S_B):
+            p = pos + S_B
+            if segB[p] == val:
+                return
+            segB[p] = val
+            p >>= 1
+            while p:
+                left = segB[p << 1]
+                right = segB[(p << 1) | 1]
+                nv = left if left <= right else right
+                if segB[p] == nv:
+                    break
+                segB[p] = nv
+                p >>= 1
+
+        stack = []
+
+        for i in range(Mloc - 1, -1, -1):
+            if signloc[i] != s:
+                continue
+
+            li = Lloc[i]
+            ri = Rloc[i]
+
+            # Type A: L_i < L_j < R_i < R_j.
+            ql = br(uniqueL, li)
+            qr = bl(uniqueL, ri)
+            if ql < qr:
+                l = ql + S_A
+                r = qr + S_A
+                stack.clear()
+
+                while l < r:
+                    if l & 1:
+                        if segA[l] > ri:
+                            stack.append(l)
+                        l += 1
+                    if r & 1:
+                        r -= 1
+                        if segA[r] > ri:
+                            stack.append(r)
+                    l >>= 1
+                    r >>= 1
+
+                while stack:
+                    node = stack.pop()
+                    if segA[node] <= ri:
+                        continue
+
+                    if node >= S_A:
+                        pos = node - S_A
+                        heap = heapsA[pos]
+
+                        while heap:
+                            key = heap[0]
+                            idx = key & mask_loc
+                            if dead[idx]:
+                                heappop(heap)
+                                continue
+
+                            Rj = N1_loc - (key >> shift_loc)
+                            if Rj <= ri:
+                                break
+
+                            heappop(heap)
+                            dead[idx] = 1
+                            if badloc[idx] < i:
+                                badloc[idx] = i
+
+                            posB = compR[idx]
+                            hb = heapsB[posB]
+                            while hb and dead[hb[0] & mask_loc]:
+                                heappop(hb)
+                            valB = hb[0] >> shift_loc if hb else INF_loc
+                            set_B(posB, valB)
+
+                        while heap and dead[heap[0] & mask_loc]:
+                            heappop(heap)
+                        valA = N1_loc - (heap[0] >> shift_loc) if heap else -1
+                        set_A(pos, valA)
+                    else:
+                        lc = node << 1
+                        rc = lc | 1
+                        if segA[rc] > ri:
+                            stack.append(rc)
+                        if segA[lc] > ri:
+                            stack.append(lc)
+
+            # Type B: L_j < L_i < R_j < R_i.
+            ql = br(uniqueR, li)
+            qr = bl(uniqueR, ri)
+            if ql < qr:
+                l = ql + S_B
+                r = qr + S_B
+                stack.clear()
+
+                while l < r:
+                    if l & 1:
+                        if segB[l] < li:
+                            stack.append(l)
+                        l += 1
+                    if r & 1:
+                        r -= 1
+                        if segB[r] < li:
+                            stack.append(r)
+                    l >>= 1
+                    r >>= 1
+
+                while stack:
+                    node = stack.pop()
+                    if segB[node] >= li:
+                        continue
+
+                    if node >= S_B:
+                        pos = node - S_B
+                        heap = heapsB[pos]
+
+                        while heap:
+                            key = heap[0]
+                            idx = key & mask_loc
+                            if dead[idx]:
+                                heappop(heap)
+                                continue
+
+                            Lj = key >> shift_loc
+                            if Lj >= li:
+                                break
+
+                            heappop(heap)
+                            dead[idx] = 1
+                            if badloc[idx] < i:
+                                badloc[idx] = i
+
+                            posA = compL[idx]
+                            ha = heapsA[posA]
+                            while ha and dead[ha[0] & mask_loc]:
+                                heappop(ha)
+                            valA = N1_loc - (ha[0] >> shift_loc) if ha else -1
+                            set_A(posA, valA)
+
+                        while heap and dead[heap[0] & mask_loc]:
+                            heappop(heap)
+                        valB = heap[0] >> shift_loc if heap else INF_loc
+                        set_B(pos, valB)
+                    else:
+                        lc = node << 1
+                        rc = lc | 1
+                        if segB[rc] < li:
+                            stack.append(rc)
+                        if segB[lc] < li:
+                            stack.append(lc)
+
+            # Insert current interval into both structures.
+            posA = compL[i]
+            keyA = ((N1_loc - Rloc[i]) << shift_loc) | i
+            heappush(heapsA[posA], keyA)
+            if Rloc[i] > segA[posA + S_A]:
+                set_A(posA, Rloc[i])
+
+            posB = compR[i]
+            keyB = (Lloc[i] << shift_loc) | i
+            heappush(heapsB[posB], keyB)
+            if Lloc[i] < segB[posB + S_B]:
+                set_B(posB, Lloc[i])
+
+    process_sign(0)
+    process_sign(1)
+
+    # Prefix maximum of bad[j].
+    for i in range(1, M):
+        if bad[i] < bad[i - 1]:
+            bad[i] = bad[i - 1]
+
+    out = ["Yes" if bad[r] < l else "No" for l, r in zip(ql, qr)]
+    sys.stdout.write("\n".join(out))
+
+
+if __name__ == "__main__":
+    solve()
+
+NOTES:
+- **Transformation:** Let P_k be prefix road strength up to road k, town t is P_{t-1}. For person i, set l=min(S,T)-1, r=max(S,T)-1, sign=0 if S<T else 1. Requirement: P_l=P_r, and for all l<x<r, P_x>P_l if sign=0, P_x<P_l if sign=1.
+- **Forbidden pairs:** A set is feasible iff it contains no pair of:
+  - same l with different (r,sign);
+  - same r with different (l,sign);
+  - same-sign strict crossing: l_i<l_j<r_i<r_j or l_j<l_i<r_j<r_i.
+  Identical same-sign intervals are allowed; identical opposite-sign intervals are forbidden by the endpoint rules.
+- **bad[j]:** Maximum i<j conflicting with j. Query [L,R] (0-indexed) is Yes iff max_{j<=R} bad[j] < L, because bad[j]<j, so prefix maxima from before L are always <L.
+- **Endpoint conflicts:** Forward pass. For each left endpoint and each right endpoint, keep the latest two encoded entries with distinct keys. Key for left is (r,sign); key for right is (l,sign). Candidate is top1 if its key differs from current, else top2. Encode as (index << shift_e) | key, where shift_e=(2N).bit_length().
+- **Crossing conflicts:** Process each sign separately, scanning i from M-1 down to 0. Maintain alive future intervals of that sign.
+  - Type A: current i needs future j with L_j in (L_i,R_i) and R_j>R_i. Use segment tree over compressed L storing max R; at each L leaf keep a min-heap of encoded (N-1-R, idx), so top has max R.
+  - Type B: current i needs future j with R_j in (L_i,R_i) and L_j<L_i. Use segment tree over compressed R storing min L; at each R leaf keep a min-heap of encoded (L, idx), so top has min L.
+- **Reporting and deletion:** For current i, decompose the relevant coordinate range into segment-tree canonical nodes. For each node whose aggregate qualifies, descend to leaves. At a leaf, pop all live intervals satisfying the strict inequality, set bad[idx]=max(bad[idx],i), mark dead, and refresh the other structure’s leaf for that idx. Then refresh the current leaf and pull ancestors. Once an interval is killed, it already has the largest crossing conflict, so it can be removed from further consideration.
+- **Lazy deletion:** Dead intervals may remain below heap tops. Clean dead tops whenever touching a heap. Segment-tree leaf values are updated to the current live extreme after every leaf modification.
+- **Encoding heaps:** Use SHIFT=M.bit_length(), MASK=(1<<SHIFT)-1. A key is ((N-1-R)<<SHIFT)|idx; B key is (L<<SHIFT)|idx. idx=key&MASK, value=key>>SHIFT.
+- **Complexity:** Endpoint pass O(M). Crossing pass O(M log M) per sign total O(M log M), because each interval is killed at most once per sign and segment-tree traversals are charged to kills/range decompositions. Queries O(1) after prefix max.
+- **Pitfalls:** Use strict inequalities in crossing ranges: L_j > L_i and L_j < R_i, R_j > L_i and R_j < R_i. Same-endpoint conflicts are independent of sign except that identical (other endpoint, sign) is not a conflict. P_0 can be shifted to 0 after assigning integer topological levels.
+
+
+CURRENT TASK LIST:
+- [done] Derive prefix-sum transformation and forbidden-pair characterization; queries reduce to prefix max of bad[j] because bad[j]<j.
+- [todo] Implement the complete O(M log N) Python solution specified in NEXT (endpoint top-two, descending dynamic segment-tree+heap crossing detection, prefix-max queries) and make it pass both samples.
+- [todo] Validate on small random cases: brute-force feasibility via difference constraints (Bellman-Ford on P_0..P_{N-1}) for N<=8,M<=10 over all ranges, and compare the O(M log N) bad values with an O(M^2) forbidden-pair scan.
+- [todo] Performance/memory pass: stress M=2e5 worst cases (all same sign nested, all crossing, many endpoint conflicts), ensure PyPy time/memory acceptable, and tune encoded-heap/segment-tree constants if needed.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 2 public samples -- the solution looks correct.] worker reported 'solved' on: Implement the full Python program (no fragments) using the forbidden-pair charac. - **Transformation:** Let P_k be prefix road strength up to road k, town t is P_{t-1}. For person i, set l=min(S,T)-1, r=max(S,T)-1, sign=0 if S<T else 1. Requirement: P_l=P_r, and for all l<x<r, P_x>
+
+PROPOSED NEW STEPS:
+(none)

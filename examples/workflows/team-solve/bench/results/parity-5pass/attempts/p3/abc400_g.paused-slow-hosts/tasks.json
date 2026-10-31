@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "desc": "Ideation: reduce to selecting 2K cakes with even counts per color / max-weight K-matching; use Lagrangian/Aliens with 8 parity masks; concavity expected from matching value.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement full Python solution: fast input; per test precompute shifted coordinate values; unrolled 8-state packed DP calc(lam) using old states for transitions; binary search largest lam in [0, 2*maxv+1) with pair_count >= K; compute answer (scaled_value + 2*lam*K)//2.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Validate correctness on samples and small random brute-force cases (exact colored DP/enumeration for N<=8/10, all K), including edge cases all zeros, N=2, odd N, K=N//2, ties, and 1e9 values; if any failure, switch to a different exact approach.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Performance check/optimize for sum N=1e5: ensure ~31 O(N) passes with unrolled DP, local bindings, precomputed shifted values, no per-item allocations in calc, and fast I/O.",
+    "status": "pending",
+    "result": ""
+  },
+  {
+    "id": 5,
+    "desc": "Fallback if Aliens validation fails: develop an alternative exact method (e.g., top-candidate parity correction or min-cost flow for 3 colors).",
+    "status": "pending",
+    "result": ""
+  }
+]

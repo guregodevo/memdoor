@@ -1,0 +1,9 @@
+### PLAN
+Reduce the pairing problem to selecting 2K cakes and labeling each with one of the three attributes, with each label used an even number of times; the value is the sum of labeled attributes. Let M_i be the maximum attribute of cake i. The top 2K cakes by M_i give an upper bound and a baseline labeling (choose one maximizing attribute), with a parity mask of the three label counts. If the mask is zero, this baseline is optimal. Otherwise any optimal solution can be reached by at most two non-conflicting operations—recolor a selected cake or swap a selected cake with an unselected one and label it—each operation has nonnegative cost and flips a two-bit parity mask. The minimum cost to flip the baseline mask is the best single operation of that mask or two operations whose masks xor to it, and it suffices to keep only the two cheapest recolors and the four best swaps per directed label change.
+
+### TASKS
+- Parse each test case, compute M_i and a base maximizing attribute for every cake, sort cakes by M_i descending, mark the top 2K as selected, and compute the baseline sum and parity mask of base attributes.
+- If the mask is nonzero, collect candidate data: for selected cakes, the two smallest M_i for each base attribute and the two cheapest recolor costs for each directed base->other attribute; for unselected cakes, the two largest values for each attribute.
+- Generate all candidate operations for each directed change: recolor operations from the selected recolor candidates and swap operations from the Cartesian product of the two selected M candidates and two unselected value candidates, storing cost, parity mask, selected id, and unselected id.
+- For the baseline mask, compute the minimum fixing cost as the minimum of one candidate operation with that mask and pairs of candidate operations from the other two masks that do not share a selected or unselected id.
+- Output baseline sum minus the minimum fixing cost for each test case.

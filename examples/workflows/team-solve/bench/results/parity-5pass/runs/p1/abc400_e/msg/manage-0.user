@@ -1,0 +1,82 @@
+PROBLEM:
+### Question
+A positive integer N is a 400 number if and only if it satisfies both of the following two conditions:
+
+- N has exactly 2 distinct prime factors.
+- For each prime factor p of N, p divides N an even number of times. More formally, the maximum non-negative integer k such that p^k divides N is even.
+
+Process Q queries. Each query gives you an integer A, so find the largest 400 number not exceeding A. Under the constraints of this problem, a 400 number not exceeding A always exists.
+
+Input
+
+The input is given from Standard Input in the following format:
+Q
+\text{query}_1
+\text{query}_2
+\vdots
+\text{query}_Q
+
+Here, \text{query}_i is the i-th query, given in the following format:
+A
+
+Output
+
+Print Q lines. The i-th line should contain the answer to the i-th query.
+
+Constraints
+
+
+- 1 \leq Q \leq 2 \times 10^5
+- For each query, 36 \leq A \leq 10^{12}.
+- All input values are integers.
+
+Sample Input 1
+
+5
+404
+36
+60
+1000000000000
+123456789
+
+Sample Output 1
+
+400
+36
+36
+1000000000000
+123454321
+
+Let us explain the first query.
+There are exactly 2 prime factors of 400: 2 and 5. Also, 2 divides 400 four times and 5 divides it twice, so 400 is a 400 number. None of 401, 402, 403, and 404 is a 400 number, so the answer is 400.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+<analysis>
+
+
+CURRENT TASK LIST:
+- [todo] Formalize the characterization: 400 numbers are exactly squares of integers with exactly two distinct prime factors, and the square root is at most \(10^6\).
+- [todo] Build a sieve up to \(10^6\), preferably a smallest-prime-factor sieve, to factor numbers quickly.
+- [todo] Iterate over all \(x\) from \(2\) to \(10^6\), count distinct prime factors using the sieve, and append \(x^2\) when the count is exactly 2.
+- [todo] Sort the generated list of 400 numbers and confirm edge cases such as \(36\) and \(10^{12}\) are handled.
+- [todo] Process all \(Q\) queries with fast input/output, using binary search to find the largest 400 number \(\le A\) for each query.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Square-root domain sieve (omega) + sorted squares + binary search. Details and pitfalls.
+- Square-root domain sieve + predecessor array / segment tree for O(1)/O(log) query. Maybe distinct enough? It's a data structure variation. Could combine with 1? The instruction says not variations of one idea. Maybe list as separate but note related. Better to make truly distinct: (a) sieve all x; (b) generate from prime pairs; (c) per-query analytic; (d) offline sorted pointer; (e) scan downward with precomputed omega (gap heuristic). But (d) is variation. Need "genuinely different algorithms / data structures / problem reductions, not variations of one idea". So maybe:
+- Reduction to predecessor in square-root domain with sieve (data structure: sorted list/binary search or prev array). This is one idea.
+- Direct generation in prime-exponent space (different reduction: enumerate primes/powers rather than sieve integers).
+- Query-time search using small-prime bound and prime predecessor (different: no full candidate set, per query optimization).
+- Offline sorted queries with incremental candidate generation (different workflow, maybe still uses generation but can generate lazily; but if generation via sieve, not distinct). Could instead: Use a heap to generate valid x in increasing order on demand, answering offline. That's distinct algorithm (priority queue merging prime-power sequences). Need flesh out.
+- Use segmented/boolean scan downward (heuristic) maybe distinct but risky.

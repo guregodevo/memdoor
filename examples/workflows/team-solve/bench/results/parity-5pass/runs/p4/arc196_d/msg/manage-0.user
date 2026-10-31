@@ -1,0 +1,140 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The stamina rules are most naturally expressed on prefix sums of road strengths. Let P_t be the sum of road strengths from town 1 to town t+1, using prefix indices t=0..N-1. For person i, define l_i = min(S_i-1, T_i-1) and r_i = max(S_i-1, T_i-1). If S_i < T_i, the person moves right, so the requirement is P_{l_i} = P_{r_i} and every interior prefix P_x with l_i < x < r_i must be strictly greater than P_{l_i}. If S_i > T_i, the person moves left, so the requirement is P_{l_i} = P_{r_i} and every interior prefix P_x with l_i < x < r_i must be strictly smaller than P_{l_i}. Thus each person becomes an interval [l_i, r_i] with a sign: positive means “interior above endpoints”, negative means “interior below endpoints”.
+
+In difference-constraint form, a positive interval adds lower-bound edges from both endpoints to every interior prefix, while a negative interval adds lower-bound edges from every interior prefix to both endpoints. Equalities between endpoints can be treated as zero-weight edges. Because all required gaps are integral, any acyclic system of these constraints is integer-feasible by taking longest-path distances; the only obstruction is a directed cycle containing at least one strict edge.
+
+The supplied plan asserts a strong pairwise characterization: a set of persons is infeasible exactly when it contains one of the following bad pairs:
+1. two intervals with the same left endpoint, regardless of sign;
+2. two intervals with the same right endpoint, regardless of sign;
+3. two same-sign intervals that strictly cross, meaning l_i < l_j < r_i < r_j or l_j < l_i < r_j < r_i.
+
+The endpoint cases are immediate: if two intervals share the same left endpoint and one is shorter, the shorter interval’s right endpoint is an interior point of the longer interval, forcing it to be both equal to and strictly above/below the shared endpoint value, or forcing two interior points to have opposite strict relations. The same-sign crossing case gives a direct contradiction using the endpoint equalities and the strict interior inequalities. Opposite-sign crossing or containment is not automatically impossible; with enough integer gap it can be feasible. This pairwise theorem is the key theoretical assumption. If there exists a triple or larger cycle that is infeasible without containing one of these bad pairs, then all “latest earlier bad pair” methods are invalid. A small brute-force difference-constraint checker should be used to validate this, especially for opposite-sign triples, nested intervals, shared endpoints, and length-two intervals.
+
+Once the pairwise characterization is accepted, answering queries becomes simple. For each person index j, compute f[j] = the largest i < j such that (i, j) is a bad pair, or 0 if none exists. Then define pref[R] = max over j <= R of f[j]. A query [L, R] is feasible exactly when L > pref[R]. If pref[R] >= L, some bad pair (i, j) has i >= L and j <= R, hence lies entirely inside the query. Conversely, if the query contains a bad pair, the later member j of that pair contributes f[j] at least the earlier member i, so pref[R] >= L.
+
+The endpoint contribution to f is easy: scan persons in input order and keep the last seen index for each left endpoint and each right endpoint. For person j, the best earlier endpoint-sharing bad pair is the maximum of the last seen index with left endpoint l_j and the last seen index with right endpoint r_j. This is O(M + N).
+
+The hard part is the same-sign crossing contribution. For each sign separately, for every j we need the largest earlier same-sign interval that strictly crosses it. This is a three-dimensional offline dominance problem: earlier index, left coordinate, and right coordinate, with two geometric orientations. The constraints M up to 2e5 make O(M^2) impossible. The main implementation pitfalls are:
+- strict inequalities: crossing requires l_i < l_j < r_i < r_j, so equal endpoints are not crossing and must be handled only by the endpoint scan;
+- coordinate indexing: prefix indices are 0..N-1, while towns are 1..N;
+- sign mapping: S_i < T_i gives positive, S_i > T_i gives negative;
+- the second crossing orientation can be handled by mirroring coordinates, e.g. l' = C - r and r' = C - l with C = N-1, or by a symmetric sweep;
+- maximum index versus count: for the f[j] approach we need the maximum earlier index, not merely existence or count;
+- data structure reset: many offline sweeps need to clear or version data structures efficiently;
+- Python performance and memory: O(M log^2 M) algorithms may be near the limit, and heavy 2D structures can use too much memory if implemented naively.
+
+
+CURRENT TASK LIST:
+- [todo] Convert all persons to arrays l[1..M], r[1..M], sign[1..M] (sign + for S_i<T_i, - otherwise), and compute endpoint bad pairs: scan j=1..M keeping last_l and last_r, set f[j]=max(f[j], last_l[l_j], last_r[r_j]), then update last_l/last_r.
+- [todo] Implement a reusable timestamped segment tree over coordinates 0..N-1 that supports point max-update and inclusive range max-query; use a global token per CDQ cross so old updates are ignored without clearing.
+- [todo] Implement a CDQ routine for a fixed sign and fixed coordinate arrays: it takes the list of original indices for that sign, splits by their position in that list, recursively returns the sub-list sorted by l, and in the cross step sweeps right-half indices by increasing l, adds left-half indices with l_i<l_j to the segment tree at r_i, queries max over r in [l_j+1, r_j-1], and updates f[j]; finally merge the two sorted sub-lists by l.
+- [todo] Run this CDQ for the plus and minus subsequences on original (l,r), and again on mirrored coordinates l'=N-1-r, r'=N-1-l, taking the maximum into f[j] for all crossing bad pairs.
+- [todo] Build pref[j]=max(pref[j-1], f[j]), answer each query [L,R] with Yes iff L>pref[R], and stress-test on samples plus small random instances against a generic difference-constraints cycle check (or bounded P enumeration), including touching endpoints and identical opposite intervals.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Implement the supplied CDQ divide-and-conquer plan. For each sign, keep intervals in original input order. In a CDQ merge, the left half contains earlier indices and the right half later indices. For the orientation l_i < l_j < r_i < r_j, sweep right-side queries by increasing l_j, add left-side intervals with l_i < l_j into a segment tree keyed by r_i storing the maximum original index, and query the segment tree over r_i in (l_j, r_j). For the opposite orientation, either mirror coordinates and repeat the same procedure, or perform a symmetric sweep by right endpoint. Combine these crossing results with the endpoint last-occurrence scan, then answer queries using the prefix maximum of f. Pitfalls: two signs and two orientations, strict bounds, efficient segment-tree reset via timestamps or rollback, avoiding excessive sorting at every recursion level, recursion overhead, and the overall O(M log^2 M) time in Python.
+- Use an online spatial range-update point-query structure. Process persons in input order. For the crossing orientation l_i < l_j < r_i < r_j, insert each previous interval into canonical segment-tree nodes covering its interior range (l_i+1 .. r_i-1). In each node, maintain a Fenwick tree or similar prefix-max structure over the inserted interval’s right endpoint. To compute f[j], query point l_j by walking the root-to-leaf path and taking the maximum prefix value over right endpoints < r_j. Mirror coordinates and repeat for the other crossing orientation. Pitfalls: each interval touches O(log N) nodes, so total stored coordinates are O(M log N) and may be large in Python; Fenwick max works cleanly because updates are monotone in index, but deletions are not supported; coordinate compression per node is needed; two passes or two structures are required; time is still O(M log^2 N) and may be slower than CDQ.
+- Use an online 2D range tree or Fenwick tree of Fenwick trees. Maintain previous intervals as points (l, r) with value equal to the person index. For current person j, query the two crossing rectangles: l_i < l_j and l_j < r_i < r_j, and l_j < l_i < r_j and r_i > r_j, taking the maximum value found, then insert j. Offline coordinate compression can be used for the second coordinate inside each first-coordinate node. Pitfalls: maximum is not invertible, so the inner structure must support range maximum, not just prefix sums; memory is O(M log N) and can be very heavy with Python lists; each update and query costs O(log^2 N); two rectangles or a mirrored pass are needed; conceptually simple but often heavier in practice than CDQ or the spatial prefix structure.
+- Use a sliding window with dynamic 2D counting and two pointers. Instead of computing f[j], compute for each left endpoint L the smallest R such that [L, R] is infeasible. Maintain the current window and the total number of bad pairs inside it. When adding or removing a person, count the bad pairs between that person and the rest of the window using endpoint counters plus dynamic 2D rectangle counting for same-sign crossing. Counting can be done with a 2D Fenwick tree supporting add/remove and prefix sums, or with a spatial segment-tree/Fenwick count structure. Since the minimal infeasible R is nondecreasing as L increases, a two-pointer sweep can compute all thresholds, and each query is answered by comparing its R to the threshold for its L. Pitfalls: deletions are required, so counting structures are necessary; pairs sharing both left and right endpoints must not be double-counted; self-exclusion must be handled carefully when removing; the method still depends on the pairwise bad-pair theorem; 2D counting has high time and memory constants.
+- Use block decomposition over person index, also called a sqrt/offline per-block approach. Partition each sign’s intervals into blocks in input order. Pairs where the earlier interval lies in an earlier block are handled by sweeping: for a fixed block, treat its intervals as points and all later intervals as queries; sort queries by left coordinate, add block points with smaller left coordinate into a small Fenwick or segment tree over right endpoints, and update the best earlier crossing index. Mirror coordinates for the opposite crossing orientation. Pairs inside the same block must be handled separately, either by brute force if the block is very small or by a local CDQ. Choose the block size to balance the cross-block cost, roughly O(M^2 / B log B), against the intra-block cost, roughly O(M log^2 B) with local CDQ or O(M B) with brute force. Pitfalls: intra-block handling is essential and can dominate; scanning a global order-by-left list for every block gives O(M^2 / B) overhead; tuning B is critical; strict ties and original index weights must be preserved; memory is low but the implementation is intricate.
+- Use a direct difference-constraint or graph-cycle approach as a validation or alternative. For a fixed set of persons, build a compressed graph using segment-tree auxiliary nodes to represent edges from endpoints to all interior prefixes for positive intervals and from interior prefixes to endpoints for negative intervals. Feasibility is then absence of a positive-weight cycle after contracting zero-weight equalities. For queries, one could attempt offline divide-and-conquer with rollback, or a segment tree over person indices storing some summary of its constraints. Pitfalls: dynamic cycle detection with rollback is difficult; the auxiliary graph can be large; positive weights and zero-weight equalities complicate topological checks; this is likely not practical for the full constraints, but it is useful to confirm that no triple-only infeasibility exists and to test the pairwise theorem.
+- Run preliminary brute-force validation on small instances. For small N and M, generate random and targeted cases, build the difference-constraint graph with unit edges for strict positivity, and test feasibility by Bellman-Ford/SPFA or by longest paths after contracting equalities. Compare the result with the bad-pair condition and with candidate implementations. Include cases with opposite-sign crossings, nested intervals, shared endpoints, touching endpoints, and length-two intervals. Pitfalls: this is not scalable; integer strictness must be modeled as weight-1 edges, not merely as boolean inequalities; random tests alone may miss rare triple-cycle counterexamples, so targeted adversarial small cases are important.

@@ -1,0 +1,123 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, k and limit. Your task is to find a non-empty subsequence of nums that:
+
+Has an alternating sum equal to k.
+Maximizes the product of all its numbers without the product exceeding limit.
+
+Return the product of the numbers in such a subsequence. If no subsequence satisfies the requirements, return -1.
+The alternating sum of a 0-indexed array is defined as the sum of the elements at even indices minus the sum of the elements at odd indices.
+ 
+Example 1:
+
+Input: nums = [1,2,3], k = 2, limit = 10
+Output: 6
+Explanation:
+The subsequences with an alternating sum of 2 are:
+
+[1, 2, 3]
+
+Alternating Sum: 1 - 2 + 3 = 2
+Product: 1 * 2 * 3 = 6
+
+
+[2]
+
+Alternating Sum: 2
+Product: 2
+
+
+
+The maximum product within the limit is 6.
+
+Example 2:
+
+Input: nums = [0,2,3], k = -5, limit = 12
+Output: -1
+Explanation:
+A subsequence with an alternating sum of exactly -5 does not exist.
+
+Example 3:
+
+Input: nums = [2,2,3,3], k = 0, limit = 9
+Output: 9
+Explanation:
+The subsequences with an alternating sum of 0 are:
+
+[2, 2]
+
+Alternating Sum: 2 - 2 = 0
+Product: 2 * 2 = 4
+
+
+[3, 3]
+
+Alternating Sum: 3 - 3 = 0
+Product: 3 * 3 = 9
+
+
+[2, 2, 3, 3]
+
+Alternating Sum: 2 - 2 + 3 - 3 = 0
+Product: 2 * 2 * 3 * 3 = 36
+
+
+
+The subsequence [2, 2, 3, 3] has the greatest product with an alternating sum equal to k, but 36 > 9. The next greatest product is 9, which is within the limit.
+
+ 
+Constraints:
+
+1 <= nums.length <= 150
+0 <= nums[i] <= 12
+-10^5 <= k <= 10^5
+1 <= limit <= 5000
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        
+```
+
+
+
+PLAN:
+Cap the alternating sum at ±12·n and encode reachable sums as integer bitsets with an offset, so shifts implement adding or subtracting a value. For positive products (subsequences with no zero), keep two lists indexed by product ≤ limit and length parity, each entry a sum bitset; process each nonzero x by copying the lists and updating product p to p·x only when p·x ≤ limit. Because choosing a zero after an over-limit positive product can still yield a valid product 0, maintain a separate four-bitset DP for parity and whether a zero has been chosen to detect product-0 subsequences. Use +x (left shift) when the current subsequence length is even and -x (right shift) when it is odd, and keep old copies to enforce each element is used at most once. Finally remove the empty state, scan products from limit down to 1 for the target sum, and return 0 if only the zero DP reaches the target, otherwise -1.
+
+NOTES:
+
+## ideation
+The core difficulty is that the alternating sum depends on the parity of the number of already chosen elements, not on their original indices, while the product constraint is multiplicative and has a special zero case. A zero makes the product zero, which is always within the limit, but it should only be returned if no positive product works. The useful bounds are that every value is at most 12 and the length is at most 150, so the alternating sum is bounded by a few thousand; also the product limit is only 5000, so product states are small. This suggests dynamic programming with compact sum representations, but the main pitfalls are empty-subsequence contamination, in-place updates that reuse the current element, and correct handling of zeros and ones.
+
+Candidate approaches and pitfalls:
+
+1. Product-major bitset DP with a separate zero-product reachability DP.
+   - Maintain, for each positive product up to the limit and for each length parity, a bitset of reachable alternating sums. Process elements in order. Skipping keeps the old state. Taking a positive value from even parity adds the value and multiplies the product; taking from odd parity subtracts the value and multiplies the product. Use old snapshots to prevent using the same element twice. Maintain a separate small DP for subsequences containing at least one zero, tracking parity and whether a zero has been chosen, because product zero ignores the product limit.
+   - Pitfalls: the empty subsequence has product 1, even parity, and sum 0, so it can mask valid non-empty all-ones states if not handled carefully. In-place updates are dangerous, especially for value 1 where the product does not change. Zeros must be excluded from the positive-product DP but included in the zero-product DP even if other selected values would exceed the limit if the product were positive. The sum bitset must be masked to a safe range. Positive products must be scanned before returning 0.
+
+2. Sum-major product-set DP.
+   - For each alternating sum and parity, store the set or bitset of achievable products. Processing a value shifts the sum by plus or minus the value and multiplies stored products by the value, discarding products above the limit.
+   - Pitfalls: multiplication is not a simple bit shift, so updates may require iterating over many products per sum. Dense product sets can become large and memory-heavy. Keeping only the maximum product per sum and parity is unsafe because a larger product may overflow later while a smaller product remains feasible and can lead to a better final answer.
+
+3. Fixed-product divisor search.
+   - Search candidate products from the limit downward. For a fixed positive product, only values that divide the product can be used as non-one factors. Use the divisors of the product as DP states, together with parity and a sum bitset. Stop at the first product that can reach the target sum. Handle product 1 separately because it can be formed by non-empty subsequences of ones.
+   - Pitfalls: repeating the DP for many candidate products can be much slower than processing all products at once. Product 1 requires special non-empty handling. Values that do not divide the candidate product must be skipped. Zero-product subsequences still need a separate reachability check.
+
+4. Multi-label Pareto frontier / label-setting DP.
+   - For each sum and parity, keep a frontier of product labels and prune labels that are strictly dominated. The idea is to avoid storing all products if many are unnecessary.
+   - Pitfalls: dominance is subtle. A larger product is better for the objective but worse for feasibility under future multiplications, while a smaller product is more feasible but lower in value. Safe pruning by product alone is very limited; aggressive pruning can miss the answer. The frontier may still grow to all products up to the limit.
+
+5. Run-length and small-value compression.
+   - Compress consecutive equal values into runs. For a run of value v and length c, selecting t elements from the run has a simple effect: parity flips if t is odd; the sum contribution is 0 if t is even, and plus or minus v if t is odd depending on the starting parity; the product is multiplied by v to the t. Value 1 runs are especially simple because the product does not change. Zero runs belong to the zero-product case.
+   - Pitfalls: even-count selections of values greater than 1 can increase the product without changing sum or parity, so they cannot be ignored. For ones, even-count selections have no effect on sum or parity but can make an all-ones subsequence non-empty. The original order of runs must be preserved. Zero runs require separate handling because they make the product zero.
+
+6. Meet-in-the-middle combination.
+   - Split the array into two halves. Compute reachable states for each half: parity, alternating sum, and product. Combine left and right states, remembering that if the left half has odd length, the right half’s alternating sum is effectively negated. The total product is the product of the two half products and must not exceed the limit.
+   - Pitfalls: state sets can still be large. Combining product pairs can be expensive. Empty half states must be handled carefully to avoid returning the empty subsequence. Zero-product states need separate treatment. This approach is likely more complex than a single-pass DP for these constraints.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the full product-major bitset DP solution in the starter code, including positive-product DP with explicit non-empty start transitions, zero-product DP, and final descending scan, then run the provided examples to verify outputs.

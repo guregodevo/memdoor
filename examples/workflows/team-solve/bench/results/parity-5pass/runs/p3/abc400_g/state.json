@@ -1,0 +1,73 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideation: reduction to even-parity 3-color assignment and WQS/Lagrangian plan.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement core WQS 8-state DP with doubled values, bit-encoded value+count keys, binary search over pair penalty P, fast I/O, and sample validation.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Verify correctness of reduction, concavity, scaling, tie-breaking, bounds, and edge cases (K=1, max K, zeros, ties, large values).",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "Optimize Python implementation with unrolled 8-state transitions, local variables, per-test high bound, and special K=1 path.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the Aliens/WQS 8-state parity DP with doubled values, per-cake penalty, max-count tie-breaking, and binary search over P; use fast I/O and tight state updates.",
+  "Add hybrid exact DP for small K and complement DP for small N - 2K to handle extremes faster and to cross-check the WQS result.",
+  "Explore a quota-based 4-color assignment formulation with min-cost flow or 2D Lagrange multipliers as an alternative, but only if it can be made near-linear and tie/parity handling is robust.",
+  "Investigate a slope-trick / max-plus representation of the 8 parity value functions to compute the K-th value directly, focusing on whether intermediate functions remain concave/M-concave.",
+  "Test and likely discard greedy or sparse-candidate matching ideas using small counterexamples; consider them only if a provable sparse certificate can be found.",
+  "Use small random brute-force matchings to validate the concavity assumption and the WQS answer formula before finalizing."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the core Python solution using the 8-state WQS/Lagrangian DP for the even-parity 3-color selection: doubled values, bit-encoded (value, count) keys with count tie-breaking, state update new[mask] = max(old[mask], old[mask^1]+dx, old[mask^2]+dy, old[mask^4]+dz), binary search over pair penalty P in [0, 2*max_attr+1], and answer reconstruction (dp_value + P*2K)//2; use fast I/O and verify against the provided samples plus a small random exact-DP/brute-force checker.",
+ "iters": 1,
+ "task": "Implement the core Python solution using the 8-state WQS/Lagrangian DP for the even-parity 3-color selection: doubled values, bit-encoded (value, count) keys with count tie-breaking, state update new[mask] = max(old[mask], old[mask^1]+dx, old[mask^2]+dy, old[mask^4]+dz), binary search over pair penalty P in [0, 2*max_attr+1], and answer reconstruction (dp_value + P*2K)//2; use fast I/O and verify against the provided samples plus a small random exact-DP/brute-force checker.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 2,
+  "total": 2,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

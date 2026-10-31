@@ -1,0 +1,67 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideation: reduce to labeled selection, baseline top-2K, and parity correction with at most two operations.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the complete Python solution using the fixed baseline parity-correction algorithm: choose p_i as any maximizing attribute, take top 2K by M_i, compute baseline sum and parity mask, build top-two selected/unselected/recolor/swap candidates, compute min single or conflict-free pair correction, and output baseline sum minus min loss.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Verify the implementation on the provided samples (passed) and review edge cases (ties in M_i, multiple maximizing attributes, K=N/2) in the algorithm.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Baseline top-2K-by-M plus parity correction: sort cakes by M_i, take the first 2K as the baseline, compute the baseline sum and parity mask. For each directed label change, collect a small constant number of best recolor operations on selected cakes and best swap operations formed from low-M selected cakes of the source label and high-value unselected cakes of the target label, keeping cake identities. Evaluate the best single operation for the odd mask and the best pair of operations involving the third label, rejecting pairs that share a cake. Pitfalls: arbitrary tie-breaking at the 2K boundary may require zero-cost swaps among tied cakes; tied maximum attributes require zero-cost recolors; one best operation per directed change is not enough because two swaps may need distinct unselected cakes or two operations from the same source label may need distinct selected cakes; when K=N/2 swaps are unavailable; use 64-bit integers.",
+  "Min-cost-flow residual-cycle formulation: model selection of 2K item-label assignments as a flow ignoring parity, then view parity fixing as sending flow around residual cycles that flip two label parities. Compress the relevant cycles into recolor and swap operations and solve a tiny parity-state shortest path. Pitfalls: standard min-cost flow does not enforce even label counts; naive cycle enumeration is too large; must ensure combined cycles are vertex-disjoint or account for conflicts; this approach may essentially reduce to the same local-exchange computation.",
+  "Lagrangian relaxation with parity DP: penalize each selected cake by a parameter lambda and run an 8-state DP over parity masks, where each cake is either skipped or chosen with one label, tracking counts or tie-breaking to force exactly 2K selected cakes; binary search lambda. Pitfalls: the value as a function of selected count may not be concave under the even-label constraint, or the optimal count may jump over 2K; recovering the exact value for 2K with ties is subtle; the method may be slower and less reliable than the exchange argument.",
+  "Fixed label-count assignment: choose how many pairs use each label, with the three pair-counts summing to K, and solve the resulting 3-way assignment with exact even demands, then optimize over the counts. Pitfalls: enumerating counts is quadratic or worse; the assignment with three labels and item conflicts is nontrivial and may require min-cost flow or Lagrange multipliers with tie handling; convexity in the counts is not obvious and exact optimization may be hard.",
+  "Candidate-pool exact DP over exceptions: prove or assume that an optimal solution differs from the top-2K baseline by only a constant number of cakes/labels, build a small pool from top M_i, top values per attribute, and boundary ties, then solve the exact selection/labeling problem on the pool with DP over parity and number of exceptions. Pitfalls: the constant pool size must be justified; boundary ties can be numerous and may require careful handling; the DP must correctly account for which baseline cakes are removed and their baseline contributions; a too-small pool can miss the optimum.",
+  "Direct matching or threshold-based approaches: treat the problem as maximum weight K matching in a complete graph with edge weight equal to the maximum of three sums, or try to binary search a total price and test feasibility. Pitfalls: general maximum matching is far too slow for N up to 1e5; greedy edge selection is not correct; a total-price threshold does not decompose cleanly over pairs; these are useful only as sanity checks, not likely primary algorithms."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the complete Python solution using the fixed baseline parity-correction algorithm: for each test case choose p_i as any maximizing attribute (e.g. first max), compute M_i, sort by M_i descending, take the top 2K cakes as S, and compute baseline sum B and parity mask T (xor of 1<<p_i). If T=0 output B. Otherwise build top-two structures: selected cakes by smallest M_i for each base label; unselected cakes by largest value for each label; for each selected cake, recolor operations to other labels (cost M_i - value_i(b), mask (1<<p_i)^(1<<b)) keeping top two distinct selected ids per mask; swap operations for each b != p_i with cost M_i - best_unselected_value[b] for the same mask, keeping top two distinct selected ids per mask. Compute min loss as the best single operation of mask T, or the best conflict-free pair of operations with the other two masks: recolor+recolor and recolor+swap via top-two distinct selected ids; swap+swap by enumerating the two ordered (source,target) label pairs for each mask, taking the minimum distinct selected M sum (top two if same source label) and maximum distinct unselected value sum (top two if same target label, checking ids). Output B - min loss. Use Python ints, handle no unselected when K=N/2, and ensure the sample outputs are produced.",
+ "iters": 1,
+ "task": "Implement the complete Python solution using the fixed baseline parity-correction algorithm: for each test case choose p_i as any maximizing attribute (e.g. first max), compute M_i, sort by M_i descending, take the top 2K cakes as S, and compute baseline sum B and parity mask T (xor of 1<<p_i). If T=0 output B. Otherwise build top-two structures: selected cakes by smallest M_i for each base label; unselected cakes by largest value for each label; for each selected cake, recolor operations to other labels (cost M_i - value_i(b), mask (1<<p_i)^(1<<b)) keeping top two distinct selected ids per mask; swap operations for each b != p_i with cost M_i - best_unselected_value[b] for the same mask, keeping top two distinct selected ids per mask. Compute min loss as the best single operation of mask T, or the best conflict-free pair of operations with the other two masks: recolor+recolor and recolor+swap via top-two distinct selected ids; swap+swap by enumerating the two ordered (source,target) label pairs for each mask, taking the minimum distinct selected M sum (top two if same source label) and maximum distinct unselected value sum (top two if same target label, checking ids). Output B - min loss. Use Python ints, handle no unselected when K=N/2, and ensure the sample outputs are produced.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 2,
+  "total": 2,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

@@ -1,0 +1,268 @@
+PROBLEM:
+### Question
+Takahashi, a patissier working at the ABC pastry shop, decided to sell assorted cakes to commemorate AtCoder Beginner Contest 400.
+The shop sells N kinds of cakes: cake 1, cake 2, \ldots, cake N.
+Each cake has three non-negative integer values: beauty, tastiness, and popularity. Specifically, cake i has beauty X_i, tastiness Y_i, and popularity Z_i.
+He considers pairing up these cakes into K pairs without overlaps.
+Formally, he will choose 2K distinct integers a_1,b_1,a_2,b_2,\ldots,a_K,b_K between 1 and N (inclusive), and pair cake a_i with cake b_i.
+The price of a pair formed by cakes a_i and b_i is \max(X_{a_i} + X_{b_i},\, Y_{a_i} + Y_{b_i},\, Z_{a_i} + Z_{b_i}).
+Here, \max(P,Q,R) denotes the greatest value among P,Q,R.
+Find the maximum possible total price of the K pairs.
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+\mathrm{case}_1
+\mathrm{case}_2
+\vdots
+\mathrm{case}_T
+
+\mathrm{case}_i represents the i-th test case. Each test case is given in the following format:
+N K
+X_1 Y_1 Z_1
+X_2 Y_2 Z_2
+\vdots
+X_N Y_N Z_N
+
+Output
+
+Print T lines. The i-th line (1\leq i\leq T) should contain the answer to the i-th test case.
+
+Constraints
+
+
+- 1\leq T\leq 1000
+- 2\leq N \leq 10^5
+- The sum of N over all test cases in each input file is at most 10^5.
+- 1\leq K \leq \lfloor \frac{N}{2}\rfloor (For a real number x, \lfloor x\rfloor denotes the greatest integer not exceeding x.)
+- 0\leq X_i,Y_i,Z_i \leq 10^9
+- All input values are integers.
+
+Sample Input 1
+
+1
+3 1
+6 3 8
+3 5 0
+2 7 3
+
+Sample Output 1
+
+12
+
+We form one pair out of three cakes.
+If we pair cake 1 with cake 2, the price is \max(6+3,\,3+5,\,8+0) = 9.
+If we pair cake 1 with cake 3, the price is \max(6+2,\,3+7,\,8+3) = 11.
+If we pair cake 2 with cake 3, the price is \max(3+2,\,5+7,\,0+3) = 12.
+Hence, pairing cake 2 with cake 3 gives the highest price, which is 12.
+
+Sample Input 2
+
+2
+5 2
+1 2 3
+1 2 3
+1 2 3
+1 2 3
+100 100 200
+6 2
+21 74 25
+44 71 80
+46 28 96
+1 74 24
+81 83 16
+55 31 1
+
+Sample Output 2
+
+209
+333
+
+Note that each cake can appear in at most one pair.
+Also note that there can be different cakes with identical values of beauty, tastiness, and popularity.
+For the first test case, pairing cake 1 with cake 2 gives a price of 6, pairing cake 3 with cake 5 gives a price of 203, and choosing these two pairs yields a total price of 209, which is the maximum.  
+For the second test case, pairing cake 2 with cake 3 gives a price of 176, pairing cake 4 with cake 5 gives a price of 157, and choosing these two pairs yields a total price of 333, which is the maximum.
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Reduce the problem to choosing 2K cakes and assigning each chosen cake to one of the three attributes, requiring an even number of chosen cakes for each attribute; the maximum assigned sum equals the maximum total pair price. Solve the unconstrained version by taking the 2K cakes with largest max-attribute value and assigning each to a maximizing attribute, giving a baseline total and a parity mask. A parity-exchange argument shows that an optimal parity-feasible assignment can be obtained from this baseline by at most two local changes, each either recoloring a selected cake or swapping a selected cake with an unselected one. Therefore the answer is the baseline total minus the minimum loss needed to make the parity mask zero using 0, 1, or 2 such changes. Precompute the cheapest recolor and swap operations for each parity mask, plus top-two selected and unselected values to enforce disjointness, and evaluate the constant number of two-operation combinations.
+
+NOTES:
+- **Reduction:** Charge each pair to one attribute attaining its maximum. Both cakes in that pair receive that color. Thus a solution is exactly 2K cakes colored with 3 colors, each color count even, maximizing the sum of the chosen color’s value. Pairing inside colors gives price at least that sum, and the reverse direction gives equality.
+- **Baseline:** Let b_i = max(X_i, Y_i, Z_i), and choose a base color a_i attaining b_i. The global upper bound B is the sum of the largest 2K b_i. Take those cakes as selected S, the rest U. The baseline colored sum is B, and parity mask m has bit c if the number of selected base-color c cakes is odd. If m = 0, B is feasible and optimal.
+- **Local loss operations:** Any feasible solution differs from the baseline by recolors and swaps. Recolor selected i from a to c: loss b_i - v_{i,c}, delta bit(a) xor bit(c). Swap selected i (base a) out and unselected j (colored c) in: loss b_i - v_{j,c}, same delta. All losses are nonnegative because selected b values dominate unselected b values and v <= b.
+- **At most two operations:** Nonzero deltas are 3, 5, 6, forming a 2-dimensional F2 space. The XOR of all operation deltas must equal m. Looking at parity of how many times each delta appears, a subcollection of one or two operations has the same XOR. Dropping the rest cannot increase loss, so an optimal correction uses 0, 1, or 2 disjoint operations. For m nonzero, the two-operation masks are the other two nonzero masks.
+- **Candidate pools:** Keep top 5 selected items for each directed recolor role (a, c) by loss, top 5 selected items for each swap-out base a by smallest b, and top 5 unselected items for each swap-in color c by largest value. Top 5 is safe because in any two-operation plan each role can conflict with at most one item id from another role; even if the same unselected item is top for two colors, one replacement per role is enough. Expand each swap role pair into all out/in pairs to form operation candidates.
+- **Evaluation:** Build ops[mask] from recolor candidates and swap candidate pairs. The answer is B minus the minimum cost of one op with mask m or two disjoint ops with the other two masks. Disjointness is checked by original item ids.
+- **Edge cases:** If U is empty, swap lists are empty and only recolors are used. Ties in b at the 2K boundary or ties for the maximum attribute are handled by zero-loss swaps/recolors; arbitrary tie-breaking is fine. Since 2K is even, m is 0 or one of 3, 5, 6. Python ints handle totals up to about 1e14.
+- **Complexity:** Sorting dominates: O(N log N) per test case, total O(sum N log N); candidate evaluation is a small constant per test case.
+
+
+CURRENT WORK:
+import sys
+
+
+def main():
+    data = list(map(int, sys.stdin.buffer.read().split()))
+    if not data:
+        return
+
+    it = iter(data)
+    T = next(it)
+    out_lines = []
+
+    bits = (1, 2, 4)
+    other_pair = {3: (5, 6), 5: (3, 6), 6: (3, 5)}
+
+    for _ in range(T):
+        N = next(it)
+        K = next(it)
+        M = 2 * K
+
+        items = []
+        for i in range(N):
+            x = next(it)
+            y = next(it)
+            z = next(it)
+            b = max(x, y, z)
+            if x == b:
+                a = 0
+            elif y == b:
+                a = 1
+            else:
+                a = 2
+            items.append((b, x, y, z, a, i))
+
+        items.sort(key=lambda t: t[0], reverse=True)
+
+        selected = items[:M]
+        unselected = items[M:]
+
+        B = 0
+        p0 = p1 = p2 = 0
+        for b, x, y, z, a, i in selected:
+            B += b
+            if a == 0:
+                p0 ^= 1
+            elif a == 1:
+                p1 ^= 1
+            else:
+                p2 ^= 1
+
+        m = p0 * 1 + p1 * 2 + p2 * 4
+
+        if m == 0:
+            out_lines.append(str(B))
+            continue
+
+        recolor = [[[] for _ in range(3)] for __ in range(3)]
+        swapout = [[] for _ in range(3)]
+        swapin = [[] for _ in range(3)]
+
+        for b, x, y, z, a, i in selected:
+            swapout[a].append((b, i))
+            if a != 0:
+                recolor[a][0].append((b - x, i))
+            if a != 1:
+                recolor[a][1].append((b - y, i))
+            if a != 2:
+                recolor[a][2].append((b - z, i))
+
+        for b, x, y, z, a, i in unselected:
+            swapin[0].append((x, i))
+            swapin[1].append((y, i))
+            swapin[2].append((z, i))
+
+        for a in range(3):
+            for c in range(3):
+                if a != c:
+                    lst = recolor[a][c]
+                    lst.sort(key=lambda p: p[0])
+                    if len(lst) > 5:
+                        del lst[5:]
+
+            lst = swapout[a]
+            lst.sort(key=lambda p: p[0])
+            if len(lst) > 5:
+                del lst[5:]
+
+        for c in range(3):
+            lst = swapin[c]
+            lst.sort(key=lambda p: p[0], reverse=True)
+            if len(lst) > 5:
+                del lst[5:]
+
+        ops = {3: [], 5: [], 6: []}
+
+        for a in range(3):
+            for c in range(3):
+                if a == c:
+                    continue
+                d = bits[a] ^ bits[c]
+
+                for cost, idx in recolor[a][c]:
+                    ops[d].append((cost, (idx,)))
+
+                out_list = swapout[a]
+                in_list = swapin[c]
+                if out_list and in_list:
+                    for b_out, idx_out in out_list:
+                        for val_in, idx_in in in_list:
+                            ops[d].append((b_out - val_in, (idx_out, idx_in)))
+
+        INF = 10**30
+        best = INF
+
+        for cost, _ in ops[m]:
+            if cost < best:
+                best = cost
+
+        if best != 0:
+            d1, d2 = other_pair[m]
+            list1 = ops[d1]
+            list2 = ops[d2]
+
+            for cost1, ids1 in list1:
+                if len(ids1) == 1:
+                    id1 = ids1[0]
+                    for cost2, ids2 in list2:
+                        if len(ids2) == 1:
+                            if id1 != ids2[0]:
+                                total = cost1 + cost2
+                                if total < best:
+                                    best = total
+                        else:
+                            if id1 != ids2[0] and id1 != ids2[1]:
+                                total = cost1 + cost2
+                                if total < best:
+                                    best = total
+                else:
+                    id1a, id1b = ids1
+                    for cost2, ids2 in list2:
+                        if len(ids2) == 1:
+                            if id1a != ids2[0] and id1b != ids2[0]:
+                                total = cost1 + cost2
+                                if total < best:
+                                    best = total
+                        else:
+                            id2a, id2b = ids2
+                            if (id1a != id2a and id1a != id2b and
+                                id1b != id2a and id1b != id2b):
+                                total = cost1 + cost2
+                                if total < best:
+                                    best = total
+
+        out_lines.append(str(B - best))
+
+    sys.stdout.write("\n".join(out_lines))
+
+
+if __name__ == "__main__":
+    main()
+
+YOUR TASK: Complete this task: Stress-test the current implementation against a brute-force matcher/colored-selection checker on random small cases (N<=8 or 10, all K, values 0..5 and large ties), including edge cases N=2, K=N/2, all equal values, and ties at the 2K boundary; if any mismatch is found, debug and fix the algorithm or candidate truncation.

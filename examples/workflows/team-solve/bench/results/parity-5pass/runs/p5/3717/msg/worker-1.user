@@ -1,0 +1,113 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, x and k. You can perform the following operation any number of times (including zero):
+
+Increase or decrease any element of nums by 1.
+
+Return the minimum number of operations needed to have at least k non-overlapping subarrays of size exactly x in nums, where all elements within each subarray are equal.
+ 
+Example 1:
+
+Input: nums = [5,-2,1,3,7,3,6,4,-1], x = 3, k = 2
+Output: 8
+Explanation:
+
+Use 3 operations to add 3 to nums[1] and use 2 operations to subtract 2 from nums[3]. The resulting array is [5, 1, 1, 1, 7, 3, 6, 4, -1].
+Use 1 operation to add 1 to nums[5] and use 2 operations to subtract 2 from nums[6]. The resulting array is [5, 1, 1, 1, 7, 4, 4, 4, -1].
+Now, all elements within each subarray [1, 1, 1] (from indices 1 to 3) and [4, 4, 4] (from indices 5 to 7) are equal. Since 8 total operations were used, 8 is the output.
+
+
+Example 2:
+
+Input: nums = [9,-2,-2,-2,1,5], x = 2, k = 2
+Output: 3
+Explanation:
+
+Use 3 operations to subtract 3 from nums[4]. The resulting array is [9, -2, -2, -2, -2, 5].
+Now, all elements within each subarray [-2, -2] (from indices 1 to 2) and [-2, -2] (from indices 3 to 4) are equal. Since 3 operations were used, 3 is the output.
+
+
+ 
+Constraints:
+
+2 <= nums.length <= 10^5
+-10^6 <= nums[i] <= 10^6
+2 <= x <= nums.length
+1 <= k <= 15
+2 <= k * x <= nums.length
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def minOperations(self, nums: List[int], x: int, k: int) -> int:
+        
+```
+
+
+
+PLAN:
+Precompute the minimum cost to make every length-x window constant, which is the sum of absolute deviations to the window median. Compute these costs in O(n log n) using a sliding median structure with coordinate compression/Fenwick trees or two heaps, maintaining counts and sums. Then solve a weighted interval scheduling DP: dp[j][i] is the minimum cost to choose j non-overlapping windows in the first i elements. Transition by skipping element i or taking the window ending at i, adding its cost and using dp[j-1][i-x] to enforce non-overlap, returning dp[k][n] because extra windows only add nonnegative cost, with O(kn) time and O(n) memory.
+
+NOTES:
+
+## ideation
+The core difficulty is that the problem splits into two coupled but separable parts: first, for every length-x window, compute the minimum number of unit increments/decrements needed to make that window constant; second, choose k non-overlapping windows with minimum total cost.
+
+For a fixed window, the cheapest constant value is a median of the window values, because the sum of absolute deviations is minimized at a median. For even window length, either of the two middle values is optimal, so using the lower median is safe. Thus each candidate window can be treated as an interval with a nonnegative weight equal to its median absolute deviation.
+
+Once those weights are known, the selection problem is a weighted interval scheduling / k-cardinality independent set problem on a line: choose k disjoint length-x intervals minimizing the sum of weights. Because all weights are nonnegative, “at least k” can be treated as “exactly k” when k*x <= n, since removing extra chosen windows cannot increase the cost.
+
+The main practical challenges are:
+- Computing all sliding-window median costs fast enough for n up to 100000.
+- Avoiding off-by-one errors in non-overlap: if a new window starts at position s, the previous chosen window must end before s.
+- Handling negative values and large total costs safely.
+- Choosing a robust median maintenance method in Python.
+
+Candidate approaches and pitfalls:
+
+1. Sliding-window median with two heaps.
+Maintain a lower half as a max-heap and an upper half as a min-heap, with the lower half containing the lower median. Also maintain the sums of the two halves so the window cost can be computed directly from the median and the two sums. Sliding the window requires removing the outgoing element and inserting the incoming element. Since Python heaps do not support arbitrary deletion, use lazy deletion with a pending-deletion count map.
+Pitfalls:
+- Physical heap length is not the same as logical size when stale deleted elements remain.
+- Deciding which half a removed value belongs to can be tricky with duplicate values, though equal values are interchangeable if the partition invariant is maintained.
+- Sums must be updated exactly once per logical removal; pruning stale tops must not double-count.
+- Rebalancing must be done after both removal and insertion, or in a carefully ordered sequence.
+- For even x, the lower median should be used consistently.
+
+2. Coordinate compression plus Fenwick trees for order statistics.
+Compress all original values to ranks. Maintain two Fenwick trees over the current window: one for counts and one for sums of actual values. To compute a window cost, find the kth smallest value where k is the lower-median rank, query the count and sum of values up to that rank, and combine with the total window sum to get the sum of absolute deviations.
+Pitfalls:
+- Off-by-one errors in the Fenwick kth-smallest search.
+- Prefix queries must include all values equal to the median.
+- The sum tree can contain negative values, which is fine but must be handled with integer arithmetic.
+- Using the full value range directly may be memory-heavy in Python; coordinate compression is safer.
+- The total window sum can be maintained separately to avoid an extra full-range query.
+
+3. Static range-query structure such as a wavelet tree/matrix or persistent segment tree.
+Instead of maintaining a sliding multiset, build a structure over the whole array that can answer, for any range, the kth order statistic and the sum of values less than or equal to that statistic. Then each length-x window cost is computed as an independent range query.
+Pitfalls:
+- Much higher implementation complexity than sliding heaps or Fenwick trees.
+- Memory can become large, especially for persistent segment trees in Python.
+- Wavelet structures require careful per-level prefix sums and correct handling of compressed negative values.
+- This approach is conceptually clean but may be overkill for this constraint size.
+
+4. Alternative selection formulations.
+The interval selection can be solved with a standard prefix DP over positions, or with a start-position DP that maintains a running minimum of the previous layer. A more general reduction is a k-layer shortest path or min-cost flow on a DAG where choosing a window is a paid edge and skipping positions are zero-cost edges.
+Pitfalls:
+- The non-overlap transition must use the prefix before the new window starts, not the prefix ending at the same position.
+- Base cases for impossible states must be initialized to a large infinity.
+- Min-cost flow is correct but likely overkill and may be too slow or memory-heavy if not carefully optimized.
+- The simple DP is preferred because k is small and intervals all have the same length.
+
+5. Value-domain block decomposition or Mo’s algorithm.
+One could maintain frequencies over value blocks to find the median, or reorder window queries using Mo’s algorithm with a multiset structure.
+Pitfalls:
+- Worst-case complexity may be too high for n = 100000 in Python.
+- Mo’s algorithm is awkward for fixed sliding windows and does not clearly improve over Fenwick or heaps.
+- Block decomposition requires tuning block size and still needs careful median search and cost computation.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the full solution using coordinate-compressed Fenwick trees: compute cost[start] for every length-x window by maintaining count/sum trees and lower-median rank (x+1)//2, then run two-row prefix DP dp[t][i] = min(dp[t][i-1], dp[t-1][i-x] + cost[i-x]) to return dp[k][n]; include tests on the provided examples and small random brute force.

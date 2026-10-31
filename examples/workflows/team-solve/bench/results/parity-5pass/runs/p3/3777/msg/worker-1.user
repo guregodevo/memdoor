@@ -1,0 +1,101 @@
+PROBLEM:
+### Question
+You are given an integer array nums and two integers, k and limit. Your task is to find a non-empty subsequence of nums that:
+
+Has an alternating sum equal to k.
+Maximizes the product of all its numbers without the product exceeding limit.
+
+Return the product of the numbers in such a subsequence. If no subsequence satisfies the requirements, return -1.
+The alternating sum of a 0-indexed array is defined as the sum of the elements at even indices minus the sum of the elements at odd indices.
+ 
+Example 1:
+
+Input: nums = [1,2,3], k = 2, limit = 10
+Output: 6
+Explanation:
+The subsequences with an alternating sum of 2 are:
+
+[1, 2, 3]
+
+Alternating Sum: 1 - 2 + 3 = 2
+Product: 1 * 2 * 3 = 6
+
+
+[2]
+
+Alternating Sum: 2
+Product: 2
+
+
+
+The maximum product within the limit is 6.
+
+Example 2:
+
+Input: nums = [0,2,3], k = -5, limit = 12
+Output: -1
+Explanation:
+A subsequence with an alternating sum of exactly -5 does not exist.
+
+Example 3:
+
+Input: nums = [2,2,3,3], k = 0, limit = 9
+Output: 9
+Explanation:
+The subsequences with an alternating sum of 0 are:
+
+[2, 2]
+
+Alternating Sum: 2 - 2 = 0
+Product: 2 * 2 = 4
+
+
+[3, 3]
+
+Alternating Sum: 3 - 3 = 0
+Product: 3 * 3 = 9
+
+
+[2, 2, 3, 3]
+
+Alternating Sum: 2 - 2 + 3 - 3 = 0
+Product: 2 * 2 * 3 * 3 = 36
+
+
+
+The subsequence [2, 2, 3, 3] has the greatest product with an alternating sum equal to k, but 36 > 9. The next greatest product is 9, which is within the limit.
+
+ 
+Constraints:
+
+1 <= nums.length <= 150
+0 <= nums[i] <= 12
+-10^5 <= k <= 10^5
+1 <= limit <= 5000
+
+### Format: You will use the following starter code to write the solution to the problem and enclose your code within delimiters.
+```python
+class Solution:
+    def maxProduct(self, nums: List[int], k: int, limit: int) -> int:
+        
+```
+
+
+
+PLAN:
+Use dynamic programming over the processed prefix, subsequence length parity, alternating sum, and capped product. Since nums[i] <= 12 and n <= 150, the alternating sum range is at most ±1800, so represent all achievable sums for each product state as a Python integer bitset. Keep product states 0..limit plus one overflow state limit+1; multiplying by 0 resets product to 0, multiplying by a positive number caps overflow at limit+1. For each number, skip it or append it: from even parity shift sums +x and flip to odd, from odd parity shift sums -x and flip to even, updating product state via precomputed transition. This tracks non-empty subsequences only by seeding the first element separately, avoiding the empty subsequence. At the end scan product states from limit down to 0 and return the first whose bitset contains k; if none, return -1.
+
+NOTES:
+
+## ideation
+The core difficulty is that the subsequence choice couples three things at once: order, selected-length parity, and a multiplicative objective under a cap. The alternating sum depends on whether the next chosen element lands at an even or odd position in the chosen subsequence, so parity must be tracked. The product is not additive, but the limit is small, so product can be discretized. The trickiest parts are the special behavior of zero and overflow: a product that exceeds the limit is not necessarily dead if a later zero resets it to zero; product zero is absorbing for all later positive values; and the empty subsequence must not be counted even though it would naturally have sum zero and a neutral product.
+
+Useful bounds make a DP feasible: the total sum of all numbers is at most 150 * 12 = 1800, so any alternating sum lies in a range of width at most 3601. The product only needs states from 0 through limit, plus one overflow state meaning “greater than limit.” A tempting but unsafe simplification is to keep only the maximum product for each parity and sum; that can fail because a smaller intermediate product may remain under the limit after future multiplications while a larger one overflows, and a zero product may become preferable if all positive products would overflow before a later zero.
+
+The supplied plan is strong: use parity and capped product as explicit DP dimensions, and represent the set of achievable alternating sums for each such state as a bitset. The main implementation risks are avoiding use of the current element more than once, seeding non-empty subsequences correctly, preserving overflow states until a zero can reset them, masking the sum bitset to the valid range, and keeping the per-element update fast enough in Python.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the full zero/positive decomposition solution in the starter code: early return -1 if abs(k) > sum(nums); positive-product DP over products 1..limit with parity and sum bitsets (ignore zeros and x>limit, use old/new arrays and active product lists, mask shifts to the valid sum range); zero-product feasibility DP with four sum bitsets (no-zero/zero, even/odd parity), where zeros flip parity and set the zero flag and positives shift sums by +/-x; return the largest positive product with sum k, else 0 if zero-feasible, else -1, and run sample/edge tests.

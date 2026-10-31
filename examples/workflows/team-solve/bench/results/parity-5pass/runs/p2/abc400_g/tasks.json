@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "desc": "Ideation: reduce to labeled selection, baseline top-2K, and parity correction with at most two operations.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the complete Python solution using the fixed baseline parity-correction algorithm: choose p_i as any maximizing attribute, take top 2K by M_i, compute baseline sum and parity mask, build top-two selected/unselected/recolor/swap candidates, compute min single or conflict-free pair correction, and output baseline sum minus min loss.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Verify the implementation on the provided samples (passed) and review edge cases (ties in M_i, multiple maximizing attributes, K=N/2) in the algorithm.",
+    "status": "done",
+    "result": ""
+  }
+]

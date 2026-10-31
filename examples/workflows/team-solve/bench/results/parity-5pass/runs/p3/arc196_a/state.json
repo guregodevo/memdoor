@@ -1,0 +1,60 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideate the structural reduction to top-half minus bottom-half scores and candidate data structures.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the complete Python solution using a two-heap MedianSplit class for the even-segment score, handle even N directly, and for odd N compute prefix/suffix scores for all even 0-indexed leftover positions, then verify it against the provided sample tests without hardcoding them.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the noncrossing-matching sign reduction with two heaps for prefix and suffix half-sums, paying close attention to parity and rebalancing.",
+  "Use a persistent segment tree or wavelet tree as an alternative range top-k sum method if heap maintenance becomes error-prone.",
+  "Develop an offline Fenwick/parallel-binary-search approach for prefix top-k sums as a fallback data-structure strategy.",
+  "Explore interval DP or general noncrossing matching formulations only to confirm that they are too slow or lack the needed optimization.",
+  "Build small brute-force validators and test greedy adjacent removal to identify counterexamples and verify the structural formula."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the complete Python solution using a two-heap MedianSplit class for the even-segment score, handle even N directly, and for odd N compute prefix/suffix scores for all even 0-indexed leftover positions, then verify it against the provided sample tests without hardcoding them.",
+ "iters": 1,
+ "task": "Implement the complete Python solution using a two-heap MedianSplit class for the even-segment score, handle even N directly, and for odd N compute prefix/suffix scores for all even 0-indexed leftover positions, then verify it against the provided sample tests without hardcoding them.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 3,
+  "total": 3,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

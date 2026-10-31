@@ -2,10 +2,13 @@ package providers
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"memdoor/pkg/llm"
 )
 
 // newDirectOpenRouterClient is the client for a gateway using the PERSON'S own
@@ -48,7 +51,39 @@ func keylessHTTPClient() *http.Client { return stallBoundClient(keylessStallAfte
 func stallBoundClient(stall, total time.Duration) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.ResponseHeaderTimeout = stall
-	return &http.Client{Timeout: total, Transport: t}
+	return &http.Client{Transport: totalBound{next: t, total: total}}
+}
+
+// totalBound bounds a request, its body read included, by total, unless the
+// request's own context carries the call's clock (llm.WithOwnClock).
+type totalBound struct {
+	next  http.RoundTripper
+	total time.Duration
+}
+
+func (b totalBound) RoundTrip(r *http.Request) (*http.Response, error) {
+	if llm.HasOwnClock(r.Context()) {
+		return b.next.RoundTrip(r)
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), b.total)
+	resp, err := b.next.RoundTrip(r.WithContext(ctx))
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	resp.Body = cancelOnClose{ReadCloser: resp.Body, cancel: cancel}
+	return resp, nil
+}
+
+type cancelOnClose struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (c cancelOnClose) Close() error {
+	err := c.ReadCloser.Close()
+	c.cancel()
+	return err
 }
 
 // retryAfter is how long a refusal asks the client to wait (the Retry-After

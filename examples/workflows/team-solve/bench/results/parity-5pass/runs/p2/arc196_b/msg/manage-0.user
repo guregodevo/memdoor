@@ -1,0 +1,125 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The main difficulty is that each tile has only a few local rotations, but the no-dead-end rule couples every shared edge, and the torus wrap makes the coupling cyclic. A brute force over tile rotations is impossible. The useful observation is that if we put a binary variable on every grid edge indicating whether an endpoint lies on that edge, then the local tile types become very simple parity conditions. For an A tile, the two opposite pairs of edge variables must differ; for a B tile, the two opposite pairs must be equal and one of the adjacent pairs must differ. The global matching condition is exactly that the two variables on each shared edge are the same variable. Therefore the whole problem can be viewed as a system of XOR equations over binary variables.
+
+The torus introduces cycle consistency: going around a row, the horizontal edge variables must return to their starting value, which forces the number of A tiles in that row to be even. Similarly each column must contain an even number of A tiles. If any row or column parity is odd, the answer is immediately zero. When all parities are even, the horizontal variables in a row are determined up to one free bit, and the vertical variables in a column are determined up to one free bit. The only remaining coupling is at B tiles, where the top edge variable and left edge variable must differ; this becomes one XOR equation between the corresponding row free bit and column free bit. Thus the counting problem can be reduced to counting parity assignments on a bipartite graph whose nodes are rows and columns and whose edges are B cells, with edge labels determined by prefix parities of A cells.
+
+This suggests several possible algorithmic directions. The most direct is to solve the bipartite XOR system with a parity union-find or DFS. Other directions are more general or exponential and are useful mainly as fallbacks or for small dimensions.
+
+Pitfalls common to the promising reduction: the prefix parity used in a B-cell label must be the parity before that cell in both the row and the column; column prefix parities must be updated only after the current row has used them; row and column parity checks must both be performed; isolated row/column nodes still contribute free bits; the DSU parity orientation must be handled carefully; and many small test cases require fast input and low per-case overhead.
+
+
+CURRENT TASK LIST:
+- [todo] Read all test cases; for each, maintain a column-prefix/parity array of length W and a running row prefix while scanning the H strings.
+- [todo] Implement a weighted DSU for H+W vertices (rows 0..H-1 and columns H..H+W-1) that supports find with xor-to-root and unite(u,v,label) enforcing x_u xor x_v = label, while tracking component count and inconsistency.
+- [todo] For every B cell, compute label = row_prefix_before_j xor col_prefix_before_i xor 1 and unite its row vertex with its column vertex; update row_prefix and col_prefix with 1 for A and 0 for B.
+- [todo] After finishing a row, mark the case invalid if the row prefix (row parity) is 1; after the grid, mark invalid if any column prefix (column parity) is 1.
+- [todo] If the case is invalid or DSU is inconsistent, output 0; otherwise output precomputed pow2[component_count] modulo 998244353, ensuring total work is O(sum HW + sum H+W).
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Try the parity/DSU reduction: maintain column prefix parities while scanning rows, add one signed edge for each B cell between its row node and column node, check row and column A-parities, and if consistent return 2 to the power of the number of connected components of the signed bipartite graph, modulo 998244353. Pitfalls: off-by-one in prefixes, updating column parities too early, forgetting isolated components, parity union-find sign errors, and memory/performance for many cases.
+- Try a frontier dynamic programming or transfer-matrix approach: sweep one dimension and keep the bits on the frontier as state, applying local tile constraints row by row, then take the trace or fix the boundary state to handle the torus. Pitfalls: state size exponential in the frontier width, torus wrap requires a trace rather than a simple initial-to-final sum, and it is not viable when both dimensions are large even though HW is only 1e6.
+- Try a general sparse linear-algebra approach over GF(2): build all XOR equations from the edge variables and compute the rank of the constraint matrix, with the answer 2 to the power of the nullity if consistent. Pitfalls: dense fill-in or cubic bitset complexity, much larger memory, and it ignores the special pairwise bipartite structure that makes union-find linear-time.
+- Try a six-vertex / fully-packed-loop / dimer-model interpretation: view A tiles as forced turns and B tiles as forced straights, then attempt to count loop configurations using Pfaffian or tensor-network methods. Pitfalls: arbitrary fixed A/B patterns and torus boundary conditions may not fit standard Pfaffian formulas, winding sectors can be missed, and the implementation is far more complex than needed.
+- Try a Fourier or inclusion-exclusion expansion over edge mismatches: enforce equality across shared edges using character sums and expand the product of local tile indicators. Pitfalls: the expansion can be exponential in the number of edges or cells, cancellations are subtle, and unless the XOR structure is exploited it will not meet the required linear-time bound.

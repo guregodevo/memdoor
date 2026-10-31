@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"memdoor/gateway/logs"
 	"memdoor/gateway/protocol"
@@ -112,6 +114,10 @@ const (
 	EventConnected    EventType = "connected"
 	EventDisconnected EventType = "disconnected"
 	EventError        EventType = "error"
+	// EventRefused: the gateway closed the socket as policy (1008: not your
+	// workspace, conversation or channel). Final: retrying gets the same
+	// answer, so the client stops and the Error carries the gateway's reason.
+	EventRefused EventType = "refused"
 )
 
 // DefaultOptions returns sensible defaults
@@ -262,13 +268,23 @@ func (c *Client) Listen() {
 
 // readPump reads messages from the WebSocket connection
 func (c *Client) readPump() {
+	var refusal error
 	defer func() {
 		if c.log != nil {
 			c.log.Debug("Read pump exiting")
 		}
 
 		// Emit disconnected (thread-safe), then hand off to the reconnect loop —
-		// a gateway restart must not leave a silently dead client.
+		// a gateway restart must not leave a silently dead client. A refusal
+		// is not a drop: reconnecting looped "lost / reconnected" every few
+		// seconds and never said why (2026-10-30).
+		if refusal != nil {
+			c.mu.Lock()
+			c.closed = true
+			c.mu.Unlock()
+			c.emit(Event{Type: EventRefused, Error: refusal, Timestamp: time.Now()})
+			return
+		}
 		c.emit(Event{Type: EventDisconnected, Timestamp: time.Now()})
 		if !c.isClosed() {
 			go c.reconnectLoop()
@@ -278,6 +294,11 @@ func (c *Client) readPump() {
 	for {
 		frameType, message, err := c.conn.ReadMessage()
 		if err != nil {
+			var ce *websocket.CloseError
+			if errors.As(err, &ce) && ce.Code == websocket.ClosePolicyViolation {
+				refusal = errors.New(printable(ce.Text))
+				return
+			}
 			// Check if it's a protocol error or expected close
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				if c.log != nil {
@@ -501,4 +522,15 @@ func (c *Client) IsConnected() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return !c.closed && c.conn != nil
+}
+
+// printable drops control characters: a close reason is the gateway's text,
+// printed in the person's terminal, and must not carry escape sequences.
+func printable(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, s)
 }

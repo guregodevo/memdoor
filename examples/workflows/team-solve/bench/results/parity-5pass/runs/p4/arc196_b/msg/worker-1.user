@@ -1,0 +1,114 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Model the presence of an endpoint on each grid edge as a binary variable and translate each tile type into XOR equations: an A cell forces its left/right endpoints to differ and its top/bottom endpoints to differ, while a B cell forces its left/right endpoints to be equal, its top/bottom endpoints to be equal, and the horizontal pair value to differ from the vertical pair value. The horizontal equations determine all horizontal edge variables in a row from one row base variable, and they are consistent exactly when the row contains an even number of A's; the vertical equations similarly require every column to contain an even number of A's. If any row or column parity is odd, the answer is 0. Otherwise, each B cell induces one parity constraint between its row base variable and its column base variable, with a label computed from prefix XORs of A's in that row and column. Use a parity DSU on H row nodes and W column nodes to check consistency and count connected components; the answer is 2^{components} modulo 998244353.
+
+NOTES:
+
+## ideation
+The central difficulty is that each tile has only a few local rotations, but the “no dead ends” condition couples neighboring tiles across the whole torus, so local choices are not independent. A clean way to view the problem is to replace rotations by binary variables indicating whether an endpoint lies on each side of a cell. The torus condition identifies the two side variables on every shared edge, leaving binary variables on the vertical and horizontal grid edges. A tile then imposes simple XOR relations: an A tile makes the two horizontal edge variables differ and the two vertical edge variables differ; a B tile makes the two horizontal variables equal, the two vertical variables equal, and the horizontal value opposite to the vertical value. Therefore the whole problem is a sparse linear system over GF(2), and the answer is either zero or a power of two.
+
+The main structural challenge is the wrap-around. Horizontal equations form cycles around each row, and vertical equations form cycles around each column. This gives immediate necessary parity conditions: every row and every column must contain an even number of A tiles. When those conditions hold, the horizontal variables in a row collapse to a single row degree of freedom plus a prefix parity of A’s, and the vertical variables in a column collapse to a single column degree of freedom plus a prefix parity of A’s. After this reduction, A tiles no longer impose cross-coupling; only B tiles remain, each giving one parity equation between the corresponding row degree of freedom and column degree of freedom. Counting valid placements then reduces to checking whether this bipartite parity system is consistent and counting its free components.
+
+Important pitfalls include: using the correct prefix parity when forming B-tile labels, namely the parity of A’s before the current cell rather than after it; handling the torus wrap so that the row/column cycle parity is checked; implementing parity union-find or parity propagation correctly; counting isolated row and column nodes as free components; not accidentally quotienting by a global flip, because flipping all row and column base variables gives a different valid pattern; keeping memory and time within limits for up to 10^6 total cells and many test cases; and being careful with small dimensions where parallel torus edges can create duplicate constraints. The modulo is prime, but the exponent is just the number of free parity components, so fast exponentiation or precomputed powers of two are sufficient.
+
+This analysis suggests the supplied plan is a strong candidate. Alternatives should either avoid the row/column reduction and solve a larger parity graph directly, use a different variable representation, or use a more general linear-algebra method.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement the complete Python solution: read all input with sys.stdin.buffer.read().split(); for each case, scan the grid once to compute row A-parities, column A-parities, and b_count, breaking early if a row parity is odd; if any row/column parity is odd output 0; if b_count == 0 output pow(2, H+W, 998244353); if b_count == H*W output 2; otherwise scan left-to-right maintaining row_pref and col_pref[j], and for each B cell unite row node i with column node H+j in a parity DSU with label w = 1 ^ row_pref ^ col_pref[j], updating row_pref and col_pref[j] on A cells; if any contradiction output 0, else output pow(2, components, 998244353). Use an iterative parity DSU (e.g. negative-parent sizes and xor-to-parent) with path compression and union by size, ensure isolated row/column nodes are counted as free components, and return the final program enclosed in the required delimiters.

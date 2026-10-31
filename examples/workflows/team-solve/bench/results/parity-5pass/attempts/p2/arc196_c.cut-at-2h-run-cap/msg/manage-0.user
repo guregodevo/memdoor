@@ -1,0 +1,93 @@
+PROBLEM:
+### Question
+There is a directed graph with 2N vertices and 2N-1 edges.
+The vertices are numbered 1, 2, \ldots, 2N, and the i-th edge is a directed edge from vertex i to vertex i+1.
+You are given a length-2N string S = S_1 S_2 \ldots S_{2N} consisting of N Ws and N Bs.
+Vertex i is colored white if S_i is W, and black if S_i is B.
+You will perform the following series of operations:
+
+- Partition the 2N vertices into N pairs, each consisting of one white vertex and one black vertex.
+- For each pair, add a directed edge from the white vertex to the black vertex.
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs such that the final graph is strongly connected.
+ Notes on strongly connectedness
+A directed graph is strongly connected if and only if it is possible to travel from any vertex to any vertex by following edges.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+
+Output
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs so that the final graph is strongly connected.
+
+Constraints
+
+
+- 1 \le N \le 2\times 10^5
+- S is a length 2N string consisting of N Ws and N Bs.
+- N is an integer.
+
+Sample Input 1
+
+2
+BWBW
+
+Sample Output 1
+
+1
+
+Vertices 2,4 are white, and vertices 1,3 are black.
+Let (u,v) denote an edge from vertex u to vertex v.
+If we pair up vertices as (2,1), (4,3), the final graph have the edges (1,2), (2,3), (3,4), (2,1), (4,3). In this case, for example, it is impossible to travel from vertex 3 to vertex 1 by following edges, so this graph is not strongly connected.
+If we pair up vertices as (2,3), (4,1), the final graph have the edges (1,2), (2,3), (3,4), (2,3), (4,1). This graph is strongly connected.
+Therefore, there is exactly 1 way to pair up the vertices that satisfies the condition.
+
+Sample Input 2
+
+4
+BWWBWBWB
+
+Sample Output 2
+
+0
+
+No matter how you pair up the vertices, you cannot satisfy the condition.
+
+Sample Input 3
+
+9
+BWWBWBBBWWBWBBWWBW
+
+Sample Output 3
+
+240792
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+<your analysis>
+
+
+CURRENT TASK LIST:
+- [todo] Parse input and precompute: if S[0]!='B' or S[-1]!='W', output 0. Otherwise scan S to form e[0..N] where e[b] is the number of W seen just before the (b+1)-th B and e[N]=N; mark valid[b] as true iff block b is nonempty (e[b] > e[b-1], with e[-1]=0) and e[b]>=b; precompute factorials and inverse factorials up to N.
+- [todo] Implement modular NTT convolution for 998244353 and a helper apply(l,m,ql,qr) that adds to add[b] the value sum_{c=l}^m H[c]*fact[e[b]-c] for b in [ql,qr]. Use direct loops when the product of range sizes is small; otherwise trim H[l..m] to its last nonzero, build A[u]=H[l+u], choose t_min=max(0, e[ql]-l-(lenA-1)) and t_max=e[qr]-l, build B[t]=fact[t] for t in [t_min,t_max], convolve, and add conv[e[b]-l-t_min] to add[b] for b with e[b]>=l.
+- [todo] Implement CDQ(l,r): if l==r, set H[l]=(fact[e[l]]-add[l])*invfact[e[l]-l] mod MOD if valid[l], else 0. Otherwise recurse on [l,mid], call apply(l,mid,mid+1,r), then recurse on [mid+1,r], keeping all values modulo MOD.
+- [todo] Run cdq(0,N), print H[N] modulo 998244353; handle N=1 and ensure all factorial indices stay within 0..N.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Direct combinatorial reduction to permutation prefix avoidance and compute H_b via recurrence with CDQ divide-and-conquer + NTT (the provided plan). Core difficulty: O(N^2) recurrence convolution; use offline convolution. Pitfalls: e_b may have equal values, denominator zero if e_b<b? Need handle impossible blocks; modulo factorial inverses; CDQ indexing; NTT implementation; memory; base conditions.
+- Inclusion-exclusion / rook polynomial / determinant? Count permutations avoiding a set of rectangle constraints. Could use transfer matrix? Maybe use Lindström-Gessel-Viennot? Or use hook-length / Young tableaux? Let's explore distinct algorithms.
+- CDQ divide and conquer with NTT for recurrence (as plan).
+- Use generating functions / Borel transform to turn recurrence into convolution and solve via formal power series? Let's see. Recurrence: e_b! = sum_{c<=b} H_c (e_b-c)!. Let f_b = H_b / (e_b-b)!? Or something. Define A_b = H_b / (e_b-b)! maybe. Then e_b!/(e_b-b)! = sum_{c<=b} H_c (e_b-c)!/(e_b-b)! = sum_{c<=b} A_c * ? H_c = A_c (e_c-c)!? Not simple because (e_b-c)! depends on e_b and c, not b-c. If e_b were b, standard convolution. But e_b arbitrary nondecreasing. However e_b-c = (e_b - e_c) + (e_c-c). Could write (e_b-c)! = (e_b-e_c)! * (e_b-e_c+1)_{e_c-c}? Not simple. CDQ uses NTT over what index? Need understand: recurrence sum_{c<b} H_c (e_b-c)!. For fixed b, term depends on c via H_c and factorial of e_b-c. If e_b is nondecreasing but not linear. How to NTT? The plan says CDQ over b using NTT to add factorial-convolution contributions from solved left halves to right halves. Need see how. For a divide step, left c in [l,mid], right b in [mid+1,r]. Need compute sum_{c in left} H_c (e_b-c)! for all b in right. Since e_b is nondecreasing, for c in left and b in right, e_b-c ranges? We can reindex by value x = e_b - c. Not a simple convolution over b-c unless e_b = b + constant? But e_b is # whites before (b+1)th black; e_b - b = # whites before next black minus black count? It can vary. Let's examine. e_b is nondecreasing, increments a_b = # whites between black b and b+1. e_b - b = cumulative (a_i -1). It can be negative? If e_b < b, then denominator (e_b-b)! invalid. But can e_b < b? e_b = # whites before (b+1)th black. Since total before (b+1)th black includes b blacks + e_b whites. It can be less than b if many blacks early. Example S=BBWW for N=2: black pos1,2; e1=0 (before black2 no whites), e1-b=-1. But S1=B, S2N=W? BBWW last W first B. Is answer? Let's test. Vertices 1B,2B,3W,4W. Pair whites 3,4 to blacks1,2. Edges path. Need strong? C after first black: black1 matched to future white => C=1. After second black: if black2 matched future white, C maybe 2 or 1; positive. At white3, if matched to black1 or2, C decreases; if both whites matched to blacks, C eventually 0 at end. Is it strongly connected? Pair (3,1),(4,2): edges 3->1,4->2. From 4 to1? 4->2, path 2->3->1 yes. From 3 to? 3->1 path to all. Strong? 1->... yes. So answer maybe 2? Let's see recurrence with e1=0 impossible? H1? e1=0,b=1 denominator (-1)! invalid. But H1 should? First bad c=1: first 1 black matched into first e1=0 whites impossible, so H1=0. H2: e2=2. total 2! =2. sum c<2 H1=0 => H2=2. Answer 2. So need handle e_b<b: H_b=0? For b=1 yes. But for b where e_b<b, can H_b be nonzero? H_b counts injective assignments of b columns into e_b rows; impossible if e_b<b, so H_b=0. In recurrence denominator (e_b-b)! invalid; set H_b=0. But in sum for later b, H_c=0. Good.

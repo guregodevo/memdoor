@@ -1,0 +1,1 @@
+arc196_c: 3/3 tests passed (samples)

@@ -1,0 +1,404 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+from bisect import bisect_left, bisect_right
+
+
+def solve():
+    input = sys.stdin.buffer.readline
+    first = input().split()
+    if not first:
+        return
+    N, M, Q = map(int, first)
+
+    l_arr = [0] * M
+    r_arr = [0] * M
+    idxs0 = []
+    idxs1 = []
+
+    for i in range(M):
+        s, t = map(int, input().split())
+        if s < t:
+            l_arr[i] = s - 1
+            r_arr[i] = t - 1
+            idxs0.append(i)
+        else:
+            l_arr[i] = t - 1
+            r_arr[i] = s - 1
+            idxs1.append(i)
+
+    # ans[j] (1-based person index j) = largest i < j such that (i, j) is bad.
+    ans = [0] * (M + 1)
+
+    # Same left endpoint or same right endpoint is always a bad pair.
+    last_l = [-1] * N
+    last_r = [-1] * N
+    for i in range(M):
+        l = l_arr[i]
+        r = r_arr[i]
+
+        prev = last_l[l]
+        if prev != -1 and prev > ans[i + 1]:
+            ans[i + 1] = prev
+        last_l[l] = i + 1
+
+        prev = last_r[r]
+        if prev != -1 and prev > ans[i + 1]:
+            ans[i + 1] = prev
+        last_r[r] = i + 1
+
+    last_l = last_r = None
+
+    sys.setrecursionlimit(1_000_000)
+
+    BASE = 128
+    size_global = 1 << (M - 1).bit_length() if M > 1 else 1
+    SHIFT = M.bit_length()
+    tree = [0] * (2 * size_global)
+    tmp = [0] * M
+    stamp = 0
+
+    def cdq(idxs, nl, nr, bl, br,
+            l_arr=l_arr, r_arr=r_arr, ans_arr=ans,
+            tree_arr=tree, tmp_arr=tmp,
+            blft=bisect_left, brgt=bisect_right,
+            SHIFT=SHIFT, BASE=BASE):
+        nonlocal stamp
+
+        if nr - nl <= BASE:
+            for jpos in range(nl, nr):
+                j = idxs[jpos]
+                best = ans_arr[j + 1]
+                if jpos > nl and best < idxs[jpos - 1] + 1:
+                    lj = l_arr[j]
+                    rj = r_arr[j]
+                    for ipos in range(jpos - 1, nl - 1, -1):
+                        i = idxs[ipos]
+                        vv = i + 1
+                        if vv <= best:
+                            break
+                        li = l_arr[i]
+                        ri = r_arr[i]
+                        if li < lj:
+                            if lj < ri and ri < rj:
+                                best = vv
+                                break
+                        elif lj < li:
+                            if li < rj and rj < ri:
+                                best = vv
+                                break
+                    ans_arr[j + 1] = best
+            return
+
+        mid = (nl + nr) >> 1
+        threshold = idxs[mid]
+
+        left_l = [x for x in bl if x < threshold]
+        right_l = [x for x in bl if x >= threshold]
+        left_r = [x for x in br if x < threshold]
+        right_r = [x for x in br if x >= threshold]
+        bl = br = None
+
+        max_left = idxs[mid - 1] + 1
+
+        # Type A: l_i < l_j < r_i < r_j
+        if left_l and right_l and left_l[0] < right_l[-1] and left_r[0] < right_r[-1]:
+            coords = []
+            last = -1
+            pos = -1
+            for x in right_l:
+                v = l_arr[x]
+                if v != last:
+                    coords.append(v)
+                    last = v
+                    pos += 1
+                tmp_arr[x] = pos
+
+            sz = 1 << (len(coords) - 1).bit_length() if len(coords) > 1 else 1
+            stamp += 1
+            st_base = stamp << SHIFT
+
+            c0 = coords[0]
+            clast = coords[-1]
+            clen = len(coords)
+
+            p = 0
+            llen = len(left_r)
+
+            for j in right_r:
+                rj = r_arr[j]
+                while p < llen:
+                    i = left_r[p]
+                    if r_arr[i] >= rj:
+                        break
+
+                    li = l_arr[i]
+                    ri = r_arr[i]
+                    if li < clast and ri > c0:
+                        if li < c0:
+                            a = 0
+                        else:
+                            a = brgt(coords, li)
+                        if ri > clast:
+                            b = clen
+                        else:
+                            b = blft(coords, ri)
+
+                        if a < b:
+                            vv = i + 1
+                            newv = st_base + vv
+                            ln = a + sz
+                            rn = b + sz
+                            while ln < rn:
+                                if ln & 1:
+                                    pack = tree_arr[ln]
+                                    if pack < st_base or vv > pack - st_base:
+                                        tree_arr[ln] = newv
+                                    ln += 1
+                                if rn & 1:
+                                    rn -= 1
+                                    pack = tree_arr[rn]
+                                    if pack < st_base or vv > pack - st_base:
+                                        tree_arr[rn] = newv
+                                ln >>= 1
+                                rn >>= 1
+
+                    p += 1
+
+                cur = ans_arr[j + 1]
+                if cur < max_left:
+                    node = tmp_arr[j] + sz
+                    best = 0
+                    while node:
+                        pack = tree_arr[node]
+                        if pack >= st_base:
+                            vv = pack - st_base
+                            if vv > best:
+                                best = vv
+                        node >>= 1
+                    if best > cur:
+                        ans_arr[j + 1] = best
+
+        # Type B: l_j < l_i < r_j < r_i
+        if left_l and right_r and left_l[-1] > right_l[0] and left_r[-1] > right_r[0]:
+            coords = []
+            last = -1
+            pos = -1
+            for x in right_r:
+                v = r_arr[x]
+                if v != last:
+                    coords.append(v)
+                    last = v
+                    pos += 1
+                tmp_arr[x] = pos
+
+            sz = 1 << (len(coords) - 1).bit_length() if len(coords) > 1 else 1
+            stamp += 1
+            st_base = stamp << SHIFT
+
+            c0 = coords[0]
+            clast = coords[-1]
+            clen = len(coords)
+
+            p = len(left_l) - 1
+
+            for j in reversed(right_l):
+                lj = l_arr[j]
+                while p >= 0:
+                    i = left_l[p]
+                    if l_arr[i] <= lj:
+                        break
+
+                    li = l_arr[i]
+                    ri = r_arr[i]
+                    if li < clast and ri > c0:
+                        if li < c0:
+                            a = 0
+                        else:
+                            a = brgt(coords, li)
+                        if ri > clast:
+                            b = clen
+                        else:
+                            b = blft(coords, ri)
+
+                        if a < b:
+                            vv = i + 1
+                            newv = st_base + vv
+                            ln = a + sz
+                            rn = b + sz
+                            while ln < rn:
+                                if ln & 1:
+                                    pack = tree_arr[ln]
+                                    if pack < st_base or vv > pack - st_base:
+                                        tree_arr[ln] = newv
+                                    ln += 1
+                                if rn & 1:
+                                    rn -= 1
+                                    pack = tree_arr[rn]
+                                    if pack < st_base or vv > pack - st_base:
+                                        tree_arr[rn] = newv
+                                ln >>= 1
+                                rn >>= 1
+
+                    p -= 1
+
+                cur = ans_arr[j + 1]
+                if cur < max_left:
+                    node = tmp_arr[j] + sz
+                    best = 0
+                    while node:
+                        pack = tree_arr[node]
+                        if pack >= st_base:
+                            vv = pack - st_base
+                            if vv > best:
+                                best = vv
+                        node >>= 1
+                    if best > cur:
+                        ans_arr[j + 1] = best
+
+        cdq(idxs, nl, mid, left_l, left_r)
+        left_l = left_r = None
+        cdq(idxs, mid, nr, right_l, right_r)
+        right_l = right_r = None
+
+    for idxs in (idxs0, idxs1):
+        k = len(idxs)
+        if k > 1:
+            if k <= BASE:
+                cdq(idxs, 0, k, idxs, idxs)
+            else:
+                bl = sorted(idxs, key=l_arr.__getitem__)
+                br = sorted(idxs, key=r_arr.__getitem__)
+                cdq(idxs, 0, k, bl, br)
+                bl = br = None
+        idxs.clear()
+
+    # Prefix maximum: pref[R] = largest left index of a bad pair ending at or before R.
+    for i in range(1, M + 1):
+        if ans[i] < ans[i - 1]:
+            ans[i] = ans[i - 1]
+
+    out = []
+    append = out.append
+    for _ in range(Q):
+        ql, qr = map(int, input().split())
+        append("Yes" if ans[qr] < ql else "No")
+
+    sys.stdout.write("\n".join(out))
+
+
+if __name__ == "__main__":
+    solve()
+
+NOTES:
+- **Prefix model:** For each person set `l = min(S,T)-1`, `r = max(S,T)-1`. If `S < T` (sign 0), require `P_l = P_r` and all interior `P_x > P_l`. If `S > T` (sign 1), require `P_l = P_r` and all interior `P_x < P_l`.
+- **Bad pair theorem:** A subset is infeasible exactly when it contains a pair with the same `l`, the same `r`, or the same sign and strict crossing: `l1 < l2 < r1 < r2` or `l2 < l1 < r2 < r1`. Same `l`/`r` creates a self-loop after contracting equalities; same-sign strict crossing creates a direct two-cycle. Without such pairs, equality components are paths and the strict inequality graph is acyclic, so integer values exist.
+- **Query reduction:** Maintain 1-based `ans[j]` as the largest `i < j` forming a bad pair with `j`. After prefix-maximizing, a query `[L, R]` is feasible iff `pref[R] < L`.
+- **Endpoint conflicts:** One pass over persons with `last_l` and `last_r` fills all same-left/same-right bad pairs in `O(M)`.
+- **Divide-and-conquer crossing detection:** Run separately for sign 0 and sign 1 on the subsequence of that sign, preserving original person order. Base blocks of size 128 are brute-forced by scanning earlier indices backwards and stopping at the first crossing, since that is the largest improving index.
+- **Cross-half sweeps:** For a node split into left/right by original index, keep lists sorted by `l` and by `r`. Type A handles `l_i < l_j < r_i < r_j`: sweep right half by increasing `r`, add left intervals with `r_i < r_j`, range-update compressed right-`l` coordinates in `(l_i, r_i)` with value `i+1`, and point-query `l_j`. Type B handles `l_j < l_i < r_j < r_i`: sweep right half by decreasing `l`, add left intervals with `l_i > l_j`, range-update compressed right-`r` coordinates in `(l_i, r_i)`, and point-query `r_j`.
+- **Segment tree trick:** The tree is an iterative range-max update / point-query structure. A global tree is reused for all sweeps. Each sweep gets a new stamp, and node values are packed as `(stamp << shift) + value`, where `shift = M.bit_length()`. Old stamps are simply smaller than the current stamp base, so no explicit clearing is needed; first touch overwrites, otherwise the maximum is kept. A temporary array stores compressed coordinates for right-side points to avoid bisecting during point queries.
+- **Complexity:** `O(M log M log M + M * 128 + Q)` time and `O(N + M)` memory. The code also uses min/max range skips and boundary shortcuts for bisect calls to reduce constant factors.
+
+
+CURRENT TASK LIST:
+- [done] Implement a standalone brute-force oracle and theorem validator for small cases comparing Bellman-Ford feasibility with the bad-pair condition.
+- [todo] Write the complete standalone Python solver using the compressed-coordinate CDQ specified in NEXT and make both samples pass.
+- [todo] Re-run stress tests against the brute-force oracle and targeted edge cases (touching endpoints, length-two intervals, opposite-sign crossings/nesting, shared endpoints, all same sign, reversed duplicates) and fix mismatches.
+- [todo] Benchmark the solver on worst-case N=4e5, M=Q=2e5; tune BASE/local bindings or switch to a different crossing-detection method if it is too slow.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: PASSED all 2 public samples -- the solution looks correct.] worker reported 'solved' on: Write a complete standalone Python program (output only code) that solves the pr. - **Prefix model:** For each person set `l = min(S,T)-1`, `r = max(S,T)-1`. If `S < T` (sign 0), require `P_l = P_r` and all interior `P_x > P_l`. If `S > T` (sign 1), require `P_l = P_r` and all inte
+
+PROPOSED NEW STEPS:
+(none)

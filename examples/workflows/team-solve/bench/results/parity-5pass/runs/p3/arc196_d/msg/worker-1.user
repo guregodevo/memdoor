@@ -1,0 +1,119 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+PLAN:
+Convert each person to a prefix-vertex interval [L_i,R_i] (L=min(S,T)-1, R=max(S,T)-1) and a sign (+ for S<T, - for S>T); the stamina conditions become P_{L_i}=P_{R_i} and all internal P_v strictly greater (for +) or smaller (for -) than that endpoint value. A set of people is infeasible exactly when it contains a bad pair: same-sign intervals that cross, intervals having the same left endpoint or the same right endpoint (with different other endpoint), or the same interval with opposite signs. Thus a query [L,R] is No iff there is a bad pair (i,j) with L<=i<j<=R, so it suffices to know for each i the smallest later j that forms a bad pair. Shared-endpoint bad pairs are found by the next occurrence of the same L or same R in input order. Same-sign crossing bad pairs are found by processing each sign and each orientation with a segment tree over one endpoint coordinate that stores the maximum of the other endpoint, reporting and deleting all previous intervals in the crossing rectangle. Take suffix minima of these earliest bad partners and answer each query by checking whether the suffix minimum is <= R.
+
+NOTES:
+
+## ideation
+The natural model is to introduce prefix potentials \(P_x\) for prefix positions \(x=0,\dots,N-1\), where town \(x+1\) corresponds to \(P_x\), and each road strength is the difference of adjacent potentials. For person \(i\), let \(l_i=\min(S_i,T_i)-1\), \(r_i=\max(S_i,T_i)-1\), and let the sign be positive if \(S_i<T_i\), negative if \(S_i>T_i\). The requirement becomes:
+- \(P_{l_i}=P_{r_i}\);
+- for every \(l_i<k<r_i\), if the sign is positive then \(P_k>P_{l_i}\), and if the sign is negative then \(P_k<P_{l_i}\).
+
+Thus a set of people is feasible exactly when the directed graph of strict inequalities, after contracting equal endpoint potentials, has no directed cycle. If it is acyclic, integer potentials can be assigned by topological ordering and then shifted so that \(P_0=0\).
+
+The core difficulty is not checking one set of constraints, but answering many contiguous-range queries over the \(M\) people. The supplied plan hinges on a pairwise characterization: a set is infeasible iff it contains one of a few forbidden pairs:
+- two intervals with the same left endpoint but different right endpoints;
+- two intervals with the same right endpoint but different left endpoints;
+- the same interval with opposite signs;
+- two same-sign intervals that cross, i.e. \(l_i<l_j<r_i<r_j\) or the symmetric case.
+
+Each of these pairs creates an immediate contradiction between an equality and a strict inequality, or a two-cycle of strict inequalities. The main correctness risk is whether a longer cycle of inequalities can exist without containing one of these forbidden pairs. The interval geometry should prevent that, but this pairwise reduction is the key assumption to verify.
+
+If the pairwise characterization is correct, then a query \([L,R]\) is “No” exactly when the index interval \([L,R]\) contains a forbidden pair. Then it suffices to compute, for each person index, the smallest later index that forms a forbidden pair with it, or equivalently the largest earlier index that forms a forbidden pair with it. Shared-endpoint conflicts are easy using next/last occurrence arrays. The nontrivial part is computing the nearest same-sign crossing partner among up to \(2\times10^5\) intervals. This is a 2D geometric problem with strict open rectangles and sign separation. Opposite-sign crossings are not conflicts, same-sign nested intervals are not conflicts, and touching at a right-left endpoint is not a conflict, while sharing a left-left or right-right endpoint is a conflict. Any data structure must respect these strict distinctions.
+
+
+CURRENT WORK:
+(none yet)
+
+YOUR TASK: Complete this task: Implement a small brute-force oracle and random/exhaustive tester to validate the forbidden-pair characterization: for tiny N and M, compare direct feasibility (union equalities + directed cycle check) against the condition that the range contains a bad pair (same left, same right, identical opposite, or same-sign strict crossing); if any mismatch, report a counterexample and stop.

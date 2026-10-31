@@ -1,0 +1,8 @@
+### PLAN
+Use dynamic programming over the processed prefix, subsequence length parity, alternating sum, and capped product. Since nums[i] <= 12 and n <= 150, the alternating sum range is at most ±1800, so represent all achievable sums for each product state as a Python integer bitset. Keep product states 0..limit plus one overflow state limit+1; multiplying by 0 resets product to 0, multiplying by a positive number caps overflow at limit+1. For each number, skip it or append it: from even parity shift sums +x and flip to odd, from odd parity shift sums -x and flip to even, updating product state via precomputed transition. This tracks non-empty subsequences only by seeding the first element separately, avoiding the empty subsequence. At the end scan product states from limit down to 0 and return the first whose bitset contains k; if none, return -1.
+
+### TASKS
+- Validate feasibility and set bitset parameters: if abs(k) > 12 * len(nums), return -1; set offset = 12 * len(nums), width = 2 * offset + 1, mask = (1 << width) - 1, overflow = limit + 1, and precompute trans[x][p] for x in 0..12 and p in 0..overflow.
+- Initialize non-empty DP arrays even[p] and odd[p] as zero bitsets for p in 0..overflow, where parity is the current subsequence length modulo 2.
+- For each x, copy old even/odd to new even/odd for skipping, seed the first-element state in new_odd with product 0 if x == 0 else min(overflow, x) and sum bit offset + x, then for every p with nonzero old_even[p] OR (old_even[p] << x) & mask into new_odd[trans[x][p]], and for every p with nonzero old_odd[p] OR (old_odd[p] >> x) into new_even[trans[x][p]].
+- After processing all numbers, scan p from limit down to 0 and return p if bit offset + k is set in even[p] or odd[p]; otherwise return -1.

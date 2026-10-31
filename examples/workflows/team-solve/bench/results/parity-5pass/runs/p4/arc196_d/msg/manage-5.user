@@ -1,0 +1,138 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+def update(p, x, stamp):
+    p += size
+    if ver[p] != stamp:
+        ver[p]=stamp; val[p]=0
+    if val[p] >= x: return
+    val[p]=x
+    p >>= 1
+    while p:
+        # compute max of children with current stamp else 0
+        lv = val[p<<1] if ver[p<<1]==stamp else 0
+        rv = val[p<<1|1] if ver[p<<1|1]==stamp else 0
+        nv = lv if lv>=rv else rv
+        if ver[p]==stamp and val[p] == nv: # maybe no change? But if old? 
+        if ver[p] != stamp or val[p] < nv:
+            ver[p]=stamp; val[p]=nv
+            p >>= 1
+        else:
+            # if val[p] >= nv, ancestors unchanged? Since this node's value didn't increase. But if ver old and val stale maybe nv=0? If ver old and nv=0, no need set? But if old val could be >0 from previous sweep; we treat as 0. If nv=0 and ver old, ancestors might have old values; but query ignores old ver. We don't need set to 0. If ver[p]==stamp and val[p]>=nv, no increase, stop.
+            break
+
+NOTES:
+- **Prefix model:** For person `(S,T)`, set `l=min(S,T)-1`, `r=max(S,T)-1`, sign `+` if `S<T`, else `-`. The requirement is `P_l=P_r`, and every interior prefix `P_x` (`l<x<r`) is strictly greater for `+` and strictly smaller for `-`.
+- **Bad-pair criterion:** A set is feasible iff it contains no pair with the same `l`, the same `r`, or the same sign and strictly crossing intervals. Same `l`/`r` creates a self-loop after contracting equalities; same-sign strict crossing creates a direct two-cycle. Without these, equality components are paths and the induced strict-inequality graph is acyclic, so integer values exist.
+- **Query reduction:** Let `f[j]` be the maximum `i<j` forming a bad pair. After prefix-maximizing, `f[R-1]` is the largest bad-pair left index ending at or before `R`. A query `[L,R]` is feasible iff `L-1 > f[R-1]`.
+- **Endpoint conflicts:** One scan over original person order with `last_l` and `last_r` catches all same-left/same-right pairs, regardless of sign.
+- **CDQ crossing computation:** For each sign separately, process persons in original index order. CDQ over index order; base blocks of size 128 are brute-forced. Cross-half pairs are handled by two sweeps:
+  - Type A: `l_i < l_j < r_i < r_j`. Sweep right half by increasing `l_j`, insert left intervals with `l_i < l_j` at coordinate `r_i`, query max in `[l_j+1, r_j-1]`.
+  - Type B: `l_j < l_i < r_j < r_i`. Sweep right half by decreasing `r_j`, insert left intervals with `r_i > r_j` at coordinate `l_i`, query max in `[l_j+1, r_j-1]`.
+- **Segment tree:** Iterative point-max/range-max over coordinates `0..N-1`. Each sweep uses a fresh timestamp; updates propagate maxima upward, and queries ignore nodes with old timestamps, avoiding explicit clearing.
+- **Stress and edge checks:** Compared against an O(M^2) bad-pair oracle and a brute-force feasibility oracle on small random cases. Targeted cases included length-two intervals, touching endpoints, opposite-sign crossings/nesting, shared endpoints of different roles, all-same-sign laminar sets, reverse-direction duplicate intervals, and single-person queries. No mismatches were found.
+- **Complexity:** `O(M log M log N + M*BASE + Q)` time and `O(N + M)` memory.
+
+
+CURRENT TASK LIST:
+- [done] Implement a standalone brute-force oracle and theorem validator for small cases comparing Bellman-Ford feasibility with the bad-pair condition.
+- [done] Replace the oracle with the final standalone solver: read stdin; compute l/r/sign for each person; compute f[j] from last_left/last_right endpoint scans and same-sign strict crossings using CDQ over each sign list (base brute; cross Type A/B sweeps with timestamped segment tree); build prefix f and answer queries Yes iff L-1 > f[R-1]; output Yes/No.
+- [done] Stress-test the final solver against the oracle on random small cases and targeted edge cases (touching endpoints, length-two intervals, opposite-sign crossings/nesting, shared endpoints, all same sign), and fix any mismatches.
+- [todo] Optimize/tune the current CDQ Python solver for maximum constraints (N=4e5, M=Q=2e5) using tuple/C sort, active min/max pruning, early-break segment tree, query skips, and BASE tuning; benchmark worst-case and, if necessary, switch to a different crossing-detection approach.
+
+LATEST WORKER RESULT: [SAMPLE TESTS: FAILED -- passed 0/2. The current solution is WRONG. First failing case: input='5 4 2\n4 2\n1 3\n3 5\n2 4\n1 3\n2 4\n' expected='Yes\nNo' got='<runtime error:   File "<scratch>/onecall/p4/arc196_d/solution.py", line 14\n    if ver[p] != stamp or val[p] < nv:\n    ^^\nInde>'. Fix the bug or, if this approach keeps failing, switch to a DIFFERENT approach.] worker EXCEEDED THE TOKEN LIMIT and was cut off before finishing task: Optimize/tune the current CDQ Python solver for maximum constraints (N=4e5, M=Q=. No complete solution was produced -- the approach was too long to finish in one call, so prefer a simpler or different approach next. Summary of its partial thinking: The attempt was pursuing a sign-separated CDQ divide-and-conquer over person indices to detect the only infeasible “bad pairs”: shared left endpoints, shared right endpoints, and same-sign strictly crossing intervals, with queries answered by a prefix-max `f`/`pref` criterion.
+
+It established the correctness argument for the bad-pair criterion and designed an optimized CDQ cross step using sorted `l`/`r` groups, min/max coordinate necessary-condition prunes, an early-break segment tree over left
+
+PROPOSED NEW STEPS:
+(none)

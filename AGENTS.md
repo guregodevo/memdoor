@@ -29,7 +29,10 @@ grep -r "duplicate_code" .    # Search before coding
 # needs no account: Greg "no pro story", "a phone can connect to daemon"). THE GATEWAY BINDS THE
 # NETWORK BY DEFAULT (0.0.0.0, Greg 2026-10-23 "default to be the network"): /remote links live on
 # the gateway's own address, memdoor.ai only when it is kept to localhost (MEMDOOR_HOST=localhost);
-# the first account is made from the machine itself only (gateway/setup_handlers.go). Pro = what memdoor.ai
+# the first account is made from the machine itself only (gateway/setup_handlers.go); ITS WORKSPACE IS THE
+# GATEWAY'S OWN (2026-10-30, gateway/gateway_owner.go): sign-up stays open, but only that workspace runs
+# turns on the gateway's keys and machine; gatewayMember / gatewayOperator, never a bare admin role (every
+# sign-up is admin of its own). docs/architecture/GATEWAY_AND_DOORS.md "The gate on every door". Pro = what memdoor.ai
 # hosts: the relay for a gateway behind a laptop's NAT, the hosted workflow state (mario-state,
 # 2026-10-05), and next the box itself (Greg: "the pro story will be the self host").
 # A seat NEVER supplies a model key (Greg 2026-10-04) — always the user's key;
@@ -188,7 +191,7 @@ grep -r "duplicate_code" .    # Search before coding
 - See `~/.memdoor/workspace` for bootstrap files (AGENTS.md, SOUL.md, TOOLS.md, etc.) and agent workspace directories
 
 ## Workspace Resolution (CLI)
-The CLI auto-discovers the active workspace via this chain (first match wins): `-w` flag → `$MEMDOOR_WORKSPACE` env → `.memdoor/workspace` file walked up from cwd to `$HOME` → `workspace_id` in `~/.memdoor/config.json`. Use `memdoor workspace use <slug>` to pin a project dir, `memdoor workspace which` to confirm what would resolve. Most CLI examples in this file pass `-w` explicitly for clarity, but the flag is **optional** when discovery works.
+The CLI auto-discovers the active workspace via this chain (first match wins): `-w` flag → `$MEMDOOR_WORKSPACE` env → `.memdoor/workspace` file walked up from cwd to `$HOME` → `workspace_id` in `~/.memdoor/config.json`. Use `memdoor workspace use <slug>` to pin a project dir, `memdoor workspace which` to confirm what would resolve. A pin (file or config) naming a workspace the signed-in account doesn't own gives way to the account's own, said on stderr (`ownWorkspace`); a refused socket (1008) is final, and the window says why instead of reconnecting. Most CLI examples in this file pass `-w` explicitly for clarity, but the flag is **optional** when discovery works.
 
 ## Authentication
 - `memdoor setup` no longer creates default users (alice/quentin removed 2026-05-02). Provision the first admin via:

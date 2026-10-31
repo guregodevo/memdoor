@@ -1,0 +1,189 @@
+### CODE
+```python
+from typing import List
+import random
+from itertools import combinations
+
+
+class Solution:
+    def minOperations(self, nums: List[int], x: int, k: int) -> int:
+        n = len(nums)
+        if k == 0:
+            return 0
+
+        # Coordinate compression for values.
+        vals = sorted(set(nums))
+        rank = {v: i + 1 for i, v in enumerate(vals)}
+        ranks = [rank[v] for v in nums]
+        m = len(vals)
+
+        # Fenwick trees: one for counts, one for sums of actual values.
+        bit_cnt = [0] * (m + 1)
+        bit_sum = [0] * (m + 1)
+        max_pow = 1 << (m.bit_length() - 1)
+
+        def add(r: int, dc: int, ds: int) -> None:
+            while r <= m:
+                bit_cnt[r] += dc
+                bit_sum[r] += ds
+                r += r & -r
+
+        def prefix(r: int):
+            c = 0
+            s = 0
+            while r > 0:
+                c += bit_cnt[r]
+                s += bit_sum[r]
+                r -= r & -r
+            return c, s
+
+        def kth(target: int) -> int:
+            """Return the smallest 1-indexed rank whose prefix count >= target."""
+            idx = 0
+            bit = max_pow
+            while bit:
+                nxt = idx + bit
+                if nxt <= m and bit_cnt[nxt] < target:
+                    idx = nxt
+                    target -= bit_cnt[nxt]
+                bit >>= 1
+            return idx + 1
+
+        # Initialize the first window.
+        total_sum = 0
+        for i in range(x):
+            v = nums[i]
+            add(ranks[i], 1, v)
+            total_sum += v
+
+        num_windows = n - x + 1
+        costs = [0] * num_windows
+        median_rank = (x + 1) // 2  # lower median, 1-indexed
+
+        # Compute cost for every length-x window.
+        for start in range(num_windows):
+            r = kth(median_rank)
+            med = vals[r - 1]
+
+            left_cnt, left_sum = prefix(r)
+            right_cnt = x - left_cnt
+            right_sum = total_sum - left_sum
+
+            costs[start] = (
+                med * left_cnt - left_sum
+                + right_sum - med * right_cnt
+            )
+
+            # Slide the window.
+            if start < num_windows - 1:
+                out = nums[start]
+                add(ranks[start], -1, -out)
+                total_sum -= out
+
+                inn = nums[start + x]
+                add(ranks[start + x], 1, inn)
+                total_sum += inn
+
+        # DP:
+        # dp[t][i] = min cost to choose t non-overlapping windows
+        # inside the first i elements.
+        #
+        # Transition:
+        # dp[t][i] = min(dp[t][i - 1],
+        #                dp[t - 1][i - x] + cost[i - x])
+        #
+        # The second term takes the window ending at i - 1,
+        # which starts at i - x.
+        INF = 10 ** 30
+        prev = [0] * (n + 1)
+
+        for _ in range(1, k + 1):
+            cur = [INF] * (n + 1)
+            for i in range(1, n + 1):
+                best = cur[i - 1]
+                if i >= x:
+                    cand = prev[i - x] + costs[i - x]
+                    if cand < best:
+                        best = cand
+                cur[i] = best
+            prev = cur
+
+        return prev[n]
+
+
+def _brute_force(nums: List[int], x: int, k: int) -> int:
+    n = len(nums)
+    if k == 0:
+        return 0
+
+    costs = []
+    for s in range(n - x + 1):
+        window = nums[s:s + x]
+        med = sorted(window)[(x - 1) // 2]
+        costs.append(sum(abs(v - med) for v in window))
+
+    best = 10 ** 30
+    for combo in combinations(range(n - x + 1), k):
+        ok = True
+        for a, b in zip(combo, combo[1:]):
+            if a + x > b:
+                ok = False
+                break
+        if ok:
+            total = 0
+            for idx in combo:
+                total += costs[idx]
+            if total < best:
+                best = total
+
+    return best
+
+
+if __name__ == "__main__":
+    sol = Solution()
+
+    # Provided examples.
+    assert sol.minOperations([5, -2, 1, 3, 7, 3, 6, 4, -1], 3, 2) == 8
+    assert sol.minOperations([9, -2, -2, -2, 1, 5], 2, 2) == 3
+
+    # Small deterministic edge cases.
+    assert sol.minOperations([1, 2, 3], 3, 1) == 2
+    assert sol.minOperations([1, 1, 1, 1], 2, 2) == 0
+    assert sol.minOperations([-1000000, 1000000], 2, 1) == 2000000
+
+    # Randomized brute-force validation.
+    random.seed(0)
+    for _ in range(300):
+        n = random.randint(2, 12)
+        x = random.randint(2, n)
+        max_k = min(15, n // x)
+        k = random.randint(1, max_k)
+        nums = [random.randint(-5, 5) for _ in range(n)]
+
+        expected = _brute_force(nums, x, k)
+        got = sol.minOperations(nums, x, k)
+        assert got == expected, (nums, x, k, expected, got)
+
+    print("All tests passed")
+```
+
+### NOTES
+- **Problem decomposition:** The task separates into computing the minimum cost to make each length-x window constant, then selecting k non-overlapping windows with minimum total cost.
+- **Window cost:** For a fixed window, the minimum number of unit changes to make all elements equal is the sum of absolute deviations to a median. For even length, the lower median is sufficient because any median in the middle interval gives the same minimum cost.
+- **Fenwick approach:** Coordinate-compress all values. Maintain two Fenwick trees over the current sliding window: one for counts and one for sums of actual values. This avoids lazy-deletion heap pitfalls and supports negative values naturally.
+- **Median rank:** Use 1-indexed lower median rank `(x + 1) // 2`. For x=2 this is rank 1, for x=3 rank 2, for x=4 rank 2.
+- **Cost formula:** If `med` is the median, let `left_cnt` and `left_sum` be the count and sum of values with rank <= median rank. Then cost is `med * left_cnt - left_sum + (total_sum - left_sum) - med * (x - left_cnt)`. Including all values equal to the median on the left is safe because their contribution is zero.
+- **Fenwick kth:** Binary lifting over the count tree finds the smallest rank whose prefix count reaches the median rank. The highest power of two is precomputed as `1 << (m.bit_length() - 1)`.
+- **Sliding window:** Initialize the first x elements, compute cost, then remove `nums[start]` and add `nums[start + x]`. Update both Fenwick trees and `total_sum` in one combined update loop for speed.
+- **Selection DP:** Let `dp[t][i]` be the minimum cost to choose t non-overlapping windows inside the first i elements. Transition is `dp[t][i] = min(dp[t][i - 1], dp[t - 1][i - x] + cost[i - x])`. The second term takes the window ending at index `i - 1`, starting at `i - x`, and requires previous windows to lie entirely before `i - x`.
+- **At least k vs exactly k:** All window costs are nonnegative, so any solution with more than k windows can drop extra windows without increasing cost. Therefore minimizing exactly k windows is equivalent to minimizing at least k windows.
+- **Memory:** Use two DP rows of length `n + 1`, giving O(n) memory. The cost array has length `n - x + 1`.
+- **Complexity:** Coordinate compression is O(n log n). Sliding median costs are O(n log n). DP is O(k n), with k <= 15. Overall O(n log n + k n), suitable for n up to 1e5.
+- **Edge cases handled:** x = n, k = 1, all equal values, negative values, duplicate medians, even window length, adjacent non-overlapping windows, and large costs using a large INF.
+- **Tests:** The program checks the two provided examples, several deterministic edge cases, and 300 small random tests against a brute force that enumerates combinations of window starts and verifies non-overlap.
+
+### NEXT
+- none
+
+### STATUS
+solved

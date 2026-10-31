@@ -1,0 +1,122 @@
+TASK: Implement the complete Python solution using the recurrence H[b] = (fact[e[b]] - sum_{c<b} H[c]*fact[e[b]-c]) * invfact[e[b]-b] mod 998244353, where e[b] is the number of W before the (b+1)-th B with e[N]=N, and H[b]=0 unless b>0, e[b]>=b, and e[b]>e[b-1]. Early-exit with 0 if S[0]!='B' or S[-1]!='W'. Compute H[0..N] by CDQ divide-and-conquer over b with a leaf threshold (e.g. 64) and a global sorted list of nonzero H indices. In apply(l,m,ql,qr), add contributions only to valid b in [ql,qr]; use direct loops when nonzero_count*valid_count is small, otherwise NTT-convolve H[c0..c1] with fact[t_min..t_max], where c0/c1 are the first/last nonzero H in [l,m], t_min=max(0, e[first_valid_b]-c0-(c1-c0)), t_max=e[last_valid_b]-c0, and query conv[e[b]-c0-t_min]. Include a correct fast NTT for 998244353 and print H[N].
+
+CUT-OFF ATTEMPT:
+We need solve programming problem. Need output code and notes. Need deeply analyze. We have plan and task. Need implement Python solution. Need ensure correctness, performance N up to 2e5, mod 998244353. Need derive recurrence and CDQ NTT. Let's reason thoroughly.
+
+Problem: directed path 1->2->...->2N. Add N edges from each white to matched black. Count perfect matching between W and B such that final graph strongly connected.
+
+Plan says: base path gives reachability smaller to larger. Strongly connected iff 2N can reach 1, forcing S1=B, S2N=W. For matching, C_k = number of added edges from white > k to black <= k. Strong connectivity equivalent C_k>0 for every 1<=k<2N. First return of C to 0 at full prefix. Group white vertices by b = number of black vertices before them. e_b = number of white vertices before (b+1)-th black vertex, e_N=N. Desired answer H_N, recurrence H_b = (e_b! - sum_{c<b} H_c (e_b-c)!)/(e_b-b)! for valid b. Need compute H[0..N] by CDQ.
+
+Need verify recurrence and definitions. Let's derive to ensure no off-by-one.
+
+Vertices 1..2N. S_i W/B. Path edges i->i+1. Added edges W->B. Strongly connected: since path edges only forward, to go from larger to smaller need added backward edges. It suffices 2N reaches 1? If 2N can reach 1, then any i can reach 2N via path, then 1, then any j via path. Yes.
+
+Consider prefix cut k: edges crossing from >k to <=k are added edges W in (k+1..2N) to B in (1..k). Path edges cross only <=k to >k. For 2N to reach 1, for every k, there must be at least one crossing edge from suffix to prefix? Actually to cross from suffix k+1..2N to prefix 1..k at some point, need an added edge from >k to <=k. If none, no path from any suffix vertex to prefix. Conversely if for every k there is at least one such edge, does 2N reach 1? Need maybe yes? Let's check: define C_k = # added edges from W>k to B<=k. If C_k>0 for all k<2N, then from 2N can follow path to some W? Wait 2N may not be white? But if S2N=W forced. To cross cut k, need an added edge from a white vertex >k to black <=k. But can we reach that white vertex from 2N? Since path goes forward only, from 2N cannot reach smaller white >k if white <2N. Hmm! Strong connectivity condition not simply C_k>0? Let's examine.
+
+Base path edges i->i+1. From 2N, can only go to 2N (no outgoing path) plus added edge if 2N is white to some black. So to reach 1, first step must be added edge from 2N (if W) to some black b. Then from b can path forward to ... Need eventually cross cuts. The condition C_k>0 for all k maybe necessary but not sufficient? Let's test sample1 N=2 S=BWBW: vertices 1B,2W,3B,4W. Pair (2,3),(4,1): added 2->3 (forward), 4->1 (backward). C_1: W>1 to B<=1: 4->1 yes. C_2: W>2 to B<=2: 4->1 yes. C_3: W>3 to B<=3: 4->1 yes. Strong yes. Pair (2,1),(4,3): C_1: 2->1 yes; C_2: W>2 to B<=2? 4->3 no (3>2), 2 not >2 =>0, not strong. OK.
+
+But consider S=BWBW, pair (2,1),(4,1) impossible matching? black 1 used twice no.
+
+Need prove C_k>0 all k sufficient? Suppose C_k>0 for all k. From 2N (must be W) choose added edge to black b1 <=? Since C_{2N-1}>0, there is edge from W=2N? Actually W>2N-1 only vertex 2N, so C_{2N-1} counts added edge from 2N to B<=2N-1. Thus 2N has edge to some black b1<2N. Then from b1 path forward. Need reach 1. Consider current position x. If x=1 done. If x>1, need cross cut x-1? We are at x, can path forward to some white y>=x with added edge to black <=x-1? C_{x-1}>0 gives some white >x-1 to black <=x-1, but white may be <x? Wait >x-
+...[middle omitted]...
+MOD` global. OK.
+
+Now, let's think about if in `apply`, `mod=MOD` local. OK.
+
+Now, let's consider if in `solve`, `mod=MOD` local. OK.
+
+Now, let's think about if in naive, `mod=MOD` local. OK.
+
+Now, let's consider if final code's `print(H[M] % MOD)` uses global MOD. OK.
+
+Now, let's think about if in early exit, we don't consume S? We read S before. OK.
+
+Now, let's consider if input N line may have spaces, int(strip). OK.
+
+Now, let's think about if S line may be very long, strip O(N). OK.
+
+Now, let's consider if in scan, `if b <= N` always true for B count up to N. Could omit, but safe.
+
+Now, let's think about if `e[N]=N` after scan, but e[N] maybe previously set if b=N+1? no.
+
+Now, let's consider if `w` at end N, but not used. OK.
+
+Now, let's think about if valid list building uses `e[b-1]` for b=1, e[0] set. If S1=B, e0=0. If S1 not B early. OK.
+
+Now, let's consider if `e[b] > e[b-1]` for b where e[b-1] maybe 0 and e[b]=0, false. Good.
+
+Now, let's think about if `e[b] >= b` for b=N, e[N]=N true. Good.
+
+Now, let's consider if M could be less than N, compressed. OK.
+
+Now, let's think about if in CDQ, `val` length M+1, indices 1..M. OK.
+
+Now, let's consider if in apply, `ql,qr` within 1..M. solve calls with mid+1<=r. OK.
+
+Now, let's think about if in solve leaf, `for j in range(l,i)` when l=i, empty. OK.
+
+Now, let's consider if in solve leaf, `append=nonzero.append` local, but if H[i] nonzero, append. Good.
+
+Now, let's think about if in apply, `nz_list=nonzero` local, but nonzero may be appended later, not during apply. OK.
+
+Now, let's consider if in apply, `lo=bl(nonzero,l)` and `hi=br(nonzero,m)`. If nonzero list is empty, lo=hi=0. OK.
+
+Now, let's think about if in apply, `c0=B_l[nz_list[lo]]` when lo==hi? returned. OK.
+
+Now, let's consider if in apply, `hi-1` valid. OK.
+
+Now, let's think about if in direct branch general, `for k in range(nz): s -= hj_list[k] * fact_l[ei - bj_list[k]]`. If `ei - bj_list[k]` negative, list index from end. But impossible. OK.
+
+Now, let's consider if in NTT branch, `A[B_l[c]-c0]` index maybe negative? c>=c0, no.
+
+Now, let's think about if in NTT branch, `F[:Mlen] = fact_l[t_min:t_max+1]` if `t_min` > `t_max`? Mlen<=0 return. OK.
+
+Now, let's consider if in NTT branch, `n` maybe 0? Mlen>0, bit_length. OK.
+
+Now, let's think about if in NTT branch, `ntt(A)` and `ntt(F)` modify lists. Good.
+
+Now, let's consider if in NTT branch, after pointwise, `del F`, then `intt(A)`. Good.
+
+Now, let's think about if in NTT branch, `base_idx=c0+t_min`, query idx. If t_min clipped? ok.
+
+Now, let's consider if in NTT branch, `A[idx]` maybe not the contribution if idx < L-1? For first i idx=L-1. For later idx increases by E increments (>=1). So idx>=L-1. Good.
+
+Now, let's think about if in NTT branch, `idx` could skip some values, but A has all. OK.
+
+Now, let's consider if in NTT branch, `val_l[i] = (val_l[i] - A[idx]) % mod`. If A[idx] is contribution from left nonzero. Good.
+
+Now, let's think about if in apply direct, we update val for all i in right, including those that may later be in left of a sub-apply? Yes, val accumulates all previous contributions. Good.
+
+Now, let's consider if in solve, after apply left->right, val for right includes left contributions. Then solve right may apply its left->right, adding more. Good.
+
+Now, let's think about if in solve, val for left indices after solve left not updated with internal contributions, but not needed. Good.
+
+Now, let's consider if in leaf, val for i includes contributions from c<l, but not c in [l,i-1]. We sum. Good.
+
+Now, let's think about if in leaf, after computing H[i], we don't update val[i+1] with H[i]; direct sum for i+1 will include H[i]. Good.
+
+Now, let's consider if in leaf, H[i] could be used in apply after leaf for right segments. nonzero appended. Good.
+
+Now, let's think about if in apply, `nonzero` list includes H from left leaf and earlier. Good.
+
+Now, let's consider if in CDQ, the order of appending nonzero in left solve is increasing, so bisect works. Good.
+
+Now, let's think about if in naive, no CDQ. OK.
+
+Now, let's consider if final code might be too long but acceptable.
+
+Now, let's think about if there is any issue with using `pow` for invfact[N] when N=0? N>=1. OK.
+
+Now, let's consider if in precompute rate2, `pow(G, (MOD - 1) >> (i + 2), MOD)` for i=29 exponent0, ok. For i maybe 30? range30 i0..29. OK.
+
+Now, let's think about if `max_log` could be >29 if N huge, but constraints no. If N=2e5, 18. OK.
+
+Now, let's consider if in `ntt`, `rtz[s]` for s up to half-1, half maybe 131072, rate_tz length131073. OK.
+
+Now, let's think about if in `intt`, `itz[s]` same.
+
+Now, let's consider if in `ntt`, `now` update after last s uses rtz[s] maybe out of range? s max w-1 <= half-1. OK.
+
+Now, let's think about if in `ntt`, for ph small, w small, s small. OK.
+
+Now, let's consider if in `ntt`, `p` can be large, `end=base+p` <= n? For ph=1, w=1, base0,p=n/2,end=n/2. For ph=h, w=n/2, base=(n/2-1)*1? shift=1, base=n-2,p=1,end=n-1? Wait for ph=h, p=1, shift=1, s max w-1=n/2-1, base=n-2, end=n-1. But we need process pairs (n-2,n-1)? What about pair (n-1?) Let's check ACL butterfly for n=4,h=2,ph=2,w=2,p=1,shift=1. s=0 base0 process (0,1); s=1 base2 process (2,3). end=base+p=3, range(2,3) i=2, j=3. Good. For n=8,ph=3,w=4,p=1,shift=1: s=0 base0 (0,1); s=1 base2 (2,3); s=2 base4 (4,5); s=3 base6 (6,7). end=7, range(6,7) i=6,j=7. Good. So end=base+p, range excludes end, j=i+p <= base+p = end, for i=end-1, j=end. For s last, end=n-1? Wait n=

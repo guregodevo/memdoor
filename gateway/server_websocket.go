@@ -136,6 +136,13 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	scope := strings.TrimSpace(r.URL.Query().Get("workspace"))
 
 	refuse := func(reason string) {
+		log.Warn("WebSocket refused",
+			slog.String("reason", reason),
+			slog.String("actor", actor),
+			slog.String("workspace", clip(scope, 64)))
+		// A close frame's reason holds 123 bytes; past that the frame is not
+		// sent and the client reads a drop, not a refusal.
+		reason = clip(reason, 123)
 		s.clientsMu.Lock()
 		delete(s.clients, reserveID)
 		s.clientsMu.Unlock()
@@ -153,7 +160,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 		ec := shared.GetExecutionContext(pctx)
 		if scope != "" && scope != ec.WorkspaceSlug && scope != ec.WorkspaceID {
-			refuse("not your workspace")
+			refuse("not your workspace (yours is " + ec.WorkspaceSlug + ")")
 			return
 		}
 		if scope == "" {
@@ -177,11 +184,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			// other (one user, one workspace, 2026-10-20); the socket would
 			// otherwise stream another account's conversation to anyone
 			// who knew the channel id.
-			s.clientsMu.Lock()
-			delete(s.clients, reserveID)
-			s.clientsMu.Unlock()
-			_ = conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "not your channel"), time.Now().Add(time.Second))
-			conn.Close()
+			refuse("not your channel")
 			return
 		}
 		sessionID = shared.NewChannelSessionID(scope, channelID)
@@ -694,4 +697,12 @@ func (s *Server) wsMayFollowChannel(ctx context.Context, actor, channelID string
 	ctx = shared.WithExecutionContext(ctx, &shared.ExecutionContext{ActorID: actorID, WorkspaceID: user.WorkspaceID})
 	ok, err := s.authzService.CanReadChannel(ctx, actorID, channel.ChannelID(channelID))
 	return err == nil && ok
+}
+
+// clip cuts s to at most n bytes without splitting a character.
+func clip(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return strings.ToValidUTF8(s[:n], "")
 }

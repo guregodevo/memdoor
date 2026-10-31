@@ -1,0 +1,150 @@
+PROBLEM:
+### Question
+There is a grid of H rows and W columns.
+The rows are numbered 0,1,\ldots,H-1 from top to bottom, and the columns are numbered 0,1,\ldots,W-1 from left to right.
+Let (i,j) denote the cell at row i and column j.
+You are given H strings S_0, S_1, \ldots, S_{H-1}, each of which is of length W and consists of A and B.
+In each cell, one of the following two types of tiles is placed.
+Let S_{ij} denote the (j+1)-th character (0 \le j \le W-1) of the string S_i. The type of tile placed in cell (i,j) is S_{ij}.
+
+- Type A: A single line segment is drawn on the tile’s surface, connecting the midpoints of two adjacent edges.
+
+
+
+- Type B: A single line segment is drawn on the tile’s surface, connecting the midpoints of two opposite edges.
+
+
+These tiles can be freely rotated. When focusing only on the pattern formed by the line segments, there are four ways to rotate a Type-A tile and two ways to rotate a Type-B tile. Therefore, if we distinguish placements only by the pattern of line segments, the number of ways to place the tiles is 4^a \times 2^b, where a is the number of Type-A tiles and b is the number of Type-B tiles.
+Among these ways, print the number, modulo 998244353, of ways such that the line segments on the tiles have no dead ends when viewing the grid as a torus.
+Here, "the line segments on the tiles have no dead ends when viewing the grid as a torus" if and only if the following two conditions are satisfied for every cell (i,j):
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the right edge of the cell (i,j)
+- the line segment drawn in the cell (i,(j+1)\bmod W), whose endpoint is the midpoint of the left edge of the cell (i,(j+1)\bmod W)
+
+
+- Both of the following exist, or neither of the following exists:
+- the line segment drawn in the cell (i,j), whose endpoint is the midpoint of the bottom edge of the cell (i,j)
+- the line segment drawn in the cell ((i+1)\bmod H,j), whose endpoint is the midpoint of the top edge of the cell ((i+1)\bmod H,j)
+
+
+
+For example, the following placement satisfies the condition:
+
+The following placement does not satisfy the condition. Specifically, while there is no line segment whose endpoint is the midpoint of the right edge of the tile in cell (0,2), there is a line segment whose endpoint is the midpoint of the left edge of the tile in cell (0,0), so the condition is not satisfied.
+
+You are given T test cases; solve each of them.
+
+Input
+
+The input is given from Standard Input in the following format:
+T
+case_1
+case_2
+\vdots
+case_T
+
+Each case is given in the following format:
+H W
+S_0
+S_1
+\vdots
+S_{H-1}
+
+Output
+
+For each test case, print the number, modulo 998244353, of placements that satisfies the condition, in separate lines.
+
+Constraints
+
+
+- 1 \le T \le 10^5
+- 2 \le H,W
+- HW\leq 10^6
+- S_i\,(0\le i\le H-1) are length-W strings consisting of A and B.
+- The sum of H W over all test cases is at most 10^6.
+- T, H, and W are integers.
+
+Sample Input 1
+
+3
+3 3
+AAB
+AAB
+BBB
+3 3
+BBA
+ABA
+AAB
+3 4
+BAAB
+BABA
+BBAA
+
+Sample Output 1
+
+2
+0
+2
+
+One valid placement for the first test case is shown in the following image:
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The core difficulty is that each tile has only a few local rotations, but the “no dead ends on a torus” condition couples every neighboring pair of cells and also wraps around both directions. A direct enumeration over all local rotations is exponential, so the problem needs to be converted into a global counting problem with a much smaller state space.
+
+A very useful way to look at the grid is to put a binary variable on every shared edge midpoint: 1 means a line endpoint is present there, 0 means it is not. The no-dead-end condition says that the two cells sharing an edge midpoint must agree on that variable. Then each tile type becomes a small set of XOR constraints on its four incident edge-midpoint variables:
+
+- For an A tile, exactly one horizontal edge and exactly one vertical edge are used. This means the two horizontal variables differ, and the two vertical variables differ.
+- For a B tile, either both horizontal edges are used or both vertical edges are used. This means the two horizontal variables are equal, the two vertical variables are equal, and one horizontal variable XOR one vertical variable equals 1.
+
+Thus the whole problem is a system of binary linear equations over GF(2). If the system is inconsistent, the answer is 0. If it is consistent, the number of solutions is a power of 2, because each connected component of the constraint graph contributes one free bit. The main challenge is to exploit the grid structure so that the constraint graph can be processed in near-linear time.
+
+A strong structural observation is that the horizontal constraints in each row form a cycle around the torus, and the vertical constraints in each column form a cycle. Summing the horizontal equations in a row shows that the row must contain an even number of A tiles; if so, all horizontal variables in that row are determined by one free row bit plus prefix parities of A tiles. Similarly, each column must contain an even number of A tiles, and all vertical variables in that column are determined by one free column bit plus prefix parities. After this reduction, A tiles impose no further constraints, while each B tile imposes one XOR equation between its row bit and its column bit. The label of that equation depends on the parity of A tiles to the left and above the B tile. The remaining problem is therefore a weighted XOR graph on H row nodes and W column nodes.
+
+Candidate approaches:
+
+1. Full edge-midpoint XOR graph.
+   Create one variable for every shared edge midpoint, for a total of 2HW variables. For each cell, add the local XOR equations for its type. Then use a parity DSU, also called weighted union-find, to check consistency and count connected components. If consistent, the answer is 2 raised to the number of components.
+   Pitfalls: This is conceptually simple but uses the largest graph: up to 2e6 variables and up to 3e6 equations in total. In Python, many union operations may be close to the time limit. Indexing the torus wrap-around must be done carefully. It is a good fallback or brute-force checker, but not necessarily the most efficient final approach.
+
+2. Row/column gauge reduction to a row-column XOR graph.
+   First check that every row and every column has an even number of A tiles. If not, output 0. If yes, introduce one free bit per row and one free bit per column. Horizontal edge variables are expressed using the row bit and the prefix parity of A tiles in that row; vertical edge variables are expressed using the column bit and the prefix parity of A tiles in that column. Each B tile then gives one XOR equation between its row bit and column bit. Use a parity DSU on H+W nodes, adding one edge per B tile. If consistent, the answer is 2 raised to the number of DSU components.
+   Pitfalls: The most likely bugs are off-by-one errors in prefix parities and in the label of the B-tile equation. The column prefix parity must represent A tiles strictly above the current row when processing top to bottom. The row prefix parity must represent A tiles strictly to the left of the current column. The final column parities must be checked after processing all rows. Isolated row and column nodes must be counted as free components; otherwise all-A cases will be undercounted. The parity DSU implementation must correctly maintain XOR-to-root values and update them when attaching roots.
+
+3. Orientation-bit XOR graph.
+   Instead of edge-midpoint variables, introduce variables directly for tile orientations: an A tile needs two independent bits, one for choosing left/right and one for choosing top/bottom; a B tile needs one bit, choosing horizontal pair versus vertical pair. The no-dead-end condition becomes equality of affine functions of neighboring orientation bits, which can again be written as XOR equations. Then use a parity DSU or BFS to count consistent assignments.
+   Pitfalls: This is closer to the original tile description, but the affine constants are easy to get wrong because A tiles have complemented endpoint expressions while B tiles do not. It also creates more variables and more boundary equations than the row/column reduction, so it is likely slower. It can be useful as an independent prototype for small grids.
+
+4. Transfer-matrix or dynamic programming over one dimension.
+   Process rows one by one and keep the vector of vertical edge states across the W columns as the DP state. For each row, the top vertical bits determine the bottom vertical bits through the vertical tile equations, and the horizontal equations plus B-tile cross constraints decide whether the row is valid and how many horizontal choices exist. The torus condition requires the final bottom state to match the initial top state.
+   Pitfalls: The state size is exponential in W, or exponential in H if processing columns. This is only feasible when the smaller dimension is very small. It is useful for verification on tiny random cases, but not for the full constraints. The torus wrap-around and the multiplicative weight for rows with no B tiles must be handled carefully.
+
+5. General sparse linear algebra, Pfaffian/FKT, or tensor-network contraction.
+   View the problem as counting solutions to a sparse GF(2) linear system, or as counting constrained 2-factors/Eulerian subgraphs on the torus grid. One could attempt sparse rank computation, determinant/Pfaffian methods, or tensor-network contraction.
+   Pitfalls: These methods are much heavier and less natural here. Sparse GF(2) rank computation is hard to implement efficiently at this scale. FKT/Pfaffian methods are designed mainly for perfect matchings on planar graphs, and the torus plus mixed A/B vertex constraints make a direct application nontrivial. Tensor-network contraction has exponential treewidth in the grid width. These approaches are overkill unless the simpler XOR-DSU reductions fail.
+
+
+CURRENT TASK LIST:
+- [todo] Parse each test case and scan the grid once, maintaining the current row A-parity and an array of column A-parities above the current row.
+- [todo] For every B cell, compute label = 1 xor row_prefix xor col_prefix[j] and union row vertex i with column vertex W+j in a weighted xor DSU, recording any contradiction.
+- [todo] For every A cell, toggle the current row prefix and the corresponding column prefix; after each row and after the case, check that row and column A-parities are even.
+- [todo] If any parity is odd or the DSU is inconsistent, output 0; otherwise output the precomputed power of two for the current number of DSU components, including isolated row/column vertices.
+- [todo] Implement fast buffered I/O, weighted DSU with path compression and union by size, and precompute powers of 2 modulo 998244353 up to 1e6+5 for O(sum HW alpha) total time.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- Try the row/column reduction with a parity DSU on H+W nodes as the primary implementation: stream rows, maintain column prefix parities, add one weighted edge per B tile, and check row/column parity.
+- Implement the full edge-midpoint parity DSU as a simpler fallback and as a small-grid cross-checker, using 2HW variables and all local XOR equations.
+- Prototype an orientation-bit XOR graph, with two bits per A tile and one bit per B tile, to independently verify the local endpoint-to-XOR translation on small cases.
+- For very small min(H,W), build a row-transfer DP over vertical edge states to validate the linear-algebra result, including torus wrap-around and weights for free row choices.
+- Keep general sparse GF(2) rank, Pfaffian/FKT, and tensor-network methods only as conceptual alternatives; do not pursue them unless the XOR-DSU reductions reveal a hidden nonlinearity or inconsistency.

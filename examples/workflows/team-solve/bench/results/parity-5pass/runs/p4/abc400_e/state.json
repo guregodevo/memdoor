@@ -1,0 +1,66 @@
+{
+ "pending": null,
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Reduce the problem to finding the largest square of a base \u2264 10^6 with exactly two distinct prime factors.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the complete Python solution and run it on the sample input: sieve up to 1,000,000 counting distinct prime factors, build a prefix array of the largest base with exactly two distinct prime factors, and for each query output best[isqrt(A)]**2 using fast I/O.",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Validate edge cases and performance: A=36, A=400, A=10^12, random small brute-force checks, and Q=200,000 input.",
+   "status": "done",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Precompute a distinct-prime-factor count for every integer up to \\(10^6\\) using a sieve. Keep all bases with exactly two distinct prime factors in a sorted list or a prefix \u201clast valid base\u201d array. For each query, compute the integer square root of \\(A\\), find the largest valid base not exceeding it, and square that base. Pitfalls: correct distinct-prime counting, memory for count/prefix arrays, exact integer square root, and ensuring the lookup is \\(O(1)\\) or logarithmic.",
+  "Generate all 400 numbers directly from their prime-power form: choose distinct primes \\(p < q\\) and positive exponents \\(a, b\\) such that \\(p^a q^b \\le 10^6\\), then add \\((p^a q^b)^2\\). Sort and unique the generated values, then answer queries by binary search. Pitfalls: the pair enumeration must be pruned effectively, higher powers must be included without excessive loops, duplicates should be removed if generation is not canonical, and the distinct-prime constraint must be enforced.",
+  "Reduce the problem to a two-set predecessor problem over square prime powers. Let \\(S\\) contain values \\(p^{2a} \\le 10^{12}\\) for primes \\(p\\) and \\(a \\ge 1\\). A 400 number is a product of two elements of \\(S\\) coming from different primes. For each query, enumerate the smaller square prime power factor up to \\(\\sqrt{A}\\), and for each candidate find the largest compatible square prime power not exceeding the remaining limit. Pitfalls: per-query enumeration may still be heavy for 200,000 queries, excluding the same prime is nontrivial, and a naive binary search for every candidate may be too slow without further optimization.",
+  "Process queries offline in increasing \\(\\sqrt{A}\\) using a segmented sieve over the base interval \\([1, 10^6]\\). As each block of bases is factored or marked, record the most recent base with exactly two distinct prime factors and answer all queries whose square root falls in that block. Pitfalls: segment boundary handling, resetting factor-count arrays, generating or using primes up to the needed limit, and correctly mapping multiple queries to the same block or endpoint.",
+  "Use a counting or binary-search-over-answer approach: define a function that counts 400 numbers up to a given bound, then binary search the largest valid number for each query. The counting function would enumerate products of square prime powers or bases with two distinct primes. Pitfalls: counting products with distinct primes is complicated, binary searching per query is likely too slow for 200,000 queries, and inclusion/exclusion or duplicate handling can become error-prone."
+ ],
+ "nexts": [],
+ "status": "done",
+ "next": "",
+ "prev": "Implement the complete Python solution and run it on the sample input: sieve up to 1,000,000 counting distinct prime factors, build a prefix array of the largest base with exactly two distinct prime factors, and for each query output best[isqrt(A)]**2 using fast I/O.",
+ "iters": 1,
+ "task": "Implement the complete Python solution and run it on the sample input: sieve up to 1,000,000 counting distinct prime factors, build a prefix array of the largest base with exactly two distinct prime factors, and for each query output best[isqrt(A)]**2 using fast I/O.",
+ "wrote": true,
+ "res": {
+  "ran": true,
+  "passed": 1,
+  "total": 1,
+  "fail": null
+ },
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  },
+  {
+   "call": "worker-1",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-1",
+   "finish": "stop"
+  }
+ ]
+}

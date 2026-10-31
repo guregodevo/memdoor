@@ -1,0 +1,9 @@
+### PLAN
+Model each shared edge midpoint as a binary variable indicating whether a line endpoint is present there, so valid placements are 2-factors of the torus grid with prescribed vertex types. For an A tile, the two incident selected edges must be one horizontal and one vertical, giving xor equations h_left+h_right=1 and v_up+v_down=1; for a B tile they must be opposite, giving h_left+h_right=0, v_up+v_down=0, and h_left+v_up=1. The horizontal equations separate by rows and the vertical equations by columns, so consistency requires every row and every column to contain an even number of A tiles, leaving one free bit per row and one per column. Parameterize horizontal edges by row bits plus prefix parities of A, and vertical edges by column bits plus prefix parities of A. Each B cell then imposes a linear xor equation between its row bit and column bit with label 1 xor row-prefix-before xor column-prefix-above; count solutions with a weighted DSU on the bipartite row-column graph. If any parity or DSU consistency check fails output 0; otherwise output 2^{number of DSU components} modulo 998244353.
+
+### TASKS
+- Parse each test case and scan the grid once, maintaining the current row A-parity and an array of column A-parities above the current row.
+- For every B cell, compute label = 1 xor row_prefix xor col_prefix[j] and union row vertex i with column vertex W+j in a weighted xor DSU, recording any contradiction.
+- For every A cell, toggle the current row prefix and the corresponding column prefix; after each row and after the case, check that row and column A-parities are even.
+- If any parity is odd or the DSU is inconsistent, output 0; otherwise output the precomputed power of two for the current number of DSU components, including isolated row/column vertices.
+- Implement fast buffered I/O, weighted DSU with path compression and union by size, and precompute powers of 2 modulo 998244353 up to 1e6+5 for O(sum HW alpha) total time.

@@ -1,0 +1,67 @@
+{
+ "pending": "worker-1",
+ "tasks": [
+  {
+   "id": 1,
+   "desc": "Ideation: formulate tile orientations as XOR constraints and choose parity DSU",
+   "status": "done",
+   "result": ""
+  },
+  {
+   "id": 2,
+   "desc": "Implement the cell-state parity DSU solver: A cells get variables P (N/S) and Q (E/W), B cells get one variable R; store hvar/vvar and flip (1 for A, 0 for B); for each horizontal torus edge k->right unite hvar[k] with hvar[right] using constant flip[k], and for each vertical torus edge k->down unite vvar[k] with vvar[down] using constant flip[k]; output 0 on contradiction, otherwise pow(2, component_count, 998244353)",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 3,
+   "desc": "Validate with brute force on tiny random grids (including H=2/W=2 and all-A odd cycle cases) and the sample",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 4,
+   "desc": "If validation fails, implement dual edge-state XOR system as an independent cross-check/fallback",
+   "status": "pending",
+   "result": ""
+  },
+  {
+   "id": 5,
+   "desc": "Finalize fast I/O and memory-efficient implementation for total HW 1e6 and T up to 1e5",
+   "status": "pending",
+   "result": ""
+  }
+ ],
+ "proposals": [
+  "Implement the cell-state XOR system with a weighted/parity union-find as the primary approach: Type-A cells get two variables, Type-B cells get one, and every horizontal/vertical torus adjacency gives one XOR equation.",
+  "Implement the dual edge-state XOR system as an independent cross-check: one variable per grid edge midpoint, with local parity constraints per cell, especially checking that Type-B cells impose all required constraints.",
+  "Try a signed two-layer graph propagation version: create vertical and horizontal port nodes, identify the two ports for Type-B cells, add signed adjacency edges, and count balanced components by BFS/DFS or parity DSU.",
+  "Consider sparse GF(2) linear algebra only as a fallback or verification method, being careful about memory and fill-in; it is less natural than pairwise parity constraints.",
+  "Use transfer-matrix or tensor-network contraction only for very small width/height sanity checks, not as the main solution, because the state space is exponential in the smaller dimension.",
+  "Explore loop/homology/FKT-style interpretations only as a theoretical alternative, since torus global cycles and model mapping are subtle and likely overkill.",
+  "Validate any implementation on tiny random grids by brute force, paying special attention to H=2 or W=2 cases where the torus has parallel edges."
+ ],
+ "nexts": [],
+ "status": "continue",
+ "next": "Implement the cell-state parity DSU solver: A cells get variables P (N/S) and Q (E/W), B cells get one variable R; store hvar/vvar and flip (1 for A, 0 for B); for each horizontal torus edge k->right unite hvar[k] with hvar[right] using constant flip[k], and for each vertical torus edge k->down unite vvar[k] with vvar[down] using constant flip[k]; output 0 on contradiction, otherwise pow(2, component_count, 998244353).",
+ "prev": "Implement the cell-state parity DSU solver: A cells get variables P (N/S) and Q (E/W), B cells get one variable R; store hvar/vvar and flip (1 for A, 0 for B); for each horizontal torus edge k->right unite hvar[k] with hvar[right] using constant flip[k], and for each vertical torus edge k->down unite vvar[k] with vvar[down] using constant flip[k]; output 0 on contradiction, otherwise pow(2, component_count, 998244353).",
+ "iters": 1,
+ "task": "Implement the cell-state parity DSU solver: A cells get variables P (N/S) and Q (E/W), B cells get one variable R; store hvar/vvar and flip (1 for A, 0 for B); for each horizontal torus edge k->right unite hvar[k] with hvar[right] using constant flip[k], and for each vertical torus edge k->down unite vvar[k] with vvar[down] using constant flip[k]; output 0 on contradiction, otherwise pow(2, component_count, 998244353).",
+ "wrote": false,
+ "res": null,
+ "stopped": null,
+ "calls": [
+  {
+   "call": "plan",
+   "finish": "stop"
+  },
+  {
+   "call": "ideate",
+   "finish": "stop"
+  },
+  {
+   "call": "manage-0",
+   "finish": "stop"
+  }
+ ]
+}

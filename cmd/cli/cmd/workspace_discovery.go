@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"unicode"
 
 	"memdoor/gateway/config"
 	"memdoor/pkg/shared"
@@ -262,4 +264,51 @@ func noWorkspaceErrorMessage(topName string) error {
 		"nothing is set up on this machine yet — `cd <your-project> && memdoor` sets it up on its first run (so does memdoor run).\n"+
 			"  already have one elsewhere? memdoor workspace use <slug>, or memdoor -w <slug> %s ...",
 		topName)
+}
+
+// ownWorkspace is the workspace a person's turns run in: their own. One
+// account has one workspace (2026-10-20) and the gateway closes a window's
+// socket on any other (2026-10-30), so a pin naming another — a
+// .memdoor/workspace or a config default written before — gives way to the
+// account's, said once on stderr. Without this a window from a directory
+// pinned in the multi-workspace days looped "connection lost / reconnected".
+// A -w or $MEMDOOR_WORKSPACE stays: the person typed it, and the refusal
+// says what to do.
+func ownWorkspace(c *Client, ws string) string {
+	_, source, pinned := resolveWorkspaceSlug()
+	if pinned && (source.kind == "flag" || source.kind == "env") {
+		return ws
+	}
+	var who struct {
+		User struct {
+			Email       string `json:"email"`
+			WorkspaceID string `json:"workspace_id"`
+		} `json:"user"`
+		Slug string `json:"workspace_slug"`
+	}
+	if err := c.GetJSON("/api/auth/whoami", &who); err != nil || !slugShape.MatchString(who.Slug) {
+		return ws
+	}
+	if ws == who.Slug || ws == who.User.WorkspaceID {
+		return ws
+	}
+	if ws != "" && pinned {
+		fmt.Fprintf(os.Stderr, "Workspace %q (%s) is not %s's: opening theirs, %q. `memdoor workspace use %s` updates the pin.\n",
+			ws, source, strings.Map(dropControl, who.User.Email), who.Slug, who.Slug)
+	}
+	workspaceSlug = who.Slug
+	c.workspaceSlug = who.Slug
+	return who.Slug
+}
+
+// slugShape is a workspace slug as the gateway's routes accept one
+// (server_lifecycle.go workspaceMiddleware): what the whoami answer must be
+// before it becomes this run's workspace and is printed.
+var slugShape = regexp.MustCompile(`^[A-Za-z0-9_\-]+$`)
+
+func dropControl(r rune) rune {
+	if unicode.IsControl(r) {
+		return -1
+	}
+	return r
 }

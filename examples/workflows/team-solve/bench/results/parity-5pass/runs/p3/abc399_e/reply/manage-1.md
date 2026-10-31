@@ -1,0 +1,6 @@
+### STATUS
+done
+### NEXT
+
+### TASKS
+- [done] Implement and verify the complete Python solution: read N,S,T; check consistency; build mapping; count changed; detect cycles; count isolated cycles; output 0, -1, or changed + isolated_cycles.

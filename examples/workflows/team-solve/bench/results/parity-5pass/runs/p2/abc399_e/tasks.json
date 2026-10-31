@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "desc": "Derive the functional-graph/token model and formula: answer C + closed nontrivial cycles, impossible only when a closed cycle exists and no spare label (image_count == 26).",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the complete Python solution with stdin/stdout and the formula above.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Verify samples and edge cases: S == T, inconsistent mapping, full-alphabet closed cycle (no spare), closed cycle with spare, non-closed cycle with incoming edge, multiple closed cycles.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Final review for O(N+26) complexity, cycle-detection correctness, and clean final code without hardcoded tests.",
+    "status": "done",
+    "result": ""
+  }
+]

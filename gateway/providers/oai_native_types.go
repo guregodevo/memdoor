@@ -64,6 +64,8 @@ type chatRequest struct {
 	// 2026-10-02 on gpt-5); one of the two is sent, never both.
 	MaxCompletionTokens int                `json:"max_completion_tokens,omitempty"`
 	Temperature         float64            `json:"temperature,omitempty"` // 0 = omit = provider default
+	TopP                float64            `json:"top_p,omitempty"`
+	TopK                int                `json:"top_k,omitempty"`
 	Tools               []chatTool         `json:"tools,omitempty"`
 	ToolChoice          string             `json:"tool_choice,omitempty"`
 	Stream              bool               `json:"stream"`
@@ -92,10 +94,8 @@ type chatChoice struct {
 		Content   string         `json:"content"`
 		Role      string         `json:"role"`
 		ToolCalls []chatToolCall `json:"tool_calls,omitempty"`
-		// Reasoning models (Qwen3, etc.) split output: thinking goes
-		// into reasoning_content, final answer into content. For some
-		// queries content comes back empty and the actual answer lives
-		// in reasoning_content. Fall back to it when content is empty.
+		// Reasoning stays separate from answer text. Workflow tasks may
+		// use it when the answer is empty; chat turns must not.
 		ReasoningContent string `json:"reasoning_content,omitempty"`
 	} `json:"message"`
 	FinishReason string `json:"finish_reason"`
@@ -166,8 +166,10 @@ type chatStreamChunk struct {
 	Error   *chatStreamError `json:"error,omitempty"`
 	Choices []struct {
 		Delta struct {
-			Content   string         `json:"content"`
-			ToolCalls []chatToolCall `json:"tool_calls,omitempty"`
+			Content          string         `json:"content"`
+			ReasoningContent string         `json:"reasoning_content,omitempty"`
+			Reasoning        string         `json:"reasoning,omitempty"`
+			ToolCalls        []chatToolCall `json:"tool_calls,omitempty"`
 		} `json:"delta"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
@@ -418,6 +420,7 @@ func convertOAIToAnthropicWithTools(choice chatChoice, usage chatUsage, model st
 		Type:       "message",
 		Role:       "assistant",
 		Content:    contentBlocks,
+		Thinking:   choice.Message.ReasoningContent,
 		StopReason: stopReason,
 		Model:      llm.Model(model),
 		Usage: llm.Usage{

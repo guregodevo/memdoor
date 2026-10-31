@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "desc": "Derive and select the telescoped one-dimensional DP recurrence that removes the segment-count dimension.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the O(n^2) telescoped DP in `Solution.minimumCost` and verify the two provided examples.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Validate the implementation against a brute-force partition checker on small random inputs, including edge case `n = 1`.",
+    "status": "done",
+    "result": ""
+  }
+]

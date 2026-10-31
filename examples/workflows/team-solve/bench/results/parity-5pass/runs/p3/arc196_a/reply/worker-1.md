@@ -1,0 +1,142 @@
+### CODE
+```python
+import sys
+from heapq import heappush, heapreplace
+
+
+class MedianSplit:
+    __slots__ = ("lo", "hi", "sum_lo", "sum_hi")
+
+    def __init__(self):
+        self.lo = []
+        self.hi = []
+        self.sum_lo = 0
+        self.sum_hi = 0
+
+    def add_pair(self, x, y, _heappush=heappush, _heapreplace=heapreplace):
+        lo = self.lo
+        hi = self.hi
+        s_lo = self.sum_lo
+        s_hi = self.sum_hi
+
+        if not lo:
+            if x <= y:
+                _heappush(lo, -x)
+                s_lo += x
+                _heappush(hi, y)
+                s_hi += y
+            else:
+                _heappush(lo, -y)
+                s_lo += y
+                _heappush(hi, x)
+                s_hi += x
+        else:
+            max_lo = -lo[0]
+            x_small = x <= max_lo
+            y_small = y <= max_lo
+
+            if x_small and y_small:
+                if x > y:
+                    x, y = y, x
+                _heappush(lo, -x)
+                s_lo += x
+                v = -_heapreplace(lo, -y)
+                s_lo += y - v
+                _heappush(hi, v)
+                s_hi += v
+            elif not x_small and not y_small:
+                if x > y:
+                    x, y = y, x
+                _heappush(hi, x)
+                s_hi += x
+                v = _heapreplace(hi, y)
+                s_hi += y - v
+                _heappush(lo, -v)
+                s_lo += v
+            else:
+                if x_small:
+                    _heappush(lo, -x)
+                    s_lo += x
+                    _heappush(hi, y)
+                    s_hi += y
+                else:
+                    _heappush(hi, x)
+                    s_hi += x
+                    _heappush(lo, -y)
+                    s_lo += y
+
+        self.sum_lo = s_lo
+        self.sum_hi = s_hi
+
+    def score(self):
+        return self.sum_hi - self.sum_lo
+
+
+def main():
+    data = list(map(int, sys.stdin.buffer.read().split()))
+    if not data:
+        return
+    n = data[0]
+    a = data[1:]
+    del data
+
+    if n & 1:
+        k = n // 2
+        suff = [0] * (k + 1)
+
+        ms = MedianSplit()
+        add_pair = ms.add_pair
+        score = ms.score
+        idx = 2 * k - 1
+        for i in range(k - 1, -1, -1):
+            add_pair(a[idx], a[idx + 1])
+            idx -= 2
+            suff[i] = score()
+
+        ans = suff[0]
+
+        del ms, add_pair, score
+        ms = MedianSplit()
+        add_pair = ms.add_pair
+        score = ms.score
+        idx = 0
+        pref = 0
+        for i in range(1, k + 1):
+            add_pair(a[idx], a[idx + 1])
+            idx += 2
+            pref = score()
+            val = pref + suff[i]
+            if val > ans:
+                ans = val
+
+        print(ans)
+    else:
+        ms = MedianSplit()
+        add_pair = ms.add_pair
+        idx = 0
+        for _ in range(n // 2):
+            add_pair(a[idx], a[idx + 1])
+            idx += 2
+        print(ms.score())
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### NOTES
+- **Modeling:** Each removal order corresponds to a noncrossing matching on original indices; for odd N one index is unmatched. A pair can be removed only after all indices between it are gone, so arcs are nested/disjoint, and any noncrossing matching can be removed by taking innermost pairs first.
+- **Even segment lemma:** For an even multiset of size 2k, the maximum score is f = sum of k largest values - sum of k smallest values. Upper bound: orient each pair from larger to smaller, giving k plus and k minus signs; any such signed sum is at most top-k minus bottom-k. Lower bound: color k largest plus and k smallest minus; repeatedly delete adjacent opposite colors. A balanced binary string always has an adjacent opposite pair, and deletion yields a noncrossing matching. Every pair has plus value >= minus value, so total equals f.
+- **Odd N split:** The final leftover has even 0-index (odd 1-index) because removing two elements before it changes its current position by -2, preserving parity, and final position is 0. No pair can cross it, so for N=2K+1 the answer is max over i=0..K of f(A[0:2i]) + f(A[2i+1:N]).
+- **MedianSplit invariant:** `lo` is a max-heap (negated) of the smaller half, `hi` a min-heap of the larger half, with equal sizes and all `lo` values <= all `hi` values. `score()` is `sum_hi - sum_lo`.
+- **Pair insertion:** `add_pair` is called only when the current multiset has even size. If empty, smaller goes to `lo`, larger to `hi`. Otherwise compare each value with `max(lo)`. If both go to `lo`, sort them, push the smaller, `heapreplace` with the larger, and move the evicted maximum to `hi`. If both go to `hi`, sort them, push the smaller, `heapreplace` with the larger, and move the evicted minimum to `lo`. If they split, push each to its side. This keeps the invariant with at most three heap operations in same-side cases.
+- **Indexing:** For odd N=2K+1, `suff[i]` stores f of suffix starting at 2i+1. Scan right to left: start with suffix length 0 at i=K, then add pairs (2i+1, 2i+2) for i=K-1..0. Prefix scan adds pairs (2i-2, 2i-1) for i=1..K and combines `pref + suff[i]`.
+- **Complexity:** O(N log N) time; each pair causes O(log N) heap work. Memory O(N) for the input and O(N/2) for the suffix scores; heaps hold O(N) elements.
+- **Edge cases and samples:** N=2 is one pair; N=3 checks both possible leftovers; all equal gives 0. Duplicates are safe because the half boundary may have equal values. Python integers handle the max sum ~1.5e14. Sample 1 gives 5, sample 2 gives 14 at i=0, sample 3 gives 0; no sample hardcoding.
+- **Pitfalls avoided:** Use even 0-index leftover positions; suffix starts are odd indices; maintain equal half sizes; do not let a boundary element move without updating sums; use `heapreplace` only on a nonempty heap.
+
+### NEXT
+none
+
+### STATUS
+solved

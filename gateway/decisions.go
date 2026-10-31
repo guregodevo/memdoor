@@ -15,7 +15,6 @@ import (
 
 	"memdoor/gateway/logs"
 	"memdoor/gateway/providers"
-	"memdoor/pkg/authorization"
 	"memdoor/pkg/decision"
 	"memdoor/pkg/decision/systemone"
 	"memdoor/pkg/message"
@@ -177,7 +176,7 @@ func (s *Server) installDecisions(db *sql.DB, messageService *message.Service) {
 	dlog().Info("Decision service installed for jgrep and decision_evaluate")
 	// The gate is always attached and consults decision_message_gate per
 	// message, so an admin can switch it on or off without a restart.
-	messageService.SetMessageGate(&decisionMessageGate{svc: svc, read: read})
+	messageService.SetMessageGate(&decisionMessageGate{svc: svc, read: read, ownChannel: s.isOwnChannel})
 	dlog().Info("Message gate attached", slog.Bool("enabled", isOn(read(settingDecisionGate))))
 }
 
@@ -197,6 +196,11 @@ func isOn(v string) bool {
 type decisionMessageGate struct {
 	svc  decision.Service
 	read func(key string) string
+	// ownChannel says whether a channel is the gateway's own workspace's:
+	// only there is the decision model (the owner's key) asked. A sign-up's
+	// every message spent the owner's decision calls until 2026-10-30, though
+	// its turns are refused anyway (isOwnWorkspace). nil: asked everywhere.
+	ownChannel func(ctx context.Context, channelID string) bool
 }
 
 func (g *decisionMessageGate) threshold() float64 {
@@ -215,6 +219,9 @@ func (g *decisionMessageGate) ShouldRespond(ctx context.Context, agentID shared.
 	mode := strings.ToLower(strings.TrimSpace(g.read(settingDecisionGate)))
 	shadow := mode == "shadow"
 	if !shadow && !isOn(mode) {
+		return false, false
+	}
+	if g.ownChannel != nil && !g.ownChannel(ctx, msg.ChannelID) {
 		return false, false
 	}
 	q, err := decision.Boolean(
@@ -329,8 +336,9 @@ func (s *Server) handleDecisionsEvaluate(w http.ResponseWriter, r *http.Request)
 		http.Error(w, `{"error": "POST only"}`, http.StatusMethodNotAllowed)
 		return
 	}
-	if authorization.GetActorID(r.Context()) == "" {
-		http.Error(w, `{"error": "Authentication required"}`, http.StatusUnauthorized)
+	// An evaluation spends the gateway's decision key: its own workspace's
+	// (any sign-up could until 2026-10-30).
+	if !s.gatewayMember(w, r) {
 		return
 	}
 	var in evaluateWire

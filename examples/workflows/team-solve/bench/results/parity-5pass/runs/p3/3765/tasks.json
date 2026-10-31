@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "desc": "Ideation and approach selection: use one-dimensional cut-path DP instead of the 2D exact-count DP.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 2,
+    "desc": "Implement the one-dimensional O(n^2) cut-path DP with prefix sums and the p>0 internal-cut penalty, returning dp[n] + k*totalCost.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 3,
+    "desc": "Verify correctness on the two examples, n=1, one-subarray, all-singletons, and small random brute-force partitions.",
+    "status": "done",
+    "result": ""
+  },
+  {
+    "id": 4,
+    "desc": "Finalize the solution in the provided starter code with Python integer arithmetic and O(n^2) runtime.",
+    "status": "done",
+    "result": ""
+  }
+]

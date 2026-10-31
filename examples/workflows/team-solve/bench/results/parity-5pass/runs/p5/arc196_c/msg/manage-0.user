@@ -1,0 +1,100 @@
+PROBLEM:
+### Question
+There is a directed graph with 2N vertices and 2N-1 edges.
+The vertices are numbered 1, 2, \ldots, 2N, and the i-th edge is a directed edge from vertex i to vertex i+1.
+You are given a length-2N string S = S_1 S_2 \ldots S_{2N} consisting of N Ws and N Bs.
+Vertex i is colored white if S_i is W, and black if S_i is B.
+You will perform the following series of operations:
+
+- Partition the 2N vertices into N pairs, each consisting of one white vertex and one black vertex.
+- For each pair, add a directed edge from the white vertex to the black vertex.
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs such that the final graph is strongly connected.
+ Notes on strongly connectedness
+A directed graph is strongly connected if and only if it is possible to travel from any vertex to any vertex by following edges.
+
+Input
+
+The input is given from Standard Input in the following format:
+N
+S
+
+Output
+
+Print the number, modulo 998244353, of ways to partition the vertices into N pairs so that the final graph is strongly connected.
+
+Constraints
+
+
+- 1 \le N \le 2\times 10^5
+- S is a length 2N string consisting of N Ws and N Bs.
+- N is an integer.
+
+Sample Input 1
+
+2
+BWBW
+
+Sample Output 1
+
+1
+
+Vertices 2,4 are white, and vertices 1,3 are black.
+Let (u,v) denote an edge from vertex u to vertex v.
+If we pair up vertices as (2,1), (4,3), the final graph have the edges (1,2), (2,3), (3,4), (2,1), (4,3). In this case, for example, it is impossible to travel from vertex 3 to vertex 1 by following edges, so this graph is not strongly connected.
+If we pair up vertices as (2,3), (4,1), the final graph have the edges (1,2), (2,3), (3,4), (2,3), (4,1). This graph is strongly connected.
+Therefore, there is exactly 1 way to pair up the vertices that satisfies the condition.
+
+Sample Input 2
+
+4
+BWWBWBWB
+
+Sample Output 2
+
+0
+
+No matter how you pair up the vertices, you cannot satisfy the condition.
+
+Sample Input 3
+
+9
+BWWBWBBBWWBWBBWWBW
+
+Sample Output 3
+
+240792
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+(none yet)
+
+NOTES:
+
+## ideation
+The essential simplification is that the fixed path edges 1→2→…→2N make strong connectivity equivalent to a prefix-crossing condition: every proper prefix must receive at least one added edge from the suffix to the prefix. In matching language, after ordering the black vertices and white vertices, a prefix with `a` black vertices and `c` white vertices is closed exactly when the first `a` black vertices are all matched to white indices at most `c`. Thus the problem becomes counting permutations whose prefix maxima stay above a monotone boundary derived from the string, or dually, counting inverse permutations whose running suffix minima stay below a monotone boundary.
+
+The core difficulty is not the graph-theoretic reduction but the counting step: the boundary is an arbitrary monotone sequence of length up to 2e5, and the natural DP over the current maximum, current minimum, or number of open backward edges is quadratic. The useful structure is that intersections of bad prefix events have counts that factor into falling factorials, producing convolution-like recurrences. The challenge is to evaluate those recurrences efficiently under modulo 998244353, likely using NTT-based divide-and-conquer, block methods, or a more specialized combinatorial formula.
+
+Simple necessary conditions are also important: if the first vertex is white, the first prefix has no black head and the answer is 0; if the last vertex is black, the last proper prefix has no white tail and the answer is 0. These early exits avoid edge cases in boundary definitions.
+
+
+CURRENT TASK LIST:
+- [todo] Parse `N` and `S`; compute prefix counts of black vertices before each white vertex, and derive the boundary array `X_u = N - B_u` for the relevant indices `u`.
+- [todo] Filter to the nontrivial indices where the corresponding bad event is possible (`X_u >= u`), preserving their original order and values.
+- [todo] Implement factorial and inverse-factorial precomputation up to `N` modulo 998244353.
+- [todo] Implement a CDQ divide-and-conquer routine that computes the DP recurrence
+- [todo] Sum the inclusion-exclusion contribution `ans = N! + sum_j dp[j] * fact[N - u_j]` modulo 998244353 and print it.
+
+LATEST WORKER RESULT: ideation complete
+
+PROPOSED NEW STEPS:
+- First-bad-prefix recurrence + CDQ/NTT: define `h_a` as the number of white vertices before the `(a+1)`-st black vertex, with sentinel `h_N = N`. Count partial matchings whose first closed prefix is exactly `a`; this gives a triangular recurrence with falling-factorial terms. Scale by factorials to turn the sum into convolution queries against the factorial sequence, then use divide-and-conquer over `a` and NTT to add left-half contributions to right-half queries. Pitfalls: invalid terms when `h_a < a`, off-by-one in the sentinel and query index, need to truncate NTT lengths to the relevant `h` range, and Python NTT performance may be heavy.
+- Inverse running-minimum inclusion-exclusion (the supplied plan): use the inverse permutation from whites to blacks, reveal whites from right to left, and require the running minimum to stay below a nonincreasing boundary derived from the string. Bad events are “the first `u` revealed values all lie after the boundary”; their intersections factor over intervals, giving a DP over the largest selected bad event with falling-factorial block weights. Compute the convolution-like DP with CDQ/NTT and combine with factorial tails. Pitfalls: boundary off-by-one, especially for the zero-white prefix; impossible events when the available right-side black count is smaller than `u`; inclusion-exclusion signs and final combination are easy to get wrong.
+- Queue/open-edge DP and polynomial-operator formulation: scan vertices left to right and let `U` be the number of backward-open pairs (black in prefix matched to white in suffix). The color balance determines the forward-pending count, so the state is one-dimensional. Transitions at black/white vertices are local with weights involving `U` and the balance, and strong connectivity is exactly `U > 0` after every proper prefix. This can be expressed as applying differential operators to a polynomial. Try to exploit the operator algebra, segment trees of transformations, or a CDQ formulation. Pitfalls: naive DP is O(N^2), the projection to `U > 0` complicates operator composition, and invalid states with negative forward-pending count must be excluded.
+- Block/sqrt decomposition of the factorial recurrence: group indices with the same boundary value; within a group, contributions from earlier indices in the same group become simple running prefix sums. For contributions from previous groups, maintain block-level convolutions or direct block sums to answer base queries. This gives a simpler but slower O(N sqrt N)-type algorithm. Pitfalls: likely too slow in Python for 2e5 if not heavily optimized, memory can blow up if full block convolutions are stored, and block-size tuning is delicate; useful as a fallback or for medium-size validation.
+- Determinant / rook-polynomial / nonintersecting-paths route: view the permutation matrix and bad prefix events as emptiness of certain rectangles, or as a path staying above a boundary. Investigate whether the first-bad decomposition yields a Hessenberg, Toeplitz, or Hankel determinant, a Ferrers-board rook polynomial, or an LGV determinant that can be evaluated with fast polynomial methods. Pitfalls: the rectangles are not simply nested, generic determinants are O(N^3), the special structure may not exist or may reduce to the same CDQ convolution, and proving the formula is nontrivial.
+- Hybrid/special-case and brute-force validation: add early exits for first white or last black, handle `N = 1`, detect long runs where the boundary is constant (which can be processed in linear time within the run), and detect the diagonal case where the recurrence becomes the classical indecomposable-permutation convolution solvable with one NTT/FPS inversion. Use O(N^2) DP or brute force for small `N` to validate formulas. Pitfalls: special cases may not cover the worst-case arbitrary boundary, hybrid transitions must avoid double counting, and brute force is only for testing, not the final solution.

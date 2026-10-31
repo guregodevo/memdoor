@@ -1,0 +1,9 @@
+### PLAN
+Use a left-to-right DP over subsequence parity and alternating sum, representing all achievable sums as bitsets with an offset of max(nums) * ceil(n/2). For non-empty positive products, maintain two arrays of length limit+1 (even/odd parity), where each product entry stores a sum bitset; process each positive number by carrying old states, starting a new subsequence, and extending old states only when the product stays <= limit. Because a zero can make the final product 0 even if earlier positive products exceed limit, run a separate four-state bitset DP that tracks whether a zero has been selected. At the end, return the largest positive product whose bitset contains k; if none exists, return 0 if the zero DP can form k, otherwise -1. Early reject when |k| exceeds the sum offset.
+
+### TASKS
+- Set offset = max(nums) * ((len(nums) + 1) // 2) and target_bit = 1 << (offset + k); return -1 immediately if abs(k) > offset.
+- Implement the zero-product feasibility DP with four bitsets (no-zero even/odd, has-zero even/odd), initialized with the empty no-zero even state, and update from old states for each x to record subsequences containing at least one zero.
+- Implement the positive-product DP with pos_even and pos_odd lists of length limit+1 of sum bitsets; for each x>0, copy the old lists, add the start state [x] if x <= limit, and extend only old states.
+- In the positive transitions, multiply the product by x and skip if it exceeds limit; shift the sum bitset left by x for even parity and right by x for odd parity, OR into the opposite parity's new product entry, and maintain active product lists/boolean markers to avoid scanning unreachable products.
+- After processing all nums, scan products from limit down to 1 and return the first p whose pos_even[p] or pos_odd[p] contains target_bit; otherwise return 0 if the has-zero zero DP contains target_bit, else -1.

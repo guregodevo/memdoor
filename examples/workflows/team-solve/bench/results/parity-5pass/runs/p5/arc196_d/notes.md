@@ -1,0 +1,16 @@
+- **Transformation:** Let P_k be prefix road strength up to road k, town t is P_{t-1}. For person i, set l=min(S,T)-1, r=max(S,T)-1, sign=0 if S<T else 1. Requirement: P_l=P_r, and for all l<x<r, P_x>P_l if sign=0, P_x<P_l if sign=1.
+- **Forbidden pairs:** A set is feasible iff it contains no pair of:
+  - same l with different (r,sign);
+  - same r with different (l,sign);
+  - same-sign strict crossing: l_i<l_j<r_i<r_j or l_j<l_i<r_j<r_i.
+  Identical same-sign intervals are allowed; identical opposite-sign intervals are forbidden by the endpoint rules.
+- **bad[j]:** Maximum i<j conflicting with j. Query [L,R] (0-indexed) is Yes iff max_{j<=R} bad[j] < L, because bad[j]<j, so prefix maxima from before L are always <L.
+- **Endpoint conflicts:** Forward pass. For each left endpoint and each right endpoint, keep the latest two encoded entries with distinct keys. Key for left is (r,sign); key for right is (l,sign). Candidate is top1 if its key differs from current, else top2. Encode as (index << shift_e) | key, where shift_e=(2N).bit_length().
+- **Crossing conflicts:** Process each sign separately, scanning i from M-1 down to 0. Maintain alive future intervals of that sign.
+  - Type A: current i needs future j with L_j in (L_i,R_i) and R_j>R_i. Use segment tree over compressed L storing max R; at each L leaf keep a min-heap of encoded (N-1-R, idx), so top has max R.
+  - Type B: current i needs future j with R_j in (L_i,R_i) and L_j<L_i. Use segment tree over compressed R storing min L; at each R leaf keep a min-heap of encoded (L, idx), so top has min L.
+- **Reporting and deletion:** For current i, decompose the relevant coordinate range into segment-tree canonical nodes. For each node whose aggregate qualifies, descend to leaves. At a leaf, pop all live intervals satisfying the strict inequality, set bad[idx]=max(bad[idx],i), mark dead, and refresh the other structure’s leaf for that idx. Then refresh the current leaf and pull ancestors. Once an interval is killed, it already has the largest crossing conflict, so it can be removed from further consideration.
+- **Lazy deletion:** Dead intervals may remain below heap tops. Clean dead tops whenever touching a heap. Segment-tree leaf values are updated to the current live extreme after every leaf modification.
+- **Encoding heaps:** Use SHIFT=M.bit_length(), MASK=(1<<SHIFT)-1. A key is ((N-1-R)<<SHIFT)|idx; B key is (L<<SHIFT)|idx. idx=key&MASK, value=key>>SHIFT.
+- **Complexity:** Endpoint pass O(M). Crossing pass O(M log M) per sign total O(M log M), because each interval is killed at most once per sign and segment-tree traversals are charged to kills/range decompositions. Queries O(1) after prefix max.
+- **Pitfalls:** Use strict inequalities in crossing ranges: L_j > L_i and L_j < R_i, R_j > L_i and R_j < R_i. Same-endpoint conflicts are independent of sign except that identical (other endpoint, sign) is not a conflict. P_0 can be shifted to 0 after assigning integer topological levels.

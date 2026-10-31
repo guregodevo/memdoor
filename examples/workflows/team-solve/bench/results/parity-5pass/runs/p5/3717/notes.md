@@ -1,0 +1,11 @@
+- **Decomposition:** Selected windows are disjoint, so their operation costs add. Each window’s minimum cost is the sum of absolute deviations to a median.
+- **Window cost:** Use the lower median rank `(x + 1) // 2`. For even `x`, any median in the middle interval is optimal; the lower median is convenient.
+- **Sliding median:** Coordinate-compress all values. Maintain Fenwick trees for counts and sums of actual values over the current length-`x` window. This avoids lazy-deletion heap issues and handles negative values.
+- **Fenwick kth:** Binary lifting over the count tree finds the smallest compressed rank whose prefix count reaches the median rank. Start from the highest power of two `<= m`.
+- **Cost query:** Let `left_cnt` and `left_sum` be prefix count/sum up to the median rank. Cost = `med * left_cnt - left_sum + (total_sum - left_sum) - med * (x - left_cnt)`. Including all values equal to the median on the left is safe because their contribution is zero.
+- **Sliding update:** Initialize the first `x` elements. For each next window, remove `nums[start]` and add `nums[start + x]` to both Fenwick trees and update `total_sum`.
+- **Selection DP:** `dp[t][i]` is the minimum cost to choose `t` non-overlapping windows inside the first `i` elements. Recurrence: `dp[t][i] = min(dp[t][i - 1], dp[t - 1][i - x] + cost[i - x])`. The second term takes the window starting at `i - x` and ending at `i - 1`; previous windows must end before `i - x`.
+- **At least k:** All window costs are nonnegative, so any solution with more than `k` windows can drop extras without increasing cost. Minimizing exactly `k` windows is therefore equivalent to minimizing at least `k` windows.
+- **Memory and complexity:** Two DP rows of length `n + 1` and a cost array of length `n - x + 1`. Overall `O(n log n + k n)` time and `O(n)` memory.
+- **Edge cases:** `x = n`, `k = 1`, `k*x = n`, adjacent windows, all equal values, negative values, duplicate medians, even `x`, and large costs with `INF = 10**30`.
+- **Validation:** Checked against the two examples and small random brute force enumerating non-overlapping window starts; final code omits the test harness for judge use.

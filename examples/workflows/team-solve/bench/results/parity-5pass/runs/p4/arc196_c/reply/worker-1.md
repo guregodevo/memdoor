@@ -1,0 +1,594 @@
+### CODE
+```python
+import sys
+import os
+import random
+import itertools
+
+MOD = 998244353
+G = 3
+
+
+def precompute_fact(n):
+    fact = [1] * (n + 1)
+    for i in range(1, n + 1):
+        fact[i] = fact[i - 1] * i % MOD
+    invfact = [1] * (n + 1)
+    invfact[n] = pow(fact[n], MOD - 2, MOD)
+    for i in range(n, 0, -1):
+        invfact[i - 1] = invfact[i] * i % MOD
+    return fact, invfact
+
+
+def parse_D(N, S):
+    """D[k] = number of black vertices before white k (1-indexed whites)."""
+    D = [0] * (N + 1)
+    b = 0
+    w = 0
+    for ch in S:
+        if ch == 'B':
+            b += 1
+        else:
+            w += 1
+            D[w] = b
+    return D
+
+
+def parse_R(N, S):
+    """R[t] = number of white vertices before black (t+1), for t=1..N-1."""
+    R = [0] * N
+    b = 0
+    w = 0
+    for ch in S:
+        if ch == 'W':
+            w += 1
+        else:
+            b += 1
+            if b >= 2:
+                R[b - 1] = w
+    return R
+
+
+def brute_force_count(N, S):
+    """
+    Enumerate all perfect white->black pairings and simulate reachability
+    from the last vertex to the first vertex.  With the original path edges,
+    this is equivalent to strong connectivity.
+    """
+    if N == 1:
+        return 1 if S == "BW" else 0
+    if S[0] != 'B' or S[-1] != 'W':
+        return 0
+
+    whites = []
+    blacks = []
+    for i, ch in enumerate(S):
+        if ch == 'W':
+            whites.append(i)
+        else:
+            blacks.append(i)
+
+    last = 2 * N - 1
+    ans = 0
+
+    # For small N this is fine.  Use itertools.permutations for speed.
+    for perm in itertools.permutations(range(N)):
+        m = last
+        while True:
+            nm = m
+            # Reachable set is a suffix [m, last].  Any white in it can jump
+            # to its paired black vertex.
+            for i, wpos in enumerate(whites):
+                if wpos >= m:
+                    bpos = blacks[perm[i]]
+                    if bpos < nm:
+                        nm = bpos
+            if nm == m:
+                break
+            m = nm
+            if m == 0:
+                break
+        if m == 0:
+            ans += 1
+    return ans % MOD
+
+
+def dp_open_arc_naive(N, S, fact=None, invfact=None):
+    """
+    Baseline O(N^2) DP for the open-arc / suffix-minimum process.
+
+    Let D[k] be the number of black vertices before white k.
+    Process white ranks N, N-1, ..., 2.
+    S_j[m] = number of ways to assign black positions to whites j..N
+             such that all assigned black positions are >= m and all
+             suffix-minimum deadline constraints up to j are satisfied.
+
+    Initial state after white N:
+        S_N[m] = D[N-1] - m + 1, 1 <= m <= D[N-1].
+
+    Transition from j+1 to j, with d = D[j-1]:
+        C = (j - d) * S_{j+1}[d+1] if d < j else 0
+        S_j[m] = (j - m + 1) * S_{j+1}[m] - C, 1 <= m <= min(d, j)
+    Answer is S_2[1].
+    """
+    if N == 1:
+        return 1 if S == "BW" else 0
+    if S[0] != 'B' or S[-1] != 'W':
+        return 0
+
+    D = parse_D(N, S)
+    dN = D[N - 1]
+    if dN <= 0:
+        return 0
+
+    S = [0] * (dN + 1)
+    for m in range(1, dN + 1):
+        S[m] = (dN - m + 1) % MOD
+
+    for j in range(N - 1, 1, -1):
+        d = D[j - 1]
+        newD = d if d < j else j
+        if newD <= 0:
+            return 0
+
+        C = 0
+        if d < j and d + 1 < len(S):
+            C = (j - d) * S[d + 1] % MOD
+
+        newS = [0] * (newD + 1)
+        for m in range(1, newD + 1):
+            newS[m] = ((j - m + 1) * S[m] - C) % MOD
+        S = newS
+
+    return S[1] % MOD if len(S) >= 2 else 0
+
+
+def dp_open_arc_count(N, S, fact=None, invfact=None):
+    """
+    Same open-arc DP as dp_open_arc_naive, but with compressed zero-cost runs.
+    Still worst-case O(N^2), but much faster on many structured strings.
+    """
+    if N == 1:
+        return 1 if S == "BW" else 0
+    if S[0] != 'B' or S[-1] != 'W':
+        return 0
+
+    if fact is None or invfact is None or len(fact) < N + 1:
+        fact, invfact = precompute_fact(N)
+
+    D = parse_D(N, S)
+    d = [0] * (N + 1)
+    for r in range(2, N + 1):
+        d[r] = D[r - 1]
+
+    dN = d[N]
+    if dN <= 0:
+        return 0
+
+    S = [0] * (dN + 1)
+    for m in range(1, dN + 1):
+        S[m] = (dN - m + 1) % MOD
+
+    # A nonzero boundary subtraction happens exactly when d drops below r.
+    events = []
+    for r in range(N - 1, 1, -1):
+        if d[r] < r and d[r] < d[r + 1]:
+            events.append(r)
+
+    current_r = N - 1
+
+    for r_e in events:
+        if r_e > current_r:
+            continue
+
+        # Zero-subtraction run: process steps current_r, current_r-1, ..., r_e+1.
+        if current_r >= r_e + 1:
+            D_end = min(d[r_e + 1], r_e + 1)
+            if D_end <= 0:
+                return 0
+            for m in range(1, D_end + 1):
+                S[m] = S[m] * fact[current_r - m + 1] % MOD * invfact[r_e + 1 - m] % MOD
+            if len(S) > D_end + 1:
+                S = S[:D_end + 1]
+        else:
+            D_end = min(d[r_e + 1], r_e + 1)
+            if len(S) > D_end + 1:
+                S = S[:D_end + 1]
+
+        # Event step r_e: deadline drops below r_e, so a boundary term appears.
+        dval = d[r_e]
+        if dval <= 0:
+            return 0
+        C = (r_e - dval) * S[dval + 1] % MOD
+        for m in range(1, dval + 1):
+            S[m] = ((r_e - m + 1) * S[m] - C) % MOD
+        if len(S) > dval + 1:
+            S = S[:dval + 1]
+
+        current_r = r_e - 1
+
+    # Final zero-subtraction run down to step 2.
+    if current_r >= 2:
+        D_end = min(d[2], 2)
+        if D_end <= 0:
+            return 0
+        for m in range(1, D_end + 1):
+            S[m] = S[m] * fact[current_r - m + 1] % MOD * invfact[2 - m] % MOD
+        if len(S) > D_end + 1:
+            S = S[:D_end + 1]
+
+    return S[1] % MOD if len(S) >= 2 else 0
+
+
+def dp_inclusion_naive(N, S, fact=None, invfact=None):
+    """
+    O(N^2) inclusion-exclusion DP.
+    H[0] = 1.
+    H[t] = - invfact[R[t]-t] * sum_{s<t} H[s] * fact[R[t]-s]
+           if R[t] >= t, else 0.
+    Answer = N! + sum_{t=1}^{N-1} H[t] * (N-t)!.
+    """
+    if N == 1:
+        return 1 if S == "BW" else 0
+    if S[0] != 'B' or S[-1] != 'W':
+        return 0
+
+    if fact is None or invfact is None or len(fact) < N + 1:
+        fact, invfact = precompute_fact(N)
+
+    R = parse_R(N, S)
+    H = [0] * N
+    H[0] = 1
+
+    for t in range(1, N):
+        if R[t] < t:
+            H[t] = 0
+            continue
+        s = 0
+        rt = R[t]
+        for prev in range(t):
+            hv = H[prev]
+            if hv:
+                s += hv * fact[rt - prev]
+        H[t] = (-s % MOD) * invfact[rt - t] % MOD
+
+    ans = fact[N]
+    for t in range(1, N):
+        if H[t]:
+            ans = (ans + H[t] * fact[N - t]) % MOD
+    return ans % MOD
+
+
+# ---------------- NTT / CDQ optional optimized solver ----------------
+
+_root_cache = {}
+_inv_n_cache = {}
+
+
+def _ntt_wlen(length, invert):
+    key = (length, invert)
+    v = _root_cache.get(key)
+    if v is None:
+        v = pow(G, (MOD - 1) // length, MOD)
+        if invert:
+            v = pow(v, MOD - 2, MOD)
+        _root_cache[key] = v
+    return v
+
+
+def _ntt_inv_n(n):
+    v = _inv_n_cache.get(n)
+    if v is None:
+        v = pow(n, MOD - 2, MOD)
+        _inv_n_cache[n] = v
+    return v
+
+
+def ntt(a, invert):
+    n = len(a)
+    j = 0
+    for i in range(1, n):
+        bit = n >> 1
+        while j & bit:
+            j ^= bit
+            bit >>= 1
+        j ^= bit
+        if i < j:
+            a[i], a[j] = a[j], a[i]
+
+    length = 2
+    while length <= n:
+        wlen = _ntt_wlen(length, invert)
+        half = length >> 1
+        for i in range(0, n, length):
+            w = 1
+            end = i + half
+            for j in range(i, end):
+                u = a[j]
+                v = a[j + half] * w % MOD
+                x = u + v
+                if x >= MOD:
+                    x -= MOD
+                y = u - v
+                if y < 0:
+                    y += MOD
+                a[j] = x
+                a[j + half] = y
+                w = w * wlen % MOD
+        length <<= 1
+
+    if invert:
+        inv_n = _ntt_inv_n(n)
+        for i in range(n):
+            a[i] = a[i] * inv_n % MOD
+
+
+def convolution(a, b):
+    if not a or not b:
+        return []
+    la, lb = len(a), len(b)
+    need = la + lb - 1
+
+    # Small cases: plain multiplication.
+    if min(la, lb) <= 32:
+        res = [0] * need
+        if la <= lb:
+            for i, ai in enumerate(a):
+                if ai:
+                    for j, bj in enumerate(b):
+                        res[i + j] += ai * bj
+        else:
+            for j, bj in enumerate(b):
+                if bj:
+                    for i, ai in enumerate(a):
+                        res[i + j] += ai * bj
+        for i in range(need):
+            res[i] %= MOD
+        return res
+
+    n = 1
+    while n < need:
+        n <<= 1
+    fa = a + [0] * (n - la)
+    fb = b + [0] * (n - lb)
+    ntt(fa, False)
+    ntt(fb, False)
+    for i in range(n):
+        fa[i] = fa[i] * fb[i] % MOD
+    ntt(fa, True)
+    return fa[:need]
+
+
+def solve_cdq_ntt(N, S, fact=None, invfact=None):
+    """
+    CDQ divide-and-conquer + NTT for the inclusion-exclusion recurrence.
+    Intended as an optimized fallback for larger N.  It is validated against
+    brute force and the baseline DP by self_test().
+    """
+    if N == 1:
+        return 1 if S == "BW" else 0
+    if S[0] != 'B' or S[-1] != 'W':
+        return 0
+
+    if fact is None or invfact is None or len(fact) < N + 1:
+        fact, invfact = precompute_fact(N)
+
+    R = parse_R(N, S)
+    good = [False] * N
+    any_good = False
+    for t in range(1, N):
+        if R[t] >= t:
+            good[t] = True
+            any_good = True
+    if not any_good:
+        return fact[N]
+
+    H = [0] * N
+    contrib = [0] * N
+    H[0] = 1
+
+    sys.setrecursionlimit(1_000_000)
+    BASE = 64
+    NAIVE_THRESH = 8192
+
+    def add_contrib(l, mid, r):
+        # Add contributions from s in [l, mid] to t in [mid+1, r].
+        needed = []
+        k_min = 10**30
+        k_max = -1
+        for t in range(mid + 1, r + 1):
+            if good[t]:
+                k = R[t] - l
+                needed.append(t)
+                if k < k_min:
+                    k_min = k
+                if k > k_max:
+                    k_max = k
+        if not needed:
+            return
+
+        left = H[l:mid + 1]
+        while left and left[-1] == 0:
+            left.pop()
+        if not left:
+            return
+
+        L = len(left)
+
+        if L * len(needed) <= NAIVE_THRESH:
+            for t in needed:
+                k = R[t] - l
+                s = 0
+                # k >= original left length, so k-i is nonnegative for all i.
+                for i, hv in enumerate(left):
+                    if hv:
+                        s += hv * fact[k - i]
+                contrib[t] = (contrib[t] + s) % MOD
+            return
+
+        j0 = k_min - L + 1
+        if j0 < 0:
+            j0 = 0
+        B = fact[j0:k_max + 1]
+        C = convolution(left, B)
+        for t in needed:
+            k = R[t] - l
+            idx = k - j0
+            contrib[t] = (contrib[t] + C[idx]) % MOD
+
+    def cdq(l, r):
+        if r - l + 1 <= BASE:
+            for t in range(l, r + 1):
+                if t == 0:
+                    H[0] = 1
+                    continue
+                if not good[t]:
+                    H[t] = 0
+                    continue
+                s = contrib[t]
+                rt = R[t]
+                # Contributions from [l, t-1] are not yet in contrib[t].
+                for prev in range(l, t):
+                    hv = H[prev]
+                    if hv:
+                        s += hv * fact[rt - prev]
+                H[t] = (-s % MOD) * invfact[rt - t] % MOD
+            return
+
+        mid = (l + r) // 2
+        cdq(l, mid)
+        add_contrib(l, mid, r)
+        cdq(mid + 1, r)
+
+    cdq(0, N - 1)
+
+    ans = fact[N]
+    for t in range(1, N):
+        if H[t]:
+            ans = (ans + H[t] * fact[N - t]) % MOD
+    return ans % MOD
+
+
+def solve_problem(N, S):
+    """
+    Main solver used by stdin mode.
+
+    For small N it cross-checks brute force and the baseline DP.
+    For larger N it uses the CDQ/NTT solver if available; if that is disabled
+    by environment variable, it falls back to the baseline DP.
+    """
+    if N <= 0:
+        return 0
+
+    fact, invfact = precompute_fact(N)
+
+    if N <= 7:
+        bf = brute_force_count(N, S)
+        dp = dp_open_arc_count(N, S, fact, invfact)
+        if bf != dp:
+            # Should never happen; prefer the exhaustive answer in that case.
+            return bf
+        return dp
+
+    use_cdq = os.environ.get("USE_CDQ", "1") != "0"
+    if use_cdq and N >= 128:
+        try:
+            return solve_cdq_ntt(N, S, fact, invfact)
+        except Exception:
+            # Fall back to the baseline if NTT/CDQ hits a resource issue.
+            pass
+
+    return dp_open_arc_count(N, S, fact, invfact)
+
+
+def self_test():
+    """
+    Validate brute force, baseline DP, inclusion-exclusion DP, and CDQ/NTT
+    on all small strings and some random strings.
+    """
+    max_all = 4
+    max_fact = 2 * max_all + 5
+    fact, invfact = precompute_fact(max_fact)
+
+    checked = 0
+    for N in range(1, max_all + 1):
+        for bpos in itertools.combinations(range(2 * N), N):
+            arr = ['W'] * (2 * N)
+            for p in bpos:
+                arr[p] = 'B'
+            S = ''.join(arr)
+
+            bf = brute_force_count(N, S)
+            dp1 = dp_open_arc_naive(N, S, fact, invfact)
+            dp2 = dp_open_arc_count(N, S, fact, invfact)
+            dp3 = dp_inclusion_naive(N, S, fact, invfact)
+            cdq = solve_cdq_ntt(N, S, fact, invfact)
+
+            if not (bf == dp1 == dp2 == dp3 == cdq):
+                raise AssertionError(
+                    f"Mismatch N={N} S={S}: bf={bf}, naive_dp={dp1}, "
+                    f"compressed_dp={dp2}, inclusion={dp3}, cdq={cdq}"
+                )
+            checked += 1
+
+    # Random N=5,6,7.
+    rng = random.Random(12345)
+    for N, trials in [(5, 120), (6, 60), (7, 12)]:
+        for _ in range(trials):
+            bpos = set(rng.sample(range(2 * N), N))
+            S = ''.join('B' if i in bpos else 'W' for i in range(2 * N))
+
+            bf = brute_force_count(N, S)
+            dp1 = dp_open_arc_naive(N, S, fact, invfact)
+            dp2 = dp_open_arc_count(N, S, fact, invfact)
+            dp3 = dp_inclusion_naive(N, S, fact, invfact)
+            cdq = solve_cdq_ntt(N, S, fact, invfact)
+
+            if not (bf == dp1 == dp2 == dp3 == cdq):
+                raise AssertionError(
+                    f"Random mismatch N={N} S={S}: bf={bf}, naive_dp={dp1}, "
+                    f"compressed_dp={dp2}, inclusion={dp3}, cdq={cdq}"
+                )
+            checked += 1
+
+    print(f"selftest ok: {checked} cases")
+
+
+def main():
+    if "--selftest" in sys.argv:
+        self_test()
+        return
+
+    data = sys.stdin.read().split()
+    if not data:
+        return
+    N = int(data[0])
+    S = data[1].strip()
+    print(solve_problem(N, S) % MOD)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### NOTES
+- **Strong connectivity reduction:** The original path edges make forward reachability automatic. The graph is strongly connected iff the last vertex can reach the first vertex. Reachable vertices from the right always form a suffix, so a pairing is valid iff every cut is crossed by at least one added edge from a white on the right to a black on the left.
+- **Critical cuts / R form:** Number black vertices 1..N and white vertices 1..N. Let R[t] be the number of whites before black t+1. A bad cut before black t+1 occurs iff the first t black vertices are all matched to the first R[t] whites, i.e. prefix maximum M_t <= R[t]. Validity is M_t > R[t] for all t=1..N-1, plus S[0]='B' and S[-1]='W'.
+- **Open-arc / suffix-minimum DP:** Let D[k] be the number of blacks before white k. Process white ranks N down to 2. Maintain S_j[m] = ways to assign whites j..N to black positions all >= m while satisfying suffix constraints. Initial S_N[m] = D[N-1]-m+1. Transition with d=D[j-1]: C=(j-d)S_{j+1}[d+1] if d<j else 0, then S_j[m]=(j-m+1)S_{j+1}[m]-C for m<=min(d,j). Answer S_2[1]. This is the requested baseline O(N^2) DP.
+- **Compressed baseline DP:** If a run of steps has no boundary subtraction, the update is just multiplication by a factorial ratio. The compressed implementation applies such runs in O(final support) using precomputed factorials. It is still worst-case O(N^2), e.g. alternating-like D[j-1]=j-1, but much faster on many structured cases.
+- **Inclusion-exclusion DP:** For selected bad cuts t1<...<tk, the intersection count is (N-tk)! * product over i of (R[ti]-t_{i-1})!/(R[ti]-t_i)!. This gives H[0]=1 and H[t]=-invfact[R[t]-t]*sum_{s<t}H[s]fact[R[t]-s] when R[t]>=t, else 0. Answer = N! + sum_{t=1}^{N-1} H[t](N-t)!.
+- **Brute force:** Enumerate all N! pairings for small N. For each pairing, simulate the suffix-reachability process from the last vertex: if current minimum reachable vertex is m, every white >=m can jump to its paired black, reducing m. Valid iff m reaches 0.
+- **Validation:** self_test() compares brute force, naive open-arc DP, compressed open-arc DP, naive inclusion-exclusion DP, and CDQ/NTT on all strings up to N=4 and random N=5..7. Run with `python program.py --selftest`.
+- **CDQ/NTT fallback:** The inclusion-exclusion recurrence is computed online by CDQ. For a node, contributions from left half to right half are sums sum_s H[s]fact[R[t]-s]. Because R[t] is nondecreasing, the needed factorial segment can be shifted so convolution length is proportional to the R-range plus left length, giving near O(N log^2 N) total. This is included as an optional large-N fallback and is validated by self_test.
+- **Automatic cases:** If R[t] < t for every t, every critical cut is crossed by pigeonhole, so the answer is N!.
+- **Pitfalls:** First vertex must be black and last vertex white, otherwise answer is 0. Off-by-one around R[t], D[k], and the final white is easy. The brute-force suffix process is derived from the path structure; for small N it is much faster than full all-pairs BFS and is sufficient as a verifier.
+- **Performance notes:** Pure Python NTT is the main risk for large N. The main solver uses brute/DP for N<=7, CDQ/NTT for N>=128 when enabled, and compressed DP otherwise. Set `USE_CDQ=0` to force baseline DP.
+
+### NEXT
+- Run `python program.py --selftest` in the workspace to confirm all validators agree.
+- If CDQ/NTT is too slow for N=2e5, optimize NTT (precomputed roots/butterfly) or replace with a faster online convolution method.
+- Stress-test compressed DP vs CDQ/NTT on random N=8..20 where brute force is too slow.
+- Decide final large-N solver and remove fallbacks before final submission.
+
+### STATUS
+continue

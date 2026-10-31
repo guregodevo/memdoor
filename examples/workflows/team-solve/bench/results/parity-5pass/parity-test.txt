@@ -1,0 +1,4 @@
+happy: IDENTICAL (5 calls authors, 5 ours: plan ideate manage worker manage)
+hard: IDENTICAL (13 calls authors, 13 ours: plan ideate manage worker cutoff manage worker manage worker manage worker manage finalize)
+ten: IDENTICAL (24 calls authors, 24 ours: plan ideate manage worker manage worker manage worker manage worker manage worker manage worker manage worker manage worker manage worker manage worker manage finalize)
+empty: IDENTICAL (6 calls authors, 6 ours: plan ideate manage worker manage finalize)

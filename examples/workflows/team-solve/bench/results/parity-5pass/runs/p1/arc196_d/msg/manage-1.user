@@ -1,0 +1,325 @@
+PROBLEM:
+### Question
+There are N towns, numbered 1,2,\ldots,N, arranged in a line in this order.
+There are N-1 roads connecting adjacent towns: road j\,(1 \leq j \leq N-1) connects towns j and j+1. For each road j, you can set a strength w_j (an integer that may be negative).
+When a person travels along a road, their stamina changes. Specifically, if a person with stamina x travels along road j, their stamina becomes x + w_j.
+There are M people who will now move between these towns.
+Person i\,(1 \le i \le M) starts with stamina 0 at town S_i and travels to town T_i via the shortest path.
+It is guaranteed that |S_i - T_i| > 1. Also, (S_i, T_i) \neq (S_j, T_j) if i \neq j.
+Person i’s requirement is as follows:
+
+When departing Town S_i and when arriving at Town T_i, their stamina should be exactly 0. At every other town, their stamina should always be a positive integer.
+
+Assume that there are no changes to stamina other than those due to traveling along roads as described above.
+Process Q queries. For the k-th query (1 \le k \le Q), if it is possible to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, print Yes; otherwise, print No.
+
+Input
+
+The input is given from Standard Input in the following format:
+N M Q
+S_1 T_1
+S_2 T_2
+\vdots
+S_M T_M
+L_1 R_1
+L_2 R_2
+\vdots
+L_Q R_Q
+
+Output
+
+Print Q lines.
+The k-th line should contain Yes if there is a way to set the strengths of the roads so that the requirements of all people L_k, L_k + 1, \ldots, R_k are satisfied, and No otherwise.
+
+Constraints
+
+
+- 3 \le N \le 4 \times 10^5
+- 1 \le M \le 2 \times 10^5
+- 1 \le Q \le 2 \times 10^5
+- 1 \le S_i, T_i \le N
+- |S_i - T_i| > 1
+- (S_i, T_i) \neq (S_j, T_j)\,(i \neq j)
+- 1 \le L_k \le R_k \le M
+- All input values are integers.
+
+Sample Input 1
+
+5 4 2
+4 2
+1 3
+3 5
+2 4
+1 3
+2 4
+
+Sample Output 1
+
+Yes
+No
+
+For the first query, consider setting the strengths of roads 1, 2, 3, 4 to 1, -1, 1, -1, respectively.
+
+- Person 1 starts at town 4 with stamina 0, visits town 3 with stamina 1, and arrives at town 2 with stamina 0.
+- Person 2 starts at town 1 with stamina 0, visits town 2 with stamina 1, and arrives at town 3 with stamina 0.
+- Person 3 starts at town 3 with stamina 0, visits town 4 with stamina 1, and arrives at town 5 with stamina 0.
+
+Thus, this configuration satisfies the requirements of persons 1,2,3, so print Yes on the first line.
+For the second query, it is impossible to satisfy the requirements of persons 2,3,4 simultaneously, so print No.
+
+Sample Input 2
+
+7 6 3
+1 5
+2 4
+4 6
+7 1
+5 3
+1 6
+1 6
+4 4
+2 5
+
+Sample Output 2
+
+No
+Yes
+Yes
+
+### Format: Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT.
+
+
+
+CURRENT SOLUTION:
+import sys
+import random
+
+
+def all_pairs(N):
+    res = []
+    for s in range(1, N + 1):
+        for t in range(1, N + 1):
+            if abs(s - t) > 1:
+                res.append((s, t))
+    return res
+
+
+def make_data(pairs, N):
+    m = len(pairs)
+    L = [0] * m
+    R = [0] * m
+    D = [0] * m
+    edges = []
+
+    for i, (s, t) in enumerate(pairs):
+        if s < t:
+            l, r, d = s, t, 1
+        else:
+            l, r, d = t, s, -1
+
+        L[i] = l
+        R[i] = r
+        D[i] = d
+
+        # Directed strict inequality edges: u -> v means H_u < H_v.
+        if d == 1:
+            edges.append([(l, x) for x in range(l + 1, r)])
+        else:
+            edges.append([(x, l) for x in range(l + 1, r)])
+
+    return L, R, D, edges
+
+
+def feasible_indices(indices, N, L, R, edges):
+    # Equality contraction by transitive closure on the endpoint equality graph.
+    # This is equivalent to DSU contraction for N <= 8.
+    eq = [0] * (N + 1)
+    for i in indices:
+        a = L[i]
+        b = R[i]
+        eq[a] |= 1 << b
+        eq[b] |= 1 << a
+
+    towns = range(1, N + 1)
+
+    for k in towns:
+        bitk = 1 << k
+        eqk = eq[k]
+        if eqk:
+            for u in towns:
+                if eq[u] & bitk:
+                    eq[u] |= eqk
+
+    comp = [0] * (N + 1)
+    for u in towns:
+        if comp[u] == 0:
+            for v in towns:
+                if v == u or ((eq[u] >> v) & 1):
+                    comp[v] = u
+
+    # Build strict inequality graph on contracted components.
+    adj = [0] * (N + 1)
+    for i in indices:
+        for u, v in edges[i]:
+            cu = comp[u]
+            cv = comp[v]
+            if cu == cv:
+                return False
+            adj[cu] |= 1 << cv
+
+    # Directed cycle detection by transitive closure.
+    for k in towns:
+        bitk = 1 << k
+        adjk = adj[k]
+        if adjk:
+            for u in towns:
+                if adj[u] & bitk:
+                    adj[u] |= adjk
+
+    for u in towns:
+        if adj[u] & (1 << u):
+            return False
+
+    return True
+
+
+def pairwise_indices(indices, N, L, R, D):
+    arr = list(indices)
+    m = len(arr)
+
+    for a in range(m):
+        i = arr[a]
+        li = L[i]
+        ri = R[i]
+        di = D[i]
+
+        for b in range(a + 1, m):
+            j = arr[b]
+
+            if di == D[j]:
+                lj = L[j]
+                rj = R[j]
+
+                # Open intervals overlap as real intervals.
+                if (li if li > lj else lj) < (ri if ri < rj else rj):
+                    # Strict containment is compatible.
+                    if (li < lj and rj < ri) or (lj < li and ri < rj):
+                        continue
+                    return False
+            else:
+                # Opposite directions conflict iff they share a normalized endpoint.
+                if li == L[j] or ri == R[j]:
+                    return False
+
+    return True
+
+
+def check_instance(pairs, N, mismatches, total, subset_limit):
+    L, R, D, edges = make_data(pairs, N)
+    M = len(pairs)
+
+    # Check all contiguous ranges.
+    for a in range(M):
+        for b in range(a, M):
+            inds = range(a, b + 1)
+            brute = feasible_indices(inds, N, L, R, edges)
+            pairwise = pairwise_indices(inds, N, L, R, D)
+            total[0] += 1
+            if brute != pairwise:
+                mismatches.append((N, pairs, list(inds), brute, pairwise))
+                return False
+
+    # Check all subsets when small enough.
+    if M <= subset_limit:
+        for mask in range(1 << M):
+            inds = [i for i in range(M) if (mask >> i) & 1]
+            brute = feasible_indices(inds, N, L, R, edges)
+            pairwise = pairwise_indices(inds, N, L, R, D)
+            total[0] += 1
+            if brute != pairwise:
+                mismatches.append((N, pairs, inds, brute, pairwise))
+                return False
+
+    return True
+
+
+def main():
+    data = sys.stdin.read().split()
+    seed = 12345
+    if data:
+        try:
+            seed = int(data[0])
+        except ValueError:
+            pass
+
+    rng = random.Random(seed)
+    mismatches = []
+    total = [0]
+
+    ok = True
+
+    # Exhaustive small N: all subsets and all ranges of the full valid pair set.
+    for N in (3, 4, 5):
+        if not check_instance(all_pairs(N), N, mismatches, total, 12):
+            ok = False
+            break
+
+    # Full pair sets for larger N: all contiguous ranges.
+    if ok:
+        for N in (6, 7, 8):
+            if not check_instance(all_pairs(N), N, mismatches, total, 12):
+                ok = False
+                break
+
+    # Random instances.
+    if ok:
+        for _ in range(200):
+            N = rng.randint(3, 8)
+            pool = all_pairs(N)
+            M = rng.randint(1, len(pool))
+            pairs = rng.sample(pool, M)
+            if not check_instance(pairs, N, mismatches, total, 10):
+                ok = False
+                break
+
+    print(f"Total checks: {total[0]}")
+
+    if not ok or mismatches:
+        print("FAILED: mismatches found")
+        for N, pairs, inds, brute, pairwise in mismatches:
+            print(
+                f"MISMATCH N={N} pairs={pairs} indices={inds} "
+                f"brute={brute} pairwise={pairwise}"
+            )
+        sys.exit(1)
+
+    print("PASSED: pairwise rule matches brute force on all checked ranges/subsets.")
+
+
+if __name__ == "__main__":
+    main()
+
+NOTES:
+- **Model:** Use prefix heights H_1..H_N, with H_1 arbitrary. A person (S,T) becomes normalized interval [l,r] and direction d. If S<T (right), constraints are H_l=H_r and H_x>H_l for every interior town x. If S>T (left), constraints are H_l=H_r and H_x<H_l for every interior town x. Integer road strengths exist exactly when such integer H exists.
+- **Brute oracle:** For each tested set of people, contract endpoint equalities and then check strict inequalities. The harness implements equality contraction by bitmask transitive closure on the endpoint equality graph, which is equivalent to DSU contraction for N<=8. Each interior constraint becomes a directed edge u->v meaning H_u<H_v. The set is infeasible iff an edge becomes a self-loop after contraction or the contracted inequality graph has a directed cycle. Cycle detection is done by bitmask Warshall closure.
+- **Pairwise rule under test:** A set is feasible iff it contains no incompatible pair. Same direction: conflict iff open intervals overlap, i.e. max(l1,l2)<min(r1,r2), and neither interval strictly contains the other. Strict containment requires both endpoint inequalities to be strict, so shared left or shared right endpoints are conflicts. Crossing intervals with no common integer interior town are still conflicts because the open real intervals overlap. Opposite direction: conflict iff the normalized left endpoints are equal or the normalized right endpoints are equal. Opposite-side touching, such as r1=l2 or r2=l1, is compatible.
+- **Harness scope:** The program exhaustively checks all subsets and all ranges for the full valid directed pair sets for N=3,4,5. It checks all contiguous ranges for the full valid pair sets for N=6,7,8. It also runs 200 random instances with N in [3,8], M uniformly chosen from 1 to the number of valid directed pairs, and a random order. For every random instance it checks all contiguous ranges, and it checks all subsets when M<=10. A fixed default seed is used; an optional seed can be supplied as the first stdin token.
+- **Pitfalls:** Open-interval overlap must be interpreted as real interval overlap, not as sharing an integer interior town. Strict containment must be strict on both endpoints; otherwise endpoint-sharing same-direction intervals would be incorrectly treated as compatible. Identical same-direction intervals are absent because (S_i,T_i) are unique; if duplicates were allowed, the stated pairwise rule would need a special case. Length-1 intervals are excluded by the original constraints, but the oracle would handle them naturally by having no interior inequality edges.
+- **Validation status:** The harness prints the number of checked sets and either a passed message or the first mismatch with N, pairs, indices, brute-force result, and pairwise result. It does not answer the original Q queries; it only validates the combinatorial pairwise feasibility rule.
+- **Next algorithmic step:** Once the rule is trusted, compute for each person j the latest earlier incompatible index prev[j]. Endpoint conflicts can be handled by arrays storing latest indices per normalized endpoint and direction. Same-direction crossing conflicts can be handled by 2D range-max/point-query structures in (l,r) and reversed coordinates. Then a query [L,R] is Yes iff L > max_{j<=R} prev[j].
+
+
+CURRENT TASK LIST:
+- [todo] Build a small brute-force validation harness: generate random small instances (N<=8, M up to all valid directed pairs, unique (S,T), |S-T|>1), decide feasibility by DSU equality contraction + directed cycle detection, and compare it with the proposed pairwise rule (same direction: open intervals overlap and neither strictly contains the other; opposite direction: same left endpoint or same right endpoint, while opposite-side touching is compatible) for all ranges/subsets.
+- [todo] Implement and unit-test the monotonic segment tree for point update (x,b,idx) and range query [l,r-1] at r returning max idx with x in range and b>=r, using packed step-function lists per node; validate against a naive 2D list on small random update/query sequences.
+- [todo] Implement the full fast solution: normalize intervals, compute prev[j] with side-specific endpoint arrays for opposite same-left/same-right conflicts and two passes (original and reversed) of direction-specific monotonic segment trees for same-direction conflicts, then prefix max bad[R] and answer queries Yes iff L>bad[R].
+- [todo] If the brute-force validation finds a counterexample, analyze the minimal infeasible set and revise the incompatibility characterization before proceeding to the fast solution.
+- [todo] Run the final program on the provided samples and on random small cases against the brute-force harness; then optimize memory/time for N=4e5, M=Q=2e5 (fast I/O, one orientation at a time, packed lists, gc between passes).
+
+LATEST WORKER RESULT: [SAMPLE TESTS: FAILED -- passed 0/2. The current solution is WRONG. First failing case: input='5 4 2\n4 2\n1 3\n3 5\n2 4\n1 3\n2 4\n' expected='Yes\nNo' got='Total checks: 38635\nPASSED: pairwise rule matches brute force on all checked ranges/subsets.'. Fix the bug or, if this approach keeps failing, switch to a DIFFERENT approach.] worker reported 'solved' on: Build a small brute-force validation harness: generate random small instances (N. - **Model:** Use prefix heights H_1..H_N, with H_1 arbitrary. A person (S,T) becomes normalized interval [l,r] and direction d. If S<T (right), constraints are H_l=H_r and H_x>H_l for every interior t
+
+PROPOSED NEW STEPS:
+- Run the harness and confirm it reports passed.
+- If a mismatch appears, inspect the printed counterexample and revise the pairwise rule or oracle.
+- Implement the final query solver using prev[j] and 2D range-max/point-query structures.
+- Test the final solver on samples and on random small instances against the brute-force oracle.

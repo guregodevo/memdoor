@@ -1,0 +1,519 @@
+### CODE
+```python
+import sys
+
+MOD = 998244353
+G = 3
+B = 66  # ord('B')
+W = 87  # ord('W')
+
+ROOTS = [None, [1]]
+IROOTS = [None, [1]]
+INV_LEN = [1, (MOD + 1) // 2]
+MAXLOG = 1
+INV2 = (MOD + 1) // 2
+
+
+def ensure_roots(length):
+    global MAXLOG, ROOTS, IROOTS, INV_LEN
+    target = length.bit_length() - 1
+    while MAXLOG < target:
+        MAXLOG += 1
+        half = 1 << (MAXLOG - 1)
+        wlen = pow(G, (MOD - 1) // (1 << MAXLOG), MOD)
+        ws = [1] * half
+        for i in range(1, half):
+            ws[i] = ws[i - 1] * wlen % MOD
+        ROOTS.append(ws)
+
+        iwlen = pow(wlen, MOD - 2, MOD)
+        iws = [1] * half
+        for i in range(1, half):
+            iws[i] = iws[i - 1] * iwlen % MOD
+        IROOTS.append(iws)
+
+        INV_LEN.append(INV_LEN[-1] * INV2 % MOD)
+
+
+def ntt(a, invert, scale=True):
+    n = len(a)
+    mod = MOD
+
+    if not invert:
+        length = n
+        lg = n.bit_length() - 1
+        roots = ROOTS
+        while length > 1:
+            half = length >> 1
+            if half == 1:
+                for i in range(0, n, 2):
+                    u = a[i]
+                    v = a[i + 1]
+                    x = u + v
+                    if x >= mod:
+                        x -= mod
+                    y = u - v
+                    if y < 0:
+                        y += mod
+                    a[i] = x
+                    a[i + 1] = y
+            else:
+                ws = roots[lg]
+                for i in range(0, n, length):
+                    j = i
+                    h = i + half
+                    for k in range(half):
+                        u = a[j]
+                        v = a[h]
+                        x = u + v
+                        if x >= mod:
+                            x -= mod
+                        y = u - v
+                        if y < 0:
+                            y += mod
+                        a[j] = x
+                        a[h] = y * ws[k] % mod
+                        j += 1
+                        h += 1
+            length = half
+            lg -= 1
+    else:
+        length = 2
+        lg = 1
+        iroots = IROOTS
+        while length <= n:
+            half = length >> 1
+            if half == 1:
+                for i in range(0, n, 2):
+                    u = a[i]
+                    v = a[i + 1]
+                    x = u + v
+                    if x >= mod:
+                        x -= mod
+                    y = u - v
+                    if y < 0:
+                        y += mod
+                    a[i] = x
+                    a[i + 1] = y
+            else:
+                ws = iroots[lg]
+                for i in range(0, n, length):
+                    j = i
+                    h = i + half
+                    for k in range(half):
+                        u = a[j]
+                        v = a[h] * ws[k] % mod
+                        x = u + v
+                        if x >= mod:
+                            x -= mod
+                        y = u - v
+                        if y < 0:
+                            y += mod
+                        a[j] = x
+                        a[h] = y
+                        j += 1
+                        h += 1
+            length <<= 1
+            lg += 1
+
+        if scale:
+            inv_n = INV_LEN[lg - 1]
+            for i in range(n):
+                a[i] = a[i] * inv_n % mod
+
+
+def poly_inv(P, n):
+    mod = MOD
+    h = [1]
+    m = 1
+    while m < n:
+        m2 = m << 1
+        if m2 > n:
+            m2 = n
+
+        if m < 128:
+            h += [0] * (m2 - m)
+            for k in range(m, m2):
+                s = 0
+                for i in range(1, k + 1):
+                    s += P[i] * h[k - i]
+                h[k] = (-s) % mod
+            m = m2
+            continue
+
+        L = m << 1
+        ensure_roots(L)
+        logL = L.bit_length() - 1
+
+        f = [0] * L
+        f[:m2] = P[:m2]
+        hpad = [0] * L
+        hpad[:m] = h
+
+        ntt(hpad, False)
+        ntt(f, False)
+        for i in range(L):
+            f[i] = f[i] * hpad[i] % mod
+        ntt(f, True, False)
+
+        inv_n = INV_LEN[logL]
+        q_len = m2 - m
+        base = m
+        q = [0] * q_len
+        for i in range(q_len):
+            q[i] = f[base + i] * inv_n % mod
+        del f
+
+        qpad = [0] * L
+        qpad[:q_len] = q
+        ntt(qpad, False)
+        for i in range(L):
+            qpad[i] = qpad[i] * hpad[i] % mod
+        ntt(qpad, True, False)
+
+        r = [0] * q_len
+        for i in range(q_len):
+            r[i] = qpad[i] * inv_n % mod
+        del qpad, hpad
+
+        h += [mod - x if x else 0 for x in r]
+        m = m2
+
+    return h
+
+
+def poly_mul(a, b, limit=None):
+    mod = MOD
+    la = len(a)
+    lb = len(b)
+    if la == 0 or lb == 0:
+        return []
+
+    full = la + lb - 1
+    need = full if limit is None else min(full, limit)
+    if need <= 0:
+        return []
+
+    if full <= 256 or min(la, lb) <= 16:
+        res = [0] * need
+        for i in range(min(la, need)):
+            ai = a[i]
+            if ai == 0:
+                continue
+            maxj = min(lb, need - i)
+            for j in range(maxj):
+                res[i + j] += ai * b[j]
+        for i in range(need):
+            res[i] %= mod
+        return res
+
+    L = 1 << (full - 1).bit_length()
+    ensure_roots(L)
+
+    fa = a[:] + [0] * (L - la)
+    fb = b[:] + [0] * (L - lb)
+
+    ntt(fa, False)
+    ntt(fb, False)
+    for i in range(L):
+        fa[i] = fa[i] * fb[i] % mod
+    del fb
+
+    ntt(fa, True, False)
+    inv_n = INV_LEN[L.bit_length() - 1]
+    return [fa[i] * inv_n % mod for i in range(need)]
+
+
+def alternating_direct(N, fact):
+    mod = MOD
+    if N <= 1:
+        return fact[N]
+
+    g = [0] * (N - 1)
+    for i in range(N - 1):
+        s = 0
+        for j in range(i):
+            s += g[j] * fact[i - j]
+        val = fact[i + 1] + (s % mod)
+        if val >= mod:
+            val -= mod
+        g[i] = mod - val if val else 0
+
+    ans = fact[N]
+    for i in range(N - 1):
+        ans += g[i] * fact[N - 1 - i]
+    return ans % mod
+
+
+def alternating_fast(N, fact):
+    if N <= 2000:
+        return alternating_direct(N, fact)
+
+    # 1 / (1 + sum_{k>=1} k! x^k)
+    H = poly_inv(fact, N + 1)
+
+    ans = 0
+    for k in range(1, N + 1):
+        ans += fact[k] * H[N - k]
+    return ans % MOD
+
+
+def parse_events(S, N):
+    M = 2 * N
+    i = 0
+    cum_b = 0
+    cum_w = 0
+    b_list = []
+    m_list = []
+
+    while i < M:
+        if S[i] == B:
+            j = i + 1
+            while j < M and S[j] == B:
+                j += 1
+            cum_b += j - i
+            i = j
+        else:
+            j = i + 1
+            while j < M and S[j] == W:
+                j += 1
+            cum_w += j - i
+            i = j
+            if i < M and cum_w >= cum_b:
+                b_list.append(cum_w)
+                m_list.append(cum_b)
+
+    return b_list, m_list
+
+
+def direct_dp_small(t, b, m, fact, invfact, N):
+    mod = MOD
+    g = [0] * t
+
+    for i in range(t):
+        bi = b[i]
+        s = 0
+        for j in range(i):
+            s += g[j] * fact[bi - m[j]]
+        val = fact[bi] + (s % mod)
+        if val >= mod:
+            val -= mod
+        g[i] = (mod - val) * invfact[bi - m[i]] % mod
+
+    ans = fact[N]
+    for i in range(t):
+        ans += g[i] * fact[N - m[i]]
+    return ans % mod
+
+
+def is_constant_consecutive(b, m):
+    if not b:
+        return False
+    d = b[0] - m[0]
+    if d < 0:
+        return False
+    for i in range(1, len(b)):
+        if m[i] - m[i - 1] != 1 or b[i] - b[i - 1] != 1 or b[i] - m[i] != d:
+            return False
+    return True
+
+
+def fast_constant(b, m, fact, invfact, N):
+    mod = MOD
+    t = len(b)
+    d = b[0] - m[0]
+    m0 = m[0]
+    b0 = b[0]
+    inv_fd = invfact[d]
+
+    if d == 0:
+        Q = fact[:t]
+    else:
+        Q = [1] * t
+        for k in range(1, t):
+            Q[k] = Q[k - 1] * (d + k) % mod
+
+    H = poly_inv(Q, t)
+    B = fact[b0:b0 + t]
+    C = poly_mul(B, H, t)
+
+    s = 0
+    for i in range(t):
+        s += C[i] * fact[N - m0 - i]
+    s %= mod
+    return (fact[N] - inv_fd * s) % mod
+
+
+def cdq_solve(t, b, m, fact, invfact, N):
+    mod = MOD
+    g = [0] * t
+    sacc = [0] * t
+
+    BLOCK = 64
+    DIRECT_LIMIT = 8192
+    DIRECT_ABS = 200_000
+    NTT_FACTOR = 1
+
+    sys.setrecursionlimit(1_000_000)
+
+    def cdq(l, r):
+        if r - l + 1 <= BLOCK:
+            fl = fact
+            ml = m
+            gl = g
+            sl = sacc
+            bl = b
+            invf = invfact
+            for i in range(l, r + 1):
+                bi = bl[i]
+                add = 0
+                for j in range(l, i):
+                    add += gl[j] * fl[bi - ml[j]]
+                s = (sl[i] + add) % mod
+                val = fl[bi] + s
+                if val >= mod:
+                    val -= mod
+                gl[i] = (mod - val) * invf[bi - ml[i]] % mod
+            return
+
+        mid = (l + r) >> 1
+        cdq(l, mid)
+
+        ls = mid - l + 1
+        rs = r - mid
+        direct_cost = ls * rs
+
+        m_l = m[l]
+        m_mid = m[mid]
+        b_mid1 = b[mid + 1]
+        b_r = b[r]
+
+        shift = b_mid1 - m_mid
+        wf = m_mid - m_l
+        wg = b_r - m_l - shift
+        total = wf + wg + 1
+        L = 1 << (total - 1).bit_length()
+        logL = L.bit_length() - 1
+
+        if direct_cost <= DIRECT_LIMIT or (direct_cost <= DIRECT_ABS and direct_cost <= NTT_FACTOR * L * logL):
+            fl = fact
+            ml = m
+            gl = g
+            sl = sacc
+            bl = b
+            mid_plus = mid + 1
+            for i in range(mid_plus, r + 1):
+                bi = bl[i]
+                s = 0
+                for j in range(l, mid_plus):
+                    s += gl[j] * fl[bi - ml[j]]
+                sl[i] = (sl[i] + s) % mod
+        else:
+            ensure_roots(L)
+
+            F = [0] * L
+            ml = m
+            gl = g
+            for j in range(l, mid + 1):
+                idx = ml[j] - m_l
+                val = F[idx] + gl[j]
+                if val >= mod:
+                    val -= mod
+                F[idx] = val
+
+            Ga = [0] * L
+            Ga[:wg + 1] = fact[shift:shift + wg + 1]
+
+            ntt(F, False)
+            ntt(Ga, False)
+            for i in range(L):
+                F[i] = F[i] * Ga[i] % mod
+            del Ga
+
+            ntt(F, True, False)
+            inv_n = INV_LEN[logL]
+            base = -m_l - shift
+            sl = sacc
+            bl = b
+            for i in range(mid + 1, r + 1):
+                idx = bl[i] + base
+                v = sl[i] + F[idx] * inv_n % mod
+                if v >= mod:
+                    v -= mod
+                sl[i] = v
+            del F
+
+        cdq(mid + 1, r)
+
+    cdq(0, t - 1)
+
+    ans = fact[N]
+    for i in range(t):
+        ans += g[i] * fact[N - m[i]]
+    return ans % mod
+
+
+def main():
+    data = sys.stdin.buffer.read().split()
+    if not data:
+        return
+
+    N = int(data[0])
+    S = data[1]
+
+    if S[0] == W or S[-1] == B:
+        print(0)
+        return
+
+    fact = [1] * (N + 1)
+    for i in range(1, N + 1):
+        fact[i] = fact[i - 1] * i % MOD
+
+    if S == b'BW' * N:
+        print(alternating_fast(N, fact))
+        return
+
+    b_list, m_list = parse_events(S, N)
+    t = len(b_list)
+
+    if t == 0:
+        print(fact[N])
+        return
+
+    invfact = [1] * (N + 1)
+    invfact[N] = pow(fact[N], MOD - 2, MOD)
+    for i in range(N, 0, -1):
+        invfact[i - 1] = invfact[i] * i % MOD
+
+    if t >= 2000 and is_constant_consecutive(b_list, m_list):
+        ans = fast_constant(b_list, m_list, fact, invfact, N)
+    elif t * (t - 1) // 2 <= 2_000_000:
+        ans = direct_dp_small(t, b_list, m_list, fact, invfact, N)
+    else:
+        ans = cdq_solve(t, b_list, m_list, fact, invfact, N)
+
+    print(ans)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### NOTES
+- **Reduction:** Strong connectivity is equivalent to no nonempty proper prefix being closed under incoming edges. Path edges never enter a prefix, so each relevant prefix must receive at least one added white-to-black edge from the right. Vertex 1 must be black and vertex 2N must be white; otherwise answer is 0.
+- **Prefix events:** For a prefix just before a black run, let b = whites seen, m = blacks seen. It is closed iff the first m black ranks are matched to white ranks <= b. If b < m the event is impossible. For the same b, the smallest m is weakest and dominates later same-b events, so keep only the first such m per b.
+- **Inclusion-exclusion DP:** For kept events (b_i,m_i), define g_i by
+  g_i = -(fact[b_i] + sum_{j<i} g_j fact[b_i-m_j]) / fact[b_i-m_i].
+  Answer = fact[N] + sum_i g_i fact[N-m_i]. This follows from counting intersections as permutations avoiding a step-shaped Ferrers board.
+- **CDQ online convolution:** CDQ over event index adds contributions from solved left half to right half. At node [l,r], set shift = b[mid+1]-m[mid], wf = m[mid]-m[l], wg = b[r]-m[l]-shift. Put F[m_j-m_l]=g_j and Ga[k]=fact[shift+k]. Then coefficient at x=b_i-m[l]-shift is sum_{j in left} g_j fact[b_i-m_j]. NTT length is next power of two of wf+wg+1.
+- **NTT implementation:** DIF forward and DIT inverse without explicit bit-reversal; pointwise products are in bit-reversed order, inverse DIT expects that. Roots are built dynamically up to needed power of two. Inverse NTT is often left unscaled and selected coefficients are multiplied by inv_n.
+- **Fast paths:** Exact alternating S="BW"*N is handled by A(x)=F(x)/(1+F(x)), F=sum k!x^k, using one poly_inv and an O(N) dot product. More generally, if events have constant balance d=b_i-m_i and consecutive m_i,b_i, the recurrence becomes A = -B/(1+F_d/fact[d]) with F_d[k]=fact[d+k]/fact[d]; compute H=1/(...) and one truncated convolution.
+- **Tuning and memory:** CDQ uses leaf block 64, direct for very small work, and NTT otherwise; an absolute direct cap avoids large Python loops. CDQ deletes convolution arrays before recursing right. poly_mul uses direct for tiny cases and NTT otherwise.
+- **Validation:** A dev-only harness (not shipped) compared cdq_solve against direct_dp_small on random valid event lists with t=2000..5000, including cases forcing NTT branches, and brute-forced all small N<=8 strings. No coefficient mismatches were found. Robustness fixes included additive F accumulation for duplicate m indices and deleting NTT temporaries before recursive calls.
+- **Edge cases:** N=1 gives 1 for "BW" and 0 for "WB". No events gives fact[N]. Early 0 for S[0]=='W' or S[-1]=='B'. All factorial indices stay in [0,N].
+
+### NEXT
+- none
+
+### STATUS
+solved
