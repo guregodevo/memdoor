@@ -33,14 +33,68 @@ const (
 
 // ByokKey is the person's OpenRouter key, or "" when there is none. The same
 // key the decision model uses (ADR-0015) — one key for the whole product.
+// The environment's first, else the one `memdoor connect` kept (a sign-in, a
+// key found on the machine, a pasted one): until 2026-10-31 a kept key got
+// none of the OpenRouter path (the ladder, the privacy policy, the decision
+// model, web search) and answered on whatever model OpenRouter listed first.
 func ByokKey() string {
-	for _, name := range []string{"OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY"} {
-		if k := strings.TrimSpace(os.Getenv(name)); k != "" {
-			return k
+	key, _ := byokKey()
+	return key
+}
+
+// ByokKeySource says where ByokKey came from: "env NAME", or the kept key's
+// source ("providers.json", "env NAME" for a kept variable name, "command").
+func ByokKeySource() string {
+	_, source := byokKey()
+	return source
+}
+
+// ByokKeyFromEnv says whether the key is a variable of the gateway's own
+// environment, the one a message may name.
+func ByokKeyFromEnv() bool {
+	return strings.TrimSpace(os.Getenv(ByokKeyVar())) != ""
+}
+
+// byokEnvKey is the environment's key alone: the registry's built-in entry
+// reads it, and a kept key reaches the registry through the file's own entry
+// (its base, its models), which the merge in Providers() keeps.
+func byokEnvKey() string { return strings.TrimSpace(os.Getenv(ByokKeyVar())) }
+
+func byokKey() (string, string) {
+	if name := ByokKeyVar(); strings.TrimSpace(os.Getenv(name)) != "" {
+		return strings.TrimSpace(os.Getenv(name)), "env " + name
+	}
+	if key, source := keptKey(OpenRouterID); key != "" {
+		return key, source
+	}
+	return "", ""
+}
+
+// ByokKeyVar is the variable the OpenRouter key is under: OPEN_ROUTER_API_KEY,
+// Memdoor's first name (it wins when both are set, as it always did), or
+// OPENROUTER_API_KEY, the name OpenRouter and most tools use and the one
+// returned when neither is set.
+func ByokKeyVar() string {
+	for _, name := range OpenRouterKeyVars {
+		if strings.TrimSpace(os.Getenv(name)) != "" {
+			return name
 		}
 	}
-	return ""
+	return OpenRouterKeyVar
 }
+
+// OpenRouterKeyVars are both names the OpenRouter key is read under, the one
+// that wins first.
+var OpenRouterKeyVars = []string{"OPEN_ROUTER_API_KEY", OpenRouterKeyVar}
+
+// OpenRouterKeyVar is the name every message tells a person to set.
+const OpenRouterKeyVar = "OPENROUTER_API_KEY"
+
+// OpenRouterID and OpenRouterBase are the OpenRouter provider's id and base.
+const (
+	OpenRouterID   = "openrouter"
+	OpenRouterBase = "https://openrouter.ai/api/v1"
+)
 
 // WebSearch is where the web_search tool goes: OpenRouter, on the person's
 // key, answered by the cheapest rung of the coder's ladder (the search

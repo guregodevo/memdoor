@@ -104,6 +104,13 @@ func systemOneFromEnv() (p decision.Provider, codingKey bool) {
 		if key = providers.ByokKey(); key != "" {
 			codingKey = true
 		}
+		// A free account (byok_free_tier.go) has no credit for the decision
+		// model: every judged read would be one refused call more. Off until
+		// it has credit; a decision key of its own still turns it on.
+		if re := providers.ActiveRemoteEngine(); codingKey && re != nil && re.FreeTier {
+			dlog().Info("no decision model on a free OpenRouter account: it judges once the account has credit")
+			return nil, false
+		}
 	}
 	// A decision key pointed at OpenRouter still needs the endpoint and model
 	// that serve Jev there; it just has to be a key someone chose for this.

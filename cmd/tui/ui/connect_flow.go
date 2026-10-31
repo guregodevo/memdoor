@@ -26,12 +26,22 @@ type ConnectKind struct {
 	Keyless                   bool   // no token at all: a runtime on this machine or the box (Ollama, llama.cpp, janis, LM Studio)
 }
 
+// The kinds that sign in in the browser instead of taking a pasted key.
+const (
+	KindChatGPT         = "chatgpt"
+	KindOpenRouterLogin = "openrouter-login"
+)
+
 var ConnectKinds = []ConnectKind{
+	// Sign in with OpenRouter (2026-10-31, Greg: "they dont know the key"):
+	// first, so Enter on an empty machine signs in instead of asking for a
+	// key a newcomer does not have (gateway/providers_openrouter_login.go).
+	{KindOpenRouterLogin, "Sign in with OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "no key? sign in or sign up free in the browser", false, "", false},
 	{"gateway", "Company AI gateway", "", "https://ai-gateway.example.com/ai", "the base before /v1; a personal or service-account token", true, "", false},
 	// Sign in with ChatGPT (2026-10-10): a Plus or Pro plan's allowance, no
 	// key; the browser step runs on the gateway (gateway/providers_chatgpt.go).
-	{"chatgpt", "ChatGPT plan (Plus/Pro)", "chatgpt", "https://api.openai.com/v1", "sign in with ChatGPT in the browser: your plan's allowance, no API key", false, "", false},
-	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPEN_ROUTER_API_KEY", false},
+	{KindChatGPT, "ChatGPT plan (Plus/Pro)", "chatgpt", "https://api.openai.com/v1", "sign in with ChatGPT in the browser: your plan's allowance, no API key", false, "", false},
+	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPENROUTER_API_KEY", false},
 	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY", false},
 	{"openai", "OpenAI", "responses", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY", false},
 	{"gemini", "Google Gemini", "chat", "https://generativelanguage.googleapis.com/v1beta/openai", "an API key from Google AI Studio", false, "GEMINI_API_KEY", false},
@@ -71,8 +81,31 @@ type ConnectResult struct {
 	Error     string   `json:"error"`
 	Advice    string   `json:"advice"`
 	Saved     bool     `json:"saved"`
-	Decisions bool     `json:"decisions"` // a local runtime's decisions endpoint answered too
-	Base      string   `json:"base"`      // where a blank base found the runtime
+	Decisions bool     `json:"decisions"`  // a local runtime's decisions endpoint answered too
+	Base      string   `json:"base"`       // where a blank base found the runtime
+	FreeModel string   `json:"free_model"` // an OpenRouter account with no credit: every turn runs on this free model
+	Default   string   `json:"default"`    // a ChatGPT plan's model that answers by default now
+	Notes     []string `json:"notes"`      // kept pins moved from the OpenAI key to the plan
+}
+
+// PlanNotes is what a ChatGPT sign-in changed: the plan answering by
+// default, and each pin it moved off the OpenAI key.
+func PlanNotes(r ConnectResult) []string {
+	var out []string
+	if r.Default != "" {
+		out = append(out, "Your plan answers by default now, on "+r.Default+" (the first model it lists); /model chatgpt:<id> picks another.")
+	}
+	for _, n := range r.Notes {
+		out = append(out, "Your pin moved off the billed OpenAI key: "+n+" (from the next conversation; /model in an open window).")
+	}
+	return out
+}
+
+// FreeModelNote is what to know when an OpenRouter account with no credit
+// answers on a free model (gateway/providers/byok_free_tier.go).
+func FreeModelNote(model string) string {
+	return "Your OpenRouter account has no credit yet: every turn runs on " + model +
+		", free (its hosts may train on what they are sent). Add credit at openrouter.ai/settings/credits for the private paid models."
 }
 
 // ConnectOps is the one call /connect makes, and the browser sign-in's
@@ -87,10 +120,16 @@ type ConnectOps struct {
 	// whether a browser opened and whether the link was copied.
 	LoginStart func(kind string) (id, url string, opened, copied bool, err error)
 	// LoginWait waits up to ~25 s: done with the probe's result, or not yet.
-	LoginWait func(id string) (done bool, res ConnectResult, err error)
-	// LoginPaste hands the sign-in a redirect URL pasted in the window.
-	LoginPaste  func(id, value string) error
-	LoginCancel func(id string)
+	LoginWait func(kind, id string) (done bool, res ConnectResult, err error)
+	// LoginPaste hands the sign-in a redirect URL (or a code) pasted in the window.
+	LoginPaste  func(kind, id, value string) error
+	LoginCancel func(kind, id string)
+	// Found is the model keys already on this machine (this shell under any
+	// name, the project's .env), one label each ("OpenRouter  $MY_OR_KEY"),
+	// listed before the kinds; ConnectFound probes and keeps the i-th
+	// (cmd/cli/cmd/connect_found.go, Greg 2026-10-31: "scan keys").
+	Found        func() []string
+	ConnectFound func(i int) (ConnectResult, error)
 }
 
 const (
@@ -106,7 +145,8 @@ const (
 // connectFlow is the window's state while /connect runs.
 type connectFlow struct {
 	step   int
-	index  int // the kind picker's cursor
+	index  int      // the kind picker's cursor, over found keys then kinds
+	found  []string // the keys found on this machine, listed first
 	kind   ConnectKind
 	id     string
 	base   string
@@ -164,6 +204,9 @@ func (m *Model) connectCommand(args []string) tea.Cmd {
 			return nil
 		}
 	}
+	if f.kind.ID == "" && m.connectOps.Found != nil && m.connectOps.ConnectFound != nil {
+		f.found = m.connectOps.Found()
+	}
 	m.connect = f
 	m.input.Reset()
 	if f.kind.ID != "" && connectKindSignsIn(f.kind) {
@@ -175,7 +218,26 @@ func (m *Model) connectCommand(args []string) tea.Cmd {
 
 // connectKindSignsIn says whether a kind is a browser sign-in rather than a
 // pasted key.
-func connectKindSignsIn(k ConnectKind) bool { return k.API == "chatgpt" }
+func connectKindSignsIn(k ConnectKind) bool {
+	return k.ID == KindChatGPT || k.ID == KindOpenRouterLogin
+}
+
+// signInTitle heads a browser sign-in's screen.
+func signInTitle(k ConnectKind) string {
+	if k.ID == KindOpenRouterLogin {
+		return "Sign in with OpenRouter"
+	}
+	return "Sign in with ChatGPT"
+}
+
+// probingLine heads the wait while a key is probed: a found key has no base
+// typed in the window.
+func probingLine(base string) string {
+	if base == "" {
+		return "Probing the key — its model list, then one call …"
+	}
+	return "Probing " + base + " — its model list, then one call …"
+}
 
 // connectLoginStart begins the browser sign-in on the gateway.
 func (m *Model) connectLoginStart() tea.Cmd {
@@ -213,9 +275,9 @@ func (m *Model) connectLoginWait() tea.Cmd {
 	if f == nil || m.connectOps.LoginWait == nil {
 		return nil
 	}
-	id, wait := f.loginID, m.connectOps.LoginWait
+	kind, id, wait := f.kind.ID, f.loginID, m.connectOps.LoginWait
 	return func() tea.Msg {
-		done, res, err := wait(id)
+		done, res, err := wait(kind, id)
 		return connectLoginWaitMsg{id: id, done: done, res: res, err: err}
 	}
 }
@@ -281,7 +343,7 @@ func (m *Model) connectKey(k tea.KeyMsg) (handled bool, cmd tea.Cmd) {
 	}
 	if k.Type == tea.KeyEsc {
 		if f.step == connectStepBrowser && f.loginID != "" && m.connectOps.LoginCancel != nil {
-			m.connectOps.LoginCancel(f.loginID)
+			m.connectOps.LoginCancel(f.kind.ID, f.loginID)
 		}
 		m.connect = nil
 		m.input.Reset()
@@ -295,7 +357,7 @@ func (m *Model) connectKey(k tea.KeyMsg) (handled bool, cmd tea.Cmd) {
 			v := strings.TrimSpace(m.input.Value())
 			m.input.Reset()
 			if v != "" && f.loginID != "" && m.connectOps.LoginPaste != nil {
-				if err := m.connectOps.LoginPaste(f.loginID, v); err != nil {
+				if err := m.connectOps.LoginPaste(f.kind.ID, f.loginID, v); err != nil {
 					m.note("✗ " + err.Error())
 				}
 			}
@@ -303,16 +365,17 @@ func (m *Model) connectKey(k tea.KeyMsg) (handled bool, cmd tea.Cmd) {
 		}
 		return false, nil
 	case connectStepKind:
+		total := len(f.found) + len(ConnectKinds)
 		switch {
 		case k.Type == tea.KeyUp:
-			f.index = (f.index - 1 + len(ConnectKinds)) % len(ConnectKinds)
+			f.index = (f.index - 1 + total) % total
 		case k.Type == tea.KeyDown:
-			f.index = (f.index + 1) % len(ConnectKinds)
+			f.index = (f.index + 1) % total
 		case k.Type == tea.KeyEnter:
-			return true, m.connectPick(f.index)
+			return true, m.connectPickAt(f.index)
 		case k.Type == tea.KeyRunes && len(k.Runes) == 1 && k.Runes[0] >= '1' && k.Runes[0] <= '9':
-			if n := int(k.Runes[0] - '1'); n < len(ConnectKinds) {
-				return true, m.connectPick(n)
+			if n := int(k.Runes[0] - '1'); n < total {
+				return true, m.connectPickAt(n)
 			}
 		}
 		return true, nil
@@ -323,6 +386,25 @@ func (m *Model) connectKey(k tea.KeyMsg) (handled bool, cmd tea.Cmd) {
 		return true, m.connectEnter(strings.TrimSpace(m.input.Value()))
 	}
 	return false, nil
+}
+
+// connectPickAt is the picker's n-th line: a found key, else a kind.
+func (m *Model) connectPickAt(n int) tea.Cmd {
+	f := m.connect
+	if n >= len(f.found) {
+		return m.connectPick(n - len(f.found))
+	}
+	f.step = connectStepProbing
+	m.input.Reset()
+	op, label := m.connectOps.ConnectFound, f.found[n]
+	return func() tea.Msg {
+		res, err := op(n)
+		id := res.ID
+		if id == "" {
+			id = strings.Fields(label)[0]
+		}
+		return connectResultMsg{req: ConnectRequest{ID: id}, res: res, err: err}
+	}
 }
 
 func (m *Model) connectPick(n int) tea.Cmd {
@@ -417,7 +499,17 @@ func (m *Model) connectDone(msg connectResultMsg) {
 		if len(r.Sample) > 0 {
 			s += "\n  e.g. " + strings.Join(r.Sample, ", ")
 		}
-		s += "\n  /model chatgpt:<id> pins one of its models for this conversation (the chatgpt: prefix, since an OpenAI key lists the same ids); ChatGPT → Settings → Usage shows the weekly cap per app."
+		for _, n := range PlanNotes(r) {
+			s += "\n  " + n
+		}
+		s += "\n  /model chatgpt:<id> pins one of its models (the chatgpt: prefix, since an OpenAI key lists the same ids); ChatGPT → Settings → Usage shows the weekly cap per app."
+		m.note(s)
+	case msg.req.ID == KindOpenRouterLogin:
+		r := msg.res
+		s := fmt.Sprintf("✓ **OpenRouter** connected · %d models · tested %s → %q\n  OpenRouter made a key named Memdoor on your account (openrouter.ai/settings/keys); turns are billed to your credits at list price.", r.Models, r.Tested, r.Answer)
+		if r.FreeModel != "" {
+			s += "\n  " + FreeModelNote(r.FreeModel)
+		}
 		m.note(s)
 	default:
 		r := msg.res
@@ -431,6 +523,9 @@ func (m *Model) connectDone(msg connectResultMsg) {
 		s += "\n  /model <id> pins one of its models for this conversation; /model-search <name> finds them."
 		if r.Decisions {
 			s += "\n  it judges too: kept as " + r.ID + "-decisions, the decision model runs here with no key."
+		}
+		if r.FreeModel != "" {
+			s += "\n  " + FreeModelNote(r.FreeModel)
 		}
 		m.note(s)
 	}
@@ -450,7 +545,20 @@ func (m Model) renderConnect(inputStyle, helpStyle lipgloss.Style) string {
 	switch f.step {
 	case connectStepKind:
 		b.WriteString(head.Render("Connect a provider — which kind?") + "\n")
-		for i, k := range ConnectKinds {
+		if len(f.found) > 0 {
+			b.WriteString(dim.Render("Found on this machine:") + "\n")
+			for i, label := range f.found {
+				line := fmt.Sprintf("  %d. %s", i+1, label)
+				if i == f.index {
+					b.WriteString(head.Render(">"+line[1:]) + "\n")
+				} else {
+					b.WriteString(dim.Render(line) + "\n")
+				}
+			}
+			b.WriteString(dim.Render("Or a provider:") + "\n")
+		}
+		for j, k := range ConnectKinds {
+			i := len(f.found) + j
 			line := fmt.Sprintf("  %d. %-32s %s", i+1, k.Name, k.Hint)
 			if i == f.index {
 				b.WriteString(head.Render(">"+line[1:]) + "\n")
@@ -487,14 +595,14 @@ func (m Model) renderConnect(inputStyle, helpStyle lipgloss.Style) string {
 		b.WriteString(head.Render(f.kind.Name+" — a model to test with (blank: the first it lists)") + "\n")
 		b.WriteString(m.input.View())
 	case connectStepProbing:
-		b.WriteString(head.Render("Probing " + f.base + " — its model list, then one call …"))
+		b.WriteString(head.Render(probingLine(f.base)))
 		return inputStyle.Render(b.String())
 	case connectStepBrowser:
 		if f.loginURL == "" {
-			b.WriteString(head.Render("Sign in with ChatGPT — starting …"))
+			b.WriteString(head.Render(signInTitle(f.kind) + " — starting …"))
 			return inputStyle.Render(b.String())
 		}
-		b.WriteString(head.Render("Sign in with ChatGPT — approve in the browser") + "\n")
+		b.WriteString(head.Render(signInTitle(f.kind)+" — approve in the browser") + "\n")
 		switch {
 		case f.opened:
 			b.WriteString(dim.Render("Your browser is opening. If it doesn't, open this link:") + "\n")
@@ -505,7 +613,7 @@ func (m Model) renderConnect(inputStyle, helpStyle lipgloss.Style) string {
 		if f.copied {
 			b.WriteString(dim.Render("  (copied to the clipboard)") + "\n")
 		}
-		b.WriteString(dim.Render("Waiting (5 minutes). A browser on another machine: paste the page's address here and press enter.") + "\n")
+		b.WriteString(dim.Render("Waiting. A browser on another machine: paste the page's address (or the code it shows) here and press enter.") + "\n")
 		b.WriteString(m.input.View())
 		b.WriteString("\n" + helpStyle.Render("esc cancel"))
 		return inputStyle.Render(b.String())

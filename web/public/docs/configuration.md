@@ -22,7 +22,7 @@ Memdoor works without configuration. These are the levers when you need them.
 
 | Variable | Effect |
 |---|---|
-| `OPEN_ROUTER_API_KEY` | Your OpenRouter key: turns go straight to OpenRouter on your account, and the decision model uses it too. Any provider's key works the same for turns: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, … or `memdoor connect` ([providers](/docs/providers)) |
+| `OPENROUTER_API_KEY` | Your OpenRouter key: turns go straight to OpenRouter on your account, and the decision model uses it too. Any provider's key works the same for turns: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, … or `memdoor connect` ([providers](/docs/providers)) |
 | `MEMDOOR_WORKSPACE` | Workspace slug, when you don't want directory discovery |
 | `MEMDOOR_GATEWAY` | Gateway address the CLI talks to |
 | `MEMDOOR_MODEL` | The model on a vendor key or a company gateway (OpenAI, Gemini and the gateway need it named) |

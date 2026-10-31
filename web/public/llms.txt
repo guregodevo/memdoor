@@ -32,7 +32,7 @@ Describe the steps and the coder writes a workflow: one YAML per task in `.memdo
 
 ## Price
 
-- Free: the agent, the decision model (on an OpenRouter key or a decision key) and workflows with local schedules, on your own key.
+- Free: the agent, the decision model (on an OpenRouter key or a decision key) and workflows with local schedules.
 - Pro, $10/month: remote control through the memdoor.ai relay, and every workflow run's state kept on memdoor.ai, one table per workspace, so a workflow can wait on a task another workflow produced, from any machine; `memdoor workflow history` answers from anywhere. Coming: runs with the laptop closed. A seat never supplies a model key. https://memdoor.ai/pricing or `memdoor account subscribe`.
 - Enterprise: the hosted state and the relay served for a company on its own instance or host, people and admins set up by us, invoiced. hello@memdoor.ai.
 
@@ -40,7 +40,7 @@ Describe the steps and the coder writes a workflow: one YAML per task in `.memdo
 
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
-export OPEN_ROUTER_API_KEY=sk-or-...
+export OPENROUTER_API_KEY=sk-or-...
 cd your-project && memdoor tui
 ```
 

@@ -14,6 +14,7 @@ import (
 )
 
 func TestByokEngineFromTheKey(t *testing.T) {
+	t.Setenv("HOME", t.TempDir()) // a kept key is a BYOK engine too (byokKey): never this machine's
 	t.Setenv("OPENROUTER_API_KEY", "")
 	t.Setenv("OPEN_ROUTER_API_KEY", "")
 	if _, ok := ByokEngine(); ok {

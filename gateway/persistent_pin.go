@@ -2,9 +2,12 @@ package gateway
 
 import (
 	"encoding/json"
-	"memdoor/pkg/shared"
 	"os"
 	"path/filepath"
+	"sort"
+
+	"memdoor/gateway/providers"
+	"memdoor/pkg/shared"
 )
 
 // THE PIN STAYS (Greg, 2026-10-03: "it didnt pin it when i opened another
@@ -131,4 +134,35 @@ func applyPersistentPin(actor string, sessions ...*Session) bool {
 		}
 	}
 	return true
+}
+
+// pinsToPlan moves each kept pin on the OpenAI key ("openai:<id>") that the
+// signed-in plan also lists to the plan ("chatgpt:<id>"), and says which it
+// moved. Signing in with ChatGPT is choosing the plan over the key (Greg,
+// 2026-10-31: a pin kept from before billed the API for a model the plan
+// serves); a pin on an id only the key lists stays where it is.
+func pinsToPlan(plan []providers.Model) []string {
+	lists := map[string]bool{}
+	for _, m := range plan {
+		lists[m.ID] = true
+	}
+	f := readPins()
+	var moved []string
+	for actor, p := range f.ByActor {
+		if p == nil {
+			continue
+		}
+		want, id := providers.SplitPin(p.Model)
+		if want != "openai" || !lists[id] {
+			continue
+		}
+		next := *p
+		next.Model = providers.ChatGPTID + ":" + id
+		if err := writePersistentPin(actor, &next); err != nil {
+			continue
+		}
+		moved = append(moved, p.Model+" → "+next.Model)
+	}
+	sort.Strings(moved)
+	return moved
 }

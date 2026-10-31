@@ -3,13 +3,11 @@ package mcp
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"memdoor/pkg/oidc"
 	"net"
 	"net/http"
 	"net/url"
@@ -233,14 +231,13 @@ func (o *OAuth) BeginLogin(ctx context.Context, serverURL, challenge string) (*L
 		ln.Close()
 		return nil, err
 	}
-	l.verifier = randomString(48)
-	l.state = randomString(24)
-	sum := sha256.Sum256([]byte(l.verifier))
+	l.verifier = oidc.RandomString(48)
+	l.state = oidc.RandomString(24)
 	q := url.Values{
 		"response_type":         {"code"},
 		"client_id":             {l.clientID},
 		"redirect_uri":          {l.redirect},
-		"code_challenge":        {base64.RawURLEncoding.EncodeToString(sum[:])},
+		"code_challenge":        {oidc.PKCEChallenge(l.verifier)},
 		"code_challenge_method": {"S256"},
 		"state":                 {l.state},
 		"resource":              {ep.resource},
@@ -464,12 +461,6 @@ func (o *OAuth) tokenRequest(ctx context.Context, endpoint string, form url.Valu
 		t.ExpiresAt = time.Now().Add(time.Duration(tr.ExpiresIn) * time.Second)
 	}
 	return t, nil
-}
-
-func randomString(n int) string {
-	b := make([]byte, n)
-	_, _ = rand.Read(b)
-	return base64.RawURLEncoding.EncodeToString(b)[:n]
 }
 
 func htmlEscape(s string) string {

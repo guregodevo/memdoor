@@ -1,19 +1,19 @@
 # Memdoor docs
 
 **A minimalist coding agent** that runs from Terminal, a shell, CI, cron,
-your IDE or phone, on a gateway you own, on **your own key, any provider's**. Multi-step jobs are files in the repo,
+your IDE or phone, on a gateway you own, **BYOK, any provider**. Multi-step jobs are files in the repo,
 run again by hand or on a schedule; each step is checked by its output, and the
 run stops only where you decide. A decision model in front of the chat model
 cuts what it reads and what it costs. Measured over 44 paired runs: 74% fewer input tokens on a question
 about the codebase, no change on edits, 22 of 22 passed each way. The
 agent, the decision model, workflows and every door onto your own gateway are
-open source (Apache-2.0) and free on your own key, self-hosted by one person or
+open source (Apache-2.0) and free, self-hosted by one person or
 a company; only the gateway memdoor.ai hosts (workflow state across machines,
 the relay for a gateway kept to localhost) is $10 a month.
 
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
-export OPEN_ROUTER_API_KEY=sk-or-...   # or any provider's key, or: memdoor connect
+export OPENROUTER_API_KEY=sk-or-...    # or any provider's key, or: memdoor connect
 cd your-project && memdoor
 ```
 
@@ -58,8 +58,8 @@ is added to your bill. The hosted gateway's $10 is never for inference on your k
 **Does my code leave my machine?** Your files, sessions, memory and the output of
 every command stay local. What leaves is the prompt and the excerpts a model must
 read, with `data_collection: deny` on every request and training hosts excluded
-(a model you pin whose id ends in `:free` is the exception: its hosts train, and
-the pin says so).
+(a `:free` model is the exception, one you pin or the one an OpenRouter account
+with no credit answers on: its hosts train, and Memdoor says so at the pin or when the key is connected).
 Without an OpenRouter or decision key nothing is judged off-machine either.
 
 **Is there a token or call limit?** No cap on tool calls. The decision model ends

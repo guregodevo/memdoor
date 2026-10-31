@@ -364,7 +364,7 @@ func nextStepsText(slug string) string {
 	// In the order they will be typed, and nothing else.
 	return fmt.Sprintf(`
 Next steps:
-  export OPEN_ROUTER_API_KEY=sk-or-...   your key, your bill, at list price (or any provider's key; or memdoor connect)
+  export OPENROUTER_API_KEY=sk-or-...    at list price (or any provider's key; or memdoor connect)
   cd <your-project> && memdoor workspace use %s
   memdoor                                it reads, patches and tests in there
 
@@ -472,12 +472,16 @@ func init() {
 // offerLocalModel says how to get a model when setup finds no key: a
 // provider key, or memdoor connect. Memdoor is API-only (2026-10-03).
 func offerLocalModel(workspaceSlug string) {
-	if strings.TrimSpace(os.Getenv("OPEN_ROUTER_API_KEY")) != "" {
-		fmt.Println("  Running on your own key.")
+	if v := providerKeyInShell(); v != "" {
+		fmt.Printf("  Model key: $%s.\n", v)
+		return
+	}
+	if found := foundKeys(); len(found) > 0 {
+		fmt.Printf("  A model key is in %s: memdoor connect offers it first.\n", found[0].Where())
 		return
 	}
 	fmt.Println("")
 	fmt.Println("  No provider key here yet. Either:")
-	fmt.Println("    export OPEN_ROUTER_API_KEY=sk-or-...   your key, your bill, at list price (or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …)")
+	fmt.Println("    export OPENROUTER_API_KEY=sk-or-...    at list price (or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …)")
 	fmt.Println("    memdoor connect                        pick a provider, paste its key; it is probed, then kept")
 }

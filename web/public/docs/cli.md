@@ -5,7 +5,7 @@ Every command is `memdoor <group> <command>`. `--help` works at every level and 
 ## Getting going
 
 ```
-export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, … — or memdoor connect
+export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, … — or memdoor connect
 cd your-project && memdoor        # the first run sets the machine up: gateway, workspace, account, then the window
 memdoor tui                       # the coding agent, on the directory you launch from (the bare `memdoor` opens it too)
 memdoor resume                    # pick up a previous conversation where you left off
@@ -27,7 +27,9 @@ memdoor providers                 # each provider, connected or not; ● the one
 memdoor providers --models groq   # one provider's own list: window · max out · $ per million
 memdoor providers --audit         # where every window came from, and which are guesses
 memdoor providers --refresh       # read every list again (a vendor shipped a model)
-memdoor connect [kind]            # add one: gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, custom
+memdoor connect [kind]            # add one: openrouter-login, gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, local, custom
+                                  # no kind: a list — keys found on this machine first (Enter connects the first),
+                                  # then "Sign in, no key:" (OpenRouter, ChatGPT), then the keyed kinds
 memdoor connect groq --probe      # test the key, keep nothing
 memdoor connect --remove <id>     # forget one you added
 ```

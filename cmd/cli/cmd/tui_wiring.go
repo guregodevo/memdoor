@@ -97,7 +97,7 @@ func (w *tuiWiring) baseConfig(agent, chID, chName string, page int) ui.PageConf
 			Effort:         tuiEffort(wsID, chID, agent),
 			MCP:            tuiMCPOps(curDir),
 			Workflow:       tuiWorkflowOps(curDir, wsID, chID),
-			Connect:        ui.ConnectOps{Connect: tuiConnect, KeySource: providerKeySource, LoginStart: tuiConnectLoginStart, LoginWait: chatgptLoginWait, LoginPaste: chatgptLoginPaste, LoginCancel: chatgptLoginCancel},
+			Connect:        ui.ConnectOps{Connect: tuiConnect, KeySource: providerKeySource, LoginStart: tuiConnectLoginStart, LoginWait: signInWait, LoginPaste: signInPaste, LoginCancel: signInCancel, Found: tuiFoundKeys, ConnectFound: tuiConnectFound},
 			Status: func() ui.Status {
 				st := tuiPageStatus(curDir(), wsID, chID, agent)
 				st.Update = tuiUpdateNotice()

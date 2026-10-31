@@ -29,11 +29,11 @@ func TestConnectFlowPicksTypesProbesAndSays(t *testing.T) {
 	if cmd := m.connectCommand(nil); cmd != nil || m.connect == nil || m.connect.step != connectStepKind {
 		t.Fatal("/connect opens the kind picker")
 	}
-	if v := m.renderConnect(lipglossPlain(), lipglossPlain()); !strings.Contains(v, "which kind") || !strings.Contains(v, "2. ChatGPT") || !strings.Contains(v, "3. OpenRouter") || !strings.Contains(v, "4. Anthropic") {
+	if v := m.renderConnect(lipglossPlain(), lipglossPlain()); !strings.Contains(v, "which kind") || !strings.Contains(v, "1. Sign in with OpenRouter") || !strings.Contains(v, "3. ChatGPT") || !strings.Contains(v, "4. OpenRouter") || !strings.Contains(v, "5. Anthropic") {
 		t.Fatalf("picker: %q", v)
 	}
-	if h, _ := m.connectKey(press(tea.KeyRunes, '4')); !h || m.connect.kind.ID != "anthropic" || m.connect.step != connectStepBase || m.input.Value() != "https://api.anthropic.com" {
-		t.Fatalf("4 picks Anthropic and prefills its base: %+v %q", m.connect, m.input.Value())
+	if h, _ := m.connectKey(press(tea.KeyRunes, '5')); !h || m.connect.kind.ID != "anthropic" || m.connect.step != connectStepBase || m.input.Value() != "https://api.anthropic.com" {
+		t.Fatalf("5 picks Anthropic and prefills its base: %+v %q", m.connect, m.input.Value())
 	}
 	if h, _ := m.connectKey(press(tea.KeyEnter)); !h || m.connect.step != connectStepKey || m.connect.base != "https://api.anthropic.com" {
 		t.Fatalf("enter keeps the base: %+v", m.connect)
@@ -115,5 +115,82 @@ func TestConnectALocalRuntimeAsksNoKey(t *testing.T) {
 	cmd()
 	if !got.Keyless || got.Key != "" || got.ID != "local" || got.API != "chat" || got.Base != "" {
 		t.Fatalf("the request says keyless and carries no token: %+v", got)
+	}
+}
+
+// The sign-in screen names the provider being signed in to (live
+// 2026-10-31: the OpenRouter link sat under "Sign in with ChatGPT").
+func TestSignInScreenNamesItsProvider(t *testing.T) {
+	for _, k := range ConnectKinds {
+		if !connectKindSignsIn(k) {
+			continue
+		}
+		m := &Model{width: 120, input: textarea.New()}
+		m.connect = &connectFlow{step: connectStepBrowser, kind: k, loginURL: "https://example.test/auth"}
+		v := m.renderConnect(lipglossPlain(), lipglossPlain())
+		want, other := "Sign in with ChatGPT", "OpenRouter"
+		if k.ID == KindOpenRouterLogin {
+			want, other = "Sign in with OpenRouter", "ChatGPT"
+		}
+		if !strings.Contains(v, want) || strings.Contains(v, other) {
+			t.Fatalf("%s: the screen must say %q and not %q:\n%s", k.ID, want, other, v)
+		}
+	}
+}
+
+// A key already on this machine is listed before the kinds: Enter on it
+// connects it, the kinds keep working below it (the mutation check: drop
+// f.found and "1. OpenRouter  $MY_OR_KEY" is not drawn).
+func TestConnectListsFoundKeysFirst(t *testing.T) {
+	picked := -1
+	m := &Model{width: 120, input: textarea.New()}
+	m.connectOps = ConnectOps{
+		Connect: func(req ConnectRequest) (ConnectResult, error) { return ConnectResult{}, nil },
+		Found:   func() []string { return []string{"OpenRouter  $MY_OR_KEY", "Anthropic  .env: ANTHROPIC_API_KEY"} },
+		ConnectFound: func(i int) (ConnectResult, error) {
+			picked = i
+			return ConnectResult{OK: true, ID: "openrouter", API: "openrouter", Models: 371, Tested: "x/y", Answer: "ok"}, nil
+		},
+	}
+	m.connectCommand(nil)
+	v := m.renderConnect(lipglossPlain(), lipglossPlain())
+	for _, want := range []string{"Found on this machine:", "1. OpenRouter  $MY_OR_KEY", "2. Anthropic  .env: ANTHROPIC_API_KEY", "Or a provider:", "3. Sign in with OpenRouter"} {
+		if !strings.Contains(v, want) {
+			t.Fatalf("picker lacks %q:\n%s", want, v)
+		}
+	}
+	_, cmd := m.connectKey(press(tea.KeyEnter))
+	if cmd == nil || m.connect.step != connectStepProbing {
+		t.Fatalf("enter on the first found key connects it: %+v", m.connect)
+	}
+	m.connectDone(cmd().(connectResultMsg))
+	if last := m.messages[len(m.messages)-1].Content; picked != 0 || !strings.Contains(last, "✓ **openrouter** connected") {
+		t.Fatalf("picked %d, said %q", picked, last)
+	}
+
+	m.connectCommand(nil)
+	if m.connectKey(press(tea.KeyRunes, '7')); m.connect.kind.ID != "anthropic" {
+		t.Fatalf("7 is Anthropic after two found keys: %+v", m.connect.kind)
+	}
+}
+
+// A ChatGPT sign-in's ✓ says the plan answers by default now and which pin
+// it moved off the billed OpenAI key (the mutation check: skip the default
+// line and "answers by default now" is not drawn).
+func TestAChatGPTSignInSaysThePlanAnswersAndThePinMoved(t *testing.T) {
+	m := &Model{width: 120, input: textarea.New()}
+	m.connectDone(connectResultMsg{req: ConnectRequest{ID: "chatgpt", API: "chatgpt"}, res: ConnectResult{
+		OK: true, ID: "chatgpt", Models: 8, Tested: "gpt-6.1-sol", Answer: "ok",
+		Default: "gpt-6.1-sol", Notes: []string{"openai:gpt-6-astra → chatgpt:gpt-6-astra"},
+	}})
+	last := m.messages[len(m.messages)-1].Content
+	for _, want := range []string{"✓ **ChatGPT plan** connected", "answers by default now, on gpt-6.1-sol", "off the billed OpenAI key: openai:gpt-6-astra → chatgpt:gpt-6-astra"} {
+		if !strings.Contains(last, want) {
+			t.Fatalf("lacks %q:\n%s", want, last)
+		}
+	}
+	m.connectDone(connectResultMsg{req: ConnectRequest{ID: "chatgpt", API: "chatgpt"}, res: ConnectResult{OK: true, ID: "chatgpt", Models: 8, Tested: "gpt-6.1-sol", Answer: "ok"}})
+	if last := m.messages[len(m.messages)-1].Content; strings.Contains(last, "by default") || strings.Contains(last, "pin moved") {
+		t.Fatalf("a company key answering: no default line, no pin line:\n%s", last)
 	}
 }

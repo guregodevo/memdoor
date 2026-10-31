@@ -13,7 +13,7 @@ import (
 func TestSetupNextStepsSayWhatToTypeNext(t *testing.T) {
 	out := nextStepsText("stranger")
 	for _, want := range []string{
-		"OPEN_ROUTER_API_KEY",    // their key, their bill
+		"OPENROUTER_API_KEY",     // the name OpenRouter uses
 		"&& memdoor",             // the one command that starts the work
 		"workspace use stranger", // what makes it work in a project directory
 		"/model",                 // which model answers

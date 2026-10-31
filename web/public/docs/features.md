@@ -1,7 +1,7 @@
 # Overview
 
 Everything Memdoor does, and where each part is documented. Memdoor is a coding
-agent on a gateway you own, on your own key, any provider's: runs from Terminal,
+agent on a gateway you own, BYOK, any provider: runs from Terminal,
 a shell, CI, cron, your IDE or phone; multi-step jobs are
 files in the repo, run again by hand or on a schedule, each step checked by its
 output. A decision model in front of the chat model cuts what it reads and what
@@ -30,7 +30,7 @@ change on an edit or on small fixes, 22 of 22 passed each way.
 
 ## Your key and the models
 
-Export a provider key (`OPEN_ROUTER_API_KEY`, `ANTHROPIC_API_KEY`,
+Export a provider key (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`,
 `DEEPSEEK_API_KEY`, …) or run `memdoor connect`, and turns go straight from your
 machine to that provider at their list price. Each agent has a ladder, cheapest rung first, and
 the footer names the model that answered and why. `/model` searches the whole
@@ -41,7 +41,7 @@ hosts.
 
 ## Web search
 
-`web_search` looks something up on the web and answers with numbered sources; `web_fetch` reads one of those pages in full. The coder has both, and they run on your own OpenRouter key — no other account. An answer with no source is refused, so the agent cannot pass memory off as a search. The `chrome` skill sends searches to `web_search` too, and keeps the browser for pages that need one.
+`web_search` looks something up on the web and answers with numbered sources; `web_fetch` reads one of those pages in full. The coder has both, and they run on an OpenRouter key — no other account. An answer with no source is refused, so the agent cannot pass memory off as a search. The `chrome` skill sends searches to `web_search` too, and keeps the browser for pages that need one.
 
 ## The terminal
 

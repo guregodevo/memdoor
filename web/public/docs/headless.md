@@ -196,7 +196,7 @@ encrypted, so a run can be watched and answered from a phone. See
 
 A turn judged unfinished by its receipts continues on its own until it is
 shown done or a token budget is spent; the budget is what makes an
-unattended turn safe to leave. See [No babysitting](/docs/no-babysitting).
+unattended turn safe to leave. See [the harness](/docs/no-babysitting).
 
 ## If the gateway restarts
 

@@ -1,6 +1,6 @@
 # Getting Started
 
-From nothing to a coding agent working in your project, on your own API key
+From nothing to a coding agent working in your project, BYOK
 (OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, …), in about two minutes. Everything here happens in a
 terminal, on a Mac (Apple Silicon or Intel), Linux or Windows, one binary. The three installers run on GitHub's
 runners on every change to them.
@@ -20,7 +20,7 @@ in PowerShell, and it is told which.
 ## Your key
 
 ```bash
-export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …
+export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
 On a ChatGPT Plus or Pro plan? Skip the key: `memdoor connect chatgpt` (or
@@ -29,12 +29,16 @@ allowance answers Memdoor's turns; `memdoor connect --remove chatgpt` signs
 out. A Claude subscription cannot be used this way (Anthropic's terms forbid
 it); Claude needs an API key from console.anthropic.com.
 
-No money on a key yet? A free OpenRouter account is enough to try it: in the
-window, `/model nvidia/nemotron-3-super-120b-a12b:free` pins a free model
-(50 requests a day; 1,000 once $10 has ever been bought). Free hosts train on
-what they are sent, and Memdoor says so at the pin: a trial, not private code.
+No key at all? Run `memdoor`: it finds a key already on this machine (in your
+shell under any name, the project's `.env`, or after a yes the keys other coding
+tools saved), else signs you in with OpenRouter in the browser, a free account
+included, or with ChatGPT. That works with a gateway on this machine, over ssh
+or on a box. An OpenRouter account with no credit runs on a free model picked
+from OpenRouter's list (50 requests a day; 1,000 once $10 has ever been
+bought), and the connect says so: free hosts train on what they are sent, so a
+trial, not private code.
 
-No key at hand? Skip it: type `/connect` inside the TUI and paste one. This
+Or type `/connect` inside the TUI and paste a key. This
 is the whole account setup: your key, your bill, at the provider's list
 prices. Put the export in your shell profile so it is there next time.
 
@@ -46,7 +50,7 @@ No key at all, a model on this machine: a running [janis](https://github.com/gur
 memdoor connect local          # finds the runtime on this machine; no token
 ```
 
-On janis the [decision model](/docs/decide) runs there too, with no key.
+On janis the [decision model](/docs/no-babysitting#who-decides-the-decision-model) runs there too, with no key.
 
 ## First turn
 
@@ -140,7 +144,7 @@ with the exit codes.
 
 The judged reads, the per-turn toolbox and the stop-instead-of-loop all come
 from a decision model, and they are what make the same work cost less. It is
-free and runs on your own key: an OpenRouter key turns it on, and so does a
+free: an OpenRouter key turns it on, and so does a
 decision key (`memdoor connect typesafe`) next to any chat provider. With
 neither, nothing is judged and every tool returns its unjudged output.
 

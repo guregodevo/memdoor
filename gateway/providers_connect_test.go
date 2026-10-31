@@ -229,3 +229,23 @@ func TestConnectALocalRuntimeNeedsNoKey(t *testing.T) {
 		t.Fatalf("the file says keyless: %s %v", b, err)
 	}
 }
+
+// A key on an account with no credit yet (a new OpenRouter sign-up) is a good
+// key: the probe's 402 connects it and says what to do, instead of "not
+// connected" (the mutation check: drop hasNoCredit and res.OK is false).
+func TestConnectAKeyWithNoCreditYet(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/models" {
+			_, _ = io.WriteString(w, `{"data":[{"id":"some/model"}]}`)
+			return
+		}
+		w.WriteHeader(http.StatusPaymentRequired)
+		_, _ = io.WriteString(w, `{"error":{"code":402,"message":"Insufficient credits. Add more using https://openrouter.ai/settings/credits"}}`)
+	}))
+	defer srv.Close()
+	res := connectProvider(context.Background(), connectRequest{ID: "fresh", Name: "Fresh", API: providers.APIChat, Base: srv.URL + "/v1", Key: "sk-or-v1-fresh", Probe: true})
+	if !res.OK || !strings.Contains(res.Answer, "no credit") {
+		t.Fatalf("want connected with the no-credit note, got %+v", res)
+	}
+}

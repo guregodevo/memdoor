@@ -282,7 +282,7 @@ The Gateway is configured via `~/.memdoor/config.json` (JSON5 format).
 ### Environment Variables
 
 ```bash
-# Inference runs on a provider's key: OPEN_ROUTER_API_KEY, or a vendor's /
+# Inference runs on a provider's key: OPENROUTER_API_KEY, or a vendor's /
 # company gateway's through `memdoor connect` (docs/features/PROVIDERS.md).
 # MEMDOOR_BILLING_TOKEN is the seat's token, only for a seat.
 

@@ -123,6 +123,7 @@ func runTUI(opts tuiOptions) error {
 			return err
 		}
 		c := NewClient()
+		offerFoundKey(c)
 
 		// The conversation is scoped to the workspace, and the session key the
 		// gateway builds carries it.

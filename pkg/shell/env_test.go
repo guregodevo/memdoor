@@ -16,12 +16,13 @@ func TestCommandHidesModelKeys(t *testing.T) {
 	t.Setenv("OPEN_ROUTER_API_KEY", "sk-or-test-should-not-leak")
 	t.Setenv("ACME_AI_GATEWAY_TOKEN", "gw-test-should-not-leak")
 	t.Setenv("MEMDOOR_ENV_TEST_KEPT", "kept")
+	t.Setenv("MY_OWN_NAME_FOR_IT", "sk-or-v1-"+strings.Repeat("ab", 32)) // a key by its value
 	out, err := Command(context.Background(), "printenv").Output()
 	if err != nil {
 		t.Fatal(err)
 	}
 	s := string(out)
-	for _, leaked := range []string{"should-not-leak", "OPEN_ROUTER_API_KEY", "ACME_AI_GATEWAY_TOKEN"} {
+	for _, leaked := range []string{"should-not-leak", "OPEN_ROUTER_API_KEY", "ACME_AI_GATEWAY_TOKEN", "MY_OWN_NAME_FOR_IT"} {
 		if strings.Contains(s, leaked) {
 			t.Fatalf("the command saw %s", leaked)
 		}

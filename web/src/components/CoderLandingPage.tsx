@@ -63,7 +63,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Is it free?',
-    a: 'Yes, and open source (Apache-2.0): the agent, workflows and every door onto your gateway, your phone included, on your own key, on your laptop or your company\'s machines. Only the gateway memdoor.ai hosts for you is paid, $10 a month; it never buys inference.',
+    a: 'Yes, and open source (Apache-2.0): the agent, workflows and every door onto your gateway, your phone included, on your laptop or your company\'s machines. Only the gateway memdoor.ai hosts for you is paid, $10 a month; it never buys inference.',
   },
   {
     q: 'Can I use my ChatGPT subscription?',
@@ -212,8 +212,8 @@ export function CoderLandingPage() {
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />
               <p className="text-xs text-neutral-400">
-                Free, on your own API key. No key? <code className="text-neutral-300">memdoor connect chatgpt</code> signs
-                in with your ChatGPT Plus/Pro plan. macOS, Linux, Windows.
+                Free, BYOK. No key? The first run signs you in with OpenRouter for free, or with your
+                ChatGPT plan. macOS, Linux, Windows.
               </p>
               <p className="text-xs text-neutral-400">
                 <a href="#demos" className="text-neutral-300 underline underline-offset-4 hover:text-white">
@@ -330,7 +330,7 @@ export function CoderLandingPage() {
               <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Open source</div>
               <div className="mb-4 text-3xl font-bold text-neutral-900">Free, Apache-2.0</div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
-                All of it: the agent, the decision model on your key, workflows, the gateway and every door onto it.
+                All of it: the agent, the decision model, workflows, the gateway and every door onto it.
                 On your own account at OpenRouter, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or Anthropic, on
                 your laptop or a box that stays on. Memdoor adds nothing to the bill.
               </p>
@@ -363,7 +363,7 @@ export function CoderLandingPage() {
             <div className="space-y-3 font-mono text-[13px] sm:text-sm">
               {[
                 ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
-                ['export OPEN_ROUTER_API_KEY=sk-or-…', 'your key, your account; or OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …, ANTHROPIC_API_KEY'],
+                ['export OPENROUTER_API_KEY=sk-or-…', 'your key, your account; or OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …, ANTHROPIC_API_KEY'],
                 ['memdoor connect chatgpt', 'no key: Sign in with ChatGPT, and your Plus/Pro plan answers'],
                 ['cd your-project && memdoor tui', 'the first run sets the machine up; the agent works where you launch it'],
                 ['/model nvidia/nemotron-3-super-120b-a12b:free', 'no money on the key yet: a free model, 50 requests a day; its hosts train on what they are sent'],

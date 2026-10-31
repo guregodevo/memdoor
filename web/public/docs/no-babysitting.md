@@ -1,4 +1,4 @@
-# No babysitting
+# The harness
 
 A coding agent you have to watch is a coding agent you have to pay twice:
 once in tokens, once in your attention. Memdoor checks the agent's work so
@@ -17,7 +17,7 @@ at a time, with the evidence attached, and answers with a probability:
 
 Memdoor acts only when the probability crosses a threshold you can change,
 for example 0.7 to send a turn back. The coding model does the work; the
-decision model decides whether the work needs you. It runs on your own key:
+decision model decides whether the work needs you. It runs on
 a decision key (`memdoor connect typesafe`), else the OpenRouter key you code
 with. On a vendor key, a company's AI gateway or a ChatGPT plan alone it
 stays off until a decision key is set.

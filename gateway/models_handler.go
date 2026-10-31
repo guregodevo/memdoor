@@ -68,12 +68,13 @@ func providerModelsResponse(ctx context.Context, q string, limit int) (map[strin
 	var flat []providers.Model
 	connected := false
 	byProvider := false
-	for _, p := range providers.Providers() {
+	order := providers.AnswerOrder()
+	for _, p := range order {
 		if strings.EqualFold(strings.TrimSpace(q), p.ID) && p.Connected() {
 			byProvider = true
 		}
 	}
-	for _, p := range providers.Providers() {
+	for _, p := range order {
 		g := map[string]any{"id": p.ID, "name": p.Name, "api": p.API, "connected": p.Connected(), "active": p.ID == active, "key_source": p.KeySource}
 		if p.Connected() {
 			connected = true
@@ -104,7 +105,9 @@ func providerModelsResponse(ctx context.Context, q string, limit int) (map[strin
 	// The flat list the picker reads is one row per model id: two providers
 	// listing the same id (a proxy in front of the same catalogue) would
 	// show it twice with nothing to tell them apart. The grouped answer
-	// above keeps both.
+	// above keeps both. The first in AnswerOrder keeps the row, so a pick
+	// pins the provider that answers, and a signed-in plan before the
+	// OpenAI key (live 2026-10-31: gpt-6-astra was pinned on the key).
 	seen := map[string]bool{}
 	dedup := flat[:0]
 	for _, m := range flat {

@@ -54,7 +54,7 @@ grep -r "duplicate_code" .    # Search before coding
 # tags): that vendor and NOTHING else — no OpenRouter, no broker, no catalogue, no web
 # search, decisions off. providers/vendor.go + anthropic.go; docs/SECURITY.md lists every
 # host the binary names and gateway/egress_test.go fails the build on a new one.
-# BYOK (2026-09-27) — OPEN_ROUTER_API_KEY in the gateway's env IS the product:
+# BYOK (2026-09-27) — OPENROUTER_API_KEY (the old OPEN_ROUTER_API_KEY still read, and wins) in the gateway's env IS the product:
 # chat goes straight to OpenRouter on that key (providers/byok.go: local ladders,
 # data_collection deny, require_parameters, price sort; /api/models reads
 # OpenRouter directly).
@@ -66,7 +66,7 @@ grep -r "duplicate_code" .    # Search before coding
 
 # Decisions (Jev via OpenRouter, 2026-09-25) — docs/features/DECIDE.md, ADR-0015
 # No on/off. JEV IS NOT PRO (2026-10-03): a decision key (MEMDOOR_SYSTEMONE_API_KEY),
-# else the person's OPEN_ROUTER_API_KEY (on by default); never the broker.
+# else the person's OPENROUTER_API_KEY (on by default); never the broker.
 # Vendor key: only an explicit decision key (autoDecisionModel, decision_model.go).
 # Settings, read per call: decision_tool_routing=on   decision_message_gate=on
 # memdoor decide was removed 2026-10-03; `memdoor savings` counts the judged reads (proof decisions run)
@@ -478,8 +478,8 @@ are written from an INLINE heredoc in `scripts/deploy.sh`, not from
 **Every LLM request goes through a provider** (2026-10-04, Greg: "no
 exception. all request for llm goes through provider"): `providers.ClientFactory`
 resolves a pinned model to the provider that lists it, else the engine chosen at
-start (a company's vendor key, else the person's own OpenRouter key) to its
-provider, else the first provider added with `memdoor connect`. No gateway
+start (a company's vendor key, else a signed-in ChatGPT plan, else the person's
+own OpenRouter key; `gateway/model_engine.go`) to its provider, else the first provider added with `memdoor connect`. No gateway
 leases a model and no seat supplies a key; the broker's brain (Qwen3.8-Omni-Flash,
 the Hermes text protocol) is deleted. A gateway with no key
 has no model until one is connected. There is no local model.

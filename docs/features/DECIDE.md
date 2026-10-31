@@ -25,7 +25,7 @@ chosen in this order (`autoDecisionModel`, gateway/decision_model.go):
    `TYPESAFE_API_KEY`). An `sk-or-…` value defaults to OpenRouter's decisions
    endpoint and `~typesafe/jev-latest`.
 2. **The person's own OpenRouter key**, the one they code with
-   (`OPEN_ROUTER_API_KEY`). On by default: nothing
+   (`OPENROUTER_API_KEY`). On by default: nothing
    to configure. The log says `System One decision provider registered
    endpoint=… own_openrouter_key=true`.
 No seat supplies a decision key (Greg, 2026-10-04: "Pro seat never offer
@@ -80,8 +80,8 @@ names the same command.
 | `decision_message_gate` | `on` / `shadow` / `off` | offer a message nobody @mentioned to the channel's agents; `shadow` asks and logs `would_reply` without waking anyone |
 | `decision_gate_threshold` | `0.8` | P(reply) an agent needs to take a gated turn |
 
-All are read per call or per turn. Environment: `OPEN_ROUTER_API_KEY` (or
-`OPENROUTER_API_KEY`); `MEMDOOR_SYSTEMONE_URL`, `_API_KEY`, `_MODEL` override
+All are read per call or per turn. Environment: `OPENROUTER_API_KEY` (or
+`OPEN_ROUTER_API_KEY`); `MEMDOOR_SYSTEMONE_URL`, `_API_KEY`, `_MODEL` override
 it — `TYPESAFE_API_KEY` for TypeSafe directly, a `http://127.0.0.1:…` URL and
 no key for a local Kev server. An origin gets `/v1/systemone` appended; a URL
 with a path is used as the endpoint.

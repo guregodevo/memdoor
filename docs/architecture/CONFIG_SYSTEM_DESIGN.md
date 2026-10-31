@@ -218,7 +218,7 @@ environment, and none of them overrides a value in the file.
 | `MEMDOOR_GATEWAY` | the address the CLI and TUI dial: a URL, `host:port`, a bare host, or `ssh://[user@]box[:port]`; `--gateway` wins | `cmd/cli/cmd/root.go` |
 | `MEMDOOR_WORKSPACE` | the workspace slug, second in the resolution chain | `cmd/cli/cmd/workspace_discovery.go` |
 | `MEMDOOR_APPROVE` | approval mode (`changes` asks before bash, writes and MCP tools); wins over the `approve` setting | `gateway/approval.go` |
-| `OPEN_ROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `AI_GATEWAY_BASE_URL` with `*_AI_GATEWAY_TOKEN`, `MEMDOOR_MODEL`, `MEMDOOR_VENDOR_HEADERS`, `MEMDOOR_MODEL_CONTEXT` | the built-in providers and the engine chosen at start | `gateway/providers/registry.go`, `vendor.go`; `docs/features/PROVIDERS.md` |
+| `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `AI_GATEWAY_BASE_URL` with `*_AI_GATEWAY_TOKEN`, `MEMDOOR_MODEL`, `MEMDOOR_VENDOR_HEADERS`, `MEMDOOR_MODEL_CONTEXT` | the built-in providers and the engine chosen at start | `gateway/providers/registry.go`, `vendor.go`; `docs/features/PROVIDERS.md` |
 | `MEMDOOR_SYSTEMONE_API_KEY` (or `TYPESAFE_API_KEY`), `MEMDOOR_SYSTEMONE_URL`, `MEMDOOR_SYSTEMONE_MODEL` | an explicit decision model; else the person's OpenRouter key judges | `gateway/decisions.go`; `docs/features/DECIDE.md` |
 | `MEMDOOR_NO_BROWSER` | never open a browser from `memdoor connect` and `memdoor mcp` | `cmd/cli/cmd/providers.go`, `mcp.go` |
 | `MEMDOOR_TELEMETRY_ENABLED` | WARN and above sent to memdoor.ai, off by default | `docs/internal/TELEMETRY.md` |

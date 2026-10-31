@@ -52,7 +52,7 @@ reports `none` and the window says how to connect one.
    on the side, before and during the turn:
                  decision.Service (pkg/decision)  ── System One client
                    tool routing · message gate · jgrep/jread · effort
-                   key: MEMDOOR_SYSTEMONE_API_KEY, else OPEN_ROUTER_API_KEY
+                   key: MEMDOOR_SYSTEMONE_API_KEY, else OPENROUTER_API_KEY
 ```
 
 ## The provider registry
@@ -78,7 +78,7 @@ and a model list. `Connected()` is true when it has a credential.
   `GEMINI_API_KEY`, `XAI_API_KEY` (or `GROK_API_KEY`), `BASETEN_API_KEY`,
   `GROQ_API_KEY` and `DEEPSEEK_API_KEY` on `chat`, each with a `*_BASE_URL`
   that replaces the vendor's host with a proxy in front of it.
-- Then OpenRouter on `OPEN_ROUTER_API_KEY` (`ByokKey`,
+- Then OpenRouter on `OPENROUTER_API_KEY` (`ByokKey`,
   `gateway/providers/byok.go`), and a signed-in ChatGPT plan
   (`chatgptProvider`, `gateway/providers/chatgpt.go`).
 - Last the decision provider `typesafe` on `MEMDOOR_SYSTEMONE_API_KEY` or
@@ -91,7 +91,14 @@ when it has a key.
 
 The engine chosen at start follows the same order (`VendorEngine` in
 `vendor.go`: the company gateway, Anthropic, then the OpenAI-shaped vendors;
-`MEMDOOR_VENDOR=off` skips them all; else `ByokEngine` in `byok.go`). It is
+`MEMDOOR_VENDOR=off` skips them all; else a signed-in ChatGPT plan on the
+first model it lists, `ChatGPTPlanEngine` in `chatgpt_engine.go`, since
+signing in is choosing to spend the plan (2026-10-31); else `ByokEngine` in
+`byok.go`). A sign-in or sign-out chooses again at once. `/model`'s list
+offers the providers in `AnswerOrder`: the answering one first, then a
+signed-in plan before the OpenAI key, and one row per id keeps the first, so
+a pick pins the provider that answers (before, `gpt-6-astra` was pinned on
+the OpenAI key and billed while the plan served it). It is
 held in memory as a `RemoteEngine` (`gateway/providers/remote.go`) and names
 the provider, the model per agent and the per-agent ladders. A connected
 provider alone sets no engine; `connectedClient` in `factory.go` answers then.

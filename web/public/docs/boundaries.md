@@ -66,6 +66,6 @@ after it starts until you say so. See [Workflows](/docs/workflows).
 
 ## Next
 
-- **[No babysitting](/docs/no-babysitting)** — what the agent decides for itself inside these lines.
+- **[The harness](/docs/no-babysitting)** — what the agent decides for itself inside these lines.
 - **[Where your data goes](/docs/security)** — every host the binary names.
 - **[Configuration](/docs/configuration)** — the other workspace settings.

@@ -56,6 +56,7 @@ laptop and your phone are windows onto it.
 # from your laptop: ssh to the box, nothing installed there
 memdoor --gateway ssh://you@box run "say hi"         # installs, starts the gateway, signs in, runs
 memdoor --gateway ssh://you@box connect openrouter   # your key, asked unseen, kept on the box
+memdoor --gateway ssh://you@box connect openrouter-login   # or no key: sign in from this laptop's browser (chatgpt: a plan)
 ```
 
 Or on the box itself, once:
@@ -111,7 +112,8 @@ no service manager it starts the gateway in the background). Each step is
 printed as it happens, and the command you typed then runs. A gateway that
 is running is left alone. The box has no model until a key is connected
 there, once: `memdoor --gateway ssh://you@box connect openrouter` (or any
-provider), and from then on every turn on that box runs on that key. Linux
+provider; `openrouter-login` or `chatgpt` sign in from the laptop's browser,
+no key), and from then on every turn on that box runs on that key. Linux
 and macOS boxes; a Windows box is set up with `irm memdoor.ai/install.ps1 |
 iex` by hand.
 

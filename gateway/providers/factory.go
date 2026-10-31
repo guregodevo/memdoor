@@ -31,7 +31,7 @@ func (f *ClientFactory) GetClientFor(ctx context.Context, agent string) (LLMClie
 	if c, ok := connectedClient(ctx); ok {
 		return c, nil
 	}
-	return nil, fmt.Errorf("no model is configured: set a provider key (OPEN_ROUTER_API_KEY, ANTHROPIC_API_KEY, …) or run memdoor connect")
+	return nil, fmt.Errorf("no model is configured: set a provider key (OPENROUTER_API_KEY, ANTHROPIC_API_KEY, …) or run memdoor connect")
 }
 
 // ModelName is the label a request carries before a provider names its

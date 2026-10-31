@@ -27,7 +27,7 @@ var doctorCmd = &cobra.Command{
 		if nothingSetUpYet() {
 			fmt.Println("Nothing is set up on this machine yet — which is what a fresh install looks like.")
 			fmt.Println()
-			fmt.Println("  export OPEN_ROUTER_API_KEY=sk-or-...   your key, your bill (or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect)")
+			fmt.Println("  export OPENROUTER_API_KEY=sk-or-...    (or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect)")
 			fmt.Println("  cd <your-project> && memdoor           the first run sets this machine up")
 			fmt.Println()
 			fmt.Println("Workflows run free here; schedule one with `memdoor cron add --workflow <name>`.")

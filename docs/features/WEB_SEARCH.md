@@ -34,7 +34,7 @@ Sources:
 
 - **An answer with no source** is refused: it is the model answering from
   memory, not a search. The agent is told to search again or rephrase.
-- **No OpenRouter key** (`OPEN_ROUTER_API_KEY`): the tool says so.
+- **No OpenRouter key** (`OPENROUTER_API_KEY`): the tool says so.
 
 ## Who has it
 

@@ -407,7 +407,7 @@ func (s *Server) welcomeAfterSubscription(ws string) {
 1. Install it, if you have not:  curl -fsSL https://memdoor.ai/install.sh | bash
 2. Sign in:  memdoor login %s     (a code arrives here; type it)
 3. Your own key pays for inference, any provider's:
-   export OPEN_ROUTER_API_KEY=sk-or-…   (or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect)
+   export OPENROUTER_API_KEY=sk-or-…    (or ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, …; or memdoor connect)
    The decision model runs on an OpenRouter key or a decision key of your own.
 4. Start working:  cd your-project && memdoor tui
 

@@ -17,6 +17,7 @@ import (
 
 	"memdoor/gateway/infra"
 	"memdoor/gateway/logs"
+	"memdoor/gateway/providers"
 	"memdoor/gateway/queue"
 	"memdoor/gateway/routing"
 	"memdoor/gateway/websocket"
@@ -714,6 +715,11 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// Deploy watchdog: progress announcements, auto-registration, and the
 	// idle auto-stop that makes the /model picker's "auto-stops" true.
 	server.selectModelEngine()
+	// Decisions were wired before the engine was chosen: a free account
+	// (no credit for the decision model) is known only now.
+	if re := providers.ActiveRemoteEngine(); re != nil && re.FreeTier && server.rewireDecisions != nil {
+		server.rewireDecisions()
+	}
 	server.startTurnJanitor()
 
 	// Handle graceful shutdown. main waits on this WaitGroup after

@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"math/big"
+	"memdoor/pkg/oidc"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -68,7 +69,7 @@ func newFakeOpenAI(t *testing.T) *fakeOpenAI {
 		switch r.PostForm.Get("grant_type") {
 		case "authorization_code":
 			f.exchanges = append(f.exchanges, r.PostForm)
-			if r.PostForm.Get("code") != "c1" || pkceChallenge(r.PostForm.Get("code_verifier")) != f.challenge {
+			if r.PostForm.Get("code") != "c1" || oidc.PKCEChallenge(r.PostForm.Get("code_verifier")) != f.challenge {
 				w.WriteHeader(http.StatusBadRequest)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid_grant", "error_description": "pkce"})
 				return
@@ -293,5 +294,28 @@ func TestARegistrationRefusedOnceKeepsTheIssuedIDAndSignsInAgain(t *testing.T) {
 	c, err := l2.Wait(context.Background())
 	if err != nil || c.ClientID != "oaiapp_777" || c.AccessToken != "at-1" {
 		t.Fatalf("the second sign-in completes: %+v %v", c, err)
+	}
+}
+
+// A refusal that comes back pasted or relayed ends the sign-in in OpenAI's
+// words, as the listener's would; another sign-in's refusal is not taken
+// (the mutation check: skip the error branch and Wait sits until timeout).
+func TestARelayedRefusalEndsTheSignIn(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	f := newFakeOpenAI(t)
+	l, err := BeginLogin(context.Background(), f.endpoints(), NewStore(t.TempDir()), f.srv.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := l.Deliver("http://127.0.0.1:1/callback?error=access_denied&state=other"); err == nil {
+		t.Fatal("another sign-in's refusal is refused")
+	}
+	if err := l.Deliver("http://127.0.0.1:1/callback?error=access_denied&error_description=the+user+said+no&state=" + l.state); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := l.Wait(ctx); err == nil || !strings.Contains(err.Error(), "refused the sign-in: access_denied the user said no") {
+		t.Fatalf("Wait: %v", err)
 	}
 }

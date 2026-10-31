@@ -246,7 +246,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **Providers and models it runs them on**
 
-- `connect` — Adds a provider to this gateway. The kind is one of: gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, local, custom.
+- `connect` — Adds a provider to this gateway. The kind is one of: openrouter-login, gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, local, custom.
 - `meter` — Every model request: the model that answered, its tokens and cost (the ledger /usage sums)
 - `model` — Which models answer, and which you can pick.
   - `check` — Probe a model for what a coder turn needs (no argument: the ladder)
@@ -787,7 +787,7 @@ memdoor gateway [flags]
 - Starts the Memdoor gateway server
 - Loads configuration
 - Initializes cron scheduler
-- Installs the engine: a company AI gateway or vendor key first, then your own provider key (OpenRouter or any `memdoor connect` provider)
+- Installs the engine: a company AI gateway or vendor key first, then a signed-in ChatGPT plan, then your own provider key (OpenRouter or any `memdoor connect` provider)
 - Serves the HTTP/WebSocket API for CLI/TUI and the login/admin web UI
 
 **Example**:
@@ -2068,7 +2068,7 @@ gateway holds its own decision key. `MEMDOOR_VENDOR=off` ignores them. **Attribu
 send the person's fields, the project's directory name and the session id as
 headers on every vendor/gateway request (default names `X-Memdoor-User/-Team/
 -Project/-Session`).
-`LLM_DEFAULT_PROVIDER` is retired and ignored. `OPEN_ROUTER_API_KEY` is the
+`LLM_DEFAULT_PROVIDER` is retired and ignored. `OPENROUTER_API_KEY` is the
 BYOK coding key (chat goes to OpenRouter on it) and runs the decision model too;
 a decision key of the gateway's own (`MEMDOOR_SYSTEMONE_API_KEY`,
 `TYPESAFE_API_KEY`) runs it next to any other provider.

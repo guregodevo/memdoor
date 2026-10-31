@@ -31,11 +31,13 @@ export const STEPS: { title: string; body: React.ReactNode }[] = [
     ),
   },
   {
-    title: 'Point it at your own key',
+    title: 'Connect a model',
     body: (
       <>
-        <code className="text-neutral-700">export OPEN_ROUTER_API_KEY=sk-or-…</code>, or any provider's key
-        (Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI), or <code className="text-neutral-700">memdoor connect</code>.
+        Nothing to do if a key is already on the machine: the first run finds it, under any name. No key? It
+        signs you in with OpenRouter, free, in the browser. Or{' '}
+        <code className="text-neutral-700">export OPENROUTER_API_KEY=sk-or-…</code>, any provider's key (Anthropic,
+        OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI), or <code className="text-neutral-700">memdoor connect</code>.
         You hold the account and pay their list price. Nothing of your code passes through memdoor.ai, and nothing is
         added to your bill.
       </>
@@ -57,7 +59,7 @@ export const STEPS: { title: string; body: React.ReactNode }[] = [
       <>
         <code className="text-neutral-700">memdoor login you@example.com</code> with the email you paid with. A
         six-digit code arrives there; type it, and remote control is on. Without it the agent still works, decision model
-        and workflows included, on your own key.
+        and workflows included.
       </>
     ),
   },
@@ -100,7 +102,7 @@ export function InstallBlock() {
         <pre className="overflow-x-auto text-[13px] leading-relaxed text-neutral-100">
           <code>
             {INSTALL_UNIX}
-            {'\n'}export OPEN_ROUTER_API_KEY=sk-or-…   # or any provider's key, or: memdoor connect
+            {'\n'}export OPENROUTER_API_KEY=sk-or-…    # or any provider's key, or: memdoor connect
             {'\n'}cd your-project &amp;&amp; memdoor
           </code>
         </pre>
@@ -110,7 +112,7 @@ export function InstallBlock() {
         <pre className="overflow-x-auto text-[13px] leading-relaxed text-neutral-100">
           <code>
             {INSTALL_WINDOWS}
-            {'\n'}$env:OPEN_ROUTER_API_KEY = "sk-or-…"   # or any provider's key, or: memdoor connect
+            {'\n'}$env:OPENROUTER_API_KEY = "sk-or-…"   # or any provider's key, or: memdoor connect
             {'\n'}cd your-project; memdoor
           </code>
         </pre>

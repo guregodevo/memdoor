@@ -1,7 +1,7 @@
 # Memdoor in your editor
 
 The same coder, in VS Code, Zed or JetBrains: your editor's chat panel sends
-the prompt, and the coder works in the folder you have open, on your own key
+the prompt, and the coder works in the folder you have open, on your key
 or your ChatGPT plan, exactly as it does in the terminal. Nothing else to
 install on the Memdoor side: the editor starts `memdoor acp`, and Memdoor
 speaks the [Agent Client Protocol](https://agentclientprotocol.com) the
@@ -48,7 +48,7 @@ agent with the command `memdoor acp`.
   the window.
 - The first run sets the machine up, as `memdoor tui` does; a machine with no
   key yet is told so in the chat (`/connect` in the window, or
-  `export OPEN_ROUTER_API_KEY=…` before the editor starts).
+  `export OPENROUTER_API_KEY=…` before the editor starts).
 - `/model`, `/workflow` and the other slash commands are the window's; the
   editor sends plain prompts. Pin a model once in the window and it holds for
   new conversations.

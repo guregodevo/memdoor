@@ -162,17 +162,7 @@ func NewAgentRuntimeWithFactory(clientFactory *providers.ClientFactory, apiKey s
 	// The OpenRouter entry of the provider registry reads the catalogue
 	// with its real prices (byok_catalog.go); every other provider reads its
 	// own list endpoint (providers/registry.go).
-	providers.OpenRouterModels = func(key string) ([]providers.Model, error) {
-		list, err := theByokCatalog.models(key)
-		if err != nil {
-			return nil, err
-		}
-		out := make([]providers.Model, 0, len(list))
-		for _, m := range list {
-			out = append(out, providers.Model{ID: m.ID, Name: m.Name, Context: m.Context, Tools: m.Tools, InPerM: m.InPerM, OutPerM: m.OutPerM, MaxOutput: m.MaxOutput, Thinking: m.Reasoning})
-		}
-		return out, nil
-	}
+	providers.OpenRouterModels = byokModels
 	// The model's own output cap, from the reference catalogue
 	// (providers/reference.go): the per-call cap stays under it and the
 	// cut-off escalation stops at it.

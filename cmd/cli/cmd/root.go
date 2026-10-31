@@ -90,7 +90,7 @@ so a run started from one is finished from another. On a box that stays on, it
 keeps working when every laptop is closed.
 
 On this machine:
-  export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or memdoor connect
+  export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or memdoor connect
   cd <your-project> && memdoor           # the first run starts the gateway here and opens the window
 
 On a box you can ssh to (a VPS, a Mac mini, Cloud Shell), with nothing installed there:

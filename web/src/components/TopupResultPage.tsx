@@ -28,7 +28,7 @@ export function TopupResultPage() {
       : 'Payment received';
   const body = cancelled
     ? seat
-      ? 'The checkout was cancelled and no subscription was started. The agent runs on your own key either way, decision model included.'
+      ? 'The checkout was cancelled and no subscription was started. The agent and the decision model stay free either way.'
       : 'The payment was cancelled and your balance is unchanged.'
     : seat
       ? 'Your workflows’ state is kept on memdoor.ai from now on, and the memdoor.ai relay is yours. Four lines and you are working, and they are in the email we just sent too.'
@@ -49,7 +49,7 @@ export function TopupResultPage() {
               <code>
                 {INSTALL}
                 {'\n'}memdoor login <span className="text-neutral-400">you@example.com</span>
-                {'\n'}export OPEN_ROUTER_API_KEY=<span className="text-neutral-400">sk-or-…</span>   <span className="text-neutral-500"># or any provider's key</span>
+                {'\n'}export OPENROUTER_API_KEY=<span className="text-neutral-400">sk-or-…</span>   <span className="text-neutral-500"># or any provider's key</span>
                 {'\n'}cd your-project &amp;&amp; memdoor tui
               </code>
             </pre>
@@ -59,8 +59,7 @@ export function TopupResultPage() {
           <p className="mt-4 text-xs leading-relaxed text-neutral-400">
             Sign in with the email you just paid with — a six-digit code arrives there, you type it, and
             the seat is on: workflow state on memdoor.ai, and the relay behind{' '}
-            <code className="text-neutral-600">/remote</code> for a daemon kept to localhost. Inference stays on
-            your own key.
+            <code className="text-neutral-600">/remote</code> for a daemon kept to localhost.
           </p>
         )}
         {seat && cancelled && (

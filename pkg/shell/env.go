@@ -3,6 +3,8 @@ package shell
 import (
 	"os"
 	"strings"
+
+	"memdoor/pkg/modelkey"
 )
 
 // modelKeys are the variables the gateway calls models with: the providers
@@ -37,8 +39,10 @@ func Env() []string {
 	env := os.Environ()
 	out := env[:0:0]
 	for _, kv := range env {
-		name, _, _ := strings.Cut(kv, "=")
-		if !IsModelKey(name) {
+		name, value, _ := strings.Cut(kv, "=")
+		// By name, and by value: a key under a name of the person's own
+		// (MY_OR_KEY) is a key all the same.
+		if !IsModelKey(name) && modelkey.ProvidersOf(value) == nil {
 			out = append(out, kv)
 		}
 	}

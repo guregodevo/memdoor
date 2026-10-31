@@ -393,6 +393,36 @@ at DevDay (2026-09-29); OpenCode, Pi, Kilo and Amp ship it. The pieces:
   the MCP sign-in (`/api/providers/chatgpt`: login, login/wait, login/paste,
   login/cancel, logout); on success the plan is probed the way `/connect`
   probes a key.
+- **The plan answers by default** (2026-10-31, Greg: "if you login to chatgpt
+  you should get chatgpt model by default in the list"): a signed-in plan is
+  the engine after a company's vendor key and before an OpenRouter key, on
+  the first model the plan lists (`ChatGPTPlanEngine`,
+  `gateway/providers/chatgpt_engine.go`); the sign-in and the sign-out choose
+  again (`selectModelEngine`). A kept pin on the key for an id the plan lists
+  (`openai:<id>`) moves to `chatgpt:<id>` at sign-in (`pinsToPlan`), and the
+  ✓ says the default and each move (`ui.PlanNotes`); an open conversation
+  keeps its own route. `/model` offers the providers in `AnswerOrder` (the
+  answering one, then the plan before the key), so its one row per id is the
+  plan's. Live before: signed in, turns still went to OpenRouter, and
+  picking `gpt-6-astra` pinned the OpenAI key and billed the API. Tests:
+  `TestASignedInPlanIsAnEngineOnItsFirstModel`,
+  `TestNoPlanEngineWithoutAListedModel`, `TestAnswerOrderPutsThePlanBeforeTheKey`,
+  `TestASignedInPlanAnswersBeforeTheOpenRouterKey`,
+  `TestASignedOutPlanLeavesNoEngine`, `TestAVendorKeyAnswersBeforeThePlan`,
+  `TestPinsOnTheKeyMoveToThePlan`, `TestTheModelListKeepsTheAnsweringProvidersRow`,
+  `TestAChatGPTSignInSaysThePlanAnswersAndThePinMoved`.
+- **From any door** (2026-10-31): the link sends the browser back to the
+  gateway's loopback (`http://127.0.0.1:<port>/callback`). With the gateway on
+  this machine that is the gateway itself. With the gateway elsewhere (the ssh
+  door, a box) the CLI catches that return on the same port here and passes
+  the whole address on like a pasted one (`oidc.StartRelay`,
+  `cmd/cli/cmd/signin.go relayBack`); the gateway's own state check decides,
+  and a refusal (`error=` in the address) ends the sign-in in OpenAI's words.
+  Where no browser can come back to this machine (an ssh session into it), or
+  the port is taken here, the shell asks `Address:` for the page the browser
+  landed on (it does not load; that is expected). The window takes a pasted
+  address at any time. No device code: OpenAI makes a person turn it on in
+  ChatGPT's security settings first.
 
 The decision model is off on a plan alone (no OpenRouter or TypeSafe key), as
 on any vendor key. A Claude subscription has no equivalent: Anthropic's terms
@@ -449,6 +479,158 @@ on the gateway's machine (`findLocalRuntime`, `localRuntimeBases`: janis
 list answers), so the whole local setup is `janis pull && janis serve` then
 `memdoor connect local`. Nothing listening is said in words with what to
 start.
+
+## A key already on the machine (2026-10-31)
+
+Greg: "they dont know the key", "when they connect we should scan keys … easy
+frictionless". The one outside install before the launch (2026-10-20) ran the
+binary, upgraded, and sent no token. A key is now found by its VALUE, never
+its variable's name (`pkg/modelkey`): `sk-or-v1-` OpenRouter, any `sk-ant-`
+kind Anthropic (`sk-ant-api03-`, `sk-ant-usr-`, …), `sk-proj-`/`sk-svcacct-`
+OpenAI, `AIza` or the newer `AQ.` Gemini, `gsk_` Groq, `xai-` xAI, a bare
+`sk-` DeepSeek or OpenAI (the probe decides, the variable's NAME breaking the
+tie: `DEEPSEEK_API_KEY` is DeepSeek's). A key with no shape of its own
+(Baseten's, TypeSafe's) is found under its provider's own name
+(`providerNames`), when the value looks like a key. A Claude subscription's
+`sk-ant-oat` token and an Anthropic admin key (`notKeys`) run no model and
+are not offered. It looks in this shell's environment, then the project's
+`.env`, `.env.local` and `.envrc`; nothing else is read and nothing leaves but
+the connect probe to the key's own provider.
+
+- **First run** (`memdoor`, `memdoor run`, at a terminal, the gateway with no
+  model; Greg: "less friction", "better than every other"), with as few
+  questions as can be (`offerFoundKey`, `cmd/cli/cmd/connect_found.go`):
+  a key in this shell is connected without a question, the first that works,
+  and the line says which and how to forget it ("No model connected yet:
+  trying the OpenRouter key in $MY_OR_KEY … ✓ … memdoor connect --remove
+  openrouter forgets it"); a key in the project's files is asked about once
+  (it may be the project's production key, another's bill); other tools'
+  saved keys after a yes, the first that works connected; with none, a
+  sign-in is offered (below).
+- **`memdoor connect` with no kind** (`connectMenu`): the found keys that
+  would change something are numbered first, then the sign-ins under "Sign
+  in, no key:" (never buried; live 2026-10-31 Sign in with OpenRouter was
+  6th under five keys already in use), then the kinds that take a key;
+  Enter takes the first found key, else Sign in with OpenRouter. The keys
+  the gateway already reads from its environment under the same variable
+  (`splitInUse`, `/api/providers` key sources; OpenRouter's two names are
+  one) are named on a line of their own, not numbered, on a gateway on this
+  machine. Numbers are right-aligned; a name too long for its column puts the
+  hint on the next line. Tests: `TestTheNewerKeyShapes`,
+  `TestTheNameBreaksATieAndFindsAShapelessKey`,
+  `TestKeysTheGatewayAlreadyUsesAreSetAside`,
+  `TestTheConnectListPutsTheSignInsBeforeTheKeyedKinds`.
+- **Name, not copy**: a shell variable is sent by its NAME, so the gateway
+  reads it and a rotated key keeps working; when the gateway cannot read it
+  (`providers.KeyNameNotSet`: started from another shell, a service, a box)
+  the value follows and is kept in `providers.json` (0600) like a pasted key.
+  A `.env` key goes by value.
+- **The agent never inherits one**: `shell.Env` drops a variable by its value
+  too, so a key under a name of the person's own is not in a command's
+  environment.
+- **The name we show is `OPENROUTER_API_KEY`**, OpenRouter's own;
+  `OPEN_ROUTER_API_KEY` is still read and wins when both are set
+  (`providers.ByokKeyVar`), and `memdoor providers` names the one in use.
+  `GOOGLE_API_KEY` is not read as Gemini's (Maps and other Google APIs use it
+  too): the scan finds its `AIza` value and the probe decides.
+
+Tests: `TestProvidersOf`, `TestFindByValueNotName` (pkg/modelkey),
+`TestConnectFoundSendsTheNameThenTheValue`,
+`TestConnectFoundFileKeyAndTwoProviders`, `TestCommandHidesModelKeys`.
+- **Other tools' saved keys, after a yes** (`modelkey.ToolStores`,
+  `FindInTools`): when the shell and the project hold none, `memdoor` and
+  `memdoor connect` ask "Codex, Claude Code, … saved keys on this machine:
+  look in them? [Y/n]", naming only the tools whose file exists: Codex
+  (`~/.codex/auth.json`), OpenCode, Claude Code (`~/.claude.json`, an API key
+  only), Hermes (`~/.hermes/.env`), Goose (`~/.config/goose/secrets.yaml`),
+  Crush, Gemini CLI (`~/.gemini/.env`), Continue, OpenClaw, llm, aider
+  (`~/.aider.conf.yml`, `~/.aider/oauth-keys.env`). Read by value; an OAuth
+  token is no key; a file past 16 MB, a directory or an unreadable file
+  offers nothing. Hermes imports four tools' setups; this reads eleven. The
+  window's `/connect` lists the shell's and the project's keys first
+  (`ConnectOps.Found`), never another tool's file without the question.
+
+### A kept OpenRouter key is the OpenRouter path (2026-10-31)
+
+`providers.ByokKey()` is the environment's key, else the one `memdoor
+connect` kept (`keptKey`: a sign-in, a key found on the machine, a pasted
+one). Until this, a kept key got none of the OpenRouter path (the ladder, the
+privacy policy, the decision model, web search) and answered on whatever
+model OpenRouter listed first; live, the kept key's turn now runs on the
+ladder's first rung. Connecting or removing `openrouter` chooses the engine
+again and rewires the decision model, no gateway start; the key removed, its
+engine is cleared. The registry's built-in entry still reads the environment
+alone (`byokEnvKey`): a kept key reaches it through the file's own entry,
+whose base and models the merge keeps.
+
+### A free account works on its first turn (2026-10-31)
+
+A new OpenRouter account has no credit and the ladder is paid: aider asks
+OpenRouter whether the key is on the free tier, and so does the engine choice
+(`providers.OpenRouterFreeTier`, `GET /api/v1/key`, `is_free_tier`, 4 s). A
+free account's every agent and rung run on one `:free` model with tools,
+ranked by its paid twin's list price, then context, then id
+(`FreeTierModel`; live: `thinkingmachines/inkling:free` of 13, not
+`inkling-small:free`, which a context-then-id order picked). The connect and
+sign-in lines say so ("Your OpenRouter account has no credit yet: every turn
+runs on …, free (its hosts may train on what they are sent)"), and the
+decision model stays off until there is credit. Anything short of a clear
+answer (offline, a refused key, no field, no free model with tools, an
+unreadable catalogue) keeps the paid ladder: a private turn that asks for
+credit, never a model that may train on the code by default. A probe's 402
+("no credit") is a good key on an empty account and connects
+(`hasNoCredit`).
+
+### Sign in with OpenRouter (2026-10-31)
+
+For the person with no key at all: OpenRouter's OAuth PKCE
+(openrouter.ai/docs/use-cases/oauth-pkce), `pkg/openrouter`. It runs in the
+CLI, where the person's terminal and browser are, and hands the key to the
+gateway like a pasted one (`/api/providers/connect`), so it works the same
+with a gateway on this machine, over the ssh door or on a box: no port to
+forward, no device code (Codex and Hermes need one or the other). The page
+`openrouter.ai/auth` gets `callback_url=http://localhost:<port>/callback`
+(listening on 127.0.0.1 and ::1), an S256 challenge, a state and
+`key_label=Memdoor`. Where no browser can reach this machine (an ssh session,
+a Linux with no display: `noBrowserHere`) it is headless: no callback, the
+page shows a code, `Code:` reads it (an empty line asks again, a refused one
+says OpenRouter's words). One POST to `/api/v1/auth/keys` returns a key of
+the person's own; a gateway that does not take it at once is asked three
+times before the person is told the key is on their account.
+
+- **Where**: the first run with no key that works offers "1. Sign in with
+  OpenRouter (free) 2. Sign in with ChatGPT" (both with any gateway: ChatGPT's
+  browser return is relayed, above); `memdoor connect openrouter-login`;
+  `memdoor connect openrouter` with no key asks "1. sign in 2. paste a key";
+  the window's `/connect` lists it first. The "no model yet" line names it.
+- **Shared code**: the gateway's sign-in registry and steps
+  (`gateway/provider_signin.go`) are ChatGPT's; the client's start, wait,
+  paste and cancel (`cmd/cli/cmd/signin.go`) drive both; the PKCE helpers are
+  `oidc.PKCEChallenge` and `oidc.RandomString` for ChatGPT, OpenRouter and
+  MCP alike (Greg: "common code is better").
+
+Tests: `TestSignInThroughTheCallback`, `TestSignInByPaste`,
+`TestHeadlessSignIn`, `TestSignInRefused` (a fake OpenRouter),
+`TestSignInSteps`, `TestSignInRefusedCancelledUnknown`,
+`TestByokKeyEnvironmentThenKept`, `TestByokKeyNegativePaths`,
+`TestOpenRouterFreeTier`, `TestOpenRouterFreeTierNegativePaths`,
+`TestFreeTierModel`, `TestOnFreeTier`, `TestAKeptKeyChoosesTheOpenRouterEngine`,
+`TestAFreeAccountRunsOnAFreeModel`, `TestTheFreeModelNeedsAClearAnswer`,
+`TestTheEngineFollowsTheKeptKey`, `TestConnectAKeyWithNoCreditYet`,
+`TestConnectListsFoundKeysFirst`, `TestSignInScreenNamesItsProvider`,
+`TestRedirectOfTakesOnlyALoopback`, `TestRelayPassesTheReturnOn`,
+`TestRelayPortTakenAndStop`, `TestARelayedRefusalEndsTheSignIn`,
+`TestChatGPTSignInWithAGatewayElsewhereCatchesTheReturnHere`,
+`TestChatGPTSignInRelayNegativePaths`,
+`TestChatGPTSignInWithNoBrowserHereTakesThePastedAddress`,
+`TestFindInTools`, `TestToolStoresNegativePaths`; the key, the free-tier
+answer, the engine's choice and the screen's title each mutation-checked.
+Live (isolated gateway, empty environment): the real key under `MY_OR_KEY`
+connected with no question and the turn ran on `z-ai/glm-5.3-flash`;
+`--remove` cleared the engine; a headless sign-in took an empty line, then
+OpenRouter refused a bogus code ("HTTP 400: Invalid code"); a refused Codex
+key fell through to the sign-in offer; the window's sign-in started and Esc
+cancelled it. Not yet: one complete sign-in with a real new account.
 
 ## Next
 

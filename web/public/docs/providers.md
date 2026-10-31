@@ -10,7 +10,10 @@ names the provider that answers.
 
 ```
 memdoor providers                 # each provider, connected or not, ● the one answering
+memdoor connect                   # a list: keys found on this machine first (Enter connects the first),
+                                  # then "Sign in, no key:" (OpenRouter, ChatGPT), then the keyed kinds
 memdoor connect <kind>            # pick, paste the key unseen, probed, kept
+memdoor connect openrouter-login  # no key: Sign in with OpenRouter in the browser (free account)
 memdoor connect chatgpt           # no key: Sign in with ChatGPT, your Plus/Pro plan answers
 memdoor providers --models groq   # one provider's list: window · max out · $ per million
 memdoor providers --audit         # where every window came from, and which are guesses
@@ -27,9 +30,30 @@ says which one to `/connect`. Every provider below has done
 the same coding turn on its fast model — a planted bug, a failing test,
 "fix the code, not the test" — in 8 to 45 seconds.
 
+With no kind, `memdoor connect` first scans this shell's environment and
+the project's `.env`, `.env.local` and `.envrc` for keys by their shape
+(`sk-or-…`, `sk-ant-…`, `AIza…`/`AQ.…`, `gsk_…`, `xai-…`, a bare `sk-…`,
+or, for a key with no shape, its provider's own variable name like
+`BASETEN_API_KEY`). The keys found that would change something are
+numbered first and Enter connects the first; the keys the gateway already
+reads from its environment are named on a line of their own, not offered
+again; then the sign-ins under "Sign in, no key:" (OpenRouter, ChatGPT),
+then the kinds that take a key.
+
+A key goes in the environment under the name below, or through
+`/connect` — which opens the token step with that name prefilled (Enter
+keeps it when the gateway already has it; the value is never shown) and
+keeps what it connects in `~/.memdoor/providers.json`, so a provider is
+there at every start. A key can be the value, the NAME of a variable, or
+`!command`; `*_BASE_URL` points a provider at a proxy or a company gateway
+in front of it. Pin a model whose provider is not connected and the window
+says which one to `/connect`. Every provider below has done
+the same coding turn on its fast model — a planted bug, a failing test,
+"fix the code, not the test" — in 8 to 45 seconds.
+
 ## OpenRouter — the catalogue
 
-- **Key**: `OPEN_ROUTER_API_KEY` · base `https://openrouter.ai/api/v1`
+- **Key**: `OPENROUTER_API_KEY` · base `https://openrouter.ai/api/v1`
 - **Its API states**: window, the top host's completion cap, prices,
   supported parameters — for every vendor's models, which is why it is
   also the catalogue the other providers fall back to.
@@ -44,6 +68,15 @@ the same coding turn on its fast model — a planted bug, a failing test,
   the plan is probed like a key and kept, encrypted, in
   `~/.memdoor/chatgpt-login.json`. `memdoor connect --remove chatgpt` signs
   out.
+- **Any door**: with the gateway on a box or over ssh, sign in from your
+  laptop as usual; the browser's return is passed on to the gateway. In an
+  ssh session with no browser, open the link anywhere, approve, and paste the
+  address the browser lands on (that page does not load; that is expected).
+- **By default**: once signed in, the plan answers your turns, on the first
+  model it lists, before an OpenRouter key (a company's key still comes
+  first). A model you had pinned on your OpenAI key that the plan also lists
+  moves to the plan at sign-in, and the sign-in says so; `memdoor connect
+  --remove chatgpt` hands the turns back to your key.
 - **What answers**: the models your plan lists, over the Responses API, on
   the plan's own allowance. OpenAI opened this to open-source, locally run
   apps in September 2026. A plan is a provider like any other: `/model`
@@ -152,7 +185,7 @@ the machine the runtime runs on.
 A runtime that also judges — [janis](https://github.com/guregodevo/janis)
 answers the decision model's questions on the same loaded model — is
 connected as both: `connect local` keeps its decisions as `local-decisions`,
-and the [decision model](/docs/decide) runs on this machine with no key
+and the [decision model](/docs/no-babysitting#who-decides-the-decision-model) runs on this machine with no key
 from that moment. On a runtime without that endpoint (Ollama,
 llama.cpp) decisions stay off, as on a vendor key.
 

@@ -41,7 +41,7 @@ PROMPT = "Make `go test ./...` pass."
 # ./...`), or `regex: <pattern> && <pattern>` matched against the screen (a
 # question).
 LIMIT = int(os.environ.get("LIMIT", "420"))
-KEY = os.environ.get("OPEN_ROUTER_API_KEY", "")
+KEY = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("OPEN_ROUTER_API_KEY", "")
 
 
 def sh(cmd, **kw):

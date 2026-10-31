@@ -35,7 +35,7 @@ const OPEN_SOURCE: string[] = [
   'The terminal agent: reads, edits, runs the tests, fixes what it broke.',
   'Workflows: say the steps, the coder writes them as a graph with a proof per step and a gate for you. Run by hand, on your local cron, or in CI.',
   'One gateway, every door: the window, memdoor run from a script or CI, a schedule, your editor, ssh, your phone on its own address.',
-  'Your own key at OpenRouter, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, Anthropic or a company gateway, paid to them at list price; or a ChatGPT Plus/Pro plan.',
+  'BYOK: OpenRouter, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, Anthropic or a company gateway, paid to them at list price; or a ChatGPT Plus/Pro plan.',
   'The decision model on your key: judged reads, a toolbox sized to the turn, a stop instead of a cap.',
 ];
 
@@ -140,7 +140,7 @@ export function EnterprisePage() {
         </p>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card name="Open source" price="Free" note="Apache-2.0, on your own key. No account." items={OPEN_SOURCE}>
+          <Card name="Open source" price="Free" note="Apache-2.0. No account." items={OPEN_SOURCE}>
             <div className="flex flex-wrap gap-3">
               <a href="/#install" className={BUTTON}>
                 Install it

@@ -54,7 +54,7 @@ stops a running gateway first and tells you to restart it.
 ## 2. Your key
 
 ```bash
-export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …
+export OPENROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
 Any provider's key works; `/connect` inside the window adds one too. Nothing

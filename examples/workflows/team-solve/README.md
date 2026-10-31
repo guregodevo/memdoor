@@ -93,7 +93,7 @@ samples). Neither is in these numbers.
 ## Run it
 
     curl -fsSL https://memdoor.ai/install.sh | bash
-    memdoor connect openrouter                 # or anthropic, openai, gemini: your own key
+    memdoor connect openrouter                 # or anthropic, openai, gemini, chatgpt
     git clone --depth 1 https://github.com/guregodevo/memdoor
 
     mkdir -p ~/.memdoor/workflows

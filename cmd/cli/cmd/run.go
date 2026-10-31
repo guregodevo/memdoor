@@ -83,6 +83,7 @@ its id is printed at the end, and memdoor resume <id> opens it in a window.
 		}
 		dir := projectDirFlag
 		c := NewClient()
+		offerFoundKey(c)
 		if _, local := localGatewayPort(); !local {
 			// The project is on the gateway's machine: --dir names it there,
 			// else the same path as here when it has one, else its home.

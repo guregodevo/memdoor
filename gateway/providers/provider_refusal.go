@@ -23,7 +23,13 @@ func providerRefusal(status int, body []byte) error {
 		return fmt.Errorf("OpenRouter refused the request: the account is out of credit for it (%s). "+
 			"Add credit at openrouter.ai/settings/credits, or raise the key's limit", shortReason(msg))
 	case status == http.StatusUnauthorized || status == http.StatusForbidden:
-		return fmt.Errorf("OpenRouter refused the key (HTTP %d): %s. Check OPEN_ROUTER_API_KEY", status, shortReason(msg))
+		// The variable is named only when the gateway read the key from it:
+		// a connected or probed key came from somewhere else.
+		check := "the key"
+		if ByokKeyFromEnv() {
+			check = ByokKeyVar()
+		}
+		return fmt.Errorf("OpenRouter refused the key (HTTP %d): %s. Check %s", status, shortReason(msg), check)
 	default:
 		return fmt.Errorf("the model provider refused the request (HTTP %d): %s", status, shortReason(msg))
 	}

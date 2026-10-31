@@ -32,6 +32,9 @@ type RemoteEngine struct {
 	// (byok.go): the ladder, the rung and the provider policy are decided
 	// here, and nothing goes through memdoor.ai.
 	Byok bool `json:"byok,omitempty"`
+	// FreeTier: the key's account never bought credit, so every agent runs
+	// on one free model (byok_free_tier.go).
+	FreeTier bool `json:"free_tier,omitempty"`
 	// Vendor: Endpoint is an approved LLM vendor (or a company's AI gateway
 	// in front of one) and APIKey the key the company gave the developer
 	// (vendor.go): "anthropic", "openai" or "google". Nothing but that

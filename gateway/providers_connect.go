@@ -81,8 +81,9 @@ type connectResult struct {
 	Advice    string            `json:"advice,omitempty"`
 	Saved     bool              `json:"saved"`
 	Headers   map[string]string `json:"headers,omitempty"`
-	Decisions bool              `json:"decisions,omitempty"` // a local runtime's decisions endpoint answered and was kept as <id>-decisions
-	Base      string            `json:"base,omitempty"`      // the address a blank base resolved to (a local runtime found on this machine)
+	Decisions bool              `json:"decisions,omitempty"`  // a local runtime's decisions endpoint answered and was kept as <id>-decisions
+	Base      string            `json:"base,omitempty"`       // the address a blank base resolved to (a local runtime found on this machine)
+	FreeModel string            `json:"free_model,omitempty"` // an OpenRouter account with no credit: every turn runs on this free model
 }
 
 // handleProvidersConnect is POST /api/providers/connect and DELETE
@@ -103,6 +104,9 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		_ = providers.RemoveProvider(id + decisionsSuffix) // a local runtime's decisions go with it
+		if id == providers.OpenRouterID {
+			s.selectModelEngine() // its engine goes with the key
+		}
 		if s.rewireDecisions != nil {
 			s.rewireDecisions()
 		}
@@ -121,7 +125,16 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 	// Always 200: a failed probe is an answer in words (error, advice), not
 	// an HTTP error the client would have to unwrap.
 	res := connectProvider(r.Context(), req)
-	if res.OK && res.Saved && (req.API == providers.APIDecisions || res.Decisions) && s.rewireDecisions != nil {
+	openRouterKept := res.OK && res.Saved && res.ID == providers.OpenRouterID
+	if openRouterKept {
+		// The OpenRouter path from this turn on: its ladder, its privacy
+		// policy, web search; no gateway start needed.
+		s.selectModelEngine()
+		if re := providers.ActiveRemoteEngine(); re != nil && re.Byok && re.FreeTier && re.APIKey == providers.ByokKey() {
+			res.FreeModel = re.Model
+		}
+	}
+	if res.OK && res.Saved && (req.API == providers.APIDecisions || res.Decisions || openRouterKept) && s.rewireDecisions != nil {
 		s.rewireDecisions() // judges from this turn on, no gateway start needed
 	}
 	_ = json.NewEncoder(w).Encode(res)
@@ -214,6 +227,11 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 		if callErr != nil && refusesTheModelNotTheKey(callErr) {
 			answer, callErr = "(the key and URL answered; "+model+" itself was refused: "+strings.TrimSpace(callErr.Error())+")", nil
 		}
+		if callErr != nil && hasNoCredit(callErr) {
+			// A new account (Sign in with OpenRouter, 2026-10-31) has a good
+			// key and nothing to spend yet: connected, and told so.
+			answer, callErr = "(the key answered; the account has no credit yet: add some at openrouter.ai/settings/credits, or /model a :free model)", nil
+		}
 		if callErr != nil {
 			lastErr = callErr.Error()
 			continue
@@ -283,6 +301,13 @@ func probeCall(ctx context.Context, p providers.Provider, model string) (string,
 
 // refusesTheModelNotTheKey: the provider read our request and refused the
 // model in it, not us. The URL and the key are proven by such an answer.
+// hasNoCredit says the provider took the key and refused for want of credit
+// (HTTP 402): the key is good, the account is empty.
+func hasNoCredit(err error) bool {
+	e := strings.ToLower(err.Error())
+	return strings.Contains(e, "out of credit") || strings.Contains(e, "insufficient credits") || strings.Contains(e, "http 402")
+}
+
 func refusesTheModelNotTheKey(err error) bool {
 	e := strings.ToLower(err.Error())
 	for _, s := range []string{"no endpoints found", "not a valid model", "model_not_found", "does not exist", "unknown model", "no such model", "was retired", "deprecated"} {

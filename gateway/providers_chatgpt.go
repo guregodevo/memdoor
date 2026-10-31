@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"memdoor/gateway/logs"
@@ -14,34 +13,14 @@ import (
 	"memdoor/pkg/chatgpt"
 )
 
-// SIGN IN WITH CHATGPT (2026-10-10): the browser step runs here, in the
-// gateway, like the MCP sign-in (mcp_handlers.go): the loopback listener is
-// the gateway's, the CLI or the window opens the link and polls. On
-// success the plan is probed the way /connect probes a key — its model
+// SIGN IN WITH CHATGPT (2026-10-10): a browser sign-in (provider_signin.go).
+// On success the plan is probed the way /connect probes a key — its model
 // list, one call — so the ✓ line says what it found.
 //
 //   POST /api/providers/chatgpt {"action":"login"}            → {id, auth_url}
-//   POST …                      {"action":"login/wait","id"}  → {done, …connect result} | {pending} | {error}
-//   POST …                      {"action":"login/paste","id","value"}
-//   POST …                      {"action":"login/cancel","id"}
+//   POST …                      login/wait, login/paste, login/cancel (provider_signin.go)
 //   POST …                      {"action":"logout"}
 //   GET  /api/providers/chatgpt                                → {signed_in, email}
-
-var chatgptLogins = struct {
-	sync.Mutex
-	m map[string]*chatgptLogin
-}{m: map[string]*chatgptLogin{}}
-
-type chatgptLogin struct {
-	login  *chatgpt.Login
-	cancel context.CancelFunc
-	done   chan chatgptLoginResult
-}
-
-type chatgptLoginResult struct {
-	cred *chatgpt.Credential
-	err  error
-}
 
 func (s *Server) handleProvidersChatGPT(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -79,57 +58,36 @@ func (s *Server) handleProvidersChatGPT(w http.ResponseWriter, r *http.Request) 
 			fail(http.StatusBadGateway, err)
 			return
 		}
-		wctx, cancel := context.WithCancel(context.Background())
-		l := &chatgptLogin{login: login, cancel: cancel, done: make(chan chatgptLoginResult, 1)}
-		id := fmt.Sprintf("%d", time.Now().UnixNano())
-		chatgptLogins.Lock()
-		chatgptLogins.m[id] = l
-		chatgptLogins.Unlock()
-		go func() { c, err := login.Wait(wctx); l.done <- chatgptLoginResult{c, err} }()
+		id := startSignIn(login.Deliver, func(ctx context.Context) signInOutcome {
+			if _, err := login.Wait(ctx); err != nil {
+				return signInOutcome{err: err, again: errors.Is(err, chatgpt.ErrSignInAgain)}
+			}
+			return signInOutcome{finish: func(ctx context.Context) any {
+				out := chatgptProbe(ctx)
+				out.Done = true
+				if out.OK {
+					// The plan answers by default now, and a pin kept on the
+					// OpenAI key for a model the plan serves moves to it
+					// (providers/chatgpt_engine.go).
+					out.Notes = pinsToPlan(out.list)
+					s.selectModelEngine()
+					if re := providers.ActiveRemoteEngine(); re != nil && re.IsChatGPTPlan() {
+						out.Default = re.Model
+					}
+				}
+				return out
+			}}
+		})
 		ok(map[string]string{"id": id, "auth_url": login.AuthURL})
 	case "login/wait", "login/paste", "login/cancel":
-		chatgptLogins.Lock()
-		l := chatgptLogins.m[req.ID]
-		chatgptLogins.Unlock()
-		if l == nil {
-			fail(http.StatusNotFound, fmt.Errorf("no sign-in %q in progress", req.ID))
-			return
-		}
-		switch req.Action {
-		case "login/paste":
-			if err := l.login.Deliver(req.Value); err != nil {
-				fail(http.StatusBadRequest, err)
-				return
-			}
-			ok(map[string]bool{"delivered": true})
-		case "login/cancel":
-			l.cancel()
-			ok(map[string]bool{"cancelled": true})
-		default:
-			select {
-			case res := <-l.done:
-				chatgptLogins.Lock()
-				delete(chatgptLogins.m, req.ID)
-				chatgptLogins.Unlock()
-				l.cancel()
-				if res.err != nil {
-					ok(map[string]any{"error": res.err.Error(), "again": errors.Is(res.err, chatgpt.ErrSignInAgain)})
-					return
-				}
-				out := chatgptProbe(r.Context())
-				out.Done = true
-				ok(out)
-			case <-time.After(25 * time.Second):
-				ok(map[string]bool{"pending": true})
-			case <-r.Context().Done():
-			}
-		}
+		signInStep(w, r, req.Action, req.ID, req.Value)
 	case "logout":
 		if err := providers.ChatGPTStore().Delete(); err != nil {
 			fail(http.StatusInternalServerError, err)
 			return
 		}
 		providers.ForgetModels(providers.ChatGPTID)
+		s.selectModelEngine()
 		ok(map[string]bool{"ok": true})
 	default:
 		fail(http.StatusBadRequest, fmt.Errorf("action must be login, login/wait, login/paste, login/cancel or logout"))
@@ -139,8 +97,11 @@ func (s *Server) handleProvidersChatGPT(w http.ResponseWriter, r *http.Request) 
 // chatgptProbeResult is the connect result with the sign-in's own fields.
 type chatgptProbeResult struct {
 	connectResult
-	Done  bool   `json:"done"`
-	Email string `json:"email,omitempty"`
+	Done    bool     `json:"done"`
+	Email   string   `json:"email,omitempty"`
+	Default string   `json:"default,omitempty"` // the plan's model that answers by default now
+	Notes   []string `json:"notes,omitempty"`   // pins moved from the OpenAI key to the plan
+	list    []providers.Model
 }
 
 // chatgptProbe is /connect's probe on the plan just signed in: the models
@@ -162,7 +123,7 @@ func chatgptProbe(ctx context.Context) chatgptProbeResult {
 		res.Error = "the ChatGPT plan lists no model for this app"
 		return res
 	}
-	res.Models = len(list)
+	res.Models, res.list = len(list), list
 	for i, m := range list {
 		if i == 5 {
 			break

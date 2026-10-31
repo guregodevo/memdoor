@@ -22,8 +22,6 @@ import (
 	"memdoor/pkg/oidc"
 
 	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -282,7 +280,7 @@ func BeginLogin(ctx context.Context, ep Endpoints, store *Store, hc *http.Client
 	}
 	l := &Login{ep: ep, store: store, http: hc, hostID: hostID, ln: ln, codes: make(chan callbackResult, 1),
 		redirect: fmt.Sprintf("http://127.0.0.1:%d/callback", ln.Addr().(*net.TCPAddr).Port),
-		verifier: randomString(64), state: randomString(32), nonce: randomString(32)}
+		verifier: oidc.RandomString(64), state: oidc.RandomString(32), nonce: oidc.RandomString(32)}
 	l.clientID = store.savedClientID()
 	q := url.Values{
 		"response_type":         {"code"},
@@ -292,7 +290,7 @@ func BeginLogin(ctx context.Context, ep Endpoints, store *Store, hc *http.Client
 		"state":                 {l.state},
 		"nonce":                 {l.nonce},
 		"code_challenge_method": {"S256"},
-		"code_challenge":        {pkceChallenge(l.verifier)},
+		"code_challenge":        {oidc.PKCEChallenge(l.verifier)},
 		"ext_agent_host_id":     {hostID},
 	}
 	if l.clientID == "" {
@@ -349,8 +347,9 @@ func (l *Login) deliver(r callbackResult) {
 	}
 }
 
-// Deliver hands the sign-in a pasted redirect URL, for a browser that could
-// not reach the local listener.
+// Deliver hands the sign-in a redirect URL that did not reach the local
+// listener: pasted, or relayed by the machine the browser came back to. A
+// refusal in it ends the sign-in as the listener's would.
 func (l *Login) Deliver(pasted string) error {
 	u, err := url.Parse(strings.TrimSpace(pasted))
 	if err != nil || u.RawQuery == "" {
@@ -359,6 +358,10 @@ func (l *Login) Deliver(pasted string) error {
 	q := u.Query()
 	if q.Get("state") != l.state {
 		return errors.New("that link belongs to another sign-in")
+	}
+	if e := q.Get("error"); e != "" {
+		l.deliver(callbackResult{err: strings.TrimSpace(e + " " + q.Get("error_description"))})
+		return nil
 	}
 	if q.Get("code") == "" {
 		return errors.New("no code in that link")
@@ -562,11 +565,6 @@ func verifyIDToken(ctx context.Context, hc *http.Client, ep Endpoints, token, cl
 
 // ---- small helpers --------------------------------------------------------
 
-func pkceChallenge(verifier string) string {
-	sum := sha256.Sum256([]byte(verifier))
-	return base64.RawURLEncoding.EncodeToString(sum[:])
-}
-
 func hasScope(scopes []string, want string) bool {
 	for _, s := range scopes {
 		if s == want {
@@ -574,12 +572,6 @@ func hasScope(scopes []string, want string) bool {
 		}
 	}
 	return false
-}
-
-func randomString(n int) string {
-	b := make([]byte, n)
-	_, _ = rand.Read(b)
-	return base64.RawURLEncoding.EncodeToString(b)[:n]
 }
 
 func uuid4() string {

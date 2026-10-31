@@ -10,8 +10,8 @@
 # From "I heard about this" to the coder editing my code:
 #
 #   curl -fsSL https://memdoor.ai/install.sh | bash   # drops the binary
-#   export OPEN_ROUTER_API_KEY=sk-or-...              # or ANTHROPIC_API_KEY, …; or /connect inside
-#   cd <project> && memdoor                           # the first run sets the machine up
+#   export OPENROUTER_API_KEY=sk-or-...               # optional: any provider's key
+#   cd <project> && memdoor                           # the first run sets the machine up; no key: it finds one, or signs in
 #
 # No setup command, no account, no admin password (2026-10-08): the first
 # `memdoor` starts the gateway and creates a local user on its own.
@@ -391,8 +391,8 @@ else
     if [ "$ON_PATH" = "0" ]; then
         echo "  export PATH=\"$DEST_DIR:\$PATH\"   # this terminal; new terminals have it already"
     fi
-    echo "  export OPEN_ROUTER_API_KEY=sk-or-...   # your key (or ANTHROPIC_API_KEY, OPENAI_API_KEY, …; or /connect inside)"
-    echo "  cd <your-project> && memdoor"
+    echo "  export OPENROUTER_API_KEY=sk-or-...    # optional: any provider's key (ANTHROPIC_API_KEY, OPENAI_API_KEY, …)"
+    echo "  cd <your-project> && memdoor           # no key? it finds one on this machine, or signs you in with OpenRouter (free)"
     echo "  memdoor --gateway ssh://you@box          # or on a box you can ssh to: set up there on first use"
     echo
     echo "Pro (remote control)? memdoor login you@example.com"

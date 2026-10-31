@@ -20,7 +20,7 @@ on your own account at the provider you chose, and everything else stays local.
   memdoor.ai relay ── only for a gateway kept to localhost (MEMDOOR_HOST=localhost)
 ```
 
-The decision model runs on your own key: a decision key (`memdoor connect
+The decision model runs on a decision key (`memdoor connect
 typesafe`), else the OpenRouter key you code with. On a vendor key, a
 company's AI gateway or a ChatGPT plan alone it is off until a decision key
 is set. Nothing
@@ -52,8 +52,8 @@ through memdoor.ai.
 Each agent has a ladder, cheapest rung first. The footer names the model and the rung, and `/model` pins
 any rung or any tool-capable model from the catalogue, ordering its hosts by
 price, throughput or latency. Every request carries `data_collection: deny` and
-`require_parameters` (a pinned `:free` model is the one exception: its hosts
-train, the request says `allow`, the pin warns), so no host that might train on your code, or that would
+`require_parameters` (a `:free` model, pinned or the one an OpenRouter account
+with no credit answers on, is the one exception: its hosts train, the request says `allow`, Memdoor says so at the pin or when the key is connected), so no host that might train on your code, or that would
 silently drop the tool schema, serves you. See **[Your key and the
 models](/docs/your-key)**.
 

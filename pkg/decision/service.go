@@ -78,7 +78,7 @@ func (s *service) Evaluate(ctx context.Context, req Request, opts Options) Resul
 	case disabled:
 		return Unavailable(ReasonDisabled, "decisions are off")
 	case ref.Provider == "":
-		return Unavailable(ReasonNotConfigured, "no decision model: it runs on an OpenRouter key (OPEN_ROUTER_API_KEY) or a decision key (MEMDOOR_SYSTEMONE_API_KEY)")
+		return Unavailable(ReasonNotConfigured, "no decision model: it runs on an OpenRouter key (OPENROUTER_API_KEY) or a decision key (MEMDOOR_SYSTEMONE_API_KEY)")
 	}
 	p, ok := s.providers[ref.Provider]
 	if !ok {

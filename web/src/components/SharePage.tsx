@@ -134,7 +134,7 @@ export function SharePage() {
         <a href="/" className="underline underline-offset-4">
           Memdoor
         </a>
-        , a coding agent on your own key. The key after # in this
+        , a coding agent. The key after # in this
         link never reached our servers.
       </p>
     </>,

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -44,6 +45,23 @@ func (s *Server) selectModelEngine() {
 	} else if reason != "" {
 		logs.New("Brain").Warn(reason)
 	}
+	// A SIGNED-IN CHATGPT PLAN NEXT (providers/chatgpt_engine.go): the person
+	// signed in to spend their plan, so it answers before their OpenRouter
+	// key; the decision model and web search still run on that key.
+	ctx, cancel := context.WithTimeout(context.Background(), planListTimeout)
+	plan, onPlan := chatGPTPlanEngine(ctx)
+	cancel()
+	if onPlan {
+		cur := providers.ActiveRemoteEngine()
+		if cur == nil || !cur.IsChatGPTPlan() || cur.Model != plan.Model {
+			if err := providers.SetRemoteEngine(plan); err != nil {
+				logs.New("Brain").Warn("the ChatGPT plan could not be used: " + err.Error())
+			} else {
+				logs.New("Brain").Info("your ChatGPT plan serves this gateway", slog.String("model", plan.Model))
+			}
+		}
+		return
+	}
 	// BYOK FIRST (Greg, 2026-09-27: "it should be BYOK with openrouter api
 	// key"). A gateway holding the person's own OpenRouter key needs no seat,
 	// no lease and no heartbeat: their turns go straight to OpenRouter on
@@ -51,17 +69,59 @@ func (s *Server) selectModelEngine() {
 	// binary (providers/byok.go). Nothing of their code reaches memdoor.ai:
 	// they are paying their own bill.
 	if re, ok := providers.ByokEngine(); ok {
+		re = onFreeTierIfFree(re)
 		cur := providers.ActiveRemoteEngine()
-		if cur == nil || !cur.Byok || cur.APIKey != re.APIKey || cur.CtxLen != re.CtxLen {
+		if cur == nil || !cur.Byok || cur.APIKey != re.APIKey || cur.CtxLen != re.CtxLen || cur.Model != re.Model {
 			if err := providers.SetRemoteEngine(re); err != nil {
 				logs.New("Brain").Warn("your own OpenRouter key could not be used: " + err.Error())
 			} else {
 				logs.New("Brain").Info("your own OpenRouter key serves this gateway",
-					slog.String("first_rung", re.ModelForTier("coder", 0)))
+					slog.String("first_rung", re.ModelForTier("coder", 0)), slog.Bool("free_tier", re.FreeTier))
 			}
 		}
 		return
 	}
+	// The OpenRouter key is gone (`memdoor connect --remove openrouter`), or
+	// the plan signed out: the engine it chose must not keep answering on it.
+	if cur := providers.ActiveRemoteEngine(); cur != nil && (cur.Byok || cur.IsChatGPTPlan()) {
+		_ = providers.ClearRemoteEngine()
+		logs.New("Brain").Info("no OpenRouter key or ChatGPT plan any more: its engine is cleared")
+	}
+}
+
+// planListTimeout bounds reading the plan's model list when the engine is
+// chosen: a plan OpenAI does not answer for gives way to the next engine.
+const planListTimeout = 10 * time.Second
+
+// The free-tier question, the catalogue and the plan, replaced in a test.
+var (
+	openRouterFreeTier = providers.OpenRouterFreeTier
+	openRouterCatalog  = byokModels
+	chatGPTPlanEngine  = providers.ChatGPTPlanEngine
+)
+
+// onFreeTierIfFree puts every agent on a free model when OpenRouter says the
+// key's account never bought credit (providers/byok_free_tier.go). Anything
+// short of that answer keeps the paid ladder: a free model's hosts may train
+// on what they are sent, and nobody chose that.
+func onFreeTierIfFree(re providers.RemoteEngine) providers.RemoteEngine {
+	free, known := openRouterFreeTier(context.Background(), re.APIKey)
+	switch {
+	case !known:
+		logs.New("Brain").Info("OpenRouter did not say whether the account has credit: the paid ladder stays")
+		return re
+	case !free:
+		return re
+	}
+	list, err := openRouterCatalog(re.APIKey)
+	model := providers.FreeTierModel(list)
+	if err != nil || model == "" {
+		logs.New("Brain").Warn("your OpenRouter account has no credit yet and no free model with tools could be read: the paid ladder stays, and a turn asks for credit (openrouter.ai/settings/credits)")
+		return re
+	}
+	logs.New("Brain").Info("your OpenRouter account has no credit yet: every turn runs on a free model until it has some",
+		slog.String("model", model))
+	return re.OnFreeTier(model)
 }
 
 // BrainStatus is what /api/llm/burst reports about the model: "ready" when a

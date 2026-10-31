@@ -129,9 +129,9 @@ func brainGate(state string) string {
 			// The key is kept where the gateway runs: on a box reached
 			// through a door, the line names the door, and the key is a
 			// value (an env NAME is read in the box's environment, not here).
-			return fmt.Sprintf("no model on %s yet — connect one there: memdoor --gateway %s connect <provider> --key <the key> (memdoor providers lists them; the key is kept on that gateway, in its ~/.memdoor/providers.json) — every model runs on your own key or plan", gatewayShown(), gatewayShown())
+			return fmt.Sprintf("no model on %s yet — connect one there: memdoor --gateway %s connect <provider> --key <the key> (memdoor providers lists them; the key is kept on that gateway, in its ~/.memdoor/providers.json)", gatewayShown(), gatewayShown())
 		}
-		return "no model yet — connect one: memdoor connect <provider> pastes a key (memdoor providers lists them; memdoor connect chatgpt uses a ChatGPT Plus/Pro plan, no key), or export OPEN_ROUTER_API_KEY=… (or ANTHROPIC_API_KEY, …) and start again; inside the TUI, /connect does the same — every model runs on your own key or plan"
+		return "no model yet — no key? memdoor connect openrouter-login signs you in with OpenRouter (free, nothing to copy), memdoor connect chatgpt with a ChatGPT plan; a key: memdoor connect <provider>, or export OPENROUTER_API_KEY=… (or ANTHROPIC_API_KEY, …) and start again; inside the TUI, /connect does the same"
 	}
 	return ""
 }

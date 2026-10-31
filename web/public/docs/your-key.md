@@ -4,7 +4,7 @@ Memdoor runs on **your** account at the provider you choose. One environment
 variable is the whole setup:
 
 ```bash
-export OPEN_ROUTER_API_KEY=sk-or-...   # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …
+export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
 or `memdoor connect`, which probes a key and keeps it. Put it in your shell
@@ -64,9 +64,10 @@ run an agent turn, so they are filtered out of the listing.
 
 Every request carries `data_collection: deny` and `require_parameters`, so a
 host that might train on your code, or that silently drops the tool schema, does
-not serve you. A model you pin whose id ends in `:free` is the exception: free
-endpoints exist only on hosts that train, so the request says `allow` and the
-pin warns; use one to try Memdoor, not on private code. Hosts known to train on paid inputs are excluded from the ladders
+not serve you. A `:free` model is the exception, one you pin or the one an
+OpenRouter account with no credit answers on: free endpoints exist only on hosts
+that train, so the request says `allow` and Memdoor says so at the pin or when the key is connected; use one to try
+Memdoor, not on private code. Hosts known to train on paid inputs are excluded from the ladders
 outright.
 
 Your files, sessions, memory and the output of every command the agent runs

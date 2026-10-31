@@ -72,7 +72,7 @@ the provider: `/model groq:qwen/qwen3.8-27b`.
 No key, no provider, a model on a machine you own: [janis](https://github.com/guregodevo/janis)
 is Memdoor's own runtime, one Go server that runs the open models on a Mac's
 GPU through MLX and on an NVIDIA box through CUDA, and serves both the chat
-and the [decision model](/docs/decide) to Memdoor. Ollama, llama.cpp and LM
+and the [decision model](/docs/no-babysitting#who-decides-the-decision-model) to Memdoor. Ollama, llama.cpp and LM
 Studio work the same way for the chat half.
 
 ```

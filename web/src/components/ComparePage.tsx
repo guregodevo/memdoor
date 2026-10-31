@@ -69,7 +69,7 @@ export function ComparePage({ slug }: { slug: string }) {
   useEffect(() => {
     if (!rival) return;
     setMeta({
-      title: `Memdoor vs ${rival.name}: an open-source alternative on your own API key`,
+      title: `Memdoor vs ${rival.name}: an open-source alternative`,
       description: `${rival.name} and Memdoor side by side: the features both document, what only Memdoor has (one gateway behind every door, workflows with a target per step, a decision model), and when to pick each.`,
       path: `/compare/${rival.slug}`,
     });
@@ -168,7 +168,7 @@ export function ComparePage({ slug }: { slug: string }) {
         </div>
 
         <div className="mx-auto mt-14 max-w-2xl text-center">
-          <p className="mb-4 text-sm text-neutral-500">Free on your own key, any provider. One binary.</p>
+          <p className="mb-4 text-sm text-neutral-500">Free, BYOK, any provider. One binary.</p>
           <InstallLine />
           <p className="mt-6 text-sm text-neutral-500">
             Other comparisons:{' '}

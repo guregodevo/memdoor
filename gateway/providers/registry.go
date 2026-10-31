@@ -170,6 +170,35 @@ func providersPath() (string, error) {
 	return shared.MemdoorHome(providersFile), nil
 }
 
+// keptKey is the key a provider was connected with (`memdoor connect`, a
+// sign-in, a key found on the machine), resolved, and where it came from;
+// "" when there is none or it does not resolve. It reads the file itself:
+// Providers() reaches ByokKey(), which reaches here.
+func keptKey(id string) (string, string) {
+	path, err := providersPath()
+	if err != nil {
+		return "", ""
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", ""
+	}
+	var f providersFileSpec
+	if json.Unmarshal(b, &f) != nil {
+		return "", ""
+	}
+	for _, s := range f.Providers {
+		if s.ID != id || s.Keyless {
+			continue
+		}
+		if key, source := resolveKey(s.Key); key != "" {
+			return key, source
+		}
+		return "", ""
+	}
+	return "", ""
+}
+
 // resolveKey is the credential rule: an environment variable's NAME when
 // one by that name is set, "!command" for the command's stdout, else the
 // literal. The second value says which.
@@ -192,10 +221,14 @@ func resolveKey(raw string) (string, string) {
 		if v := strings.TrimSpace(os.Getenv(raw)); v != "" {
 			return v, "env " + raw
 		}
-		return "", raw + " is not set in the gateway's environment (the gateway was started without it: set it where the gateway starts, then restart it)"
+		return "", raw + KeyNameNotSet + " (the gateway was started without it: set it where the gateway starts, then restart it)"
 	}
 	return raw, "providers.json"
 }
+
+// KeyNameNotSet follows a variable's name when a key given by name is not in
+// the gateway's environment: a caller that holds the value sends it instead.
+const KeyNameNotSet = " is not set in the gateway's environment"
 
 // looksLikeEnvName: upper-case letters, digits and underscores only, at
 // least one underscore — OPENAI_API_KEY, CORP_TOKEN — never a real key.
@@ -312,7 +345,7 @@ func builtInProviders() []Provider {
 		Provider{ID: "baseten", Name: "Baseten", API: APIChat, Base: envOr("BASETEN_BASE_URL", basetenDefaultBase), Key: os.Getenv("BASETEN_API_KEY"), KeySource: "env BASETEN_API_KEY", Context: basetenDefaultContext, BuiltIn: true},
 		Provider{ID: "groq", Name: "Groq", API: APIChat, Base: envOr("GROQ_BASE_URL", groqDefaultBase), Key: os.Getenv("GROQ_API_KEY"), KeySource: "env GROQ_API_KEY", Context: groqDefaultContext, BuiltIn: true},
 		Provider{ID: "deepseek", Name: "DeepSeek", API: APIChat, Base: envOr("DEEPSEEK_BASE_URL", deepseekDefaultBase), Key: os.Getenv("DEEPSEEK_API_KEY"), KeySource: "env DEEPSEEK_API_KEY", Context: deepseekDefaultContext, BuiltIn: true},
-		Provider{ID: "openrouter", Name: "OpenRouter", API: APIOpenRouter, Base: "https://openrouter.ai/api/v1", Key: ByokKey(), KeySource: "env OPEN_ROUTER_API_KEY", Context: byokCtxLen, BuiltIn: true},
+		Provider{ID: OpenRouterID, Name: "OpenRouter", API: APIOpenRouter, Base: OpenRouterBase, Key: byokEnvKey(), KeySource: "env " + ByokKeyVar(), Context: byokCtxLen, BuiltIn: true},
 		Provider{ID: TypeSafeID, Name: "TypeSafe (Jev, decisions)", API: APIDecisions, Base: envOr("MEMDOOR_SYSTEMONE_URL", typesafeDefault), Key: typesafeKey(), KeySource: "env " + typesafeKeyVar(), BuiltIn: true},
 	)
 	for i := range out {

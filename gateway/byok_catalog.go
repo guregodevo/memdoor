@@ -42,6 +42,21 @@ type byokCatalog struct {
 
 var theByokCatalog byokCatalog
 
+// byokModels is the catalogue as the provider registry's models: the
+// OpenRouter entry's list (providers.OpenRouterModels) and the free-tier
+// choice (model_engine.go) read it here.
+func byokModels(key string) ([]providers.Model, error) {
+	list, err := theByokCatalog.models(key)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]providers.Model, 0, len(list))
+	for _, m := range list {
+		out = append(out, providers.Model{ID: m.ID, Name: m.Name, Context: m.Context, Tools: m.Tools, InPerM: m.InPerM, OutPerM: m.OutPerM, MaxOutput: m.MaxOutput, Thinking: m.Reasoning})
+	}
+	return out, nil
+}
+
 // byokCatalogTTL keeps the listing for an hour: it is a few hundred models
 // and it changes when a vendor ships, not between two searches.
 const byokCatalogTTL = time.Hour

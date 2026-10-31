@@ -270,7 +270,7 @@ environment. Any CI that can run a shell runs them:
 ```bash
 curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
 export PATH="$HOME/.local/bin:$PATH"
-memdoor workflow run pr-review --wait --stop-at-gate    # OPEN_ROUTER_API_KEY in the env
+memdoor workflow run pr-review --wait --stop-at-gate    # OPENROUTER_API_KEY in the env
 ```
 
 To watch or steer a CI run from your phone, see

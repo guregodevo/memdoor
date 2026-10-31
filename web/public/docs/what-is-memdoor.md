@@ -77,7 +77,7 @@ pairs, never a single run.
 
 ## Your key, your bill
 
-You hold the account. Export a provider key (`OPEN_ROUTER_API_KEY`,
+You hold the account. Export a provider key (`OPENROUTER_API_KEY`,
 `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, …) or
 run `memdoor connect`, and every turn goes straight from your machine to that
 provider at their list price — nothing of your code passes through memdoor.ai,
@@ -90,13 +90,14 @@ in the catalogue with its real price, pins one for the conversation, and orders
 its hosts by price, throughput or latency.
 
 Every request says `data_collection: deny`, and hosts that train on paid inputs
-are excluded from the ladders. A model you pin whose id ends in `:free` is the
-exception: its hosts train on what they are sent, the request says `allow`, and
-the pin warns.
+are excluded from the ladders. A `:free` model is the exception, one you pin or the
+one an OpenRouter account with no credit answers on: its hosts train on what
+they are sent, the request says `allow`, and
+Memdoor says so at the pin or when the key is connected.
 
 ## Price
 
-**Free** is the whole agent on your own key: the terminal, the ladder, the
+**Free** is the whole agent: the terminal, the ladder, the
 model picker, the decision model and workflows with local schedules.
 
 `memdoor savings` prints what it kept out of your bill this month, from your own
@@ -122,8 +123,7 @@ hosted gateway** is the one paid thing: memdoor.ai relays your phone to a
 gateway kept to localhost and keeps every workflow run's state, one table
 per workspace, so a workflow can wait on what another produced, from any
 machine; next, a box that memdoor.ai runs for you. It is $10 a month,
-cancel any month. The models always run on your own key — memdoor.ai never
-supplies one. See [memdoor.ai/enterprise](https://memdoor.ai/enterprise).
+cancel any month. memdoor.ai never supplies a model key. See [memdoor.ai/enterprise](https://memdoor.ai/enterprise).
 
 ## Today
 
@@ -132,7 +132,7 @@ gateway in the background on your machine.
 
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
-export OPEN_ROUTER_API_KEY=sk-or-...   # or any provider's key, or: memdoor connect
+export OPENROUTER_API_KEY=sk-or-...    # or any provider's key, or: memdoor connect
 cd your-project && memdoor
 ```
 

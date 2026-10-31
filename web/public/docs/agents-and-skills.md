@@ -39,7 +39,7 @@ The coding agent's:
 | `notes` | The coder's memory for a project: a file it reads at the start of a turn and appends to as it works |
 | `recall` | Return a tool output word for word after the transcript has been compacted |
 | `jgrep`, `jread` | The judged versions of `grep` and `read_file`: the decision model scores every match or section against the task and returns the ones that count |
-| `web_search`, `web_fetch` | Look something up on the web and read a page in full, on your own OpenRouter key; an answer with no source is refused |
+| `web_search`, `web_fetch` | Look something up on the web and read a page in full, on an OpenRouter key; an answer with no source is refused |
 | `mcp`, `cron`, `workflow`, `sessions_spawn` | Call a connected MCP server's tool, schedule its own re-check, run or approve a workflow, run a subtask in a session of its own |
 
 Everything runs on your machine, inside the folder the TUI was launched from. What leaves it is the prompt and the excerpts the model has to read.
