@@ -125,3 +125,7 @@ memdoor.next
 
 # edit-bench run outputs (HASHLINE §7 measurement)
 eval/editbench/results/
+# the team-solve parity evidence keeps each run's cost and host rows and the moved runs' resume logs
+!examples/workflows/team-solve/bench/results/parity-5pass/runs/*/*/meter.jsonl
+!examples/workflows/team-solve/bench/results/parity-5pass/runs/*/*/resume-fp8.log
+!examples/workflows/team-solve/bench/results/parity-5pass/attempts/*/*/meter.jsonl

@@ -11,7 +11,9 @@ func TestMonthSumsWhatWasMeasured(t *testing.T) {
 	t.Cleanup(func() { SetLedger("") })
 
 	now := time.Now()
-	lastMonth := now.AddDate(0, -1, 0)
+	// The hour before this month began: now.AddDate(0, -1, 0) on the 31st
+	// is "September 31", normalised to October 1, inside this month.
+	lastMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).Add(-time.Hour)
 	// This month.
 	Record(Entry{At: now, Kind: KindJudgedRead, Tool: "jgrep", RawBytes: 40_000, KeptBytes: 4_000})
 	Record(Entry{At: now, Kind: KindJudgedRead, Tool: "read_file", RawBytes: 60_000, KeptBytes: 20_000})
