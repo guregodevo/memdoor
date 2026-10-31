@@ -83,24 +83,27 @@ func dialTerminal(t *testing.T, srv *httptest.Server, token string) (*websocket.
 	// The handler upgrades the socket, then attaches the terminal to the
 	// session (remote_relay.go HandleRelayWS): Dial returns in between. A
 	// browser dialed in that gap is told "no such session" (404), which is
-	// what a slow CI runner saw on 2026-10-23. Wait for the attach.
-	if relayTestHub != nil {
-		deadline := time.Now().Add(10 * time.Second)
-		for time.Now().Before(deadline) {
-			relayTestHub.mu.RLock()
-			sess := relayTestHub.sessions[relayTestID]
-			relayTestHub.mu.RUnlock()
-			attached := false
-			if sess != nil {
-				sess.mu.RLock() // the terminal is the session's, under its own lock
-				attached = sess.terminal != nil
-				sess.mu.RUnlock()
-			}
-			if attached {
-				break
-			}
-			time.Sleep(5 * time.Millisecond)
+	// what a slow CI runner saw on 2026-10-23, and again on 2026-10-31 from a
+	// test that built its own hub without setting relayTestHub: the wait was
+	// skipped in silence. A test that dials a terminal must name its hub.
+	if relayTestHub == nil {
+		t.Fatalf("dialTerminal: relayTestHub is nil; the test must set it to the hub it dials")
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		relayTestHub.mu.RLock()
+		sess := relayTestHub.sessions[relayTestID]
+		relayTestHub.mu.RUnlock()
+		attached := false
+		if sess != nil {
+			sess.mu.RLock() // the terminal is the session's, under its own lock
+			attached = sess.terminal != nil
+			sess.mu.RUnlock()
 		}
+		if attached {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
 	return c, http.StatusSwitchingProtocols
 }

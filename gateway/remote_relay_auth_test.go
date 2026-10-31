@@ -96,6 +96,7 @@ func TestRelayAuthRefusesBadTokensAndDownBilling(t *testing.T) {
 func TestRelayAttachesATerminalWithAnAccountToken(t *testing.T) {
 	billing, _ := fakeBilling(t)
 	hub := NewRemoteRelayHub()
+	relayTestHub = hub // dialTerminal waits on it for the attach (the 404 the public CI saw 2026-10-31)
 	mux := http.NewServeMux()
 	mux.Handle("/api/relay", hub.HandleRelayWS(newRelayAuth(relayUsers{}, billing.URL)))
 	mux.HandleFunc("/api/relay/browser", hub.HandleRelayBrowser)
