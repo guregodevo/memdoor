@@ -6,14 +6,14 @@
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Memdoor — a lightweight coding and automation agent</title>
-    <meta name="description" content="A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo." />
+    <meta name="description" content="A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows." />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://memdoor.ai" />
     <link rel="canonical" href="https://memdoor.ai/" />
     <meta property="og:title" content="Memdoor — a lightweight coding and automation agent" />
-    <meta property="og:description" content="A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo." />
+    <meta property="og:description" content="A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows." />
     <meta property="og:image" content="https://memdoor.ai/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -22,7 +22,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Memdoor — a lightweight coding and automation agent" />
-    <meta name="twitter:description" content="A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo." />
+    <meta name="twitter:description" content="A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows." />
     <meta name="twitter:image" content="https://memdoor.ai/og-image.png" />
 
     <meta name="theme-color" content="#ffffff" />
@@ -43,11 +43,12 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Memdoor",
-      "description": "A lightweight coding and automation agent in one CLI binary. Run it locally or over SSH, start a run from a script, CI or a schedule, and keep multi-step jobs as files in your repo.",
+      "description": "A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows.",
       "image": "https://memdoor.ai/og-image.png",
       "author": { "@type": "Organization", "name": "Memdoor", "url": "https://memdoor.ai" },
       "license": "https://www.apache.org/licenses/LICENSE-2.0",
       "sameAs": ["https://github.com/guregodevo/memdoor"],
+      "subjectOf": { "@type": "WebPage", "name": "Five small models against a frontier model: the team-solve result", "url": "https://memdoor.ai/docs/team-solve" },
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "macOS, Linux, Windows",
       "url": "https://memdoor.ai",
@@ -71,6 +72,7 @@
         <p>One CLI binary for macOS, Linux and Windows, used locally or over SSH on another machine. No Docker or Python required. Start work from a terminal, your IDE or phone, or from a shell script, CI or a schedule, and finish it from any of those, on a gateway you own.</p>
         <p>Token optimization: a decision model filters search hits, file sections and logs, selects the tools the turn needs and stops stalled turns. Across 44 runs (22 pairs), all tasks passed with decisions off and on; one codebase question used 74% fewer input tokens, while edits and fixes showed no saving. Savings depend on the task.</p>
         <p>Headless-first CLI: memdoor run takes a prompt, writes an answer to stdout and returns an exit code reflecting its checks. Resume the same conversation interactively when needed.</p>
+        <p>Result: five Qwen3.8-27B agents, run as a Memdoor workflow that rebuilds GVS5H's harness with the authors' exact prompts, scored a mean of 9.8 of 10 on the first ten problems of their LiveCodeBench Hard list over five passes, against 9.6 for the authors' harness and 8.0 for Fable 5 in a single call. All 50 runs are published. <a href="/docs/team-solve">The result</a> · <a href="https://news.ycombinator.com/item?id=50320995">the Hacker News thread</a>.</p>
         <p>Describe the steps and it builds a workflow: one task file per step, run as a graph. Independent steps run in parallel, a step is done when its file exists or its command passes, a gate waits for your approval, and a failed run resumes at the failed step. Workflows run by hand or on your local cron.</p>
         <p>Free: the agent, the decision model and workflows. Pro, $10 a month: remote control from your phone (the page is your terminal, end-to-end encrypted) and workflow state kept on memdoor.ai so a workflow can wait on what another produced, from any machine. Every model call is on your own key.</p>
         <h2>Install (macOS, Linux, Windows)</h2>
