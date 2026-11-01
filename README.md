@@ -43,13 +43,105 @@ memdoor --gateway ssh://you@box connect openrouter        # your key, kept on th
 memdoor --gateway ssh://you@box run "fix the failing test" # the same box from a script or CI
 ```
 
-Runs live on the box and continue when the laptop disconnects. The phone or
-the next terminal opens the same conversation there.
+<p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
 
-No account. Telemetry off by default. One static binary for macOS, Linux and
-Windows. Apache 2.0.
+`memdoor` reads files, writes patches, runs the build, fixes the errors, in
+the directory it was launched from. A run is a conversation on a gateway on
+your machine. Doors: a terminal window, `memdoor run` from a script or CI, a
+cron schedule, the editor, the page on the phone. Model calls go from your
+machine to the provider at list price.
 
-### In GitHub Actions
+**Decision model.** Jev (TypeSafe) answers a typed question about a turn
+with a calibrated probability in under half a second. Judged reads: search,
+file and log reads return what counts. Per-turn toolbox: only the tools the
+turn needs are sent. Stall detection: a turn that stops making progress ends.
+44 paired runs, decisions off and on: 22 of 22 passed each way; a codebase
+question 54,661 to 14,367 input tokens (−74%); an edit with a test and ten
+one-file fixes read the same files either way (within ±11%)
+([`docs/features/DECIDE.md`](docs/features/DECIDE.md)).
+
+**Workflows, the deterministic harness.** Say the steps; the coder writes one
+YAML per step. [`mario`](https://github.com/guregodevo/mario) runs the graph.
+Independent steps run in parallel. A step is done when its check passes. A
+gate waits for approval with the diff. A failed run resumes at the failed
+step. Started by hand, from CI or on local cron
+([`docs/features/WORKFLOWS.md`](docs/features/WORKFLOWS.md)). Workflows, not
+skills: [the write-up](https://guregodevo.github.io/2026/10/06/workflows-not-skills/).
+Examples, each run before it was added:
+[`examples/workflows/`](examples/workflows/). The nightly grade step,
+`examples/workflows/nightly-rule/steps/grade.yaml`:
+
+```yaml
+type: agent
+prompt: |
+  Today's partition is {{.partition}}.
+  Read rules/{{.partition}}.md and grade today's trading rule: assess it
+  briefly (clarity, risk profile, plausibility) and write a JSON object
+  {"score": <0-100 integer>, "verdict": "<one sentence>"} into
+  grades/{{.partition}}.json (create grades/ if needed).
+requires:
+  - table_pattern: build
+target:
+  # run by the engine, not by the agent: the grade must exist and be newer than step 1's start stamp
+  command: test "grades/{{.partition}}.json" -nt "rules/{{.partition}}.start" && test -s "grades/{{.partition}}.json"
+timeout: 10m
+```
+
+The review loop recorded (findings verified by running, a gate, the fixes
+applied): [memdoor.ai/workflows](https://memdoor.ai/workflows).
+
+## In the window
+
+| Command | What it does |
+|---|---|
+| `/model` | The agent's ladder, cheapest rung first. Pin any model of your providers. List prices |
+| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, a company AI gateway. `/connect local`: a runtime on this machine or the box (Ollama, llama.cpp, janis), no key. `/connect chatgpt`: a ChatGPT Plus/Pro plan, no key |
+| `/workflow` | The project's workflows and runs. Enter opens a run's graph, `a` approves a gate, `/workflow:<name>` runs one |
+| `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
+| `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |
+| `/remote view` | A watch-only link: live, no typing, no account, up to 200 viewers. `?live=1` is the terminal alone, for a stream or OBS |
+| `/share` | A read-only link to the conversation, encrypted, secrets removed. `/unshare` deletes it |
+| `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, each with what happened to it. Enter previews, `ctrl+d` diffs, `ctrl+e` opens in `$EDITOR`, tab puts `@path` in the prompt |
+| `/graph` or `ctrl+g` | The turn as a graph: the reads, the edits that depended on them, the runs that depended on the edits, the failing check in red |
+| `/mcp` | MCP servers from a URL, a command or a `.mcp.json` snippet |
+| `/help` | The rest |
+
+`Esc` interrupts. `ctrl+o` expands tool frames. `Shift+Tab` sets reasoning
+effort. `@path` mentions a file. `MEMDOOR_APPROVE=changes` asks before every
+command and write.
+
+## In your editor
+
+`memdoor acp` serves the coder over the [Agent Client
+Protocol](https://agentclientprotocol.com). Zed and JetBrains host it
+natively. VS Code: an ACP client extension (for example "ACP Client") and one
+setting:
+
+```json
+"acp.agents": { "Memdoor": { "command": "memdoor", "args": ["acp"] } }
+```
+
+A session is a conversation on the local gateway. A prompt is a turn in the
+editor's workspace folder. Text, tool calls and approvals show as the
+editor's own. Steps: [memdoor.ai/docs/editor](https://memdoor.ai/docs/editor).
+
+## From a script
+
+```bash
+memdoor run "make the retry wait configurable and add a test"     # a headless turn, no window
+git diff | memdoor run "review this diff; one line per finding"    # stdin is the input
+memdoor run --json "fix the failing test" | jq 'select(.event=="done")'
+memdoor workflow run release --wait                                 # progress on stderr, results on stdout
+memdoor remote --last                                               # the link /remote gives, on stdout; the gateway holds the run for your phone
+memdoor remote --view --last                                        # the watch-only link: an audience, or a pair of eyes
+```
+
+Exit code: 0 checked, 2 unverified or a failing check, 3 a question nobody
+answered (`--yes` answers it), 1 an error, 130 interrupted. The gateway starts
+if none is running. `memdoor resume` opens any run.
+[Headless, then attached](https://memdoor.ai/docs/headless).
+
+## In GitHub Actions
 
 One step. Your key as the secret. Nothing added to the repo
 ([Marketplace](https://github.com/marketplace/actions/memdoor)):
@@ -79,183 +171,53 @@ Built in:
 - **`fix-tests`**: finds the test command, fixes the code until the tests pass, leaves the fix in the working tree.
 - **`release-notes`**: commits since the last tag as Added / Changed / Fixed.
 
-`local-model: Qwen3-8B-4bit` in place of the key: no key, the model inside the
+`local-model: Qwen3-8B-4bit` in place of the key: the model runs inside the
 runner ([janis](https://github.com/guregodevo/janis), one file, cached), one
-call. On a free runner it found an obvious and a subtle bug in about a minute
-each. It can flag a correct change as a blocker. A first pass.
+call. On a free runner: an obvious and a subtle bug found in about a minute
+each; a correct change can be flagged as a blocker. A first pass.
 
 `workflow: <name>` runs yours from `.memdoor/workflows/<name>/`. Exit code:
 0 done, 2 failed, 1 stopped, 3 stopped at an approval gate. The job summary
 holds the review, the fix or the notes. Trigger on `pull_request`, never
-`pull_request_target`: a fork's pull request gets no secrets, so a stranger's
-code never runs beside your key.
+`pull_request_target`: a fork's pull request gets no secrets.
 
-Keys: a ChatGPT Plus or Pro plan signs in with `memdoor connect chatgpt` (or
-`/connect chatgpt`) and its allowance answers the turns. A Claude subscription
-cannot be used this way (Anthropic's terms); Claude needs an API key. With no
-key, the first `memdoor` signs in with OpenRouter in the browser (or ChatGPT),
-from this machine, over ssh or on a box. An account with no credit runs on a
-free model: 50 requests a day, and the free hosts train on what they are sent.
-For a trial, not private code.
+## Keys and models
 
-`memdoor connect local` connects a model running on this machine
+A provider key in the environment (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`,
+`OPENAI_API_KEY`, `GEMINI_API_KEY`, …) or `memdoor connect`. No key: the
+first `memdoor` signs in with OpenRouter in the browser, from this machine,
+over ssh or on a box. No credit: a free model, 50 requests a day; its hosts
+train on what they are sent. For a trial, not private code.
+
+Local: `memdoor connect local` connects a model on this machine
 ([janis](https://github.com/guregodevo/janis), Ollama, llama.cpp, LM Studio).
 Nothing leaves it. janis: one Go server, open models on a Mac's GPU through
-MLX or an NVIDIA box through CUDA, serves chat and the decision model, no key.
-Runs Qwen3-Coder-30B-A3B on a $0.71-an-hour Google L4.
-`memdoor --gateway ssh://you@box connect local` connects the box's runtime.
-`memdoor peers add box http://box:18789 --dir ~/app` names the box;
-`@box:coder …` in any conversation runs the turn there and returns the answer.
-A recording on memdoor.ai: a laptop with no GPU, a turn on Qwen3.8-27B on an
-L4 through janis, the answer in the laptop's window.
+MLX or an NVIDIA box through CUDA, serves chat and the decision model, no
+key; Qwen3-Coder-30B-A3B on a $0.71-an-hour Google L4. On a box: `memdoor
+--gateway ssh://you@box connect local`. Peers: `memdoor peers add box
+http://box:18789 --dir ~/app` names the box; `@box:coder …` in any
+conversation runs the turn there and returns the answer.
 
-<p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
+## Where your data goes
 
-Every run is a conversation on a gateway on your machine, from any door: a
-terminal window, `memdoor run` from a script or CI, a cron schedule, the
-editor, the page on the phone. `memdoor resume <id>` opens the run a CI job
-started. Doors and exit codes: [the walk through
-them](https://memdoor.ai/docs/headless).
+Files, sessions and commands stay on your machine. What the model reads goes
+to the provider. OpenRouter: every request carries `data_collection: deny`;
+hosts that train on paid inputs are kept out of the ladders. Exception: a
+`:free` model, pinned or answering for an account with no credit; its hosts
+train on what they are sent, the request says so (`allow`), Memdoor warns at
+the pin or at connect. Vendor key or company gateway: nothing else is
+contacted. [`docs/SECURITY.md`](docs/SECURITY.md) lists the hosts the binary
+can name; a test fails the build on a new one.
 
-```bash
-memdoor run "fix the failing test"        # one turn, no window; the exit code is the receipt of its checks
-memdoor workflow run release --wait       # a workflow from a shell or CI, exit code the run's outcome
-memdoor resume --last                     # the same run, in a window
-```
+## Build from source
 
----
-
-`memdoor` reads files, writes patches, runs the build, fixes what it broke, in
-the directory it was launched from. Model calls go from your machine to the
-connected provider at list price.
-
-**A decision model in front of the chat model.** Jev (TypeSafe) answers a
-typed question such as *is this hit relevant to the task?* with a calibrated
-probability in under half a second. Judged reads: search, file and log reads
-return what counts. Per-turn toolbox: only the tools the turn needs are sent.
-Stall detection: a turn that stops making progress ends instead of looping to
-a cap. 44 paired runs, decisions off and on: 22 of 22 passed each way; a
-codebase question 54,661 to 14,367 input tokens (−74%); an edit with a test
-and ten one-file fixes read the same files either way (within ±11%)
-([`docs/features/DECIDE.md`](docs/features/DECIDE.md)).
-
-**Workflows, the deterministic harness.** Say the steps; the coder writes one
-YAML per step. [`mario`](https://github.com/guregodevo/mario) runs them as a
-graph. Independent steps run in parallel. A step is done when its check
-passes, never on the model's word. A gate waits for your approval with the
-diff. A failed run resumes at the failed step. By hand, from CI or on local
-cron ([`docs/features/WORKFLOWS.md`](docs/features/WORKFLOWS.md)). Workflows
-rather than skills: [the
-write-up](https://guregodevo.github.io/2026/10/06/workflows-not-skills/).
-Worked examples, each run before it was added:
-[`examples/workflows/`](examples/workflows/). The step that grades a trading
-rule nightly (`examples/workflows/nightly-rule/steps/grade.yaml`), no code:
-
-```yaml
-type: agent
-prompt: |
-  Today's partition is {{.partition}}.
-  Read rules/{{.partition}}.md and grade today's trading rule: assess it
-  briefly (clarity, risk profile, plausibility) and write a JSON object
-  {"score": <0-100 integer>, "verdict": "<one sentence>"} into
-  grades/{{.partition}}.json (create grades/ if needed).
-requires:
-  - table_pattern: build
-target:
-  # run by the engine, not by the agent: the grade must exist and be newer than step 1's start stamp
-  command: test "grades/{{.partition}}.json" -nt "rules/{{.partition}}.start" && test -s "grades/{{.partition}}.json"
-timeout: 10m
-```
-
-A recorded session of the review loop (findings verified by running, a gate,
-the fixes applied): [memdoor.ai/workflows](https://memdoor.ai/workflows).
-
-## Install
-
-```bash
-curl -fsSL https://memdoor.ai/install.sh | bash
-export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, … or /connect inside
-cd your-project && memdoor             # the first run sets the machine up
-```
-
-macOS (Apple Silicon and Intel), Linux (amd64, arm64; static), Windows
-(`irm https://memdoor.ai/install.ps1 | iex`; commands run in Git Bash when
-installed, otherwise PowerShell). One binary in `~/.local/bin`. No sudo, no
-Docker, no Python. The installer ([`scripts/install.sh`](scripts/install.sh))
-verifies the SHA-256 of the download.
-
-From a clone with Go 1.25:
+Go 1.25:
 
 ```bash
 git clone https://github.com/guregodevo/memdoor && cd memdoor
 make build                             # ./memdoor, stamped with the tag it was built from
 cp memdoor ~/.local/bin/               # or anywhere on your PATH
 ```
-
-## In the window
-
-| Command | What it does |
-|---|---|
-| `/model` | Which model answers: the agent's ladder (cheapest rung first), or pin any model of your providers, with list prices |
-| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, your company's AI gateway; `/connect local` a runtime on this machine or the box (Ollama, llama.cpp, janis), no key; `/connect chatgpt` signs in with a ChatGPT Plus/Pro plan, no key |
-| `/workflow` | The project's workflows and runs; enter opens a run's graph, `a` approves a gate, `/workflow:<name>` runs one |
-| `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
-| `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |
-| `/remote view` | A watch-only link: whoever opens it sees the terminal live and cannot type, no account, up to 200 at once; `?live=1` is the terminal alone, for a stream or OBS |
-| `/share` | A read-only link to the conversation, encrypted, secrets removed; `/unshare` deletes it |
-| `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, each with what happened to it; enter previews, `ctrl+d` diffs, `ctrl+e` opens in `$EDITOR`, tab puts `@path` in the prompt |
-| `/graph` or `ctrl+g` | This turn as a graph: the reads, the edits that depended on them, the runs that depended on the edits, the failing check in red |
-| `/mcp` | Connect MCP servers from a URL, a command or a `.mcp.json` snippet |
-| `/help` | The rest |
-
-`Esc` interrupts. `ctrl+f` files panel, `ctrl+g` the turn as a graph,
-`ctrl+o` expands tool frames, `Shift+Tab` reasoning effort, `@path` mentions a
-file. `MEMDOOR_APPROVE=changes` asks before every command and write.
-
-## In your editor
-
-`memdoor acp` serves the coder over the [Agent Client
-Protocol](https://agentclientprotocol.com). Zed and JetBrains host it
-natively. VS Code: an ACP client extension (for example "ACP Client") and one
-setting:
-
-```json
-"acp.agents": { "Memdoor": { "command": "memdoor", "args": ["acp"] } }
-```
-
-An editor session is a conversation on the local gateway. A prompt is a turn
-in the editor's workspace folder. Text, tool calls and approvals show as the
-editor's own. Steps: [memdoor.ai/docs/editor](https://memdoor.ai/docs/editor).
-
-## From a script
-
-```bash
-memdoor run "make the retry wait configurable and add a test"     # a headless turn, no window
-git diff | memdoor run "review this diff; one line per finding"    # stdin is the input
-memdoor run --json "fix the failing test" | jq 'select(.event=="done")'
-memdoor workflow run release --wait                                 # progress on stderr, results on stdout
-memdoor remote --last                                               # the link /remote gives, on stdout; the gateway holds the run for your phone
-memdoor remote --view --last                                        # the watch-only link: an audience, or a pair of eyes
-```
-
-Exit code: 0 checked, 2 unverified or a failing check, 3 a question nobody
-answered (`--yes` answers it), 1 an error, 130 interrupted. The gateway starts
-if none is running. Every run is a conversation `memdoor resume` opens.
-[Headless, then attached](https://memdoor.ai/docs/headless).
-
-A workflow in GitHub Actions is one step: [In GitHub Actions](#in-github-actions) above.
-
-## Where your data goes
-
-Files, sessions and commands stay on your machine. What the model reads goes
-to the connected provider. On OpenRouter every request carries
-`data_collection: deny`; hosts that train on paid inputs are kept out of the
-ladders. Exception: a `:free` model, pinned by you or answering for an account
-with no credit. Its hosts train on what they are sent; the request says so
-(`allow`) and Memdoor warns at the pin or at connect. For a trial, not private
-code. On a vendor key or a company gateway nothing else is contacted.
-[`docs/SECURITY.md`](docs/SECURITY.md) lists the hosts the binary can name; a
-test fails the build on a new one.
 
 ## Documentation
 
@@ -279,6 +241,6 @@ examples/      workflows built by the coder and run, to copy into a project
 
 ## License
 
-Apache License 2.0: [LICENSE](LICENSE), [NOTICE](NOTICE). The public repository is
+Apache License 2.0: [LICENSE](LICENSE), [NOTICE](NOTICE). Public repository:
 [github.com/guregodevo/memdoor](https://github.com/guregodevo/memdoor). Issues
 go there.
