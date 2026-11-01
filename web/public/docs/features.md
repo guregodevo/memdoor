@@ -1,112 +1,103 @@
 # Overview
 
-Everything Memdoor does and where each part is documented. Memdoor is a coding
-agent on your gateway, on your key at any provider. It runs from Terminal,
-a shell, CI, cron, your IDE or phone. A multi-step job runs as a workflow,
-the deterministic harness: each step checked by its output, a gate where
-you want one, resumed where it failed. A decision model in front of the chat model cuts what it reads and what
-it costs.
+Memdoor is a coding agent. It runs as a gateway on your machine, on your key.
+Clients: terminal, shell, CI, cron, IDE, phone. Multi-step jobs run as
+workflows, the deterministic harness. A decision model in front of the chat
+model cuts input and cost.
 
 ## The coding agent
 
-`cd your-project && memdoor`. It reads your files, writes patches, runs the
-build, reads the errors and fixes what it broke. It works in the directory you
-launched it from: its file tools stay inside it and its commands start there.
-It is not a sandbox, since a shell command can still reach other folders. `@`
-mentions files and folders. `memdoor resume` returns to an earlier
-conversation.
+`cd your-project && memdoor`. Reads files, writes patches, runs the build,
+fixes the errors. File tools and commands are rooted in the launch directory.
+Not a sandbox: a shell command can reach other folders. `@` mentions a file or
+folder. `memdoor resume` reopens a conversation.
 
 → **[What is Memdoor](/docs/what-is-memdoor)**, **[Getting started](/docs/getting-started)**
 
 ## The decision model
 
-A decision model (Jev) answers typed questions about the turn with a calibrated
-probability in under half a second. The harness acts on the answer. Judged
-reads return the search hits, file sections and log lines the task needs. The
-tool schemas sent per call are narrowed to the kind of work the request needs.
-A turn that has stopped making progress is ended.
-Measured over 44 paired runs: 74% fewer input tokens on a code question, no
-change on an edit or on small fixes, 22 of 22 passed each way.
+Jev answers typed questions about a turn with a calibrated probability in
+under half a second. Judged reads: search hits, file sections and log lines
+filtered against the task. Per-call toolbox: tool schemas narrowed to the
+request. Stall detection: a turn that stops making progress is ended.
+44 paired runs: 74% fewer input tokens on a code question, no change on an
+edit or on small fixes, 22 of 22 passed both ways.
 
 → **[What is Memdoor](/docs/what-is-memdoor)**, **[Why Memdoor](/docs/why)**
 
 ## Your key and the models
 
 Export a provider key (`OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`,
-`DEEPSEEK_API_KEY`, …) or run `memdoor connect`. Turns go straight from your
-machine to that provider at its list price. Each agent has a ladder with the
-cheapest rung first. The footer names the model that answered and why. `/model`
-searches the catalogue of tool-capable models with real prices, pins one and
-orders its hosts.
+`DEEPSEEK_API_KEY`, …) or run `memdoor connect`. Requests go from your
+machine to the provider at list price. Each agent has a model ladder,
+cheapest rung first. The footer names the model that answered and why.
+`/model` searches tool-capable models with prices, pins one, orders its hosts.
 
 → **[Your key and the models](/docs/your-key)**, **[Models](/docs/models)**
 
 ## Web search
 
-`web_search` looks something up on the web and answers with numbered sources. `web_fetch` reads one of those pages in full. The coder has both. They run on an OpenRouter key and no other account. An answer with no source is refused, so the agent cannot pass memory off as a search. The `chrome` skill sends searches to `web_search` too and keeps the browser for pages that need one.
+`web_search` returns an answer with numbered sources. `web_fetch` reads one
+page. Both run on an OpenRouter key. An answer without a source is refused.
+The `chrome` skill sends searches to `web_search` and uses the browser for
+pages that need one.
 
 ## The terminal
 
-Replies stream as they generate. `Esc` interrupts. Typing during a step queues.
-Every tool call renders as a frame you can expand with `Ctrl+O`. Scrolling up
-never pulls you back down: a bar says what landed below and `End` returns to
-live. If the gateway restarts the TUI reconnects and sends what you typed while
-it was away.
+Replies stream. `Esc` interrupts. Typing during a step queues. Each tool call
+is a frame; `Ctrl+O` expands it. Scrolling up stays put; a bar reports what
+landed below; `End` returns to live. After a gateway restart the TUI
+reconnects and sends what was typed meanwhile.
 
 → **[The TUI](/docs/tui)**, **[Slash commands](/docs/slash-commands)**
 
 ## Remote control
 
-`/remote` gives the conversation a link and a QR code. The page it opens on your
-phone is the TUI, run by your gateway, so it works with the window
-closed. Watch a turn, answer its question, stop it, start the next one. The
-screen and your keystrokes are end-to-end encrypted with a key that is only in
-the link. The relay, your gateway or memdoor.ai, forwards what it cannot read.
-`/remote off` revokes the link. On your gateway it is free. Only the
-memdoor.ai relay for a gateway kept to localhost is part of the hosted gateway.
+`/remote` prints a link and a QR code. The page is the TUI, served by your
+gateway, so it works with the window closed. Screen and keystrokes are
+end-to-end encrypted with a key held only in the link; the relay forwards
+ciphertext. `/remote off` revokes the link. Free on your gateway. The
+memdoor.ai relay, for a gateway kept to localhost, is the hosted part.
 
 → **[Remote control](/docs/remote)**
 
 ## Workflows
 
-Say what you want done in steps and the coder builds a workflow: a graph of
-tasks, each proven done by something you can check (a file that must exist,
-a command that must exit 0, or the task's own answer). Independent tasks run
-in parallel and the graph is drawn in your window as it goes. Three kinds of
-task: an agent turn, a shell command, one model call. Your approval is a task
-nobody runs. A failed task reads `✗` with the reason and the run resumes from
-there. The engine is mario, an open DAG runner.
+Describe the steps; the coder writes the workflow. A graph of tasks, each
+done when its check passes: a file exists, a command exits 0, or the task's
+answer. Independent tasks run in parallel. The graph is drawn live in the
+window. Task kinds: agent turn, shell command, one model call. Approval is a
+task nobody runs. A failed task shows `✗` and the reason; the run resumes
+there. Engine: mario, an open DAG runner.
 
 → **[Workflows](/docs/workflows)**
 
 ## In CI
 
-One step in a GitHub job reviews every pull request, writes its tests or its
-description, explains a failed run, triages a new issue, fixes a failing suite
-or writes release notes. The job passes or fails on a check. The model runs on
-your key, or with no key on a model inside the runner. The runner model is a free first pass for the obvious. An agent on your key
-runs the code to prove what it finds.
+One step in a GitHub job: review a pull request, write its tests or its
+description, explain a failed run, triage an issue, fix a failing suite,
+write release notes. The job passes or fails on a check. Runs on your key,
+or with no key on a model inside the runner. The runner model is a first
+pass; an agent on your key runs the code.
 
 → **[In CI](/docs/ci)**
 
 ## Sessions
 
-Sessions persist, compact when they grow, and rewind when a turn derails.
+Persist, compact when large, rewind when a turn derails.
 
 ## Agents, tools, skills
 
-A workspace ships with a team: coder, planner, verifier and others, each
-with its tools and prompt, all of it configuration. Skills are markdown
-instructions resolved from disk first. Editing one takes effect on the next
-call.
+A workspace ships coder, planner, verifier and others. Each is tools and a
+prompt, all configuration. Skills are markdown, loaded from disk first.
+An edit applies on the next call.
 
 → **[Agents and skills](/docs/agents-and-skills)**
 
 ## Operations
 
-Structured, queryable logs (`memdoor logs query --regex … --since 10m`). A
-per-turn ledger of what each model served and cost (`memdoor meter`). A
-single binary that installs without sudo and runs where Docker and
-package managers are blocked.
+Queryable logs: `memdoor logs query --regex … --since 10m`. Per-turn ledger
+of model and cost: `memdoor meter`. One binary, no sudo, runs where Docker
+and package managers are blocked.
 
 → **[CLI](/docs/cli)**, **[Configuration](/docs/configuration)**

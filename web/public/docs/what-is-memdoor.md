@@ -1,6 +1,6 @@
 # What is Memdoor
 
-A lightweight coding and automation agent in a single CLI binary. Run it locally or over SSH on another machine, on your gateway, with your provider account. No Docker or Python required.
+A lightweight coding and automation agent in a single CLI binary. Run it locally or over SSH on another machine, on your gateway, on your key. No Docker or Python required.
 
 Memdoor is headless first. A run starts from a shell script, CI or a
 schedule, or interactively from a terminal, your IDE or phone, and can be
