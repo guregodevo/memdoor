@@ -89,8 +89,10 @@ memdoor workflow run team-solve --wait
 A hard problem takes about 300K output tokens over the run's eight steps, an
 hour or two on a 24 GB card at 20 tokens a second. The published 9.8 ran on
 Qwen3.8-27B in FP8 and BF16 through OpenRouter; a quantised copy on your card
-is the same weights at lower precision, and readers in the HN thread report
-Q5 and above holding up where Q3 does not. Every step keeps its files, so a
+is the same weights at lower precision, and readers in
+[the HN thread](https://news.ycombinator.com/item?id=50320995)
+([summary on zeli.app](https://zeli.app/story/50320995)) report Q5 and above
+holding up where Q3 does not. Every step keeps its files, so a
 run that stops resumes where it stopped.
 
 What leaves the machine: nothing. The runtime answers on localhost, Memdoor
