@@ -94,6 +94,7 @@ samples). Neither is in these numbers.
 
     curl -fsSL https://memdoor.ai/install.sh | bash
     memdoor connect openrouter                 # or anthropic, openai, gemini, chatgpt
+    # or no key at all: memdoor connect local   # Ollama, llama.cpp, vLLM, LM Studio on this machine
     git clone --depth 1 https://github.com/guregodevo/memdoor
 
     mkdir -p ~/.memdoor/workflows
@@ -109,7 +110,8 @@ The program is `solution.py`, read from stdin, compared to the samples with
 the folder into that project's `.memdoor/workflows/`. The project's copy wins.
 
 The steps name no model. Whatever `/model` is pinned to answers, a local one
-included (`memdoor connect local` for janis, Ollama or llama-server).
+included (`memdoor connect local` for Ollama, llama.cpp, vLLM, LM Studio or janis:
+[how to connect one](https://memdoor.ai/docs/providers#a-local-runtime-no-key)).
 
 ## How it works
 

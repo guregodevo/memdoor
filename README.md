@@ -16,7 +16,8 @@
 > [GVS5H](https://github.com/slee-persis/GVS5H)'s harness rebuilt with the authors' exact prompts and loop,
 > on the first ten problems of their list, five passes each: a mean of **9.8 of 10**, against 9.6 for the
 > authors' own harness and 8.0 for Fable 5 in a single call. All 50 runs are published: every request,
-> reply, program and grader output. The workflow is YAML and names no model; point it at yours.
+> reply, program and grader output. The workflow is YAML and names no model: point it at yours, or at a
+> local one with `memdoor connect local` (Ollama, llama.cpp, vLLM, LM Studio; [how](https://memdoor.ai/docs/providers#a-local-runtime-no-key)).
 > [examples/workflows/team-solve](examples/workflows/team-solve/) · [the HN thread](https://news.ycombinator.com/item?id=50320995)
 
 On this machine:
