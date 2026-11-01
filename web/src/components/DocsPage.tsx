@@ -132,7 +132,7 @@ export function DocsPage() {
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['start', 'guides', 'reference', 'background'])
+    new Set(['start', 'open-weight-models', 'guides', 'reference', 'background'])
   );
 
   const currentDocPath = location.pathname.replace(/^\/docs\/?/, '') || 'README';
