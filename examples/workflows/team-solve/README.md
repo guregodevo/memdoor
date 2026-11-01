@@ -41,6 +41,12 @@ What this does and does not show:
   training. Contamination cannot be ruled out, for any column.
 - Fable 5's column is one call per problem, from the authors' files. It was
   not run in this harness.
+- The first ten are the block where Fable 5 scores lowest in the authors'
+  own data: 80 percent over its five passes, against 91.6 on the other ninety.
+  Over all 100, their harness and Fable are 92.4 and 90.4, a tie. The block is
+  the top of their list, not a choice, and it is where the gap is widest
+  ([issue #3](https://github.com/guregodevo/memdoor/issues/3), checked against
+  their `patched_verdicts.json`).
 - The loop sees only the public samples; the score is the hidden tests.
 - The model ran on OpenRouter, not a local machine.
 - The one lost problem: the manager invented a wrong counterexample and the

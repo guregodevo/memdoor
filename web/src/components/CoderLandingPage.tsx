@@ -301,7 +301,7 @@ function HackerNewsSection() {
           </table>
           <p className="mt-4 text-xs leading-relaxed text-neutral-500">
             Same model, Qwen3.8-27B, through OpenRouter. The authors' columns are their regraded result files.
-            Ten problems, not their 100; contamination cannot be ruled out; Fable 5 was not given the harness.
+            Ten problems, not their 100, and the first ten are the block where Fable 5 scores lowest in the authors' data (80 against 91.6 on the other ninety; over all 100, 92.4 to 90.4, a tie); contamination cannot be ruled out; Fable 5 was not given the harness.
             $0.39 and a median of 40 minutes a run.
           </p>
         </div>
