@@ -182,6 +182,18 @@ runtime's model list and makes one call, as with every provider;
 the runtime runs on the box and the window on your laptop. Nothing leaves
 the machine the runtime runs on.
 
+Ollama reads a prompt through a 4,096-token window unless told otherwise,
+whatever the model allows, and a coder turn's prompt is longer than that:
+the model then answers a task it never saw, in a few lines, and calls no
+tool (the meter shows exactly 4096 input tokens on every call). Start Ollama
+with `OLLAMA_CONTEXT_LENGTH=32768`, or make a tag with the window set and pin
+that one:
+
+```
+printf 'FROM qwen3:8b\nPARAMETER num_ctx 32768\n' > Modelfile
+ollama create qwen3:8b-32k -f Modelfile
+```
+
 A runtime that also judges — [janis](https://github.com/guregodevo/janis)
 answers the decision model's questions on the same loaded model — is
 connected as both: `connect local` keeps its decisions as `local-decisions`,

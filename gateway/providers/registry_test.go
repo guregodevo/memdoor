@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -229,5 +230,46 @@ func TestAConnectedBuiltInSurvivesARestart(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "sk-ant-env")
 	if p, _ := FindProvider("anthropic"); p.Key != "sk-ant-env" || p.KeySource != "env ANTHROPIC_API_KEY" {
 		t.Fatalf("the environment first: %+v", p)
+	}
+}
+
+// A model pulled into a local runtime after memdoor connect local is found
+// on the next pin: the cached list is re-read once on a miss (2026-11-01,
+// the first team-solve run after an `ollama pull` answered on the list's
+// first, retired, model for the hour the list is kept).
+func TestAModelPulledAfterConnectIsFoundOnTheNextPin(t *testing.T) {
+	clearProviderEnv(t)
+	var pulled atomic.Bool
+	var reads atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reads.Add(1)
+		if pulled.Load() {
+			_, _ = io.WriteString(w, `{"data":[{"id":"qwen3:8b"},{"id":"kimi-k2.5:cloud"}]}`)
+			return
+		}
+		_, _ = io.WriteString(w, `{"data":[{"id":"kimi-k2.5:cloud"}]}`)
+	}))
+	defer srv.Close()
+	if err := SaveProvider(ProviderSpec{ID: "local", API: APIChat, Base: srv.URL + "/v1", Keyless: true}); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	if _, _, ok := FindModel(ctx, "local:qwen3:8b"); ok {
+		t.Fatal("not pulled yet")
+	}
+	pulled.Store(true)
+	p, m, ok := FindModel(ctx, "local:qwen3:8b")
+	if !ok || p.ID != "local" || m.ID != "qwen3:8b" {
+		t.Fatalf("the pulled model is found on the next pin: %+v %+v %v", p, m, ok)
+	}
+	if p, m, ok := FindModel(ctx, "qwen3:8b"); !ok || p.ID != "local" || m.ID != "qwen3:8b" {
+		t.Fatalf("and by its bare id: %+v %+v %v", p, m, ok)
+	}
+	n := reads.Load()
+	if _, _, ok := FindModel(ctx, "local:nobody-has-it"); ok {
+		t.Fatal("unknown")
+	}
+	if reads.Load()-n != 1 {
+		t.Fatalf("a miss re-reads the list once, not more: %d reads", reads.Load()-n)
 	}
 }

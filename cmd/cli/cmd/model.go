@@ -28,6 +28,7 @@ In the window, /model shows this conversation's model and pins one:
 [order host1,host2] (any model from the search), /model auto.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var st struct {
+			Model        string              `json:"model"`
 			AgentLadders map[string][]string `json:"agent_ladders"`
 			AgentModels  map[string]string   `json:"agent_models"`
 		}
@@ -35,6 +36,14 @@ In the window, /model shows this conversation's model and pins one:
 			return err
 		}
 		if len(st.AgentLadders) == 0 && len(st.AgentModels) == 0 {
+			// No engine chosen at start, a provider added with memdoor connect
+			// answers on its first model (brain_status.go): a local runtime
+			// with no key read "no model yet" here while every turn ran
+			// (2026-11-01).
+			if st.Model != "" {
+				fmt.Printf("%-10s %s\n", "coder", st.Model)
+				return nil
+			}
 			fmt.Println(brainGate("none"))
 			return nil
 		}

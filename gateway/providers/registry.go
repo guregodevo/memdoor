@@ -519,8 +519,42 @@ func SplitPin(id string) (provider, model string) {
 // FindModel is the provider that serves a model id: the one named by a
 // "provider:" prefix, else the active engine's provider when it lists it,
 // else the first connected provider that does. The model returned carries
-// the bare id, as the provider names it.
+// the bare id, as the provider names it. A miss on a list read from the
+// cache re-reads it once: a model pulled into Ollama after `memdoor connect
+// local` stayed invisible for the hour a list is kept, and the first run
+// after the pull answered on the list's first, retired, model (2026-11-01).
 func FindModel(ctx context.Context, id string) (Provider, Model, bool) {
+	if p, m, ok := findListedModel(ctx, id); ok {
+		return p, m, true
+	}
+	if !forgetCachedListsFor(id) {
+		return Provider{}, Model{}, false
+	}
+	return findListedModel(ctx, id)
+}
+
+// forgetCachedListsFor drops the cached model lists a pin of id would be
+// looked up in: the named provider's, else every connected provider's.
+// False when none was cached, so a miss on a fresh list is final.
+func forgetCachedListsFor(id string) bool {
+	want, _ := SplitPin(id)
+	forgot := false
+	for _, p := range Providers() {
+		if !p.Connected() || (want != "" && p.ID != want) {
+			continue
+		}
+		modelLists.mu.Lock()
+		_, cached := modelLists.list[p.ID]
+		modelLists.mu.Unlock()
+		if cached {
+			ForgetModels(p.ID)
+			forgot = true
+		}
+	}
+	return forgot
+}
+
+func findListedModel(ctx context.Context, id string) (Provider, Model, bool) {
 	if want, bare := SplitPin(id); want != "" {
 		p, ok := FindProvider(want)
 		if !ok || !p.Connected() {
