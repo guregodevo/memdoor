@@ -106,10 +106,26 @@ export function InstallLine({ dark = false }: { dark?: boolean }) {
   );
 }
 
+// A public number memdoor.ai's nginx fetches and caches for ten minutes
+// (/site/github, /site/hn in scripts/deploy.sh): the browser asks only this
+// site, so the CSP stays connect-src 'self'. A gateway elsewhere answers 404
+// and the number is left out.
+function useSiteNumber(path: string, field: string): number | null {
+  const [n, setN] = useState<number | null>(null);
+  useEffect(() => {
+    fetch(path)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j && typeof j[field] === 'number') setN(j[field]); })
+      .catch(() => {});
+  }, [path, field]);
+  return n;
+}
+
 export function CoderHeader({ dark = false }: { dark?: boolean }) {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const link = dark ? 'text-neutral-300 hover:text-white' : 'text-neutral-500 hover:text-neutral-900';
+  const stars = useSiteNumber('/site/github', 'stargazers_count');
   return (
     <header
       className={`flex items-center justify-between px-6 py-4 sm:px-10 ${
@@ -120,7 +136,7 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
       <button onClick={() => navigate('/')} aria-label="Memdoor home">
         <img src="/memdoor-logo.png" alt="Memdoor" width={1409} height={351} className={`h-9 w-auto ${dark ? 'invert' : ''}`} />
       </button>
-        {/* GitHub first, beside the logo (Greg, 2026-11-01: "GitHub on top left"). A star count would need a fetch the CSP (connect-src self) refuses. */}
+        {/* GitHub first, beside the logo, with the star count memdoor.ai's nginx caches (Greg, 2026-11-01: "GitHub on top left", "adds the Github stars"). */}
         <a
           href="https://github.com/guregodevo/memdoor"
           className={`inline-flex items-center gap-1.5 text-sm ${link}`}
@@ -130,6 +146,7 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
             <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
           </svg>
           <span className="hidden sm:inline">GitHub</span>
+          {stars !== null && <span className="hidden sm:inline tabular-nums text-neutral-400">★ {stars.toLocaleString()}</span>}
         </a>
       </div>
       <nav className="flex items-center gap-5 text-sm">
@@ -185,6 +202,110 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
   );
 }
 
+
+// THE RESULT — the HN thread of 2026-10-31 (item 50320995): five Qwen3.8-27B
+// agents as a team-solve workflow against Fable 5 on LiveCodeBench Hard. The
+// points, comments and stars are live through /site/hn and /site/github.
+const HN_ITEM = 'https://news.ycombinator.com/item?id=50320995';
+function HackerNewsSection() {
+  const points = useSiteNumber('/site/hn', 'score');
+  const comments = useSiteNumber('/site/hn', 'descendants');
+  const stars = useSiteNumber('/site/github', 'stargazers_count');
+  const rows: [string, string, string, string][] = [
+    ['1', '10', '9', '7'],
+    ['2', '10', '10', '8'],
+    ['3', '10', '10', '10'],
+    ['4', '10', '9', '8'],
+    ['5', '9', '10', '7'],
+  ];
+  return (
+    <section className="border-b border-neutral-100 bg-[#fff7f0]">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-6 py-14 sm:px-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+        <div>
+          <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-widest text-[#ff6600]">
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm bg-[#ff6600] text-[10px] font-bold text-white">Y</span>
+            On Hacker News
+          </div>
+          <h2 className="mb-4 max-w-2xl text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+            A team of five Qwen3.8-27B models beats Fable 5 on LiveCodeBench Hard.
+          </h2>
+          <p className="mb-6 max-w-2xl text-sm leading-relaxed text-neutral-600">
+            GVS5H's harness, rebuilt as a Memdoor workflow with the authors' exact prompts and loop: a
+            planner, two ideators, a solver and a manager, each from a fresh context, talking only through
+            files. On the first ten problems of their list, five passes each, it scored a mean of{' '}
+            <strong className="text-neutral-900">9.8 of 10</strong>, against 9.6 for the authors' own harness
+            and 8.0 for Fable 5 in a single call. All 50 runs are published: every request, reply, program and
+            grade. Front page of Hacker News for a day; the thread argued about models and local hardware, not
+            about the tool.
+          </p>
+          <div className="mb-6 flex flex-wrap gap-x-8 gap-y-3">
+            {[
+              [points, 'points'],
+              [comments, 'comments'],
+              [stars, 'GitHub stars'],
+            ].map(([n, label]) => (
+              <div key={label as string}>
+                <div className="text-3xl font-bold tabular-nums text-neutral-900">
+                  {typeof n === 'number' ? n.toLocaleString() : '—'}
+                </div>
+                <div className="text-xs uppercase tracking-widest text-neutral-500">{label as string}</div>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <a href={HN_ITEM} className="rounded-full bg-[#ff6600] px-4 py-2 font-semibold text-white hover:bg-[#e65c00]">
+              Read the thread
+            </a>
+            <a href="/docs/team-solve" className="rounded-full border border-neutral-300 px-4 py-2 font-semibold text-neutral-800 hover:border-neutral-900">
+              The result, on one page
+            </a>
+            <a
+              href="https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve/bench/results/parity-5pass"
+              className="rounded-full border border-neutral-300 px-4 py-2 font-semibold text-neutral-800 hover:border-neutral-900"
+            >
+              All 50 runs
+            </a>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="mb-3 text-xs uppercase tracking-widest text-neutral-500">Problems solved of 10, per pass</div>
+          <table className="w-full text-sm tabular-nums">
+            <thead>
+              <tr className="text-left text-xs text-neutral-500">
+                <th className="pb-2 font-medium">pass</th>
+                <th className="pb-2 font-medium">Memdoor workflow</th>
+                <th className="pb-2 font-medium">authors' harness</th>
+                <th className="pb-2 font-medium">Fable 5, one call</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(([p, a, b, c]) => (
+                <tr key={p} className="border-t border-neutral-100">
+                  <td className="py-2 text-neutral-500">{p}</td>
+                  <td className="py-2 font-semibold text-neutral-900">{a}</td>
+                  <td className="py-2 text-neutral-700">{b}</td>
+                  <td className="py-2 text-neutral-700">{c}</td>
+                </tr>
+              ))}
+              <tr className="border-t-2 border-neutral-200">
+                <td className="py-2 text-neutral-500">mean</td>
+                <td className="py-2 font-bold text-neutral-900">9.8</td>
+                <td className="py-2 text-neutral-700">9.6</td>
+                <td className="py-2 text-neutral-700">8.0</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="mt-4 text-xs leading-relaxed text-neutral-500">
+            Same model, Qwen3.8-27B, through OpenRouter. The authors' columns are their regraded result files.
+            Ten problems, not their 100; contamination cannot be ruled out; Fable 5 was not given the harness.
+            $0.39 and a median of 40 minutes a run.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function CoderLandingPage() {
   useEffect(() => {
     setMeta({ ...HOME_META, path: '/' });
@@ -233,6 +354,8 @@ export function CoderLandingPage() {
       </div>
 
       <main className="flex-1">
+        <HackerNewsSection />
+
         {/* ORCHESTRATION — the Airflow analogy (Greg, 2026-10-04: "it does not
             give you the orchestration"). Cron+make existed; teams still moved
             to Airflow. Pi+a Makefile is cron+make for agents. */}
