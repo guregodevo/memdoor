@@ -1,6 +1,7 @@
 # team-solve: working notes
 
-The record behind the [README](README.md): how parity with the authors'
+The record behind the [README](README.md) and the result page at
+[memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve): how parity with the authors'
 harness was checked, what differed, what it took, where it lost, and what the
 first run found. Every run is in [`bench/results/parity-5pass/`](bench/results/parity-5pass/).
 

@@ -26,6 +26,7 @@ cd your-project && memdoor
 ## Guides
 
 - **[The TUI](/docs/tui)** — the screens, captured from a running session.
+- **[Team solve: the result](/docs/team-solve)** — five small models against a frontier model, every run published.
 - **[Remote control](/docs/remote)** — `/remote`: the same terminal, on your phone.
 - **[In your editor](/docs/editor)** — the coder in VS Code, Zed or JetBrains (`memdoor acp`).
 - **[Headless, then attached](/docs/headless)** — scheduled checks, workflows from CI, editor sessions: every run is a conversation you can come back into.

@@ -54,6 +54,7 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 - Docs: https://memdoor.ai/docs/getting-started
 - Features, with the comparison to other coding agents: https://memdoor.ai/features — one page each: https://memdoor.ai/compare/claude-code, /compare/codex-cli, /compare/gemini-cli, /compare/aider, /compare/pi
 - Workflows: https://memdoor.ai/workflows (catalog), https://memdoor.ai/docs/workflows (guide), https://memdoor.ai/docs/cron (schedules)
+- Team solve, the result: https://memdoor.ai/docs/team-solve (five Qwen3.8-27B agents at 9.8 of 10 against Fable 5's 8.0 on LiveCodeBench Hard, all runs published)
 - Remote control: https://memdoor.ai/docs/remote
 - Installer (plain shell, SHA-256 verified): https://memdoor.ai/install.sh
 - Pricing: https://memdoor.ai/pricing

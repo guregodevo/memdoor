@@ -49,6 +49,7 @@ What this does and does not show:
 
 The parity check (every request byte for byte against their code), the hosts,
 the changes it took and the first run's findings are in [NOTES.md](NOTES.md).
+The same result, on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
 
 ## Run it
 

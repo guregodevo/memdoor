@@ -1,5 +1,9 @@
 # The LCB-100 bench: team workflow against a single call, Qwen3.8-27B
 
+The parity result on the authors' first ten problems, 9.8 of 10 over five passes, is
+written up at [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve); this
+folder also holds the earlier 100-problem bench below.
+
 GVS5H's 100 hardest LiveCodeBench problems (`ids.json`, release_v6, contests
 of 2024-12 to 2025-04: 73 AtCoder, 27 LeetCode), each graded on all of its
 tests, public and hidden, with LiveCodeBench's own checker. Two arms, both

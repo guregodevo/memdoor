@@ -19,6 +19,7 @@ type Entry = {
   cast?: { src: string; poster: string };
   source?: { label: string; href: string };
   results?: { label: string; href: string };
+  result?: { label: string; href: string };
 };
 
 const CATALOG: Entry[] = [
@@ -31,6 +32,7 @@ const CATALOG: Entry[] = [
     cast: { src: '/team-solve.cast', poster: 'npt:8:25' },
     source: { label: 'GVS5H: five Qwen3.8-27B models match Fable 5 on LiveCodeBench Hard', href: 'https://github.com/slee-persis/GVS5H' },
     results: { label: 'All 50 runs: every request, reply, program, grade and cost', href: 'https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve/bench/results/parity-5pass' },
+    result: { label: '9.8 of 10 against Fable 5\'s 8.0: the result, on one page', href: '/docs/team-solve' },
   },
   {
     name: 'karpathy-recipe',
@@ -138,6 +140,16 @@ export function WorkflowCatalogPage() {
                     <dd>
                       <a href={w.source.href} className="text-neutral-700 underline underline-offset-4 hover:text-neutral-900">
                         {w.source.label}
+                      </a>
+                    </dd>
+                  </>
+                )}
+                {w.result && (
+                  <>
+                    <dt className="text-neutral-400">Result</dt>
+                    <dd>
+                      <a href={w.result.href} className="text-neutral-700 underline underline-offset-4 hover:text-neutral-900">
+                        {w.result.label}
                       </a>
                     </dd>
                   </>
