@@ -60,6 +60,7 @@ detail: [NOTES.md](https://github.com/guregodevo/memdoor/blob/main/examples/work
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
 memdoor connect openrouter          # or anthropic, openai, gemini, chatgpt
+memdoor connect local               # or no key: a model on this machine (Ollama, llama.cpp, vLLM, LM Studio)
 git clone --depth 1 https://github.com/guregodevo/memdoor
 
 mkdir -p ~/.memdoor/workflows
@@ -74,7 +75,7 @@ Replace `task.md` with your problem and put paired `tests/N.in` /
 and compared to the samples with `diff`. The steps name no model: whatever
 `/model` is pinned to answers, a local one included.
 
-A local model instead of a key: `memdoor connect local` reaches Ollama,
+A local model instead of a key ([the whole path](/docs/open-weight)): `memdoor connect local` reaches Ollama,
 llama.cpp, vLLM or LM Studio on this machine
 ([how](/docs/providers#a-local-runtime-no-key)). Ollama's default window is
 4,096 tokens, too short for the coder's prompt; give the model a 32K window

@@ -18,7 +18,7 @@
 > on the first ten problems of their list, five passes each: a mean of **9.8 of 10**, against 9.6 for the
 > authors' own harness and 8.0 for Fable 5 in a single call. All 50 runs are published: every request,
 > reply, program and grader output. The workflow is YAML and names no model: point it at yours, or at a
-> local one with `memdoor connect local` (Ollama, llama.cpp, vLLM, LM Studio; [how](https://memdoor.ai/docs/providers#a-local-runtime-no-key)).
+> local one with `memdoor connect local` (Ollama, llama.cpp, vLLM, LM Studio; [how to run it on an open-weight model, no key](https://memdoor.ai/docs/open-weight)).
 > [examples/workflows/team-solve](examples/workflows/team-solve/) · [the result page](https://memdoor.ai/docs/team-solve) · [the HN thread](https://news.ycombinator.com/item?id=50320995)
 
 On this machine:
@@ -26,6 +26,7 @@ On this machine:
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
+# or no key: memdoor connect local    # an open-weight model on this machine — https://memdoor.ai/docs/open-weight
 cd your-project && memdoor             # the first run sets the machine up
 ```
 

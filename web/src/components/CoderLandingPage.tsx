@@ -236,7 +236,8 @@ function HackerNewsSection() {
             <strong className="text-neutral-900">9.8 of 10</strong>, against 9.6 for the authors' own harness
             and 8.0 for Fable 5 in a single call. All 50 runs are published: every request, reply, program and
             grade. Front page of Hacker News for a day; the thread argued about models and local hardware, not
-            about the tool.
+            about the tool. The workflow names no model:{' '}
+            <code className="text-neutral-800">memdoor connect local</code> points it at one on your own machine.
           </p>
           <div className="mb-6 flex flex-wrap gap-x-8 gap-y-3">
             {[
@@ -264,6 +265,9 @@ function HackerNewsSection() {
               className="rounded-full border border-neutral-300 px-4 py-2 font-semibold text-neutral-800 hover:border-neutral-900"
             >
               All 50 runs
+            </a>
+            <a href="/docs/open-weight" className="rounded-full border border-neutral-300 px-4 py-2 font-semibold text-neutral-800 hover:border-neutral-900">
+              Run it on a local model
             </a>
           </div>
         </div>
@@ -338,7 +342,11 @@ export function CoderLandingPage() {
               <InstallLine dark />
               <p className="text-xs text-neutral-400">
                 Free, BYOK. No key? The first run signs you in with OpenRouter for free, or with your
-                ChatGPT plan. macOS, Linux, Windows.
+                ChatGPT plan. Or no key at all:{' '}
+                <a href="/docs/open-weight" className="text-neutral-300 underline underline-offset-4 hover:text-white">
+                  <code>memdoor connect local</code>
+                </a>{' '}
+                runs a model on this machine, and nothing leaves it. macOS, Linux, Windows.
               </p>
               <p className="text-xs text-neutral-400">
                 <a href="#demos" className="text-neutral-300 underline underline-offset-4 hover:text-white">
@@ -492,6 +500,7 @@ export function CoderLandingPage() {
                 ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
                 ['export OPENROUTER_API_KEY=sk-or-…', 'your key, your account; or OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …, ANTHROPIC_API_KEY'],
                 ['memdoor connect chatgpt', 'no key: Sign in with ChatGPT, and your Plus/Pro plan answers'],
+                ['memdoor connect local', 'no key, nothing leaves the machine: Ollama, llama.cpp, vLLM, LM Studio or janis on this box'],
                 ['cd your-project && memdoor tui', 'the first run sets the machine up; the agent works where you launch it'],
                 ['/model nvidia/nemotron-3-super-120b-a12b:free', 'no money on the key yet: a free model, 50 requests a day; its hosts train on what they are sent'],
                 ['/model', 'which model is answering, and what it lists for'],

@@ -23,10 +23,14 @@ cd your-project && memdoor
 - **[Getting started](/docs/getting-started)** — install, key, first turn.
 - **[Your key and the models](/docs/your-key)** — the ladder, pins, real prices.
 
+## Open-weight models
+
+- **[No key: run on an open-weight model](/docs/open-weight)** — Ollama, llama.cpp, vLLM, LM Studio or janis on your machine; `memdoor connect local`; the window, the model, the team on your GPU.
+- **[Team solve: the result](/docs/team-solve)** — five Qwen3.8-27B agents at 9.8 of 10 against Fable 5's 8.0, every run published.
+
 ## Guides
 
 - **[The TUI](/docs/tui)** — the screens, captured from a running session.
-- **[Team solve: the result](/docs/team-solve)** — five small models against a frontier model, every run published.
 - **[Remote control](/docs/remote)** — `/remote`: the same terminal, on your phone.
 - **[In your editor](/docs/editor)** — the coder in VS Code, Zed or JetBrains (`memdoor acp`).
 - **[Headless, then attached](/docs/headless)** — scheduled checks, workflows from CI, editor sessions: every run is a conversation you can come back into.

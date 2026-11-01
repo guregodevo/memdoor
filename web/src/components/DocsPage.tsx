@@ -79,6 +79,14 @@ const docsStructure: DocEntry[] = [
     ],
   },
   {
+    title: 'Open-weight models',
+    path: 'open-weight-models',
+    children: [
+      { title: 'No key: run on an open-weight model', path: 'open-weight' },
+      { title: 'Team solve: the result', path: 'team-solve' },
+    ],
+  },
+  {
     title: 'Guides',
     path: 'guides',
     children: [
@@ -91,7 +99,6 @@ const docsStructure: DocEntry[] = [
       { title: 'MCP servers', path: 'mcp' },
       { title: 'Scheduled checks', path: 'cron' },
       { title: 'Workflows', path: 'workflows' },
-      { title: 'Team solve: the result', path: 'team-solve' },
       { title: 'In CI', path: 'ci' },
       { title: 'The harness', path: 'no-babysitting' },
       { title: 'Boundaries', path: 'boundaries' },
