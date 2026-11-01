@@ -1,14 +1,13 @@
 # What is Memdoor
 
-**A lightweight coding and automation agent in a single CLI binary. Run it locally or connect over SSH to another machine, on your gateway, with your provider account. No Docker or Python required.**
+A lightweight coding and automation agent in a single CLI binary. Run it locally or over SSH on another machine, on your gateway, with your provider account. No Docker or Python required.
 
-Lightweight means simple to deploy. Memdoor is
-headless first. Start a run from a shell script, CI or a schedule, or work
-interactively from a terminal, your IDE or phone. Finish it from any of
-those. It combines four things:
+Memdoor is headless first. A run starts from a shell script, CI or a
+schedule, or interactively from a terminal, your IDE or phone, and can be
+finished from any of those. Four parts:
 
-- **Token optimization:** filter reads, select tools and stop stalled turns
-  before they consume more model calls. Savings depend on the task.
+- **Token optimization:** judged reads, a per-turn toolbox and a stop for
+  stalled turns. Savings depend on the task.
 - **A single binary:** install on macOS, Linux or Windows and connect to
   another machine with `memdoor --gateway ssh://you@box`.
 - **A headless-first CLI:** prompts in, answers on stdout and exit codes
@@ -22,18 +21,18 @@ See [Why Memdoor](/docs/why) for the reasons and measurements.
 your files, writes patches, runs the build, reads the errors and fixes what it
 broke.
 
-The window is one door. Every run is a conversation on a gateway on your
-machine. `memdoor run "<prompt>"` is a turn with no window and its exit code is the
-receipt of its checks, so a script or a CI job can start one. `memdoor cron add`
-puts one on a schedule. The editor and the phone open the same gateway.
-`memdoor resume <id>` opens any of those runs in a window, live. Your next line
+Every run is a conversation on the gateway on your machine. The window is
+one door onto it. `memdoor run "<prompt>"` runs a turn with no window and
+exits with the result of its checks, so a script or a CI job can start one.
+`memdoor cron add` schedules one. The editor and the phone open the same
+gateway. `memdoor resume <id>` opens any run in a window and the next line
 is its next turn. See [Headless, then attached](/docs/headless) and [The gateway](/docs/gateway).
 
-A **decision model** sits in front of the model that writes your
-code. It answers typed questions (is this search hit relevant to the task, is
-this turn still making progress, does this claim hold up) with a calibrated
-probability in under half a second. The harness acts on those answers. The
-expensive model reads a fraction of the text and gives the same answer.
+A decision model sits in front of the model that writes your code. It
+answers typed questions (is this search hit relevant to the task, is this
+turn still making progress, does this claim hold up) with a calibrated
+probability in under half a second. The harness acts on those answers, so
+the chat model reads a fraction of the text.
 
 ## The three places it saves you money
 
@@ -64,10 +63,10 @@ is in the full table in
 | An edit with a test, run green (3 pairs) | 64,274 input tokens | 69,746 | +9% |
 | Ten one-file fixes, test green (10 pairs) | 37,374 input tokens | 41,621 | +11% |
 
-22 of 22 passed under each condition: every edit and fix under `go test` on its
-own copy, every question naming the right file. The saving is on reads with
-something to judge. Reading less never cost a correct answer. That is why each mechanism
-errs on the side of sending too much rather than too little.
+22 of 22 passed under each condition: each edit and fix under `go test` on its
+own copy, each question naming the right file. The saving is on reads with
+something to judge. Each mechanism errs toward sending too much rather than
+too little, and reading less did not cost a correct answer in these runs.
 
 Per-run variance on edits is wider than the effect, so each row is several
 pairs.
@@ -93,38 +92,32 @@ Memdoor says so at the pin or when the key is connected.
 
 ## Price
 
-**Free** is the whole agent: the terminal, the ladder, the
-model picker, the decision model and workflows with local schedules.
+Free: the terminal, the ladder, the model picker, the decision model and
+workflows with local schedules.
 
-`memdoor savings` prints what it kept out of your bill this month, from your
-turns: bytes the judge read that the chat model did not, tool schemas not sent,
-turns ended for want of progress. Your provider's invoice says what you paid.
-That says what you did not.
+`memdoor savings` prints what the decision model kept out of your bill this
+month: bytes the judge read that the chat model did not, tool schemas not
+sent, turns ended for want of progress.
 
-**The decision model is free** and on by default, on an OpenRouter key or a
-decision key:
-the judged reads, the toolbox sizing, the stop. It reads a fraction of what the
-chat model would.
+The decision model is on by default with an OpenRouter key or a decision
+key.
 
 Workflows, the deterministic harness, are free too: graphs of agent tasks,
 each step proven, gated on your approval where you say so. Run them by hand or on a schedule
 with your local cron (`memdoor cron add --workflow <name>`).
 
-**Every door onto your gateway is free:** the window on a laptop, ssh,
-your phone on the gateway's address, and runs with the laptop closed
-on [a box that stays on](/docs/gateway). All of it is open source
-(Apache-2.0). A company self-hosts it the same way, for free.
-Enterprise adds full support, by invoice. **The
-hosted gateway** is the one paid thing. memdoor.ai relays your phone to a
-gateway kept to localhost and keeps every workflow run's state, one table
-per workspace, so a workflow can wait on what another produced from any
-machine. Next comes a box that memdoor.ai runs for you. It is $10 a month,
-cancel any month. memdoor.ai never supplies a model key. See [memdoor.ai/enterprise](https://memdoor.ai/enterprise).
+Every door onto your gateway is free: the window on a laptop, ssh, your
+phone on the gateway's address, and runs with the laptop closed on
+[a box that stays on](/docs/gateway). All of it is open source
+(Apache-2.0). A company self-hosts it the same way. Enterprise adds
+support, by invoice. The hosted gateway is the one paid thing: memdoor.ai
+relays your phone to a gateway kept to localhost and keeps every workflow
+run's state, one table per workspace, so a workflow can wait on what another
+produced from any machine. $10 a month, cancel any month. memdoor.ai never
+supplies a model key. A box that memdoor.ai runs for you is next. See
+[memdoor.ai/enterprise](https://memdoor.ai/enterprise).
 
-## Today
-
-Command line only. One binary: no Docker, no Python, no app. It runs a small
-gateway in the background on your machine.
+Install:
 
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash

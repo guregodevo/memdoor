@@ -1,6 +1,6 @@
 # CLI
 
-A command is `memdoor <group> <command>`. `--help` works at every level and is the authority. This page is the map.
+A command is `memdoor <group> <command>`. `--help` at any level is the reference. This page is the map.
 
 ## Getting going
 
@@ -115,7 +115,7 @@ memdoor peers remove box
 
 ## Conversations
 
-Each `memdoor tui` starts a fresh conversation. `resume` is how you go back to an old one.
+Each `memdoor tui` starts a fresh conversation. `resume` returns to an earlier one.
 
 ```
 memdoor resume                    # what you've worked on here, newest first, and which one to open
@@ -126,10 +126,10 @@ memdoor resume 2                  # straight to number 2 from the list
 memdoor resume 8488c86b           # the id the window printed when you left it
 ```
 
-The window's last line, once you have said something in it, is the way back:
+Once you have said something in a window, its last line names the way back:
 `Resume this conversation with: memdoor resume 8488c86b`.
 
-A resumed session opens with its title in the header and its last exchanges in view, continuing the same agent session. Conversations are listed per directory. `--all` widens it.
+A resumed session opens with its title in the header and its last exchanges in view, on the same agent session. Conversations are listed per directory. `--all` lists every directory's.
 
 ```
 memdoor sessions list             # the gateway's live sessions (a different question)
@@ -150,8 +150,8 @@ memdoor remote off <id>                # revoke
 memdoor --gateway <box> remote <id>    # a conversation on that box: the box holds the link
 ```
 
-What `/remote` does in the window, as a command. The id is the one `memdoor
-run` and `memdoor resume` print. stdout is the link alone. See
+The command form of `/remote`. The id is the one `memdoor run` and
+`memdoor resume` print. stdout is the link alone. See
 [Remote control](/docs/remote).
 
 ## Workspace and scripts

@@ -1,20 +1,19 @@
 # The gateway
 
-The gateway is the daemon: a small server on your machine.
-Every run is a conversation on it. The window, `memdoor run` in a script or
-CI, a cron schedule, your editor and your phone are doors onto the same
-gateway. That is why a run started by one can be finished from another.
+The gateway is a daemon on your machine. Every run is a conversation on it.
+The window, `memdoor run` in a script or CI, a cron schedule, your editor
+and your phone are doors onto the same gateway, so a run started by one can
+be finished from another.
 
 ## What it is
 
-A background process on the machine the run belongs to: your laptop, or a
-CI runner. It holds the conversations. It runs the turns and their tools in
-your project. It keeps the schedules and the workflow runs and talks to the
-model on your key. It listens on port 18789, on this machine and on its
-network, so your phone has a door. Every door takes a token.
-The first account can only be made on the machine itself.
-`MEMDOOR_HOST=localhost` keeps it to this machine. Your files never leave
-the machine. What goes out is the request to the provider you chose.
+A background process on the machine the run belongs to: your laptop or a
+CI runner. It holds the conversations, runs the turns and their tools in
+your project, keeps the schedules and workflow runs, and talks to the model
+on your key. It listens on port 18789 on the machine and its network, so a
+phone can reach it. Each door requires a token. The first account can only
+be created on the machine itself. `MEMDOOR_HOST=localhost` restricts it to
+the machine. Only the requests to the provider you chose leave the machine.
 
 ```
   window · memdoor run · cron · editor · phone ──► the gateway on your machine
@@ -24,13 +23,13 @@ the machine. What goes out is the request to the provider you chose.
                                                        └─► your provider key ──► the model
 ```
 
-## You never start it on your laptop
+## Starting it
 
 The first command that needs it starts one when none is running: `memdoor`,
 `memdoor run`, `memdoor resume`, `workflow run`, `cron add` and `acp`. It
-stays up afterwards, so the next command finds it. A key you export
-later reaches it the next time you run one. A reboot, a logout or a closed lid ends it, and the next command starts a
-fresh one. To start it by hand:
+stays up, so the next command finds it. A key exported later is picked up
+by the next command. A reboot, a logout or a closed lid ends it, and the
+next command starts a fresh one. By hand:
 
 ```bash
 memdoor gateway                 # on :18789, in the foreground
@@ -45,11 +44,10 @@ Its log is `~/.memdoor/gateway.log`. The pid of one Memdoor started is in
 
 ## On a box that stays on
 
-A laptop sleeps when its lid closes, and everything on it stops, the gateway
-included. A run that must outlive the lid runs on a machine that does not
-sleep: a VPS, a Mac mini, a home server. There the gateway belongs to the
-service manager. It is up at boot and comes back if it stops. Your
-laptop and your phone are windows onto it.
+A laptop's gateway stops when the lid closes. A run that must outlive it
+runs on a machine that does not sleep: a VPS, a Mac mini, a home server.
+There the gateway is a service: up at boot, restarted if it stops. Your
+laptop and phone are windows onto it.
 
 ```bash
 # from your laptop: ssh to the box, nothing installed there
@@ -68,12 +66,12 @@ memdoor gateway install                      # systemd --user on Linux, launchd 
 memdoor gateway status
 ```
 
-The gateway listens on the box's network, for your laptop and your phone.
-It speaks plain HTTP. Trust that network, or keep the box behind ssh,
-Tailscale or a reverse proxy. `--host localhost` keeps it to the box alone,
-and the ssh door still reaches it. On Linux, `loginctl enable-linger $USER` keeps the
-user service running when you are not logged in. The install prints the line
-when it is needed. Removing it is `memdoor gateway uninstall`. The data stays.
+The gateway listens on the box's network over plain HTTP. Trust that
+network, or keep the box behind ssh, Tailscale or a reverse proxy. `--host
+localhost` restricts it to the box; the ssh door still reaches it. On
+Linux, `loginctl enable-linger $USER` keeps the user service running when
+you are logged out; the install prints the line when it is needed. `memdoor
+gateway uninstall` removes the service and keeps the data.
 
 From your laptop:
 
@@ -85,16 +83,14 @@ memdoor --gateway <box> workflow run release                            # a work
 memdoor --gateway <box> resume --last                                   # the window on that machine's last run, in its directory
 ```
 
-The run happens on that machine, in that machine's project, on that
-gateway's key. Your terminal is the door. The box generated a login
-on its first run (`~/.memdoor/local-login` there). The ssh door reads it and
-signs you in, for `ssh://` and for the box's plain address alike, so no
-password is typed. Without ssh, `memdoor auth login-direct --gateway
-<box> --email … --password …` with that login does the same. The window's files panel (ctrl+f),
-the @-mentions and `/dir` read that machine's directory through the gateway,
-so what you see is what the agent sees. A directory the gateway does not have
-is refused by name, never quietly replaced. Workflows and schedules on that
-gateway need no window.
+The run happens on that machine, in its project, on its key. The box
+generated a login on its first run (`~/.memdoor/local-login` there). The ssh
+door reads it and signs you in, for `ssh://` and for the box's plain address,
+so no password is typed. Without ssh, `memdoor auth login-direct --gateway
+<box> --email … --password …` with that login does the same. The files
+panel (ctrl+f), @-mentions and `/dir` read that machine's directory through
+the gateway. A directory the gateway does not have is refused by name, not
+replaced. Workflows and schedules there need no window.
 
 Over ssh, nothing on the box is opened to the network. `--gateway
 ssh://you@box` (or `MEMDOOR_GATEWAY=ssh://you@box`) opens a tunnel to the
@@ -103,18 +99,17 @@ It signs in with the login the box generated. `?port=18799`
 names a gateway on another port there.
 
 A box with nothing on it is set up by the same line. When no gateway
-answers through the tunnel, the door looks at the box over the same ssh.
-No memdoor there, and it runs memdoor.ai's installer (the binary lands in
-`~/.local/bin`, no sudo). Its gateway not running, and it installs it as a
-service there on the door's port (systemd --user or launchd; where there is
-no service manager it starts the gateway in the background). Each step is
-printed as it happens, and the command you typed then runs. A gateway that
-is running is left alone. The box has no model until a key is connected
-there, once: `memdoor --gateway ssh://you@box connect openrouter` (or any
-provider; `openrouter-login` or `chatgpt` sign in from the laptop's browser,
-no key). From then on every turn on that box runs on that key. Linux
-and macOS boxes are set up this way. A Windows box is set up with `irm memdoor.ai/install.ps1 |
-iex` by hand.
+answers through the tunnel, the door inspects the box over the same ssh.
+No memdoor there: it runs memdoor.ai's installer (binary in `~/.local/bin`,
+no sudo). Gateway not running: it installs one as a service on the door's
+port (systemd --user or launchd; without a service manager, a background
+process). Each step is printed, then the command you typed runs. A running
+gateway is left alone. The box has no model until a key is connected there
+once: `memdoor --gateway ssh://you@box connect openrouter` (any provider;
+`openrouter-login` or `chatgpt` sign in from the laptop's browser, no key).
+Every turn on that box then runs on that key. Linux and macOS boxes are set
+up this way. A Windows box is set up by hand with `irm
+memdoor.ai/install.ps1 | iex`.
 
 ```bash
 memdoor --gateway ssh://you@box                                   # the window, in the box's home
@@ -127,11 +122,11 @@ Your phone reaches the box the way your laptop does. `/remote` in a window
 on a box prints a link on that gateway, `http://box:18789/r/…`. A phone on
 the box's network, VPN or Tailscale opens the conversation there, with no
 memdoor.ai account and no plan. `memdoor --gateway <box> remote --last`
-prints the same link from a shell. The box holds the conversation on it. The key after `#` never
-leaves the page and every frame is sealed with it, so the link works on the
-box's plain http. Through the ssh door the link is on the box's name, with
-the gateway's port. A gateway kept to localhost has no door for a phone.
-`/remote` then goes through memdoor.ai and says so.
+prints the same link from a shell. The box holds the conversation. The key
+after `#` never leaves the page and every frame is sealed with it, so the
+link works over the box's plain http. Through the ssh door the link is on
+the box's name with the gateway's port. A gateway kept to localhost has no
+door for a phone; `/remote` then goes through memdoor.ai and says so.
 
 Once a window turned `/remote` on, the gateway holds the link. Close the
 window and the phone still opens the conversation and answers its gate. A

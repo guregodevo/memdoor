@@ -1,7 +1,7 @@
 # Memdoor docs
 
 **A minimalist coding agent** that runs from Terminal, a shell, CI, cron,
-your IDE or phone, on your gateway, **BYOK, any provider**. A multi-step
+your IDE or phone, on your gateway, BYOK, any provider. A multi-step
 job runs as a workflow, the deterministic harness: each step is checked by
 its output and the run stops only where you decide. A decision model in front of the chat model cuts what
 it reads and what it costs. Measured over 44 paired runs: 74% fewer input

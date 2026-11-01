@@ -4,8 +4,8 @@ Memdoor checks the agent's work so you do not have to watch it.
 
 ## Who decides: the decision model
 
-Behind each check on this page is a second, small model whose job is
-to decide. It does not write code or chat. It is asked one yes-or-no question
+Each check on this page is a question to a second, small model. It does
+not write code or chat. It is asked one yes-or-no question
 at a time with the evidence attached and answers with a probability:
 
 - Is this turn finished, given what its tool calls show?

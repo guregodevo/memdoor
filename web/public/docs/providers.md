@@ -55,9 +55,9 @@ key.
   is probed like a key and kept encrypted in `~/.memdoor/chatgpt-login.json`.
   `memdoor connect --remove chatgpt` signs out.
 - **Any door**: with the gateway on a box or over ssh, sign in from your
-laptop as usual. The browser's return is passed on to the gateway. In an ssh
+laptop. The browser's return is passed on to the gateway. In an ssh
 session with no browser, open the link anywhere and approve. Then paste the
-address the browser lands on (that page does not load, which is expected).
+address the browser lands on (the page does not load).
 - **By default**: once signed in, the plan answers your turns on the first
 model it lists, before an OpenRouter key (a company's key still comes first).
 A model you had pinned on your OpenAI key that the plan also lists moves to
@@ -138,7 +138,7 @@ Nemotron. Ids carry case. Type them as listed.
 - **Fast model**: `claude-haiku-4-5-20251001` (200k / 64k). Sonnet 5, Opus 4.6
 and Fable 5.1 are 1M / 128k.
 - A Claude subscription is not an API key. The key comes from
-console.anthropic.com. Streams.
+console.anthropic.com. Responses stream.
 
 ## Your company's AI gateway
 

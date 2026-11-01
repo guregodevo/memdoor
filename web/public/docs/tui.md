@@ -29,10 +29,9 @@ The header names the conversation. It reads "new session" until you ask
 something. Then it keeps the first thing you asked, which is how the
 conversation is listed by `memdoor resume`.
 
-The footer's status line is the part worth learning: the git branch, the model
-that answered, and its rung on the agent's ladder with the reason it is there
-(`first rung · the default`, or `pinned by you` after `/model 3`).
-The line says what is answering and why. Under it, the keys that apply.
+The footer's status line shows the git branch, the model that answered, and
+its rung on the agent's ladder with the reason (`first rung · the default`,
+or `pinned by you` after `/model 3`). Under it, the keys that apply.
 
 ![A question on this repository: judged reads, the answer with file:line](/demo.cast)
 
@@ -47,7 +46,7 @@ The session works in `.memdoor/worktrees/fix-login` on branch
 windows in two worktrees cannot step on each other's files. When the window
 closes it says where the work is and how to merge it or throw it away. A
 worktree where nothing changed is removed with its branch. A name reopens its
-worktree. `--worktree` with no name picks one from the clock.
+worktree. `--worktree` with no name derives one from the time.
 
 The tab shows `●` while a turn runs and `✓` when one has finished and you have
 not looked yet. If the window is in the background, the terminal gets a
@@ -55,7 +54,7 @@ bell and a notification.
 
 ## A turn, frame by frame
 
-Type a task. Every tool call renders as a frame:
+Each tool call renders as a frame:
 
 ```
 > write hello.py that prints the first 5 squares, then run it
@@ -80,7 +79,6 @@ The agent works in the directory you launched from. Its file tools stay inside i
 
 ## What it touched
 
-After a turn you want to know what changed and where.
 `ctrl+f` (or `/files`) opens the project's files with the ones this
 conversation read or changed first, newest first. Each carries what happened to
 it (`✎ calc.go  2 edits · 1 read`). The rest of the tree is behind the same
@@ -100,8 +98,7 @@ many reads, edits and runs, and whether the last run passed. `↑↓` move.
 
 ## What a frame shows
 
-A frame says what happened in the shape you scan for. `ctrl+o` shows
-the raw result underneath:
+A frame summarizes the result. `ctrl+o` shows the raw output underneath:
 
 - **a search** (`grep`, `glob`, `locate`, `web_search`) reads as its hits
   grouped by file with counts, most hits first. A web search reads as its
@@ -148,8 +145,8 @@ In the coding agent the list carries `/model` and `/go`. One more character narr
   Models       z-ai/glm-5.3-flash (171)  ·  z-ai/glm-5.3 (13)
 ```
 
-Your provider's account is the authority on the money. This is Memdoor's
-per-turn ledger. `memdoor meter` prints every line of it.
+This is Memdoor's per-turn ledger. Your provider's account is the authority
+on cost. `memdoor meter` prints every line of it.
 
 ### `/model` — which model is answering, and pinning one
 
@@ -176,8 +173,7 @@ shift+up/down, and `s` cycles how they are sorted:
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
-The prices are left out of this capture. They change daily and the picker
-shows today's.
+Prices are omitted from this capture. They change daily.
 
 ### `/context` — how full the window is
 
@@ -217,13 +213,13 @@ Skills are markdown instructions on disk. `/skill:review some/file.go` makes tha
 
 ### `/go`, `/fresh`, `/clear`, `/new`, `/exit`
 
-When a turn has produced a plan, `/go` (also `/run`, `/approve`) hands it to the coder. `/clear` wipes what the agent remembers of this conversation, so its next turn starts from nothing. The messages stay for `memdoor resume`. `/fresh` does the same and sends your last request again. It is the way out of a turn that has read too much and what the note after `Esc` points to. `/new` starts a fresh session. `/exit` leaves, same as `Ctrl+C`.
+When a turn has produced a plan, `/go` (also `/run`, `/approve`) hands it to the coder. `/clear` wipes what the agent remembers of this conversation, so its next turn starts from nothing. The messages stay for `memdoor resume`. `/fresh` does the same and sends your last request again. Use it when a turn has read too much; the note after `Esc` points to it. `/new` starts a fresh session. `/exit` leaves, same as `Ctrl+C`.
 
-The full reference is **[Slash commands](/docs/slash-commands)**.
+The full reference is [Slash commands](/docs/slash-commands).
 
 ## Reading long output
 
-Scrolling up never yanks you back down when new output lands. A bar appears at the bottom telling you what you're missing. `End` or a click on the bar jumps back to live:
+Scrolling up is not interrupted by new output. A bar at the bottom shows what arrived. `End` or a click on the bar jumps back to live:
 
 ```
  ↓ 2 new messages — End or click to jump to latest
@@ -233,11 +229,11 @@ Mouse wheel and `PgUp`/`PgDn` scroll. While the command list is open they move t
 
 ## If the gateway restarts
 
-The TUI reconnects on its own and sends anything you typed while it was away. A step that was mid-flight may have finished during the gap. Its events aren't replayed, so check the folder rather than assuming it was lost.
+The TUI reconnects and sends anything you typed while it was away. A step that was mid-flight may have finished during the gap. Its events are not replayed, so check the folder.
 
 ## If the gateway refuses the window
 
-A gateway opens only your workspace and your conversations to you. If the window asks for someone else's, the gateway refuses it and the TUI doesn't keep retrying. It shows the reason once, with what to do:
+A gateway opens only your workspace and your conversations. If the window asks for someone else's, the gateway refuses and the TUI does not retry. It shows the reason once, with what to do:
 
 ```
 ⚠ the gateway refused this window: not your workspace (yours is acme). Start memdoor again without -w or $MEMDOOR_WORKSPACE: it opens your own workspace. …
@@ -253,7 +249,7 @@ start the next one, with this window closed if you like. On your gateway
 it is free. Only the memdoor.ai relay, for a gateway kept to localhost, is
 part of the hosted gateway.
 
-→ **[Remote control](/docs/remote)**
+See [Remote control](/docs/remote).
 
 ## Coming back to a conversation
 
@@ -269,7 +265,7 @@ $ memdoor resume --last
 Resuming "make the throttle limit configurable" (7m ago, 4 turns)
 ```
 
-It opens with that title in the header and the last exchanges in view, on the same session. `memdoor resume` with no argument lists and asks. `resume 2` takes the second row. Conversations are listed for the folder you're in. `--all` shows every one.
+It opens with that title in the header and the last exchanges in view, on the same session. `memdoor resume` with no argument lists and asks. `resume 2` takes the second row. Conversations are listed for the current folder. `--all` shows every one.
 
 ## Where to next
 

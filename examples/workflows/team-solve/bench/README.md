@@ -44,9 +44,9 @@ passed, seconds.
   the absolute score.
 - **Not a Fable comparison.** Fable 5's 90.4% in the paper is a thinking-on,
   single-call figure on the same problems. Nothing here reaches it.
-- **An old benchmark.** The contests predate the model's training cutoff
-concerns raised on the HN thread. The paired comparison on identical problems
-and settings is still meaningful. The absolute pass rate less so.
+- **An old benchmark.** The contests predate the model's training cutoff, a
+  contamination concern raised on the HN thread. The paired comparison on
+  identical problems and settings holds. The absolute pass rate means less.
 
 ## What it took
 

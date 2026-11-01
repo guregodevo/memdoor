@@ -51,7 +51,7 @@ agent with the command `memdoor acp`.
 - `/model`, `/workflow` and the other slash commands are the window's; the
   editor sends plain prompts. Pin a model once in the window and it holds for
   new conversations.
-- Prompts go where they always go: [Where your data goes](/docs/security).
+- Where prompts go: [Where your data goes](/docs/security).
 
 ## Next
 

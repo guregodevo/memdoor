@@ -44,14 +44,14 @@ The model behind the step is one input.
           local-model: Qwen3-8B-4bit
 ```
 
-**With a key** the review is an agent. It reads the diff and opens the files
-around the change. It runs the code to check each finding before writing it
-down. It answers on the model you pick (`model:`). `anthropic-api-key`,
-`openai-api-key` and `gemini-api-key` work in place of OpenRouter. So does a
-key already in the job's environment.
+With a key the review is an agent. It reads the diff, opens the files around
+the change and runs the code to check each finding before writing it down.
+`model:` picks the model. `anthropic-api-key`, `openai-api-key` and
+`gemini-api-key` work in place of OpenRouter, as does a key already in the
+job's environment.
 
-**With no key** the action downloads
-[janis](https://github.com/guregodevo/janis), one file. It runs the model on
+With no key the action downloads
+[janis](https://github.com/guregodevo/janis), one file, runs the model on
 the runner's CPU, caches it and points Memdoor at it. No secret, no API
 account, nothing leaves the runner. Linux runners only. A free runner has 4
 CPUs and 16 GB, so a 9B model is about the largest that fits. Each workflow is
@@ -74,22 +74,20 @@ a 3,000-line Go project, each reviewed both ways on `ubuntu-latest`, twice
 | Review | 45–90 s | 35–60 s |
 | Job | 2–3 min, most of it the model's first download | about 1 min |
 
-The local model catches bugs. It files opinions as P0s. Since v1.731.0
-its P0s are advisory: they appear in the review and the job does not fail on
-them. With a key a P0 still fails the check. Read a local P0 before you
-believe it. Since v1.714.0 each local P0 gets a second look on the same model
-with one question: is it a problem of the code after the change or of the code
-before it? An answer of "before" demotes it to P2. On the correct change that
-turned one of two runs green. The other run's "P0" was praise ("which is
-correct … no bug here"), which the question does not catch
+The local model catches bugs and files opinions as P0s. Since v1.731.0 its
+P0s are advisory: they appear in the review and do not fail the job. With a
+key a P0 fails the check. Since v1.714.0 each local P0 gets a second look on
+the same model with one question: is it a problem of the code after the
+change or of the code before it? "Before" demotes it to P2. On the correct
+change that turned one of two runs green. The other run's "P0" was praise
+("which is correct … no bug here"), which the question does not catch
 ([#12](https://github.com/guregodevo/llamafit/pull/12),
 [#13](https://github.com/guregodevo/llamafit/pull/13),
 [#14](https://github.com/guregodevo/llamafit/pull/14)). `Qwen3.5-9B-4bit` is
-quieter. It passed the correct change and missed the subtle bug. The agent on
-a key opens the files around the change and runs the code to prove what it
-finds. It was right all three times. Use local where a key cannot go: a public
-repository or a team with no API account yet. Use a key where the review has
-to be right.
+quieter: it passed the correct change and missed the subtle bug. The agent on
+a key opens the files around the change and runs the code. It was right all
+three times. Use local where a key cannot go: a public repository or a team
+with no API account yet. Use a key where the review has to be right.
 
 On a runner's CPU janis decodes the 8B at 5.6 tokens a second and reads a
 prompt at the same speed; Ollama decodes at 4.45. The model is cached per
@@ -117,26 +115,26 @@ the runner as one model call with everything it needs in the prompt.
 | `fix-tests` | `push`, or by hand | Finds the test command, fixes the code until it passes, leaves the fix in the working tree. | the tests still fail |
 | `release-notes` | a tag push | The commits since the previous tag as Added / Changed / Fixed. | — |
 
-Every one needs `contents: read`. The three that read GitHub (`gh`) use the
-job's token, passed as `github-token` (the default), with the permission
-above. `pr-triage` reads the labels and the open pull requests and issues for
-duplicates and leaves out what it may not read. Tests, fixes and notes stay in
+All need `contents: read`. The three that read GitHub through `gh` use the
+job's token, passed as `github-token` (the default), with the permission in
+the table. `pr-triage` reads the labels and the open pull requests and issues
+for duplicates and skips what it may not read. Tests, fixes and notes stay in
 the runner's working tree and appear in the job summary. Commit them in a
-later step if you want them kept.
+later step to keep them.
 
 `pr-triage` runs the project's tests on the pull request's code: `go test
 ./...`, `cargo test`, `npm test`, `pytest` or `make test`, found from the
-repository's files, or `MEMDOOR_TEST_COMMAND` in the job's environment. Set up
-what they need (`actions/setup-go`, a build step) before the action. On six
+repository's files, or `MEMDOOR_TEST_COMMAND` from the job's environment. Set
+up what they need (`actions/setup-go`, a build step) before the action. On six
 pull requests on llamafit, three honest and three slop
 ([#19](https://github.com/guregodevo/llamafit/pull/19) to
 [#24](https://github.com/guregodevo/llamafit/pull/24)), the 8B asked for a
-verdict called all six slop. With the verdict made from those checks the three
+verdict called all six slop. With the verdict made from the checks, the three
 honest ones were ready for review and the three slop ones flagged: one likely
 slop (tests claimed, none changed) and two needs work (functions nothing
-calls, the tests fail). The same in three runs each on `ubuntu-latest`, 3 to
-4½ minutes a job. On a key the agent checks each claim of the description
-against the code. It called all three slop ones likely slop. The write-up:
+calls, failing tests). Three runs each on `ubuntu-latest`, 3 to 4½ minutes a
+job. On a key the agent checks each claim of the description against the code
+and called all three slop ones likely slop. The write-up:
 [Qwen3-8B couldn't judge AI slop PRs, so I let the tests
 decide](https://guregodevo.github.io/2026/10/30/triage-ai-slop-prs/).
 
@@ -147,23 +145,23 @@ Measured on GitHub's runners
 [#17](https://github.com/guregodevo/llamafit/pull/17)), each both ways. A pull
 request with a path traversal: `security-review` red on a key and on the 8B.
 The same kind of request done correctly: green both ways. On the 8B that takes
-a re-check. Each P0 is asked once more whether the code after the change lets
+a re-check: each P0 is asked once more whether the code after the change lets
 someone read, write or run something they could not before, and a no turns it
-into a P2. `write-tests` on a key left four passing tests on a correct change.
-On a change that broke an existing test it went red at once and named that
+into a P2. `write-tests` on a key left four passing tests on a correct change;
+on a change that broke an existing test it went red at once and named the
 test. `explain-failure` named the failing test and the changed loop both ways
 (the 8B put the line three off). `issue-triage` and `pr-description` wrote
-their reports both ways. On the 8B the description has one line per changed
-file, so a one-line change is never left out. A job on the 8B takes two to
-five minutes with the model cached, about one on a key.
+their reports both ways; on the 8B the description has one line per changed
+file, so a one-line change is not left out. A job on the 8B takes two to five
+minutes with the model cached, about one on a key.
 
-`write-tests` on the 8B kept no test in ten tries. Its tests compile but do
+`write-tests` on the 8B kept no test in ten tries: its tests compile but do
 not match how the code behaves, and a failing test is removed. The job stays
-green and says so after about a quarter of an hour on a runner. Writing tests
-that pass needs the agent on a key. `fix-tests` and `release-notes` were
-measured on fixtures on a Mac, not yet on a runner. On the 8B `fix-tests`
-fixed an off-by-one with a one-line edit and `release-notes` sorted the
-commits since the last tag.
+green and says so after about a quarter of an hour on a runner. Tests that
+pass need the agent on a key. `fix-tests` and `release-notes` were measured on
+fixtures on a Mac, not yet on a runner: on the 8B `fix-tests` fixed an
+off-by-one with a one-line edit and `release-notes` sorted the commits since
+the last tag.
 
 Explain a failed CI run (`gh` reads the logs on the job's token):
 
@@ -231,11 +229,11 @@ jobs:
 
 ## Your own workflow
 
-`workflow: <name>` runs `.memdoor/workflows/<name>/` from your repository.
-They are the same files `memdoor workflow run <name>` runs on your machine.
-Build one by asking the coder ([Workflows](/docs/workflows)), try it locally
-and commit it. CI runs it unchanged. Each step is done when its target exists,
-so the job's outcome is that check.
+`workflow: <name>` runs `.memdoor/workflows/<name>/` from your repository,
+the same files `memdoor workflow run <name>` runs on your machine. Build one
+by asking the coder ([Workflows](/docs/workflows)), try it locally and commit
+it. CI runs it unchanged. Each step is done when its target exists, so the
+job's outcome is that check.
 
 A workflow with an approval gate stops the job there with exit 3, since nobody
 in CI can approve. `stop-at-gate: false` waits instead for an approval from
@@ -254,13 +252,13 @@ produced, one per line) for the steps after it.
 ## Your key in CI
 
 The agent runs your repository's code on the runner, where your key is.
-Trigger on `pull_request`, **never** `pull_request_target`. GitHub gives a
+Trigger on `pull_request`, never `pull_request_target`. GitHub gives a
 fork's pull request no secrets, so a stranger's code never runs beside your
-key. `pull_request_target` runs their code with your secrets. Memdoor
-keeps model keys out of the environment of every command the agent or a step
-runs, so a test that prints its environment cannot carry one into the model's
-context or the log. That is a second line of defence. The trigger is the
-boundary.
+key; `pull_request_target` runs their code with your secrets. Memdoor keeps
+model keys out of the environment of every command the agent or a step runs,
+so a test that prints its environment cannot carry one into the model's
+context or the log. The trigger is the boundary; the environment rule is a
+second line of defence.
 
 The inputs (`model`, `partition`, `timeout`, `github-token`…) and macOS
 runners are in the [action's

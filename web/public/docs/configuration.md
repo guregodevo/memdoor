@@ -1,6 +1,6 @@
 # Configuration
 
-Memdoor works without configuration. These are the levers when you need them.
+Memdoor needs no configuration. These are the settings when you want them.
 
 ## Where things live
 

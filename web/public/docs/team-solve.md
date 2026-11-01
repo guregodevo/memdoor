@@ -37,9 +37,8 @@ Each run took a median of 40 minutes and $0.39. The 50 runs cost $35.79.
 
 ## What it does and does not show
 
-- Ten problems and five passes, against the authors' 100. On a sample this
-  small 9.8 and 9.6 cannot be told apart, so the result is parity with their
-  harness.
+- Ten problems and five passes, against the authors' 100. 9.8 and 9.6 are
+  within noise on that sample. The result is parity with their harness.
 - The contests date from spring 2025 and the model may have seen them in
 training. Contamination cannot be ruled out for any column.
 - Fable 5's column is one call per problem, from the authors' files. It was

@@ -6,10 +6,10 @@ when the binary names a host this page does not list, so the table is complete
 by construction (2026-10-02).
 
 Memdoor is one static binary on the developer's machine. Files, sessions,
-memory, the project index and every command the agent runs stay there. What
+memory, the project index and the commands the agent runs stay there. What
 leaves is what a model has to read: the prompt and the excerpts the agent
-chose. It goes to one of the places below, chosen by configuration and
-never mixed:
+chose. It goes to one of the places below, chosen by configuration, never
+mixed:
 
 | Mode | Set by | Where prompts go | Nothing else is contacted? |
 |---|---|---|---|
@@ -21,7 +21,7 @@ never mixed:
 
 The hosted gateway never supplies a model key, so it changes nothing about
 whose key a prompt is sent on. No memdoor.ai call carries a prompt in the
-clear. The hosts table below lists them, and the remote-control relay is
+clear: the hosts table below lists each call, and the remote-control relay is
 sealed end to end.
 
 ## Every host the binary names
@@ -71,10 +71,10 @@ is in them. They go only to the model endpoint.
 
 `memdoor connect` keeps a provider in `~/.memdoor/providers.json` (0600, the
 directory 0700). The credential is stored as given: a literal, the NAME of an
-environment variable, or `!command`. A secret in your company's tooling is
+environment variable, or `!command`, so a secret in your company's tooling is
 never copied onto disk. The gateway probes a provider (its model list, one
-small call) before keeping it. It contacts a provider you added only when a
-model of its is pinned or its list is read. A local runtime (`memdoor connect
+small call) before keeping it and contacts it afterwards only when one of its
+models is pinned or its list is read. A local runtime (`memdoor connect
 local`: Ollama, llama.cpp, janis, LM Studio on this machine or on the box) is
 kept with no credential, and its requests go to the address you gave,
 normally localhost.
@@ -82,12 +82,12 @@ normally localhost.
 ## Where the gateway listens
 
 On this machine and on its network, port 18789, since 2026-10-23. A phone on
-the same network reaches a `/remote` link on the gateway with no relay
-in between. Every door takes a token. `/health` and the sealed relay pages are
+the same network reaches a `/remote` link on the gateway with no relay in
+between. Every door takes a token; `/health` and the sealed relay pages are
 the only unauthenticated ones. The first account can only be made from the
-machine; a request from the network is refused. It speaks plain HTTP,
-so it belongs on a network you trust or behind ssh, Tailscale or a reverse
-proxy. `MEMDOOR_HOST=localhost` (or `--host localhost`) keeps it to this
+machine; a request from the network is refused. The gateway speaks plain
+HTTP, so it belongs on a network you trust or behind ssh, Tailscale or a
+reverse proxy. `MEMDOOR_HOST=localhost` (or `--host localhost`) keeps it to this
 machine, and a company preset can set that.
 
 For a `/remote` link the gateway's process is the terminal end of the
@@ -101,8 +101,8 @@ them), and where the link lives. `/remote off` deletes the entry.
 
 Memdoor's default is always-auto. `MEMDOOR_APPROVE=changes` (or the workspace
 setting `approve`) makes every command, file write and MCP tool call wait for
-the person's yes in the terminal. No answer in five minutes is a no. Reads
-never ask. `gateway/approval.go`. Rules that refuse a call outright (`memdoor
+the person's yes in the terminal; no answer in five minutes is a no. Reads
+never ask. Implementation: `gateway/approval.go`. Rules that refuse a call outright (`memdoor
 guards`: never `.env`, never `git push`) are in
 [Boundaries](/docs/boundaries).
 

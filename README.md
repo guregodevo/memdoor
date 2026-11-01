@@ -43,8 +43,8 @@ memdoor --gateway ssh://you@box connect openrouter        # your key, kept on th
 memdoor --gateway ssh://you@box run "fix the failing test" # the same box from a script or CI
 ```
 
-The runs live on the box. Close the laptop and the work goes on; your phone or
-the next terminal opens the same conversation there.
+The runs live on the box and continue when the laptop disconnects. Your phone
+or the next terminal opens the same conversation there.
 
 No account. Telemetry off unless you turn it on. One static binary for macOS,
 Linux and Windows. Apache 2.0.
@@ -82,9 +82,8 @@ Nine are built in:
 `local-model: Qwen3-8B-4bit` in place of the key runs any of them with no key.
 The model runs inside the runner
 ([janis](https://github.com/guregodevo/janis), one file, cached) and
-answers in one call. On a free runner it caught an obvious and a subtle bug in
-about a minute each. It can file a correct change's own fix as a blocker.
-Treat it as a first pass before a review.
+answers in one call. On a free runner it found an obvious and a subtle bug in about a minute
+each. It can flag a correct change as a blocker. Treat it as a first pass.
 
 Or `workflow: <name>` for yours, from `.memdoor/workflows/<name>/` in the
 repo. The job ends with the run's outcome (0 done, 2 failed, 1 stopped, 3
@@ -99,23 +98,23 @@ answers Memdoor's turns. A Claude subscription cannot be used this way
 (Anthropic's terms). Claude needs an API key.
 
 With no key, the first `memdoor` signs you in with OpenRouter in the browser
-(or with ChatGPT). A free account is included. It works from a gateway on this
-machine, over ssh or on a box. An account with no credit runs on a free model
-from OpenRouter's list, and the connect says so. That is 50 requests a day,
-and the free hosts train on what they are sent. Use it for a trial and not for
-private code.
+(or with ChatGPT). A free OpenRouter account is enough. This works from a
+gateway on this machine, over ssh or on a box. An account with no credit runs
+on a free model from OpenRouter's list, and the connect says so: 50 requests a
+day, and the free hosts train on what they are sent. Use it for a trial, not
+for private code.
 
 `memdoor connect local` finds a model running on this machine
 ([janis](https://github.com/guregodevo/janis), Ollama, llama.cpp, LM Studio).
-Nothing leaves it. janis is ours: one Go server that runs the open models on a
-Mac's GPU through MLX or on an NVIDIA box through CUDA. It serves chat and the
-decision model with no key. It runs Qwen3-Coder-30B-A3B on a $0.71-an-hour
-Google L4. `memdoor --gateway ssh://you@box connect local` makes that box
-yours. `memdoor peers add box http://box:18789 --dir ~/app` names it. Then
-`@box:coder …` in any conversation here runs the turn there on the box's own
-model and brings the answer back. Recorded on memdoor.ai: a laptop with no GPU
-asks. Qwen3.8-27B on an L4 through janis reads, patches and runs a Go program
-on the box. The window on the laptop shows it land.
+Nothing leaves it. janis is one Go server that runs open models on a Mac's GPU
+through MLX or on an NVIDIA box through CUDA, and serves chat and the decision
+model with no key. It runs Qwen3-Coder-30B-A3B on a $0.71-an-hour Google L4.
+`memdoor --gateway ssh://you@box connect local` connects the box's runtime.
+`memdoor peers add box http://box:18789 --dir ~/app` names the box. Then
+`@box:coder …` in any conversation here runs the turn there on the box's model
+and brings the answer back. A recording on memdoor.ai shows a laptop with no
+GPU running a turn on Qwen3.8-27B on an L4 through janis: the box reads,
+patches and runs a Go program, and the answer lands in the laptop's window.
 
 <p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
 
@@ -152,8 +151,8 @@ edit with a test and ten one-file fixes read the same files either way (within
 per step. [`mario`](https://github.com/guregodevo/mario) runs them as a graph.
 Independent steps run in parallel. A step is done when its check passes, never
 because the model says so. A gate waits for your approval with the diff in
-front of you. A failed run resumes at the failed step. The files live in your
-repo and run by hand, from CI or on your local cron
+front of you. A failed run resumes at the failed step. Run them by hand, from CI or on
+your local cron
 ([`docs/features/WORKFLOWS.md`](docs/features/WORKFLOWS.md)). Why workflows
 rather than skills: [the
 write-up](https://guregodevo.github.io/2026/10/06/workflows-not-skills/).
@@ -267,7 +266,7 @@ model reads, sent to the provider you connected. On OpenRouter every request
 carries `data_collection: deny`, and hosts that train on paid inputs are kept
 out of the ladders. The exception is a `:free` model, pinned by you or
 answering for an OpenRouter account with no credit. Its hosts train on what
-they are sent. The request says so (`allow`), and Memdoor at the pin or at
+they are sent. The request says so (`allow`), and Memdoor warns at the pin or at
 connect. Use one for a trial and not on private code. On a vendor key or a
 company gateway nothing else is contacted.
 [`docs/SECURITY.md`](docs/SECURITY.md) lists the hosts the binary can name,

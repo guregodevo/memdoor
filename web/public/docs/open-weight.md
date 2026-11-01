@@ -1,13 +1,12 @@
 # Run Memdoor on an open-weight model, no key
 
-Memdoor needs a model, not a vendor. An open-weight model on your machine
-is a provider like any other. `memdoor connect local` finds it and asks for no
-token. Nothing you type or read leaves the box. This page is the whole path
-from an empty machine to the team-solve workflow on your GPU.
+An open-weight model on your machine is a provider like any other. `memdoor connect local` finds it and asks for no
+token. Nothing you type or read leaves the box. This page goes from an empty
+machine to the team-solve workflow on your GPU.
 
 ## 1. Run a model
 
-Any OpenAI-compatible server works. The four most people have:
+Any OpenAI-compatible server works. Four common ones:
 
 | runtime | start it | listens on |
 |---|---|---|
@@ -24,7 +23,7 @@ Which model: a coder turn reads files, calls tools and writes patches, so it
 needs a model trained for tool calls. Qwen3.8-27B is the one the published
 result ran on. A 7B or 8B answers a turn on a laptop but loses the thread on
 long work. The floor for the team-solve workflow is a 27B at Q5 or above,
-which wants a 24 GB card or a 32 GB Mac.
+which needs a 24 GB card or a 32 GB Mac.
 
 ## 2. Give it a window
 
@@ -95,6 +94,6 @@ is the same weights at lower precision. Readers in
 holding up where Q3 does not. Every step keeps its files, so a run that stops
 resumes where it stopped.
 
-What leaves the machine: nothing. The runtime answers on localhost and Memdoor
+Nothing leaves the machine. The runtime answers on localhost and Memdoor
 keeps its state under `~/.memdoor`. The only outside address in a local setup
 is GitHub, for the clone.

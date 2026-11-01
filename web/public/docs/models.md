@@ -1,8 +1,7 @@
 # Models
 
 You do not have to pick a model to start. Each agent has a ladder with the
-cheapest rung first. The footer names the model that answered and why. When
-you want to choose, everything below is one command.
+cheapest rung first. The footer names the model that answered and why.
 
 ## Your company's key
 
@@ -37,7 +36,7 @@ front of a vendor is `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL` or
 on every request. The gateway's first log line says which key serves it
 and `/model` shows that one model. Workflows run locally with no memdoor.ai
 call. The decision model stays off unless the gateway holds a decision key. The full table of the hosts the binary can name, and when, is
-[docs/SECURITY.md](/docs/security), the page to hand your reviewer.
+[docs/SECURITY.md](/docs/security).
 
 ## Connect a provider
 

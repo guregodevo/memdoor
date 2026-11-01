@@ -84,9 +84,8 @@ there. The engine is mario, an open DAG runner.
 One step in a GitHub job reviews every pull request, writes its tests or its
 description, explains a failed run, triages a new issue, fixes a failing suite
 or writes release notes. The job passes or fails on a check. The model runs on
-your key, or with no key on a model inside the runner. That is a free first
-pass that catches the obvious, beside an agent on your key that runs the code
-to prove what it finds.
+your key, or with no key on a model inside the runner. The runner model is a free first pass for the obvious. An agent on your key
+runs the code to prove what it finds.
 
 → **[In CI](/docs/ci)**
 

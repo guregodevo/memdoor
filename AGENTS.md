@@ -158,6 +158,7 @@ grep -r "duplicate_code" .    # Search before coding
 - `.agents/skills/roadmap.md` - Roadmap management (MUST/SHOULD/COULD)
 - `.agents/skills/verify-assumptions.md` - Verify runtime changes via CLI and logs (always-on)
 - `.agents/skills/test-tui.md` - Drive the real TUI from tmux: which gateway, which keys, what to assert
+- `.agents/skills/doc-writing.md` - How docs, READMEs, landing copy and llms.txt are written: an engineer's documentation, no AI slop (always-on for any doc change)
 
 ---
 
@@ -505,6 +506,8 @@ has no model until one is connected. There is no local model.
   - Write clear, descriptive commit messages that explain the "why" not just the "what"
 
 ## Rules kept by Memdoor
+
+- Docs are an engineer's documentation, no AI slop (2026-11-01, `.agents/skills/doc-writing.md`): short sentences, few commas, no aphorisms or asides, no filler words, "on your key", "your machine", a workflow is the deterministic harness, never "jobs kept as files" in a tagline; headings are anchors; code blocks, numbers and links never change in an edit; a doubtful claim is flagged, not rewritten.
 
 - Context windows and output caps are DATA, never constants: a provider's own list, then models.dev (providers/reference.go, daily, on disk, off the network on a company key), then the provider default marked `~` (a guess, warned once per model in the log). Never add a model's window to code; `memdoor providers --models <id>` shows where each figure came from, `--refresh` re-reads. (Greg, 2026-10-02: "very important to maintain it".)
 

@@ -71,8 +71,7 @@ it. Hosts known to train on paid inputs are excluded from the ladders.
 
 Your files, sessions, memory and the output of every command the agent runs
 stay on your machine. What leaves is the prompt and the excerpts a model needs
-to answer. With the decision model on, that is a fraction of what it would
-otherwise be.
+to answer. With the decision model on, fewer excerpts leave.
 
 ## What it saved you
 

@@ -1,9 +1,9 @@
 # Getting Started
 
-From nothing to a coding agent working in your project on your key
-(OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, …) in about two minutes. Everything here happens in a
-terminal. One binary on a Mac (Apple Silicon or Intel), Linux or Windows. The three installers run on GitHub's
-runners on every change to them.
+Install, connect a key (OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, …)
+and run a first turn, in a terminal, in about two minutes. One binary for
+macOS (Apple Silicon or Intel), Linux and Windows. The three installers are
+tested on GitHub's runners on every change to them.
 
 ## Install
 
@@ -35,12 +35,12 @@ tools saved. Otherwise it signs you in with OpenRouter in the browser (a free ac
 included) or with ChatGPT. That works with a gateway on this machine or on a box
 over ssh. An OpenRouter account with no credit runs on a free model picked
 from OpenRouter's list: 50 requests a day, or 1,000 once $10 has been
-bought. The connect says so. Free hosts train on what they are sent, so use them for a
-trial and not for private code.
+bought. `memdoor connect` prints the limit. Free hosts train on what they are
+sent, so use them for a trial and not for private code.
 
-Or type `/connect` inside the TUI and paste a key. That is the whole account
-setup: your key and your bill at the provider's list prices. Put the export in
-your shell profile so it is there next time.
+Or type `/connect` in the TUI and paste a key. There is no other account
+setup: your key, billed at the provider's list prices. Put the export in your
+shell profile.
 
 With no key and a model on this machine, a running [janis](https://github.com/guregodevo/janis)
 (`janis pull && janis serve`), Ollama, llama.cpp or LM Studio is a
@@ -59,10 +59,9 @@ cd your-project
 memdoor
 ```
 
-The bare command opens the window (`memdoor tui` still works). The first run
-sets this machine up: it starts the local gateway in
-the background and makes the workspace, with nothing to answer. A key you
-export later reaches it the next time you run `memdoor`.
+`memdoor` opens the window (`memdoor tui` is the same). The first run starts
+the local gateway in the background and creates the workspace without
+prompting. A key exported later is picked up the next time you run `memdoor`.
 
 The agent works on the directory you launched it from. Its file tools stay inside it and its commands start there. It is not a sandbox: a shell command can still reach other folders. Type a task:
 
@@ -92,18 +91,18 @@ memdoor --gateway ssh://you@box connect openrouter   # your key, kept on the box
 memdoor --gateway ssh://you@box run "say hi"         # one turn from a script or CI
 ```
 
-The first command finds no gateway on the box and sets it up over the same
-ssh. memdoor.ai's installer puts the binary in `~/.local/bin` there, with no
-sudo. `memdoor gateway install` makes it a service (systemd --user or
-launchd; where there is no service manager it starts in the background).
-The window then opens on it, in the box's home unless `--dir` names a
-project there. Each step is printed as it happens. The runs then live on
-the box. Close the laptop and the work goes on. `memdoor --gateway
-ssh://you@box resume --last` or your phone opens the same conversation.
-The box's gateway listens on its network and every door is gated by the
-account token (`MEMDOOR_HOST=localhost` keeps it to the box). The box's
-login is read over ssh, so no password is typed. [The gateway](/docs/gateway) has
-the rest, the phone included.
+When no gateway answers on the box, the first command installs memdoor
+there over the same ssh (the installer puts the binary in `~/.local/bin`, no
+sudo) and runs `memdoor gateway install`, which registers a service (systemd
+--user or launchd; without a service manager it starts the gateway in the
+background). The window then opens on it, in the box's home unless `--dir`
+names a project there. Each step is printed. Runs live on the box and
+continue with the laptop closed. `memdoor --gateway ssh://you@box resume
+--last` or your phone reopens the conversation. The box's gateway listens on
+its network with the account token required on every door
+(`MEMDOOR_HOST=localhost` restricts it to the box). The ssh door reads the
+box's login, so no password is typed. [The gateway](/docs/gateway) has the
+rest, the phone included.
 
 ## The commands worth knowing first
 
@@ -123,8 +122,8 @@ with the model served and its tokens.
 
 ## The other doors
 
-The window is one door onto the gateway the first run started. Every run is a
-conversation on it, and each of these opens the same one:
+Every run is a conversation on the gateway the first run started. Each of
+these is another door onto it:
 
 ```bash
 memdoor run "fix the failing test"        # one turn, no window; exit 0 checked, 2 unverified, 3 it needed you
@@ -136,21 +135,20 @@ memdoor remote --last                     # the link /remote gives, on stdout; t
 ```
 
 Your editor (VS Code, Zed, JetBrains) and the page `/remote` opens on your
-phone are two more. The run a CI job started is the one you open live and
-answer. [Headless, then attached](/docs/headless) walks through every door
-with the exit codes.
+phone are two more. A run started by CI can be opened live and answered.
+[Headless, then attached](/docs/headless) lists each door with its exit
+codes.
 
 ## The decision model
 
-The judged reads, the per-turn toolbox and the stop-instead-of-loop all come
-from a decision model. They are what make the same work cost less. It is
-free. An OpenRouter key turns it on, and so does a
-decision key (`memdoor connect typesafe`) next to any chat provider. With
-neither, nothing is judged and every tool returns its unjudged output.
+Judged reads, the per-turn toolbox and the stop instead of a loop come from
+the decision model. It is free and is enabled by an OpenRouter key or a
+decision key (`memdoor connect typesafe`) beside any chat provider. With
+neither, tools return unjudged output.
 
 ## Where to next
 
-- **[Headless, then attached](/docs/headless)** — one gateway, every door: scripts, CI, cron, resume.
+- **[Headless, then attached](/docs/headless)** — scripts, CI, cron, resume.
 - **[The gateway](/docs/gateway)** — the process on your machine every door opens onto.
 - **[Your key and the models](/docs/your-key)** — the ladder, pins, prices.
 - **[The TUI](/docs/tui)** — the screens and the keys.

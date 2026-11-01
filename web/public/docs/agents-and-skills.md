@@ -35,7 +35,7 @@ The coding agent's:
 | `grep`, `glob`, `locate` | Find code by content, by name, by symbol |
 | `todo_write`, `todo_read` | Track a multi-step plan visibly in the TUI |
 | `skill` | Load a skill's instructions on demand |
-| `ask_user_question` | Interrupt with a numbered picker when a decision is genuinely needed |
+| `ask_user_question` | Interrupt with a numbered picker when a decision is needed |
 | `notes` | The coder's memory for a project: a file it reads at the start of a turn and appends to as it works |
 | `recall` | Return a tool output word for word after the transcript has been compacted |
 | `jgrep`, `jread` | The judged versions of `grep` and `read_file`: the decision model scores every match or section against the task and returns the ones that count |
