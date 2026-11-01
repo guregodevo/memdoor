@@ -1,15 +1,14 @@
 # Memdoor docs
 
-**A minimalist coding agent** that runs from Terminal, a shell, CI, cron,
-your IDE or phone, on your gateway, BYOK, any provider. A multi-step
-job runs as a workflow, the deterministic harness: each step is checked by
-its output and the run stops only where you decide. A decision model in front of the chat model cuts what
-it reads and what it costs. Measured over 44 paired runs: 74% fewer input
-tokens on a question about the codebase, no change on edits, 22 of 22 passed
-each way. The agent, the decision model, workflows and every door onto your
-gateway are open source (Apache-2.0) and free, self-hosted by one person
-or a company. Only the gateway memdoor.ai hosts (workflow state across
-machines and the relay for a gateway kept to localhost) is $10 a month.
+A coding agent that runs from Terminal, a shell, CI, cron, your IDE or
+phone, on your gateway, on your key, any provider. A multi-step job runs
+as a workflow, the deterministic harness: each step checked by its output,
+the run stops only where you decide. A decision model in front of the chat
+model cuts input and cost: 44 paired runs, 74% fewer input tokens on a
+codebase question, no change on edits, 22 of 22 passed each way. The agent,
+the decision model, workflows and every door onto your gateway are open
+source (Apache-2.0) and free. The gateway memdoor.ai hosts (workflow state
+across machines, the relay for a gateway kept to localhost) is $10 a month.
 
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
@@ -54,21 +53,22 @@ cd your-project && memdoor
 ## Common questions
 
 **What do I need?** A terminal and a provider key (OpenRouter, Anthropic,
-OpenAI, Gemini, DeepSeek, …), on a Mac, Linux or Windows: one binary.
+OpenAI, Gemini, DeepSeek, …). Mac, Linux or Windows. One binary.
 
-**Do you resell me tokens?** No. You hold the account at your provider and pay
-its list price directly. Nothing of your code passes through memdoor.ai. The hosted gateway's $10 is never for inference.
+**Do you resell me tokens?** No. You hold the provider account and pay list
+price. No code passes through memdoor.ai. The hosted gateway's $10 is never
+for inference.
 
-**Does my code leave my machine?** Your files, sessions, memory and the output of
-every command stay local. What leaves is the prompt and the excerpts a model must
-read, with `data_collection: deny` on every request and training hosts excluded.
-The exception is a `:free` model, one you pin or the one an OpenRouter account
-with no credit answers on. Its hosts train, and Memdoor says so at the pin or
-when the key is connected. Without an OpenRouter or decision key nothing is
-judged off-machine either.
+**Does my code leave my machine?** Files, sessions, memory and command output
+stay local. The prompt and the excerpts a model must read leave, with
+`data_collection: deny` on every request and training hosts excluded.
+Exception: a `:free` model, pinned or the one an OpenRouter account with no
+credit answers on. Its hosts train; Memdoor says so at the pin or when the
+key is connected. Without an OpenRouter or decision key nothing is judged
+off-machine either.
 
-**Is there a token or call limit?** No cap on tool calls. The decision model ends
-a turn that has stopped making progress.
+**Is there a token or call limit?** No cap on tool calls. The decision model
+ends a turn that has stopped making progress.
 
-**Does it work on a locked-down laptop?** Usually. It is a single binary with
-no Docker, no Python and no package manager. See [Getting started](/docs/getting-started).
+**Does it work on a locked-down laptop?** One binary, no Docker, no Python,
+no package manager. See [Getting started](/docs/getting-started).

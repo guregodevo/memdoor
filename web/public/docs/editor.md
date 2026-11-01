@@ -1,39 +1,37 @@
 # Memdoor in your editor
 
-The same coder, in VS Code, Zed or JetBrains. Your editor's chat panel sends
-the prompt. The coder works in the folder you have open, on your key or
-ChatGPT plan, as it does in the terminal. Nothing else to
-install: the editor starts `memdoor acp`, and Memdoor speaks the
-[Agent Client Protocol](https://agentclientprotocol.com) the editors host.
+The same coder in VS Code, Zed or JetBrains. The editor's chat panel sends
+the prompt. The coder works in the open folder, on your key or ChatGPT
+plan. Nothing else to install: the editor starts `memdoor acp`, and Memdoor
+speaks the [Agent Client Protocol](https://agentclientprotocol.com) the
+editors host.
 
-What you see in the chat is what the window shows: the coder's answer as it
-streams, the files it reads, the edits (placed at the file), the commands
-it runs, and the green or red of the build and the tests. It prompts you
-for a question, or for an approval if you run with
-`MEMDOOR_APPROVE=changes`. Stop ends the turn like `Esc` does.
+The chat shows what the window shows: the streaming answer, the files
+read, the edits placed at the file, the commands run, the green or red of
+the build and tests. It prompts for a question, or for an approval under
+`MEMDOOR_APPROVE=changes`. Stop ends the turn, as `Esc` does.
 
 ## VS Code
 
-1. Install the **ACP Client** extension (search "ACP Client" in the
-   Extensions view; its id is `formulahendry.acp-client`).
-2. In your settings (`settings.json`):
+1. Install the **ACP Client** extension (id `formulahendry.acp-client`).
+2. In `settings.json`:
 
    ```json
    "acp.agents": { "Memdoor": { "command": "memdoor", "args": ["acp"] } }
    ```
 
-   `memdoor` is on your PATH after the installer; use its full path
-   (`~/.local/bin/memdoor`) if the extension cannot find it.
+   `memdoor` is on PATH after the installer; otherwise its full path
+   (`~/.local/bin/memdoor`).
 3. Open a folder, click the ACP Client icon in the Activity Bar, pick
-   **Memdoor**, and type.
+   **Memdoor**, type.
 
-Any other ACP client extension works the same way; the setting's name is the
-extension's.
+Any other ACP client extension works the same way under its own setting
+name.
 
 ## Zed
 
 Agent panel → add a custom agent: command `memdoor`, argument `acp`. Zed
-sends the folder you have open as the working directory.
+sends the open folder as the working directory.
 
 ## JetBrains
 
@@ -42,15 +40,15 @@ agent with the command `memdoor acp`.
 
 ## Good to know
 
-- Each editor session is a conversation of its own; `memdoor resume` in a
-  terminal lists them, so a session started in the editor can continue in
-  the window.
-- The first run sets the machine up, as `memdoor tui` does; a machine with no
-  key yet is told so in the chat (`/connect` in the window, or
-  `export OPENROUTER_API_KEY=…` before the editor starts).
+- Each editor session is a conversation of its own. `memdoor resume` in a
+  terminal lists them; a session started in the editor continues in the
+  window.
+- The first run sets the machine up, as `memdoor tui` does. No key yet: the
+  chat says so (`/connect` in the window, or `export OPENROUTER_API_KEY=…`
+  before the editor starts).
 - `/model`, `/workflow` and the other slash commands are the window's; the
-  editor sends plain prompts. Pin a model once in the window and it holds for
-  new conversations.
+  editor sends plain prompts. A model pinned in the window holds for new
+  conversations.
 - Where prompts go: [Where your data goes](/docs/security).
 
 ## Next

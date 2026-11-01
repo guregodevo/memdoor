@@ -1,11 +1,10 @@
 # Providers
 
-Models come from providers. Each has a list read from the provider's
-API: windows, output caps, prices and modalities as the vendor states them,
-never typed into Memdoor. `/model-search` alone lists your providers. Enter
-opens one's models and enter again pins one for the conversation.
-`/model-search <text>` searches them all. `/model` shows what is connected and
-what is not. The footer names the provider that answers.
+A provider's model list is read from its API: windows, output caps, prices
+and modalities as the vendor states them, never typed into Memdoor.
+`/model-search`: your providers; enter opens one's models, enter again pins
+one for the conversation. `/model-search <text>`: all of them. `/model`:
+connected or not. The footer names the provider that answers.
 
 ```
 memdoor providers                 # each provider, connected or not, ● the one answering
@@ -18,25 +17,23 @@ memdoor providers --models groq   # one provider's list: window · max out · $ 
 memdoor providers --audit         # where every window came from, and which are guesses
 ```
 
-A key goes in the environment under the name below, or through `/connect`.
-`/connect` opens the token step with that name prefilled. Enter keeps it when
-the gateway already has it, and the value is never shown. What it connects is
-kept in `~/.memdoor/providers.json`, so a provider is there at every start. A
-key can be the value, the NAME of a variable, or `!command`. `*_BASE_URL`
-points a provider at a proxy or a company gateway in front of it. Pin a model
-whose provider is not connected and the window says which one to `/connect`.
-Every provider below has done the same coding turn on its fast model (a
-planted bug, a failing test, "fix the code, not the test") in 8 to 45 seconds.
+Key: the environment variable named below, or `/connect`, which opens the
+token step with that name prefilled (Enter keeps a key the gateway already
+has; the value is never shown). Connected providers are kept in
+`~/.memdoor/providers.json`. A key value: the key, the NAME of a variable, or
+`!command`. `*_BASE_URL`: a proxy or a company gateway in front of the
+provider. A pin on a provider that is not connected: the window names the one
+to `/connect`. Each provider below did the same coding turn on its fast model
+(a planted bug, a failing test, "fix the code, not the test") in 8 to 45
+seconds.
 
-With no kind, `memdoor connect` first scans this shell's environment and
-the project's `.env`, `.env.local` and `.envrc` for keys by their shape
-(`sk-or-…`, `sk-ant-…`, `AIza…`/`AQ.…`, `gsk_…`, `xai-…`, a bare `sk-…`,
-or, for a key with no shape, its provider's own variable name like
-`BASETEN_API_KEY`). The keys found that would change something are numbered first, and Enter
-connects the first. The keys the gateway already reads from its environment
-are named on a line of their own and not offered again. Then come the sign-ins
-under "Sign in, no key:" (OpenRouter, ChatGPT), then the kinds that take a
-key.
+`memdoor connect` with no kind scans the shell environment and the project's
+`.env`, `.env.local` and `.envrc` for keys by shape (`sk-or-…`, `sk-ant-…`,
+`AIza…`/`AQ.…`, `gsk_…`, `xai-…`, a bare `sk-…`, or the provider's variable
+name for a key with no shape, like `BASETEN_API_KEY`). Order: keys that would
+change something, numbered, Enter connects the first; keys the gateway already
+reads, named and not offered; the sign-ins under "Sign in, no key:"
+(OpenRouter, ChatGPT); the kinds that take a key.
 
 ## OpenRouter — the catalogue
 
@@ -155,23 +152,20 @@ console.anthropic.com. Responses stream.
 
 ## A local runtime — no key
 
-`memdoor connect local` (or `/connect local` in the window) connects an
-OpenAI-compatible server on this machine or on the box the gateway runs
-on: janis, Ollama, llama.cpp, LM Studio, vLLM. It asks for no token and sends
-none. A blank base finds the runtime on the gateway's machine (janis on 8090,
-Ollama 11434, llama.cpp 8080, LM Studio 1234), or you name its address. The
-probe reads the runtime's model list and makes one call, as with every
-provider. `/model search` then lists what the runtime serves at no price, and
-`/model <id>` pins one. On a box reached with `--gateway ssh://you@box` the
-runtime runs on the box and the window on your laptop. Nothing leaves the
+`memdoor connect local` (or `/connect local`): an OpenAI-compatible server
+on this machine or on the gateway's box: janis, Ollama, llama.cpp, LM Studio,
+vLLM. No token asked or sent. Blank base: the runtime on the gateway's machine
+(janis 8090, Ollama 11434, llama.cpp 8080, LM Studio 1234); or an address.
+Probe: the runtime's model list and one call. `/model search` lists what it
+serves at no price; `/model <id>` pins one. Over `--gateway ssh://you@box`
+the runtime runs on the box and the window on the laptop. Nothing leaves the
 machine the runtime runs on.
 
-Ollama reads a prompt through a 4,096-token window unless told otherwise,
-whatever the model allows. A coder turn's prompt is longer than that. The
-model then answers a task it never saw in a few lines and calls no tool (the
-meter shows exactly 4096 input tokens on every call). Start Ollama with
-`OLLAMA_CONTEXT_LENGTH=32768`, or make a tag with the window set and pin that
-one:
+Ollama's default window is 4,096 tokens, whatever the model allows. A coder
+prompt is longer: the model answers a task it never saw in a few lines and
+calls no tool (the meter shows exactly 4096 input tokens on every call).
+Start Ollama with `OLLAMA_CONTEXT_LENGTH=32768`, or make a tag with the window
+set and pin it:
 
 ```
 printf 'FROM qwen3:8b\nPARAMETER num_ctx 32768\n' > Modelfile
@@ -180,41 +174,38 @@ ollama create qwen3:8b-32k -f Modelfile
 
 A runtime that also judges is connected as both.
 [janis](https://github.com/guregodevo/janis) answers the decision model's
-questions on the same loaded model. `connect local` keeps its decisions as
+questions on the same loaded model; `connect local` keeps that as
 `local-decisions`, and the [decision
 model](/docs/no-babysitting#who-decides-the-decision-model) runs on this
-machine with no key from that moment. On a runtime without that endpoint
-(Ollama, llama.cpp) decisions stay off, as on a vendor key.
+machine with no key. Without that endpoint (Ollama, llama.cpp) decisions stay
+off, as on a vendor key.
 
 ### The box's model answers the laptop
 
-A gateway on a box with a GPU is a peer of the one on your laptop. `memdoor
-peers add box http://box:18789 --dir ~/app` names it once you are signed in to
-it (the ssh door signs you in on the way). Then `@box:coder …` in any
-conversation here runs the turn there on the model that box serves and brings
-the answer back as the reply. The laptop needs no GPU and no key for that
-model. The box's tokens show on its ledger (`memdoor meter` there).
+A gateway on a GPU box is a peer of the laptop's. `memdoor peers add box
+http://box:18789 --dir ~/app` names it once signed in (the ssh door signs in
+on the way). `@box:coder …` in any conversation runs the turn on the box's
+model and returns the answer as the reply. The laptop needs no GPU and no key
+for that model. The box's tokens are on its ledger (`memdoor meter` there).
 
 ![A laptop with no GPU asks @box:coder; the box runs Qwen3.8-27B through janis on its L4, patches main.go, runs it, and the answer lands in the laptop's window](/local-model.cast)
 
-Recorded 2026-10-26 on a g2-standard-16 with one L4 on Google Cloud. janis
-served Qwen3.8-27B 4-bit (the Qwen3.5 hybrid on CUDA). Memdoor was installed
-on the box through the ssh door. The 27B answers at about 5 tokens a second on
-that card and reads a coder prompt at 250. A turn that edits and runs a file
-takes a few minutes, all of it on the box.
+Recorded 2026-10-26: g2-standard-16, one L4, Google Cloud; janis serving
+Qwen3.8-27B 4-bit (the Qwen3.5 hybrid on CUDA); Memdoor installed on the box
+through the ssh door. About 5 tokens a second out, a coder prompt read at 250.
+A turn that edits and runs a file: a few minutes, all on the box.
 
 ## Any OpenAI-compatible endpoint
 
-`memdoor connect custom` with a base URL and its key: a vLLM, an internal
-proxy, a hosted model. Window and cap are read when the endpoint lists them (`context_length`,
-`max_model_len`). Otherwise the reference answers, else a marked guess you can
-declare.
+`memdoor connect custom` with a base URL and key: a vLLM, an internal proxy,
+a hosted model. Window and cap from the endpoint when listed
+(`context_length`, `max_model_len`), else the reference, else a marked guess
+you can declare.
 
 ## Attribution — whose request this is
 
-A company gateway tags requests by person and team for cost attribution.
-Memdoor sends four fields as headers on every vendor and gateway request,
-under the names your gateway expects:
+Four fields as headers on every vendor and gateway request, under the names
+your gateway expects, for cost attribution by person and team:
 
 ```
 export MEMDOOR_ATTRIBUTION="user=you@corp.example;team=data-eng"
@@ -227,15 +218,14 @@ are filled from the turn. A field with no value sends no header.
 
 ## When two providers list the same id
 
-A bare id goes to the active provider. Name the provider to be exact:
-`/model groq:qwen/qwen3.8-27b`, `/model baseten:zai-org/GLM-5.3-Flash`.
-The footer then reads `groq · qwen/qwen3.8-27b · pinned by you`.
+A bare id goes to the active provider. `/model groq:qwen/qwen3.8-27b`,
+`/model baseten:zai-org/GLM-5.3-Flash` name the provider. The footer reads
+`groq · qwen/qwen3.8-27b · pinned by you`.
 
 ## Where a window comes from
 
-In order: the provider's API; the same model in OpenRouter's catalogue;
-the public reference catalogue (models.dev, read once a day, kept on disk,
-never contacted on a company gateway); the provider's default. The default is
-shown as `~` after the figure, warned once in the log, and declarable in
-`providers.json`. `memdoor providers --audit` prints the count per provider
-and how many of the figures are stated rather than guessed.
+In order: the provider's API; the same model in OpenRouter's catalogue; the
+public reference (models.dev, read once a day, on disk, never contacted on a
+company gateway); the provider's default, shown as `~`, warned once in the
+log, declarable in `providers.json`. `memdoor providers --audit`: the count
+per provider and how many figures are stated rather than guessed.

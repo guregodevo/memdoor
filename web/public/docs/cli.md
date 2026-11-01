@@ -1,6 +1,7 @@
 # CLI
 
-A command is `memdoor <group> <command>`. `--help` at any level is the reference. This page is the map.
+`memdoor <group> <command>`. `--help` at any level is the reference. This
+page is the map.
 
 ## Getting going
 
@@ -18,7 +19,9 @@ memdoor version                   # this build's version, commit and date
 memdoor uninstall                 # remove the binary (and ~/.memdoor unless --keep-data)
 ```
 
-`memdoor setup` does the first run's setup from a script: `--workspace-name`, `--admin-email`, `--admin-password`, `--workspace-dir`, `--non-interactive`. `doctor` takes `--workspace-dir` too.
+`memdoor setup`: the first run's setup from a script. Flags
+`--workspace-name`, `--admin-email`, `--admin-password`, `--workspace-dir`,
+`--non-interactive`. `doctor` takes `--workspace-dir` too.
 
 ## Providers
 
@@ -34,8 +37,8 @@ memdoor connect groq --probe      # test the key, keep nothing
 memdoor connect --remove <id>     # forget one you added
 ```
 
-A key can be the value, the NAME of an environment variable, or `!command`.
-It is probed (the list, then one tiny call) before anything is kept in
+A key: the value, the NAME of an environment variable, or `!command`.
+Probed (the list, then one tiny call) before anything is kept in
 `~/.memdoor/providers.json`. See [Providers](/docs/providers).
 
 ## Models and what they cost
@@ -66,8 +69,9 @@ memdoor workflow stop <run-id>    # cancel a run
 memdoor workflow history <name>   # every run of a workflow, newest first (survives a restart)
 ```
 
-A workflow is the deterministic harness: a directory of task files. The coder writes it from a sentence.
-In the window, `/workflow` draws the graph live. See [Workflows](/docs/workflows).
+A workflow is the deterministic harness: a directory of task files, written
+by the coder from a sentence. `/workflow` in the window draws the graph
+live. See [Workflows](/docs/workflows).
 
 ## MCP servers
 
@@ -81,7 +85,7 @@ memdoor mcp on|off|remove <name>
 memdoor mcp trust                 # let this project's .mcp.json servers start
 ```
 
-`/mcp` in the window does the same. See [MCP](/docs/mcp).
+`/mcp` in the window: the same. See [MCP](/docs/mcp).
 
 ## Guards
 
@@ -93,7 +97,9 @@ memdoor guards remove 2           # the number `memdoor guards` shows
 memdoor guards clear
 ```
 
-A rule names a tool (`*` for any) and a regex matched against the call's input. A matching call is refused with the message, on every agent and every turn. Setting them takes an admin's sign-in. See [Boundaries](/docs/boundaries).
+A rule: a tool (`*` for any) and a regex matched against the call's input.
+A matching call is refused with the message, on every agent and every turn.
+Setting rules takes an admin's sign-in. See [Boundaries](/docs/boundaries).
 
 ## Your editor
 
@@ -101,7 +107,8 @@ A rule names a tool (`*` for any) and a regex matched against the call's input. 
 memdoor acp                       # the coder over the Agent Client Protocol, on stdin/stdout, for Zed, JetBrains or VS Code's ACP client to spawn
 ```
 
-Each editor session is a conversation on this machine's gateway, in the folder the editor has open. See [Memdoor in your editor](/docs/editor).
+An editor session is a conversation on this machine's gateway, in the
+folder the editor has open. See [Memdoor in your editor](/docs/editor).
 
 ## Peers (experimental)
 
@@ -111,11 +118,14 @@ memdoor peers add box <gateway> --dir <path>    # name a gateway you are signed 
 memdoor peers remove box
 ```
 
-`@<peer>:<agent> …` in a window, a run or a message sends that turn to the agent on the peer, in the directory named there. The answer comes back as the reply.
+`@<peer>:<agent> …` in a window, a run or a message sends that turn to the
+agent on the peer, in the directory named there. The answer comes back as
+the reply.
 
 ## Conversations
 
-Each `memdoor tui` starts a fresh conversation. `resume` returns to an earlier one.
+Each `memdoor tui` starts a fresh conversation. `resume` returns to an
+earlier one.
 
 ```
 memdoor resume                    # what you've worked on here, newest first, and which one to open
@@ -126,10 +136,12 @@ memdoor resume 2                  # straight to number 2 from the list
 memdoor resume 8488c86b           # the id the window printed when you left it
 ```
 
-Once you have said something in a window, its last line names the way back:
+After the first message a window's last line names the way back:
 `Resume this conversation with: memdoor resume 8488c86b`.
 
-A resumed session opens with its title in the header and its last exchanges in view, on the same agent session. Conversations are listed per directory. `--all` lists every directory's.
+A resumed session opens with its title in the header and its last
+exchanges in view, on the same agent session. Listed per directory;
+`--all` lists every directory's.
 
 ```
 memdoor sessions list             # the gateway's live sessions (a different question)
@@ -183,8 +195,9 @@ memdoor auth token                # the session token, for curl
 ```
 
 `users`, `channels`, `messages`, `sessions`, `auth` and the other operator
-commands are not listed in `memdoor --help`. Each runs when typed, and
-`docs/reference/CLI.md` lists them. `cron` is listed: see [Scheduled checks](/docs/cron).
+commands are not listed in `memdoor --help`. Each runs when typed;
+`docs/reference/CLI.md` lists them. `cron` is listed: see [Scheduled
+checks](/docs/cron).
 
 ## Global flags
 
@@ -195,9 +208,14 @@ commands are not listed in `memdoor --help`. Each runs when typed, and
 | `--dir <path>` | The project directory: here by default; with `--gateway`, the directory on that machine |
 | `-v, --verbose` | Verbose output |
 
-Workspace resolution order: `-w` → `$MEMDOOR_WORKSPACE` → a `.memdoor/workspace` file walked up from the current directory → `workspace_id` in `~/.memdoor/config.json`.
+Workspace resolution: `-w` → `$MEMDOOR_WORKSPACE` → a `.memdoor/workspace`
+file walked up from the current directory → `workspace_id` in
+`~/.memdoor/config.json`.
 
-Your account has one workspace. If a `.memdoor/workspace` file or the config names a different one, the window, `memdoor run` and `memdoor acp` open yours and say so in one line. `memdoor workspace use <slug>` updates the pin. A workspace you name with `-w` or `$MEMDOOR_WORKSPACE` is used as given.
+One workspace per account. A `.memdoor/workspace` file or the config naming
+another: the window, `memdoor run` and `memdoor acp` open yours and say so
+in one line. `memdoor workspace use <slug>` updates the pin. A workspace
+named with `-w` or `$MEMDOOR_WORKSPACE` is used as given.
 
 ## Next
 

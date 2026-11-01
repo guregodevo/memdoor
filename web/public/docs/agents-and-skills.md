@@ -2,7 +2,7 @@
 
 ## The agents
 
-A workspace ships with a small team. Each has its tools, prompt and sessions.
+A workspace ships with a team. Each has its tools, prompt and sessions.
 
 | Agent | What it does |
 |---|---|
@@ -13,9 +13,16 @@ A workspace ships with a small team. Each has its tools, prompt and sessions.
 | `runner` | Runs a command and reports its real output; it does not write code (`bash`, `read_file`) |
 | `narrator` | Narrates the coder's tool activity for a person; no tools |
 
-`memdoor tui` talks to the coder. Start a message with `@planner` (or another agent's name) to send it there. `memdoor agent list` shows what is on your gateway. Agents can mention each other (`@coder`, `@chief`) and the mentioned agent's answer comes back as the reply. A scheduled check's answer or a spawned subagent's report wakes the conversation that asked for it.
+`memdoor tui` talks to the coder. `@planner` (or another agent's name) at
+the start of a message sends it there. `memdoor agent list` shows what is
+on your gateway. Agents mention each other (`@coder`, `@chief`); the
+mentioned agent's answer comes back as the reply. A scheduled check's answer
+or a spawned subagent's report wakes the conversation that asked.
 
-Agents are configuration. Tool allowlists, prompt, description and personality live in the database per agent and `memdoor agent update` changes them. No agent has a model of its own. Each runs on its ladder or on the model you pin with `/model`.
+Agents are configuration: tool allowlist, prompt, description and
+personality, in the database per agent, changed with `memdoor agent
+update`. No agent has a model of its own. Each runs on its ladder or on the
+model pinned with `/model`.
 
 ```
 memdoor agent list
@@ -42,24 +49,30 @@ The coding agent's:
 | `web_search`, `web_fetch` | Look something up on the web and read a page in full, on an OpenRouter key; an answer with no source is refused |
 | `mcp`, `cron`, `workflow`, `sessions_spawn` | Call a connected MCP server's tool, schedule its own re-check, run or approve a workflow, run a subtask in a session of its own |
 
-Everything runs on your machine inside the folder the TUI was launched from. Only the prompt and the excerpts the model reads leave it.
+Everything runs on your machine inside the folder the TUI was launched
+from. The prompt and the excerpts the model reads leave it; nothing else.
 
-**Blocking a tool.** The `tool_guards` workspace setting takes regex rules per tool. A rule forbids specific invocations (a destructive command shape or a path you do not want touched) without removing the tool.
+Blocking a tool: the `tool_guards` workspace setting takes regex rules per
+tool. A rule refuses specific invocations (a destructive command shape, a
+path) without removing the tool.
 
 ## Skills
 
-A skill is a markdown file of instructions the agent loads when it is relevant: a checklist for reviews or the conventions in your repo.
+A skill is a markdown file of instructions the agent loads when relevant:
+a review checklist, the conventions of a repo.
 
-**They resolve from disk first**, in this order:
+Resolved from disk first, in this order:
 
 1. `<project>/.agents/skills/`
 2. `~/.memdoor/workspace/skills/`
 3. `~/.memdoor/skills/` (seeded on first boot)
 4. the built-in defaults
 
-Edit a file and the next call uses it, with no rebuild and no restart. A skill dropped into `.agents/skills/` appears in the TUI's `/` dropdown at once.
+An edit applies on the next call. No rebuild, no restart. A skill dropped
+into `.agents/skills/` appears in the TUI's `/` dropdown at once.
 
-**The built-in skills**, seeded into `~/.memdoor/skills/` on first boot and shipped inside the binary:
+Built-in skills, seeded into `~/.memdoor/skills/` on first boot and shipped
+in the binary:
 
 | Skill | What it is |
 |---|---|
@@ -67,25 +80,25 @@ Edit a file and the next call uses it, with no rebuild and no restart. A skill d
 | `review` | Read and understand an existing repo before changing it |
 | `workflow` | Build a workflow's task files from what the person asked for, then run it |
 
-**Running one deliberately.** `/skill:review src/auth.go` makes that skill the turn's task instead of leaving the choice to the model.
+Running one deliberately: `/skill:review src/auth.go` makes that skill the
+turn's task.
 
-**Agents write their own.** When an agent works out a procedure worth keeping, it can save it as a skill and use it next time. The files land in the same directories you edit by hand.
+Agents write their own: a procedure worth keeping is saved as a skill in the
+same directories, for the next time.
 
 ## What it remembers
 
-The agent's notes are working memory for one conversation: what it worked
-out and which take was the good one. They end with the conversation. For
-something you want kept in every later conversation in the project, say so:
+The agent's notes are working memory for one conversation and end with it.
+A rule for every later conversation in the project:
 
 ```
 > keep this as a rule: run the tests with -race, and never add a dependency
 ```
 
-It is written as a rule into the project's `AGENTS.md` and read at every
-turn. When the project has none it goes into `.memdoor/AGENTS.md`, which is
-git-ignored. A rule for every project goes in `~/.memdoor/workspace/AGENTS.md`,
-which every conversation reads. Memdoor does not write such files on its own
-after a turn.
+Written into the project's `AGENTS.md` and read at every turn. With no
+`AGENTS.md` it goes into `.memdoor/AGENTS.md`, git-ignored. A rule for every
+project: `~/.memdoor/workspace/AGENTS.md`. Memdoor writes such files only
+when told.
 
 ## Next
 

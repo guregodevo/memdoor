@@ -1,8 +1,8 @@
 # MCP servers
 
-The coder can use tools from MCP servers you connect: your issue tracker,
-your database, your docs, any service that ships an MCP server. Add one in
-the TUI with `/mcp`, or from a shell with `memdoor mcp`.
+The coder uses tools from MCP servers you connect: issue tracker, database,
+docs, any service with an MCP server. Add one with `/mcp` in the TUI or
+`memdoor mcp` in a shell.
 
 ![/mcp: a URL, a command line, a .mcp.json snippet, or the registry](/demo-mcp.cast)
 
@@ -19,49 +19,44 @@ Or search the official MCP registry (`registry.modelcontextprotocol.io`,
 public, no sign-in): `s` in the panel, `/mcp search <words>`, or
 `memdoor mcp search <words>`. A result becomes the entry you would write:
 a hosted server's URL, else `npx -y pkg@version`, `uvx pkg==version` or
-`docker run -i --rm image`, with everything it needs from you as `${VAR}`
-(a required environment variable, a header such as `Bearer ${API_KEY}`).
-Nothing secret is written, and a missing value is named when it connects.
-Only each server's latest version is shown.
+`docker run -i --rm image`, with what it needs from you as `${VAR}` (a
+required environment variable, a header such as `Bearer ${API_KEY}`).
+Nothing secret is written; a missing value is named at connect. Only each
+server's latest version is shown.
 
-The transport follows from what you pasted; you are never asked. A name is
-suggested (`mcp.linear.app` → `linear`,
-`@modelcontextprotocol/server-everything` → `everything`). Then choose: save
-for **this project** (`.mcp.json`, shared with the repo) or **every project**
-(`~/.memdoor/mcp.json`, just you). It connects at once and says what it got:
-its tools, or the reason it failed and what to do. A server that asks for
-sign-in starts the sign-in.
+Transport follows from the paste. A name is suggested (`mcp.linear.app` →
+`linear`, `@modelcontextprotocol/server-everything` → `everything`). Scope:
+**this project** (`.mcp.json`, shared with the repo) or **every project**
+(`~/.memdoor/mcp.json`). It connects at once and reports its tools, or the
+failure and what to do. A server that asks for sign-in starts the sign-in.
 
-A server that cannot run is not kept: the box opens again with your text and
-the reason, so nothing is written that would fail for everyone who clones the
-repository. One waiting for a variable (`${API_KEY}` unset) is saved, since
-the entry is right and only the environment is missing, and the panel names
-what to set.
+A server that cannot run is not kept: the box reopens with your text and
+the reason, so nothing is written that would fail for everyone who clones
+the repository. One waiting for a variable (`${API_KEY}` unset) is saved,
+and the panel names what to set.
 
 ## Signing in
 
-An HTTP server that answers 401 needs sign-in. Memdoor follows the MCP
-authorization spec. The server's challenge names its protected-resource
-metadata (RFC 9728). That names its authorization server (RFC 8414 or
-OpenID; a server from before RFC 9728 is its own). Memdoor registers itself
-as a public client (RFC 7591). You approve in a browser with PKCE (S256)
-and the resource indicator (RFC 8707).
+An HTTP server that answers 401 needs sign-in, per the MCP authorization
+spec: the challenge names the protected-resource metadata (RFC 9728), which
+names the authorization server (RFC 8414 or OpenID; a server from before
+RFC 9728 is its own). Memdoor registers as a public client (RFC 7591). You
+approve in a browser with PKCE (S256) and the resource indicator (RFC 8707).
 
-On screen: the browser opens, the link is in the transcript (clickable) and
-copied to the clipboard, a timer runs. The code comes back to a listener on
-127.0.0.1 (a random port). When the browser is on another machine, paste the
-address the browser ends on; Esc cancels.
+On screen: the browser opens, the link is in the transcript and on the
+clipboard, a timer runs. The code returns to a listener on 127.0.0.1 (a
+random port). Browser on another machine: paste the address it ends on.
+Esc cancels.
 
-Tokens live in `~/.memdoor/mcp-tokens.json`, each encrypted with the master
-key and keyed by the server's URL, so a committed
-`.mcp.json` carries no credential. A token is refreshed five minutes before
-it expires. `/mcp logout <name>` forgets it. A server whose config sends an
-`Authorization` header (an API key, `${VAR}` from the environment) is
-not signed in to.
+Tokens: `~/.memdoor/mcp-tokens.json`, each encrypted with the master key
+and keyed by server URL, so a committed `.mcp.json` carries no credential.
+Refreshed five minutes before expiry. `/mcp logout <name>` forgets one. A
+server whose config sends an `Authorization` header (an API key, `${VAR}`)
+is not signed in to.
 
 ## The files
 
-`.mcp.json` is Claude Code's format, so an existing one works as is:
+`.mcp.json` is Claude Code's format; an existing one works as is:
 
 ```json
 {"mcpServers": {
@@ -73,20 +68,19 @@ not signed in to.
 
 `${VAR}` and `${VAR:-default}` expand from the gateway's environment; a
 missing one is named. A name in both files is the project's. Memdoor's
-writes keep the keys and fields it does not model. `"disabled": true` turns
-a server off. A server on the old HTTP+SSE transport (MCP 2024-11-05) works
-too: a URL whose POST is refused with 404 or 405 falls back to it, as the
-spec says, and `"type": "sse"` goes straight to it.
+writes keep keys and fields it does not model. `"disabled": true` turns a
+server off. The old HTTP+SSE transport (MCP 2024-11-05): a URL whose POST
+is refused with 404 or 405 falls back to it; `"type": "sse"` goes straight
+to it.
 
 ## Trust
 
-A project's `.mcp.json` can start commands, and a repo may have just been
-cloned: its servers start only after your yes. At start, the TUI opens the
+A project's `.mcp.json` can start commands, and a repo may be freshly
+cloned: its servers start only after your yes. At start the TUI opens the
 panel on what the file would run; `y` (or `memdoor mcp trust`) allows it.
-The trust covers the servers as they are: a changed command asks again,
-turning one on or off does not. Adding a server to a project through
-Memdoor trusts the file only if it was trusted or held nothing else, so a
-repo's servers are never approved as a side effect.
+Trust covers the servers as they are: a changed command asks again; on or
+off does not. Adding a server through Memdoor trusts the file only if it
+was trusted or held nothing else.
 
 ## How the coder gets the tools
 
@@ -94,24 +88,22 @@ repo's servers are never approved as a side effect.
   window; a slow one joins on a later turn), kept while used, closed after
   30 idle minutes, reconnected when their config changes, a failed one left
   alone for a minute.
-- Tools are named `mcp__<server>__<tool>` (Claude Code's convention), kept
-  within 64 characters. Results come back as text: images described,
-  resources inlined, 50,000 characters at most; an error result is an error.
-- Resources: when a connected server offers them, the coder gets
+- Tool names: `mcp__<server>__<tool>` (Claude Code's convention), within 64
+  characters. Results come back as text: images described, resources
+  inlined, 50,000 characters at most; an error result is an error.
+- Resources: a server that offers them gives the coder
   `mcp__list_resources` and `mcp__read_resource` (Claude Code's two tools),
   not one tool per resource.
 - An agent whose palette carries `mcp` gets them; the coder's does.
 - Cost: every tool's schema travels on every request. With the decision
-  model, tool routing offers an `mcp` family only on a turn whose project
-  has connected servers.
-  Without it, they go on every turn.
+  model, tool routing offers the `mcp` family only on a turn whose project
+  has connected servers. Without it, on every turn.
 
 ## Prompts
 
-A server's prompts are slash commands in the TUI: `/<server>:<prompt>`,
-listed in the `/` dropdown. Arguments go in the order the prompt declares
-them or as `name=value`; a missing required one shows the usage. The
-filled prompt is sent as your message.
+A server's prompts are slash commands: `/<server>:<prompt>`, in the `/`
+dropdown. Arguments in the declared order or as `name=value`; a missing
+required one shows the usage. The filled prompt is sent as your message.
 
 ## Commands
 
@@ -129,7 +121,7 @@ filled prompt is sent as your message.
 | (pick a result) | `memdoor mcp add --registry <name>` | add one from the registry |
 | `/<server>:<prompt> [args]` | | run a server's prompt as your message |
 
-In the panel: ↑↓ move, enter signs in or tests, `a` add, `s` search the
+Panel keys: ↑↓ move, enter signs in or tests, `a` add, `s` search the
 registry, space on/off, `t` test, `o` sign out, `x` twice removes, `y`
 trusts, esc closes.
 

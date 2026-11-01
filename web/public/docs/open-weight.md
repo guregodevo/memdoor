@@ -1,12 +1,12 @@
 # Run Memdoor on an open-weight model, no key
 
-An open-weight model on your machine is a provider like any other. `memdoor connect local` finds it and asks for no
-token. Nothing you type or read leaves the box. This page goes from an empty
-machine to the team-solve workflow on your GPU.
+A model on your machine is a provider. `memdoor connect local` finds it,
+asks for no token. Nothing leaves the box. This page: empty machine to the
+team-solve workflow on your GPU.
 
 ## 1. Run a model
 
-Any OpenAI-compatible server works. Four common ones:
+Any OpenAI-compatible server. Four common ones:
 
 | runtime | start it | listens on |
 |---|---|---|
@@ -15,31 +15,30 @@ Any OpenAI-compatible server works. Four common ones:
 | [LM Studio](https://lmstudio.ai) | load a model, start the server | 1234 |
 | [vLLM](https://github.com/vllm-project/vllm) | `vllm serve Qwen/Qwen3.8-27B` | 8000 |
 
-[janis](https://github.com/guregodevo/janis), our own server for Apple
-silicon and CUDA, listens on 8090 and answers the decision model's
-questions, so the token savings run locally too.
+[janis](https://github.com/guregodevo/janis), our server for Apple silicon
+and CUDA, listens on 8090 and also answers the decision model, so the token
+savings run locally.
 
-Which model: a coder turn reads files, calls tools and writes patches, so it
-needs a model trained for tool calls. Qwen3.8-27B is the one the published
-result ran on. A 7B or 8B answers a turn on a laptop but loses the thread on
-long work. The floor for the team-solve workflow is a 27B at Q5 or above,
-which needs a 24 GB card or a 32 GB Mac.
+Model: one trained for tool calls, since a coder turn reads files, calls
+tools and writes patches. Qwen3.8-27B is the one the published result ran
+on. A 7B or 8B answers a turn on a laptop but loses the thread on long
+work. Floor for team-solve: a 27B at Q5 or above, a 24 GB card or a 32 GB
+Mac.
 
 ## 2. Give it a window
 
-Ollama reads a prompt through 4,096 tokens unless told otherwise, whatever
-the model allows. A coder turn's prompt is longer than that. The model
-answers a task it never saw in a few lines and calls no tool. Start Ollama
-with `OLLAMA_CONTEXT_LENGTH=32768` or make a tag with the window set:
+Ollama reads 4,096 tokens of prompt unless told otherwise. A coder turn's
+prompt is longer; the model then answers a task it never saw and calls no
+tool. Start Ollama with `OLLAMA_CONTEXT_LENGTH=32768` or make a tag:
 
 ```
 printf 'FROM qwen3:8b\nPARAMETER num_ctx 32768\n' > Modelfile
 ollama create qwen3:8b-32k -f Modelfile
 ```
 
-llama.cpp takes `-c 32768` on the command line. LM Studio and vLLM set it in
-the model's settings. 32K is enough for a turn. The team-solve workflow's
-longest replies run past 100K, so give the 27B what the card allows.
+llama.cpp: `-c 32768`. LM Studio and vLLM: the model's settings. 32K covers
+a turn. Team-solve replies run past 100K, so give the 27B what the card
+allows.
 
 ## 3. Connect
 
@@ -49,17 +48,15 @@ memdoor connect local            # finds the runtime on this machine, probes it,
 memdoor model                    # the model that answers, and what it lists for: nothing
 ```
 
-A blank address finds janis, Ollama, llama.cpp or LM Studio on their usual
-ports. `--base http://localhost:8000/v1` names another. The probe reads the
-runtime's model list and makes one call. A large model may take a few minutes
-to load on the first one. `/model search` in the window lists the models the
-runtime serves and `/model qwen3:8b-32k` pins one. A model pulled after the
-connect is found on its next pin.
+Blank address: janis, Ollama, llama.cpp or LM Studio on their usual ports.
+`--base http://localhost:8000/v1` names another. The probe reads the model
+list and makes one call; a large model may take minutes to load. `/model
+search` lists what the runtime serves, `/model qwen3:8b-32k` pins one. A
+model pulled after the connect is found on its next pin.
 
-The runtime can be on a box instead of the laptop. `memdoor --gateway
-ssh://you@box connect local` installs Memdoor there and connects the box's
-runtime. `@box:coder …` in a conversation here runs the turn on the box
-([peers](/docs/providers#the-box-s-model-answers-the-laptop)).
+On a box: `memdoor --gateway ssh://you@box connect local` installs Memdoor
+there and connects the box's runtime. `@box:coder …` here runs the turn on
+the box ([peers](/docs/providers#the-box-s-model-answers-the-laptop)).
 
 ## 4. A turn
 
@@ -67,16 +64,14 @@ runtime. `@box:coder …` in a conversation here runs the turn on the box
 cd your-project && memdoor tui
 ```
 
-The first turn tells you whether the model is up to the work. Ask it to read a
-file and fix something small. The meter (`memdoor meter`) shows the input
-tokens of each call. 4,096 on every call means the window of step 2 is not
-set.
+Ask it to read a file and fix something small. `memdoor meter` shows input
+tokens per call; 4,096 on every call means the window of step 2 is not set.
 
 ## 5. The team on your GPU
 
-The [team-solve workflow](/docs/team-solve) names no model, so the
-harness that scored 9.8 of 10 on LiveCodeBench Hard runs on whatever
-`connect local` found:
+The [team-solve workflow](/docs/team-solve) names no model. The harness
+that scored 9.8 of 10 on LiveCodeBench Hard runs on whatever `connect
+local` found:
 
 ```
 git clone --depth 1 https://github.com/guregodevo/memdoor
@@ -85,15 +80,14 @@ mkdir my-problem && cd my-problem && cp -r ../memdoor/examples/workflows/team-so
 memdoor workflow run team-solve --wait
 ```
 
-A hard problem takes about 300K output tokens over the run's eight steps.
-At 20 tokens a second on a 24 GB card that is about four hours. The published 9.8 ran on
-Qwen3.8-27B in FP8 and BF16 through OpenRouter. A quantised copy on your card
-is the same weights at lower precision. Readers in
+Cost of a hard problem: about 300K output tokens over eight steps, about
+four hours at 20 tokens a second on a 24 GB card. The published 9.8 ran on
+Qwen3.8-27B in FP8 and BF16 through OpenRouter; a quantised copy is the same
+weights at lower precision. Readers in
 [the HN thread](https://news.ycombinator.com/item?id=50320995)
 ([summary on zeli.app](https://zeli.app/story/50320995)) report Q5 and above
-holding up where Q3 does not. Every step keeps its files, so a run that stops
+holding up where Q3 does not. Each step keeps its files; a stopped run
 resumes where it stopped.
 
-Nothing leaves the machine. The runtime answers on localhost and Memdoor
-keeps its state under `~/.memdoor`. The only outside address in a local setup
-is GitHub, for the clone.
+Nothing leaves the machine: the runtime answers on localhost, state is under
+`~/.memdoor`. The one outside address is GitHub, for the clone.

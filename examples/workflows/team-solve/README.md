@@ -2,20 +2,19 @@
 
 <a href="https://news.ycombinator.com/item?id=50320995"><img alt="Hacker News" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhacker-news.firebaseio.com%2Fv0%2Fitem%2F50320995.json&query=%24.score&label=Hacker%20News&suffix=%20points&logo=ycombinator&logoColor=white&color=ff6600"></a>
 
-Five small models solve a programming problem together: a planner, two
-ideators, a solver and a manager, plus a repair worker. Each starts from a
-fresh context and talks only through files on disk. Success is decided by a
-script that runs the samples. It is the method of
-[GVS5H](https://github.com/slee-persis/GVS5H) (Lee, 2026), written as a
+Five small models on one programming problem: a planner, two ideators, a
+solver, a manager and a repair worker, each from a fresh context, talking
+only through files on disk; a script that runs the samples decides success.
+The method of [GVS5H](https://github.com/slee-persis/GVS5H) (Lee, 2026) as a
 [Memdoor](../../../README.md) workflow: eight YAML files, no code, no model
 named.
 
 ## The result
 
-The authors' harness rebuilt on the same model, Qwen3.8-27B, with their
-prompts, loop and 128K reply cap. The first ten problems of their
-LiveCodeBench Hard list. Five passes each, graded on every hidden test with
-their corrected grader:
+The authors' harness on the same model, Qwen3.8-27B, with their prompts,
+loop and 128K reply cap. The first ten problems of their LiveCodeBench Hard
+list, five passes each, graded on every hidden test with their corrected
+grader:
 
 | pass | this workflow | authors' harness | Fable 5, one call |
 |---|---|---|---|
@@ -26,33 +25,32 @@ their corrected grader:
 | 5 | **9** / 10 | 10 | 7 |
 | mean | **9.8** | 9.6 | 8.0 |
 
-The authors' two columns are the regraded result files in their repository,
-the numbers in their paper. Our column is
-[`bench/results/parity-5pass/`](bench/results/parity-5pass/): all 50 runs,
+The authors' columns: the regraded result files in their repository, the
+numbers in their paper. Ours:
+[`bench/results/parity-5pass/`](bench/results/parity-5pass/), all 50 runs,
 each with every request and reply, the program, the grader's output and the
-cost. A run took a median of 40 minutes and $0.39. The 50 cost $35.79.
+cost. A median of 40 minutes and $0.39 a run; $35.79 for the 50.
 
 What this does and does not show:
 
-- Ten problems and five passes, against the authors' 100. 9.8 and 9.6 are
-  within noise on that sample. The claim is parity with their harness.
-- The contests date from spring 2025 and the model may have seen them in
-training. Contamination cannot be ruled out for any column.
-- Fable 5's column is one call per problem, from the authors' files. It was
-  not run in this harness.
-- On these ten the authors' own five-pass data put Fable 5 at 80 and their
-harness at 96. The workflow's 98 reproduces that gap. Across their full 100,
-  harness and Fable are 92.4 and 90.4 (their `patched_verdicts.json`).
-- The loop sees only the public samples; the score is the hidden tests.
-- The model ran on OpenRouter rather than a local machine.
-- The one lost problem: the manager invented a wrong counterexample and the
-  team rewrote a correct program. Twice elsewhere a correct program was
-  overwritten and then recovered. Both are gaps in the authors' loop and were
-  kept as is.
+- Sample: ten problems, five passes, against the authors' 100. 9.8 and 9.6
+  are within noise. The claim is parity with their harness.
+- Contamination: the contests date from spring 2025; the model may have seen
+  them. Not ruled out for any column.
+- Fable 5: one call per problem, from the authors' files, not run in this
+  harness.
+- On these ten, the authors' own five-pass data: Fable 5 at 80, their harness
+  at 96. The workflow's 98 reproduces that gap. Across their full 100: 92.4
+  and 90.4 (their `patched_verdicts.json`).
+- The loop sees the public samples; the score is the hidden tests.
+- Host: OpenRouter, not a local machine.
+- The lost problem: the manager invented a wrong counterexample and the team
+  rewrote a correct program. Twice elsewhere a correct program was overwritten
+  and then recovered. Both are gaps in the authors' loop, kept as is.
 
-The parity check (every request byte for byte against their code), the hosts,
-the changes it took and the first run's findings are in [NOTES.md](NOTES.md).
-The same result on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
+Parity check (every request byte for byte against their code), hosts, the
+changes it took, the first run's findings: [NOTES.md](NOTES.md). The result
+on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
 
 ## Run it
 
@@ -67,15 +65,13 @@ The same result on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/doc
     cp -r ../memdoor/examples/workflows/team-solve/sample/* .    # task.md + tests/1.in … 5.out
     memdoor workflow run team-solve --wait   # exit 0 when every sample passes
 
-For your problem, replace `task.md` and put paired `tests/N.in` /
-`tests/N.out` beside it. The program is `solution.py`. It reads stdin and is
-compared to the samples with `diff`. It needs Python 3 and bash. `/workflow`
-in `memdoor tui` draws the run live.
+Your problem: `task.md` and paired `tests/N.in` / `tests/N.out`. Program:
+`solution.py`, stdin in, compared to the samples with `diff`. Needs Python 3
+and bash. `/workflow` in `memdoor tui` draws the run live.
 
-The steps name no model. Whatever `/model` is pinned to answers, a local one
-included ([how to connect
-one](https://memdoor.ai/docs/providers#a-local-runtime-no-key)). To change a
-role, edit its prompt in `steps/`.
+The steps name no model; the `/model` pin answers, a local one included
+([how to connect one](https://memdoor.ai/docs/providers#a-local-runtime-no-key)).
+A role is its prompt in `steps/`.
 
 ## How it works
 
@@ -94,8 +90,7 @@ plan ──┬── ideate-a ──┬── solve ── test ── review �
 | `repair` | agent | the instructions | a fixed `solution.py`, or nothing |
 | `verify` | command | `tests/` | the verdict: a nonzero exit fails the run |
 
-Every agent prompt says "fresh context, read the files, do not rely on chat".
-The paper credits that ledger discipline for the gain. Each step is one YAML
-file in `steps/` in the format of
-[mario](https://github.com/guregodevo/mario), the engine underneath.
-`requires:` is the DAG.
+Every agent prompt: "fresh context, read the files, do not rely on chat"; the
+paper credits that ledger discipline for the gain. One YAML file per step in
+`steps/`, in the format of [mario](https://github.com/guregodevo/mario), the
+engine underneath. `requires:` is the DAG.

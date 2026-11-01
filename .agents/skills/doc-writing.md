@@ -22,6 +22,14 @@ Internal engineering documentation maintained by an experienced team, written
 by a competent engineer for other competent engineers. Not a polished
 AI-generated blog post.
 
+A reference, not prose. Drop the sentences, keep the facts. Label and value:
+"Judged reads: search hits, file sections and log lines filtered against the
+task." No narrative, no scene-setting, no "you" walkthrough unless it is a
+numbered procedure. A mechanism gets one explaining sentence only where a
+reader could not infer it. The exemplar is web/public/docs/features.md as
+rewritten on 2026-11-01 (864 to 650 words); Greg called three lighter passes
+"still full of slop" and this one the bar.
+
 ## Rules
 
 ### Remove AI writing patterns

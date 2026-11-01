@@ -1,24 +1,23 @@
 # Boundaries
 
-What the agent may touch is a set of rules you can read.
+What the agent may touch, as rules you can read.
 
 ## What holds by default
 
 - **Writes stay in the project.** File tools write only under the folder
-  you launched `memdoor tui` from (or the editor's project). Reads go
+  `memdoor tui` was launched from (or the editor's project). Reads go
   anywhere, as a shell could.
 - **Commands start in the project** and can reach the rest of the machine.
   A short hard-coded net refuses the catastrophic ones (wiping a disk,
   recursing over `/`).
-- **A secret in a tool's output is redacted** before the model or the window
-  sees it: an API key printed by a script shows as a mask.
+- **Secrets in tool output are redacted** before the model or the window
+  sees them: an API key printed by a script shows as a mask.
 
 ## The rules you add
 
-A guard is a rule on a tool: a tool name (`bash`, `apply_patch`, or `*` for
-any) and a regular expression over the call's input. A call that matches is
-refused with your message, and the agent reads it and works another
-way instead of asking you.
+A guard: a tool name (`bash`, `apply_patch`, or `*`) and a regular
+expression over the call's input. A matching call is refused with your
+message. The agent reads it and works another way.
 
 ```bash
 memdoor guards add --tool '*'  --pattern '\.env\b'        --message 'secrets stay out of reach'
@@ -29,9 +28,9 @@ memdoor guards                 # the rules, numbered
 memdoor guards remove 3
 ```
 
-The rules hold for every agent in the workspace on every turn, however the
-turn started: a window, a scheduled check, a workflow, an editor session.
-Setting them takes an admin's sign-in; the first account on a machine is one.
+Scope: every agent in the workspace, every turn, from a window, a scheduled
+check, a workflow or an editor session. Setting them takes an admin
+sign-in; the first account on a machine is one.
 
 What the agent sees when a rule fires:
 
@@ -45,22 +44,22 @@ It finishes with the branch unpushed and says so.
 
 ## Ask before every change
 
-Where an unattended agent is not allowed, approval mode asks in the window
-before every command, file write and MCP tool call:
+Approval mode asks in the window before every command, file write and MCP
+tool call:
 
 ```bash
 export MEMDOOR_APPROVE=changes
 ```
 
-The picker offers Yes, Yes for this session, or No. No ends the call with a
-result the agent acts on; no answer in five minutes is a no. Reads never ask.
-The setting is `approve` in the workspace settings.
+Picker: Yes, Yes for this session, No. No ends the call with a result the
+agent acts on. No answer in five minutes is a no. Reads never ask. Workspace
+setting: `approve`.
 
 ## A gate in a run
 
-In a workflow, the deterministic harness, the boundary is a step: a task marked
-external waits for your approval with the diff in front of you, and nothing
-after it starts until you say so. See [Workflows](/docs/workflows).
+In a workflow, the deterministic harness, the boundary is a step: a task
+marked external waits for your approval with the diff in front of you.
+Nothing after it starts until you say so. See [Workflows](/docs/workflows).
 
 ## Next
 

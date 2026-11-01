@@ -1,9 +1,8 @@
 # The LCB-100 bench: team workflow against a single call, Qwen3.8-27B
 
-The parity result on the authors' first ten problems (9.8 of 10 over five
-passes) is written up at
-[memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve). This folder
-holds the earlier 100-problem bench below.
+The parity result on the authors' first ten problems (9.8 of 10, five
+passes): [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
+This folder: the earlier 100-problem bench.
 
 GVS5H's 100 hardest LiveCodeBench problems (`ids.json`, release_v6, contests
 of 2024-12 to 2025-04: 73 AtCoder, 27 LeetCode). Each is graded on all of its
@@ -26,45 +25,42 @@ Model line on every role: `openrouter:qwen/qwen3.8-27b throughput thinking off`.
 | single call | **35 / 100** | 32.9% | 40.7% | 63 |
 | team workflow | **47 / 100** | 42.5% | 59.3% | 150 |
 
-Paired on the 100: both arms solve 30, only the team 17, only the single call 5.
-The whole bench was 828 model calls, 6.8M tokens in and 2.2M out. It cost
-$3.27 on OpenRouter (Cerebras, fp16) and took about 75 minutes with 6 problems
-in flight.
-`results/*.tsv` has every problem: id, run state, samples passed, all tests
-passed, seconds.
+Paired on the 100: both arms 30, team only 17, single call only 5. The bench:
+828 model calls, 6.8M tokens in, 2.2M out, $3.27 on OpenRouter (Cerebras,
+fp16), about 75 minutes with 6 problems in flight. `results/*.tsv`: every
+problem with id, run state, samples passed, all tests passed, seconds.
 
 ## What this is not
 
-- **Not the paper's setting.** GVS5H gave Qwen3.8-27B up to 128K tokens to
-  think and reports 66.8% single call, 92.4% orchestrated. Here thinking is off.
-  With it on, the model reasoned past the fast host's 32K output cap on a
-  planning prompt and wrote nothing. The hosts that allow 235K outputs run at
-  34 to 44 tokens a second, a day of wall clock for the set. These are
-  thinking-off numbers. The finding is the gap between the arms rather than
-  the absolute score.
-- **Not a Fable comparison.** Fable 5's 90.4% in the paper is a thinking-on,
-  single-call figure on the same problems. Nothing here reaches it.
-- **An old benchmark.** The contests predate the model's training cutoff, a
+- Not the paper's setting: GVS5H gave Qwen3.8-27B up to 128K tokens to think
+  and reports 66.8% single call, 92.4% orchestrated. Here thinking is off:
+  with it on, the model reasoned past the fast host's 32K output cap on a
+  planning prompt and wrote nothing, and the hosts that allow 235K outputs run
+  at 34 to 44 tokens a second, a day of wall clock for the set. The finding is
+  the gap between the arms, not the absolute score.
+- Not a Fable comparison: Fable 5's 90.4% in the paper is thinking-on, single
+  call, on the same problems. Nothing here reaches it.
+- An old benchmark: the contests predate the model's training cutoff, the
   contamination concern raised on the HN thread. The paired comparison on
-  identical problems and settings holds. The absolute pass rate means less.
+  identical problems and settings holds; the absolute pass rate means less.
 
 ## What it took
 
-- A task's `model:` line now carries the host preference and the thinking
-  switch (`throughput`, `order …`, `thinking off`). The same model answered at
-  885 tokens a second on the throughput host and 44 on the cheapest.
-- The agent-role variant (each role a coder turn with tools) was tried first
-  on Groq: 250K tokens a minute rate limit, over two dollars a problem, five
-  to eight minutes a role. The one-call-per-role shape is the paper's and
-  costs a tenth of a cent per role.
-- `grade.py --private` stops at the first failing test. A timing-out solution
-otherwise costs 6 s on each of forty hidden tests for the same verdict.
+- A task's `model:` line carries the host preference and the thinking switch
+  (`throughput`, `order …`, `thinking off`): the same model at 885 tokens a
+  second on the throughput host, 44 on the cheapest.
+- The agent-role variant (each role a coder turn with tools), tried first on
+  Groq: a 250K tokens a minute rate limit, over two dollars a problem, five to
+  eight minutes a role. One call per role is the paper's shape, a tenth of a
+  cent per role.
+- `grade.py --private` stops at the first failing test; a timing-out solution
+  otherwise costs 6 s on each of forty hidden tests for the same verdict.
 
 ## Run it again
 
-Needs Python 3 with `datasets<4` and numpy, the LiveCodeBench fork from the
-GVS5H repo (`LCB_RUNNER=<path to codebase/livecodebench>`), a gateway with
-an OpenRouter key, and about four dollars.
+Python 3 with `datasets<4` and numpy; the LiveCodeBench fork from the GVS5H
+repo (`LCB_RUNNER=<path to codebase/livecodebench>`); a gateway with an
+OpenRouter key; about four dollars.
 
     export LCB_BENCH=$PWD LCB_PYTHON=<python with datasets>
     $LCB_PYTHON dump.py ids.json problems.json        # the problems and tests, from Hugging Face

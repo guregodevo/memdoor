@@ -1,9 +1,9 @@
 # team-solve: working notes
 
-The record behind the [README](README.md) and the result page at
-[memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve): how parity with the authors'
-harness was checked, what differed, what it took, where it lost, and what the
-first run found. Every run is in [`bench/results/parity-5pass/`](bench/results/parity-5pass/).
+The record behind the [README](README.md) and
+[memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve): the parity
+check, what differed, what it took, where it lost, what the first run found.
+Every run: [`bench/results/parity-5pass/`](bench/results/parity-5pass/).
 
 ## Same as the authors'
 
@@ -18,25 +18,25 @@ reply with no text answered by its reasoning.
 
 ## Different: the host
 
-Theirs was their own vLLM in FP8. Ours is OpenRouter, asked in the order
-Modal, CoreWeave, Parasail, Wafer until Modal slowed to 14 tokens/s, then the
-FP8 hosts only (Wafer, Parasail, CoreWeave). Modal served 203 calls, CoreWeave
-27 and Wafer 115. Every call of the FP8 order went to Wafer. Three runs were
-moved mid-run with their finished steps kept (`log/host-switch.txt`). Modal
-does not publish its precision.
+Theirs: their own vLLM in FP8. Ours: OpenRouter, host order Modal, CoreWeave,
+Parasail, Wafer until Modal slowed to 14 tokens/s, then the FP8 hosts only
+(Wafer, Parasail, CoreWeave). Calls served: Modal 203, CoreWeave 27, Wafer
+115; every call of the FP8 order went to Wafer. Three runs moved mid-run with
+their finished steps kept (`log/host-switch.txt`). Modal does not publish its
+precision.
 
 Local paths in the run scripts and in four tracebacks a manager was shown read
 `<scratch>` and `$HOME`. Nothing else in the runs is edited.
 
 ## What it took
 
-The problem text was the mismatch. Our first version wrote its own task file
+The mismatch was the problem text: the first version wrote its own task file
 around each problem, and the 27B planned worse from it than from the authors'
 exact LiveCodeBench text (arc196_c's plan: 0 of 2 against 2 of 2). Four
-Memdoor changes let a workflow ask what their harness asks: a task answers
-with the model's reasoning when it wrote no text, `top_p`/`top_k` on a model
-line, `mark_cutoff` for a reply cut at the cap, and a call that runs on its
-own four-hour clock.
+Memdoor changes so a workflow can ask what their harness asks: a task answers
+with the model's reasoning when it wrote no text; `top_p`/`top_k` on a model
+line; `mark_cutoff` for a reply cut at the cap; a call on its own four-hour
+clock.
 
 ## Where it lost
 
@@ -63,10 +63,10 @@ took a median of 40 minutes of model time (the longest 4 hours) and $0.39.
 
 ## What the first run found (2026-10-25)
 
-The coder wrote the workflow's files itself from a description of the method.
-The sample: count the substrings of a string over
-{a, b, c} with equal counts of each letter, up to 200,000 characters. Run on
-the default ladder through OpenRouter:
+The coder wrote the workflow's files from a description of the method.
+Sample: count the substrings of a string over {a, b, c} with equal counts of
+each letter, up to 200,000 characters. Run on the default ladder through
+OpenRouter:
 
 - 8 of 8 steps, 5 of 5 samples. The solver took ideator A's prefix-state
   method, O(N) with a dictionary of (a−b, a−c) pairs. A brute force on 300

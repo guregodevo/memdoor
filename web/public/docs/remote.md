@@ -2,20 +2,20 @@
 
 ![/remote: the same terminal on a phone, sealed end to end](/remote.cast)
 
-Type `/remote` in the TUI and scan the code. The page that opens is the TUI
-itself, running on your computer and drawn on your phone.
+`/remote` in the TUI prints a link and a QR code. The page is the TUI,
+running on your computer and drawn on your phone.
 
-The gateway listens on this machine's network, so the link is `http://<its
+The gateway listens on this machine's network. The link is `http://<its
 address>:18789/r/…` and the gateway is its own relay. A phone on the same
-Wi-Fi, VPN or Tailscale opens the conversation there with no account and no
-plan. The same holds for [a box that stays on](/docs/gateway). Only a gateway
-kept to localhost (`MEMDOOR_HOST=localhost`) goes through the memdoor.ai
-relay, which is part of the hosted gateway. `/remote` says so. Your relay at
-`MEMDOOR_REMOTE_URL` is free.
+Wi-Fi, VPN or Tailscale opens the conversation with no account and no plan.
+Same on [a box that stays on](/docs/gateway). A gateway kept to localhost
+(`MEMDOOR_HOST=localhost`) goes through the memdoor.ai relay, part of the
+hosted gateway; `/remote` says so. A relay of yours at `MEMDOOR_REMOTE_URL`
+is free.
 
 ## Turn it on
 
-In the conversation you want to take with you:
+In the conversation:
 
 ```
 > /remote
@@ -29,51 +29,44 @@ In the conversation you want to take with you:
   cannot read. /remote off revokes both links.
 ```
 
-Scan the code with your phone or open the link in any browser. No account and
-no plan: the gateway serves the page on its own address.
+Scan the code or open the link in any browser. No account, no plan: the
+gateway serves the page on its own address.
 
-Only a gateway kept to localhost (`MEMDOOR_HOST=localhost`) goes through the
-memdoor.ai relay. Its link reads `https://memdoor.ai/r/<id>#k=…`. For that
-one, sign in once so the relay knows whose terminal it is:
+A gateway kept to localhost (`MEMDOOR_HOST=localhost`) goes through the
+memdoor.ai relay; its link reads `https://memdoor.ai/r/<id>#k=…`. That one
+needs a sign-in, once:
 
 ```
 $ memdoor login you@example.com
 ```
 
-Once `/remote` is on, your gateway's process holds the link as the terminal
-end of the relay. Close the window, or put the laptop to sleep
-when the gateway is on a box, and the link still opens the conversation. A
-gate is still answered from the phone. A gateway restart brings every link
-back. The same link comes from any window on the conversation, on any machine,
-and with no window from `memdoor remote` (below). `/remote off` revokes it
-everywhere.
+Once on, the gateway's process holds the link as the terminal end of the
+relay. The window may close; a laptop may sleep when the gateway is on a box;
+the link still opens the conversation and a gate is still answered from the
+phone. A gateway restart brings every link back. The same link comes from any
+window on the conversation, on any machine, and from `memdoor remote`
+(below). `/remote off` revokes it everywhere.
 
 ## What you can do from the page
 
-Everything you can do at the keyboard, because it is the same program:
+The same program as the keyboard: watch a turn as it runs, tool frame by tool
+frame; answer a question; stop a turn; type the next request or any slash
+command.
 
-- watch a turn as it runs, tool frame by tool frame;
-- answer a question the agent asks;
-- stop a turn that is going the wrong way;
-- type the next request, or any slash command.
-
-A bar under the screen has the keys a phone's keyboard lacks: `Esc`, `Tab`, the
-arrows, `Enter`, `Ctrl+C` and `Ctrl+O`.
-
-**Chat**, in the corner, switches to a plain reading view of the same
-conversation with a box to send a turn. **Stop** interrupts the running turn
-from either view.
+A bar under the screen has the keys a phone's keyboard lacks: `Esc`, `Tab`,
+the arrows, `Enter`, `Ctrl+C` and `Ctrl+O`. Chat, in the corner, switches to
+a plain reading view with a box to send a turn. Stop interrupts the running
+turn from either view.
 
 ## When it works
 
-While your gateway is up. It holds the link once `/remote` turned it on, so
-the window may close and the page keeps working. If the gateway is down (a
-laptop asleep), the page waits; when the gateway is back, every link is back
-with it and nothing needs scanning again.
+While your gateway is up. The window may close. If the gateway is down (a
+laptop asleep) the page waits; when it is back, every link is back, nothing
+to scan again.
 
-Several pages can be open at once, your phone and your laptop for instance.
-They all show the same screen. A page that opens later is shown the screen so
-far. Up to eight pages per conversation, watch-only pages apart (below).
+Several pages at once (phone and laptop) show the same screen; a page that
+opens later is shown the screen so far. Up to eight pages per conversation,
+watch-only pages apart (below).
 
 Where the page connects depends on where the gateway listens:
 
@@ -84,12 +77,11 @@ gateway ──http──▶ viewer              gateway ──dials out──▶
 ```
 
 On its own address the gateway serves the page and sends every frame to every
-viewer. That works on a LAN, a VPN, Tailscale or a VPS; a laptop behind NAT
-cannot be reached. Kept to localhost, the gateway dials out to memdoor.ai
-once with your account token (the hosted gateway's relay), each viewer dials
-memdoor.ai with a proof from the link, and the relay fans out sealed frames
-it cannot read, so the gateway sends each frame once. That is the path for
-an audience anywhere.
+viewer: a LAN, a VPN, Tailscale or a VPS; a laptop behind NAT cannot be
+reached. Kept to localhost, the gateway dials out to memdoor.ai once with
+your account token, each viewer dials memdoor.ai with a proof from the link,
+and the relay fans out sealed frames it cannot read; the gateway sends each
+frame once. That is the path for an audience anywhere.
 
 ## A link to watch, not to drive
 
@@ -104,30 +96,27 @@ an audience anywhere.
   http://192.168.1.20:18789/r/0L17wXRvEC5IzW_D#v=…
 ```
 
-Send it to someone who should follow along. Their page says **watching**: no
-key bar, no Stop, no box to send a turn, and your terminal drops anything it
-sends except a request to see. The watch-only link does not
-contain your link's key and cannot be turned into it. `/remote off` revokes
-both links.
+Their page says watching: no key bar, no Stop, no box to send a turn; your
+terminal drops anything it sends except a request to see. The watch-only
+link does not contain your link's key and cannot be turned into it. `/remote
+off` revokes both links.
 
 ## An audience
 
-The watch link is how a session is streamed or paired on. Up to 200 pages
-may watch at once, apart from the eight the full link allows. Each sees the
-terminal as you see it, sealed the same way, with no account and nothing
-uploaded anywhere. `/remote view` prints a second form of the link with
-`?live=1` before the `#`: the terminal alone, no header, for a stream, a
-projector or an OBS browser source. Put the watch link in the chat or the live
-link in the scene. A watcher's opening starts the terminal, so the stream
-shows before you open the full link. A page of yours that opens later
-resizes it. Pair programming is the full link in a second pair of hands: both
-type into the same window.
+Up to 200 pages may watch at once, apart from the eight the full link allows.
+Each sees the terminal as you see it, sealed the same way, no account,
+nothing uploaded. `/remote view` also prints the link with `?live=1` before
+the `#`: the terminal alone, no header, for a stream, a projector or an OBS
+browser source. The watch link goes in the chat, the live link in the scene.
+A watcher's opening starts the terminal, so the stream shows before you open
+the full link; a page of yours that opens later resizes it. Pair
+programming: the full link in a second pair of hands, both typing into the
+same window.
 
 ## From a script, no window
 
-`memdoor remote` does what `/remote` does in the window, headless, for the
-conversation a run printed. The gateway holds the link, so `--gateway <box>`
-names whose.
+`memdoor remote` is `/remote` headless, for the conversation a run printed.
+The gateway holds the link; `--gateway <box>` names whose.
 
 ```bash
 memdoor remote <id>                    # the link on stdout, one line; the gateway holds the conversation on it
@@ -139,13 +128,13 @@ memdoor --gateway <box> remote <id>    # a conversation on that box: the box hol
 ```
 
 The id is the one `memdoor run` and `memdoor resume` print; any unique prefix
-works. Stdout is the link and nothing else, so `memdoor remote --last |
-pbcopy` works. The title, the watch-only link and the QR code go to stderr, so
-a job's log shows a code your phone scans off the screen. The command returns
-at once: the gateway holds the link with no window and no command open and
-brings it back when it restarts. The same link opens the conversation the next
-time, from the window or from the command. A gateway older than this command
-cannot hold a link, and the command says so.
+works. Stdout is the link alone, so `memdoor remote --last | pbcopy` works.
+Title, watch-only link and QR code go to stderr, so a job's log shows a code
+a phone scans off the screen. The command returns at once: the gateway holds
+the link with no window and no command open and brings it back on restart.
+The same link opens the conversation next time, from the window or the
+command. A gateway older than this command cannot hold a link, and the
+command says so.
 
 ```
 $ memdoor remote --last
@@ -159,12 +148,11 @@ held by your gateway, on 192.168.1.20:18789: it works with nothing open here, an
 
 ### Finishing a CI run from your phone
 
-A job that started a run with `memdoor run` hands it to you with that line.
-The job starts the gateway in the step and `wait`s on it at the end, the link
-open, until you are done or the job's timeout ends it. A runner's address is
-not reachable from a phone, so the job keeps its gateway to localhost
-(`MEMDOOR_HOST: localhost`) and the link goes through the memdoor.ai relay.
-The runner needs the hosted gateway's account token in
+The job starts the gateway in the step, runs `memdoor run`, prints the link,
+and `wait`s on the gateway until you are done or the job's timeout ends it. A
+runner's address is not reachable from a phone, so the job keeps its gateway
+to localhost (`MEMDOOR_HOST: localhost`) and the link goes through the
+memdoor.ai relay. The runner needs the hosted gateway's account token in
 `MEMDOOR_BILLING_TOKEN`; on your machine `memdoor login` keeps it in
 `~/.memdoor/billing-token`.
 
@@ -191,8 +179,8 @@ stays on](/docs/gateway).
 
 ### The receipt
 
-The steps below ran on 12 October 2026 against a gateway on a scratch
-machine, in this order:
+Run on 12 October 2026 against a gateway on a scratch machine, in this
+order:
 
 | Step | What happened |
 |---|---|
@@ -205,8 +193,7 @@ machine, in this order:
 
 ## Sharing a conversation
 
-`/share` is the other kind of link: the conversation as it is now, read-only,
-for someone who should read it later.
+`/share`: the conversation as it is now, read-only, for later reading.
 
 ```
 > /share
@@ -216,27 +203,27 @@ for someone who should read it later.
   https://memdoor.ai/s/z8eKiSvRuHMsIGES#k=…
 ```
 
-It holds what was asked and what was answered, without tool output. Anything
-that looks like a key, a token or a password is replaced by `[redacted]`
-before it leaves your computer, and the rest is encrypted there with a key
-that is only in the link, so memdoor.ai stores bytes it cannot read. `/unshare` deletes
-every shared link to the conversation. Sharing needs a memdoor.ai sign-in
-(`memdoor login you@example.com`). `/remote` on your gateway does not.
+What was asked and answered, without tool output. Anything that looks like a
+key, a token or a password is replaced by `[redacted]` before it leaves your
+computer; the rest is encrypted there with a key that is only in the link, so
+memdoor.ai stores bytes it cannot read. `/unshare` deletes every shared link
+to the conversation. Sharing needs a memdoor.ai sign-in (`memdoor login
+you@example.com`); `/remote` on your gateway does not.
 
 ## What travels, and who can read it
 
-Your files stay on your computer. What travels is the screen and your
-keystrokes, end-to-end encrypted, through your gateway or through the
-memdoor.ai relay when the gateway is kept to localhost. The key is only in the
-link, after the `#`, the part of a link a browser never sends to a server. The
-relay forwards what it cannot read.
+Files stay on your computer. What travels: the screen and your keystrokes,
+end-to-end encrypted, through your gateway or through the memdoor.ai relay
+when the gateway is kept to localhost. The key is only in the link, after
+the `#`, the part a browser never sends to a server. The relay forwards what
+it cannot read.
 
 ## The link is the key
 
-Anyone who has the link can drive the agent in that conversation, and the
-agent runs commands on your computer. Treat it like a password: open it on
-your devices, and run `/remote off` if it went anywhere else. The old link
-then opens nothing and the next `/remote` makes a new one.
+Anyone with the link can drive the agent in that conversation, and the agent
+runs commands on your computer. Treat it like a password: open it on your
+devices; `/remote off` if it went anywhere else. The old link then opens
+nothing and the next `/remote` makes a new one.
 
 ## Commands
 

@@ -1,11 +1,10 @@
 # The harness
 
-Memdoor checks the agent's work so you do not have to watch it.
+Memdoor checks the agent's work so you do not watch it.
 
 ## Who decides: the decision model
 
-Each check on this page is a question to a second, small model. It does
-not write code or chat. It is asked one yes-or-no question
+A second, small model. It writes no code. It gets one yes-or-no question
 at a time with the evidence attached and answers with a probability:
 
 - Is this turn finished, given what its tool calls show?
@@ -13,16 +12,16 @@ at a time with the evidence attached and answers with a probability:
 - Is this run going in circles?
 - Did this command fail, even though it exited 0?
 
-Memdoor acts only when the probability crosses a threshold you can change,
-for example 0.7 to send a turn back. The coding model does the work. The
-decision model decides whether the work needs you. It runs on a decision key
-(`memdoor connect typesafe`), else the OpenRouter key you code with. On a vendor key, a company's AI gateway or a ChatGPT plan alone it
-stays off until a decision key is set.
+Memdoor acts when the probability crosses a threshold you can change,
+for example 0.7 to send a turn back. Key: a decision key
+(`memdoor connect typesafe`), else the OpenRouter key you code with. On a
+vendor key, a company's AI gateway or a ChatGPT plan alone: off until a
+decision key is set.
 
 ## Every turn ends on a receipt
 
-When a turn changes code, its last line says what happened, taken from the
-tool calls rather than the model's summary:
+The last line of a turn that changes code, taken from the tool calls, not
+from the model's summary:
 
 ```
 ✓ checked: 2 files changed · `go test ./...` PASS
@@ -35,26 +34,25 @@ counts as failing. Reading files is not a check.
 
 ## Unfinished work goes back, not to you
 
-If the receipt says the turn is not done (a file changed and nothing ran)
-the agent gets one more round with that reason at the top of its prompt
-before the turn ends. You see the result.
+Receipt not done (a file changed, nothing ran): the agent gets one more
+round with that reason at the top of its prompt. Then the turn ends.
 
 ## Questions it can answer itself don't reach you
 
-Before the agent asks you something, Memdoor asks whether it could find out
-by reading, running or checking. If yes, the question goes back to the agent
-with "find out yourself". A question asked twice gets through.
+Before a question reaches you, the decision model is asked whether the
+agent could find out by reading, running or checking. If yes, the question
+goes back with "find out yourself". A question asked twice gets through.
 
 ## A stuck run ends with a summary, not a spin
 
-Repeating the same call, or a test that keeps failing without getting
-closer, ends the turn with what is done, what failed and what to try next.
+The same call repeated, or a test failing without getting closer: the turn
+ends with what is done, what failed and what to try next.
 
 ## Let it run: a token budget
 
-Set `turn_token_budget` (a number of tokens) and a turn keeps going. Each round continues from where the last one said it would go next,
-until the receipt shows it done or the budget is spent. It asks its
-questions first, then works.
+`turn_token_budget` (tokens): the turn continues round after round, each
+from where the last said it would go, until the receipt shows done or the
+budget is spent. Questions first, then work.
 
 ```bash
 TOKEN=$(memdoor auth token)
@@ -65,13 +63,11 @@ curl -X PUT http://localhost:18789/api/workspace/settings \
 
 ## For longer work, a workflow
 
-A turn is one task. When the work has steps, run it as a
-[workflow](/docs/workflows). Each step is done only when its target exists.
-A failed run resumes where it stopped. You are asked only at the gates you
-put in.
+A turn is one task. Work with steps runs as a [workflow](/docs/workflows),
+the deterministic harness: a step is done when its target exists, a failed
+run resumes where it stopped, you are asked at the gates you put in.
 
-Without a decision model the receipts still show and nothing is judged. You
-read them yourself.
+Without a decision model: receipts show, nothing is judged.
 
 ## Next
 

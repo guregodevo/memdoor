@@ -1,15 +1,14 @@
 # Models
 
-You do not have to pick a model to start. Each agent has a ladder with the
-cheapest rung first. The footer names the model that answered and why.
+No model to pick at the start. Each agent has a ladder, cheapest rung first.
+The footer names the model that answered and why.
 
 ## Your company's key
 
-At a company that approves vendors (Claude Code on an Anthropic key, Codex
-on an OpenAI one, Gemini) Memdoor runs on the key the company gave you.
-Nothing else leaves your machine: no OpenRouter, no memdoor.ai, no
-catalogue, no web search. The data path is the one your security team
-reviewed for those tools.
+A company that approves vendors (Claude Code on an Anthropic key, Codex on
+an OpenAI one, Gemini): Memdoor runs on that key. Nothing else leaves the
+machine: no OpenRouter, no memdoor.ai, no catalogue, no web search. The
+data path is the one your security team reviewed for those tools.
 
 ```
 export ANTHROPIC_API_KEY=…            # or OPENAI_API_KEY / GEMINI_API_KEY
@@ -17,9 +16,8 @@ export MEMDOOR_MODEL=claude-sonnet-5  # OpenAI and Gemini need the model named
 cd your-project && memdoor
 ```
 
-A company with an **AI gateway** of its own, with provider integrations set
-up in its UI and a provider slug per model, needs two variables and the
-slug:
+A company AI gateway, with provider integrations in its UI and a provider
+slug per model: two variables and the slug.
 
 ```
 export AI_GATEWAY_BASE_URL=https://ai-gateway.example.com/ai
@@ -27,28 +25,27 @@ export AI_GATEWAY_TOKEN=…             # or any *_AI_GATEWAY_TOKEN your preset 
 export MEMDOOR_MODEL=my-provider-slug
 ```
 
-Memdoor calls `POST <base>/v1/responses` with `{"model": "<slug>", "input":
-…}` as the gateway's own curl example does, and nothing else.
-`AI_GATEWAY_API=chat` if yours speaks chat/completions instead. A proxy in
-front of a vendor is `ANTHROPIC_BASE_URL`, `OPENAI_BASE_URL` or
-`GEMINI_BASE_URL`. Cost-attribution tags are
-`MEMDOOR_VENDOR_HEADERS="X-Team: data; X-Email: you@corp.example"`, sent
-on every request. The gateway's first log line says which key serves it
-and `/model` shows that one model. Workflows run locally with no memdoor.ai
-call. The decision model stays off unless the gateway holds a decision key. The full table of the hosts the binary can name, and when, is
-[docs/SECURITY.md](/docs/security).
+Request: `POST <base>/v1/responses` with `{"model": "<slug>", "input": …}`,
+as the gateway's own curl example, nothing else. `AI_GATEWAY_API=chat` for
+chat/completions. A proxy in front of a vendor: `ANTHROPIC_BASE_URL`,
+`OPENAI_BASE_URL`, `GEMINI_BASE_URL`. Cost-attribution tags:
+`MEMDOOR_VENDOR_HEADERS="X-Team: data; X-Email: you@corp.example"`, on every
+request. The gateway's first log line names the key serving it; `/model`
+shows that one model. Workflows run locally with no memdoor.ai call. The
+decision model stays off without a decision key. Every host the binary can
+name, and when: [docs/SECURITY.md](/docs/security).
 
 ## Connect a provider
 
 Every provider, its key, what its API states and its fast model:
 [Providers](/docs/providers).
 
-Models come from providers, each with a list: OpenRouter (the
-catalogue with real prices), the company AI gateway, Anthropic, OpenAI,
-Gemini, Groq, xAI Grok, DeepSeek, Baseten and any OpenAI-compatible endpoint
-you add. `memdoor providers` shows them connected or not, with where each
-credential came from and ● on the one answering. `/model search` and
-`/model <id>` search and pin across every connected provider.
+Providers, each with a list: OpenRouter (the catalogue with real prices),
+the company AI gateway, Anthropic, OpenAI, Gemini, Groq, xAI Grok, DeepSeek,
+Baseten, any OpenAI-compatible endpoint you add. `memdoor providers`: each
+one connected or not, where its credential came from, ● on the one
+answering. `/model search` and `/model <id>` work across every connected
+provider.
 
 ```
 memdoor connect                 # pick the kind, base URL prefilled, token unseen
@@ -56,23 +53,21 @@ memdoor connect anthropic       # straight to one kind
 memdoor connect custom --probe --base https://host/v1 --key MY_TOKEN_VAR
 ```
 
-Before anything is kept the gateway reads the provider's model list and
-makes one small call. A wrong URL or token fails there, in words. The
-token can be the value, the NAME of an environment variable that holds it,
-or a `!command` that prints it (Keychain, 1Password, Vault). The file keeps
-what you typed and never the resolved secret. `--remove <id>` forgets one.
-When two providers list the same id, name the provider:
-`/model groq:qwen/qwen3.8-27b`.
+Before keeping anything the gateway reads the provider's model list and
+makes one small call; a wrong URL or token fails there, in words. Token
+forms: the value, the NAME of an environment variable, or a `!command` that
+prints it (Keychain, 1Password, Vault). The file keeps what you typed, never
+the resolved secret. `--remove <id>` forgets one. Two providers with the
+same id: `/model groq:qwen/qwen3.8-27b`.
 
 ## A local LLM with janis
 
-A model on your machine, with no key and no provider:
-[janis](https://github.com/guregodevo/janis) is Memdoor's runtime. One
-Go server runs the open models on a Mac's GPU through MLX and on an NVIDIA
-box through CUDA. It serves both the chat and the
-[decision model](/docs/no-babysitting#who-decides-the-decision-model) to
-Memdoor. Ollama, llama.cpp and LM Studio work the same way for the chat
-half.
+A model on your machine, no key, no provider:
+[janis](https://github.com/guregodevo/janis) is Memdoor's runtime. One Go
+server runs open models on a Mac's GPU through MLX and on an NVIDIA box
+through CUDA. It serves the chat model and the
+[decision model](/docs/no-babysitting#who-decides-the-decision-model).
+Ollama, llama.cpp and LM Studio serve the chat half.
 
 ```
 git clone https://github.com/guregodevo/janis && cd janis
@@ -82,28 +77,26 @@ make build && go build -o janis ./cmd/janis   # on Linux with a GPU: ./scripts/f
 memdoor connect local                         # finds it; chat and decisions, no token
 ```
 
-In the window `/model search` lists what janis serves at no price.
-`/model <id>` pins one and the footer names it on every answer. janis loads
-a model at the first request that names it and swaps when another is asked
-for. Pin the one you mean.
+`/model search` lists what janis serves, at no price. `/model <id>` pins
+one; the footer names it. janis loads a model at the first request naming
+it and swaps when another is asked for, so pin the one you mean.
 
-On a box with a GPU, the same thing through the ssh door, with your laptop
-and phone as windows onto it:
+On a GPU box, through the ssh door, laptop and phone as windows onto it:
 
 ```
 memdoor --gateway ssh://you@box connect local   # installs Memdoor on the box, finds janis there
 cd your-project && memdoor --gateway ssh://you@box
 ```
 
-Measured on a Google L4 at $0.71 an hour and nothing per token: Qwen3-8B
-about 38 tokens a second and Qwen3-Coder-30B-A3B (128 experts, 8 active)
-11. The numbers and what limits them are in janis's README. On janis the
-decision model runs there too. On the other runtimes decisions stay off.
+Measured on a Google L4 at $0.71 an hour, nothing per token: Qwen3-8B about
+38 tokens a second, Qwen3-Coder-30B-A3B (128 experts, 8 active) 11. Details
+in janis's README. On janis the decision model runs there too; on the other
+runtimes decisions stay off.
 
 ## The catalogue, at real prices
 
-Your OpenRouter key sees the catalogue, so the listing carries the
-list price you pay per million tokens:
+An OpenRouter key sees the catalogue, with the list price per million
+tokens:
 
 ```
 memdoor model                        # each agent's ladder, first rung first
@@ -111,8 +104,7 @@ memdoor model search glm             # tool-capable models matching "glm", newes
 memdoor model providers z-ai/glm-5.3 # its hosts: precision, context, uptime, price
 ```
 
-A model that cannot call a tool cannot run an agent turn, so the listing leaves
-those out.
+Models that cannot call a tool are left out: they cannot run an agent turn.
 
 ![/model: each agent's ladder at real prices; pin a rung or any model](/demo-model.cast)
 
@@ -130,10 +122,9 @@ In the TUI:
 | `/model auto` | Hand the choice back to the ladder, and drop the kept pin |
 | `/model-search sonnet` | Search the catalogue from the chat, then pin from the result |
 
-Pinning changes nothing else: same session, same history, same memory, same
-tools. The footer shows `pinned by you`. The pin is kept in
-`~/.memdoor/model.json` on the gateway. Every new conversation starts on it.
-A conversation that pins its own keeps that.
+A pin changes nothing else: same session, history, memory, tools. Footer:
+`pinned by you`. Kept in `~/.memdoor/model.json` on the gateway; every new
+conversation starts on it. A conversation with its own pin keeps that.
 
 ## What each turn cost
 
@@ -141,8 +132,8 @@ A conversation that pins its own keeps that.
 memdoor meter          # every turn: model served, tokens, duration
 ```
 
-Appended to `~/.memdoor/meter.jsonl` and never rewritten. Check it against
-your provider's invoice.
+Appended to `~/.memdoor/meter.jsonl`, never rewritten. Check it against
+the provider's invoice.
 
 ## Next
 

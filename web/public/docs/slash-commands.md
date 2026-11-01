@@ -1,6 +1,6 @@
 # Slash commands
 
-Everything you can type in the TUI. The `/` key opens a dropdown that filters as you type; `/help` prints the list in the session. Screens for most of these are in **[The TUI](/docs/tui)**; `/remote` has its own page, **[Remote control](/docs/remote)**.
+Everything you can type in the TUI. `/` opens a dropdown that filters as you type; `/help` prints the list. Screens: **[The TUI](/docs/tui)**. `/remote`: **[Remote control](/docs/remote)**.
 
 ## Models and cost
 
@@ -59,7 +59,7 @@ Everything you can type in the TUI. The `/` key opens a dropdown that filters as
 | `/exit` | Leave the TUI. Same as `Ctrl+C` |
 | `/help` | Print the whole list in the session |
 
-Your own commands: any `.md` file in `<project>/.agents/commands/` becomes a slash command named after the file (`review-pr.md` → `/review-pr`); `.claude/commands/` works as a legacy fallback. A name in both is offered once. They appear in the `/` dropdown and `/help`.
+Your own commands: any `.md` file in `<project>/.agents/commands/` is a slash command named after the file (`review-pr.md` → `/review-pr`); `.claude/commands/` is a legacy fallback. A name in both is offered once. Listed in the `/` dropdown and `/help`.
 
 ## Keys
 

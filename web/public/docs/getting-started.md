@@ -1,9 +1,9 @@
 # Getting Started
 
-Install, connect a key (OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, …)
-and run a first turn, in a terminal, in about two minutes. One binary for
-macOS (Apple Silicon or Intel), Linux and Windows. The three installers are
-tested on GitHub's runners on every change to them.
+Install, connect a key (OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, …),
+run a first turn. About two minutes. One binary for macOS (Apple Silicon or
+Intel), Linux and Windows. The three installers are tested on GitHub's
+runners on every change to them.
 
 ## Install
 
@@ -12,10 +12,9 @@ curl -fsSL https://memdoor.ai/install.sh | bash
 ```
 
 One binary at `~/.local/bin/memdoor`. No sudo, no Docker, no Python. The
-installer verifies the download against the published SHA-256 and refuses to
-install if it does not match. On Windows: `irm https://memdoor.ai/install.ps1 |
-iex`. The agent runs its commands in Git Bash when it is installed and otherwise
-in PowerShell. It is told which.
+download is verified against the published SHA-256; a mismatch is refused.
+Windows: `irm https://memdoor.ai/install.ps1 | iex`. Commands run in Git
+Bash when installed, else PowerShell; the agent is told which.
 
 ## Your key
 
@@ -23,26 +22,25 @@ in PowerShell. It is told which.
 export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, …
 ```
 
-On a ChatGPT Plus or Pro plan you can skip the key. `memdoor connect chatgpt` (or
-`/connect chatgpt` in the window) opens Sign in with ChatGPT and your plan's
-allowance answers Memdoor's turns. `memdoor connect --remove chatgpt` signs
-out. A Claude subscription cannot be used this way because Anthropic's terms forbid
-it. Claude needs an API key from console.anthropic.com.
+ChatGPT Plus or Pro, no key: `memdoor connect chatgpt` (or `/connect
+chatgpt` in the window) opens Sign in with ChatGPT; the plan's allowance
+answers the turns. `memdoor connect --remove chatgpt` signs out. A Claude
+subscription cannot be used this way (Anthropic's terms); Claude needs an
+API key from console.anthropic.com.
 
-With no key, run `memdoor`. It finds a key on this machine: in your
-shell under any name, in the project's `.env`, or after a yes among the keys other coding
-tools saved. Otherwise it signs you in with OpenRouter in the browser (a free account
-included) or with ChatGPT. That works with a gateway on this machine or on a box
-over ssh. An OpenRouter account with no credit runs on a free model picked
-from OpenRouter's list: 50 requests a day, or 1,000 once $10 has been
-bought. `memdoor connect` prints the limit. Free hosts train on what they are
-sent, so use them for a trial and not for private code.
+No key: run `memdoor`. It looks for a key on this machine (the shell under
+any name, the project's `.env`, or, after a yes, keys other coding tools
+saved), else signs you in with OpenRouter in the browser (free account
+included) or ChatGPT. Same with a gateway on a box over ssh. An OpenRouter
+account with no credit runs on a free model from OpenRouter's list: 50
+requests a day, or 1,000 once $10 has been bought; `memdoor connect`
+prints the limit. Free hosts train on what they are sent: a trial, not
+private code.
 
-Or type `/connect` in the TUI and paste a key. There is no other account
-setup: your key, billed at the provider's list prices. Put the export in your
-shell profile.
+Or `/connect` in the TUI and paste a key. No other account setup. Billed
+at the provider's list prices. Put the export in the shell profile.
 
-With no key and a model on this machine, a running [janis](https://github.com/guregodevo/janis)
+Local model: a running [janis](https://github.com/guregodevo/janis)
 (`janis pull && janis serve`), Ollama, llama.cpp or LM Studio is a
 [provider of its own](/docs/providers). Nothing leaves the machine:
 
@@ -50,7 +48,7 @@ With no key and a model on this machine, a running [janis](https://github.com/gu
 memdoor connect local          # finds the runtime on this machine; no token
 ```
 
-On janis the [decision model](/docs/no-babysitting#who-decides-the-decision-model) runs there too, with no key.
+On janis the [decision model](/docs/no-babysitting#who-decides-the-decision-model) runs there too, no key.
 
 ## First turn
 
@@ -59,31 +57,31 @@ cd your-project
 memdoor
 ```
 
-`memdoor` opens the window (`memdoor tui` is the same). The first run starts
-the local gateway in the background and creates the workspace without
-prompting. A key exported later is picked up the next time you run `memdoor`.
+`memdoor` opens the window (`memdoor tui` is the same). The first run
+starts the local gateway in the background and creates the workspace, no
+prompts. A key exported later is picked up on the next run.
 
-The agent works on the directory you launched it from. Its file tools stay inside it and its commands start there. It is not a sandbox: a shell command can still reach other folders. Type a task:
+The agent works on the launch directory: file tools inside it, commands
+starting there. Not a sandbox: a shell command can reach other folders. A
+task:
 
 ```
 > the rate limit in throttle.go is hard-coded to 30 s. Make it configurable by
   environment variable, add a test, and run it.
 ```
 
-It reads the file, writes the patch, runs the test, reads the output and fixes
-what it broke. The footer names the model that answered and the rung
-of the ladder it came from.
+It reads the file, writes the patch, runs the test, reads the output,
+fixes what it broke. The footer names the model and its rung.
 
-`Esc` interrupts a running turn. `ctrl+f` opens the files panel: what this
-conversation touched, newest first. `ctrl+o` expands a tool frame to its full
-output. `@` mentions a file or folder. On macOS an image on the clipboard
-pastes in.
+Keys: `Esc` interrupts. `ctrl+f`: the files panel, what this conversation
+touched, newest first. `ctrl+o`: expand a tool frame. `@`: mention a file
+or folder. macOS: an image on the clipboard pastes in.
 
 ## Or on a box, over ssh
 
-The same first step works on a machine you can ssh to with nothing
-installed there: a VPS, a Mac mini, a home server, Google Cloud Shell.
-Install memdoor here, then name the box:
+Same first step on a machine you can ssh to with nothing installed: a VPS,
+a Mac mini, a home server, Google Cloud Shell. Install memdoor here, then
+name the box:
 
 ```bash
 memdoor --gateway ssh://you@box                      # the window, on the box
@@ -91,18 +89,17 @@ memdoor --gateway ssh://you@box connect openrouter   # your key, kept on the box
 memdoor --gateway ssh://you@box run "say hi"         # one turn from a script or CI
 ```
 
-When no gateway answers on the box, the first command installs memdoor
-there over the same ssh (the installer puts the binary in `~/.local/bin`, no
-sudo) and runs `memdoor gateway install`, which registers a service (systemd
---user or launchd; without a service manager it starts the gateway in the
-background). The window then opens on it, in the box's home unless `--dir`
-names a project there. Each step is printed. Runs live on the box and
-continue with the laptop closed. `memdoor --gateway ssh://you@box resume
---last` or your phone reopens the conversation. The box's gateway listens on
-its network with the account token required on every door
+No gateway on the box: the first command installs memdoor there over ssh
+(binary in `~/.local/bin`, no sudo) and runs `memdoor gateway install`,
+which registers a service (systemd --user or launchd; without a service
+manager, a background process). The window opens on it, in the box's home
+unless `--dir` names a project. Each step is printed. Runs live on the box
+and continue with the laptop closed. `memdoor --gateway ssh://you@box
+resume --last` or the phone reopens the conversation. The box's gateway
+listens on its network, token required on every door
 (`MEMDOOR_HOST=localhost` restricts it to the box). The ssh door reads the
-box's login, so no password is typed. [The gateway](/docs/gateway) has the
-rest, the phone included.
+box's login: no password typed. Rest, phone included: [The
+gateway](/docs/gateway).
 
 ## The commands worth knowing first
 
@@ -116,14 +113,14 @@ rest, the phone included.
 | `/update` | Install the published build and reopen this conversation on it |
 | `/help` | Everything else |
 
-From the shell: `memdoor resume` reopens a previous conversation. `memdoor model
-search <name>` browses the catalogue. `memdoor meter` lists every turn
-with the model served and its tokens.
+Shell: `memdoor resume` reopens a conversation; `memdoor model search
+<name>` browses the catalogue; `memdoor meter` lists every turn with the
+model served and its tokens.
 
 ## The other doors
 
-Every run is a conversation on the gateway the first run started. Each of
-these is another door onto it:
+Every run is a conversation on the gateway the first run started. Other
+doors onto it:
 
 ```bash
 memdoor run "fix the failing test"        # one turn, no window; exit 0 checked, 2 unverified, 3 it needed you
@@ -134,17 +131,15 @@ memdoor resume --last                     # the same run, in a window; into a pi
 memdoor remote --last                     # the link /remote gives, on stdout; the run on your phone
 ```
 
-Your editor (VS Code, Zed, JetBrains) and the page `/remote` opens on your
-phone are two more. A run started by CI can be opened live and answered.
-[Headless, then attached](/docs/headless) lists each door with its exit
-codes.
+Two more: the editor (VS Code, Zed, JetBrains) and the page `/remote`
+opens on the phone. A run started by CI can be opened live and answered.
+Each door with its exit codes: [Headless, then attached](/docs/headless).
 
 ## The decision model
 
-Judged reads, the per-turn toolbox and the stop instead of a loop come from
-the decision model. It is free and is enabled by an OpenRouter key or a
-decision key (`memdoor connect typesafe`) beside any chat provider. With
-neither, tools return unjudged output.
+Judged reads, the per-turn toolbox and the stop instead of a loop. Free.
+Enabled by an OpenRouter key or a decision key (`memdoor connect typesafe`)
+beside any chat provider. With neither, tools return unjudged output.
 
 ## Where to next
 

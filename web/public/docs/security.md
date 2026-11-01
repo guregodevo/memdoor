@@ -1,9 +1,9 @@
 # Where your data goes
 
 For a security reviewer: every host the `memdoor` binary can name, what it is,
-and when it is contacted, if ever. `gateway/egress_test.go` fails the build
-when the binary names a host this page does not list, so the table is complete
-by construction (2026-10-02).
+and when it is contacted. `gateway/egress_test.go` fails the build when the
+binary names a host this page does not list, so the table is complete by
+construction (2026-10-02).
 
 Memdoor is one static binary on the developer's machine. Files, sessions,
 memory, the project index and the commands the agent runs stay there. What
@@ -21,7 +21,7 @@ mixed:
 
 The hosted gateway never supplies a model key, so it changes nothing about
 whose key a prompt is sent on. No memdoor.ai call carries a prompt in the
-clear: the hosts table below lists each call, and the remote-control relay is
+clear: the hosts table lists each call, and the remote-control relay is
 sealed end to end.
 
 ## Every host the binary names
@@ -49,14 +49,13 @@ sealed end to end.
 | `ai-gateway.example.com` | The prefilled example in `memdoor connect`'s base-URL prompt | Never contacted; replaced by what you type |
 | `api.stripe.com`, `api.resend.com` | Stripe, transactional e-mail | Only the `memdoor-billing` service on memdoor.ai; never from a developer's machine |
 
-**The decision model is a hosted model.** Jev, by TypeSafe, answers the typed
+The decision model is a hosted model: Jev, by TypeSafe. It answers the typed
 questions (is this search hit relevant, is this turn still making progress)
-with a probability. What it is asked about leaves the machine to it: the
-search hit, the file section or the log lines being judged. It goes through
-OpenRouter on your OpenRouter key or directly on a decision key. On a vendor
-key or a company gateway alone it is **off**. Every read returns unjudged and
-the agent works without the savings. `memdoor
-connect typesafe` turns it on with your key.
+with a probability. What leaves the machine to it: the search hit, the file
+section or the log lines being judged. Path: OpenRouter on your OpenRouter
+key, or direct on a decision key. On a vendor key or a company gateway alone
+it is off; every read returns unjudged. `memdoor connect typesafe` turns it
+on with your key.
 
 ## Attribution headers
 
@@ -64,8 +63,8 @@ connect typesafe` turns it on with your key.
 "user=X-Email;team=X-Team"` put the person's fields on every vendor and
 gateway request under the names the company's gateway expects. The project's
 directory name and the conversation's session id travel the same way
-(`X-Memdoor-Project`, `X-Memdoor-Session` unless renamed). No prompt content
-is in them. They go only to the model endpoint.
+(`X-Memdoor-Project`, `X-Memdoor-Session` unless renamed). No prompt content.
+Model endpoint only.
 
 ## Providers you add
 
@@ -76,49 +75,48 @@ never copied onto disk. The gateway probes a provider (its model list, one
 small call) before keeping it and contacts it afterwards only when one of its
 models is pinned or its list is read. A local runtime (`memdoor connect
 local`: Ollama, llama.cpp, janis, LM Studio on this machine or on the box) is
-kept with no credential, and its requests go to the address you gave,
-normally localhost.
+kept with no credential; its requests go to the address you gave, normally
+localhost.
 
 ## Where the gateway listens
 
-On this machine and on its network, port 18789, since 2026-10-23. A phone on
-the same network reaches a `/remote` link on the gateway with no relay in
-between. Every door takes a token; `/health` and the sealed relay pages are
-the only unauthenticated ones. The first account can only be made from the
-machine; a request from the network is refused. The gateway speaks plain
-HTTP, so it belongs on a network you trust or behind ssh, Tailscale or a
-reverse proxy. `MEMDOOR_HOST=localhost` (or `--host localhost`) keeps it to this
-machine, and a company preset can set that.
+This machine and its network, port 18789, since 2026-10-23. A phone on the
+same network reaches a `/remote` link on the gateway with no relay. Every
+door takes a token; `/health` and the sealed relay pages are the only
+unauthenticated ones. The first account can only be made from the machine; a
+request from the network is refused. Plain HTTP: a network you trust, or
+behind ssh, Tailscale or a reverse proxy. `MEMDOOR_HOST=localhost` (or
+`--host localhost`) keeps it to this machine; a company preset can set that.
 
-For a `/remote` link the gateway's process is the terminal end of the
-relay (since 2026-10-23), so the link outlives the window that made it. What
-that takes is kept in `~/.memdoor/remote-hosted.json` on the gateway's
-machine, mode 0600, and nowhere else: the link's id and key, the gateway
-session token of the person who turned it on (the gateway follows and posts as
-them), and where the link lives. `/remote off` deletes the entry.
+For a `/remote` link the gateway's process is the terminal end of the relay
+(since 2026-10-23), so the link outlives the window that made it. State in
+`~/.memdoor/remote-hosted.json` on the gateway's machine, mode 0600, nowhere
+else: the link's id and key, the gateway session token of the person who
+turned it on (the gateway follows and posts as them), and where the link
+lives. `/remote off` deletes the entry.
 
 ## No "yolo" mode
 
-Memdoor's default is always-auto. `MEMDOOR_APPROVE=changes` (or the workspace
-setting `approve`) makes every command, file write and MCP tool call wait for
-the person's yes in the terminal; no answer in five minutes is a no. Reads
-never ask. Implementation: `gateway/approval.go`. Rules that refuse a call outright (`memdoor
-guards`: never `.env`, never `git push`) are in
+Default: always-auto. `MEMDOOR_APPROVE=changes` (or the workspace setting
+`approve`) makes every command, file write and MCP tool call wait for the
+person's yes in the terminal; no answer in five minutes is a no. Reads never
+ask. Implementation: `gateway/approval.go`. Rules that refuse a call outright
+(`memdoor guards`: never `.env`, never `git push`):
 [Boundaries](/docs/boundaries).
 
 ## What a company reviewer can check
 
 - Set the three variables, start `memdoor gateway` and read its first lines:
   `your company's <vendor> key serves this gateway; nothing else is
-  contacted`. Then `memdoor logs query --regex "LLM request"` shows every
-  model call with the model and the message count. Nothing to any other host
-  appears in the log.
-- `MEMDOOR_VENDOR=off` is the only way out of company-key mode. It is an
-  environment variable the company's preset controls. The same preset can
-  set `MEMDOOR_APPROVE=changes`, which wins over the workspace setting.
-- The decision model, the catalogue and web search are not degraded
-  silently. The agent reads more instead, as without a decision key or an
-  OpenRouter key. The catalogue is the one model the key names. `web_search`
-  answers that it has no key.
-- `go test ./gateway/ -run TestEveryHostTheBinaryNamesIsDocumented` is the
-  proof this table is complete for the build in hand.
+  contacted`. `memdoor logs query --regex "LLM request"` shows every model
+  call with the model and the message count. No other host appears in the
+  log.
+- `MEMDOOR_VENDOR=off` is the only way out of company-key mode: an
+  environment variable the company's preset controls. The same preset can set
+  `MEMDOOR_APPROVE=changes`, which wins over the workspace setting.
+- The decision model, the catalogue and web search are not degraded silently.
+  The agent reads more, as without a decision key or an OpenRouter key. The
+  catalogue is the one model the key names. `web_search` answers that it has
+  no key.
+- `go test ./gateway/ -run TestEveryHostTheBinaryNamesIsDocumented` proves
+  the table is complete for the build in hand.

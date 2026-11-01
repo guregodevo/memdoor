@@ -1,8 +1,8 @@
 # How It Works
 
-Memdoor is a small server on your machine that the terminal talks to. The gateway
-runs the agent, its tools, memory and sessions. The model calls go to the
-provider you chose, on your key; the rest stays local.
+A small server on your machine, the gateway, that the terminal talks to.
+It runs the agent, its tools, memory and sessions. Model calls go to your
+provider on your key. Everything else stays local.
 
 ## The architecture
 
@@ -20,54 +20,49 @@ provider you chose, on your key; the rest stays local.
   memdoor.ai relay ── only for a gateway kept to localhost (MEMDOOR_HOST=localhost)
 ```
 
-The decision model runs on a decision key (`memdoor connect
-typesafe`), else the OpenRouter key you code with. On a vendor key, a
-company's AI gateway or a ChatGPT plan alone it is off until a decision key
-is set. Nothing of your code passes through memdoor.ai.
+Decision model key: a decision key (`memdoor connect typesafe`), else the
+OpenRouter key you code with. On a vendor key, a company's AI gateway or a
+ChatGPT plan alone: off until a decision key is set. No code passes through
+memdoor.ai.
 
 ## What happens in a turn
 
-1. **The request is read once.** Before the first call, the decision model is
-   asked which kind of work this is, and only the tools that kind needs are put
-   in the request. The coder's full palette is about 5,200 tokens of schema, and
-   it would otherwise be resent on every call of the turn.
-2. **The agent searches and reads.** Search, file reads and log reads pass
-   through the decision model: it scores every hit, section or line
-   against the task and returns the ones that count, with a probability beside
-   each. A file small enough that judging would keep nearly all of it comes back
-   whole instead.
-3. **It edits and runs.** Patches are applied with their exact context lines, the
-   build and the tests are run, and the real output is read back.
-4. **It stops when it is done, or when it is not getting anywhere.** After each
-   step the decision model judges whether the turn is making progress. When
-   it is not, the turn is wrapped up with what it has and says so. The turn has no
-   call cap.
-5. **The turn is metered.** Model served, tokens in and out, duration, appended
-   to `~/.memdoor/meter.jsonl` and never rewritten.
+1. **Toolbox.** The decision model is asked which kind of work the request
+   is; only that kind's tools go in the request. The coder's full palette is
+   about 5,200 tokens of schema per call.
+2. **Judged reads.** Search, file reads and log reads pass through the
+   decision model, which scores each hit, section or line against the task
+   and returns the ones that count, with a probability each. A file small
+   enough that judging would keep nearly all of it comes back whole.
+3. **Edit and run.** Patches apply with exact context lines. Build and tests
+   run. Real output is read back.
+4. **Stop.** After each step the decision model judges progress. No progress:
+   the turn wraps up with what it has and says so. No call cap.
+5. **Meter.** Model served, tokens in and out, duration, appended to
+   `~/.memdoor/meter.jsonl`, never rewritten.
 
 ## The models
 
 Each agent has a ladder, cheapest rung first. The footer names the model and
-the rung. `/model` pins any rung or any tool-capable model from the catalogue,
-ordering its hosts by price, throughput or latency. Every request carries
-`data_collection: deny` and `require_parameters`. No host that might train on
-your code, or that would silently drop the tool schema, serves you. The
-exception is a `:free` model, pinned or the one an OpenRouter account with no
-credit answers on. Its hosts train and the request says `allow`. Memdoor says
-so at the pin or when the key is connected. See **[Your key and the
-models](/docs/your-key)**.
+the rung. `/model` pins any rung or any tool-capable model from the catalogue
+and orders its hosts by price, throughput or latency. Every request carries
+`data_collection: deny` and `require_parameters`: no host that trains on your
+code or drops the tool schema. Exception: a `:free` model, pinned or the one
+an OpenRouter account with no credit answers on. Its hosts train and the
+request says `allow`. Memdoor says so at the pin or when the key is
+connected. See **[Your key and the models](/docs/your-key)**.
 
 ## Sessions
 
-Sessions persist across restarts and compact when they grow (`/compact`); a
-derailed turn can be undone with `memdoor sessions rewind`, an operator
-command left out of `--help`.
+Persist across restarts. Compact when they grow (`/compact`). A derailed
+turn is undone with `memdoor sessions rewind`, an operator command left out
+of `--help`.
 
 ## What it is not
 
-- **Not a token reseller.** You hold the account at your provider and pay
-  their list price. The subscription is never for inference on your key; workflows are free.
-- **Not a hosted agent.** The engine, database and files are on your
-  machine.
-- **Not an opaque router.** The model, the rung and the reason are in the footer,
-  and any model in the catalogue can be pinned by hand.
+- **Not a token reseller.** You hold the provider account and pay list
+  price. The subscription is never for inference on your key. Workflows
+  are free.
+- **Not a hosted agent.** Engine, database and files are on your machine.
+- **Not an opaque router.** Model, rung and reason are in the footer. Any
+  catalogue model can be pinned by hand.
