@@ -1,10 +1,10 @@
 # In CI
 
 A review on every pull request, tests written for it, a failed run explained,
-a new issue triaged, release notes on a tag: one step in a GitHub job, nothing
-added to your repository. The model
-runs on your key, or with no key at all on a model inside the runner. The job
-passes or fails on a check, never because the model said so.
+a new issue triaged, release notes on a tag. Each is one step in a GitHub job.
+Nothing is added to your repository. The model runs on your key or inside the
+runner with no key. The job passes or fails on a check, never on what the
+model said.
 
 ```yaml
 on: pull_request
@@ -21,9 +21,10 @@ jobs:
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
 ```
 
-The action is [on the GitHub Marketplace](https://github.com/marketplace/actions/memdoor).
-It installs Memdoor on the runner (one binary), runs the workflow and ends the
-job with the run's outcome. The review lands in the job summary.
+The action is [on the GitHub
+Marketplace](https://github.com/marketplace/actions/memdoor). It installs
+Memdoor on the runner as one binary, runs the workflow and ends the job with
+the run's outcome. The review lands in the job summary.
 
 ## Local or a key
 
@@ -43,23 +44,23 @@ The model behind the step is one input.
           local-model: Qwen3-8B-4bit
 ```
 
-**With a key** the review is an agent: it reads the diff, opens the files
-around the change, runs the code to check each finding before it writes it
-down, and answers on whatever model you pick (`model:`). `anthropic-api-key`,
-`openai-api-key` and `gemini-api-key` work in place of OpenRouter; so does a
+**With a key** the review is an agent. It reads the diff and opens the files
+around the change. It runs the code to check each finding before writing it
+down. It answers on the model you pick (`model:`). `anthropic-api-key`,
+`openai-api-key` and `gemini-api-key` work in place of OpenRouter. So does a
 key already in the job's environment.
 
-**With no key** the action downloads [janis](https://github.com/guregodevo/janis),
-one file, runs the model with it on the runner's CPU, caches the model, and
-points Memdoor at it. Nothing installed, no secret, no API account, and
-nothing leaves the runner. Linux runners. A free runner has 4 CPUs and 16 GB,
-so a 9B model is about the largest that fits, and each workflow is one model
-call with everything it needs in the prompt: no agent, nothing run to prove a
-finding. A free first pass, not a reviewer.
+**With no key** the action downloads
+[janis](https://github.com/guregodevo/janis), one file. It runs the model on
+the runner's CPU, caches it and points Memdoor at it. No secret, no API
+account, nothing leaves the runner. Linux runners only. A free runner has 4
+CPUs and 16 GB, so a 9B model is about the largest that fits. Each workflow is
+one model call with everything it needs in the prompt. No agent runs the code
+to prove a finding. Treat it as a first pass.
 
 ## What each one catches
 
-The same three pull requests on [llamafit](https://github.com/guregodevo/llamafit),
+Three pull requests on [llamafit](https://github.com/guregodevo/llamafit),
 a 3,000-line Go project, each reviewed both ways on `ubuntu-latest`, twice
 ([#9](https://github.com/guregodevo/llamafit/pull/9),
 [#10](https://github.com/guregodevo/llamafit/pull/10),
@@ -73,36 +74,36 @@ a 3,000-line Go project, each reviewed both ways on `ubuntu-latest`, twice
 | Review | 45–90 s | 35–60 s |
 | Job | 2–3 min, most of it the model's first download | about 1 min |
 
-The local model catches bugs and also files opinions as P0s, so since v1.731.0
-its P0s are advisory: they are in the review, and the job does not fail on
-them (with a key, a P0 still fails the check). Read a local P0 before you
-believe it. Since v1.714.0 each of its P0s gets a second look on
-the same model, one question: is it a problem of the code after the change, or
-of the code before it? One answered "before" is demoted to P2. On the correct
-change that turned one of two runs green; the other run's "P0" was praise
-("which is correct … no bug here"), which the question does not catch
+The local model catches bugs. It files opinions as P0s. Since v1.731.0
+its P0s are advisory: they appear in the review and the job does not fail on
+them. With a key a P0 still fails the check. Read a local P0 before you
+believe it. Since v1.714.0 each local P0 gets a second look on the same model
+with one question: is it a problem of the code after the change or of the code
+before it? An answer of "before" demotes it to P2. On the correct change that
+turned one of two runs green. The other run's "P0" was praise ("which is
+correct … no bug here"), which the question does not catch
 ([#12](https://github.com/guregodevo/llamafit/pull/12),
 [#13](https://github.com/guregodevo/llamafit/pull/13),
-[#14](https://github.com/guregodevo/llamafit/pull/14)). `Qwen3.5-9B-4bit` is the quiet one: it passed the
-correct change and missed the subtle bug. The agent on a key opens the files
-around the change and runs the code to prove what it finds, and was right all
-three times. Use local where a key cannot go (a public repository you would
-rather not put a secret in, a team with no API account yet) and a key where
-the review has to be right.
+[#14](https://github.com/guregodevo/llamafit/pull/14)). `Qwen3.5-9B-4bit` is
+quieter. It passed the correct change and missed the subtle bug. The agent on
+a key opens the files around the change and runs the code to prove what it
+finds. It was right all three times. Use local where a key cannot go: a public
+repository or a team with no API account yet. Use a key where the review has
+to be right.
 
-On a runner's CPU janis decodes the 8B at 5.6 tokens a second where Ollama
-does 4.45, and reads a prompt at the same speed. The model is cached per
-branch, and GitHub shares only a cache saved on the default branch: run the
-workflow once on a push to `main` and every pull request starts from it. A
+On a runner's CPU janis decodes the 8B at 5.6 tokens a second and reads a
+prompt at the same speed; Ollama decodes at 4.45. The model is cached per
+branch. GitHub shares only a cache saved on the default branch, so run the
+workflow once on a push to `main` and pull requests start from it. A
 `workflow_run` or `issues` job (`explain-failure`, `issue-triage`) reads that
-cache but GitHub refused both a write, so they download the model when `main`
-has none saved; a `pull_request` job saved it.
+cache but GitHub refused both a write. They download the model when `main` has
+none saved; a `pull_request` job saved it.
 
 ## The built-in workflows
 
-Nine, none of them a file in your repository. Each runs on your key (an
-agent that reads the code around the change and runs it) or on a model
-inside the runner (one model call with everything it needs in the prompt).
+Nine, none of them a file in your repository. Each runs on your key as an
+agent that reads the code around the change and runs it, or on a model inside
+the runner as one model call with everything it needs in the prompt.
 
 | `workflow:` | Run it on, with | What it does | The job fails when |
 |---|---|---|---|
@@ -116,12 +117,12 @@ inside the runner (one model call with everything it needs in the prompt).
 | `fix-tests` | `push`, or by hand | Finds the test command, fixes the code until it passes, leaves the fix in the working tree. | the tests still fail |
 | `release-notes` | a tag push | The commits since the previous tag as Added / Changed / Fixed. | — |
 
-Every one needs `contents: read`; the three that read GitHub (`gh`) do it on the
-job's own token, passed as `github-token` (the default), with the permission
-above (`pr-triage` reads the labels and the open pull requests and issues for
-duplicates; one it may not read is left out, and the triage goes on). Tests, fixes and
-notes stay in the runner's working tree, and the job summary shows them;
-commit them in a later step if you want them kept.
+Every one needs `contents: read`. The three that read GitHub (`gh`) use the
+job's token, passed as `github-token` (the default), with the permission
+above. `pr-triage` reads the labels and the open pull requests and issues for
+duplicates and leaves out what it may not read. Tests, fixes and notes stay in
+the runner's working tree and appear in the job summary. Commit them in a
+later step if you want them kept.
 
 `pr-triage` runs the project's tests on the pull request's code: `go test
 ./...`, `cargo test`, `npm test`, `pytest` or `make test`, found from the
@@ -130,39 +131,41 @@ what they need (`actions/setup-go`, a build step) before the action. On six
 pull requests on llamafit, three honest and three slop
 ([#19](https://github.com/guregodevo/llamafit/pull/19) to
 [#24](https://github.com/guregodevo/llamafit/pull/24)), the 8B asked for a
-verdict called all six slop. With the verdict made from those checks, the
-three honest ones were ready for review and the three slop ones flagged (one
-likely slop: tests claimed, none changed; two needs work: functions nothing
-calls, the tests fail), the same in three runs each on `ubuntu-latest`, 3 to
-4½ minutes a job. On a key the agent also checks each claim of the description
-against the code, and called all three slop ones likely slop. How it got there:
-[Qwen3-8B couldn't judge AI slop PRs, so I let the tests decide](https://guregodevo.github.io/2026/10/30/triage-ai-slop-prs/).
+verdict called all six slop. With the verdict made from those checks the three
+honest ones were ready for review and the three slop ones flagged: one likely
+slop (tests claimed, none changed) and two needs work (functions nothing
+calls, the tests fail). The same in three runs each on `ubuntu-latest`, 3 to
+4½ minutes a job. On a key the agent checks each claim of the description
+against the code. It called all three slop ones likely slop. The write-up:
+[Qwen3-8B couldn't judge AI slop PRs, so I let the tests
+decide](https://guregodevo.github.io/2026/10/30/triage-ai-slop-prs/).
 
-Measured on GitHub's runners ([llamafit](https://github.com/guregodevo/llamafit)
+Measured on GitHub's runners
+([llamafit](https://github.com/guregodevo/llamafit)
 [#15](https://github.com/guregodevo/llamafit/pull/15),
 [#16](https://github.com/guregodevo/llamafit/issues/16) and
-[#17](https://github.com/guregodevo/llamafit/pull/17)), each both ways. A pull request with a path traversal:
-`security-review` red on a key and on the 8B; the same kind of request done
-correctly: green both ways. On the 8B that takes a re-check: each P0 is asked
-once more whether the code after the change lets someone read, write or run
-something they could not before, and a no turns it into a P2. `write-tests` on
-a key left four passing tests on a correct change, and on a change that broke
-an existing test it went red at once, naming that test. `explain-failure` named
-the failing test and the changed loop both ways (the 8B put the line three off).
-`issue-triage` and `pr-description` wrote their reports both ways; on the 8B
-the description has one line per changed file, so a one-line change is never
-left out. A job on the 8B takes two to five minutes with the model cached,
-about one on a key.
+[#17](https://github.com/guregodevo/llamafit/pull/17)), each both ways. A pull
+request with a path traversal: `security-review` red on a key and on the 8B.
+The same kind of request done correctly: green both ways. On the 8B that takes
+a re-check. Each P0 is asked once more whether the code after the change lets
+someone read, write or run something they could not before, and a no turns it
+into a P2. `write-tests` on a key left four passing tests on a correct change.
+On a change that broke an existing test it went red at once and named that
+test. `explain-failure` named the failing test and the changed loop both ways
+(the 8B put the line three off). `issue-triage` and `pr-description` wrote
+their reports both ways. On the 8B the description has one line per changed
+file, so a one-line change is never left out. A job on the 8B takes two to
+five minutes with the model cached, about one on a key.
 
-`write-tests` on the 8B kept no test in ten tries: its tests compile but do
-not match how the code behaves, and a test that does not pass is removed, never
-kept. The job stays green and says so, after about a quarter of an hour on a
-runner. Writing tests that pass needs the agent, on a key. `fix-tests` and
-`release-notes` were measured on fixtures on a Mac, not yet on a runner: on the
-8B, `fix-tests` fixed an off-by-one with a one-line edit, and `release-notes`
-sorted the commits since the last tag.
+`write-tests` on the 8B kept no test in ten tries. Its tests compile but do
+not match how the code behaves, and a failing test is removed. The job stays
+green and says so after about a quarter of an hour on a runner. Writing tests
+that pass needs the agent on a key. `fix-tests` and `release-notes` were
+measured on fixtures on a Mac, not yet on a runner. On the 8B `fix-tests`
+fixed an off-by-one with a one-line edit and `release-notes` sorted the
+commits since the last tag.
 
-Explain a failed CI run (`gh` reads the logs on the job's own token):
+Explain a failed CI run (`gh` reads the logs on the job's token):
 
 ```yaml
 on:
@@ -228,15 +231,15 @@ jobs:
 
 ## Your own workflow
 
-`workflow: <name>` runs `.memdoor/workflows/<name>/` from your repository,
-the same files `memdoor workflow run <name>` runs on your machine: build one
-by asking the coder ([Workflows](/docs/workflows)), try it locally, commit
-it, and CI runs it unchanged. Each step is done when its target exists, so
-the job's outcome is that check.
+`workflow: <name>` runs `.memdoor/workflows/<name>/` from your repository.
+They are the same files `memdoor workflow run <name>` runs on your machine.
+Build one by asking the coder ([Workflows](/docs/workflows)), try it locally
+and commit it. CI runs it unchanged. Each step is done when its target exists,
+so the job's outcome is that check.
 
-A workflow with an approval gate stops the job there with exit 3, since
-nobody in CI can approve; `stop-at-gate: false` waits instead, for an
-approval from another door, bounded by `timeout`.
+A workflow with an approval gate stops the job there with exit 3, since nobody
+in CI can approve. `stop-at-gate: false` waits instead for an approval from
+another door, bounded by `timeout`.
 
 | Exit | Meaning |
 |---|---|
@@ -245,27 +248,28 @@ approval from another door, bounded by `timeout`.
 | 1 | stopped (timeout) |
 | 3 | stopped at an approval gate |
 
-The step's outputs are `run-id`, `exit-code` and `results` (the files the
-run produced, one per line), for the steps after it.
+The step's outputs are `run-id`, `exit-code` and `results` (the files the run
+produced, one per line) for the steps after it.
 
 ## Your key in CI
 
 The agent runs your repository's code on the runner, where your key is.
-Trigger on `pull_request`, **never** `pull_request_target`: GitHub gives a
+Trigger on `pull_request`, **never** `pull_request_target`. GitHub gives a
 fork's pull request no secrets, so a stranger's code never runs beside your
-key, while `pull_request_target` runs their code with your secrets. Memdoor
-also keeps model keys out of the environment of every command the agent or a
-step runs, so a test that prints its environment cannot carry one into the
-model's context or the log. That is a second line, not the boundary.
+key. `pull_request_target` runs their code with your secrets. Memdoor
+keeps model keys out of the environment of every command the agent or a step
+runs, so a test that prints its environment cannot carry one into the model's
+context or the log. That is a second line of defence. The trigger is the
+boundary.
 
-Every input (`model`, `partition`, `timeout`, `github-token`…), and macOS
-runners, are in the
-[action's README](https://github.com/guregodevo/memdoor-action#inputs).
+The inputs (`model`, `partition`, `timeout`, `github-token`…) and macOS
+runners are in the [action's
+README](https://github.com/guregodevo/memdoor-action#inputs).
 
 ## Without the action
 
-The action wraps an install and one command, with the key in the
-environment. Any CI that can run a shell runs them:
+The action wraps an install and one command with the key in the environment.
+Any CI that can run a shell runs them:
 
 ```bash
 curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
@@ -273,5 +277,5 @@ export PATH="$HOME/.local/bin:$PATH"
 memdoor workflow run pr-review --wait --stop-at-gate    # OPENROUTER_API_KEY in the env
 ```
 
-To watch or steer a CI run from your phone, see
-[Headless, then attached](/docs/headless#in-ci).
+To watch or steer a CI run from your phone see [Headless, then
+attached](/docs/headless#in-ci).

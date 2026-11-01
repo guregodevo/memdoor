@@ -1,6 +1,6 @@
 # CLI
 
-Every command is `memdoor <group> <command>`. `--help` works at every level and is the authority — this page is the map.
+A command is `memdoor <group> <command>`. `--help` works at every level and is the authority. This page is the map.
 
 ## Getting going
 
@@ -18,7 +18,7 @@ memdoor version                   # this build's version, commit and date
 memdoor uninstall                 # remove the binary (and ~/.memdoor unless --keep-data)
 ```
 
-`memdoor setup` does the first run's setup from a script: `--workspace-name`, `--admin-email`, `--admin-password`, `--workspace-dir`, `--non-interactive`; `doctor` takes `--workspace-dir` too.
+`memdoor setup` does the first run's setup from a script: `--workspace-name`, `--admin-email`, `--admin-password`, `--workspace-dir`, `--non-interactive`. `doctor` takes `--workspace-dir` too.
 
 ## Providers
 
@@ -34,8 +34,8 @@ memdoor connect groq --probe      # test the key, keep nothing
 memdoor connect --remove <id>     # forget one you added
 ```
 
-A key can be the value, the NAME of an environment variable, or `!command`;
-it is probed (the list, then one tiny call) before anything is kept in
+A key can be the value, the NAME of an environment variable, or `!command`.
+It is probed (the list, then one tiny call) before anything is kept in
 `~/.memdoor/providers.json`. See [Providers](/docs/providers).
 
 ## Models and what they cost
@@ -66,7 +66,7 @@ memdoor workflow stop <run-id>    # cancel a run
 memdoor workflow history <name>   # every run of a workflow, newest first (survives a restart)
 ```
 
-A workflow is a directory of task files; the coder writes it from a sentence.
+A workflow is the deterministic harness: a directory of task files. The coder writes it from a sentence.
 In the window, `/workflow` draws the graph live. See [Workflows](/docs/workflows).
 
 ## MCP servers
@@ -93,7 +93,7 @@ memdoor guards remove 2           # the number `memdoor guards` shows
 memdoor guards clear
 ```
 
-A rule names a tool (`*` for any) and a regex matched against the call's input; a matching call is refused with the message, on every agent and every turn. Setting them takes an admin's sign-in. See [Boundaries](/docs/boundaries).
+A rule names a tool (`*` for any) and a regex matched against the call's input. A matching call is refused with the message, on every agent and every turn. Setting them takes an admin's sign-in. See [Boundaries](/docs/boundaries).
 
 ## Your editor
 
@@ -111,11 +111,11 @@ memdoor peers add box <gateway> --dir <path>    # name a gateway you are signed 
 memdoor peers remove box
 ```
 
-`@<peer>:<agent> …` in a window, a run or a message sends that turn to the agent on the peer, in the directory named there; the answer comes back as the reply.
+`@<peer>:<agent> …` in a window, a run or a message sends that turn to the agent on the peer, in the directory named there. The answer comes back as the reply.
 
 ## Conversations
 
-Each `memdoor tui` starts a fresh conversation; `resume` is how you deliberately go back to an old one.
+Each `memdoor tui` starts a fresh conversation. `resume` is how you go back to an old one.
 
 ```
 memdoor resume                    # what you've worked on here, newest first, and which one to open
@@ -129,7 +129,7 @@ memdoor resume 8488c86b           # the id the window printed when you left it
 The window's last line, once you have said something in it, is the way back:
 `Resume this conversation with: memdoor resume 8488c86b`.
 
-A resumed session opens with its title in the header and its last exchanges in view, continuing the same agent session. Conversations are listed per directory; `--all` widens it.
+A resumed session opens with its title in the header and its last exchanges in view, continuing the same agent session. Conversations are listed per directory. `--all` widens it.
 
 ```
 memdoor sessions list             # the gateway's live sessions (a different question)
@@ -137,7 +137,7 @@ memdoor sessions rewind --turns 1 # undo a derailed turn
 memdoor sessions export           # sessions → JSONL
 ```
 
-`sessions` is not listed in `memdoor --help`; it runs when typed.
+`sessions` is not listed in `memdoor --help`. It runs when typed.
 
 ## The phone door from a script
 
@@ -150,8 +150,8 @@ memdoor remote off <id>                # revoke
 memdoor --gateway <box> remote <id>    # a conversation on that box: the box holds the link
 ```
 
-What `/remote` does in the window, as a command: the id is the one `memdoor
-run` and `memdoor resume` print; stdout is the link alone. See
+What `/remote` does in the window, as a command. The id is the one `memdoor
+run` and `memdoor resume` print. stdout is the link alone. See
 [Remote control](/docs/remote).
 
 ## Workspace and scripts
@@ -183,7 +183,7 @@ memdoor auth token                # the session token, for curl
 ```
 
 `users`, `channels`, `messages`, `sessions`, `auth` and the other operator
-commands are not listed in `memdoor --help`; every one runs when typed, and
+commands are not listed in `memdoor --help`. Each runs when typed, and
 `docs/reference/CLI.md` lists them. `cron` is listed: see [Scheduled checks](/docs/cron).
 
 ## Global flags

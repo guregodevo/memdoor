@@ -1,14 +1,15 @@
 # Workflows
 
-Say what you want done in steps, and the coder builds a workflow and runs
-it: a graph of tasks, each one proven done by something you can check, run
-in parallel where nothing stands in the way, drawn in your window as it
-goes. Workflows are free on your machine, and so is running one on a
+A workflow is the deterministic harness: a graph of tasks, each proven done
+by something you can check. Say what you want done in steps, and the coder
+builds one and runs it. Independent
+tasks run in parallel. The graph is drawn in your window as it
+goes. Workflows are free on your machine. So is running one on a
 schedule with your local cron: `memdoor cron add --id nightly --schedule
 "0 7 * * *" --workflow <name> --partition today` runs it in this project
-every morning, once a day. The hosted gateway keeps every run's state on memdoor.ai, one
-table per workspace: every project and every person on the workspace share
-it, so a workflow can wait on a task another workflow produced, from any
+every morning. The hosted gateway keeps every run's state on memdoor.ai, one
+table per workspace, shared by every project and person on it. A workflow
+there can wait on a task another workflow produced, from any
 machine. Runs with your laptop closed: `memdoor gateway install` on [a box
 that stays on](/docs/gateway).
 
@@ -30,18 +31,17 @@ window shows the graph filling in:
       ⏺ apply_patch
 ```
 
-A running task's clock ticks; the tool it is calling shows under it; the
+A running task's clock ticks. The tool it is calling shows under it. The
 end is one line, `■ digest done`. You never write a file.
 
 ![A chain: command → llm → agent, from one sentence](/workflow-digest.cast)
 
 ## What a task is
 
-One YAML file per task, in your project under `.memdoor/workflows/<name>/`
-(yours to commit: the `.memdoor/.gitignore` Memdoor writes ignores only the
+One YAML file per task, in your project under `.memdoor/workflows/<name>/`. The `.memdoor/.gitignore` Memdoor writes ignores only the
 run outputs `runs/`, the run table `runs.db`, `worktrees/` and this machine's
-`workspace` marker, never `workflows/`). The
-file says its **type** and what the task **requires**; the engine runs the
+`workspace` marker, never `workflows/`. The
+file says its **type** and what the task **requires**. The engine runs the
 graph in that order and in parallel where it can.
 
 Three kinds of task, mixed freely:
@@ -52,62 +52,61 @@ Three kinds of task, mixed freely:
 | `command` | a shell line in your project (`git log`, a build, a fetch) | its target, or its stdout |
 | `llm` | one model call, no tools — summarize, classify, rewrite | its target, or the answer |
 
-A task is **done when its target exists** — a file that must be there, or
-a command that must exit 0 — never because the model said so. A task with
+A task is **done when its target exists**: a file that must be there, or
+a command that must exit 0. Never because the model said so. A task with
 no target keeps its answer as the proof, and the task after it reads it:
 `{{ output "log" }}` in a prompt is the upstream task's answer, inlined.
 
 The check is not the task's to change. The programs a target command runs
 from the project (`./check.sh`, `sh scripts/verify.sh`) are kept as they are
-when the task starts: a write to one of them is refused with the reason, and
-one changed by any other means is put back after the tool call and again
-right before the check runs, whatever ran in the background. Found by
+when the task starts. A write to one of them is refused with the reason.
+One changed by any other means is put back after the tool call and again
+right before the check runs, whatever ran in the background. This came from
 measuring a check that could never pass: on its third try the agent rewrote
-the script to exit 0, and the run read done. What the check itself depends
-on (the tests `go test` runs, a Makefile's recipe) is the task's own work.
+the script to exit 0 and the run read done. What the check depends on
+(the tests `go test` runs, a Makefile's recipe) is the task's work.
 
 ## Keeping one
 
-A workflow is files, so it is a thing you keep. Commit `.memdoor/workflows/
-<name>/` and the whole team runs it. Put it in **`~/.memdoor/workflows/`**
-— your own library — and it runs in **any** project: the dropdown offers it,
-`/workflow:<name>` runs it, a project's own workflow of the same name wins.
-`args` make one workflow serve many asks (`{{.version}}`), and the
+Commit `.memdoor/workflows/<name>/` and the whole team runs it. Put it in **`~/.memdoor/workflows/`**,
+your library, and it runs in **any** project. The dropdown offers it and
+`/workflow:<name>` runs it. A project's workflow of the same name wins.
+`args` make one workflow serve many asks (`{{.version}}`). The
 partition says what a run is for (`{{.partition}}`). Each workflow carries
-a `README.md` beside its steps — what it does, what it needs, how to run
-it — and its first paragraph is what `/workflow` shows beside the name. To
+a `README.md` beside its steps, saying what it does, what it needs and how to run
+it. Its first paragraph is what `/workflow` shows beside the name. To
 share one, share the directory: `cp -R`, a gist, a repo cloned into
 `~/.memdoor/workflows/<name>`.
 
 ## Gates, failures, re-runs
 
 - **Your approval is a task nobody runs.** A step can require `approve`
-  marked `external`: the run builds everything else and stops, *waiting*.
+  marked `external`. The run builds everything else and stops, *waiting*.
   Press `a` on it in `/workflow`, or `memdoor workflow approve <run> approve`,
   and the same run goes on.
 
 ![A gate: two tasks at once, a merge, the run waiting for a person, going on](/workflow-release.cast)
 - **Or send it back.** At a gate the run shows what it changed: its
-  commits and the files, and `d` puts every changed line in your window
-  (`memdoor workflow diff <run>` from the shell). Not right yet? `/workflow changes <step> <what to
-  change>` reruns that step with your comment, then every step after it,
-  and the run comes back to the same gate for you to look again. The CLI is
+  commits and the files. `d` puts every changed line in your window
+  (`memdoor workflow diff <run>` from the shell). `/workflow changes <step> <what to
+  change>` reruns that step with your comment and the steps after it.
+  The run comes back to the same gate. The CLI is
   `memdoor workflow changes <run> <step> "<comment>"`.
 
 ![The review loop: a GitHub issue reproduced, fixed, sent back with one comment, approved, and the PR opened](/review-loop.cast)
-- **A workflow can fail; that is it working.** A task that cannot meet its
-  target after its retries reads `✗` with the reason, and what depends on
+- **A workflow can fail.** A task that cannot meet its
+  target after its retries reads `✗` with the reason. What depends on
   it stays waiting. Fix the cause and **resume** the run: what it finished
-  is skipped, what it did not runs.
-- **Every run is fresh** — its own partition, every task runs. Resume is for
-  continuing one. For a workflow that is *about* something — a commit, a
-  day, a release — the partition is that thing: the same commit resumes,
+  is skipped and what it did not runs.
+- **Every run is fresh**, with its own partition, and every task runs. Resume is for
+  continuing one. For a workflow that is about something (a commit, a
+  day, a release) the partition is that thing. The same commit resumes and
   the next one reruns.
 
 ## In the TUI
 
 `/workflow` opens the panel: your project's workflows, then its runs. Enter
-on a workflow runs it; Enter on a run opens its graph. The dropdown
+on a workflow runs it. Enter on a run opens its graph. The dropdown
 completes `/workflow:<name>` with what your project has. In the graph:
 `a` approves, `d` shows the full diff, `c` continues a failed or stopped run, `s` twice stops one,
 `Esc` stops the run of this window.
@@ -128,12 +127,11 @@ memdoor workflow stop <run-id>
 
 ## Bigger ones
 
-Fan-out is just requirements: five tasks that each require `fetch` run at
-the same time; one that requires all five waits for them. Ask for deep
+Fan-out is requirements. Five tasks that each require `fetch` run at
+once. One that requires all five waits for them. Ask for deep
 research on the top Hacker News stories and the coder makes a fetch step,
-one reading-and-summarizing step per story in parallel, and a merge — and
-every summary quotes the page it read, because the proof is the file, not
-the sentence.
+one reading-and-summarizing step per story in parallel, and a merge. Every
+summary quotes the page it read, because the proof is the file.
 
 ![A fan-out: one fetch, five readers at once, one merge](/workflow-hn.cast)
 
@@ -147,19 +145,19 @@ check that alone decides. It is in the repo as
 [`examples/workflows/team-solve`](https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve),
 with the problem it ran on and what the run found. On the first ten problems of
 the paper's list, five passes each, it scored 9.8 of 10 against the authors' 9.6 and
-Fable 5's 8.0 in one call: [the result](/docs/team-solve). Run on the paper's 100 hardest
+Fable 5's 8.0 in one call: [the result](/docs/team-solve). On the paper's 100 hardest
 LiveCodeBench problems against a single call of the same model, Qwen3.8-27B with
-thinking off, the team solved 47 to the single call's 35; the harness, the per-problem
+thinking off, the team solved 47 to the single call's 35. The harness, the per-problem
 tables and the caveats are in the example's `bench/` folder:
 
 ![A team on a ledger: a planner, two ideators in parallel, a solver, the samples, a manager, a repair round, the final check](/team-solve.cast)
 
 
-Memdoor releases itself with a workflow, reviews its own commits with one,
-and tests its terminal with one — all three live in its repo:
+Memdoor releases itself with a workflow, reviews its commits with one,
+and tests its terminal with one. All three live in its repo:
 
 ![The real terminal, tested: a tmux pane runs the TUI, types a prompt, and the assertion is on the file the turn made](/workflow-tui-check.cast)
 
 The engine is [mario](https://github.com/guregodevo/mario), an open DAG
-runner in Go; the task types, the proofs and the live graph are what
+runner in Go. The task types, the proofs and the live graph are what
 Memdoor adds.

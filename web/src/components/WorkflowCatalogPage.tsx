@@ -113,7 +113,7 @@ export function WorkflowCatalogPage() {
         <CoderHeader dark />
         <section className="mx-auto w-full max-w-6xl px-6 pb-14 pt-10 sm:px-12">
           <div className="mb-3 text-xs uppercase tracking-[0.2em] text-neutral-400">Workflows</div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Durable steps orchestration</h1>
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Workflows: the deterministic harness</h1>
         </section>
       </div>
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-14 sm:px-12">

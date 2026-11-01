@@ -1,6 +1,6 @@
 # The TUI, screen by screen
 
-Screens below were captured from running sessions at 96 columns — including the agent's own output, which is why the wording varies.
+Screens below were captured from running sessions at 96 columns. The agent's output is included, which is why the wording varies.
 
 ## The first screen
 
@@ -26,14 +26,13 @@ cd your-project && memdoor
 ```
 
 The header names the conversation. It reads "new session" until you ask
-something, then keeps the first thing you asked — which is also how the
+something. Then it keeps the first thing you asked, which is how the
 conversation is listed by `memdoor resume`.
 
 The footer's status line is the part worth learning: the git branch, the model
 that answered, and its rung on the agent's ladder with the reason it is there
 (`first rung · the default`, or `pinned by you` after `/model 3`).
-Routing is never an opaque auto mode — the line always says what is answering
-and why. Under it, the keys that apply right now.
+The line says what is answering and why. Under it, the keys that apply.
 
 ![A question on this repository: judged reads, the answer with file:line](/demo.cast)
 
@@ -44,19 +43,19 @@ memdoor tui --worktree fix-login
 ```
 
 The session works in `.memdoor/worktrees/fix-login` on branch
-`memdoor/fix-login`, cut from your HEAD. Your checkout is not touched, and two
+`memdoor/fix-login`, cut from your HEAD. Your checkout is not touched. Two
 windows in two worktrees cannot step on each other's files. When the window
-closes it says where the work is and how to merge it or throw it away; a
-worktree where nothing changed is removed with its branch. The same name
-reopens the same worktree. `--worktree` with no name picks one from the clock.
+closes it says where the work is and how to merge it or throw it away. A
+worktree where nothing changed is removed with its branch. A name reopens its
+worktree. `--worktree` with no name picks one from the clock.
 
 The tab shows `●` while a turn runs and `✓` when one has finished and you have
-not looked yet. If the window is in the background, the terminal also gets a
+not looked yet. If the window is in the background, the terminal gets a
 bell and a notification.
 
 ## A turn, frame by frame
 
-Type a task; every tool call renders as a frame:
+Type a task. Every tool call renders as a frame:
 
 ```
 > write hello.py that prints the first 5 squares, then run it
@@ -77,43 +76,42 @@ Type a task; every tool call renders as a frame:
     squares.
 ```
 
-The agent works in the directory you launched from: its file tools stay inside it and its commands start there — not a sandbox: a shell command can still reach other folders.
+The agent works in the directory you launched from. Its file tools stay inside it and its commands start there. It is not a sandbox: a shell command can still reach other folders.
 
 ## What it touched
 
-After a turn you want to know what changed and where, not to browse a tree.
+After a turn you want to know what changed and where.
 `ctrl+f` (or `/files`) opens the project's files with the ones this
-conversation read or changed first, newest first, each with what happened to
-it (`✎ calc.go  2 edits · 1 read`); the rest of the tree is behind the same
-filter. Type to filter, `↑↓` to move, enter to preview the file beside the
-list, `ctrl+d` for its diff since the turn started (a file the turn created
-shows whole, as added), `ctrl+e` to open it in `$EDITOR` and come back,
-tab to put `@path` into the prompt, esc to close. No modes to learn: one key
-in, one key out.
+conversation read or changed first, newest first. Each carries what happened to
+it (`✎ calc.go  2 edits · 1 read`). The rest of the tree is behind the same
+filter. Type to filter. `↑↓` moves. Enter previews the file beside the
+list. `ctrl+d` shows its diff since the turn started (a file the turn created
+shows whole, as added). `ctrl+e` opens it in `$EDITOR` and comes back.
+Tab puts `@path` into the prompt. Esc closes.
 
 ## This turn as a graph
 
 `ctrl+g` (or `/graph`) draws the turn so far the way `/workflow` draws a
 run: the reads and searches in the first layer, the edits that depended on
-them, the runs and checks that depended on the edits, each with its state
-and time, the failing check in red with its reason. The head line says how
-many reads, edits and runs, and whether the last run passed. `↑↓` move,
-`enter` on a file step opens it in the files panel, `esc` closes.
+them, the runs and checks that depended on the edits. Each carries its state
+and time. A failing check is red with its reason. The head line says how
+many reads, edits and runs, and whether the last run passed. `↑↓` move.
+`enter` on a file step opens it in the files panel. `esc` closes.
 
 ## What a frame shows
 
-A frame says what happened in the shape you scan for, and `ctrl+o` shows
+A frame says what happened in the shape you scan for. `ctrl+o` shows
 the raw result underneath:
 
 - **a search** (`grep`, `glob`, `locate`, `web_search`) reads as its hits
-  grouped by file with counts, most hits first; a web search as its
-  sources; nothing found as "no hits".
-- **a spawned run** (`Spawn(…)`) shows the child's own steps as it takes
+  grouped by file with counts, most hits first. A web search reads as its
+  sources. Nothing found reads as "no hits".
+- **a spawned run** (`Spawn(…)`) shows the child's steps as it takes
   them, newest last, and `✓ reported back` when its result wakes the
   conversation.
 - **a workflow call** shows the run's tasks with the panel's glyphs:
   `✓` done, `▶` running, `⏸` waiting for you, `✗` failed.
-- **a change** shows its diff; **a command** streams its tail while it
+- **a change** shows its diff. **A command** streams its tail while it
   runs.
 
 ## Slash commands
@@ -137,7 +135,7 @@ The dropdown opens on `/` and filters as you type. Skills appear under `/skill:`
  > /
 ```
 
-In the coding agent the list also carries `/model` and `/go`. One more character narrows it.
+In the coding agent the list carries `/model` and `/go`. One more character narrows it.
 
 ### `/usage` — what this month cost
 
@@ -150,8 +148,8 @@ In the coding agent the list also carries `/model` and `/go`. One more character
   Models       z-ai/glm-5.3-flash (171)  ·  z-ai/glm-5.3 (13)
 ```
 
-Your provider's account is the authority on the money; this is Memdoor's own
-per-turn ledger, and `memdoor meter` prints every line of it.
+Your provider's account is the authority on the money. This is Memdoor's
+per-turn ledger. `memdoor meter` prints every line of it.
 
 ### `/model` — which model is answering, and pinning one
 
@@ -165,7 +163,7 @@ per-turn ledger, and `memdoor meter` prints every line of it.
   /model <vendor/name> [price|throughput|latency] [order a,b]
 ```
 
-`/model-search glm` lists the catalogue with real prices per million tokens, and
+`/model-search glm` lists the catalogue with real prices per million tokens and
 pins from the result. The picker moves with up/down, reorders hosts with
 shift+up/down, and `s` cycles how they are sorted:
 
@@ -178,7 +176,7 @@ shift+up/down, and `s` cycles how they are sorted:
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
-The prices are left out of this capture: they change daily, and the picker
+The prices are left out of this capture. They change daily and the picker
 shows today's.
 
 ### `/context` — how full the window is
@@ -215,44 +213,44 @@ shows today's.
 
 ### `/skill:<name>` — run a skill as the task
 
-Skills are markdown instructions on disk. `/skill:review some/file.go` makes that skill the turn's task, deterministically. Drop a file into `.agents/skills/` and it appears in the dropdown immediately, no restart.
+Skills are markdown instructions on disk. `/skill:review some/file.go` makes that skill the turn's task. Drop a file into `.agents/skills/` and it appears in the dropdown at once, with no restart.
 
 ### `/go`, `/fresh`, `/clear`, `/new`, `/exit`
 
-When a turn has produced a plan, `/go` (also `/run`, `/approve`) hands it to the coder. `/clear` wipes what the agent remembers of this conversation, so its next turn starts from nothing; the messages stay for `memdoor resume`. `/fresh` does the same and sends your last request again — the way out of a turn that has read too much, and what the note after `Esc` points to. `/new` starts a fresh session. `/exit` leaves, same as `Ctrl+C`.
+When a turn has produced a plan, `/go` (also `/run`, `/approve`) hands it to the coder. `/clear` wipes what the agent remembers of this conversation, so its next turn starts from nothing. The messages stay for `memdoor resume`. `/fresh` does the same and sends your last request again. It is the way out of a turn that has read too much and what the note after `Esc` points to. `/new` starts a fresh session. `/exit` leaves, same as `Ctrl+C`.
 
 The full reference is **[Slash commands](/docs/slash-commands)**.
 
 ## Reading long output
 
-Scrolling up never yanks you back down when new output lands. A bar appears at the bottom telling you what you're missing, and `End` — or a click on the bar — jumps back to live:
+Scrolling up never yanks you back down when new output lands. A bar appears at the bottom telling you what you're missing. `End` or a click on the bar jumps back to live:
 
 ```
  ↓ 2 new messages — End or click to jump to latest
 ```
 
-Mouse wheel and `PgUp`/`PgDn` scroll; while the command list is open they move the selection instead.
+Mouse wheel and `PgUp`/`PgDn` scroll. While the command list is open they move the selection instead.
 
 ## If the gateway restarts
 
-The TUI reconnects on its own and sends anything you typed while it was away. A step that was mid-flight may have finished during the gap — its events aren't replayed, so check the folder rather than assuming it was lost.
+The TUI reconnects on its own and sends anything you typed while it was away. A step that was mid-flight may have finished during the gap. Its events aren't replayed, so check the folder rather than assuming it was lost.
 
 ## If the gateway refuses the window
 
-A gateway only opens your own workspace and your own conversations to you. If the window asks for someone else's, the gateway refuses it, and the TUI doesn't keep retrying. It shows the reason once, with what to do:
+A gateway opens only your workspace and your conversations to you. If the window asks for someone else's, the gateway refuses it and the TUI doesn't keep retrying. It shows the reason once, with what to do:
 
 ```
 ⚠ the gateway refused this window: not your workspace (yours is acme). Start memdoor again without -w or $MEMDOOR_WORKSPACE: it opens your own workspace. …
 ```
 
-`memdoor auth whoami` shows which account this machine is signed in as; `memdoor auth login-direct --email <email> --password <pass>` switches to another.
+`memdoor auth whoami` shows which account this machine is signed in as. `memdoor auth login-direct --email <email> --password <pass>` switches to another.
 
 ## From your phone
 
 `/remote` prints a link and a QR code. The page it opens on your phone is this
-same TUI, run by your gateway: watch a turn, answer its question, stop it,
-start the next one, with this window closed if you like. On your own gateway
-it is free; only the memdoor.ai relay, for a gateway kept to localhost, is
+TUI, run by your gateway. Watch a turn, answer its question, stop it,
+start the next one, with this window closed if you like. On your gateway
+it is free. Only the memdoor.ai relay, for a gateway kept to localhost, is
 part of the hosted gateway.
 
 → **[Remote control](/docs/remote)**
@@ -271,7 +269,7 @@ $ memdoor resume --last
 Resuming "make the throttle limit configurable" (7m ago, 4 turns)
 ```
 
-It opens with that title in the header and the last exchanges in view, on the same session. `memdoor resume` with no argument lists and asks; `resume 2` takes the second row. Conversations are listed for the folder you're in — `--all` shows every one.
+It opens with that title in the header and the last exchanges in view, on the same session. `memdoor resume` with no argument lists and asks. `resume 2` takes the second row. Conversations are listed for the folder you're in. `--all` shows every one.
 
 ## Where to next
 

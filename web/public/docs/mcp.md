@@ -10,18 +10,18 @@ the TUI with `/mcp`, or from a shell with `memdoor mcp`.
 
 `/mcp` opens the panel; `a` (or `/mcp add`) opens one box. Paste:
 
-- a URL — an HTTP server: `https://mcp.linear.app/mcp`
-- a command line — a local server: `npx -y @modelcontextprotocol/server-github`
+- a URL, for an HTTP server: `https://mcp.linear.app/mcp`
+- a command line, for a local server: `npx -y @modelcontextprotocol/server-github`
   (quotes respected; a leading `NAME=value` pair becomes part of its environment)
-- a `.mcp.json` snippet — one server or several, as a README shows them
+- a `.mcp.json` snippet, one server or several, as a README shows them
 
 Or search the official MCP registry (`registry.modelcontextprotocol.io`,
 public, no sign-in): `s` in the panel, `/mcp search <words>`, or
-`memdoor mcp search <words>`. A result becomes the entry you would write —
+`memdoor mcp search <words>`. A result becomes the entry you would write:
 a hosted server's URL, else `npx -y pkg@version`, `uvx pkg==version` or
-`docker run -i --rm image` — with everything it needs from you as `${VAR}`
-(a required environment variable, a header such as `Bearer ${API_KEY}`),
-so nothing secret is written and a missing value is named when it connects.
+`docker run -i --rm image`, with everything it needs from you as `${VAR}`
+(a required environment variable, a header such as `Bearer ${API_KEY}`).
+Nothing secret is written, and a missing value is named when it connects.
 Only each server's latest version is shown.
 
 The transport follows from what you pasted; you are never asked. A name is
@@ -34,17 +34,17 @@ sign-in starts the sign-in.
 
 A server that cannot run is not kept: the box opens again with your text and
 the reason, so nothing is written that would fail for everyone who clones the
-repository. One waiting for a variable (`${API_KEY}` unset) is the exception —
-the entry is right, the environment is not, so it is saved and the panel names
+repository. One waiting for a variable (`${API_KEY}` unset) is saved, since
+the entry is right and only the environment is missing, and the panel names
 what to set.
 
 ## Signing in
 
 An HTTP server that answers 401 needs sign-in. Memdoor follows the MCP
-authorization spec: the server's challenge names its protected-resource
-metadata (RFC 9728), that names its authorization server (RFC 8414 or
-OpenID; a server from before RFC 9728 is its own), Memdoor registers itself
-as a public client (RFC 7591), and you approve in a browser with PKCE (S256)
+authorization spec. The server's challenge names its protected-resource
+metadata (RFC 9728). That names its authorization server (RFC 8414 or
+OpenID; a server from before RFC 9728 is its own). Memdoor registers itself
+as a public client (RFC 7591). You approve in a browser with PKCE (S256)
 and the resource indicator (RFC 8707).
 
 On screen: the browser opens, the link is in the transcript (clickable) and
@@ -53,10 +53,10 @@ copied to the clipboard, a timer runs. The code comes back to a listener on
 address the browser ends on; Esc cancels.
 
 Tokens live in `~/.memdoor/mcp-tokens.json`, each encrypted with the master
-key and keyed by the server's URL — never in a config file, so a committed
+key and keyed by the server's URL, so a committed
 `.mcp.json` carries no credential. A token is refreshed five minutes before
-it expires. `/mcp logout <name>` forgets it. A server whose config sends its
-own `Authorization` header (an API key, `${VAR}` from the environment) is
+it expires. `/mcp logout <name>` forgets it. A server whose config sends an
+`Authorization` header (an API key, `${VAR}` from the environment) is
 not signed in to.
 
 ## The files
@@ -73,7 +73,7 @@ not signed in to.
 
 `${VAR}` and `${VAR:-default}` expand from the gateway's environment; a
 missing one is named. A name in both files is the project's. Memdoor's
-writes keep every key and field it does not model. `"disabled": true` turns
+writes keep the keys and fields it does not model. `"disabled": true` turns
 a server off. A server on the old HTTP+SSE transport (MCP 2024-11-05) works
 too: a URL whose POST is refused with 404 or 405 falls back to it, as the
 spec says, and `"type": "sse"` goes straight to it.
@@ -83,10 +83,10 @@ spec says, and `"type": "sse"` goes straight to it.
 A project's `.mcp.json` can start commands, and a repo may have just been
 cloned: its servers start only after your yes. At start, the TUI opens the
 panel on what the file would run; `y` (or `memdoor mcp trust`) allows it.
-The trust covers the servers as they are — a changed command asks again;
+The trust covers the servers as they are: a changed command asks again,
 turning one on or off does not. Adding a server to a project through
-Memdoor trusts the file only if it was trusted or held nothing else, so it
-never approves a repo's own servers by the way.
+Memdoor trusts the file only if it was trusted or held nothing else, so a
+repo's servers are never approved as a side effect.
 
 ## How the coder gets the tools
 
@@ -103,8 +103,8 @@ never approves a repo's own servers by the way.
 - An agent whose palette carries `mcp` gets them; the coder's does.
 - Cost: every tool's schema travels on every request. With the decision
   model, tool routing offers an `mcp` family only on a turn whose project
-  has connected servers, its description naming them, so the schemas go
-  only on turns that need them. Without it, they go on every turn.
+  has connected servers.
+  Without it, they go on every turn.
 
 ## Prompts
 

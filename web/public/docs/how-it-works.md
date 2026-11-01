@@ -1,8 +1,8 @@
 # How It Works
 
 Memdoor is a small server on your machine that the terminal talks to. The gateway
-runs the agent, its tools, memory and sessions; it sends the *thinking* to a model
-on your own account at the provider you chose, and everything else stays local.
+runs the agent, its tools, memory and sessions. The model calls go to the
+provider you chose, on your key; the rest stays local.
 
 ## The architecture
 
@@ -23,9 +23,7 @@ on your own account at the provider you chose, and everything else stays local.
 The decision model runs on a decision key (`memdoor connect
 typesafe`), else the OpenRouter key you code with. On a vendor key, a
 company's AI gateway or a ChatGPT plan alone it is off until a decision key
-is set. Nothing
-downstream can tell which model answered, and nothing of your code passes
-through memdoor.ai.
+is set. Nothing of your code passes through memdoor.ai.
 
 ## What happens in a turn
 
@@ -41,20 +39,22 @@ through memdoor.ai.
 3. **It edits and runs.** Patches are applied with their exact context lines, the
    build and the tests are run, and the real output is read back.
 4. **It stops when it is done, or when it is not getting anywhere.** After each
-   step the decision model judges whether the turn is still making progress. When
-   it is not, the turn is wrapped up with what it has and says so. There is no
+   step the decision model judges whether the turn is making progress. When
+   it is not, the turn is wrapped up with what it has and says so. The turn has no
    call cap.
 5. **The turn is metered.** Model served, tokens in and out, duration, appended
    to `~/.memdoor/meter.jsonl` and never rewritten.
 
 ## The models
 
-Each agent has a ladder, cheapest rung first. The footer names the model and the rung, and `/model` pins
-any rung or any tool-capable model from the catalogue, ordering its hosts by
-price, throughput or latency. Every request carries `data_collection: deny` and
-`require_parameters` (a `:free` model, pinned or the one an OpenRouter account
-with no credit answers on, is the one exception: its hosts train, the request says `allow`, Memdoor says so at the pin or when the key is connected), so no host that might train on your code, or that would
-silently drop the tool schema, serves you. See **[Your key and the
+Each agent has a ladder, cheapest rung first. The footer names the model and
+the rung. `/model` pins any rung or any tool-capable model from the catalogue,
+ordering its hosts by price, throughput or latency. Every request carries
+`data_collection: deny` and `require_parameters`. No host that might train on
+your code, or that would silently drop the tool schema, serves you. The
+exception is a `:free` model, pinned or the one an OpenRouter account with no
+credit answers on. Its hosts train and the request says `allow`. Memdoor says
+so at the pin or when the key is connected. See **[Your key and the
 models](/docs/your-key)**.
 
 ## Sessions

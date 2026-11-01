@@ -1,13 +1,13 @@
 # Memdoor
 
-> A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows. Open source, on a gateway you own, using your own provider account.
+> A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows. Open source, on your gateway, on your key.
 
 ## Why Memdoor
 
 - Token optimization: judged reads, tool selection and progress checks reduce unnecessary model input and stalled turns. Savings depend on the task; measurements are below.
 - Single binary: deploy the CLI on macOS, Linux or Windows without Docker or Python. Connect over SSH to another machine with `memdoor --gateway ssh://you@box`.
 - CLI, headless first: `memdoor run` takes a prompt, writes to stdout and returns a check-aware exit code for shell scripts, CI and cron. Resume the same conversation from a terminal, IDE or phone.
-- Durable workflows: keep task graphs in the repo, check outputs, wait for approval where required and resume failed runs without repeating completed steps.
+- Durable workflows, the deterministic harness: a graph of steps, each checked by its output, a gate where you want one, and a failed run resumed without repeating completed steps.
 
 ## What it is
 

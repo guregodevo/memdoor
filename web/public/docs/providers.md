@@ -1,12 +1,11 @@
 # Providers
 
-Models come from providers, each with its own list, read from the
-provider's own API — windows, output caps, prices and modalities as the
-vendor states them, never typed into Memdoor. `/model-search` alone is a
-picker of your providers: enter opens one's models, enter again pins one
-for the conversation, no name to know. `/model-search <text>` searches
-them all; `/model` shows what is connected and what is not; the footer
-names the provider that answers.
+Models come from providers. Each has a list read from the provider's
+API: windows, output caps, prices and modalities as the vendor states them,
+never typed into Memdoor. `/model-search` alone lists your providers. Enter
+opens one's models and enter again pins one for the conversation.
+`/model-search <text>` searches them all. `/model` shows what is connected and
+what is not. The footer names the provider that answers.
 
 ```
 memdoor providers                 # each provider, connected or not, ● the one answering
@@ -19,44 +18,32 @@ memdoor providers --models groq   # one provider's list: window · max out · $ 
 memdoor providers --audit         # where every window came from, and which are guesses
 ```
 
-A key goes in the environment under the name below, or through
-`/connect` — which opens the token step with that name prefilled (Enter
-keeps it when the gateway already has it; the value is never shown) and
-keeps what it connects in `~/.memdoor/providers.json`, so a provider is
-there at every start. A key can be the value, the NAME of a variable, or
-`!command`; `*_BASE_URL` points a provider at a proxy or a company gateway
-in front of it. Pin a model whose provider is not connected and the window
-says which one to `/connect`. Every provider below has done
-the same coding turn on its fast model — a planted bug, a failing test,
-"fix the code, not the test" — in 8 to 45 seconds.
+A key goes in the environment under the name below, or through `/connect`.
+`/connect` opens the token step with that name prefilled. Enter keeps it when
+the gateway already has it, and the value is never shown. What it connects is
+kept in `~/.memdoor/providers.json`, so a provider is there at every start. A
+key can be the value, the NAME of a variable, or `!command`. `*_BASE_URL`
+points a provider at a proxy or a company gateway in front of it. Pin a model
+whose provider is not connected and the window says which one to `/connect`.
+Every provider below has done the same coding turn on its fast model (a
+planted bug, a failing test, "fix the code, not the test") in 8 to 45 seconds.
 
 With no kind, `memdoor connect` first scans this shell's environment and
 the project's `.env`, `.env.local` and `.envrc` for keys by their shape
 (`sk-or-…`, `sk-ant-…`, `AIza…`/`AQ.…`, `gsk_…`, `xai-…`, a bare `sk-…`,
 or, for a key with no shape, its provider's own variable name like
-`BASETEN_API_KEY`). The keys found that would change something are
-numbered first and Enter connects the first; the keys the gateway already
-reads from its environment are named on a line of their own, not offered
-again; then the sign-ins under "Sign in, no key:" (OpenRouter, ChatGPT),
-then the kinds that take a key.
-
-A key goes in the environment under the name below, or through
-`/connect` — which opens the token step with that name prefilled (Enter
-keeps it when the gateway already has it; the value is never shown) and
-keeps what it connects in `~/.memdoor/providers.json`, so a provider is
-there at every start. A key can be the value, the NAME of a variable, or
-`!command`; `*_BASE_URL` points a provider at a proxy or a company gateway
-in front of it. Pin a model whose provider is not connected and the window
-says which one to `/connect`. Every provider below has done
-the same coding turn on its fast model — a planted bug, a failing test,
-"fix the code, not the test" — in 8 to 45 seconds.
+`BASETEN_API_KEY`). The keys found that would change something are numbered first, and Enter
+connects the first. The keys the gateway already reads from its environment
+are named on a line of their own and not offered again. Then come the sign-ins
+under "Sign in, no key:" (OpenRouter, ChatGPT), then the kinds that take a
+key.
 
 ## OpenRouter — the catalogue
 
 - **Key**: `OPENROUTER_API_KEY` · base `https://openrouter.ai/api/v1`
 - **Its API states**: window, the top host's completion cap, prices,
-  supported parameters — for every vendor's models, which is why it is
-  also the catalogue the other providers fall back to.
+  supported parameters, for every vendor's models, so it is the
+  catalogue the other providers fall back to.
 - **Fast model**: `z-ai/glm-5.3-flash` (the ladder's first rung).
 - One key for 380 tool-capable models; the ladder, `/model` with real
   prices and host ordering live here.
@@ -64,61 +51,60 @@ the same coding turn on its fast model — a planted bug, a failing test,
 ## ChatGPT Plus or Pro — no key
 
 - **Sign in**: `memdoor connect chatgpt`, or `/connect chatgpt` in the
-  window. The browser opens OpenAI's Sign in with ChatGPT; you approve;
-  the plan is probed like a key and kept, encrypted, in
-  `~/.memdoor/chatgpt-login.json`. `memdoor connect --remove chatgpt` signs
-  out.
+  window. The browser opens OpenAI's Sign in with ChatGPT. You approve. The plan
+  is probed like a key and kept encrypted in `~/.memdoor/chatgpt-login.json`.
+  `memdoor connect --remove chatgpt` signs out.
 - **Any door**: with the gateway on a box or over ssh, sign in from your
-  laptop as usual; the browser's return is passed on to the gateway. In an
-  ssh session with no browser, open the link anywhere, approve, and paste the
-  address the browser lands on (that page does not load; that is expected).
-- **By default**: once signed in, the plan answers your turns, on the first
-  model it lists, before an OpenRouter key (a company's key still comes
-  first). A model you had pinned on your OpenAI key that the plan also lists
-  moves to the plan at sign-in, and the sign-in says so; `memdoor connect
-  --remove chatgpt` hands the turns back to your key.
+laptop as usual. The browser's return is passed on to the gateway. In an ssh
+session with no browser, open the link anywhere and approve. Then paste the
+address the browser lands on (that page does not load, which is expected).
+- **By default**: once signed in, the plan answers your turns on the first
+model it lists, before an OpenRouter key (a company's key still comes first).
+A model you had pinned on your OpenAI key that the plan also lists moves to
+the plan at sign-in, which says so. `memdoor connect --remove
+chatgpt` hands the turns back to your key.
 - **What answers**: the models your plan lists, over the Responses API, on
   the plan's own allowance. OpenAI opened this to open-source, locally run
-  apps in September 2026. A plan is a provider like any other: `/model`
-  shows its models, a bare pin that both the plan and an OpenAI key list
-  goes to the plan, `openai:<id>` names the key.
-- **Limits**: a weekly allowance per app; when it is used up the window
-  says so and the turn ends there. The decision model needs an OpenRouter
-  or decision key of its own, so on a plan alone it is off.
-- A Claude subscription has no equivalent: Anthropic's terms forbid it
-  outside Claude Code, so Claude needs an API key (below).
+  apps in September 2026. A plan is a provider like any other. `/model` shows
+  its models. A bare pin that both the plan and an OpenAI key list goes to the
+  plan. `openai:<id>` names the key.
+- **Limits**: a weekly allowance per app. When it is used up the window says
+so and the turn ends there. The decision model needs an OpenRouter
+  or decision key, so on a plan alone it is off.
+- A Claude subscription has no equivalent. Anthropic's terms forbid it outside
+Claude Code, so Claude needs an API key (below).
 
 ## OpenAI
 
 - **Key**: `OPENAI_API_KEY` · base `https://api.openai.com/v1`
-- **Its API states**: nothing beyond the id — the one vendor without
+- **Its API states**: nothing beyond the id, the one vendor without
   model metadata. Windows come from the same model in OpenRouter's
-  catalogue (`openai/gpt-5-codex`, 400k), then the public reference;
-  audio, image, realtime and embedding ids stay marked `~`.
+  catalogue (`openai/gpt-5-codex`, 400k), then the public reference. Audio,
+  image, realtime and embedding ids stay marked `~`.
 - **Fast model**: `gpt-5-mini` (400k / 128k).
-- Newer models take `max_completion_tokens`; Memdoor sends it on this host
-  and switches to it on any host that asks.
+- Newer models take `max_completion_tokens`. Memdoor sends it on this host and
+switches to it on any host that asks.
 
 ## Google Gemini
 
 - **Key**: `GEMINI_API_KEY` · base `https://generativelanguage.googleapis.com/v1beta/openai`
-- **Its API states**: `inputTokenLimit`, `outputTokenLimit`, thinking —
-  read from the native `/v1beta/models`, not the OpenAI-shaped list, so
-  the figures are Google's own; embedding and image models are left out.
-- **Fast model**: `gemini-3-flash-preview` (1M). The 2.5 line is closed to
-  new keys; Gemini 3 needs billing enabled on the key.
-- Gemini 3's thinking models return a `thought_signature` with each tool
-  call; Memdoor carries it back on the follow-up, as they require.
+- **Its API states**: `inputTokenLimit`, `outputTokenLimit`, thinking. They
+are read from the native `/v1beta/models` rather than the OpenAI-shaped list,
+so the figures are Google's own. Embedding and image models are left out.
+- **Fast model**: `gemini-3-flash-preview` (1M). The 2.5 line is closed to new
+keys. Gemini 3 needs billing enabled on the key.
+- Gemini 3's thinking models return a `thought_signature` with each tool call.
+Memdoor carries it back on the follow-up as they require.
 
 ## Groq
 
 - **Key**: `GROQ_API_KEY` · base `https://api.groq.com/openai/v1`
 - **Its API states**: `context_window`, `max_completion_tokens`, prices,
   modalities.
-- **Fast model**: `openai/gpt-oss-20b` — 8 seconds on the coding turn,
-  the fastest here; `qwen/qwen3.8-27b` for a stronger one.
-- The free tier rate-limits quickly; Memdoor waits what `Retry-After`
-  says (up to a minute) before asking again.
+- **Fast model**: `openai/gpt-oss-20b`: 8 seconds on the coding turn, the
+fastest here. `qwen/qwen3.8-27b` for a stronger one.
+- The free tier rate-limits quickly. Memdoor waits what `Retry-After` says (up
+to a minute) before asking again.
 
 ## xAI Grok
 
@@ -133,97 +119,96 @@ the same coding turn on its fast model — a planted bug, a failing test,
 - **Key**: `DEEPSEEK_API_KEY` · base `https://api.deepseek.com/v1`
 - **Its API states**: `context_window`, `max_output_tokens`, effort,
   modalities.
-- **Fast model**: `deepseek-flash` (1M / 393k); `deepseek-v4-pro` for the
-  larger one.
+- **Fast model**: `deepseek-flash` (1M / 393k). `deepseek-v4-pro` for the
+larger one.
 
 ## Baseten
 
 - **Key**: `BASETEN_API_KEY` · base `https://inference.baseten.co/v1`
 - **Its API states**: `context_length`, `max_completion_tokens`, prices,
   modalities, supported features (only tool-capable models are listed).
-- **Fast model**: `zai-org/GLM-5.3-Flash`; also DeepSeek V4, Kimi K3,
-  Nemotron. Ids carry case — type them as
-  listed.
+- **Fast model**: `zai-org/GLM-5.3-Flash`. Also DeepSeek V4, Kimi K3 and
+Nemotron. Ids carry case. Type them as listed.
 
 ## Anthropic
 
 - **Key**: `ANTHROPIC_API_KEY` · base `https://api.anthropic.com`
-- **Its API states**: `max_input_tokens`, `max_tokens`, capabilities —
-  image input, thinking, effort levels — per model.
-- **Fast model**: `claude-haiku-4-5-20251001` (200k / 64k); Sonnet 5,
-  Opus 4.6 and Fable 5.1 are 1M / 128k.
-- A Claude subscription is not an API key; the key comes from
-  console.anthropic.com. Streams.
+- **Its API states**: `max_input_tokens`, `max_tokens`, capabilities
+  (image input, thinking, effort levels) per model.
+- **Fast model**: `claude-haiku-4-5-20251001` (200k / 64k). Sonnet 5, Opus 4.6
+and Fable 5.1 are 1M / 128k.
+- A Claude subscription is not an API key. The key comes from
+console.anthropic.com. Streams.
 
 ## Your company's AI gateway
 
 - **Variables**: `AI_GATEWAY_BASE_URL` + `AI_GATEWAY_TOKEN` (or any
   `*_AI_GATEWAY_TOKEN`) + `MEMDOOR_MODEL` = the provider slug the gateway
-  serves; `AI_GATEWAY_API=chat` if it speaks chat/completions rather than
-  the Responses API.
-- **What it states**: whatever its `/models` lists (window and cap are
-  read when present); a slug it does not list is declared by
-  `MEMDOOR_MODEL` and `MEMDOOR_MODEL_CONTEXT`.
-- With it set, nothing but the gateway is contacted — no OpenRouter, no
+  serves. `AI_GATEWAY_API=chat` if it speaks chat/completions rather than the
+  Responses API.
+- **What it states**: whatever its `/models` lists (window and cap are read
+  when present). A slug it does not list is declared by `MEMDOOR_MODEL` and
+  `MEMDOOR_MODEL_CONTEXT`.
+- With it set, nothing but the gateway is contacted: no OpenRouter, no
   memdoor.ai, no catalogue, no public reference (the last copy on disk
   answers). [Where your data goes](/docs/security).
 
 ## A local runtime — no key
 
-`memdoor connect local` (or `/connect local` in the window): an
+`memdoor connect local` (or `/connect local` in the window) connects an
 OpenAI-compatible server on this machine or on the box the gateway runs
-on — janis, Ollama, llama.cpp, LM Studio, vLLM. It asks for no token and
-sends none; a blank base finds the runtime on the gateway's machine (janis
-on 8090, Ollama 11434, llama.cpp 8080, LM Studio 1234), or you name its
-address. The probe reads the
-runtime's model list and makes one call, as with every provider;
-`/model search` then lists what the runtime serves, at no price, and
-`/model <id>` pins one. On a box reached with `--gateway ssh://you@box`,
-the runtime runs on the box and the window on your laptop. Nothing leaves
-the machine the runtime runs on.
+on: janis, Ollama, llama.cpp, LM Studio, vLLM. It asks for no token and sends
+none. A blank base finds the runtime on the gateway's machine (janis on 8090,
+Ollama 11434, llama.cpp 8080, LM Studio 1234), or you name its address. The
+probe reads the runtime's model list and makes one call, as with every
+provider. `/model search` then lists what the runtime serves at no price, and
+`/model <id>` pins one. On a box reached with `--gateway ssh://you@box` the
+runtime runs on the box and the window on your laptop. Nothing leaves the
+machine the runtime runs on.
 
 Ollama reads a prompt through a 4,096-token window unless told otherwise,
-whatever the model allows, and a coder turn's prompt is longer than that:
-the model then answers a task it never saw, in a few lines, and calls no
-tool (the meter shows exactly 4096 input tokens on every call). Start Ollama
-with `OLLAMA_CONTEXT_LENGTH=32768`, or make a tag with the window set and pin
-that one:
+whatever the model allows. A coder turn's prompt is longer than that. The
+model then answers a task it never saw in a few lines and calls no tool (the
+meter shows exactly 4096 input tokens on every call). Start Ollama with
+`OLLAMA_CONTEXT_LENGTH=32768`, or make a tag with the window set and pin that
+one:
 
 ```
 printf 'FROM qwen3:8b\nPARAMETER num_ctx 32768\n' > Modelfile
 ollama create qwen3:8b-32k -f Modelfile
 ```
 
-A runtime that also judges — [janis](https://github.com/guregodevo/janis)
-answers the decision model's questions on the same loaded model — is
-connected as both: `connect local` keeps its decisions as `local-decisions`,
-and the [decision model](/docs/no-babysitting#who-decides-the-decision-model) runs on this machine with no key
-from that moment. On a runtime without that endpoint (Ollama,
-llama.cpp) decisions stay off, as on a vendor key.
+A runtime that also judges is connected as both.
+[janis](https://github.com/guregodevo/janis) answers the decision model's
+questions on the same loaded model. `connect local` keeps its decisions as
+`local-decisions`, and the [decision
+model](/docs/no-babysitting#who-decides-the-decision-model) runs on this
+machine with no key from that moment. On a runtime without that endpoint
+(Ollama, llama.cpp) decisions stay off, as on a vendor key.
 
 ### The box's model answers the laptop
 
-A gateway on a box with a GPU is a peer of the one on your laptop: `memdoor
+A gateway on a box with a GPU is a peer of the one on your laptop. `memdoor
 peers add box http://box:18789 --dir ~/app` names it once you are signed in to
-it (the ssh door signs you in on the way), and `@box:coder …` in any
-conversation here runs the turn there, on the model that box serves, and brings
+it (the ssh door signs you in on the way). Then `@box:coder …` in any
+conversation here runs the turn there on the model that box serves and brings
 the answer back as the reply. The laptop needs no GPU and no key for that
-model; the box's tokens show on the box's own ledger (`memdoor meter` there).
+model. The box's tokens show on its ledger (`memdoor meter` there).
 
 ![A laptop with no GPU asks @box:coder; the box runs Qwen3.8-27B through janis on its L4, patches main.go, runs it, and the answer lands in the laptop's window](/local-model.cast)
 
-Recorded 2026-10-26: a g2-standard-16 with one L4 on Google Cloud, janis
-serving Qwen3.8-27B 4-bit (the Qwen3.5 hybrid on CUDA), Memdoor installed on
-the box through the ssh door. The 27B answers at about 5 tokens a second on
-that card and reads a coder prompt at 250; a turn that edits and runs a file
+Recorded 2026-10-26 on a g2-standard-16 with one L4 on Google Cloud. janis
+served Qwen3.8-27B 4-bit (the Qwen3.5 hybrid on CUDA). Memdoor was installed
+on the box through the ssh door. The 27B answers at about 5 tokens a second on
+that card and reads a coder prompt at 250. A turn that edits and runs a file
 takes a few minutes, all of it on the box.
 
 ## Any OpenAI-compatible endpoint
 
 `memdoor connect custom` with a base URL and its key: a vLLM, an internal
-proxy, a hosted model. Window and cap are read when the endpoint lists
-them (`context_length`, `max_model_len`), else the reference, else a
-marked guess you can declare.
+proxy, a hosted model. Window and cap are read when the endpoint lists them (`context_length`,
+`max_model_len`). Otherwise the reference answers, else a marked guess you can
+declare.
 
 ## Attribution — whose request this is
 
@@ -236,22 +221,21 @@ export MEMDOOR_ATTRIBUTION="user=you@corp.example;team=data-eng"
 export MEMDOOR_ATTRIBUTION_HEADERS="user=X-Email;team=X-Team"   # default X-Memdoor-User, X-Memdoor-Team …
 ```
 
-`project` (the project's directory name) and `session` (the
-conversation's id) are filled from the turn; a field with no value sends
-no header. `MEMDOOR_VENDOR_HEADERS="Name: value; …"` adds anything static
-beside them.
+`project` (the project's directory name) and `session` (the conversation's id)
+are filled from the turn. A field with no value sends no header.
+`MEMDOOR_VENDOR_HEADERS="Name: value; …"` adds anything static beside them.
 
 ## When two providers list the same id
 
-A bare id goes to the active provider; name the provider to be exact:
+A bare id goes to the active provider. Name the provider to be exact:
 `/model groq:qwen/qwen3.8-27b`, `/model baseten:zai-org/GLM-5.3-Flash`.
 The footer then reads `groq · qwen/qwen3.8-27b · pinned by you`.
 
 ## Where a window comes from
 
-In order: the provider's own API; the same model in OpenRouter's
-catalogue; the public reference catalogue (models.dev, read once a day,
-kept on disk, never contacted on a company gateway); the provider's
-default — shown as `~` after the figure, warned once in the log, and
-declarable in `providers.json`. `memdoor providers --audit` prints the
-count per provider, and how many of the figures are stated rather than guessed.
+In order: the provider's API; the same model in OpenRouter's catalogue;
+the public reference catalogue (models.dev, read once a day, kept on disk,
+never contacted on a company gateway); the provider's default. The default is
+shown as `~` after the figure, warned once in the log, and declarable in
+`providers.json`. `memdoor providers --audit` prints the count per provider
+and how many of the figures are stated rather than guessed.

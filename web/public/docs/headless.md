@@ -1,62 +1,61 @@
 # Headless, then attached
 
-One gateway, every door. Every run is a conversation on your gateway,
-whether a window was open or not: the window, the phone, the editor, a
-schedule, a workflow from a shell or CI, a spawned child, and `memdoor
-resume` into any of them. That is what lets you leave a run alone and come
-back into it live, instead of killing it and starting over.
+Every run is a conversation on your gateway, whether a window was open or not:
+a turn from the window, the phone or the editor, a schedule, a workflow from a
+shell or CI, a spawned child. `memdoor resume` opens any of them. You can
+leave a run alone and come back into it live instead of killing it and
+starting over.
 
 ## The rule
 
-Every command is headless except the window. `memdoor tui` is the window.
-`memdoor resume` is the window at a terminal and text into a pipe, the Unix
-rule, no flag. `memdoor run`, `workflow run`, `cron add`, `guards` and the
-rest are commands and nothing else: a prompt or arguments in, text or events
-out, an exit code. Stdin is the input when it is a pipe or a file; a
-terminal is never read.
+Every command is headless except `memdoor tui`, the window. `memdoor resume`
+opens the window at a terminal and prints text into a pipe. No flag decides
+it. `memdoor run`, `workflow run`, `cron add`, `guards` and the rest take a
+prompt or arguments and write text or events. Each returns an exit code. Stdin
+is the input when it is a pipe or a file. A terminal is never read.
 
-Headless means it runs without a desktop app or an interface: the gateway is
-a background process on the machine the run belongs to (your laptop, a CI
-runner), and nothing else is needed. You never start it by hand: `memdoor
-run`, `workflow run`, `workflow resume`, `cron add`, `resume`, `tui` and
-`acp` start one when none is running, and set the machine up the first
-time (a home that has never seen Memdoor is one command away from its first
-answer). A run with the laptop closed runs on [a box that stays
-on](/docs/gateway): `memdoor gateway install` there, and your laptop, ssh and
-your phone are doors onto it. A box that memdoor.ai runs for you is coming.
+Headless means no desktop app and no interface. The gateway is a background
+process on the machine the run belongs to, your laptop or a CI runner. Nothing
+else is needed. You never start it by hand: `memdoor run`, `workflow run`,
+`workflow resume`, `cron add`, `resume`, `tui` and `acp` start one when none
+is running and set the machine up the first time. A run that must survive a
+closed laptop belongs on [a box that stays on](/docs/gateway). Run `memdoor
+gateway install` there and your laptop, ssh and your phone are doors onto it.
+A box that memdoor.ai runs for you is coming.
 
 ## Runs that need no window
 
-- **A scheduled check.** Inside a turn the agent schedules its own re-check
-  (`cron(every: "20s", task: "is CI green?", times: 6)`) and the turn ends;
-  from the shell, `memdoor cron add --id nightly --schedule "0 6 * * *"
-  --agent coder --message "…"` runs a turn on a schedule, and `--workflow
+- **A scheduled check.** Inside a turn the agent schedules a re-check
+  (`cron(every: "20s", task: "is CI green?", times: 6)`) and the turn ends.
+  From the shell, `memdoor cron add --id nightly --schedule "0 6 * * *"
+  --agent coder --message "…"` runs a turn on a schedule. `--workflow
   <name>` runs a workflow on one. See [Scheduled checks](/docs/cron).
 - **A workflow from the shell or CI.** `memdoor workflow run <name>` starts
-  the project's workflow and prints the run; `memdoor workflow status
-  <run-id>` shows every task's state, `history <name>` what earlier runs did.
-  On a CI runner the whole job is the installer, the key in the environment
-  and that one command with `--wait`: it starts the gateway, sets the runner
-  up itself, and exits with the run's outcome. On GitHub that job is one
-  step, `uses: guregodevo/memdoor-action@v1` with the workflow's name and your
-  key; `pr-triage`, `pr-review`, `security-review`, `write-tests`, `pr-description`,
-  `explain-failure`, `issue-triage`, `fix-tests` and `release-notes` are
-  built in and need no file in the repo. See [Workflows](/docs/workflows).
+  the project's workflow and prints the run. `memdoor workflow status
+  <run-id>` shows every task's state and `history <name>` what earlier runs
+  did. On a CI runner the whole job is the installer, the key in the
+  environment and that one command with `--wait`. It starts the gateway, sets
+  the runner up and exits with the run's outcome. On GitHub that job
+  is one step, `uses: guregodevo/memdoor-action@v1` with the workflow's name
+  and your key. `pr-triage`, `pr-review`, `security-review`, `write-tests`,
+  `pr-description`, `explain-failure`, `issue-triage`, `fix-tests` and
+  `release-notes` are built in and need no file in the repo. See
+  [Workflows](/docs/workflows).
 - **An editor session.** The coder in VS Code, Zed or JetBrains is a
   conversation on the same gateway. See [In your editor](/docs/editor).
-- **The phone, from a script.** `memdoor remote <id>` prints the
-  link `/remote` would, on stdout, and returns: the gateway holds the link,
-  so the run a script or a CI job started is on your phone for as long as
-  that gateway runs. See [Remote control](/docs/remote).
+- **The phone, from a script.** `memdoor remote <id>` prints the link
+  `/remote` would, on stdout, and returns. The gateway holds the link, so the
+  run a script or a CI job started is on your phone for as long as that
+  gateway runs. See [Remote control](/docs/remote).
 
-Each of these answers into a conversation; a check's answer also wakes the
+Each of these answers into a conversation. A check's answer wakes the
 conversation that asked for it, so the agent acts on it without you.
 
 ## A turn from a script
 
-`memdoor run` is one coder turn with no window: the prompt from the
-arguments or stdin, the answer on stdout, everything else on stderr, and an
-exit code that is the turn's receipt.
+`memdoor run` is one coder turn with no window. The prompt comes from the
+arguments or stdin. The answer goes to stdout and everything else to stderr.
+The exit code is the turn's receipt.
 
 ```bash
 memdoor run "make the retry wait configurable and add a test"
@@ -66,8 +65,8 @@ memdoor run --json "fix the failing test" | jq -r 'select(.event=="done") | .rec
 
 With both arguments and a pipe, what is piped in is the input the prompt is
 about. `--json` streams NDJSON events (`text`, `tool_start`, `tool_done`,
-`question`, `done`); the `done` event carries the conversation id, the
-receipt and the exit code. The codes:
+`question`, `done`). The `done` event carries the conversation id, the receipt
+and the exit code. The codes:
 
 | Exit | Meaning |
 |---|---|
@@ -79,18 +78,18 @@ receipt and the exit code. The codes:
 
 ![A turn from a script: the answer on stdout, the exit code, then the same run opened in a window](/headless.cast)
 
-Each run is a conversation: its id is on stderr at the end, and `memdoor
+Each run is a conversation. Its id is on stderr at the end, and `memdoor
 resume <id>` opens it in a window. `--conversation <id>` continues one.
 
 `memdoor workflow run <name> --wait` is the same contract for a workflow:
 progress on stderr, the files the run produced on stdout, exit 0 done, 2
-failed, 1 stopped; a gate is reported and waited on. `--stop-at-gate` ends
-it at a gate instead, exit 3 with the gate's review on stderr: the job that
-has nobody to approve from (the run stays waiting on the gateway).
+failed, 1 stopped. A gate is reported and waited on. `--stop-at-gate` ends it
+at a gate instead, exit 3 with the gate's review on stderr, for a job with
+nobody to approve. The run stays waiting on the gateway.
 
 ## A walk through the doors
 
-Every command below was run in this order on 11 October 2026, against a
+The commands below were run in this order on 11 October 2026, against a
 gateway that was not running when the first one started, in a scratch Go
 project whose `Add` returned `a - b`. The exit codes are the receipts.
 
@@ -109,16 +108,16 @@ project whose `Add` returned `a - b`. The exit codes are the receipts.
 | `memdoor cron add --id t --schedule "*/30 * * * *" --agent coder --message "say ok"`, `list`, `remove` | 0 | added, listed once, removed |
 | `memdoor remote --last > link.txt` (12 October), the link opened from another terminal | 0 | the link alone on stdout; the other terminal showed the run's conversation and a turn typed there answered on the gateway; `/remote` in a window gave the same link; `remote off` revoked it |
 
-The second row is the one to read twice: nothing changed and the last run
-failed, so the pipeline sees 2. A failing test you did not touch is still a
-failing test.
+In the second row nothing changed and the test still failed, so the pipeline
+sees 2.
 
 ## In CI
 
-On GitHub, one step: `uses: guregodevo/memdoor-action@v1` with a workflow
-(one of nine built in, such as `pr-triage` or `pr-review`, or your own) and your key, or a
-model inside the runner. The run's outcome is the job's. The whole page is
-**[In CI](/docs/ci)**; elsewhere, the same run is three shell lines:
+On GitHub it is one step, `uses: guregodevo/memdoor-action@v1`, with a
+workflow and your key or a model inside the runner. The workflow is one of
+nine built in, such as `pr-triage` or `pr-review`, or yours. The run's
+outcome is the job's. The whole page is **[In CI](/docs/ci)**. Elsewhere the
+same run is three shell lines:
 
 ```bash
 curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
@@ -126,17 +125,17 @@ export PATH="$HOME/.local/bin:$PATH"
 memdoor workflow run pr-review --wait --stop-at-gate
 ```
 
-To finish a CI run from your phone, the job starts its gateway itself
-(`memdoor gateway &`, waits for it with `memdoor gateway status`, then `memdoor run`), prints the link with `memdoor remote
---last` and `wait`s on the gateway: the link and its QR code are
-in the job's log and the job stays there, the gateway holding the link, until
-you are done or the job's timeout ends it; the full step is on the
-[Remote control](/docs/remote) page. A runner's own address
-is no door for a phone, so the job keeps its gateway to localhost
+To finish a CI run from your phone, the job starts its gateway
+(`memdoor gateway &`, `memdoor gateway status` until it answers, then `memdoor
+run`). It prints the link with `memdoor remote --last` and `wait`s on the
+gateway. The link and its QR code are in the job's log. The job stays there,
+the gateway holding the link, until you are done or the job's timeout ends it.
+The full step is on the [Remote control](/docs/remote) page. A runner's
+address is no door for a phone, so the job keeps its gateway to localhost
 (`MEMDOOR_HOST: localhost` in the step's env) and the link goes through the
-memdoor.ai relay: an account with the hosted gateway signed in on the runner, the token in
-`MEMDOOR_BILLING_TOKEN` (or in `~/.memdoor/billing-token` when `memdoor
-login` wrote it there).
+memdoor.ai relay. That needs an account with the hosted gateway signed in on
+the runner: the token in `MEMDOOR_BILLING_TOKEN`, or in
+`~/.memdoor/billing-token` when `memdoor login` wrote it there.
 
 ## Coming back in
 
@@ -152,25 +151,25 @@ $ memdoor resume 2
 ```
 
 Into a pipe, the same command prints the conversation as text instead of
-opening a window; no flag, the Unix rule:
+opening a window. No flag decides it:
 
 ```bash
 memdoor resume 41af4ac5 | head -40
 memdoor resume --last --follow     # text, and keep printing what the running turn does
 ```
 
-Your lines start with `>`, the agent's are plain, a tool call is one `⏺`
-line. `--gateway` takes a bare host or IP as well as a URL, so the same
-commands reach a gateway on another machine: `memdoor --gateway
-192.168.1.10 resume --all | head`.
+Your lines start with `>`. The agent's are plain. A tool call is one `⏺` line.
+`--gateway` takes a bare host or IP as well as a URL, so the same commands
+reach a gateway on another machine: `memdoor --gateway 192.168.1.10 resume
+--all | head`.
 
-The window opens on that conversation, its saved messages in view and the
-same session underneath: your next line is the next turn of that run. If a
-turn is running when you attach, you see it from that moment on (its tool
-frames, its answer) and `Esc` interrupts it; what it did before you arrived
-is in the saved messages, not replayed as frames. `memdoor resume <id>`
-takes the id a run printed, from any directory; with no `--all` the list is
-this folder's conversations.
+The window opens on that conversation with its saved messages in view and the
+same session underneath. Your next line is the next turn of that run. If a
+turn is running when you attach, you see it from that moment on, tool frames
+and answer, and `Esc` interrupts it. What it did before you arrived is in the
+saved messages, not replayed as frames. `memdoor resume <id>` takes the id a
+run printed, from any directory. Without `--all` the list is this folder's
+conversations.
 
 ## A run waiting on you
 
@@ -182,28 +181,28 @@ memdoor workflow approve <run-id> <task>
 memdoor workflow changes <run-id> <task> "the notes miss the migration"
 ```
 
-`changes` reruns the task with your comment and waits again. A failed run
-is resumed at the failed step with `memdoor workflow resume <run-id>`; what
-it finished is skipped.
+`changes` reruns the task with your comment and waits again. A failed run is
+resumed at the failed step with `memdoor workflow resume <run-id>`. What it
+finished is skipped.
 
 ## From your phone
 
 `/remote` in a window gives a link that is the terminal itself, end to end
-encrypted, so a run can be watched and answered from a phone. See
-[Remote control](/docs/remote).
+encrypted, so a run can be watched and answered from a phone. See [Remote
+control](/docs/remote).
 
 ## Letting a turn run
 
 A turn judged unfinished by its receipts continues on its own until it is
-shown done or a token budget is spent; the budget is what makes an
-unattended turn safe to leave. See [the harness](/docs/no-babysitting).
+shown done or a token budget is spent. The budget is what makes an unattended
+turn safe to leave. See [the harness](/docs/no-babysitting).
 
 ## If the gateway restarts
 
-Conversations and runs are on disk. A window reconnects on its own; a turn
-that was mid-run may have finished while it was away, and its result is in
-the saved messages, not replayed. A workflow run that was cut off continues
-from its last finished task with `memdoor workflow resume <run-id>`.
+Conversations and runs are on disk. A window reconnects. A turn
+that was mid-run may have finished while it was away; its result is in the
+saved messages, not replayed. A workflow run that was cut off continues from
+its last finished task with `memdoor workflow resume <run-id>`.
 
 ## Next
 

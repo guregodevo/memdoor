@@ -71,7 +71,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'What is a workflow?',
-    a: 'One YAML per step, run as a DAG: independent steps in parallel, a step done when its target exists, a gate that waits for you. Describe the steps and the coder writes the files.',
+    a: 'The deterministic harness: one YAML per step, run as a DAG, independent steps in parallel, a step done when its target exists, a gate that waits for you. Describe the steps and the coder writes the files.',
   },
 ];
 
@@ -374,7 +374,7 @@ export function CoderLandingPage() {
           </h2>
           <p className="mx-auto mb-10 max-w-2xl text-center text-sm leading-relaxed text-neutral-500">
             Data teams had cron and make and moved to Airflow anyway, for the run state and the retries. A workflow
-            is that for agent work.
+            is that for agent work: the deterministic harness.
           </p>
           <div className="mx-auto mb-10 w-full max-w-3xl">
             <Cast

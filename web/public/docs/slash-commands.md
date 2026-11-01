@@ -59,7 +59,7 @@ Everything you can type in the TUI. The `/` key opens a dropdown that filters as
 | `/exit` | Leave the TUI. Same as `Ctrl+C` |
 | `/help` | Print the whole list in the session |
 
-Your own commands: any `.md` file in `<project>/.agents/commands/` becomes a slash command named after the file (`review-pr.md` → `/review-pr`); `.claude/commands/` still works as a legacy fallback. A name in both is offered once. They appear in the `/` dropdown and `/help`.
+Your own commands: any `.md` file in `<project>/.agents/commands/` becomes a slash command named after the file (`review-pr.md` → `/review-pr`); `.claude/commands/` works as a legacy fallback. A name in both is offered once. They appear in the `/` dropdown and `/help`.
 
 ## Keys
 
@@ -78,4 +78,4 @@ Your own commands: any `.md` file in `<project>/.agents/commands/` becomes a sla
 | `Ctrl+V` | Paste an image from the clipboard: it is saved and inserted as an `@` mention |
 | `Alt+Enter` (or `Ctrl+J`) | Insert a newline in the prompt |
 
-The footer shows only what applies right now: `esc interrupt · ctrl+o expand` while a turn runs, `/ commands · ctrl+o expand · ctrl+c quit` when it doesn't.
+The footer shows only what applies: `esc interrupt · ctrl+o expand` while a turn runs, `/ commands · ctrl+o expand · ctrl+c quit` when it doesn't.

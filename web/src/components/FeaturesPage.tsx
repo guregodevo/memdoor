@@ -13,7 +13,7 @@ import { setMeta } from '../meta';
 export const SHARED: { feature: string; detail: string; also: string }[] = [
   { feature: 'Works in your terminal', detail: 'memdoor tui, in the directory you launch it from', also: 'Claude Code, Codex CLI, Gemini CLI, Aider, OpenCode, Cline, Copilot CLI, Amp, Goose, Cursor CLI' },
   { feature: 'Reads your project instructions', detail: 'AGENTS.md or CLAUDE.md, only the sections the task needs', also: 'Claude Code, Codex CLI, OpenCode, Amp, Goose (AGENTS.md); Gemini CLI, Cline, Aider (their own files)' },
-  { feature: 'BYOK, any model', detail: 'OpenRouter’s catalogue, or Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq and xAI on their own keys (memdoor connect); /model shows list prices', also: 'Codex CLI, Cline, Goose, Aider, OpenCode' },
+  { feature: 'BYOK, any model', detail: 'OpenRouter’s catalogue, or Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq and xAI with your key (memdoor connect); /model shows list prices', also: 'Codex CLI, Cline, Goose, Aider, OpenCode' },
   { feature: 'Work in a git worktree', detail: 'memdoor tui --worktree, your checkout untouched', also: 'Codex CLI' },
   { feature: 'Screenshots as input', detail: 'paste an image (macOS); @ mentions a file or folder', also: 'Codex CLI, Gemini CLI, Aider' },
   { feature: 'Scripts and CI', detail: 'memdoor run "<prompt>": the answer on stdout, the exit code the receipt of its checks (0 checked, 2 unverified, 3 it needed you); git diff | memdoor run reviews a diff', also: 'Claude Code, Codex CLI, Gemini CLI, Cline, Goose, Cursor CLI' },

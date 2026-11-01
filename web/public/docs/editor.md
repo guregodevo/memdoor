@@ -1,16 +1,15 @@
 # Memdoor in your editor
 
-The same coder, in VS Code, Zed or JetBrains: your editor's chat panel sends
-the prompt, and the coder works in the folder you have open, on your key
-or your ChatGPT plan, exactly as it does in the terminal. Nothing else to
-install on the Memdoor side: the editor starts `memdoor acp`, and Memdoor
-speaks the [Agent Client Protocol](https://agentclientprotocol.com) the
-editors host.
+The same coder, in VS Code, Zed or JetBrains. Your editor's chat panel sends
+the prompt. The coder works in the folder you have open, on your key or
+ChatGPT plan, as it does in the terminal. Nothing else to
+install: the editor starts `memdoor acp`, and Memdoor speaks the
+[Agent Client Protocol](https://agentclientprotocol.com) the editors host.
 
 What you see in the chat is what the window shows: the coder's answer as it
-streams, every file it reads, every edit (placed at the file), every command
-it runs, the green or red of the build and the tests, and a prompt whenever it
-needs you: a question, or an approval if you run with
+streams, the files it reads, the edits (placed at the file), the commands
+it runs, and the green or red of the build and the tests. It prompts you
+for a question, or for an approval if you run with
 `MEMDOOR_APPROVE=changes`. Stop ends the turn like `Esc` does.
 
 ## VS Code
@@ -52,7 +51,7 @@ agent with the command `memdoor acp`.
 - `/model`, `/workflow` and the other slash commands are the window's; the
   editor sends plain prompts. Pin a model once in the window and it holds for
   new conversations.
-- Where prompts go does not change: [Where your data goes](/docs/security).
+- Prompts go where they always go: [Where your data goes](/docs/security).
 
 ## Next
 

@@ -47,15 +47,15 @@ Memdoor works without configuration. These are the levers when you need them.
 
 ## Workspace settings
 
-Per-workspace settings live in the database; `memdoor config show` prints the configuration, and an admin sets workspace settings through the gateway's workspace-settings API. The one worth knowing:
+Per-workspace settings live in the database. `memdoor config show` prints the configuration. An admin sets workspace settings through the gateway's workspace-settings API. Two to know:
 
-**`tool_guards`** — rules per tool that refuse a matching call: never `.env`, never `git push`, never `sudo`. Set with `memdoor guards add --tool bash --pattern '\bgit push\b' --message '…'`; the whole story is in [Boundaries](/docs/boundaries).
+**`tool_guards`**: rules per tool that refuse a matching call, such as never `.env`, never `git push`, never `sudo`. Set with `memdoor guards add --tool bash --pattern '\bgit push\b' --message '…'`. The rest is in [Boundaries](/docs/boundaries).
 
-**`approve`** (or `MEMDOOR_APPROVE=changes` in the environment, which wins) — approval mode, for a company that forbids "yolo" agents: before every command, every file write and every MCP tool call, the picker asks *"Run: go test ./... — allow?"* — Yes, Yes-for-this-session, or No. No ends the call with a result the agent acts on; no answer in five minutes is a no. Reads never ask. Off by default.
+**`approve`** (or `MEMDOOR_APPROVE=changes` in the environment, which wins): approval mode. Before every command, file write and MCP tool call the picker asks *"Run: go test ./... — allow?"* with Yes, Yes-for-this-session or No. No ends the call with a result the agent acts on. No answer in five minutes is a no. Reads never ask. Off by default.
 
 ## Blocked machines
 
-The installer needs only `curl` and a shell. There's no Docker, Python, package manager, or API key anywhere in the install path, and the binary is self-contained (on macOS the installer ad-hoc signs it with `codesign --force --sign -`; it is not notarized) — which is why it runs on locked-down corporate machines where the alternatives can't be installed at all.
+The installer needs only `curl` and a shell. The install path has no Docker, Python, package manager or API key. The binary is self-contained. On macOS the installer ad-hoc signs it with `codesign --force --sign -`; it is not notarized. So it runs on locked-down corporate machines where the alternatives cannot be installed.
 
 ## Next
 

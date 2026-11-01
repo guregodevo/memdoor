@@ -1,22 +1,21 @@
 # Why Memdoor
 
-Memdoor is a lightweight coding and automation agent built around four
-priorities: token optimization, a single binary, a headless-first CLI and
-durable workflows. Run it locally or connect over SSH to another machine,
-on a gateway you own, using your own provider account.
+Memdoor is a coding and automation agent built around four priorities:
+token optimization, a single binary, a headless-first CLI and durable
+workflows. It runs on your machine or over SSH on another, on your key.
 
 ## 1. Token optimization
 
-A whole file when three functions mattered. Every search hit when two did.
-A whole log when ten lines answered. That text stays in the conversation
-and can be sent again on later calls, so unnecessary input adds up.
+A model is often sent a whole file when three functions mattered, every
+search hit when two did, or a whole log when ten lines answered. That text
+stays in the conversation and is sent again on later calls.
 
 A decision model filters search hits, file sections and logs against the
-task, selects the tools the turn needs and checks whether it is still
+task, selects the tools the turn needs and checks whether it is
 making progress. The coding model receives less irrelevant input, and a
 stalled turn can stop instead of spending more calls going in circles.
 
-The savings are task-dependent, not a blanket discount. Across 44 runs
+The saving depends on the task. Across 44 runs
 (22 pairs, decisions off and on), 22 of 22 tasks passed each way. A
 codebase question used 74% fewer input tokens over three pairs; an edit
 with a test and ten one-file fixes showed no saving (within ±11%). See
@@ -24,12 +23,11 @@ the [measurements and harness](https://github.com/guregodevo/memdoor/blob/main/d
 
 ## 2. Single binary
 
-Lightweight means low deployment overhead: one CLI binary for macOS,
-Linux or Windows, without Docker or Python. It works in your project and
-runs a small gateway in the background to keep conversations and jobs.
+One binary for macOS, Linux or Windows, without Docker or Python. It
+works in your project and runs a small gateway in the background that
+keeps conversations and jobs.
 
-Use it on your own machine, or connect over SSH to a peer machine or a
-remote host with `memdoor --gateway ssh://you@box`. That command installs
+Run it here, or connect over SSH to another machine with `memdoor --gateway ssh://you@box`. That command installs
 Memdoor on the host if needed, starts its gateway and opens the window on
 it. Work lives on that host; on a box that stays on, it keeps running when
 your laptop disconnects. See [The gateway](/docs/gateway).
@@ -42,23 +40,21 @@ returns an exit code reflecting its checks: 0 checked, 2 unverified or a
 failing check, 3 an unanswered question, 1 an error, 130 interrupted.
 Shell scripts, CI and cron can use those results directly.
 
-Every run is a conversation on the gateway, not a disposable terminal
-process. `memdoor resume <id>` opens it interactively; your IDE or phone
-can reach the same gateway. Start unattended, then step in when needed.
+A run is a conversation on the gateway. `memdoor resume <id>` opens
+it interactively, and your IDE or phone can reach that gateway, so a
+run can start unattended and be joined later.
 See [Headless, then attached](/docs/headless).
 
 ## 4. Durable workflows
 
-Describe the steps once and keep them as task files in your repository.
-The engine runs them as a graph: independent steps run in parallel, and
-each step is done when its target check passes, not when the model says so.
-A gate waits for your approval where you require it.
+A workflow is the deterministic harness. Describe the steps once. The engine runs them as a graph: independent steps run in parallel, and
+a step is done when its target check passes, whatever the model says. A
+gate waits for your approval where you put one.
 
-A failed run resumes at the failed step without repeating completed work.
-Run the same workflow by hand, from CI with
-`memdoor workflow run <name> --wait`, or on your local cron. The task
-files make the automation repeatable and shareable; the checks and run
-state make its outcome inspectable. See [Workflows](/docs/workflows).
+A failed run resumes at the failed step.
+Run the workflow by hand, from CI with
+`memdoor workflow run <name> --wait`, or on your local cron. The checks
+and the run state show what happened. See [Workflows](/docs/workflows).
 
 ## Next
 

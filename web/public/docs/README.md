@@ -1,15 +1,15 @@
 # Memdoor docs
 
 **A minimalist coding agent** that runs from Terminal, a shell, CI, cron,
-your IDE or phone, on a gateway you own, **BYOK, any provider**. Multi-step jobs are files in the repo,
-run again by hand or on a schedule; each step is checked by its output, and the
-run stops only where you decide. A decision model in front of the chat model
-cuts what it reads and what it costs. Measured over 44 paired runs: 74% fewer input tokens on a question
-about the codebase, no change on edits, 22 of 22 passed each way. The
-agent, the decision model, workflows and every door onto your own gateway are
-open source (Apache-2.0) and free, self-hosted by one person or
-a company; only the gateway memdoor.ai hosts (workflow state across machines,
-the relay for a gateway kept to localhost) is $10 a month.
+your IDE or phone, on your gateway, **BYOK, any provider**. A multi-step
+job runs as a workflow, the deterministic harness: each step is checked by
+its output and the run stops only where you decide. A decision model in front of the chat model cuts what
+it reads and what it costs. Measured over 44 paired runs: 74% fewer input
+tokens on a question about the codebase, no change on edits, 22 of 22 passed
+each way. The agent, the decision model, workflows and every door onto your
+gateway are open source (Apache-2.0) and free, self-hosted by one person
+or a company. Only the gateway memdoor.ai hosts (workflow state across
+machines and the relay for a gateway kept to localhost) is $10 a month.
 
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
@@ -42,8 +42,8 @@ cd your-project && memdoor
 ## Reference
 
 - **[Slash commands](/docs/slash-commands)** — everything you can type in the TUI.
-- **[Where your data goes](/docs/security)** — every host the binary can contact, and when; the decision model is a hosted model.
-- **[CLI](/docs/cli)** — every command, grouped by what you're doing.
+- **[Where your data goes](/docs/security)** — the hosts the binary can contact, and when; the decision model is a hosted model.
+- **[CLI](/docs/cli)** — the commands, grouped by what you're doing.
 - **[Configuration](/docs/configuration)** — environment variables, file locations, workspace resolution.
 
 ## Background
@@ -57,19 +57,18 @@ cd your-project && memdoor
 OpenAI, Gemini, DeepSeek, …), on a Mac, Linux or Windows: one binary.
 
 **Do you resell me tokens?** No. You hold the account at your provider and pay
-their list price directly; nothing of your code passes through memdoor.ai and nothing
-is added to your bill. The hosted gateway's $10 is never for inference on your key.
+its list price directly. Nothing of your code passes through memdoor.ai. The hosted gateway's $10 is never for inference.
 
 **Does my code leave my machine?** Your files, sessions, memory and the output of
 every command stay local. What leaves is the prompt and the excerpts a model must
-read, with `data_collection: deny` on every request and training hosts excluded
-(a `:free` model is the exception, one you pin or the one an OpenRouter account
-with no credit answers on: its hosts train, and Memdoor says so at the pin or when the key is connected).
-Without an OpenRouter or decision key nothing is judged off-machine either.
+read, with `data_collection: deny` on every request and training hosts excluded.
+The exception is a `:free` model, one you pin or the one an OpenRouter account
+with no credit answers on. Its hosts train, and Memdoor says so at the pin or
+when the key is connected. Without an OpenRouter or decision key nothing is
+judged off-machine either.
 
 **Is there a token or call limit?** No cap on tool calls. The decision model ends
-a turn that has stopped making progress, which is what a cap was trying to do
-badly.
+a turn that has stopped making progress.
 
-**Does it work on a locked-down laptop?** Usually — a single binary with
-no Docker, no Python, no package manager. See [Getting started](/docs/getting-started).
+**Does it work on a locked-down laptop?** Usually. It is a single binary with
+no Docker, no Python and no package manager. See [Getting started](/docs/getting-started).

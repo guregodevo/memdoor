@@ -1,15 +1,15 @@
 # Where your data goes
 
-The page for a security reviewer: every host the `memdoor` binary can name,
-what it is, and when — if ever — it is contacted. `gateway/egress_test.go`
-fails the build when the binary names a host this page does not list, so
-the table is complete by construction (2026-10-02).
+For a security reviewer: every host the `memdoor` binary can name, what it is,
+and when it is contacted, if ever. `gateway/egress_test.go` fails the build
+when the binary names a host this page does not list, so the table is complete
+by construction (2026-10-02).
 
-Memdoor is one static binary running on the developer's machine. Files,
-sessions, memory, the index of the project and every command the agent runs
-stay on that machine. What leaves is what a model has to read — the prompt
-and the excerpts the agent chose — and it goes to exactly one of three
-places, chosen by configuration, never mixed:
+Memdoor is one static binary on the developer's machine. Files, sessions,
+memory, the project index and every command the agent runs stay there. What
+leaves is what a model has to read: the prompt and the excerpts the agent
+chose. It goes to one of the places below, chosen by configuration and
+never mixed:
 
 | Mode | Set by | Where prompts go | Nothing else is contacted? |
 |---|---|---|---|
@@ -19,9 +19,10 @@ places, chosen by configuration, never mixed:
 | A provider you connected | `memdoor connect`, kept in `~/.memdoor/providers.json` | That provider | Used when no key above is set, or when you pin one of its models. A host that lists apps (Vercel AI Gateway, LLM Gateway, EUrouter, Requesty) gets the same app headers as OpenRouter, Google its `x-goog-api-client`; the rest see only the User-Agent (`pkg/attribution`). |
 | Your ChatGPT plan | `memdoor connect chatgpt` (Sign in with ChatGPT, in the browser; the tokens kept encrypted in `~/.memdoor/chatgpt-login.json`) | OpenAI's Responses API, with your plan's bearer token, `store: false` | Used like a connected provider. No API key, no client secret; `memdoor connect --remove chatgpt` signs out. |
 
-The hosted gateway changes nothing about whose key a prompt is sent on: it never
-supplies a model key. No memdoor.ai call carries a prompt in the clear (the hosts table below
-lists them; the remote-control relay is sealed end to end).
+The hosted gateway never supplies a model key, so it changes nothing about
+whose key a prompt is sent on. No memdoor.ai call carries a prompt in the
+clear. The hosts table below lists them, and the remote-control relay is
+sealed end to end.
 
 ## Every host the binary names
 
@@ -50,75 +51,74 @@ lists them; the remote-control relay is sealed end to end).
 
 **The decision model is a hosted model.** Jev, by TypeSafe, answers the typed
 questions (is this search hit relevant, is this turn still making progress)
-with a probability; what it is asked about — the search hit, the file section,
-the log lines being judged — leaves the machine to it, through OpenRouter on
-your OpenRouter key or directly on a decision key. On a vendor key or a company
-gateway alone it is **off**: nothing is judged off-machine, every read returns
-unjudged, the agent works without the savings. `memdoor connect typesafe` turns
-it on with a key of your own.
+with a probability. What it is asked about leaves the machine to it: the
+search hit, the file section or the log lines being judged. It goes through
+OpenRouter on your OpenRouter key or directly on a decision key. On a vendor
+key or a company gateway alone it is **off**. Every read returns unjudged and
+the agent works without the savings. `memdoor
+connect typesafe` turns it on with your key.
 
 ## Attribution headers
 
 `MEMDOOR_ATTRIBUTION="user=…;team=…"` and `MEMDOOR_ATTRIBUTION_HEADERS=
 "user=X-Email;team=X-Team"` put the person's fields on every vendor and
-gateway request under the names the company's gateway expects; the
-project's directory name and the conversation's session id travel the
-same way (`X-Memdoor-Project`, `X-Memdoor-Session` unless renamed). No
-prompt content is in them; they go only to the model endpoint.
+gateway request under the names the company's gateway expects. The project's
+directory name and the conversation's session id travel the same way
+(`X-Memdoor-Project`, `X-Memdoor-Session` unless renamed). No prompt content
+is in them. They go only to the model endpoint.
 
 ## Providers you add
 
-`memdoor connect` keeps a provider in `~/.memdoor/providers.json` (0600,
-the directory 0700). The credential is stored as given — a literal, the
-NAME of an environment variable, or `!command` — so a secret in your
-company's tooling is never copied onto disk. The gateway probes a provider
-(its model list, one small call) before keeping it, and contacts a provider
-you added only when a model of its is pinned or its list is read. A local
-runtime (`memdoor connect local`: Ollama, llama.cpp, janis, LM Studio on
-this machine or on the box) is kept with no credential at all, and its
-requests carry none; they go to the address you gave, normally localhost.
+`memdoor connect` keeps a provider in `~/.memdoor/providers.json` (0600, the
+directory 0700). The credential is stored as given: a literal, the NAME of an
+environment variable, or `!command`. A secret in your company's tooling is
+never copied onto disk. The gateway probes a provider (its model list, one
+small call) before keeping it. It contacts a provider you added only when a
+model of its is pinned or its list is read. A local runtime (`memdoor connect
+local`: Ollama, llama.cpp, janis, LM Studio on this machine or on the box) is
+kept with no credential, and its requests go to the address you gave,
+normally localhost.
 
 ## Where the gateway listens
 
-On this machine and on its network, port 18789, since 2026-10-23: a phone
-on the same network reaches a `/remote` link on the gateway itself, with no
-relay in between. Every door takes a token; `/health` and the sealed relay
-pages are the only unauthenticated ones; the first account can only be made
-from the machine itself (a request from the network is refused). It speaks
-plain HTTP, so it belongs on a network you trust, or behind ssh, Tailscale or
-a reverse proxy. `MEMDOOR_HOST=localhost` (or `--host localhost`) keeps it to
-this machine, and a company preset can set that.
+On this machine and on its network, port 18789, since 2026-10-23. A phone on
+the same network reaches a `/remote` link on the gateway with no relay
+in between. Every door takes a token. `/health` and the sealed relay pages are
+the only unauthenticated ones. The first account can only be made from the
+machine; a request from the network is refused. It speaks plain HTTP,
+so it belongs on a network you trust or behind ssh, Tailscale or a reverse
+proxy. `MEMDOOR_HOST=localhost` (or `--host localhost`) keeps it to this
+machine, and a company preset can set that.
 
-For a `/remote` link the gateway's own process is the terminal end of the
+For a `/remote` link the gateway's process is the terminal end of the
 relay (since 2026-10-23), so the link outlives the window that made it. What
 that takes is kept in `~/.memdoor/remote-hosted.json` on the gateway's
 machine, mode 0600, and nowhere else: the link's id and key, the gateway
-session token of the person who turned it on (the gateway follows and posts
-as them), and where the link lives. `/remote off` deletes the entry.
+session token of the person who turned it on (the gateway follows and posts as
+them), and where the link lives. `/remote off` deletes the entry.
 
 ## No "yolo" mode
 
-Memdoor's default is always-auto. `MEMDOOR_APPROVE=changes` (or the
-workspace setting `approve`) makes every command, file write and MCP tool
-call wait for the person's yes in the terminal; no answer in five minutes
-is a no. Reads never ask. `gateway/approval.go`. Rules that refuse a
-call outright (`memdoor guards`: never `.env`, never `git push`) are in
+Memdoor's default is always-auto. `MEMDOOR_APPROVE=changes` (or the workspace
+setting `approve`) makes every command, file write and MCP tool call wait for
+the person's yes in the terminal. No answer in five minutes is a no. Reads
+never ask. `gateway/approval.go`. Rules that refuse a call outright (`memdoor
+guards`: never `.env`, never `git push`) are in
 [Boundaries](/docs/boundaries).
 
 ## What a company reviewer can check
 
-- Set the three variables, start `memdoor gateway`, and read its first lines:
+- Set the three variables, start `memdoor gateway` and read its first lines:
   `your company's <vendor> key serves this gateway; nothing else is
   contacted`. Then `memdoor logs query --regex "LLM request"` shows every
-  model call with the model and the message count, and nothing to any other
-  host appears in the log.
-- `MEMDOOR_VENDOR=off` is the only way out of company-key mode, and it is
-  an environment variable the company's preset controls. The same preset can
+  model call with the model and the message count. Nothing to any other host
+  appears in the log.
+- `MEMDOOR_VENDOR=off` is the only way out of company-key mode. It is an
+  environment variable the company's preset controls. The same preset can
   set `MEMDOOR_APPROVE=changes`, which wins over the workspace setting.
 - The decision model, the catalogue and web search are not degraded
-  silently: the agent reads more instead (as without a decision key or an
-  OpenRouter key), the
-  catalogue is the one model the key names, and `web_search` answers that it
-  has no key.
+  silently. The agent reads more instead, as without a decision key or an
+  OpenRouter key. The catalogue is the one model the key names. `web_search`
+  answers that it has no key.
 - `go test ./gateway/ -run TestEveryHostTheBinaryNamesIsDocumented` is the
   proof this table is complete for the build in hand.
