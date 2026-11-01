@@ -26,7 +26,7 @@ const CATALOG: Entry[] = [
   {
     name: 'team-solve',
     kind: 'From a paper',
-    what: "GVS5H's multi-agent harness for hard programming problems: a planner, ideators, a manager and workers, each from a fresh context, talking only through files, with a script that runs the samples deciding success. The authors' own loop, rebuilt as a workflow with their exact prompts on Qwen3.8-27B, solved 49 of 50 runs on the first ten LiveCodeBench Hard problems over five passes (10, 10, 10, 10, 9): a mean of 9.8 against 9.6 for the authors' own harness and 8.0 for Fable 5 alone, every run published. The ten are the block where Fable scores lowest in the authors' data; over all 100 their harness and Fable tie.",
+    what: "GVS5H's multi-agent harness for hard programming problems: a planner, ideators, a manager and workers, each from a fresh context, talking only through files, with a script that runs the samples deciding success. The authors' own loop, rebuilt as a workflow with their exact prompts on Qwen3.8-27B, solved 49 of 50 runs on the first ten LiveCodeBench Hard problems over five passes (10, 10, 10, 10, 9): a mean of 9.8 against 9.6 for the authors' own harness and 8.0 for Fable 5 alone, every run published. On these ten the authors' own data put Fable at 80 and their harness at 96, the gap the workflow reproduces; across their full 100, 92.4 and 90.4.",
     steps: 'plan → ideate-a + ideate-b → solve → test → review → repair → verify',
     run: 'memdoor workflow run team-solve --wait',
     cast: { src: '/team-solve.cast', poster: 'npt:8:25' },

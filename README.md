@@ -16,9 +16,9 @@
 > **Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, as a Memdoor workflow.**
 > [GVS5H](https://github.com/slee-persis/GVS5H)'s harness rebuilt with the authors' exact prompts and loop,
 > on the first ten problems of their list, five passes each: a mean of **9.8 of 10**, against 9.6 for the
-> authors' own harness and 8.0 for Fable 5 in a single call: parity with their harness on the block where
-> Fable scores lowest in their data (over all 100, their harness and Fable tie at 92.4 and 90.4). All 50 runs
-> are published: every request, reply, program and grader output. The workflow is YAML and names no model: point it at yours, or at a
+> authors' own harness and 8.0 for Fable 5 in a single call, the gap the authors measured on these ten
+> (across their full 100: 92.4 and 90.4). All 50 runs are published: every request, reply, program and
+> grader output. The workflow is YAML and names no model: point it at yours, or at a
 > local one with `memdoor connect local` (Ollama, llama.cpp, vLLM, LM Studio; [how to run it on an open-weight model, no key](https://memdoor.ai/docs/open-weight)).
 > [examples/workflows/team-solve](examples/workflows/team-solve/) · [the result page](https://memdoor.ai/docs/team-solve) · [the HN thread](https://news.ycombinator.com/item?id=50320995)
 
