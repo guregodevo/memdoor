@@ -1,5 +1,7 @@
 # team-solve
 
+<a href="https://news.ycombinator.com/item?id=50320995"><img alt="Hacker News" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhacker-news.firebaseio.com%2Fv0%2Fitem%2F50320995.json&query=%24.score&label=Hacker%20News&suffix=%20points&logo=ycombinator&logoColor=white&color=ff6600"></a>
+
 Five small models solve a programming problem together: a planner, two
 ideators, a solver and a manager, plus a repair worker. Each starts from a
 fresh context and talks only through files on disk. A script that runs the
