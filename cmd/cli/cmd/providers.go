@@ -350,7 +350,7 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 			} else {
 				if pick.Keyless && term.IsTerminal(int(os.Stdin.Fd())) {
 					var err error
-					if base, err = chooseLocalRuntime(ask, func(t string) { fmt.Print(t) }); err != nil {
+					if base, err = chooseLocalRuntime(ask, func(t string) { fmt.Print(t) }, janisOffer()); err != nil {
 						return err
 					}
 				} else {
