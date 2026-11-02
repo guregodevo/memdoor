@@ -1,6 +1,6 @@
 # Memdoor
 
-> A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows. Open source, on your gateway, on your key.
+> The workflow harness that makes a small model beat a frontier one, on your machine. Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account. Open source, on your gateway, on your key.
 
 ## Why Memdoor
 

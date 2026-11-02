@@ -6,9 +6,9 @@
 const SITE = 'https://memdoor.ai';
 
 export const HOME_META = {
-  title: 'Memdoor — a lightweight coding and automation agent',
+  title: 'Memdoor — the workflow harness that makes a small model beat a frontier one, on your machine',
   description:
-    'A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows.',
+    'Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account.',
 };
 
 function setTag(selector: string, attr: string, value: string, create: () => HTMLElement) {
