@@ -361,15 +361,27 @@ func (ar *AgentRuntime) executeToolUnredacted(ctx context.Context, toolUse *llm.
 			"default":     q.Default,
 		})
 		log.Info("Asked user question", slog.String("question", truncateForLog(q.Question, 120)))
+		// A workflow step has no time limit: it waits until answered or until the
+		// run stops and cancels ctx. expire stays nil for it, and a nil channel never fires.
+		var expire <-chan time.Time
+		workflowStep := strings.HasPrefix(sessionID, workflowSessionPrefix)
+		if !workflowStep {
+			expire = time.After(5 * time.Minute)
+		}
 		select {
 		case ans := <-ch:
+			if workflowStep {
+				// Every window of the project shows the question; workflowQuestionAnswered closes the picker in the windows that did not answer.
+				ar.events.EmitEvent(runID, workflowQuestionAnswered, sessionID, map[string]interface{}{"question_id": qid})
+			}
+
 			out, _ := json.Marshal(map[string]string{"question": q.Question, "selected": ans})
 			info.Output = string(out)
 			return info, llm.NewToolResultBlock(toolUse.ID, string(out), false)
 		case <-ctx.Done():
 			info.Error = "question cancelled"
 			return info, llm.NewToolResultBlock(toolUse.ID, info.Error, true)
-		case <-time.After(5 * time.Minute):
+		case <-expire:
 			info.Error = "no answer received within 5 minutes"
 			return info, llm.NewToolResultBlock(toolUse.ID, info.Error, true)
 		}

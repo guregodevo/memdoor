@@ -81,9 +81,13 @@ type WorkflowEntry struct {
 type workflowEventMsg struct {
 	runID  string
 	task   string
-	state  string // started, done, failed, retrying, note
+	state  string // started, done, failed, retrying, note, progress, question, answered
 	text   string
 	status *WorkflowRun
+	// Set for state "question" (questionID, options; text is the question) and
+	// "answered" (questionID only), from workflow_runs.go relayQuestion.
+	questionID string
+	options    []string
 }
 
 type workflowListMsg struct {
@@ -263,24 +267,20 @@ func (m *Model) updateWorkflowPanel(msg tea.Msg) (bool, tea.Cmd) {
 	p := m.workflowPanel
 	switch t := msg.(type) {
 	case workflowEventMsg:
+		switch t.state {
+		case "question":
+			m.askFromStep(t)
+			return true, nil
+		case "answered":
+			m.questionAnswered(t.questionID)
+			return true, nil
+		}
 		var cmd tea.Cmd
 		if t.state == "note" || t.state == "failed" || t.state == "done" && t.task == "" {
 			m.note(t.text)
 		}
 		if t.state == "progress" && t.status == nil {
-			// a tool the task called: shown under the task, nothing else redrawn
-			if last, ok := m.workflowLast[t.runID]; ok {
-				for i := range last.Tasks {
-					if last.Tasks[i].Name == t.task {
-						last.Tasks[i].Note = t.text
-					}
-				}
-				m.workflowLast[t.runID] = last
-				m.upsertWorkflowGraph(last)
-				if m.viewport.Height > 0 {
-					m.refreshFollow()
-				}
-			}
+			m.noteTask(t.runID, t.task, t.text)
 			return true, nil
 		}
 		if t.status != nil {

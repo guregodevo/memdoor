@@ -431,6 +431,7 @@ func (m *Model) answerQuestion(selected string) tea.Cmd {
 		_ = m.ws.SendAnswer(q.id, selected)
 	}
 	m.messages = append(m.messages, Message{Role: "system", Content: "answered: " + selected, Timestamp: time.Now()})
+	m.nextQuestion()
 	m.viewport.SetContent(m.renderMessages())
 	m.gotoBottom()
 	return nil
