@@ -55,6 +55,7 @@ type workflowListResponse struct {
 }
 
 var workflowWaitFlag, workflowStopAtGateFlag bool
+var workflowModelFlag string
 
 // Exit codes of run --wait: the pipeline's contract, as memdoor run's.
 const (
@@ -264,6 +265,9 @@ var workflowRunCmd = &cobra.Command{
 		if workflowPartitionFlag != "" {
 			body["partition"] = workflowPartitionFlag
 		}
+		if workflowModelFlag != "" {
+			body["model"] = workflowModelFlag
+		}
 		if err := workflowPost("run", body, &out); err != nil {
 			return err
 		}
@@ -443,6 +447,7 @@ func init() {
 	workflowRunCmd.Flags().BoolVar(&workflowWaitFlag, "wait", false, "follow the run to its end: progress on stderr, the files it produced on stdout, exit 0 done / 2 failed / 1 stopped")
 	workflowRunCmd.Flags().BoolVar(&workflowStopAtGateFlag, "stop-at-gate", false, "--wait, except a gate ends the command with exit 3 and its review on stderr: for a CI job nobody can approve from (the run stays waiting on the gateway)")
 	workflowRunCmd.Flags().StringVar(&workflowTimeoutFlag, "timeout", "", "a clock on the whole run, e.g. 90m (default 2h, at most 24h)")
+	workflowRunCmd.Flags().StringVar(&workflowModelFlag, "model", "", "the model every agent and llm step runs on: an id memdoor model search shows, provider:id when two providers list it; a step with a model: of its own keeps it")
 	workflowRunCmd.Flags().StringVar(&workflowPartitionFlag, "partition", "", "resume an earlier run by its partition (status shows it), or \"today\" for a DAG run once a day; a run is fresh by default")
 	workflowHistoryCmd.Flags().IntVar(&workflowHistoryLimit, "limit", 0, "history: how many runs back to show (default 20)")
 	workflowCmd.AddCommand(workflowRunCmd, workflowStatusCmd, workflowStopCmd, workflowApproveCmd, workflowChangesCmd, workflowDiffCmd, workflowResumeCmd, workflowHistoryCmd)

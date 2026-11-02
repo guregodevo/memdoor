@@ -50,6 +50,10 @@ type workflowRuns struct {
 	runs map[string]*workflowRun
 }
 
+// runModelKey carries a run's --model to its llm steps (the agent steps
+// read it off the run).
+type runModelKey struct{}
+
 type workflowRun struct {
 	ID        string
 	Workflow  string
@@ -57,6 +61,7 @@ type workflowRun struct {
 	Session   string // the TUI conversation that asked
 	Workspace string // whose windows see the run's events (BroadcastToWorkspace)
 	Actor     string // who started it: its tasks start on that person's kept pin
+	Model     string // --model on the run: every agent and llm step without a model: of its own runs on it
 	WF        workflow.Workflow
 	Partition string // mario's partition: fresh per run (its start time); naming an earlier one resumes it
 	cancel    context.CancelFunc
@@ -270,7 +275,10 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 	}
 	ctx = cheapestRung(ctx)
 	var tm taskModel
-	if model = strings.TrimSpace(model); model != "" {
+	if model = strings.TrimSpace(model); model == "" {
+		model, _ = ctx.Value(runModelKey{}).(string) // --model on the run
+	}
+	if model != "" {
 		tm = parseTaskModel(model)
 		model = tm.ID
 		if tm.ID != "" {
@@ -423,7 +431,7 @@ func (r *workflowRunner) Run(ctx context.Context, t workflow.TaskRun) (string, e
 			if t.Task.Budget > 0 {
 				sess.SetMetadata(turnBudgetKey, t.Task.Budget)
 			}
-			if err := pinTaskModel(sess, t.Task.Model, r.run.Actor); err != nil {
+			if err := pinTaskModel(sess, firstNonEmptyString(t.Task.Model, r.run.Model), r.run.Actor); err != nil {
 				return "", fmt.Errorf("task %s: %w", t.Task.Name, err)
 			}
 		}
@@ -720,7 +728,7 @@ func workflowPartition(asked string) string {
 // and external dependencies across workspaces). The 2026-10-02 seat check
 // on starting a run is gone.
 
-func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition string, timeout time.Duration) (*workflowRun, error) {
+func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, model string, timeout time.Duration) (*workflowRun, error) {
 	if dir == "" || !filepath.IsAbs(dir) {
 		return nil, fmt.Errorf("a workflow runs in a project: give its absolute directory")
 	}
@@ -747,7 +755,7 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition s
 	}
 	run := &workflowRun{
 		ID: w.newID(spec.Name), Workflow: spec.Name, Dir: dir, Session: session, Workspace: runWorkspace(workspace, session), Actor: actor,
-		WF: spec, Partition: workflowPartition(partition), timeout: timeout, started: time.Now(),
+		WF: spec, Partition: workflowPartition(partition), timeout: timeout, started: time.Now(), Model: strings.TrimSpace(model),
 		base: gitHead(dir),
 	}
 	w.runs[run.ID] = run
@@ -767,6 +775,9 @@ func (s *Server) triggerWorkflow(run *workflowRun) {
 	// running eight problems at once can bill each (2026-10-26, the GVS5H
 	// rows: the entries had no session at all).
 	ctx, cancel := context.WithCancel(context.WithValue(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID), sharedctx.AttendedKey, run.attended()))
+	if run.Model != "" {
+		ctx = context.WithValue(ctx, runModelKey{}, run.Model)
+	}
 	var exe *workflow.Execution
 	repo, err := s.runRepository(run.Dir)
 	if err == nil {
@@ -875,7 +886,7 @@ func (s *Server) resumeWorkflow(id, session, dir, workspace, actor string) (*wor
 			}
 			return nil, fmt.Errorf("no run %s in this gateway or in %s's run table", id, dir)
 		}
-		return s.startWorkflow(dir, name, session, workspace, actor, partition, 0)
+		return s.startWorkflow(dir, name, session, workspace, actor, partition, "", 0)
 	}
 	prev.mu.Lock()
 	state, dir, name, partition, timeout := prev.state, prev.Dir, prev.WF.Dir, prev.Partition, prev.timeout
@@ -895,7 +906,7 @@ func (s *Server) resumeWorkflow(id, session, dir, workspace, actor string) (*wor
 	if actor == "" {
 		actor = prev.Actor
 	}
-	return s.startWorkflow(dir, name, session, workspace, actor, partition, timeout)
+	return s.startWorkflow(dir, name, session, workspace, actor, partition, "", timeout)
 }
 
 func (s *Server) stopWorkflow(id string) (*workflowRun, error) {
@@ -1115,6 +1126,7 @@ type workflowRequest struct {
 	Task      string `json:"task"`
 	Timeout   string `json:"timeout"`
 	Partition string `json:"partition"` // "" = fresh; an earlier run's partition resumes it; "today" = once a day
+	Model     string `json:"model"`     // run: the model every step runs on, unless the step names its own
 	Comment   string `json:"comment"`   // changes: what the reviewer wants changed
 	Limit     int    `json:"limit"`     // history: how many runs back (0 = the default)
 }
@@ -1158,7 +1170,7 @@ func (s *Server) handleWorkflow(w http.ResponseWriter, r *http.Request) {
 			}
 			timeout = d
 		}
-		run, err := s.startWorkflow(req.Dir, req.Name, session, strings.TrimSpace(req.Workspace), string(authorization.GetActorID(r.Context())), req.Partition, timeout)
+		run, err := s.startWorkflow(req.Dir, req.Name, session, strings.TrimSpace(req.Workspace), string(authorization.GetActorID(r.Context())), req.Partition, req.Model, timeout)
 		if err != nil {
 			fail(http.StatusBadRequest, err)
 			return

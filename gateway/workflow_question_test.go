@@ -153,7 +153,7 @@ func TestARunStartedWithoutASessionIsUnattended(t *testing.T) {
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
 	s := &Server{}
-	cli, err := s.startWorkflow(dir, "release", "", "", "", "", 0)
+	cli, err := s.startWorkflow(dir, "release", "", "", "", "", "", 0)
 	if err != nil {
 		t.Fatal(err)
 	}

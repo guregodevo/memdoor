@@ -21,7 +21,7 @@ func (f *fakeWorkflowOps) workflowList(dir string) ([]workflowRunJSON, []string)
 	f.calls = append(f.calls, "list "+dir)
 	return []workflowRunJSON{f.run.snapshot()}, []string{"release"}
 }
-func (f *fakeWorkflowOps) startWorkflow(dir, name, session, _, _, _ string, _ time.Duration) (*workflowRun, error) {
+func (f *fakeWorkflowOps) startWorkflow(dir, name, session, _, _, _, _ string, _ time.Duration) (*workflowRun, error) {
 	f.calls = append(f.calls, "run "+name+" in "+dir+" for "+session)
 	return f.run, nil
 }
