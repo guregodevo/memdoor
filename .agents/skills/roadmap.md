@@ -36,5 +36,5 @@ One file, `docs/ROADMAP.md`, public. Three lists.
 ## Before adding
 
 ```bash
-grep -n "label" docs/ROADMAP.md     # already there?
+grep -n "label" docs/ROADMAP.md     # listed?
 ```
