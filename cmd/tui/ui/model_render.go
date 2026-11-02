@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -575,12 +574,7 @@ func (m Model) pageURL(target string) string {
 // the payload, per the tmux protocol). The pane needs allow-passthrough on,
 // which the TUI enables at startup. Outside tmux this is a plain OSC 8.
 func osc8(url, text string) string {
-	seq := "\x1b]8;;" + url + "\x1b\\" + text + "\x1b]8;;\x1b\\"
-	if os.Getenv("TMUX") == "" {
-		return seq
-	}
-	payload := strings.ReplaceAll(seq, "\x1b", "\x1b\x1b")
-	return "\x1bPtmux;" + payload + "\x1b\\"
+	return tmuxPassthrough("\x1b]8;;" + url + "\x1b\\" + text + "\x1b]8;;\x1b\\")
 }
 
 // formatMarkdown applies basic markdown formatting (bold, italic, headers, lists)

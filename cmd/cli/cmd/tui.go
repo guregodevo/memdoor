@@ -247,6 +247,7 @@ func runTUI(opts tuiOptions) error {
 
 		final, err := p.Run()
 		ui.CmuxClear() // no "Running" left beside the workspace after quitting mid-turn
+		ui.ProgramStatusClear()
 		if err != nil {
 			return fmt.Errorf("TUI error: %w", err)
 		}
