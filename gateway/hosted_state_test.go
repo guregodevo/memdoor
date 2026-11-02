@@ -125,3 +125,25 @@ func TestWhereARunsStateLives(t *testing.T) {
 		t.Fatalf("nil hosted state: local, got %v %v", repo, err)
 	}
 }
+
+// memdoor.ai's hosted services off (billing answers 410): a Pro machine runs
+// locally, even with "pro" remembered on disk, and no error stops the run.
+func TestHostedServicesOffMeansLocal(t *testing.T) {
+	off := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, `{"error":"sign-in on memdoor.ai is off"}`, http.StatusGone)
+	}))
+	defer off.Close()
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{"status":"ok"}`)) }))
+	defer up.Close()
+
+	h := newHostedState(off.URL, up.URL, func() string { return "pro" })
+	h.planPath = filepath.Join(t.TempDir(), "plan")
+	h.rememberPlan("pro", "pro")
+	repo, err := h.repository()
+	if repo != nil || err != nil {
+		t.Fatalf("hosted off with pro remembered: local and no error, got %v %v", repo, err)
+	}
+	if h.plan != "free" {
+		t.Fatalf("the plan in force must be free while the switch is off, got %q", h.plan)
+	}
+}
