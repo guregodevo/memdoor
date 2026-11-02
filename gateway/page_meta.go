@@ -24,8 +24,8 @@ type pageMeta struct {
 }
 
 var homeMeta = pageMeta{
-	Title:       "Memdoor — a lightweight coding and automation agent",
-	Description: "A lightweight coding and automation agent in one CLI binary. Run locally or over SSH, optimize token use, and automate CI and cron with durable workflows.",
+	Title:       "Memdoor — the workflow harness that makes a small model beat a frontier one, on your machine",
+	Description: "Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account.",
 	Path:        "/",
 }
 
