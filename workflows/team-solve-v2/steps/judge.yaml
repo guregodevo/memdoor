@@ -20,5 +20,5 @@ prompt: |
   spawn agents or rely on chat context.
 target:
   file: .memdoor/runs/team-solve-v2-{{.partition}}/verdict.md
-timeout: 10m
+timeout: 40m
 max_retries: 1

@@ -34,5 +34,5 @@ prompt: |
   task and do not change any project file. Verify the three files and the
   two markers. Communicate only through these files; do not rely on prior
   conversation or delegate agents yourself.
-timeout: 10m
+timeout: 40m
 max_retries: 1

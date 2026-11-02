@@ -14,5 +14,5 @@ prompt: |
   the correction. Do not start another repair round and do not change
   task.md, the prompt, test inputs or expected outputs. The final check
   alone decides the run. Do not spawn agents or rely on chat history.
-timeout: 20m
+timeout: 90m
 max_retries: 1

@@ -18,6 +18,8 @@ The output is whatever the task asks for: changes to the tree (a refactor, a fix
 
 **The model.** `--model <id>` puts every step on one model, an id `memdoor model search` shows; without it, the `/model` pin, else the agent's ladder. With no key, `memdoor connect local` connects Ollama, llama.cpp, vLLM or LM Studio on this machine ([how](https://memdoor.ai/docs/providers#a-local-runtime-no-key)); Ollama needs a 32K window (`OLLAMA_CONTEXT_LENGTH=32768`).
 
+**The time.** On a hosted model a run is minutes. On a model on this machine every step is slower: the agent steps allow 40 minutes, solve and repair 90, and a run takes hours, as a background job (`--timeout` raises the run's clock, 2 hours by default).
+
 **The score.** The method is [GVS5H](https://github.com/slee-persis/GVS5H)'s. Its published benchmark, 9.8 of 10 on the first ten LiveCodeBench Hard problems against Fable 5's 8.0, is the `team-solve` workflow's, run with the authors' exact prompts: [examples/workflows/team-solve](../../examples/workflows/team-solve/). v2's prompts differ, so v2 has no benchmark score of its own yet; its runs are under [examples/workflows/team-solve-v2/results](../../examples/workflows/team-solve-v2/results/).
 
 Needs bash, git for a change to a repository, and Python 3 for the samples.

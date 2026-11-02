@@ -19,5 +19,5 @@ prompt: |
   test data or bypass a failing check. Verify the review is on disk. There is
   exactly one conditional repair round followed by a final check; do not
   claim completion before it passes.
-timeout: 10m
+timeout: 40m
 max_retries: 1

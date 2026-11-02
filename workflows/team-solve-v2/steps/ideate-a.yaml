@@ -19,5 +19,5 @@ prompt: |
   file. Re-read and retry a minimal insertion if the ledger changed. Verify
   your proposal is on disk. Do not spawn other agents or rely on chat
   context.
-timeout: 10m
+timeout: 40m
 max_retries: 1
