@@ -172,6 +172,11 @@ func (s *Server) relayQuestion(run *workflowRun, task string, ev infra.AgentEven
 	s.sendRunEvent(run, data)
 }
 
+// attended reports whether a window started the run. The window and the
+// coder's workflow tool pass a session. The shell, the GitHub Action and cron
+// pass none.
+func (r *workflowRun) attended() bool { return r.Session != "" }
+
 // taskSession is the session a task's turn runs under; taskOfSession reads it back.
 func (r *workflowRun) taskSession(task string) string {
 	return workflowSessionPrefix + r.Workflow + ":" + r.Partition + ":" + task
@@ -761,7 +766,7 @@ func (s *Server) triggerWorkflow(run *workflowRun) {
 	// line of an llm task then says which run it belongs to, and a bench
 	// running eight problems at once can bill each (2026-10-26, the GVS5H
 	// rows: the entries had no session at all).
-	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID))
+	ctx, cancel := context.WithCancel(context.WithValue(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID), sharedctx.AttendedKey, run.attended()))
 	var exe *workflow.Execution
 	repo, err := s.runRepository(run.Dir)
 	if err == nil {

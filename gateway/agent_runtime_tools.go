@@ -63,6 +63,10 @@ const applyPatchIsATool = "apply_patch is a TOOL, not a shell command — bash c
 // after its "Output:" label, so the message is not always at a line start.
 // The shell names itself as it was invoked: "bash", "/bin/bash" or Git for
 // Windows' full path, so a path before the name is allowed.
+// questionTimeout is how long ask_user_question waits for an answer. It is a
+// variable so tests do not wait five minutes.
+var questionTimeout = 5 * time.Minute
+
 var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)(?:\S*[\\/])?bash(?:\.exe)?: (line \d+: )?apply_patch: command not found`)
 
 // A TOOL'S OUTPUT NEVER CARRIES A SECRET (live 2026-10-10): asked for a free
@@ -361,12 +365,13 @@ func (ar *AgentRuntime) executeToolUnredacted(ctx context.Context, toolUse *llm.
 			"default":     q.Default,
 		})
 		log.Info("Asked user question", slog.String("question", truncateForLog(q.Question, 120)))
-		// A workflow step has no time limit: it waits until answered or until the
-		// run stops and cancels ctx. expire stays nil for it, and a nil channel never fires.
+		// A step of a run a window started waits until answered or until the
+		// run stops and cancels ctx. Its expire stays nil, and a nil channel
+		// never fires. Any other question gives up after questionTimeout.
 		var expire <-chan time.Time
 		workflowStep := strings.HasPrefix(sessionID, workflowSessionPrefix)
-		if !workflowStep {
-			expire = time.After(5 * time.Minute)
+		if attended, _ := ctx.Value(sharedctx.AttendedKey).(bool); !workflowStep || !attended {
+			expire = time.After(questionTimeout)
 		}
 		select {
 		case ans := <-ch:
