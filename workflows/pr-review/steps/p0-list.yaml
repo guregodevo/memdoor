@@ -1,24 +1,15 @@
 type: command
-# The lean review's first three P0s, one per file, for p0-check-1..3 to weigh
-# one by one: a small model asked about several at once answers in a pattern
-# (AFTER, BEFORE) rather than per finding. A fourth is kept unchecked.
+# The lean review's first three P0s, for p0-check-1..3 to weigh one by one:
+# a small model asked about several at once answers in a pattern (AFTER,
+# BEFORE) rather than per finding. A fourth is kept unchecked. Each
+# check reads the same trimmed diff as the review, in the same words and
+# first, so the model's cache serves it: a CPU prefills it once, not four times.
 when: test -s .memdoor/runs/pr-review-{{.partition}}.md && [ -n "${MEMDOOR_LEAN:-}" ]
 command: |
   r=.memdoor/runs/pr-review-{{.partition}}
   rm -f "$r".p0-1 "$r".p0-2 "$r".p0-3
   grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P0([^0-9]|$)' "$r".md | head -3 |
     awk -v r="$r" '{ print > (r ".p0-" NR) }'
-  # The re-check reads the file the finding names, not the whole diff: a
-  # CPU prefills the diff once per question otherwise.
-  for n in 1 2 3; do
-    [ -s "$r.p0-$n" ] || continue
-    f=$(grep -oE '`[^`:]+' "$r.p0-$n" | head -1 | tr -d '`')
-    if [ -n "$f" ] && grep -q "^diff --git a/$f " "$r.lean.diff"; then
-      awk -v f="$f" '/^diff --git /{p = ($0 == "diff --git a/" f " b/" f)} p' "$r.lean.diff" > "$r.p0-$n.diff"
-    else
-      cp "$r.lean.diff" "$r.p0-$n.diff"
-    fi
-  done
   ls "$r".p0-? 2>/dev/null | wc -l | tr -d ' '
 requires:
   - table_pattern: review-lean

@@ -8,13 +8,13 @@ model: thinking off
 # of 21 on that model over three false P0s and four real ones.
 when: test -s .memdoor/runs/pr-review-{{.partition}}.p0-1
 prompt: |
-  Here is a code change (the file the reviewer names). Lines starting with - are the code before, lines starting with + the code after.
+  Here is a code change: a unified diff, lines starting with + are added, lines starting with - are removed.
 
   ```diff
-  {{ file (printf ".memdoor/runs/pr-review-%s.p0-1.diff" .partition) }}
+  {{ file (printf ".memdoor/runs/pr-review-%s.lean.diff" .partition) }}
   ```
 
-  A reviewer says:
+  A reviewer says of this change:
   {{ file (printf ".memdoor/runs/pr-review-%s.p0-1" .partition) }}
 
   Is that a problem of the code AFTER the change (it breaks something that worked before), or a problem of the code BEFORE the change that the change removes?

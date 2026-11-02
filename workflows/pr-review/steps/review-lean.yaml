@@ -4,12 +4,20 @@ model: thinking off
 # Action sets it with local-model, a model on the runner's CPU): the diff in
 # the prompt, no tools, no loop. The agent's review (review.yaml) runs instead
 # when it is not set. The diff is what trim kept: code, no comment-only
-# hunks, within the CPU budget.
+# hunks, within the CPU budget. The diff comes FIRST, in the same words as in
+# p0-check-1..3: janis keeps the KV of the longest prefix two requests share,
+# so the re-checks read this diff from its cache and prefill only their own
+# question (a CPU prefills 12 tokens a second; measured with Qwen3-8B on a
+# 4K-token diff: 2.4 s cold, 0.07 s on the shared prefix).
 when: test -s .memdoor/runs/pr-review-{{.partition}}.lean.diff && [ -n "${MEMDOOR_LEAN:-}" ]
 prompt: |
-  You review a code change. The unified diff is below: lines starting with + are added, lines starting with - are removed.
+  Here is a code change: a unified diff, lines starting with + are added, lines starting with - are removed.
 
-  Write the review in exactly this Markdown shape, and nothing else:
+  ```diff
+  {{ file (printf ".memdoor/runs/pr-review-%s.lean.diff" .partition) }}
+  ```
+
+  You review a code change. Write the review in exactly this Markdown shape, and nothing else:
 
   ## Summary
   Two sentences: what the change does and whether it does it correctly.
@@ -20,10 +28,6 @@ prompt: |
   - **P2** `path:line` — …
 
   P0 is only what must not merge: a bug a user hits, a security hole, data loss, a broken build. P1 is what should be fixed soon; P2 a nit. A finding is a fault in the new code: what the change fixes or improves is never a finding, say it in the Summary. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
-
-  ```diff
-  {{ file (printf ".memdoor/runs/pr-review-%s.lean.diff" .partition) }}
-  ```
 requires:
   - table_pattern: trim
 target:

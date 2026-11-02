@@ -249,9 +249,13 @@ func Find(workdir, name string) (string, error) {
 	// The project's own first, then the library (shared.ProjectOrHome).
 	if dir := shared.ProjectOrHome(ProjectRoot(workdir), "workflows", name); isWorkflowDir(dir) {
 		// The engine walks the directory and does not follow a symlink at
-		// the root: hand it the real path.
-		if real, err := filepath.EvalSymlinks(dir); err == nil {
-			return real, nil
+		// the root: hand it the real path. Only a symlink is resolved, so
+		// any other path comes back as it was built (macOS resolves /var to
+		// /private/var, and the path would differ from the one asked for).
+		if fi, err := os.Lstat(dir); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+			if real, err := filepath.EvalSymlinks(dir); err == nil {
+				return real, nil
+			}
 		}
 		return dir, nil
 	}
