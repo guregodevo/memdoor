@@ -88,13 +88,15 @@ func TestHandleRooms_POST(t *testing.T) {
 func TestHandleRooms_Unauthenticated(t *testing.T) {
 	cs := newTestChatServer()
 
-	// No auth context
-	req := httptest.NewRequest("POST", "/api/channels", strings.NewReader(`{"name":"x"}`))
-	rr := httptest.NewRecorder()
+	// No auth context: neither the list nor a create answers.
+	for _, method := range []string{"GET", "POST"} {
+		req := httptest.NewRequest(method, "/api/channels", strings.NewReader(`{"name":"x"}`))
+		rr := httptest.NewRecorder()
 
-	cs.handleRooms(rr, req)
+		cs.handleRooms(rr, req)
 
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+		if rr.Code != http.StatusUnauthorized {
+			t.Errorf("%s status = %d, want %d", method, rr.Code, http.StatusUnauthorized)
+		}
 	}
 }

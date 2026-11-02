@@ -333,11 +333,12 @@ export function CoderLandingPage() {
         <section className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-12 px-6 pb-16 pt-12 sm:px-12 sm:pt-16 lg:grid-cols-[1fr_1.2fr] lg:gap-14">
           <div className="text-center lg:text-left">
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
-              Your daemon agents on <span className="text-emerald-400">every door</span>
+              The workflow harness that makes a small model{' '}
+              <span className="text-emerald-400">beat a frontier one</span>, on your machine.
             </h1>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
-              Start it from CI, a schedule or a shell. Finish it from your phone or a window. Each step is
-              checked by its output, and the run stops where only you decide.
+              Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama,
+              llama.cpp, or any key. One binary, no account.
             </p>
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />
@@ -403,7 +404,7 @@ export function CoderLandingPage() {
           <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
             <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">One gateway, every door</div>
             <h2 className="mx-auto mb-4 max-w-3xl text-center text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
-              Start it anywhere. Open it anywhere.
+              Your daemon agents on every door
             </h2>
             <p className="mx-auto mb-10 max-w-2xl text-center text-sm text-neutral-500">
               A run is a conversation on a gateway on your machine. Every door opens the same one.

@@ -72,7 +72,10 @@ rewritten on 2026-11-01 (864 to 650 words); the maintainer called three lighter 
 - Never "multi-step jobs kept as files in your repo" in a tagline or
   summary. A format sentence (one YAML task file per step under
   .memdoor/workflows) is fine where a doc explains the format.
-- The README tagline is exactly "A headless CLI with multi-agent harness".
+- The one sentence, everywhere (README hero, site title and description, OG,
+  JSON-LD, HOME_META, the landing hero, what-is, llms.txt): "The workflow harness that makes a small model beat a frontier one, on your machine."
+  Under it, the second line with the benchmark. The GitHub description stays
+  "A headless coding agent with multi-agent harness".
 
 ### Structure
 
