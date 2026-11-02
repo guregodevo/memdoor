@@ -1,6 +1,6 @@
 ---
 name: roadmap
-description: The roadmap is docs/ROADMAP.md: Now, Next, Not now, every item with a done-when; how an item is added, moved or closed
+description: The roadmap is the quarter plan in docs/ROADMAP.md; features are issues labelled now or next, each with a done-when
 user-invocable: true
 disable-model-invocation: false
 metadata:
@@ -11,30 +11,34 @@ metadata:
 
 # Roadmap
 
-One file, `docs/ROADMAP.md`, public. Three lists.
+Two places.
 
-- **Now**: numbered, at most five. What is being built this week or next.
-- **Next**: what follows, with the evidence that would move it to Now.
-- **Not now**: what was decided against and why, so it is not re-proposed.
+- **`docs/ROADMAP.md`**: the quarter. What it is for, how it is judged on
+  its last day, what is not this quarter. Public.
+- **Issues** on guregodevo/memdoor: one feature per issue. Label `now` for
+  what is being built this week or next, at most five. Label `next` for
+  what follows, with the evidence that would move it to `now`. An issue
+  closes when its done-when holds.
 
-## An item
+## An issue
 
-- One bold label, two or three sentences, a **done-when** that a stranger
-  could check: a page, a command, a number.
-- No quotes of the maintainer, no dates inside the text beyond the one the
-  decision was made.
-- A number in an item has its run published.
+- A title that names the feature. Two or three sentences. A **done-when** a
+  stranger could check: a page, a command, a number.
+- No quotes of the maintainer. A number in it has its run published.
 
-## Moving an item
+## Moving an issue
 
-- Into Now: a user asked, a run showed it, or a number moved. Say which, in
-  the item.
-- Out of Now: done (delete it; the commit and the page are the record) or
-  demoted to Next with the reason.
-- Into Not now: the reason in one sentence.
+- To `now`: a user asked, a run showed it, or a number moved. Say which in
+  a comment.
+- Out of `now`: closed when done, or relabelled `next` with the reason.
+- Declined: closed with the reason in one sentence.
 
-## Before adding
+## The quarter
+
+Changes at its end, or earlier on evidence. Link the issue that carries the
+evidence from the change.
 
 ```bash
-grep -n "label" docs/ROADMAP.md     # listed?
+gh issue list --label now
+gh issue list --label next
 ```
