@@ -167,6 +167,7 @@ var (
 
 // renderIndex is the HTML page with this route's head and crawler text.
 func renderIndex(index []byte, m pageMeta) []byte {
+	index = withHostedMeta(index)
 	if m.Path == "/" || m.Path == "" {
 		return index
 	}

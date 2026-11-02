@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { HOSTED } from '../config';
 import { HOME_META, setMeta } from '../meta';
 import { WorkflowDemo } from './WorkflowDemo';
 import { Cast } from './Cast';
@@ -169,7 +170,7 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
           Docs
         </a>
         {/* Who is signed in, and the way out; else the way in (the maintainer, 2026-10-20). */}
-        {isAuthenticated && user ? (
+        {!HOSTED ? null : isAuthenticated && user ? (
           <>
             <a href="/welcome" className={`hidden sm:inline ${link}`} title={user.email}>
               {user.name || user.email}

@@ -1,3 +1,4 @@
+import { HOSTED as HOSTED_ON } from '../config';
 import { useEffect, useState, type ReactNode } from 'react';
 import { setMeta } from '../meta';
 import { useNavigate } from 'react-router-dom';
@@ -54,7 +55,7 @@ const HOSTED: string[] = [
   'Still your key: memdoor.ai never supplies a model.',
 ];
 
-const FAQ: { q: string; a: string }[] = [
+const FAQ_ALL: { q: string; a: string }[] = [
   {
     q: 'Is all of it open source?',
     a: 'Yes. Apache-2.0, at github.com/guregodevo/memdoor. The binary you install is built from it, with no paid edition and no feature held back.',
@@ -76,6 +77,8 @@ const FAQ: { q: string; a: string }[] = [
     a: 'The same open-source binary on your machines, with full support from a named person: setup, your people and admins, your AI gateway or key. Invoiced. Write to hello@memdoor.ai: say how many people and where it should run.',
   },
 ];
+// The hosted gateway's price is a question only while the hosted services are on.
+const FAQ = HOSTED_ON ? FAQ_ALL : FAQ_ALL.filter((f) => !f.q.startsWith('What does the hosted gateway cost'));
 
 function Check() {
   return (
@@ -167,13 +170,15 @@ export function EnterprisePage() {
             </p>
           </Card>
 
-          <Card name="Hosted gateway" price="$10 / month" note="What memdoor.ai runs for you. Cancel any month." items={HOSTED}>
-            <SeatCheckout />
-            <p className="mt-4 text-xs leading-relaxed text-neutral-400">
-              Already installed? <code className="text-neutral-600">memdoor account subscribe</code> opens the same
-              checkout from the terminal.
-            </p>
-          </Card>
+          {HOSTED_ON && (
+            <Card name="Hosted gateway" price="$10 / month" note="What memdoor.ai runs for you. Cancel any month." items={HOSTED}>
+              <SeatCheckout />
+              <p className="mt-4 text-xs leading-relaxed text-neutral-400">
+                Already installed? <code className="text-neutral-600">memdoor account subscribe</code> opens the same
+                checkout from the terminal.
+              </p>
+            </Card>
+          )}
         </div>
       </section>
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { getApiUrl } from '../config';
+import { HOSTED, getApiUrl } from '../config';
 
 interface User {
   id: string;
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check for existing token on mount
   useEffect(() => {
     const storedToken = localStorage.getItem('auth_token');
-    if (storedToken) {
+    if (storedToken && HOSTED) {
       // Verify token and get user info
       verifyToken(storedToken);
     } else {

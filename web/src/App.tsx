@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { applyWorkspaceLanguage } from './i18n';
 import { getApiUrl } from './config';
 import { LoginPage } from './components/LoginPage';
+import { HOSTED } from './config';
 import { SetupPage } from './components/SetupPage';
 import { VerifyEmailPage } from './components/VerifyEmailPage';
 import { TopupResultPage } from './components/TopupResultPage';
@@ -123,6 +124,16 @@ function App() {
     return <DownloadPage />;
   }
 
+  // The hosted services off (HOSTED, from the gateway's head): no account
+  // page exists, every one of them is the landing.
+  if (
+    !HOSTED &&
+    (['/login', '/welcome', '/verify-email', '/forgot-password', '/reset-password'].includes(location.pathname) ||
+      location.pathname.startsWith('/topup') ||
+      location.pathname.startsWith('/pro/'))
+  ) {
+    return <CoderLandingPage />;
+  }
   // Public auth pages (no login required)
   if (location.pathname === '/verify-email') {
     return <VerifyEmailPage />;

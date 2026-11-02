@@ -4,6 +4,13 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
 
+// The gateway serving this page says whether memdoor.ai's hosted services
+// (sign-in, the relay, /share) are on: a meta tag it writes into the head
+// when MEMDOOR_HOSTED=off. Off, the site shows no sign-in and no account page.
+export const HOSTED =
+  typeof document === 'undefined' ||
+  document.querySelector('meta[name="memdoor-hosted"]')?.getAttribute('content') !== 'off';
+
 // Build full API URL
 export const getApiUrl = (path: string): string => {
   return `${API_BASE_URL}${path}`;
