@@ -310,7 +310,7 @@ func (s *Server) executeAgentJob(ctx context.Context, job *queue.AgentJob) error
 func (s *Server) executeCronJob(ctx context.Context, job *config.CronJob, agentID string, sessionKey string) error {
 	log := logs.New("Cron")
 
-	// A SCHEDULED WORKFLOW (Greg, 2026-10-04: "everyone can run schedule with
+	// A SCHEDULED WORKFLOW (the maintainer, 2026-10-04: "everyone can run schedule with
 	// local cron"): a job whose message is "/workflow run <name> [partition]"
 	// starts that workflow in the job's project, the same words a person
 	// types in the window.
@@ -428,7 +428,7 @@ func (s *Server) executeCronJob(ctx context.Context, job *config.CronJob, agentI
 
 // postCronAnswer puts a scheduled run's answer in front of the person, in the
 // session that scheduled it, and WAKES that conversation with it — the
-// heartbeat, as OpenClaw has it (Greg, 2026-10-04: "heartbeat should be used
+// heartbeat, as OpenClaw has it (the maintainer, 2026-10-04: "heartbeat should be used
 // like in openclaw for subpawned or cron"): the agent that scheduled the
 // check gets the answer as a turn of its own and acts on it, and the answer
 // is in the conversation's history rather than in a note nobody saw when no
@@ -438,7 +438,7 @@ func (s *Server) executeCronJob(ctx context.Context, job *config.CronJob, agentI
 func (s *Server) postCronAnswer(ctx context.Context, job *config.CronJob, agentID, text string) {
 	// The answer alone: the run's receipt line ("⚠ nothing changed · ran: …")
 	// is true of every check that changes nothing by design, and under each
-	// ⏱ note it was noise (Greg, 2026-10-05). It stays in the logs.
+	// ⏱ note it was noise (the maintainer, 2026-10-05). It stays in the logs.
 	text = cronAnswerBody(text)
 	note := fmt.Sprintf("⏱ %s — %s", job.ID, text)
 	if s.broadcaster != nil {

@@ -1,6 +1,6 @@
 // Package openrouter is "Sign in with OpenRouter": a person with no key signs
 // in, or signs up for free, in the browser, and OpenRouter hands Memdoor a key
-// of their own (OAuth PKCE, openrouter.ai/docs/use-cases/oauth-pkce). Greg,
+// of their own (OAuth PKCE, openrouter.ai/docs/use-cases/oauth-pkce). The maintainer,
 // 2026-10-31: "they dont know the key". The key is an ordinary user key,
 // billed to their credits; nothing of it passes through memdoor.ai.
 //

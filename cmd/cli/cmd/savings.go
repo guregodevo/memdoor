@@ -11,7 +11,7 @@ import (
 )
 
 // `memdoor savings` — the receipt for the product's one claim, read from the
-// person's own turns (pkg/savings). Greg, 2026-09-27: "let's focus on cheaper
+// person's own turns (pkg/savings). The maintainer, 2026-09-27: "let's focus on cheaper
 // by efficiency". This is the number, on their machine, not in our benchmark.
 //
 // Everything here is measured, and the arithmetic is stated rather than

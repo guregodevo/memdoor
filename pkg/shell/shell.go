@@ -4,7 +4,7 @@
 //
 // bash when there is one: every macOS and Linux, Git for Windows, WSL. On a
 // Windows machine without one, PowerShell (pwsh, else powershell), which the
-// system prompt then names so the model writes PowerShell (Greg, 2026-10-18:
+// system prompt then names so the model writes PowerShell (the maintainer, 2026-10-18:
 // "it should work on windows too"). The launcher Windows ships in System32
 // as bash.exe is WSL's and fails with no distribution installed, so it does
 // not count.

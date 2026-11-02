@@ -6,7 +6,7 @@ import "strings"
 //
 // "Recommend texts in the input, Claude CLI style: if there is a suggestion
 // we show it in grey; when the user presses Tab it just submits this text
-// as the user's" (Greg, 2026-09-19). The empty box shows the next thing a
+// as the user's" (the maintainer, 2026-09-19). The empty box shows the next thing a
 // person would most likely ask for, from what just happened; Tab is the
 // whole gesture — no arguments, no confirmation, the text goes as if typed.
 // Nothing is suggested while the person is typing or a turn is running.
@@ -28,7 +28,7 @@ func (m Model) suggestion() string {
 
 // hint is the grey placeholder for the empty box and what Tab sends for it.
 //
-// A HINT IS THE NEXT THING, NOT A MENU (Greg, 2026-09-27: "contextual hint in
+// A HINT IS THE NEXT THING, NOT A MENU (the maintainer, 2026-09-27: "contextual hint in
 // the input. the next action. The hint for free user to upgrade. The hint for
 // slash command that can be useful with jev"). One line, chosen from what just
 // happened, and only while the box is empty and nothing is running:
@@ -54,7 +54,7 @@ func (m Model) hint() (text, send string) {
 		return commit, commit
 	}
 	if m.decisionsOff {
-		// IF THERE IS NO JEV, SAY HOW TO GET ONE (Greg, 2026-10-03: "if
+		// IF THERE IS NO JEV, SAY HOW TO GET ONE (the maintainer, 2026-10-03: "if
 		// it's not we should have a hint for users to connect"). Decisions
 		// need no OpenRouter account: a TypeSafe key works with any
 		// provider. Information only: Tab sends nothing.

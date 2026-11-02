@@ -14,7 +14,7 @@ import (
 	"memdoor/pkg/shared"
 )
 
-// PEERS, EXPERIMENTAL (Greg, 2026-10-24: "we need A2A from one gateway to
+// PEERS, EXPERIMENTAL (the maintainer, 2026-10-24: "we need A2A from one gateway to
 // another", "we can do @<host>:agent_name", "we have a quorum of gateways;
 // from the quorum we can see which gateway are available"). A peer is a
 // gateway this person has signed in to and named: ~/.memdoor/peers.json,

@@ -34,7 +34,7 @@ type AgentExecutorAdapter struct {
 	// one — the rung a person pinned with /route (route_handler.go) — has
 	// to be carried over here or the turn never sees it (found with the
 	// first pin, 2026-09-26). Required at construction: no lazy setter,
-	// nothing silently not carried (Greg: "fail fast constructor").
+	// nothing silently not carried (the maintainer: "fail fast constructor").
 	routes sessionLookup
 }
 

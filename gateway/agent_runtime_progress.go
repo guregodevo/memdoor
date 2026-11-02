@@ -26,7 +26,7 @@ import (
 //     before it delegated.
 //
 // So: a heartbeat on the running tool, and the same heartbeat MIRRORED onto
-// the requester's session (Greg: "if it's not [stuck] we should display what
+// the requester's session (the maintainer: "if it's not [stuck] we should display what
 // is in progress… like adding an event emitter for subspawned"). The mirror
 // is a separate event — "subagent" — so it never collides with the screen's
 // own tool frames; it drives the status line, not the transcript.

@@ -124,7 +124,7 @@ func TestEmailCode_ExpiresAndLocksAfterAttempts(t *testing.T) {
 // A WRONG CODE HAS TO SAY WHAT IS LEFT (onboarding battle test, 2026-09-27).
 // "that code is not right" taught nobody anything: not that it is six digits
 // from the newest email, not that it dies in ten minutes, not that the last
-// wrong try throws the code away. Greg pasted the example from the docs and
+// wrong try throws the code away. The maintainer pasted the example from the docs and
 // learned only that he was wrong.
 func TestWrongCodeSaysWhatIsLeft(t *testing.T) {
 	s, _ := newEmailAuthServer(t)

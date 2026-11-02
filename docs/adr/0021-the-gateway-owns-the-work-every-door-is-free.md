@@ -1,6 +1,6 @@
 # ADR-0021: The gateway owns the work; every door onto it is free; it binds the network by default
 
-Date: 2026-10-23 (Greg: "default to be the network", "the pro story will be
+Date: 2026-10-23 (the maintainer: "default to be the network", "the pro story will be
 the self host") · 2026-10-24 (the ssh door: "accessible from http and ssh
 like github") · Status: accepted, in force. Record:
 `docs/architecture/GATEWAY_AND_DOORS.md`, `docs/features/REMOTE.md`,

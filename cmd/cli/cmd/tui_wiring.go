@@ -14,7 +14,7 @@ import (
 // view of the conversation. The window (runTUI) and the phone door with no
 // window (`memdoor remote`, remote.go) build the same thing, so a phone
 // reaching a conversation a script started sees exactly the TUI it would at
-// a terminal (Greg, 2026-10-12: "there should be a remote command to return
+// a terminal (the maintainer, 2026-10-12: "there should be a remote command to return
 // in stdout the link", "from a resume id").
 type tuiWiring struct {
 	c            *Client

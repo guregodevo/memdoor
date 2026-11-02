@@ -12,7 +12,7 @@ import (
 
 // Which model serves this gateway, at start: a company's vendor key, else
 // the person's own OpenRouter key. Nothing is leased from memdoor.ai's broker
-// any more — no seat supplies a model key (Greg, 2026-10-04: "Pro seat never
+// any more — no seat supplies a model key (the maintainer, 2026-10-04: "Pro seat never
 // offer key. It's always with user key"; the MEMDOOR_BRAIN_CLASS and
 // MEMDOOR_BYOK=0 switches that reached the lease were removed the same day).
 
@@ -30,7 +30,7 @@ func (s *Server) selectModelEngine() {
 	// A COMPANY'S VENDOR KEY FIRST (providers/vendor.go): every turn goes to
 	// the vendor the company approved, on the key it gave the developer, and
 	// nothing reaches OpenRouter or memdoor.ai's broker. The one mode a
-	// monitored laptop allows (Greg, 2026-10-02).
+	// monitored laptop allows (the maintainer, 2026-10-02).
 	if re, ok, reason := providers.VendorEngine(); ok {
 		cur := providers.ActiveRemoteEngine()
 		if cur == nil || cur.Vendor != re.Vendor || cur.APIKey != re.APIKey || cur.Endpoint != re.Endpoint || cur.Model != re.Model || cur.CtxLen != re.CtxLen {
@@ -62,7 +62,7 @@ func (s *Server) selectModelEngine() {
 		}
 		return
 	}
-	// BYOK FIRST (Greg, 2026-09-27: "it should be BYOK with openrouter api
+	// BYOK FIRST (the maintainer, 2026-09-27: "it should be BYOK with openrouter api
 	// key"). A gateway holding the person's own OpenRouter key needs no seat,
 	// no lease and no heartbeat: their turns go straight to OpenRouter on
 	// their key, with the ladder and the provider policy resolved in the

@@ -33,7 +33,7 @@ func channelIn(name, workspace string) *domain.Channel {
 		Timestamps: domain.Timestamps{CreatedAt: now, UpdatedAt: now}}
 }
 
-// One user, one workspace (Greg, 2026-10-20, after a fresh sign-up on
+// One user, one workspace (the maintainer, 2026-10-20, after a fresh sign-up on
 // memdoor.ai listed and read another account's channels): a person lists the
 // channels of their workspace and reaches no other, public or not.
 func TestAPersonReachesOnlyTheChannelsOfTheirWorkspace(t *testing.T) {

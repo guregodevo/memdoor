@@ -5,7 +5,7 @@ import { useState } from 'react';
 // they sign in on the command line with the same email. No form to fill,
 // nobody to wait for.
 //
-// THE SEAT IS THE HOSTED SCHEDULER, $10 a month (Greg, 2026-10-04: workflows
+// THE SEAT IS THE HOSTED SCHEDULER, $10 a month (the maintainer, 2026-10-04: workflows
 // and local schedules are free, "everyone can run schedule with local cron";
 // the price since 2026-09-27: "update the stripe price to $10"). The
 // live price was changed that day and a real checkout session quotes $10.00
@@ -44,7 +44,7 @@ export function SeatCheckout({ dark = false }: { dark?: boolean }) {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || !j?.url) {
-        // NOT AN INBOX (Greg, 2026-09-27: "No email to hello"). A checkout
+        // NOT AN INBOX (the maintainer, 2026-09-27: "No email to hello"). A checkout
         // that cannot open is our problem to fix, not a letter to write.
         setError(j?.error || 'Checkout would not open. Try again in a minute — or run `memdoor account subscribe` in the terminal.');
         setState('error');

@@ -17,7 +17,7 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // agent's page saw a CIFAR-10 training recipe and filed it under ML ops. The
 // poster is the frame before the cast loads, and the still for anyone who
 // prefers reduced motion.
-// Five tabs, the things it is (Greg, 2026-10-11: "Workflows / Headless /
+// Five tabs, the things it is (the maintainer, 2026-10-11: "Workflows / Headless /
 // Cost saving", "No babysitting? the top 4 features"; 2026-10-26: "the story
 // of local model with peer features"). Each is a real session.
 const TAKES = [

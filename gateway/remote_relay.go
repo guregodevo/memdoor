@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// REMOTE CONTROL, STEP 2 (Greg, 2026-09-28): the encrypted relay behind
+// REMOTE CONTROL, STEP 2 (the maintainer, 2026-09-28): the encrypted relay behind
 // https://memdoor.ai/r/<id>#k=<key>. The TUI connects to /api/relay as an
 // authenticated terminal; the page at /r/<id> (the SPA) connects to
 // /api/relay/browser with a proof derived from the key. The
@@ -65,7 +65,7 @@ const (
 	remoteRelayMaxBrowsers = 8
 	// remoteRelayMaxWatchers bounds the watch-only pages (/remote view,
 	// ?watch=1 on the socket): an audience, a stream's viewers, a pair
-	// programming partner (Greg, 2026-10-24: "someone shares his gateway and
+	// programming partner (the maintainer, 2026-10-24: "someone shares his gateway and
 	// his followers see the TUI"). Frames are fanned out without waiting,
 	// so a slow viewer loses frames, never the terminal.
 	remoteRelayMaxWatchers = 200

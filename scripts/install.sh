@@ -378,7 +378,7 @@ if [ "${WAS_RUNNING:-0}" = "1" ]; then
     echo "  memdoor gateway &                      # restart it (this upgrade stopped it and could not restart it)"
 fi
 if [ "$INSTALL_MODE" = "existing" ] || [ "$HAD_DATA_DIR" = "1" ]; then
-    # An upgrade: nothing new to set up (Greg, Cloud Shell, 2026-10-24: the
+    # An upgrade: nothing new to set up (the maintainer, Cloud Shell, 2026-10-24: the
     # first-install lines read wrong after one). The conversations and the
     # keys are the same, on the new binary.
     echo "  memdoor resume --last                  # same conversations, same keys, on the new binary"

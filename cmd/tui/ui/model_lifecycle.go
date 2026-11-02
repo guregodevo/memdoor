@@ -81,7 +81,7 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 	case "/model-search":
 		// The model catalogue (every connected provider's): find a
 		// model by name, then /model <id> pins it for this conversation
-		// (Greg, 2026-09-26: "user can change models").
+		// (the maintainer, 2026-09-26: "user can change models").
 		if len(fields) < 2 {
 			// Nothing typed: a picker of the providers, then one's models —
 			// the person need not know a provider's name.
@@ -96,7 +96,7 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 	case "/model":
 		// Which model answers this conversation — the agent's ladder with the
 		// current rung marked — and a pin (gateway/route_handler.go). One
-		// command, one meaning (Greg, 2026-09-26: "it pins a model", "less is
+		// command, one meaning (the maintainer, 2026-09-26: "it pins a model", "less is
 		// more").
 		if m.route == nil {
 			m.note("Routing isn't available in this build.")

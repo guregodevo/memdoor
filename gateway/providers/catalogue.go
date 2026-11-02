@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// EACH PROVIDER HAS A METADATA API (Greg, 2026-10-02: "check if each
+// EACH PROVIDER HAS A METADATA API (the maintainer, 2026-10-02: "check if each
 // provider has an API that provides model metadata … let's add this in our
 // provider interface, getModel"). Read on 2026-10-02, with keys:
 //

@@ -63,7 +63,7 @@ func TestTheRelayStopsOnAPlanRefusal(t *testing.T) {
 
 // A gateway on another machine is its own relay: the link is on that
 // gateway, the terminal dials it with the gateway's token, and no account or
-// plan is asked (Greg, 2026-10-23: "a phone can connect to daemon", "no pro
+// plan is asked (the maintainer, 2026-10-23: "a phone can connect to daemon", "no pro
 // story"). A gateway on this machine still goes through the hosted relay.
 func TestRemoteOnAnotherMachineIsOnThatGateway(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
@@ -103,7 +103,7 @@ func TestRemoteOnAnotherMachineIsOnThatGateway(t *testing.T) {
 // The link lives on the gateway whenever a phone could reach it: a gateway
 // reached through loopback that listens on the network puts the link on
 // the address it names (the box's name through the ssh door); one on
-// localhost alone goes through memdoor.ai and says why (Greg, 2026-10-23:
+// localhost alone goes through memdoor.ai and says why (the maintainer, 2026-10-23:
 // "/remote should not go through memdoor.ai anymore unless it's needed").
 func TestRemoteLinkIsOnTheGatewayWhenAPhoneCouldReachIt(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())

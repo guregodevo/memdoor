@@ -54,7 +54,7 @@ type agentToolRouting struct {
 // tool the turn needs but cannot see gets called with guessed arguments
 // (2026-09-25), so families err wide:
 // change 16,758 bytes (−20%), answer 13,075 (−37%), investigate 17,522 (−16%),
-// schedule 11,139 (−47%). Greg, 2026-09-27: "no risk no quality degradation" —
+// schedule 11,139 (−47%). The maintainer, 2026-09-27: "no risk no quality degradation" —
 // so each family carries more than its own core, and the cut is smaller than
 // it could be.
 var builtinToolRouting = map[string]agentToolRouting{
@@ -64,7 +64,7 @@ var builtinToolRouting = map[string]agentToolRouting{
 		// apply_patch is core, never a family's: the prompt tells the coder it
 		// implements by calling apply_patch, and a turn routed "answer" lost
 		// it — "review last changes" (2026-09-28) reviewed and could not fix
-		// what it found. Greg: "apply_patch is always there by default".
+		// what it found. The maintainer: "apply_patch is always there by default".
 		// locate too (2026-09-28, "it always take time to read all files and
 		// search relevant files"): finding where the code lives is the first
 		// step of every kind of work, and a turn without it reads its way there.
@@ -79,7 +79,7 @@ var builtinToolRouting = map[string]agentToolRouting{
 				Description: "Write, fix or change code, configuration or documentation in the project, then build, test or run it.",
 				// A family must carry every tool its kind of work might reach
 				// for, or the turn guesses the arguments instead.
-				// sessions_spawn (2026-10-05, Greg: "give the coder sessions_spawn"):
+				// sessions_spawn (2026-10-05, the maintainer: "give the coder sessions_spawn"):
 				// a well-defined subtask runs in parallel in its own session and
 				// its result wakes this conversation.
 				// cron (2026-10-11): "then build, test or run it" can take minutes.

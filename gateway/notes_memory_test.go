@@ -7,7 +7,7 @@ import (
 	"memdoor/pkg/llm"
 )
 
-// THE CODER REMEMBERS THROUGH NOTES (Greg, 2026-09-27: "notes was pretty
+// THE CODER REMEMBERS THROUGH NOTES (the maintainer, 2026-09-27: "notes was pretty
 // handy", "we should have it in coder tool palette"). It is in the palette,
 // and it survives per-turn tool routing — a routed turn that dropped the
 // memory tool would forget exactly when the decision model is on.

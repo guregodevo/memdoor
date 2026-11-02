@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// The model picker — Memdoor's core surface (Greg, 2026-09-26: "this will
+// The model picker — Memdoor's core surface (the maintainer, 2026-09-26: "this will
 // be the core feature of Memdoor to have efficient model selection"; "very
 // UX friendly for sorting and reordering"). Two screens in one overlay:
 //
@@ -24,7 +24,7 @@ import (
 // the picker is what a person uses.
 
 // CatalogModel is a catalogue entry as the seat sees it, real price included
-// (Greg, 2026-09-26: "show the real price").
+// (the maintainer, 2026-09-26: "show the real price").
 type CatalogModel struct {
 	ID       string
 	Provider string // which provider lists it (registry.go); "" = the catalogue
@@ -94,7 +94,7 @@ type providersMsg struct {
 }
 
 // openProviderPicker is a bare /model-search: pick a provider from a list
-// (Greg, 2026-10-03: "the user doesn't know the provider name; it should
+// (the maintainer, 2026-10-03: "the user doesn't know the provider name; it should
 // be without inputting text"), then one of its models.
 func (m *Model) openProviderPicker() tea.Cmd {
 	if m.modelProviders == nil {

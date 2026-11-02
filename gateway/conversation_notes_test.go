@@ -91,7 +91,7 @@ func TestTheServersRuntimeWiresNotesOutsideTheProject(t *testing.T) {
 	}
 }
 
-// The runtime the server builds compacts at 60% of the window (Greg,
+// The runtime the server builds compacts at 60% of the window (the maintainer,
 // 2026-09-29: "60%, capped at 200k"); an earlier default of 45% compacted a
 // remote model at 49.8% (live the same day).
 func TestTheServersRuntimeCompactsAtSixtyPercent(t *testing.T) {

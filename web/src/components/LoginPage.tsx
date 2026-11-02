@@ -50,7 +50,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
       return;
     }
     // Back from the welcome page's sign-out: say so, the same way a sign-in
-    // is confirmed (Greg, 2026-10-20: "logout too?").
+    // is confirmed (the maintainer, 2026-10-20: "logout too?").
     if (params.get('signed_out') !== null) {
       setNotice("You're signed out. Sign in again whenever you like.");
       window.history.replaceState(null, '', window.location.pathname);

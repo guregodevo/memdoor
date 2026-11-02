@@ -10,7 +10,7 @@ import (
 )
 
 // Inside cmux a new turn clears the last turn's notification and sets a
-// status; the end clears it (Greg: "it keeps saying turn finished … it's a
+// status; the end clears it (the maintainer: "it keeps saying turn finished … it's a
 // different turn and it's running"). A fake cmux records what it was told.
 func TestCmuxFollowsTheTurn(t *testing.T) {
 	dir := t.TempDir()

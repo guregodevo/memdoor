@@ -14,7 +14,7 @@ import (
 )
 
 // The workflow tool: the agent runs, watches, stops and approves DAGs the
-// way the TUI and the shell do (Greg, 2026-10-02: "the coder agent can stop
+// way the TUI and the shell do (the maintainer, 2026-10-02: "the coder agent can stop
 // a workflow … gracefully"). Same calls, no logic of its own — mario
 // orchestrates, the gateway reports.
 

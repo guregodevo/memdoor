@@ -13,7 +13,7 @@ import (
 )
 
 // memdoor remote <id> — the phone's link for a conversation, from a script
-// with no window (Greg, 2026-10-12: "there should be a remote command to
+// with no window (the maintainer, 2026-10-12: "there should be a remote command to
 // return in stdout the link", "from a resume id"; 2026-10-24, once the
 // gateway held the link: "memdoor remote does not make sense, we should use
 // gateway instead", "we need to pass the --gateway <host> so memdoor
@@ -27,7 +27,7 @@ import (
 //
 // Stdout is the link and nothing else. The watch-only link and the QR code
 // go to stderr: a job's log shows the code, and a phone scans it off the
-// screen (Greg: "or the qr code"). `off` revokes the link.
+// screen (the maintainer: "or the qr code"). `off` revokes the link.
 var remoteCmd = &cobra.Command{
 	Use:   "remote [id | off <id>]",
 	Short: "The link that opens a conversation on your phone, on stdout; the gateway holds it",

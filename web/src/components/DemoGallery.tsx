@@ -4,7 +4,7 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // DemoGallery: every demo on the page as its own take, each a REAL recorded
 // `memdoor tui` session (nothing scripted, nothing reordered). A card shows
 // a still of its take and plays on click; nothing autoplays here, the hero
-// already does. Greg, 2026-10-02: "put more demos videos for each demos like
+// already does. The maintainer, 2026-10-02: "put more demos videos for each demos like
 // a gallery".
 const DEMOS = [
   {

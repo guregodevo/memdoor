@@ -28,7 +28,7 @@ build: web-build
 	@echo "✅ Memdoor built: ./memdoor"
 	@echo "   make up — put it on your PATH and restart the gateway on it"
 
-# THE LOCAL UPDATE IN ONE COMMAND (Greg, 2026-09-27: "this is in make right? it
+# THE LOCAL UPDATE IN ONE COMMAND (the maintainer, 2026-09-27: "this is in make right? it
 # should be"). Build, put that build on your PATH, and restart the gateway on
 # it — the three steps every change needed by hand. The restart is graceful
 # (SIGTERM, the six-phase teardown drains) via stop-gateway.

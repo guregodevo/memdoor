@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// THE REFERENCE CATALOGUE (Greg, 2026-10-02: "make sure you have the
+// THE REFERENCE CATALOGUE (the maintainer, 2026-10-02: "make sure you have the
 // correct context size; if we can get it dynamically that's better"). A
 // provider that states a model's window in its own list is believed
 // (OpenRouter's context_length, Groq's context_window). Anthropic, OpenAI
@@ -153,7 +153,7 @@ func ReferenceLimits(ctx context.Context, providerID, modelID string) (Limits, b
 		}
 	}
 	// No family guessing (gpt-5.1-codex-max → gpt-5.1): a model the
-	// catalogue does not name is unknown, said so (Greg, 2026-10-02: "we
+	// catalogue does not name is unknown, said so (the maintainer, 2026-10-02: "we
 	// should call an API for context_size").
 	return Limits{}, false
 }

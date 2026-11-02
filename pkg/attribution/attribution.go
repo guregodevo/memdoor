@@ -1,7 +1,7 @@
 // Package attribution names this app to the providers that can tell apps
 // apart, never the person and never the key.
 //
-// THE CHANNEL IS THE PROVIDERS' OWN APP PAGES (Greg, 2026-09-27: "the strategy
+// THE CHANNEL IS THE PROVIDERS' OWN APP PAGES (the maintainer, 2026-09-27: "the strategy
 // should be to promote our app through openrouter"; 2026-10-24: every provider
 // that can recognise the app must). A request counts toward an app only when
 // it carries the headers that provider reads:

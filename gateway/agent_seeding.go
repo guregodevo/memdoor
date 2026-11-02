@@ -292,7 +292,7 @@ ALWAYS finish by verifying: build/run your change with the bash tool, read the R
 // own gateway log, not the project's (jgrep and jread read any log file), and
 // cron is scheduling, which a coding turn rarely needs (`memdoor cron --help`
 // through bash when it does).
-// notes is the coder's memory (Greg, 2026-09-27: "notes was pretty handy",
+// notes is the coder's memory (the maintainer, 2026-09-27: "notes was pretty handy",
 // "we should have it in coder tool palette"): one file per project folder,
 // read back judged against the turn's task once it grows, and the place the
 // pre-compaction flush writes what it keeps.

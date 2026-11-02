@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// The turn as a graph (Greg, 2026-10-11, "the turn drawn as a graph"):
+// The turn as a graph (the maintainer, 2026-10-11, "the turn drawn as a graph"):
 // ctrl+g (or /graph) draws what this turn did as the DAG it is, in the
 // workflow panel's own shape — the reads and searches, the edits that
 // depended on them, the runs and checks that depended on the edits — with

@@ -5,8 +5,8 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // this repository (2026-09-27): one question, a judged search that kept 6 of
 // 29 hunks, a judged read that kept 4 of 41 sections of a 1,182-line file, and
 // the answer with file:line, on the cheapest rung. The waits are compressed
-// (Greg: "remove silence") — 36 s recorded, 15 s played; every frame is the
-// session's own, none added or reordered. It replaced a scripted animation (Greg: "we
+// (the maintainer: "remove silence") — 36 s recorded, 15 s played; every frame is the
+// session's own, none added or reordered. It replaced a scripted animation (the maintainer: "we
 // need better demo") — the page's proof should be the product, not a mock-up.
 //
 // To re-record: a clean checkout at /tmp/memdoor (no personal path on screen),

@@ -419,7 +419,7 @@ answers from anywhere. Runs with the laptop closed are coming.
 $10 a month, cancel any month. Reply to this email if anything is unclear — a
 person answers.
 
-— Greg, memdoor.ai
+— Memdoor, memdoor.ai
 `, acct.Email)
 	go func() {
 		if err := s.mail.Send(email.Email{To: acct.Email, Subject: "Your Memdoor subscription is active — remote control is on", Body: body}); err != nil {

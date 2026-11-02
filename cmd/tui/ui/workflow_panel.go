@@ -11,7 +11,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// THE WORKFLOW VIEW RENDERS THE DAG (Greg, 2026-10-02: "the workflow rendered
+// THE WORKFLOW VIEW RENDERS THE DAG (the maintainer, 2026-10-02: "the workflow rendered
 // should render a dag of tasks"). A run is drawn as its graph: tasks in the
 // layers their dependencies impose, each with its state and what it requires,
 // updated live from the gateway's workflow_event broadcasts. /workflow lists
@@ -621,7 +621,7 @@ func workflowGraphRows(r WorkflowRun, width int) []string {
 }
 
 // workflowGraphMessage is the DAG as one block in the conversation, redrawn
-// in place on every event (Greg, 2026-10-02: "a tool to run workflow that
+// in place on every event (the maintainer, 2026-10-02: "a tool to run workflow that
 // we can see in real time the dag running"). Keyed by the run's id.
 func workflowGraphMessage(r WorkflowRun, width int) Message {
 	head := fmt.Sprintf("%s · %s · %d/%d done", r.Workflow, r.State, r.Done, r.Total)

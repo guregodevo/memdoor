@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// Reads are lock-free; a writer is not (Greg, 2026-10-11: "there are lock
+// Reads are lock-free; a writer is not (the maintainer, 2026-10-11: "there are lock
 // free tools in general but some like apply_patch is not"). apply_patch,
 // write_file, edit_file and search_replace each read a file, compute, and
 // write it back; two sessions in one gateway (a spawned subtask, a scheduled

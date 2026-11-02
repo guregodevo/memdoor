@@ -27,7 +27,7 @@ var loginRateLimiter = ratelimit.NewPerClientLimiter(10, 1*time.Minute)
 // address typed, account or not, so it says nothing about which exist.
 var accountLoginLimiter = ratelimit.NewPerClientLimiter(5, 15*time.Minute)
 
-// Anyone can sign up (Greg, 2026-10-18: "no invite gate please", "anyone can
+// Anyone can sign up (the maintainer, 2026-10-18: "no invite gate please", "anyone can
 // signup"); the limiter is what stands between the form and a script.
 var registerRateLimiter = ratelimit.NewPerClientLimiter(5, 10*time.Minute)
 

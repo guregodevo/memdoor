@@ -9,7 +9,7 @@ import (
 	"memdoor/tools"
 )
 
-// ANY MODEL SHOULD RUN THE CODING AGENT (Greg, 2026-09-27: "we need our coding
+// ANY MODEL SHOULD RUN THE CODING AGENT (the maintainer, 2026-09-27: "we need our coding
 // agent to work with any model", "try to identify common pattern of failure so
 // we can generalize the adapter and not have too many coding paths").
 //

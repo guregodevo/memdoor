@@ -41,7 +41,7 @@ a credential, where that credential came from, and which one is answering.
 		}
 		if audit, _ := cmd.Flags().GetBool("audit"); audit {
 			// Where every connected provider's windows come from: the
-			// maintenance number (Greg, 2026-10-02: "very important to
+			// maintenance number (the maintainer, 2026-10-02: "very important to
 			// maintain it … let's add top 100 models"). A guess is a model
 			// nobody states; those are listed so they can be declared.
 			var res struct {
@@ -324,7 +324,7 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 			return providerSignIn(pick.ID, os.Stdout, in, true)
 		}
 		// `memdoor connect openrouter` with no key anywhere: a newcomer has
-		// none, so signing in comes first (Greg, 2026-10-31).
+		// none, so signing in comes first (the maintainer, 2026-10-31).
 		if flagKey, _ := cmd.Flags().GetString("key"); pick.ID == providers.OpenRouterID && flagKey == "" &&
 			term.IsTerminal(int(os.Stdin.Fd())) && providerKeySource(pick.ID) == "" {
 			fmt.Println("  1. Sign in with OpenRouter in the browser (no key to copy; sign up is free)")

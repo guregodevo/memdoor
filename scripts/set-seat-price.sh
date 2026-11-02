@@ -1,7 +1,7 @@
 #!/bin/bash
 # Point the subscription checkout at a different Stripe price.
 #
-# Greg, 2026-09-27: "update the stripe price to $10". The plan of record is Pro
+# The maintainer, 2026-09-27: "update the stripe price to $10". The plan of record is Pro
 # at $10/month for the decision model (docs/roadmap/MUST.md), while Stripe still
 # holds the $149 seat, so nothing in the binary or on the site may quote $10
 # until this has run.

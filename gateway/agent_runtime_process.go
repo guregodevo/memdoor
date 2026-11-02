@@ -331,7 +331,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	// Process response and handle tool loops
 	// Pattern: Tool execution loop (like OpenClaw's tool handling)
 	// The cap that used to sit here (50 API calls, calibrated from
-	// multi-instrument research runs) is gone (Greg, 2026-09-26: "no hard
+	// multi-instrument research runs) is gone (the maintainer, 2026-09-26: "no hard
 	// limit please"): a coder building an app from
 	// scratch used all 50 on a HEALTHY run and was cut off while tidying. What
 	// stops a spin is the loop-breakers below, the streamed-bash cap, the
@@ -353,7 +353,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	const maxRepeatedFail = 3
 	consecutiveFail := 0
 	const maxConsecutiveFail = 4
-	// A GUARD'S FIRST TRIP IS A WORD, NOT THE END (Greg, 2026-10-05: "like
+	// A GUARD'S FIRST TRIP IS A WORD, NOT THE END (the maintainer, 2026-10-05: "like
 	// omp" — oh-my-pi's loop guard injects a redirect and lets the turn go
 	// on). The loop-breaker and the exploring check nudge once, in the
 	// model's next input; the second trip ends the turn as before.
@@ -1002,7 +1002,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 		// THE DECISION MODEL ENDS A RUN THAT IS GOING NOWHERE. The first time
 		// the shadow score says the last steps made no progress, one yes/no
 		// over those steps asks whether the run is stuck; a yes ends the turn
-		// with a wrap-up round. No count does this (Greg, 2026-09-26).
+		// with a wrap-up round. No count does this (the maintainer, 2026-09-26).
 		if shadow.justFired() {
 			if p, stop := ar.turnVerdict.stuck(ctx, agentName, userMessage, shadow.windowText()); stop {
 				log.Warn("Turn stopped: no progress", slog.Float64("p_stuck", p), slog.Int("calls", apiCallCount))

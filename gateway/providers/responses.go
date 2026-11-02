@@ -17,7 +17,7 @@ import (
 )
 
 // responsesClient speaks the OpenAI Responses API — `input` items, not
-// `messages` — which is what a company's own AI gateway exposes (Greg,
+// `messages` — which is what a company's own AI gateway exposes (the maintainer,
 // 2026-10-02: `POST …/ai/v1/responses` with `{"model": "<provider slug>",
 // "input": …}` and a personal or service-account token as Bearer). One
 // call, no stream; the model is the provider slug the company set up.

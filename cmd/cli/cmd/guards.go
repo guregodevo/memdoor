@@ -17,7 +17,7 @@ import (
 // a matching call is refused with the rule's message, which the agent reads
 // and works around. The rules were a workspace setting set with a curl and a
 // token (gateway/tool_guards.go), which nobody found, the author included
-// (Greg, 2026-10-11: "no one know even myself"). Same setting, a command.
+// (the maintainer, 2026-10-11: "no one know even myself"). Same setting, a command.
 var guardsCmd = &cobra.Command{
 	Use:   "guards",
 	Short: "Rules that block a tool call: never .env, never push, never sudo",

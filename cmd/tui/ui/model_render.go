@@ -88,7 +88,7 @@ func (m Model) renderMessages() string {
 			PaddingTop(2)
 		hint := "No messages yet. Type a message to get started!"
 		// The hint is a sentence or two: wrapped to the window, or the
-		// window clips it at the right edge ("it's truncated", Greg,
+		// window clips it at the right edge ("it's truncated", the maintainer,
 		// 2026-09-19). A sensible line length, never the whole width.
 		if w := m.viewport.Width - 4; w > 20 {
 			if w > 88 {

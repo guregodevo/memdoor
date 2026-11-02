@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-// THE PLAN ANSWERS BY DEFAULT (Greg, 2026-10-31: "if you login to chatgpt you
+// THE PLAN ANSWERS BY DEFAULT (the maintainer, 2026-10-31: "if you login to chatgpt you
 // should get chatgpt model by default in the list"). Signing in with ChatGPT
 // is the person choosing to spend their plan, so a signed-in plan is the
 // engine before their OpenRouter key (a company's vendor key still comes

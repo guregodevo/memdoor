@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// A COMPANY'S OWN KEY (Greg, 2026-10-02: "I want to use memdoor but it's not
+// A COMPANY'S OWN KEY (the maintainer, 2026-10-02: "I want to use memdoor but it's not
 // possible with my telemetry company that checks everything … Claude Code,
 // Cursor, Warp, Codex are used … the company gives developers an API key").
 //
@@ -41,7 +41,7 @@ import (
 //	                              ("X-Team: data; X-Email: me@corp.example")
 //	MEMDOOR_VENDOR=off            ignore the keys above (use OpenRouter or a seat)
 //
-// A company AI gateway (Greg, 2026-10-02: "golden env var preset at runtime …
+// A company AI gateway (the maintainer, 2026-10-02: "golden env var preset at runtime …
 // provider / model refreshed in place … tagged with your email and team for
 // cost attribution") is exactly this contract: it sets the base URL, the key
 // and the model in the environment, and the headers carry the tags. The
@@ -74,7 +74,7 @@ const (
 	// Gemini speaks the OpenAI shape at this base; the same client serves it.
 	googleDefaultBase    = "https://generativelanguage.googleapis.com/v1beta/openai"
 	googleDefaultContext = 1_000_000
-	// Grok and Baseten speak the OpenAI shape too (Greg, 2026-10-02: "we
+	// Grok and Baseten speak the OpenAI shape too (the maintainer, 2026-10-02: "we
 	// should try baseten and grok as well").
 	xaiDefaultBase         = "https://api.x.ai/v1"
 	xaiDefaultContext      = 256_000
@@ -96,7 +96,7 @@ func VendorEngine() (re RemoteEngine, ok bool, reason string) {
 	model := strings.TrimSpace(os.Getenv("MEMDOOR_MODEL"))
 	ctxLen := envInt("MEMDOOR_MODEL_CONTEXT")
 	// The company's own gateway first: its base URL and token are the whole
-	// integration (Greg, 2026-10-02: `AI_GATEWAY_BASE_URL` and a
+	// integration (the maintainer, 2026-10-02: `AI_GATEWAY_BASE_URL` and a
 	// `*_AI_GATEWAY_TOKEN`, `model` = the provider slug set up in its UI).
 	if base := strings.TrimSpace(os.Getenv("AI_GATEWAY_BASE_URL")); base != "" {
 		token := gatewayToken()
@@ -240,7 +240,7 @@ func gatewayTokenVar() (string, string) {
 }
 
 // xaiKey is XAI_API_KEY, or GROK_API_KEY — the name people give it
-// (Greg's .envrc, 2026-10-02).
+// (the maintainer's .envrc, 2026-10-02).
 func xaiKey() string { return strings.TrimSpace(os.Getenv(xaiKeyVar())) }
 
 func xaiKeyVar() string {

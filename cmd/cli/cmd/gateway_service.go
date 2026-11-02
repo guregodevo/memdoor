@@ -16,7 +16,7 @@ import (
 	"memdoor/pkg/shared"
 )
 
-// THE DAEMON THAT OWNS THE WORK (Greg, 2026-10-23: "the deamon that owns the
+// THE DAEMON THAT OWNS THE WORK (the maintainer, 2026-10-23: "the deamon that owns the
 // work is the way to go"). A gateway started by the first run lives as long
 // as the login session that started it: a reboot, a logout or a closed lid
 // on a laptop ends it, and nothing brings it back. On a box that stays on, a

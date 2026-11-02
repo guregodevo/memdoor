@@ -86,7 +86,7 @@ func TestModelPickerFlow(t *testing.T) {
 	}
 }
 
-// A bare /model-search is a picker of providers (Greg, 2026-10-03: "the
+// A bare /model-search is a picker of providers (the maintainer, 2026-10-03: "the
 // user doesn't know the provider name; it should be without inputting
 // text"): enter opens a provider's models, esc there goes back, a provider
 // not connected says how to connect it.

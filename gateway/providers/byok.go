@@ -13,7 +13,7 @@ import (
 
 // BYOK — the person's own OpenRouter key serves their turns.
 //
-// Greg, 2026-09-27: "it should be BYOK with openrouter api key … they bring
+// The maintainer, 2026-09-27: "it should be BYOK with openrouter api key … they bring
 // their own open router key, memdoor cuts the bill". The product is the layer,
 // not the tokens: a solo developer already pays a provider, and the decision
 // model makes those tokens go further (docs/features/DECIDE.md). So when the gateway's environment carries an
@@ -153,7 +153,7 @@ func byokProviderPolicy(ctx context.Context, model string) map[string]any {
 	p := map[string]any{
 		// Never a host that may train on what it is sent: the person's code
 		// goes through here. Sent per request, not left to an account toggle.
-		// THE ONE EXCEPTION IS A FREE MODEL (Greg, 2026-10-10: "for free we
+		// THE ONE EXCEPTION IS A FREE MODEL (the maintainer, 2026-10-10: "for free we
 		// allow data collection"): every `:free` endpoint on OpenRouter is
 		// served on the condition that it may train on what it is sent, and
 		// with deny they all answer "no endpoints match your data policy"

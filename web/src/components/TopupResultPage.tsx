@@ -12,7 +12,7 @@ import { useLocation } from 'react-router-dom';
 // THIS IS THE SCREEN A PAYING PERSON SEES FIRST, and until 2026-09-27 it sold
 // them a Mac app to drop a video into. They just bought a terminal coding
 // agent's decision model, so the page is the next four lines and nothing
-// else. No mailto anywhere (Greg: "no mailto") — a person who just paid should
+// else. No mailto anywhere (the maintainer: "no mailto") — a person who just paid should
 // be working in a minute, not composing a letter.
 
 const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';

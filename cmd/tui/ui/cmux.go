@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// CMUX KEEPS A NOTIFICATION UNTIL IT IS READ (Greg, 2026-09-27: "it keeps
+// CMUX KEEPS A NOTIFICATION UNTIL IT IS READ (the maintainer, 2026-09-27: "it keeps
 // saying turn finished … right now it's a different turn and it's running").
 // An OSC 9 cannot be taken back, so inside cmux the window speaks cmux's own
 // language instead, the way its agent integrations do: a status beside the

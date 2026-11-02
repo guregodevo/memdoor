@@ -26,7 +26,7 @@ func writeRecents(t *testing.T, home string, slugs ...string) {
 	}
 }
 
-// A QUESTION WITH ONE POSSIBLE ANSWER IS NOT A QUESTION (Greg, 2026-09-27,
+// A QUESTION WITH ONE POSSIBLE ANSWER IS NOT A QUESTION (the maintainer, 2026-09-27,
 // walking onboarding: "there is a default workspace"). Somebody with a single
 // workspace was refused in any directory they had not pinned, and handed four
 // ways to name the only workspace they have.

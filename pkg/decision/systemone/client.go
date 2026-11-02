@@ -33,7 +33,7 @@ const (
 
 	// RefusalHold is how long a client whose endpoint refused it (no access
 	// to the model, no credits, no such route) stays not-ready: if there is
-	// a Jev model, use it, otherwise don't (Greg, 2026-10-03). A refused key
+	// a Jev model, use it, otherwise don't (the maintainer, 2026-10-03). A refused key
 	// is not asked again on every turn.
 	RefusalHold = 10 * time.Minute
 )

@@ -52,7 +52,7 @@ const (
 	// The stop question: asked once per turn, when the shadow score
 	// (route_shadow.go) says the last steps made no progress. A yes ends the
 	// turn with a wrap-up round. The decision model, not a call count, is
-	// what ends a run (Greg, 2026-09-26: "with decision model we have a
+	// what ends a run (the maintainer, 2026-09-26: "with decision model we have a
 	// control on how to end"; "instead of hard coded limits").
 	settingTurnStop   = "decision_turn_stop"
 	turnStopThreshold = 0.8

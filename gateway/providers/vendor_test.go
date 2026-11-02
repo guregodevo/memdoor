@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// A company's key (Greg, 2026-10-02: the policy allows an approved vendor on a
+// A company's key (the maintainer, 2026-10-02: the policy allows an approved vendor on a
 // key the developer creates — Anthropic, Google, OpenAI — or the company AI
 // gateway in front of one; the default provider must be off).
 func TestVendorEngineFromTheEnvironment(t *testing.T) {
@@ -92,7 +92,7 @@ func TestVendorModeIsTheActiveEngine(t *testing.T) {
 	}
 }
 
-// The company's own AI gateway (Greg, 2026-10-02): a base URL, a personal or
+// The company's own AI gateway (the maintainer, 2026-10-02): a base URL, a personal or
 // service-account token named after the company, the provider slug as the
 // model, the Responses API unless told chat — and it comes before any vendor
 // key in the same environment.

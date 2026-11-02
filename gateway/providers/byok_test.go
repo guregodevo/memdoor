@@ -46,7 +46,7 @@ func TestByokEngineFromTheKey(t *testing.T) {
 
 // A free model is the one exception to deny: its endpoints exist only on the
 // condition that they may train, so the request says allow for it and for
-// nothing else (Greg, 2026-10-10: "for free we allow data collection").
+// nothing else (the maintainer, 2026-10-10: "for free we allow data collection").
 func TestAFreeModelAllowsTrainingAndNothingElseDoes(t *testing.T) {
 	for _, id := range []string{"nvidia/nemotron-3.5-lightning:free", "Google/Gemma-4-31b-it:FREE", "openrouter/free"} {
 		if p := byokProviderPolicy(context.Background(), id); p["data_collection"] != "allow" {
