@@ -1,7 +1,7 @@
 # Contributing
 
 Memdoor is open source under the Apache License 2.0 with one maintainer,
-Gregory Desvaux. This repository is the source of truth: what is on `main`
+guregodevo. This repository is the source of truth: what is on `main`
 is what memdoor.ai ships.
 
 ## What is welcome
@@ -21,24 +21,24 @@ is what memdoor.ai ships.
 - The rules are in `AGENTS.md` and `.agents/skills/`: search before coding,
   test through the CLI, factories return interfaces, no obvious comments,
   the logger and never `fmt.Println`, docs with no AI slop.
-- One squash commit per pull request. The maintainer reviews every one;
+- One squash commit per pull request, signed CLA. The maintainer reviews every one;
   a review may ask for a change or decline the change with the reason.
 
-## Developer Certificate of Origin
+## Contributor Licence Agreement
 
-Every commit is signed off (`git commit -s`), which adds
-`Signed-off-by: Name <email>` and states that you wrote the change or have
-the right to submit it under the project's licence, as the
-[Developer Certificate of Origin 1.1](https://developercertificate.org)
-says. No contributor licence agreement.
+Before a first pull request is merged, its author signs the
+[CLA](CLA.md), once: the copyright in the contribution is assigned to the
+maintainer (an exclusive, irrevocable licence where the law allows no
+assignment), with a patent licence for what it practises; the author gets a
+licence back to reuse their own work. The CLA check on the pull request
+asks for it.
 
 ## Ownership and licence
 
-The code is copyright Gregory Desvaux and licensed to you under Apache 2.0
-([LICENSE](LICENSE), [NOTICE](NOTICE)). A contribution is licensed under
-the same terms, as section 5 of the licence says; the contributor keeps the
-copyright of what they wrote. The name and the project stay with the
-maintainer.
+The code is copyright the maintainer, guregodevo, and licensed to you under Apache 2.0
+([LICENSE](LICENSE), [NOTICE](NOTICE)). Every merged contribution is his
+copyright too, under the CLA, so the project is one work with one owner,
+who can relicense it. The name and the project stay with him.
 
 ## Building it
 
