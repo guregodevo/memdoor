@@ -150,13 +150,14 @@ type Model struct {
 	// plan is the account's plan as the window was opened — \"pro\", \"free\", or
 	// \"\" when it could not be read — for the input's hint (suggest.go).
 	plan            string
-	decisionsOff    bool             // no decision model: the hint says how to connect one
-	background      bool             // a page not showing (pages.go): nothing printed to scrollback
-	page            int              // this page's index in the App (pages.go)
-	paged           bool             // the page runs inside an App: websocket messages are tagged
-	pendingQuestion *pendingQuestion // interactive ask_user_question awaiting the user's choice
-	connect         *connectFlow     // /connect in progress (connect_flow.go)
-	connectOps      ConnectOps       // the one call /connect makes
+	decisionsOff    bool              // no decision model: the hint says how to connect one
+	background      bool              // a page not showing (pages.go): nothing printed to scrollback
+	page            int               // this page's index in the App (pages.go)
+	paged           bool              // the page runs inside an App: websocket messages are tagged
+	pendingQuestion *pendingQuestion  // interactive ask_user_question awaiting the user's choice
+	questionQueue   []pendingQuestion // workflow questions queued while a picker is open (workflow_question.go)
+	connect         *connectFlow      // /connect in progress (connect_flow.go)
+	connectOps      ConnectOps        // the one call /connect makes
 }
 
 // subagentWorkState is one spawned run's current activity: which agent, what
