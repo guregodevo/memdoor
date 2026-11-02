@@ -33,8 +33,8 @@ grep -r "duplicate_code" .    # Search before coding
 # GATEWAY'S OWN (2026-10-30, gateway/gateway_owner.go): sign-up stays open, but only that workspace runs
 # turns on the gateway's keys and machine; gatewayMember / gatewayOperator, never a bare admin role (every
 # sign-up is admin of its own). docs/architecture/GATEWAY_AND_DOORS.md "The gate on every door". Pro = what memdoor.ai
-# hosts: the relay for a gateway behind a laptop's NAT, the hosted workflow state (mario-state,
-# 2026-10-05), and next the box itself (the maintainer: "the pro story will be the self host").
+# hosts: the relay for a gateway behind a laptop's NAT and the hosted workflow state (mario-state,
+# 2026-10-05).
 # A seat NEVER supplies a model key (the maintainer 2026-10-04) — always the user's key;
 # the gateway never leases a model (no MEMDOOR_BRAIN_CLASS / MEMDOOR_BYOK any
 # more). The BROKER owns the seat: token ->
@@ -108,7 +108,7 @@ grep -r "duplicate_code" .    # Search before coding
 # FREE LOCALLY (2026-10-04, "everyone can run schedule with local cron"): no seat check;
 # `memdoor cron add --workflow <name> [--partition today]` schedules one (gateway/server_jobs.go
 # scheduledWorkflow). Pro = the hosted workflow state (one table per workspace on memdoor.ai: every
-# project and person on it, so an external of one workflow is a task another produced); laptop-off runs coming.
+# project and person on it, so an external of one workflow is a task another produced).
 # STATE IS MARIO'S: pkg/workflow = the agent TaskFactory + duck-typed callbacks (Runner,
 # Events, Logger); the gateway reads Execution.Status() from mario's repository and keeps
 # no task state. Missing/wrong behaviour → change mario, never add state or logic here.
@@ -176,7 +176,7 @@ grep -r "duplicate_code" .    # Search before coding
   own (2026-10-23: a box that stays on, the window on a laptop, ssh, the phone
   on the box's address); Pro is what memdoor.ai hosts: the relay for a gateway
   behind a laptop's NAT and the hosted workflow state (one table per workspace
-  on memdoor.ai, shipped 2026-10-05); the hosted box is next. A seat never supplies a key: every model
+  on memdoor.ai, shipped 2026-10-05). A seat never supplies a key: every model
   and decision call is on the user's own (`autoDecisionModel` never picks the
   broker; every chat request goes through a provider, `providers/factory.go`).
   Command line only — one binary, no app, no feature flags. The
@@ -470,14 +470,9 @@ serves it, driving tmux, what to assert, negative paths).
 
 ## Production Operations
 
-memdoor.ai runs TWO units from the same binary: `memdoor` (gateway) and
-`memdoor-billing` (sign-in/Stripe/plans, memdoor.ai only). **Runtime
-state must never live under `/opt/memdoor`** — the deploy rsyncs with
-`--delete` and will erase it (live incident 2026-08-18). Secrets live in
-`/etc/memdoor/billing.env`, ledgers in `/var/lib/memdoor/`. nginx routes
-are written from an INLINE heredoc in the deploy script. The deploy, the
-rollback and the metrics live in memdoor-ops, a private repo that names the
-server; this public repo is the source of truth it builds from (2026-11-02).
+memdoor.ai is deployed from this repo by memdoor-ops, a private repo: the
+deploy, the rollback, the server layout and the metrics live there. This
+public repo is the source of truth it builds from (2026-11-02).
 **Every LLM request goes through a provider** (2026-10-04, the maintainer: "no
 exception. all request for llm goes through provider"): `providers.ClientFactory`
 resolves a pinned model to the provider that lists it, else the engine chosen at
