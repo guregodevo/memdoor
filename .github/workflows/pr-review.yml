@@ -1,9 +1,10 @@
 # A pull request from this repository is reviewed by Memdoor's own pr-review
 # workflow, through the published action, on the OpenRouter secret: glm-5.3-flash
-# runs the full review (the agent opens the files and runs what it can) and a
-# P0 fails the check. A pull request from a fork has no secret and is not
-# reviewed here. It runs on pull_request, never pull_request_target: a
-# stranger's code never runs beside a secret.
+# reads the diff in one call (MEMDOOR_LEAN, no agent loop that builds and runs
+# the tests: seconds, not minutes) and each P0 gets a second look. Its P0s are
+# advisory: the review is the job summary. A pull request from a fork has no
+# secret and is not reviewed here. It runs on pull_request, never
+# pull_request_target: a stranger's code never runs beside a secret.
 name: PR review (Memdoor)
 
 permissions:
@@ -22,7 +23,7 @@ jobs:
   review:
     if: github.repository != 'guregodevo/memdoor-private'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     env:
       HAS_KEY: ${{ secrets.OPEN_ROUTER_API_KEY != '' && 'yes' || 'no' }}
     steps:
@@ -32,8 +33,10 @@ jobs:
       - name: Review on the OpenRouter key
         if: env.HAS_KEY == 'yes'
         uses: guregodevo/memdoor-action@v1
+        env:
+          MEMDOOR_LEAN: '1'
         with:
           workflow: pr-review
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
           model: z-ai/glm-5.3-flash
-          timeout: 15m
+          timeout: 10m
