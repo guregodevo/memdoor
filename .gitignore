@@ -40,6 +40,10 @@ __pycache__/
 
 # Demo files
 *.js
+# The site's PostCSS config is the one .js the tree keeps: without it vite inlines
+# Tailwind's theme and base and builds no utility, an unstyled memdoor.ai
+# (2026-11-02, the first deploy from this checkout).
+!/web/postcss.config.js
 # but DO track the Chrome extension's JS files (popup, options, background
 # service worker). The extension is plain JS by Manifest V3 design — no
 # build step, files are loaded directly by Chrome from web/extension/.
