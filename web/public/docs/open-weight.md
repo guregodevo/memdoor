@@ -54,6 +54,8 @@ list and makes one call; a large model may take minutes to load. `/model
 search` lists what the runtime serves, `/model qwen3:8b-32k` pins one. A
 model pulled after the connect is found on its next pin.
 
+In a terminal, `connect local` keeps the tested model as your pin. New conversations start on `local:<model>`. `/model auto` removes the pin.
+
 On a box: `memdoor --gateway ssh://you@box connect local` installs Memdoor
 there and connects the box's runtime. `@box:coder …` here runs the turn on
 the box ([peers](/docs/providers#the-box-s-model-answers-the-laptop)).

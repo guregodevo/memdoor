@@ -413,9 +413,11 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 			Decisions bool     `json:"decisions"`
 			Base      string   `json:"base"`
 			FreeModel string   `json:"free_model"`
+			Selected  string   `json:"selected"`
 		}
 		err := NewClient().PostJSON("/api/providers/connect", map[string]any{
 			"id": id, "name": pick.Name, "api": pick.API, "base": base, "key": strings.TrimSpace(key), "model": model, "probe": probe, "keyless": pick.Keyless,
+			"select": pick.Keyless && !probe && term.IsTerminal(int(os.Stdin.Fd())),
 		}, &res)
 		if err != nil && res.Error == "" {
 			return err
@@ -440,6 +442,9 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 		}
 		if res.FreeModel != "" {
 			fmt.Println("  " + ui.FreeModelNote(res.FreeModel))
+		}
+		if res.Selected != "" {
+			fmt.Printf("  pinned: new conversations start on %s. /model auto removes the pin.\n", res.Selected)
 		}
 		fmt.Println("  /model <id> in the window pins one of its models; memdoor model search <name> finds them.")
 		if res.Decisions {

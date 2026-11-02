@@ -13,6 +13,7 @@ import (
 
 	"memdoor/gateway/logs"
 	"memdoor/gateway/providers"
+	"memdoor/pkg/authorization"
 	"memdoor/pkg/decision"
 	"memdoor/pkg/decision/systemone"
 	"memdoor/pkg/llm"
@@ -116,6 +117,7 @@ type connectRequest struct {
 	Context int               `json:"context"`
 	Probe   bool              `json:"probe"`   // true: test only, keep nothing
 	Keyless bool              `json:"keyless"` // a local runtime (Ollama, llama.cpp, janis): no token, none sent
+	Select  bool              `json:"select"`  // keep the tested model as the person's pin: every new conversation starts on it
 }
 
 type connectResult struct {
@@ -124,7 +126,8 @@ type connectResult struct {
 	API       string            `json:"api"`
 	Models    int               `json:"models"`
 	Sample    []string          `json:"sample,omitempty"`
-	Tested    string            `json:"tested,omitempty"` // the model the test call used
+	Tested    string            `json:"tested,omitempty"`   // the model the test call used
+	Selected  string            `json:"selected,omitempty"` // the pin kept for the person: provider:model
 	Answer    string            `json:"answer,omitempty"`
 	Error     string            `json:"error,omitempty"`
 	Advice    string            `json:"advice,omitempty"`
@@ -178,6 +181,7 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 	// Always 200: a failed probe is an answer in words (error, advice), not
 	// an HTTP error the client would have to unwrap.
 	res := connectProvider(r.Context(), req)
+	selectConnected(string(authorization.GetActorID(r.Context())), req, &res)
 	openRouterKept := res.OK && res.Saved && res.ID == providers.OpenRouterID
 	if openRouterKept {
 		// The OpenRouter path from this turn on: its ladder, its privacy
@@ -191,6 +195,22 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 		s.rewireDecisions() // judges from this turn on, no gateway start needed
 	}
 	_ = json.NewEncoder(w).Encode(res)
+}
+
+// selectConnected keeps the model a local runtime was just tested with as the
+// person's pin (persistent_pin.go), so the next conversation runs on it and not
+// on a pin from before. Only a local runtime that was saved and asked for it:
+// connecting a provider says nothing about which model the person wants.
+func selectConnected(actor string, req connectRequest, res *connectResult) {
+	if !req.Select || !req.Keyless || !res.OK || !res.Saved || res.Tested == "" {
+		return
+	}
+	pin := res.ID + ":" + res.Tested
+	if err := writePersistentPin(actor, &persistentPin{Model: pin}); err != nil {
+		logs.New("Agent").Warn("pin not kept: " + err.Error())
+		return
+	}
+	res.Selected = pin
 }
 
 // connectProvider probes, then saves unless asked only to probe. The API
