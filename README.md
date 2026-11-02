@@ -24,6 +24,11 @@
 > no key](https://memdoor.ai/docs/open-weight)).
 > [examples/workflows/team-solve](examples/workflows/team-solve/) · [the result page](https://memdoor.ai/docs/team-solve) · [the HN thread](https://news.ycombinator.com/item?id=50320995)
 
+Memdoor is a coding agent and workflow runner. Give the agent a task to read
+files, edit code and run checks. For repeatable work, a workflow coordinates
+checked steps, parallel tasks and approval gates. Run it with a local model or
+a provider on your key.
+
 On this machine:
 
 ```bash
