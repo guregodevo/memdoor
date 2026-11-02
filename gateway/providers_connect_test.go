@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -286,5 +287,52 @@ func TestAnsweringRuntimesListsEachThatAnswers(t *testing.T) {
 		if runtimeNames[port] != name {
 			t.Errorf("port %s is %q, not %q", port, runtimeNames[port], name)
 		}
+	}
+}
+
+// Connecting a local runtime from a terminal keeps its tested model as the
+// person's pin, so the next conversation runs on it and not on an older pin.
+func TestConnectingALocalRuntimeSelectsItsModel(t *testing.T) {
+	dir := t.TempDir()
+	old := persistentPinPath
+	persistentPinPath = func() string { return filepath.Join(dir, ".memdoor", "model.json") }
+	t.Cleanup(func() { persistentPinPath = old })
+
+	if err := writePersistentPin("human:me", &persistentPin{Model: "deepseek/deepseek-v4.1-flash-1017"}); err != nil {
+		t.Fatal(err)
+	}
+	connected := connectResult{OK: true, Saved: true, ID: "local", Tested: "Qwen3-1.7B-4bit"}
+
+	for name, req := range map[string]connectRequest{
+		"not asked for":    {Keyless: true},
+		"a keyed provider": {Select: true},
+	} {
+		res := connected
+		selectConnected("human:me", req, &res)
+		if res.Selected != "" || readPersistentPin("human:me").Model != "deepseek/deepseek-v4.1-flash-1017" {
+			t.Fatalf("%s must leave the pin alone: %+v %+v", name, res, readPersistentPin("human:me"))
+		}
+	}
+	for name, res := range map[string]connectResult{
+		"a probe only":  {OK: true, ID: "local", Tested: "m"},
+		"a failed test": {ID: "local", Tested: "m", Saved: true},
+		"no model":      {OK: true, Saved: true, ID: "local"},
+	} {
+		selectConnected("human:me", connectRequest{Keyless: true, Select: true}, &res)
+		if res.Selected != "" {
+			t.Fatalf("%s must not select: %+v", name, res)
+		}
+	}
+
+	res := connected
+	selectConnected("human:me", connectRequest{Keyless: true, Select: true}, &res)
+	if res.Selected != "local:Qwen3-1.7B-4bit" {
+		t.Fatalf("the tested model is reported as selected: %+v", res)
+	}
+	if p := readPersistentPin("human:me"); p == nil || p.Model != "local:Qwen3-1.7B-4bit" {
+		t.Fatalf("the older pin is replaced by the local model: %+v", p)
+	}
+	if readPersistentPin("human:other") != nil {
+		t.Fatal("another person's pin is not written")
 	}
 }
