@@ -28,6 +28,7 @@ command: |
   if [ -n "$p0" ] && [ -n "${MEMDOOR_LEAN:-}" ]; then
     echo "$(printf '%s\n' "$p0" | wc -l | tr -d ' ') P0 finding(s) to check before merging (advisory on a local model):"
     printf '%s\n' "$p0"
+    [ -s "$r.trim.txt" ] && { echo; cat "$r.trim.txt"; } || true
     exit 0
   fi
   if [ -n "$p0" ]; then
@@ -36,8 +37,10 @@ command: |
     exit 1
   fi
   echo "no blocking finding; $others to consider in $f"
+  [ -s "$r.trim.txt" ] && { echo; cat "$r.trim.txt"; } || true
 requires:
   - table_pattern: review
+  - table_pattern: trim
   - table_pattern: review-lean
   - table_pattern: p0-check-1
   - table_pattern: p0-check-2

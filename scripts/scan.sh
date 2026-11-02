@@ -8,7 +8,9 @@
 # its own.
 set -e
 cd "$(dirname "$0")/.."
-EXCL='--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude=*.cast'
+# .memdoor/ is Memdoor's own state in a project (runs, diffs, reviews): never
+# committed, never scanned.
+EXCL='--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.memdoor --exclude=.git --exclude=*.cast'
 fail=0
 hit() { echo "SCAN FAILED ($1):" >&2; echo "$2" | sed 's/^/  /' >&2; fail=1; }
 out=$(grep -rIEn $EXCL "sk-or-v1-[A-Za-z0-9]{20}|sk-ant-[A-Za-z0-9-]{20}|sk-proj-[A-Za-z0-9_-]{20}|sk_live_[A-Za-z0-9]{10}|whsec_[A-Za-z0-9]{10}|ghp_[A-Za-z0-9]{30}|AKIA[0-9A-Z]{16}" . 2>/dev/null | grep -v '_test.go:' || true)

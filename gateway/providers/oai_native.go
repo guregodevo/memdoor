@@ -236,6 +236,17 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 					continue
 				}
 			}
+			// A model whose thinking cannot be turned off (GLM 5.3 Flash on
+			// OpenRouter: "Reasoning is mandatory for this endpoint") is asked
+			// again with the least it takes, once, instead of failing a step
+			// that said thinking off.
+			if resp.StatusCode == http.StatusBadRequest && reqBody.Reasoning["enabled"] == false && strings.Contains(string(body), "Reasoning is mandatory") {
+				reqBody.Reasoning = map[string]any{"effort": "low"}
+				if jsonData, err = json.Marshal(reqBody); err == nil {
+					logs.New("Remote").Info("the model cannot think less than it does; asking again with effort low", slog.String("model", modelLabel))
+					continue
+				}
+			}
 			// A low balance refuses the RESERVATION, not the reply: OpenRouter
 			// holds credit for the whole max_tokens, most replies are a few
 			// hundred tokens, and the refusal says what the balance covers.
