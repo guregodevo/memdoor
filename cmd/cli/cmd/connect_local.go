@@ -79,7 +79,7 @@ func noLocalRuntimeText(where, goos string) string {
 	default:
 		b.WriteString("  Start janis, Ollama, LM Studio, llama.cpp or vLLM on that machine and run this again.\n")
 	}
-	b.WriteString("  Or type its address below. Without a model on this machine, use a key: memdoor connect openrouter\n")
+	b.WriteString("  Or type its address below. No model here? Use a key: memdoor connect openrouter\n")
 	return b.String()
 }
 
