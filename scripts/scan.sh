@@ -10,15 +10,26 @@ set -e
 cd "$(dirname "$0")/.."
 # .memdoor/ is Memdoor's own state in a project (runs, diffs, reviews): never
 # committed, never scanned.
-EXCL='--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=.memdoor --exclude=.git --exclude=*.cast'
+# What is scanned is what could be committed: the tracked files and the
+# untracked ones that are not ignored. A log or a build output that .gitignore
+# keeps out is never public, so it is not scanned (the owner's gateway.log
+# holds the home path and failed every deploy). Outside a git checkout, the
+# whole tree.
+publishable() {
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        git ls-files -z --cached --others --exclude-standard | grep -zvE '(^|/)\.memdoor/|\.cast$'
+    else
+        find . \( -name node_modules -o -name .git -o -name dist -o -name .memdoor \) -prune -o -type f ! -name '*.cast' -print0
+    fi
+}
 fail=0
 hit() { echo "SCAN FAILED ($1):" >&2; echo "$2" | sed 's/^/  /' >&2; fail=1; }
-out=$(grep -rIEn $EXCL "sk-or-v1-[A-Za-z0-9]{20}|sk-ant-[A-Za-z0-9-]{20}|sk-proj-[A-Za-z0-9_-]{20}|sk_live_[A-Za-z0-9]{10}|whsec_[A-Za-z0-9]{10}|ghp_[A-Za-z0-9]{30}|AKIA[0-9A-Z]{16}" . 2>/dev/null | grep -v '_test.go:' || true)
+out=$(publishable | xargs -0 grep -IEnH "sk-or-v1-[A-Za-z0-9]{20}|sk-ant-[A-Za-z0-9-]{20}|sk-proj-[A-Za-z0-9_-]{20}|sk_live_[A-Za-z0-9]{10}|whsec_[A-Za-z0-9]{10}|ghp_[A-Za-z0-9]{30}|AKIA[0-9A-Z]{16}" 2>/dev/null | grep -v '_test.go:' || true)
 [ -z "$out" ] || hit "a key" "$out"
-out=$(grep -rIEln $EXCL --exclude=scan.sh "[Pp]roprietary\.|This repository is proprietary|All rights reserved" . 2>/dev/null || true)
+out=$(publishable | xargs -0 grep -IElH "[Pp]roprietary\.|This repository is proprietary|All rights reserved" 2>/dev/null | grep -v '^scripts/scan.sh$' || true)
 [ -z "$out" ] || hit "a proprietary notice" "$out"
 if [ -n "${MEMDOOR_SCAN_PATTERNS:-}" ] && [ -f "$MEMDOOR_SCAN_PATTERNS" ]; then
-    out=$(grep -rIEn $EXCL -f "$MEMDOOR_SCAN_PATTERNS" . 2>/dev/null || true)
+    out=$(publishable | xargs -0 grep -IEnH -f "$MEMDOOR_SCAN_PATTERNS" 2>/dev/null || true)
     [ -z "$out" ] || hit "a private pattern" "$out"
 fi
 [ "$fail" = 0 ] && echo "scan clean"
