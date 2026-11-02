@@ -444,7 +444,7 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 			fmt.Println("  " + ui.FreeModelNote(res.FreeModel))
 		}
 		if res.Selected != "" {
-			fmt.Printf("  selected: new conversations run on %s · /model auto goes back to the default\n", res.Selected)
+			fmt.Printf("  pinned: new conversations start on %s. /model auto removes the pin.\n", res.Selected)
 		}
 		fmt.Println("  /model <id> in the window pins one of its models; memdoor model search <name> finds them.")
 		if res.Decisions {

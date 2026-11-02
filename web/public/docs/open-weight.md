@@ -48,13 +48,13 @@ memdoor connect local            # finds the runtime on this machine, probes it,
 memdoor model                    # the model that answers, and what it lists for: nothing
 ```
 
-Memdoor lists the model servers running on the gateway's machine (janis, Ollama, llama.cpp, LM Studio, vLLM, on their usual ports) and you pick one by number.
+`memdoor connect local` lists the model servers on the gateway's machine (janis, Ollama, llama.cpp, LM Studio, vLLM, on their default ports). Pick one by number. With none running on Linux, it offers to install janis and the model that fits the machine.
 `--base http://localhost:8000/v1` names another. The probe reads the model
 list and makes one call; a large model may take minutes to load. `/model
 search` lists what the runtime serves, `/model qwen3:8b-32k` pins one. A
 model pulled after the connect is found on its next pin.
 
-Run in a terminal, `connect local` also keeps the tested model as your pin: new conversations start on `local:<model>` in place of an earlier pin, and `/model auto` goes back to the default.
+In a terminal, `connect local` keeps the tested model as your pin. New conversations start on `local:<model>`. `/model auto` removes the pin.
 
 On a box: `memdoor --gateway ssh://you@box connect local` installs Memdoor
 there and connects the box's runtime. `@box:coder …` here runs the turn on
