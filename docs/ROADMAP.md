@@ -5,9 +5,8 @@ one, on your machine, with the runs published. The terminal, a shell, CI,
 cron, an editor and a phone are doors onto it.
 
 Decided 2026-11-02, after the LiveCodeBench Hard result and its thread: the
-harness is the product, and the people who want it run local models. The
-goal is that they love it. The other surfaces are kept and not extended
-until a user asks.
+harness is the product. The people who want it run local models. The other
+surfaces are kept and not extended until a user asks.
 
 ## Now
 
@@ -27,9 +26,8 @@ until a user asks.
 4. **Lean review on a key.** `review-lean` sets thinking off; a model that
    refuses (HTTP 400, reasoning mandatory) fails the run. Retry without the
    flag. Done when the lean path passes on glm-5.3-flash.
-5. **Retention, not reach.** The metric is machines that ran the binary
-   again, per day, 14 days. No usage ping. Done when `make metrics` leads
-   with it.
+5. **The metric.** Machines that ran the binary again, per day, over 14
+   days. No usage ping. Done when `make metrics` leads with it.
 
 ## Next
 
@@ -39,20 +37,19 @@ until a user asks.
 - The decision model: message gate on by default, a stop reason on every cut
   reply, "which tool did it mean" before giving up on an unparseable call.
 - Provider listings: DeepSeek's agent list, Hugging Face hub docs, Vercel's
-  OSS program, OpenAI's Codex for Open Source, the Groq badge. Cheap, when
-  idle.
+  OSS program, OpenAI's Codex for Open Source, the Groq badge.
 - SSH peers (`@box:coder`, PR #10) and the editor door (ACP): kept as they
   are.
 
 ## Not now
 
-- Enterprise: SSO, SAML, SCIM, audit logs, SOC 2. Built to a signed deal,
-  not before.
+- Enterprise: SSO, SAML, SCIM, audit logs, SOC 2. Built when a deal is
+  signed.
 - Voice, messaging channels, plugins: dropped.
 - A hosted box (memdoor.ai runs the gateway for you): after a team pays for
   the state.
 
-## How an item moves
+## Moving an item
 
-An item has a done-when. It moves to Next or Now with the evidence that asks
-for it: a user, a run, a number. A claim ships with its run.
+Every item has a done-when. An item moves to Next or Now on evidence: a user
+asked, a run showed it, or a number moved. The item names which.

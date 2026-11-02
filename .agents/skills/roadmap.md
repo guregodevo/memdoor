@@ -23,7 +23,7 @@ One file, `docs/ROADMAP.md`, public. Three lists.
   could check: a page, a command, a number.
 - No quotes of the maintainer, no dates inside the text beyond the one the
   decision was made.
-- A claim in an item ships with its run, like every other claim.
+- A number in an item has its run published.
 
 ## Moving an item
 
@@ -38,6 +38,3 @@ One file, `docs/ROADMAP.md`, public. Three lists.
 ```bash
 grep -n "label" docs/ROADMAP.md     # already there?
 ```
-
-The roadmap is read by contributors and by the people deciding whether to
-rely on Memdoor. Write it for them.
