@@ -1,20 +1,18 @@
 type: command
-# Samples when there are samples: every tests/N.in through solution.py
-# against tests/N.out. No samples: nothing to run, the reviewer judges.
+# What the run changed (changes.diff) and the task's check as task.md names
+# it: the command, the samples, or nothing (the judge decides). Records the
+# result for the reviewer; never fails the run itself.
 requires:
   - table_pattern: solve
 command: |
-  if ls tests/*.in > /dev/null 2>&1; then
-    check=.memdoor/workflows/team-solve-v2/check-samples.sh
-    [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-v2/check-samples.sh"
-    bash "$check" > test-output.log 2>&1
-    result=$?
-  else
-    printf 'no samples: the reviewer judges the deliverable against task.md\n' > test-output.log
-    result=none
-  fi
-  printf '%s\n' "$result" > test-status.txt
-  cat test-output.log
+  r=.memdoor/runs/team-solve-v2-{{.partition}}
+  w=.memdoor/workflows/team-solve-v2; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve-v2"
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/test-output.log"
+  result=$?
+  [ "$result" = 3 ] && result=none
+  printf '%s\n' "$result" > "$r/test-status.txt"
+  tail -40 "$r/test-output.log"
   printf 'Initial check status: %s\n' "$result"
-timeout: 5m
+timeout: 30m
 max_retries: 0

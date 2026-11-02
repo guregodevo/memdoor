@@ -110,6 +110,7 @@ window's run.
 memdoor workflow                       the project's workflows and runs
 memdoor workflow run <name>            a fresh run
 memdoor workflow run <name> --model <id>   every agent and llm step on that model
+memdoor workflow run <name> "<prompt>"     the task, for a workflow that takes one (team-solve-v2)
 memdoor workflow status <run-id>
 memdoor workflow resume <run-id>       continue a failed or stopped run
 memdoor workflow approve <run-id> <task>

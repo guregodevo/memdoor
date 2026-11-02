@@ -240,7 +240,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `diff` — The full diff a run made since it started, committed or not: what you approve at its gate
   - `history` — What a workflow did before: every run, newest first (survives a restart)
   - `resume` — Continue a failed or stopped run: what it finished is skipped
-  - `run` — Start .memdoor/workflows/<name>/ in this project — a fresh run
+  - `run` — Start .memdoor/workflows/<name>/ in this project — a fresh run; the prompt, when given, is the task
   - `status` — Every task's state in a run
   - `stop` — Cancel a run: nothing more starts, the running task is told
 

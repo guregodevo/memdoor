@@ -4,15 +4,17 @@ requires:
   - table_pattern: ideate-a
   - table_pattern: ideate-b
 prompt: |
-  You are the solver in a fresh context. Read task.md, plan.md, and notes.md
-  from disk, including both proposals. Select and justify an approach in the
-  Solver decision section of notes.md, with a brief argument for why it meets
-  the requirements. Write the deliverable plan.md names, complete. A program:
-  solution.py using Python's standard library, reading stdin and printing
-  only the answer, meeting the stated constraints; run it on at least one
-  sample when tests/ exist to verify it executes. A document: answer.md,
-  every requirement in plan.md met, nothing the task did not ask for. Do not
-  change task.md or tests. The downstream steps check the deliverable and the
-  manager owns any repair round. Do not spawn agents or use chat context.
-timeout: 10m
+  You are the solver in a fresh context. The run's files are in .memdoor/runs/team-solve-v2-{{.partition}}/: task.md (the task: the prompt
+  and what plan settled), plan.md, notes.md (the ledger every role writes
+  to). They are never part of the work and never committed.
+  Read task.md, plan.md and notes.md there, both proposals included. Select
+  and justify an approach in the Solver decision section of notes.md. Then do
+  the task as task.md's Deliverable says: change the project's files within
+  the Scope, or write the new files it names, complete. Touch nothing outside
+  the Scope and change nothing the task did not ask for. Run the Check
+  (the command, or a sample) before you finish and fix what it shows. Do not
+  change task.md, the prompt or test data. The steps after you check the
+  work and the manager owns any repair round. Do not spawn agents or use
+  chat context.
+timeout: 20m
 max_retries: 1

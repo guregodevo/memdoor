@@ -54,6 +54,23 @@ type workflowRuns struct {
 // read it off the run).
 type runModelKey struct{}
 
+// writeRunPrompt keeps a run's prompt where its steps read it:
+// .memdoor/runs/<workflow>-<partition>/prompt.md under the project, beside
+// every other output of the run and out of git. No prompt, no file: a
+// workflow that takes none never sees one.
+func writeRunPrompt(dir, workflowName, partition, prompt string) error {
+	prompt = strings.TrimSpace(prompt)
+	if prompt == "" {
+		return nil
+	}
+	runDir := filepath.Join(workflow.OutputsDir(dir), workflowName+"-"+partition)
+	if err := os.MkdirAll(runDir, 0o755); err != nil {
+		return fmt.Errorf("the run's prompt: %w", err)
+	}
+	workflow.EnsureIgnored(dir)
+	return os.WriteFile(filepath.Join(runDir, "prompt.md"), []byte(prompt+"\n"), 0o644)
+}
+
 type workflowRun struct {
 	ID        string
 	Workflow  string
@@ -728,7 +745,7 @@ func workflowPartition(asked string) string {
 // and external dependencies across workspaces). The 2026-10-02 seat check
 // on starting a run is gone.
 
-func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, model string, timeout time.Duration) (*workflowRun, error) {
+func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, model, prompt string, timeout time.Duration) (*workflowRun, error) {
 	if dir == "" || !filepath.IsAbs(dir) {
 		return nil, fmt.Errorf("a workflow runs in a project: give its absolute directory")
 	}
@@ -760,6 +777,12 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, 
 	}
 	w.runs[run.ID] = run
 	w.mu.Unlock()
+	if err := writeRunPrompt(dir, spec.Name, run.Partition, prompt); err != nil {
+		w.mu.Lock()
+		delete(w.runs, run.ID)
+		w.mu.Unlock()
+		return nil, err
+	}
 	s.triggerWorkflow(run)
 	run.note(s, fmt.Sprintf("▶ %s · %d tasks · %s", spec.Name, len(spec.Tasks), run.ID))
 	return run, nil
@@ -886,7 +909,7 @@ func (s *Server) resumeWorkflow(id, session, dir, workspace, actor string) (*wor
 			}
 			return nil, fmt.Errorf("no run %s in this gateway or in %s's run table", id, dir)
 		}
-		return s.startWorkflow(dir, name, session, workspace, actor, partition, "", 0)
+		return s.startWorkflow(dir, name, session, workspace, actor, partition, "", "", 0)
 	}
 	prev.mu.Lock()
 	state, dir, name, partition, timeout := prev.state, prev.Dir, prev.WF.Dir, prev.Partition, prev.timeout
@@ -906,7 +929,7 @@ func (s *Server) resumeWorkflow(id, session, dir, workspace, actor string) (*wor
 	if actor == "" {
 		actor = prev.Actor
 	}
-	return s.startWorkflow(dir, name, session, workspace, actor, partition, "", timeout)
+	return s.startWorkflow(dir, name, session, workspace, actor, partition, "", "", timeout)
 }
 
 func (s *Server) stopWorkflow(id string) (*workflowRun, error) {
@@ -1127,6 +1150,7 @@ type workflowRequest struct {
 	Timeout   string `json:"timeout"`
 	Partition string `json:"partition"` // "" = fresh; an earlier run's partition resumes it; "today" = once a day
 	Model     string `json:"model"`     // run: the model every step runs on, unless the step names its own
+	Prompt    string `json:"prompt"`    // run: the task, kept as .memdoor/runs/<workflow>-<partition>/prompt.md for the steps
 	Comment   string `json:"comment"`   // changes: what the reviewer wants changed
 	Limit     int    `json:"limit"`     // history: how many runs back (0 = the default)
 }
@@ -1170,7 +1194,7 @@ func (s *Server) handleWorkflow(w http.ResponseWriter, r *http.Request) {
 			}
 			timeout = d
 		}
-		run, err := s.startWorkflow(req.Dir, req.Name, session, strings.TrimSpace(req.Workspace), string(authorization.GetActorID(r.Context())), req.Partition, req.Model, timeout)
+		run, err := s.startWorkflow(req.Dir, req.Name, session, strings.TrimSpace(req.Workspace), string(authorization.GetActorID(r.Context())), req.Partition, req.Model, req.Prompt, timeout)
 		if err != nil {
 			fail(http.StatusBadRequest, err)
 			return

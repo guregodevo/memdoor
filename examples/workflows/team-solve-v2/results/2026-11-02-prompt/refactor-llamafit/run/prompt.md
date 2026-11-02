@@ -1,0 +1,1 @@
+Rename ReadGGUFMetadata to ParseGGUFMetadata everywhere in this repository: the function, every caller, the tests and their names, and the comments that name it. go build ./... and go test ./... must still pass.

@@ -24,7 +24,7 @@ const workflowToolName = "workflow"
 // runtime does not hold the server.
 type workflowOps interface {
 	workflowList(dir string) ([]workflowRunJSON, []string)
-	startWorkflow(dir, name, session, workspace, actor, partition, model string, timeout time.Duration) (*workflowRun, error)
+	startWorkflow(dir, name, session, workspace, actor, partition, model, prompt string, timeout time.Duration) (*workflowRun, error)
 	workflowStatus(id string) (*workflowRun, error)
 	stopWorkflow(id string) (*workflowRun, error)
 	resumeWorkflow(id, session, dir, workspace, actor string) (*workflowRun, error)
@@ -90,7 +90,7 @@ func (ar *AgentRuntime) workflowTool(session, workdir, actor string) tools.ToolD
 				if strings.TrimSpace(in.Name) == "" {
 					return "", fmt.Errorf("name is required: which workflow? (workflow(action:\"list\") shows them)")
 				}
-				run, err := ops.startWorkflow(workdir, strings.TrimSpace(in.Name), session, "", actor, in.Partition, "", 0)
+				run, err := ops.startWorkflow(workdir, strings.TrimSpace(in.Name), session, "", actor, in.Partition, "", "", 0)
 				if err != nil {
 					return "", err
 				}

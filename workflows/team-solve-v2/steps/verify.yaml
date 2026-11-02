@@ -1,19 +1,18 @@
 type: command
-# Samples: all of them must pass. No samples: the judge's verdict. Either
-# way a nonzero exit fails the run.
+# The check again on the final tree, then the judge's verdict when it ran.
+# A failing check or a FAIL verdict fails the run.
 requires:
   - table_pattern: repair
   - table_pattern: judge
 command: |
-  if ls tests/*.in > /dev/null 2>&1; then
-    check=.memdoor/workflows/team-solve-v2/check-samples.sh
-    [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-v2/check-samples.sh"
-    bash "$check" > final-test-output.log 2>&1
-    result=$?
-    cat final-test-output.log
-    exit "$result"
-  fi
-  head -1 verdict.md | tee final-test-output.log
-  grep -q '^verdict: PASS' verdict.md
-timeout: 5m
+  r=.memdoor/runs/team-solve-v2-{{.partition}}
+  w=.memdoor/workflows/team-solve-v2; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve-v2"
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/final-check.log"
+  result=$?
+  tail -40 "$r/final-check.log"
+  [ "$result" = 1 ] && exit 1
+  if [ -f "$r/verdict.md" ]; then head -1 "$r/verdict.md"; grep -q '^verdict: PASS' "$r/verdict.md" || exit 1; fi
+  [ "$result" = 0 ] || [ -f "$r/verdict.md" ]
+timeout: 30m
 max_retries: 0

@@ -8,5 +8,5 @@ package workflows
 
 import "embed"
 
-//go:embed */README.md */steps/*.yaml */check-samples.sh */sample
+//go:embed */README.md */steps/*.yaml */*.sh */*.template.md */sample
 var FS embed.FS

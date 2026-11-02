@@ -1,14 +1,33 @@
 type: command
-# The task is task.md: any prompt. A programming problem may bring paired
-# tests/N.in and tests/N.out; a task without them is judged by a fresh
-# reviewer at the end. An empty folder gets the sample problem.
+# The task is the prompt: `memdoor workflow run team-solve-v2 "<what to do>"`
+# keeps it as .memdoor/runs/team-solve-v2-{{.partition}}/prompt.md. Without one, a task.md in
+# the folder is the prompt; an empty folder gets the sample problem. The
+# prompt goes into the workflow's task template, which plan fills in. The
+# tree's state is recorded now, so the run's changes can be told apart.
 command: |
-  if [ ! -f task.md ]; then
-    src=.memdoor/workflows/team-solve-v2/sample
-    [ -d "$src" ] || src="$HOME/.memdoor/workflows/team-solve-v2/sample"
-    cp -R "$src"/. . && printf 'no task.md here: the sample problem was copied in (task.md, tests/)\n'
+  set -e
+  r=.memdoor/runs/team-solve-v2-{{.partition}}
+  w=.memdoor/workflows/team-solve-v2; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve-v2"
+  mkdir -p "$r"
+  if [ ! -s "$r/prompt.md" ]; then
+    if [ ! -f task.md ] && [ -z "$(ls -A | grep -vxE '\.memdoor|\.git' || true)" ]; then
+      cp -R "$w/sample"/. . && printf 'empty folder: the sample problem was copied in (task.md, tests/)\n'
+    fi
+    [ -f task.md ] || { echo 'no prompt: memdoor workflow run team-solve-v2 "<what to do>", or a task.md in this folder'; exit 1; }
+    cp task.md "$r/prompt.md"
   fi
-  test -s task.md
-  if ls tests/*.in > /dev/null 2>&1; then printf 'samples: %s\n' "$(ls tests/*.in | wc -l | tr -d ' ')"; else printf 'samples: none, the judge decides\n'; fi
+  python3 - "$w/task.template.md" "$r/prompt.md" "$r/task.md" <<'PY'
+  import sys
+  template, prompt, out = sys.argv[1:]
+  open(out, "w").write(open(template).read().replace("@@PROMPT@@", open(prompt).read().strip()))
+  PY
+  touch "$r/start"
+  if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    b=$(git stash create 2>/dev/null || true)
+    [ -n "$b" ] || b=$(git rev-parse HEAD 2>/dev/null || true)
+    printf '%s\n' "$b" > "$r/base.txt"
+    git ls-files --others --exclude-standard > "$r/untracked-before.txt"
+  fi
+  printf 'task: %s\n' "$r/task.md"
 timeout: 1m
 max_retries: 0

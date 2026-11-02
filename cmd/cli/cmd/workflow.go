@@ -244,9 +244,9 @@ var workflowTimeoutFlag, workflowPartitionFlag string
 var workflowHistoryLimit int
 
 var workflowRunCmd = &cobra.Command{
-	Use:   "run <name>",
-	Short: "Start .memdoor/workflows/<name>/ in this project — a fresh run",
-	Args:  cobra.ExactArgs(1),
+	Use:   "run <name> [prompt]",
+	Short: "Start .memdoor/workflows/<name>/ in this project — a fresh run; the prompt, when given, is the task",
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Headless: a run from a shell or CI needs no window and no gateway
 		// started by hand — the same first-run check as memdoor tui (2026-10-11).
@@ -267,6 +267,11 @@ var workflowRunCmd = &cobra.Command{
 		}
 		if workflowModelFlag != "" {
 			body["model"] = workflowModelFlag
+		}
+		if prompt, err := runPrompt(args[1:]); err != nil {
+			return err
+		} else if prompt != "" {
+			body["prompt"] = prompt
 		}
 		if err := workflowPost("run", body, &out); err != nil {
 			return err
@@ -590,4 +595,17 @@ func oneLineText(s string, max int) string {
 		return s[:max-1] + "…"
 	}
 	return s
+}
+
+// runPrompt is the task a run is given: the words after the workflow's name,
+// or stdin when the one word is "-" (a long prompt, a file piped in).
+func runPrompt(words []string) (string, error) {
+	if len(words) == 1 && words[0] == "-" {
+		b, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return "", fmt.Errorf("reading the prompt from stdin: %w", err)
+		}
+		return strings.TrimSpace(string(b)), nil
+	}
+	return strings.TrimSpace(strings.Join(words, " ")), nil
 }
