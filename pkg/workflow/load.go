@@ -3,6 +3,7 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"memdoor/pkg/shared"
 	"os"
 	"path/filepath"
@@ -247,6 +248,11 @@ func SharedDir() string {
 func Find(workdir, name string) (string, error) {
 	// The project's own first, then the library (shared.ProjectOrHome).
 	if dir := shared.ProjectOrHome(ProjectRoot(workdir), "workflows", name); isWorkflowDir(dir) {
+		// The engine walks the directory and does not follow a symlink at
+		// the root: hand it the real path.
+		if real, err := filepath.EvalSymlinks(dir); err == nil {
+			return real, nil
+		}
 		return dir, nil
 	}
 	p := name
@@ -333,7 +339,10 @@ func listWorkflows(root string) []string {
 	}
 	entries, _ := os.ReadDir(root)
 	for _, e := range entries {
-		if e.IsDir() && isWorkflowDir(filepath.Join(root, e.Name())) {
+		// A symlink to a directory counts (a repo that points its own
+		// .memdoor/workflows/<name> at a copy kept elsewhere in the tree):
+		// isWorkflowDir stats through it.
+		if (e.IsDir() || e.Type()&fs.ModeSymlink != 0) && isWorkflowDir(filepath.Join(root, e.Name())) {
 			names = append(names, e.Name())
 		}
 	}
