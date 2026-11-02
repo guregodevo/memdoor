@@ -155,7 +155,7 @@ grep -r "duplicate_code" .    # Search before coding
 - `.agents/skills/refactoring.md` - Refactoring patterns (eliminate duplication, DDD)
 - `.agents/skills/quick-test.md` - Pre-commit testing workflow (always-on)
 - `.agents/skills/ddd-workflow.md` - DDD patterns and examples
-- `.agents/skills/roadmap.md` - Roadmap management (MUST/SHOULD/COULD)
+- `.agents/skills/roadmap.md` - The roadmap: docs/ROADMAP.md, Now / Next / Not now, every item with a done-when
 - `.agents/skills/verify-assumptions.md` - Verify runtime changes via CLI and logs (always-on)
 - `.agents/skills/test-tui.md` - Drive the real TUI from tmux: which gateway, which keys, what to assert
 - `.agents/skills/doc-writing.md` - How docs, READMEs, landing copy and llms.txt are written: an engineer's documentation, no AI slop (always-on for any doc change)
@@ -164,8 +164,9 @@ grep -r "duplicate_code" .    # Search before coding
 
 ## Documentation
 - Read `docs/` directory for project documentation and architecture details
-- **What Memdoor is** (the epoch note of 2026-09-27; the roadmap itself is kept
-  outside this repo): a **coding agent for solo devs that cuts their
+- **`docs/ROADMAP.md`** — READ FIRST: what Memdoor is now (2026-11-02: the
+  workflow harness that makes small models reliable, with the runs published)
+  and the queue. The epoch note of 2026-09-27: a **coding agent for solo devs that cuts their
   model bill, on THEIR OWN key** (BYOK — `gateway/providers/byok.go`; any
   provider's key works). The decision model (Jev) is what does the cutting:
   judged reads, a per-turn toolbox, a stop instead of a cap, `/model` with real
