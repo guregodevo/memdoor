@@ -18,7 +18,7 @@ import (
 	"memdoor/pkg/savings"
 )
 
-// LOCATE, LANGUAGE-AGNOSTIC (Greg, 2026-09-28: "we need the locate tool
+// LOCATE, LANGUAGE-AGNOSTIC (the maintainer, 2026-09-28: "we need the locate tool
 // because it always take time to read all files and search relevant files",
 // "should be language agnostic"). It indexed .go files only, through a Go
 // syntax graph, so in any other project it found nothing and the coder read

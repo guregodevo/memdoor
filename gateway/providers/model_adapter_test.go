@@ -15,7 +15,7 @@ var probedTools = []ToolShape{
 // THE CALL GEMINI ACTUALLY MADE (probed 2026-09-27): grep with
 // {"query":"cache.go"} when the turn offered read_file(path) and grep(pattern).
 // A model that cannot be repaired cannot be integrated, which is the whole
-// point of the adapters (Greg: "gemini should work").
+// point of the adapters (the maintainer: "gemini should work").
 func TestGeminiCallIsRepaired(t *testing.T) {
 	a := AdapterFor("google/gemini-3.8-flash")
 	if a.Name() != "envelope" {

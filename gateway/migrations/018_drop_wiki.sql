@@ -1,6 +1,6 @@
 -- Migration 018: drop the wiki's tables.
 --
--- The wiki was deleted on 2026-09-27 (Greg: "remove wiki features", "delete
+-- The wiki was deleted on 2026-09-27 (the maintainer: "remove wiki features", "delete
 -- them too", and on the data: "no wiki users"). Nothing reads or writes these
 -- tables any more, and a fresh database no longer creates them, so a database
 -- from before today is the only place they can still exist. Dropping them

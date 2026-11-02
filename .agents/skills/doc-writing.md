@@ -13,7 +13,7 @@ metadata:
 # Doc writing
 
 Applies to web/public/docs/*.md, README.md, examples/*/README.md, llms.txt,
-docs/*.md and every sentence on the landing page. Set by Greg on 2026-11-01
+docs/*.md and every sentence on the landing page. Set by the maintainer on 2026-11-01
 after an HN reader called the team-solve README "pure, unfiltered Claude".
 
 ## The bar
@@ -27,7 +27,7 @@ A reference, not prose. Drop the sentences, keep the facts. Label and value:
 task." No narrative, no scene-setting, no "you" walkthrough unless it is a
 numbered procedure. A mechanism gets one explaining sentence only where a
 reader could not infer it. The exemplar is web/public/docs/features.md as
-rewritten on 2026-11-01 (864 to 650 words); Greg called three lighter passes
+rewritten on 2026-11-01 (864 to 650 words); the maintainer called three lighter passes
 "still full of slop" and this one the bar.
 
 ## Rules
@@ -94,7 +94,7 @@ rewritten on 2026-11-01 (864 to 650 words); Greg called three lighter passes
   link targets exactly. Never touch a fenced code block or an indented
   command block in an editing pass.
 - Never invent a detail. Never silently change a technical statement's
-  meaning. Flag a doubtful or unverifiable claim to Greg instead of
+  meaning. Flag a doubtful or unverifiable claim to the maintainer instead of
   rewriting it as a fact.
 - Do not add sections, claims, examples or recommendations in an edit.
 - If a passage is already clear and concise, leave it alone. Optimize for
@@ -116,4 +116,4 @@ rewritten on 2026-11-01 (864 to 650 words); Greg called three lighter passes
    before and after, what it kept and why, and the claims it flagged.
 3. Check per file against main: headings, fenced blocks and link targets
    identical. The checker is a few lines of Python over `git show main:`.
-4. PR with the flagged claims in the body. Greg decides on those.
+4. PR with the flagged claims in the body. The maintainer decides on those.

@@ -9,7 +9,7 @@ Go 1.23), imported as a library and changed upstream — never copied
 
 ## Context
 
-Greg, 2026-10-01: "in my repos in gh i built a workflow framework that works
+The maintainer, 2026-10-01: "in my repos in gh i built a workflow framework that works
 locally. We need to revisit it for workflow runs… you will take care of a dag
 run, a dag of tasks that is orchestrated… the workflow can outcompete any
 coding agents." 2026-10-02: "i think we can use it for workflow use case for
@@ -46,7 +46,7 @@ exists means it did.
 ## Decision
 
 1. **mario is the engine, imported as a library, and mario changes to fit.**
-   Greg, 2026-10-02: "we can change mario and import mario lib", "let's not
+   The maintainer, 2026-10-02: "we can change mario and import mario lib", "let's not
    copy it". Memdoor depends on `github.com/guregodevo/mario` at a pinned
    version and never copies it; what Memdoor's use needs lands **in mario**,
    as general engine features: a context on a run (cancellation, a per-node
@@ -74,7 +74,7 @@ exists means it did.
 
 3. **mario's YAML, in mario's layout, loaded by mario.** Amended the same
    day: the first draft had a single `workflows/<name>.yaml` of Memdoor's
-   own and a loader for it. Greg: "why you create mario tasks in golang? You
+   own and a loader for it. The maintainer: "why you create mario tasks in golang? You
    should do it in yaml files … everything is already done in yaml … no need
    to reinvent the wheel … remove your boilerplate … if you miss anything
    change it in mario or mario-llm." So a workflow is a **directory** of
@@ -103,7 +103,7 @@ exists means it did.
    build the yaml files; it can be in a repo also and from a repo you run
    the workflow."
 
-   **External is mario's meaning, exactly.** Greg: "external tasks are not
+   **External is mario's meaning, exactly.** the maintainer: "external tasks are not
    triggerable … unlike standard tasks that are triggered by workflow." An
    external task is a leaf made outside the workflow — the workflow never
    runs it, only checks its target, and it requires nothing. A run that
@@ -127,7 +127,7 @@ exists means it did.
    expiry; no two runs of one workflow at once in one project. The mechanism
    that makes a loop safe is a counter, not a better prompt.
 
-6. **Task types are mario's; Memdoor adds one.** Greg, 2026-10-02: "mario
+6. **Task types are mario's; Memdoor adds one.** the maintainer, 2026-10-02: "mario
    is an orchestrator with different task types, with clean interface …
    the yaml defines the type and behind the factory builds it … minimum
    changes in memdoor, max in mario … never use concrete type". mario's
@@ -166,7 +166,7 @@ exists means it did.
   cross-workflow requirement through the sibling's target, the coder's
   `workflow` tool (list/run/status/stop/approve — "the coder agent can stop
   a workflow … gracefully") and Esc as the window's stop. Receipts in
-  `../features/WORKFLOWS.md`. Greg, the same day: "let's not change too much
+  `../features/WORKFLOWS.md`. The maintainer, the same day: "let's not change too much
   mario design or add extra logic. A dag is a dag and the orchestration is
   handled by mario" — the tool and Esc call the gateway's own run/stop, and
   nothing orchestrates outside mario. Then: "you are rewriting mario in

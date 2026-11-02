@@ -17,7 +17,7 @@ import (
 	"memdoor/pkg/oidc"
 )
 
-// Sign in with Google and Sign in with GitHub on the web sign-in page (Greg,
+// Sign in with Google and Sign in with GitHub on the web sign-in page (the maintainer,
 // 2026-10-20: "Is it hard to get google account sign in?", "Github too").
 // The browser is sent to the provider, comes back to
 // /api/auth/<provider>/callback with a code, the gateway turns the code into

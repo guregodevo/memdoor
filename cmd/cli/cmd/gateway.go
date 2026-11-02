@@ -77,7 +77,7 @@ var gatewayCmd = &cobra.Command{
 		// startup logs from gateway.Start.
 		fmt.Printf("Memdoor gateway → http://%s:%d\n", gateway.DialHost(gatewayHost), gatewayPort)
 		if !isLoopbackHost(gatewayHost) {
-			// The network is the default (Greg, 2026-10-23: "default to be
+			// The network is the default (the maintainer, 2026-10-23: "default to be
 			// the network"): a phone reaches the gateway directly. It
 			// speaks plain HTTP, every door takes a token, and the first
 			// account is made from this machine alone; say where it is

@@ -67,14 +67,14 @@ target:
   file: RELEASE.md
 ```
 
-A file target is one file, done once it exists on any run (Greg's fresh
+A file target is one file, done once it exists on any run (the maintainer's fresh
 `digest` run: `log` and `summary` ran again, `digest` was skipped —
 `DIGEST.md` was still there). When each run must make its own, the target
 carries the partition: `target: {file: "DIGEST-{{.partition}}.md"}` — a
 target is a template over args and partition, like a prompt.
 
 A `target` is a **check**, not the work: a command that already exits 0
-means the task is already done, and mario skips it without a turn (Greg's
+means the task is already done, and mario skips it without a turn (the maintainer's
 first run, 2026-10-02: `target: {command: sleep 10 && echo A}` skipped all
 three tasks; dropping the targets made each answer the proof and the turns
 ran). Put the work in the prompt; put what proves it in the target.
@@ -188,7 +188,7 @@ the run returns to the same gate.
 
 ## A library of workflows
 
-A workflow is reusable because it is files (Greg: "workflow can be
+A workflow is reusable because it is files (the maintainer: "workflow can be
 reusable"): commit `.memdoor/workflows/<name>/` in a repo, or keep it in
 **`~/.memdoor/workflows/<name>/`**, the person's shared library, and it runs
 in any project — `workflow.Names(workdir)` lists the project's own then the
@@ -229,7 +229,7 @@ the refactor out; fix-tests on a passing suite skipped the agent, no key.
 ## The partition
 
 mario runs a DAG per *partition*, and **the partition is the identity of
-what the DAG is for** (Greg: "there are different partition schemes — a
+what the DAG is for** (the maintainer: "there are different partition schemes — a
 CI/CD run, what is the partition?"): CI on a commit → the commit, so the
 same commit resumes and a new one reruns everything; a nightly → `today`;
 a release → its version, so approval resumes that release; a PR review →
@@ -288,12 +288,12 @@ run's end is one line (`■ release done`). `s` twice stops a run: nothing more
 starts, the running turn is told.
 
 `/workflow:<name>` runs one straight from the slash dropdown, which
-completes it with the project's workflows (Greg: "autocomplete with existing
+completes it with the project's workflows (the maintainer: "autocomplete with existing
 workflows"). `/workflow run <name> [partition]` · `/workflow resume
 <run-id>` · `/workflow approve <task>` (the open run) ·
 `/workflow stop <run-id>`. A run is named `<workflow>-<yyyymmdd-hhmmss>`.
 **Esc** in the conversation stops this window's run, the way it interrupts
-a turn (Greg: "the user can escape using its esc").
+a turn (the maintainer: "the user can escape using its esc").
 
 ## From the shell
 
@@ -392,7 +392,7 @@ Two properties the table has to have, both tested:
 
 ## From a sentence
 
-Nobody has to know the format (Greg: "the prompter should not know about
+Nobody has to know the format (the maintainer: "the prompter should not know about
 mario … it says what it wants and the agent builds it"). The coder has the
 `workflow` **skill** (`skills/workflow.md`, seeded to `~/.memdoor/skills`
 like every other, so a user's edit wins): what a workflow is, the five
@@ -412,7 +412,7 @@ the gate as a task.
 ## From an agent
 
 The coder has a `workflow` tool with the same five actions — `list`, `run`,
-`status`, `stop`, `approve` — on the gateway's own run functions (Greg:
+`status`, `stop`, `approve` — on the gateway's own run functions (the maintainer:
 "the coder agent can stop a workflow … gracefully"). A run it starts goes on
 in the background and reports into the window the turn came from; `stop`
 is graceful: nothing more starts, the running task is told and ends on its
@@ -442,7 +442,7 @@ task"` shows the scheduler beside the turns it drove.
 
 ## Free locally, Pro hosted
 
-Greg, 2026-10-04: "everyone can run schedule with local cron". Running a
+The maintainer, 2026-10-04: "everyone can run schedule with local cron". Running a
 workflow on your own machine needs no seat: the 2026-10-02 check in
 `startWorkflow` ("workflow is for Pro only") is gone
 (`TestLocalWorkflowsNeedNoSeat`). Schedule one with the local cron:
@@ -581,7 +581,7 @@ Third batch ("yes try it"):
     `workflow(action: "status")` → `stopped · 0/1`.
 13. **Esc**: `/workflow run slow`, Esc five seconds in → `■ slow stopped`,
     the run listed as `stopped 0/1`.
-14. **Two complex DAGs from a sentence** (Greg's gateway, 2026-10-02,
+14. **Two complex DAGs from a sentence** (the maintainer's gateway, 2026-10-02,
     "try to build more workflow … like complex ones"): `workflow-review` —
     three parallel agent reviews of `pkg/workflow` (43 s, 1m12s, 1m36s) →
     an `llm` merge → the gate → `REVIEW.md` (6/6 done; the merged review
@@ -611,8 +611,8 @@ the three YAML files in mario's layout, ran it with its tool and polled
 complete; the kept answers are `2` and `3`; REPORT.md reads `2 .go files` /
 `3 lines in add.go`. Nothing in Memdoor decided the order — mario did.
 
-Fifth (Greg's own run, then "I expected a tool to run workflow that we can
-see in real time the dag running, instead of bash"): in Greg's window the
+Fifth (the maintainer's own run, then "I expected a tool to run workflow that we can
+see in real time the dag running, instead of bash"): in the maintainer's window the
 coder had **no `workflow` tool** — the turn was routed as a change and the
 tool sat only in the `investigate` family — so it ran `./memdoor workflow`
 through bash, and a shell-started run has no window to draw in. Fixed: the
@@ -623,7 +623,7 @@ Additional property letter_b is not allowed`), it fixed the file, called
 `workflow(name: "abc")`, polled `status`, then scheduled a `cron` to
 re-check — and the block in the conversation went from `running · 0/3` to
 `✓ B done 16s` / `✓ A done 15s ← B` / `✓ C done 15s ← B`, `done · 3/3`,
-redrawn in place. Also found on Greg's run: `target: {command: sleep 10 &&
+redrawn in place. Also found on the maintainer's run: `target: {command: sleep 10 &&
 echo A}` is a check, not the work — all three skipped without a turn; the
 tool now says so.
 
@@ -655,7 +655,7 @@ fires — a task that reads an upstream answer should expect prose, not data.
 
 The first design had the gate in the middle of the chain and the loader of
 its own; the first live run did nothing (mario skips an external and never
-builds what it requires). Greg: "external tasks are not triggerable …
+builds what it requires). The maintainer: "external tasks are not triggerable …
 unlike standard tasks that are triggered by workflow" — the gate is a leaf,
 the run waits, approval triggers again. "Everything is already done in yaml
 … no need to reinvent the wheel … remove your boilerplate" — the loader

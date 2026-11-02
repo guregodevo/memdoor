@@ -430,7 +430,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// for most of a turn and a runaway could not be stopped (live
 			// 2026-09-28: "escape dont work", a 60-call turn ran to a gateway
 			// restart).
-			// Esc is also the way out of this window's workflow run (Greg,
+			// Esc is also the way out of this window's workflow run (the maintainer,
 			// 2026-10-02: "the user can escape using its esc"): the gateway
 			// stops it and reports it, like any failed or stopped DAG.
 			if id := m.workflowRunning; id != "" && m.workflow.Stop != nil {
@@ -885,7 +885,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case runCompleteMsg:
 		// Which model answered, on every turn: a dim line under the answer
-		// and the footer until the next turn (Greg, 2026-09-26).
+		// and the footer until the next turn (the maintainer, 2026-09-26).
 		if msg.model != "" {
 			m.answeredBy = msg.model
 			m.status.Model = msg.model

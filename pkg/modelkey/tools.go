@@ -7,7 +7,7 @@ import (
 )
 
 // ToolStore is a file where another coding tool keeps a person's model keys.
-// Memdoor reads one only after the person said yes (Greg, 2026-10-31): it is
+// Memdoor reads one only after the person said yes (the maintainer, 2026-10-31): it is
 // another program's secret.
 type ToolStore struct {
 	Tool string // the tool, as a person names it

@@ -1,7 +1,6 @@
 <!--
-External pull requests are not merged at this stage (see CONTRIBUTING.md); they
-are read as proposals and closed once answered. If this is one, say what it
-fixes and how to see the problem, so the maintainer can act on it.
+Say what it fixes and how to see the problem. A first pull request signs
+the CLA (CLA.md) with one comment, "I agree to CLA.md"; once is enough.
 -->
 
 **What changes, and why**

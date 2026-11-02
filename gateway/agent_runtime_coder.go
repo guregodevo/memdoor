@@ -140,7 +140,7 @@ func shellQuote(s string) string {
 // exactly this failure — a model INVENTS an absolute path — and writes are
 // the stray-main.go incident with a different tool. Same fence, same voice.
 //
-// READS GO ANYWHERE (Greg, 2026-10-05: "like omp" — oh-my-pi confines no
+// READS GO ANYWHERE (the maintainer, 2026-10-05: "like omp" — oh-my-pi confines no
 // read in any mode; --add-dir only tells the model more roots exist). A
 // coder reading a dependency, another repo or a system file is doing its
 // job; refusing read_file while `sed` through bash read the same file anyway

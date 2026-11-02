@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// THE ONBOARDING WALK, BOTH WAYS (Greg, 2026-09-27: "test onboarding positive
+// THE ONBOARDING WALK, BOTH WAYS (the maintainer, 2026-09-27: "test onboarding positive
 // and negative paths"). Walked by hand on a clean HOME with a gateway of its
 // own; what the walk found is asserted here so it cannot come back.
 

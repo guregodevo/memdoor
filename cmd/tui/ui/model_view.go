@@ -32,7 +32,7 @@ func (m Model) View() string {
 	// busy() includes the turn itself: between a tool's end and the next
 	// round's first token, or while a long tool call is generated with no
 	// text streaming, nothing is "thinking" and the bar vanished though the
-	// turn ran on ("sometimes it's running and we don't see it", Greg,
+	// turn ran on ("sometimes it's running and we don't see it", the maintainer,
 	// 2026-09-26). A running turn always has a bar.
 	if m.busy() || m.compacting {
 		// Blank line above AND below the spinner so it doesn't visually glue to
@@ -387,7 +387,7 @@ var brailleFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "�
 // 100ms in the palette's full running amber — ten glyph changes a second in
 // the corner of the eye, for every tool, for as long as a build takes. It
 // steps every 200ms now and sits a shade back from the tool name it belongs
-// to: still plainly alive, no longer waving (Greg, 2026-10-01: colour that
+// to: still plainly alive, no longer waving (the maintainer, 2026-10-01: colour that
 // does not harm eyes).
 //
 // The spinner is a palette entry, not a hex: a truecolor escape falls back to
@@ -401,7 +401,7 @@ const (
 // The TUI palette. Colour here carries meaning — what KIND of work a line is,
 // or whether it went well — so a scrolling transcript can be read at a glance
 // instead of parsed word by word. Anything decorative stays grey.
-// FIVE COLOURS, ALL MUTED (Greg, 2026-10-01: "this should be for
+// FIVE COLOURS, ALL MUTED (the maintainer, 2026-10-01: "this should be for
 // neurodivergent. Good color rendering that does not harm eyes"). There were
 // nine meaning-hues at full saturation — pure red 196, pink 213, amber 214,
 // yellow 220, orange 208, magenta 170 — and a scrolling transcript of them

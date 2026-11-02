@@ -6,7 +6,7 @@ import (
 )
 
 // One spelling everywhere, or a ranking splits us across two rows — this is
-// the channel (Greg, 2026-09-27: "the strategy should be to promote our app
+// the channel (the maintainer, 2026-09-27: "the strategy should be to promote our app
 // through openrouter"; 2026-10-24: every provider that can tell apps apart).
 func TestAttributionIsOneCanonicalPair(t *testing.T) {
 	t.Setenv("MEMDOOR_OPENROUTER_ATTRIBUTION", "")

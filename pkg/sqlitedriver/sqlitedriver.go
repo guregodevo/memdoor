@@ -2,7 +2,7 @@
 // opens, under the names callers already use: "sqlite3", and LogsDriverName
 // (the same, plus a REGEXP function on every connection).
 //
-// It is modernc.org/sqlite — SQLite translated to Go — in every build (Greg,
+// It is modernc.org/sqlite — SQLite translated to Go — in every build (the maintainer,
 // 2026-09-29: "Pure go is better"). The Linux and Windows downloads are built
 // on a Mac with no C cross-compiler, and with mattn/go-sqlite3 they linked its
 // cgo stub, whose every Open fails with "Binary was compiled with

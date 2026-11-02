@@ -13,7 +13,7 @@ import (
 // on the free tier and picks a free model; so does this, from OpenRouter's own
 // list rather than a name written here (a window, a price or a model is data,
 // never a constant). A free model's hosts may train on what they are sent
-// (Greg, 2026-10-10: "for free we allow data collection"), so when the tier
+// (the maintainer, 2026-10-10: "for free we allow data collection"), so when the tier
 // cannot be read the paid ladder stays: a private turn that asks for credit
 // beats a public one nobody chose.
 

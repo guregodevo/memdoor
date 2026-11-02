@@ -5,7 +5,7 @@
 on the developer's computer, drawn by xterm.js in the browser. Live since
 2026-09-28.
 
-Pro on the hosted relay (Greg, 2026-10-04: "Remote should be pro only"; it
+Pro on the hosted relay (the maintainer, 2026-10-04: "Remote should be pro only"; it
 was free on every plan from 2026-09-29). The memdoor.ai relay asks billing who
 the terminal belongs to and which plan: an account without a seat gets
 402 and the sentence the window prints (`gateway/remote_relay_auth.go`). A
@@ -13,7 +13,7 @@ gateway relaying for its own users (`MEMDOOR_REMOTE_URL` at it, someone
 hosting Memdoor themselves) never asks for a plan.
 
 The gateway is its own relay whenever a phone could reach it (2026-10-23,
-Greg: "a phone can connect to daemon", "no pro story", "/remote should not go
+The maintainer: "a phone can connect to daemon", "no pro story", "/remote should not go
 through memdoor.ai anymore unless it's needed"). `remoteSession.resolved()`
 settles it once per `/remote`: a gateway on another machine is the relay as
 the window reaches it; a gateway reached through loopback (the laptop's own,
@@ -122,7 +122,7 @@ plus two streams of its own, `history` (the last 20 turns, long replies cut at
 ## `memdoor remote` holds nothing (2026-10-24)
 
 `cmd/cli/cmd/remote.go`: the link from a script. The gateway holds it, and
-`--gateway <box>` names whose (Greg: "memdoor remote does not make sense, we
+`--gateway <box>` names whose (the maintainer: "memdoor remote does not make sense, we
 should use gateway instead", "we need to pass the --gateway <host> so memdoor
 --gateway <host> remote"). It settles the
 conversation (`remoteTarget`: an id prefix, `--last`, or the list and a

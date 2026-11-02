@@ -34,7 +34,7 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-// REMOTE CONTROL (Greg, 2026-09-28: "remote control"): /remote gives this
+// REMOTE CONTROL (the maintainer, 2026-09-28: "remote control"): /remote gives this
 // conversation a link and a QR code to open it on another device, and the
 // TUI runs the terminal side of the relay while the conversation is open.
 //
@@ -47,7 +47,7 @@ import (
 // as --gateway <box>) is its own relay: the link is on that gateway, the
 // terminal dials its /api/relay with the gateway's own token, and a phone
 // that reaches the box reaches the daemon the way the laptop does. No
-// memdoor.ai account, no plan (Greg, 2026-10-23: "a phone can connect to
+// memdoor.ai account, no plan (the maintainer, 2026-10-23: "a phone can connect to
 // daemon", "no pro story"). A gateway on this machine sits behind the
 // laptop's NAT, so its link goes through memdoor.ai, the outbound tunnel a
 // phone reaches without port forwarding, with the memdoor.ai account token.
@@ -246,7 +246,7 @@ func gatewayListen(gateway string) (remoteListen, bool) {
 
 // resolved settles where this conversation's link lives, once: on the
 // gateway itself whenever a phone could reach it, through memdoor.ai only
-// when it could not (Greg, 2026-10-23: "/remote should not go through
+// when it could not (the maintainer, 2026-10-23: "/remote should not go through
 // memdoor.ai anymore unless it's needed").
 //
 //   - a gateway on another machine: that gateway, as the window reaches it;

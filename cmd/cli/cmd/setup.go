@@ -432,7 +432,7 @@ func registerAdminViaSetup(email, password, workspaceName string) (string, error
 	}
 
 	// The machine's own account (<user>@localhost, made by the first run) is
-	// plumbing nobody typed; the screen does not name it (Greg, 2026-10-20).
+	// plumbing nobody typed; the screen does not name it (the maintainer, 2026-10-20).
 	if strings.HasSuffix(email, "@localhost") {
 		fmt.Println("\n  This machine is set up and signed in.")
 	} else {

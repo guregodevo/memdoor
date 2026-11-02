@@ -106,7 +106,7 @@ func TestUpdateNoticeAndRestart(t *testing.T) {
 	}
 }
 
-// A COMMAND THAT NO LONGER EXISTS MUST NOT REAPPEAR (Greg, 2026-09-27:
+// A COMMAND THAT NO LONGER EXISTS MUST NOT REAPPEAR (the maintainer, 2026-09-27:
 // "remove slash commands"): the deleted ones stay deleted.
 func TestTheDeletedSlashCommandsAreGone(t *testing.T) {
 	{

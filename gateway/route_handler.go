@@ -199,7 +199,7 @@ func pinRoute(s *Session, rung, ladderLen int) error {
 }
 
 // pinModel holds a model by id for the session — any model the catalogue
-// offers, off the ladder (Greg, 2026-09-26: "user can change models").
+// offers, off the ladder (the maintainer, 2026-09-26: "user can change models").
 func pinModel(s *Session, id, sortBy, order string) error {
 	id = strings.TrimSpace(id)
 	if !modelIDRe.MatchString(id) {
@@ -277,7 +277,7 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 		if sess == nil || !sessionRouted(sess) {
 			// A conversation with no route of its own will start on the kept
 			// pin (persistent_pin.go): the footer says so before the first
-			// turn, not after it (Greg, 2026-10-03: "if someone pins it he
+			// turn, not after it (the maintainer, 2026-10-03: "if someone pins it he
 			// should see it pinned").
 			tmp := &Session{ID: key, Metadata: map[string]interface{}{}}
 			if applyPersistentPin(string(authorization.GetActorID(r.Context())), tmp) {

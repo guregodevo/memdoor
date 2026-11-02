@@ -93,6 +93,7 @@ data/**/training-data/
 !.memdoor/.gitignore
 !.memdoor/workflows/
 .memdoor/workflows/*
+!.memdoor/workflows/pr-review
 !.memdoor/workflows/workflow-selftest/
 !.memdoor/workflows/ship/
 !.memdoor/workflows/review/

@@ -1,9 +1,11 @@
-# Every pull request is triaged by Memdoor's own pr-triage workflow, through
-# the published action, on a model inside the job: Qwen3-8B on the runner's
-# CPU, through janis. No key, so a pull request from a fork is triaged too.
-# The verdict comes from what the job measures (the test suite on the pull
-# request's code, tests claimed but not changed, functions nothing calls); the
-# model writes the summary. Advisory: the job never fails on the verdict.
+# A pull request from this repository is triaged by Memdoor's own pr-triage
+# workflow, through the published action, on the OpenRouter secret: the default
+# model (GLM 5.3 Flash) reads the diff and the description in one call
+# (MEMDOOR_LEAN). The tests are not run here (MEMDOOR_TEST_COMMAND=skip): the
+# CI job runs them. Advisory: the job never fails on the verdict. A pull
+# request from a fork has no secret and is not triaged here. It runs on
+# pull_request, never pull_request_target: a stranger's code never runs beside
+# a secret.
 name: PR triage (Memdoor)
 
 permissions:
@@ -23,30 +25,20 @@ jobs:
   triage:
     if: github.repository != 'guregodevo/memdoor-private'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # pr-triage runs `go test ./...` (go.mod); the cgo SQLite needs these, as in CI.
+    timeout-minutes: 10
     env:
-      CGO_CFLAGS: -DSQLITE_ENABLE_FTS5
-      CGO_LDFLAGS: -lm
+      HAS_KEY: ${{ secrets.OPEN_ROUTER_API_KEY != '' && 'yes' || 'no' }}
     steps:
       - uses: actions/checkout@v5
+        if: env.HAS_KEY == 'yes'
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version: '1.25'
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-
-      # gateway/web/embed.go embeds web/dist (gitignored); the cgo SQLite needs its header.
-      - name: Build web frontend, install cgo deps
-        run: |
-          (cd web && npm ci && npm run build)
-          sudo apt-get update -qq && sudo apt-get install -y -qq libsqlite3-dev
-
-      - uses: guregodevo/memdoor-action@v1
+      - name: Triage on the OpenRouter key
+        if: env.HAS_KEY == 'yes'
+        uses: guregodevo/memdoor-action@v1
+        env:
+          MEMDOOR_LEAN: '1'
+          MEMDOOR_TEST_COMMAND: skip
         with:
           workflow: pr-triage
-          local-model: Qwen3-8B-4bit
-          timeout: 25m
+          openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+          timeout: 8m

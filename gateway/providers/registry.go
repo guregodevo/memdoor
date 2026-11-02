@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// PROVIDERS, EACH WITH ITS LIST OF MODELS (Greg, 2026-10-02: "we had an
+// PROVIDERS, EACH WITH ITS LIST OF MODELS (the maintainer, 2026-10-02: "we had an
 // OpenRouter integration … we can continue to extend it with different
 // providers including the company provider … each provider has a list of
 // models actually"). What omp's models.yml, Codex's model_providers and
@@ -41,7 +41,7 @@ const (
 	APIAnthropic  = "anthropic"
 	// APIDecisions is a decision model's endpoint (System One: Jev, Kev),
 	// not a chat one: it judges, it never answers a turn, and it lists no
-	// models for /model (Greg, 2026-10-03: decisions without OpenRouter,
+	// models for /model (the maintainer, 2026-10-03: decisions without OpenRouter,
 	// "if it's not we should have a hint for users to connect").
 	APIDecisions = "decisions"
 
@@ -285,7 +285,7 @@ func Providers() []Provider {
 	for _, p := range builtInProviders() {
 		// A built-in connected through /connect lives in the file under the
 		// same id: what the environment does not give, the file does, so a
-		// kept connection is there at every start (Greg, 2026-10-03: "once
+		// kept connection is there at every start (the maintainer, 2026-10-03: "once
 		// it is connected store it so we don't need to reconnect").
 		if !p.Connected() {
 			for _, f := range fromFile {

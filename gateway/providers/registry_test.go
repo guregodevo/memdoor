@@ -32,7 +32,7 @@ func clearProviderEnv(t *testing.T) {
 	modelsDev.mu.Unlock()
 }
 
-// Providers, each with its list (Greg, 2026-10-02): the built-in ones are
+// Providers, each with its list (the maintainer, 2026-10-02): the built-in ones are
 // listed whether or not a key is set — locked without one — and the file's
 // come after them. A credential is a literal, an env var's NAME, or a
 // command's stdout.

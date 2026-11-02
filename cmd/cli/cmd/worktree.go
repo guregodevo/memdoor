@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// A SESSION IN ITS OWN WORKTREE (Greg, 2026-09-27: "next item: worktree";
+// A SESSION IN ITS OWN WORKTREE (the maintainer, 2026-09-27: "next item: worktree";
 // MUST.md "worktrees and commits", the gap against Codex and Claude Code).
 //
 //	memdoor tui --worktree            a fresh worktree, named for now

@@ -142,7 +142,7 @@ func (s *Service) CanAccessChannel(ctx context.Context, actorID shared.ActorID, 
 // outsideActorsWorkspace says whether the channel belongs to another
 // workspace than the one the request acts in. The auth middleware pins
 // that workspace from the signed-in user's row (one user, one workspace:
-// Greg, 2026-10-20, after a fresh sign-up on memdoor.ai read another
+// The maintainer, 2026-10-20, after a fresh sign-up on memdoor.ai read another
 // account's conversation), so a person never reaches a channel of another
 // workspace, member or not, public or not. Agents and the gateway's own
 // callers carry no user workspace and pass; a channel from before channels

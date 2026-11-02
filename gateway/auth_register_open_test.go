@@ -46,7 +46,7 @@ func postRegister(a *AuthGatewayAdapter, from, body string) *httptest.ResponseRe
 	return rec
 }
 
-// Anyone can sign up (Greg, 2026-10-18): a request with no invite token
+// Anyone can sign up (the maintainer, 2026-10-18): a request with no invite token
 // registers the account and answers signed in.
 func TestRegisterHasNoInviteGate(t *testing.T) {
 	fake := &registerFake{}

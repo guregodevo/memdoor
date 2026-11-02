@@ -24,18 +24,18 @@ grep -r "duplicate_code" .    # Search before coding
 # workflows (local cron schedules included) on your own machine and key, and EVERY DOOR onto a
 # gateway of your own: `memdoor gateway install` on a box, the window on a laptop (--gateway
 # <box> --dir), ssh (--gateway ssh://box; a box with nothing on it is installed and started
-# over that ssh on first use, cmd/cli/cmd/gateway_ssh.go sshBoxSetup, Greg 2026-10-24 "accessible
+# over that ssh on first use, cmd/cli/cmd/gateway_ssh.go sshBoxSetup, the maintainer 2026-10-24 "accessible
 # from http and ssh like github"), the phone on the box's own address (/remote there
-# needs no account: Greg "no pro story", "a phone can connect to daemon"). THE GATEWAY BINDS THE
-# NETWORK BY DEFAULT (0.0.0.0, Greg 2026-10-23 "default to be the network"): /remote links live on
+# needs no account: the maintainer "no pro story", "a phone can connect to daemon"). THE GATEWAY BINDS THE
+# NETWORK BY DEFAULT (0.0.0.0, the maintainer 2026-10-23 "default to be the network"): /remote links live on
 # the gateway's own address, memdoor.ai only when it is kept to localhost (MEMDOOR_HOST=localhost);
 # the first account is made from the machine itself only (gateway/setup_handlers.go); ITS WORKSPACE IS THE
 # GATEWAY'S OWN (2026-10-30, gateway/gateway_owner.go): sign-up stays open, but only that workspace runs
 # turns on the gateway's keys and machine; gatewayMember / gatewayOperator, never a bare admin role (every
 # sign-up is admin of its own). docs/architecture/GATEWAY_AND_DOORS.md "The gate on every door". Pro = what memdoor.ai
 # hosts: the relay for a gateway behind a laptop's NAT, the hosted workflow state (mario-state,
-# 2026-10-05), and next the box itself (Greg: "the pro story will be the self host").
-# A seat NEVER supplies a model key (Greg 2026-10-04) — always the user's key;
+# 2026-10-05), and next the box itself (the maintainer: "the pro story will be the self host").
+# A seat NEVER supplies a model key (the maintainer 2026-10-04) — always the user's key;
 # the gateway never leases a model (no MEMDOOR_BRAIN_CLASS / MEMDOOR_BYOK any
 # more). The BROKER owns the seat: token ->
 # workspace -> plan. No GPU pool, no catalogue, no warm pools (all removed).
@@ -124,13 +124,13 @@ grep -r "duplicate_code" .    # Search before coding
 # --dir <path there>` names a gateway you are signed in to; `@box:coder …` in any conversation
 # (window, run, agent -m) runs the turn on box and brings the answer back as the thread's reply
 # (pkg/message/peers.go, gateway/peers.go, cmd/cli/cmd/peers.go); `memdoor peers` is the quorum.
-# THE REPLY IS A2A ACROSS GATEWAYS (Greg: "it should be a2a with reply across gateway"): the
+# THE REPLY IS A2A ACROSS GATEWAYS (the maintainer: "it should be a2a with reply across gateway"): the
 # names in a peer's reply are resolved HERE, where the thread is (@coder wakes this coder,
 # @vps:coder asks another peer, the coder may ask box again; the mention depth ends it), and
 # a turn asked by a peer (asked_by_peer) wakes nobody on the peer. A turn woken by a reply now
 # gets the project and the mode of the turn before it (asyncTurnContext), not the scratch dir.
 # A mention nobody answers to now fails the turn instead of hanging the window and the run.
-# A new websocket path needs its own nginx location in scripts/deploy.sh.
+# A new websocket path needs its own nginx location in the deploy (memdoor-ops, private).
 # MEMDOOR_REMOTE_URL=http://localhost:18789 tests it against a local gateway.
 
 # Models & sessions (post 2026-08-16)
@@ -164,12 +164,12 @@ grep -r "duplicate_code" .    # Search before coding
 
 ## Documentation
 - Read `docs/` directory for project documentation and architecture details
-- **`docs/roadmap/MUST.md`** — READ FIRST. The epoch note at the top states what
-  Memdoor is now (2026-09-27): a **coding agent for solo devs that cuts their
+- **What Memdoor is** (the epoch note of 2026-09-27; the roadmap itself is kept
+  outside this repo): a **coding agent for solo devs that cuts their
   model bill, on THEIR OWN key** (BYOK — `gateway/providers/byok.go`; any
   provider's key works). The decision model (Jev) is what does the cutting:
   judged reads, a per-turn toolbox, a stop instead of a cap, `/model` with real
-  list prices. Free is the agent **and the decision model** on their key (Greg,
+  list prices. Free is the agent **and the decision model** on their key (the maintainer,
   2026-10-03: "jev decision model is not pro"), and so are workflows and
   their local schedules (2026-10-04), and every door onto a gateway of your
   own (2026-10-23: a box that stays on, the window on a laptop, ssh, the phone
@@ -265,7 +265,7 @@ The three rules that catch the most real bugs: **type-safety (10), fail-fast con
 
 ## Making a demo (2026-10-02)
 Every demo on memdoor.ai — the hero, the gallery, the casts in the docs — is a
-REAL `memdoor tui` session, never a scripted animation (Greg: "we need better
+REAL `memdoor tui` session, never a scripted animation (the maintainer: "we need better
 demo", "excellent demos, we need more like this in docs as well"). The method,
 in `scripts/demo/`:
 - `take.sh <session> <out.cast> "<script>" "<end marker>" <seconds>` — a clean
@@ -445,7 +445,7 @@ serves it, driving tmux, what to assert, negative paths).
 - WARN/ERROR events flow through `gateway/telemetry` to https://memdoor.ai when `MEMDOOR_TELEMETRY_ENABLED=1`
 - Agents can emit structured anomalies via the `report_bug` tool (universal palette)
 - Sender opt-in (default OFF); same `memdoor logs query` UX works against the receiver
-- Full design + env-var contract: [`docs/internal/TELEMETRY.md`](docs/internal/TELEMETRY.md)
+- Full design + env-var contract: `gateway/telemetry` (the design note is kept outside this repo)
 
 ## Architecture Patterns
 
@@ -474,9 +474,10 @@ memdoor.ai runs TWO units from the same binary: `memdoor` (gateway) and
 state must never live under `/opt/memdoor`** — the deploy rsyncs with
 `--delete` and will erase it (live incident 2026-08-18). Secrets live in
 `/etc/memdoor/billing.env`, ledgers in `/var/lib/memdoor/`. nginx routes
-are written from an INLINE heredoc in `scripts/deploy.sh`, not from
-`scripts/nginx-memdoor.conf`. Full runbook: `docs/internal/OPS.md`.
-**Every LLM request goes through a provider** (2026-10-04, Greg: "no
+are written from an INLINE heredoc in the deploy script. The deploy, the
+rollback and the metrics live in memdoor-ops, a private repo that names the
+server; this public repo is the source of truth it builds from (2026-11-02).
+**Every LLM request goes through a provider** (2026-10-04, the maintainer: "no
 exception. all request for llm goes through provider"): `providers.ClientFactory`
 resolves a pinned model to the provider that lists it, else the engine chosen at
 start (a company's vendor key, else a signed-in ChatGPT plan, else the person's
@@ -509,7 +510,7 @@ has no model until one is connected. There is no local model.
 
 - Docs are an engineer's documentation, no AI slop (2026-11-01, `.agents/skills/doc-writing.md`): short sentences, few commas, no aphorisms or asides, no filler words, "on your key", "your machine", a workflow is the deterministic harness, never "jobs kept as files" in a tagline; headings are anchors; code blocks, numbers and links never change in an edit; a doubtful claim is flagged, not rewritten.
 
-- Context windows and output caps are DATA, never constants: a provider's own list, then models.dev (providers/reference.go, daily, on disk, off the network on a company key), then the provider default marked `~` (a guess, warned once per model in the log). Never add a model's window to code; `memdoor providers --models <id>` shows where each figure came from, `--refresh` re-reads. (Greg, 2026-10-02: "very important to maintain it".)
+- Context windows and output caps are DATA, never constants: a provider's own list, then models.dev (providers/reference.go, daily, on disk, off the network on a company key), then the provider default marked `~` (a guess, warned once per model in the log). Never add a model's window to code; `memdoor providers --models <id>` shows where each figure came from, `--refresh` re-reads. (the maintainer, 2026-10-02: "very important to maintain it".)
 
 - Review after apply (2026-10-03): after a fix is applied, run the review skill on the diff AND sweep untouched files for the same class of claim ("no MCP server", "rented GPU", "no model-vendor API key" survived two rewrites each). Three rounds in a row a cheap model found a real leftover; the second pass costs cents.
 - No word-scoring heuristics or tuned thresholds for narrowing the coder's prompt: when no decision model, send an exact outline (preamble + ## headings with line numbers) instead.

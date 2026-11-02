@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// The ssh door (Greg, 2026-10-23: "we can do ssh too"). --gateway
+// The ssh door (the maintainer, 2026-10-23: "we can do ssh too"). --gateway
 // ssh://[user@]box[:port] (or MEMDOOR_GATEWAY) reaches the gateway on a box
 // through ssh: a tunnel is opened to the gateway's port on that box and this
 // command talks through it, the window, a run, a workflow, resume alike.
@@ -219,7 +219,7 @@ func sshRun(target, sshPort, command string) (string, error) {
 // PATH, else where the installer puts it.
 const sshFindMemdoor = `command -v memdoor 2>/dev/null || { [ -x "$HOME/.local/bin/memdoor" ] && echo "$HOME/.local/bin/memdoor"; }`
 
-// sshBoxSetup makes a box answer the door (Greg, 2026-10-24: "it should be
+// sshBoxSetup makes a box answer the door (the maintainer, 2026-10-24: "it should be
 // accessible from http and ssh like github", "add memdoor --gateway
 // ssh://you@box run"). When no gateway answers through the tunnel, the box
 // is looked at over the same ssh: no memdoor there, and memdoor.ai's

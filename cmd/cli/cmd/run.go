@@ -21,7 +21,7 @@ import (
 	"memdoor/gateway/client"
 )
 
-// memdoor run: the headless turn (Greg, 2026-10-11, after OpenRouter's
+// memdoor run: the headless turn (the maintainer, 2026-10-11, after OpenRouter's
 // "create a headless agent" cookbook: a prompt from a flag or stdin, text or
 // an event stream out, an exit code the pipeline acts on). The same door the
 // editor uses (gatewayRunner, acp.go), with a sink that prints instead of

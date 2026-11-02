@@ -4,7 +4,7 @@ import { CoderHeader } from './CoderLandingPage';
 //
 // It used to hand over a Mac app zip and tell people to drop a video in, from
 // the months when Memdoor was a video editor with an app. The product is a
-// terminal coding agent now (Greg, 2026-09-27: "command line only", "like
+// terminal coding agent now (the maintainer, 2026-09-27: "command line only", "like
 // memdoor binary", "no app"), so this page is the install line, what it puts
 // where, and how to sign in. No mailto: a person stuck on an install needs the
 // docs, not an inbox.

@@ -1,6 +1,6 @@
 # Providers — each with its list of models
 
-Greg, 2026-10-02: "we had an OpenRouter integration … we can continue to
+The maintainer, 2026-10-02: "we had an OpenRouter integration … we can continue to
 extend it with different providers including the company provider … each
 provider has a list of models actually … anthropic as well … openai as
 well etc. … let's not change the slash commands /model and /model-search,
@@ -61,7 +61,7 @@ provider *and* tests it.
   `memdoor providers` lists them with ● on the one answering and where
   each credential came from.
 
-## Receipts (Greg's gateway, 2026-10-02)
+## Receipts (the maintainer's gateway, 2026-10-02)
 
 - `memdoor providers`: anthropic / openai / gemini *not connected · memdoor
   connect <id>*, `● openrouter connected (env OPEN_ROUTER_API_KEY)`.
@@ -90,14 +90,14 @@ provider *and* tests it.
   next; a refusal with its advice; Esc cancels at any step. Connecting is
   the gateway operator's alone, on the gateway's machine (`gatewayOperator`,
   2026-10-30: the route answered anyone, and a `!command` key runs there);
-  a window on a laptop connects through the ssh door. Greg: "omp
+  a window on a laptop connects through the ssh door. The maintainer: "omp
   does it with a slash command right?" — omp's `/login`, with the probe
-  omp lacks. Receipt in a tmux window on Greg's gateway: `/connect` → 5 →
+  omp lacks. Receipt in a tmux window on the maintainer's gateway: `/connect` → 5 →
   `orx` → OpenRouter's base → the key as `OPEN_ROUTER_API_KEY` (shown as
   19 dots) → `z-ai/glm-5.3-flash` → `✓ orx connected · responses API ·
   465 models … kept`. `TestConnectFlowPicksTypesProbesAndSays`.
 
-- **The first real Anthropic turn** (Greg's key, 2026-10-02): `memdoor
+- **The first real Anthropic turn** (the maintainer's key, 2026-10-02): `memdoor
   connect anthropic --probe … --model claude-haiku-4-5-20251001` → `✓ 13
   models · tested claude-haiku-4-5-20251001 → "ok"`; `memdoor providers`
   → `anthropic connected (env ANTHROPIC_API_KEY)` beside `● openrouter`
@@ -165,7 +165,7 @@ provider *and* tests it.
   was refused by the Messages API (`tools.0.custom.input_schema.type:
   Input should be 'object'`); every schema is typed now.
 
-- **Context windows, dynamically** (Greg: "make sure you have the correct
+- **Context windows, dynamically** (the maintainer: "make sure you have the correct
   context size; if we can get it dynamically that's better"): a provider's
   own figure first (OpenRouter's `context_length`, Groq's
   `context_window`), then **models.dev** — the public catalogue, read at
@@ -182,7 +182,7 @@ provider *and* tests it.
   column), and the cut-off escalation stops at it
   (`ctxmgmt.SetRemoteOutput`, `ModelLimits.MaxOutputCeiling`).
 
-- **Each provider's own metadata API, behind one interface** (Greg:
+- **Each provider's own metadata API, behind one interface** (the maintainer:
   "check if each provider has an API that provides model metadata … add
   this in our provider interface, getModel"). `ModelReader`
   (`gateway/providers/catalogue.go`): `ListModels` and `GetModel`, one reader per
@@ -210,10 +210,10 @@ provider *and* tests it.
   `max_completion_tokens`, now sent on OpenAI's host and retried under
   that name when any host asks; then `openai · gpt-5 · pinned by you` did
   the small fix (+2 −2, tests green), and `xai · grok-4.3` did it too (the
-  key is `GROK_API_KEY` in Greg's .envrc, accepted as the alias of
+  key is `GROK_API_KEY` in the maintainer's .envrc, accepted as the alias of
   `XAI_API_KEY`). Grok and Groq are different companies; both are in.
 
-## The fast-model round (Greg, 2026-10-02: "test each provider with haiku equivalent model")
+## The fast-model round (the maintainer, 2026-10-02: "test each provider with haiku equivalent model")
 
 The same turn on each provider's fast model — a planted off-by-one in
 `sum.go` with a failing test, "fix the bug (not the test)" — ground truth
@@ -239,10 +239,10 @@ when any host asks), and Gemini 3's thinking models return a
 `thought_signature` with each function call under `extra_content.google`
 and refuse the follow-up without it — kept by call id and replayed
 (`TestToolCallExtraContentIsReplayed`); with it, Gemini 3 Flash got four
-steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 Flash then did the fix in
+steps in before its quota ran out. The maintainer enabled billing on the key and Gemini 3 Flash then did the fix in
 16 s: all six providers have the same receipt.
 
-- **DeepSeek and Baseten** (Greg: "DEEPSEEK and BASETEN providers as
+- **DeepSeek and Baseten** (the maintainer: "DEEPSEEK and BASETEN providers as
   well"), read live with keys: DeepSeek's `/v1/models` states
   `context_window`, `max_output_tokens`, `effort`, modalities (two models,
   1M windows); Baseten's states `context_length`, `max_completion_tokens`,
@@ -262,14 +262,14 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
   `MEMDOOR_ATTRIBUTION_HEADERS` for the gateway's names (default
   `X-Memdoor-*`), the project's directory name and the session id from the
   turn; a field with no value sends nothing. `TestAttributionHeaders`.
-- **A public Providers page** (`/docs/providers`, Greg: "document it in
+- **A public Providers page** (`/docs/providers`, the maintainer: "document it in
   docs public for all providers"): each of the eight and the company
   gateway — key name, base, what its API states, the fast model that did
   the coding turn, the quirks (max_completion_tokens, thought_signature,
   Baseten's case, Groq's rate limits) — plus attribution, the
   `provider:model` form and where a window comes from.
 
-- **Attribution tested against a company gateway** (Greg: "test
+- **Attribution tested against a company gateway** (the maintainer: "test
   attribution with the company gateway"): no such gateway is reachable from
   here, so a stand-in that speaks its API (`POST /ai/v1/responses`, `GET
   /ai/v1/models`, Bearer PAT) recorded every header while a scratch Memdoor
@@ -288,7 +288,7 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
   200k (a declared model now takes the list's figures), and the credential's
   source named `AI_GATEWAY_TOKEN` when it came from `CORP_AI_GATEWAY_TOKEN`.
 
-- **`/model-search` names the provider on every row** (Greg, 2026-10-03:
+- **`/model-search` names the provider on every row** (the maintainer, 2026-10-03:
   "/model-search should work for deepseek"): `deepseek · deepseek-flash`,
   `baseten · deepseek-ai/DeepSeek-V4.1-Flash`, `openrouter ·
   deepseek/deepseek-v4.1-flash` side by side in the shell and the picker;
@@ -299,7 +299,7 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
   `deepseek-flash` alias is not in it, so its rows stay $0.00 rather than
   guessed.
 
-- **Onboarding, 2026-10-03** (Greg: "prefill default KEY NAME or value if
+- **Onboarding, 2026-10-03** (the maintainer: "prefill default KEY NAME or value if
   you find it … unless it's not obvious like for company gateway", "once
   it is connected store it so we don't need to reconnect at every start",
   "when not connected suggest /connect"): the token step opens with the
@@ -314,7 +314,7 @@ steps in before its quota ran out. Greg enabled billing on the key and Gemini 3 
   is prefilled)*, `groq:…` → `/connect groq`, otherwise *Not connected
   yet: … — /connect <kind>* (`connectHint`).
 
-- **A bare `/model-search` is a picker** (Greg, 2026-10-03, after
+- **A bare `/model-search` is a picker** (the maintainer, 2026-10-03, after
   `/connect deepseek` left `/model-search` answering with stale help:
   "the user doesn't know the provider name; it should be without
   inputting text"): the providers with their counts and which is
@@ -333,7 +333,7 @@ this machine's own ledger (`memdoor meter`, read in UTC), per day, written to
 row yet. The remainder on a day is other people on their own key; before the launch
 (2026-10-21) it includes Memdoor's own machines of the time.
 
-Greg: "for each provider key we can see who is using our app… the idea is to
+The maintainer: "for each provider key we can see who is using our app… the idea is to
 promote memdoor." Nothing phones home (decided the same day); the count of
 people on Memdoor is whatever each provider shows for the app. Researched
 provider by provider, web only; what the binary sends is `pkg/attribution`
@@ -393,7 +393,7 @@ at DevDay (2026-09-29); OpenCode, Pi, Kilo and Amp ship it. The pieces:
   the MCP sign-in (`/api/providers/chatgpt`: login, login/wait, login/paste,
   login/cancel, logout); on success the plan is probed the way `/connect`
   probes a key.
-- **The plan answers by default** (2026-10-31, Greg: "if you login to chatgpt
+- **The plan answers by default** (2026-10-31, the maintainer: "if you login to chatgpt
   you should get chatgpt model by default in the list"): a signed-in plan is
   the engine after a company's vendor key and before an OpenRouter key, on
   the first model the plan lists (`ChatGPTPlanEngine`,
@@ -431,7 +431,7 @@ March 2026.
 
 ## A local runtime, no key (2026-10-25)
 
-Greg: "the next move can be local llm that you ssh from a different machine",
+The maintainer: "the next move can be local llm that you ssh from a different machine",
 "it should be a different provider", "janis should work like a llama.cpp or
 ollama, independent from memdoor". The `local` kind in `/connect` and
 `memdoor connect local` (`cmd/tui/ui/connect_flow.go` `ConnectKinds`,
@@ -458,7 +458,7 @@ minutes, and an hour in all; a step's `thinking off` reaches it as
 model with no thinking mode refuses one). Test:
 `TestAKeylessRuntimeMayReadInSilence`.
 
-**A local decision model** (Greg: "there should be a janis jev model"): janis
+**A local decision model** (the maintainer: "there should be a janis jev model"): janis
 serve also answers `POST /v1/systemone`, the System One wire Memdoor's
 decision client speaks (`pkg/decision/systemone`), from the engine's
 `Decide` (one prefill per question, the probability read off the option
@@ -472,7 +472,7 @@ connect handler calls it after a decisions provider is kept or removed), so
 it judges from the next turn, no gateway start. `--remove local` drops
 both. A runtime without the endpoint stays chat-only.
 
-**Minimum friction (Greg, 2026-10-25: "minimum friction for install and
+**Minimum friction (the maintainer, 2026-10-25: "minimum friction for install and
 quick getting started")**: a blank base on `connect local` finds the runtime
 on the gateway's machine (`findLocalRuntime`, `localRuntimeBases`: janis
 8090, Ollama 11434, llama.cpp 8080, LM Studio 1234, the first whose model
@@ -482,7 +482,7 @@ start.
 
 ## A key already on the machine (2026-10-31)
 
-Greg: "they dont know the key", "when they connect we should scan keys … easy
+The maintainer: "they dont know the key", "when they connect we should scan keys … easy
 frictionless". The one outside install before the launch (2026-10-20) ran the
 binary, upgraded, and sent no token. A key is now found by its VALUE, never
 its variable's name (`pkg/modelkey`): `sk-or-v1-` OpenRouter, any `sk-ant-`
@@ -498,7 +498,7 @@ are not offered. It looks in this shell's environment, then the project's
 the connect probe to the key's own provider.
 
 - **First run** (`memdoor`, `memdoor run`, at a terminal, the gateway with no
-  model; Greg: "less friction", "better than every other"), with as few
+  model; the maintainer: "less friction", "better than every other"), with as few
   questions as can be (`offerFoundKey`, `cmd/cli/cmd/connect_found.go`):
   a key in this shell is connected without a question, the first that works,
   and the line says which and how to forget it ("No model connected yet:
@@ -607,7 +607,7 @@ times before the person is told the key is on their account.
   (`gateway/provider_signin.go`) are ChatGPT's; the client's start, wait,
   paste and cancel (`cmd/cli/cmd/signin.go`) drive both; the PKCE helpers are
   `oidc.PKCEChallenge` and `oidc.RandomString` for ChatGPT, OpenRouter and
-  MCP alike (Greg: "common code is better").
+  MCP alike (the maintainer: "common code is better").
 
 Tests: `TestSignInThroughTheCallback`, `TestSignInByPaste`,
 `TestHeadlessSignIn`, `TestSignInRefused` (a fake OpenRouter),

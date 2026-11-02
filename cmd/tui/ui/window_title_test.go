@@ -11,7 +11,7 @@ import (
 
 // The title is the only thing a multiplexer's tab, a dock icon and a window
 // list can all read, so it carries the one fact they need: is this running?
-// Both paths, because a title stuck on "running" is worse than none (Greg,
+// Both paths, because a title stuck on "running" is worse than none (the maintainer,
 // 2026-09-27: "is running state for cmux terminal so that the tab show it is
 // running", "test positive and negative paths").
 func TestTheTitleSaysWhetherATurnIsRunning(t *testing.T) {
@@ -46,7 +46,7 @@ func TestTheTitleSaysWhetherATurnIsRunning(t *testing.T) {
 	}
 
 	// The circle turns while the turn runs, on its own clock, and the clock
-	// stops with the turn (Greg: "it should be a spinning circle").
+	// stops with the turn (the maintainer: "it should be a spinning circle").
 	spinning := Model{turnRunning: true}
 	if (&spinning).spin(nil) == nil {
 		t.Fatal("a running turn must start the title's clock")
@@ -83,7 +83,7 @@ func TestTheTitleSaysWhetherATurnIsRunning(t *testing.T) {
 	}
 }
 
-// THE END OF A TURN IS A SIGNAL (Greg, 2026-09-27: "signal the end of a turn
+// THE END OF A TURN IS A SIGNAL (the maintainer, 2026-09-27: "signal the end of a turn
 // from tab"). A ✓ stays in the title until the person is back; the terminal is
 // rung only when it told us the window is out of focus. Both directions, since
 // a window that beeps at the person looking at it is worse than one that is

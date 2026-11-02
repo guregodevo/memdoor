@@ -9,7 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// THE TAB SAYS WHETHER IT IS RUNNING (Greg, 2026-09-27: "is running state for
+// THE TAB SAYS WHETHER IT IS RUNNING (the maintainer, 2026-09-27: "is running state for
 // cmux terminal so that the tab show it is running").
 //
 // A turn can take minutes. Someone who switched tabs has no way to tell whether
@@ -25,7 +25,7 @@ import (
 //	✓ proj          a turn finished and you have not looked yet
 //	proj            idle
 //
-// THE END OF A TURN IS A SIGNAL, NOT JUST THE ABSENCE OF ●  (Greg, 2026-09-27:
+// THE END OF A TURN IS A SIGNAL, NOT JUST THE ABSENCE OF ●  (the maintainer, 2026-09-27:
 // "signal the end of a turn from tab"). A dot that quietly disappears is easy
 // to miss across a row of tabs; a turn that took four minutes deserves to be
 // noticed the moment it lands. So the title keeps a ✓ until the next key or the
@@ -54,7 +54,7 @@ func (m Model) windowTitle() string {
 	}
 }
 
-// spinFrames turn the running mark (Greg, 2026-09-27: "it should be a spinning
+// spinFrames turn the running mark (the maintainer, 2026-09-27: "it should be a spinning
 // circle when it's running"): a still dot reads the same as a stuck one.
 var spinFrames = []string{"◐", "◓", "◑", "◒"}
 

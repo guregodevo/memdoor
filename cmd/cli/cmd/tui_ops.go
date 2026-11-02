@@ -118,7 +118,7 @@ func readBrain(c *Client) brainRead {
 
 // brainGate says why a turn cannot run yet, or nothing.
 //
-// "We should block user until brain is on" (Greg, 2026-09-18): a turn sent
+// "We should block user until brain is on" (the maintainer, 2026-09-18): a turn sent
 // where no model can answer fails at once and reads as broken software, so
 // the gate names the step that connects one — the person's own key, the
 // only way to a model (2026-10-04).
@@ -137,12 +137,12 @@ func brainGate(state string) string {
 }
 
 // tuiUsage answers /usage: this month's turns from the local meter and what
-// the decision model kept out of them (pkg/savings). Greg, 2026-09-27:
+// the decision model kept out of them (pkg/savings). The maintainer, 2026-09-27:
 // "let's focus on cheaper by efficiency" — this is where a person looks for
 // the number that justifies the ten dollars. Only the header differs between
 // a seat and the person's own key; tokens, never the seat's money.
 func tuiUsage() (string, error) {
-	// THE KEY IS ANY PROVIDER'S (Greg, 2026-10-03: "stop with openrouter"):
+	// THE KEY IS ANY PROVIDER'S (the maintainer, 2026-10-03: "stop with openrouter"):
 	// the header names the provider that answers, as `memdoor providers`
 	// marks it, never one vendor by default.
 	own := ownKeyLabel()
@@ -456,7 +456,7 @@ func tuiRoute(workspace, channelID, agent string) func(arg string) (string, erro
 			} else if arg != "auto" {
 				return "", fmt.Errorf("/model takes a rung number, a model id (vendor/name) or auto")
 			}
-			// A PINNED MODEL IS 1 (Greg, 2026-10-03: "why i dont see it as
+			// A PINNED MODEL IS 1 (the maintainer, 2026-10-03: "why i dont see it as
 			// 1"): the list shows it first and the ladder after it, so the
 			// numbers typed are the numbers shown — 1 keeps the pin, n>1 is
 			// the ladder's rung n-1.
@@ -493,7 +493,7 @@ func tuiRoute(workspace, channelID, agent string) func(arg string) (string, erro
 			fmt.Fprintf(&b, "→ 1  %s   ← %s%s\n", shown, rv.Reason, pref)
 		}
 		// Each rung names the provider that serves it, as the gateway states
-		// per rung (Greg, 2026-10-03: rung 2 is "deepseek/…" served by
+		// per rung (the maintainer, 2026-10-03: rung 2 is "deepseek/…" served by
 		// OpenRouter): "2  openrouter · deepseek/deepseek-v4.1-flash".
 		for i, m := range rv.Rungs {
 			mark := "  "
@@ -518,7 +518,7 @@ func tuiRoute(workspace, channelID, agent string) func(arg string) (string, erro
 		} else {
 			b.WriteString("This agent has one rung; /model <vendor/name> pins another model (/model-search finds one).")
 		}
-		// The other providers (Greg, 2026-10-03, after /connect xai showed
+		// The other providers (the maintainer, 2026-10-03, after /connect xai showed
 		// nothing here): what is connected and how to pin one of its models,
 		// and what is not and how to connect it.
 		if rows := listProviders(); len(rows) > 0 {
@@ -783,7 +783,7 @@ func modelInCatalogue(id string) (string, error) {
 	}
 	// The search is a substring match, so an empty result for a full id means
 	// nothing in the catalogue resembles it — often because the provider that
-	// would list it is not connected: say which, and how (Greg, 2026-10-03:
+	// would list it is not connected: say which, and how (the maintainer, 2026-10-03:
 	// "when not connected suggest /connect").
 	if len(models) == 0 {
 		if hint := connectHint(id, listProviders()); hint != "" {

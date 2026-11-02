@@ -11,7 +11,7 @@ import (
 // in one place so per-command init() functions do not each need to know
 // which group they belong to.
 //
-// THE GROUPS SAY WHAT THE PRODUCT IS (Greg, 2026-10-23: "the deamon that owns
+// THE GROUPS SAY WHAT THE PRODUCT IS (the maintainer, 2026-10-23: "the deamon that owns
 // the work is the way to go", "repackage and realign commands product to
 // option 1"). The gateway is the daemon that owns the work; the window, a
 // headless run, a resumed conversation, the phone and the editor are doors

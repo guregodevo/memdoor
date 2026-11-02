@@ -260,7 +260,7 @@ func runTUI(opts tuiOptions) error {
 			return nil
 		}
 		// The way back in, printed where the eye lands after the window
-		// closes (Greg, 2026-10-03: "when the user exits we should see the
+		// closes (the maintainer, 2026-10-03: "when the user exits we should see the
 		// resume command").
 		fmt.Println(resumeLine(channelID))
 		return nil

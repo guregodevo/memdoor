@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { CoderHeader } from './CoderLandingPage';
 import { setMeta } from '../meta';
 
-// THE TABLE STAKES, AND WHO ELSE HAS THEM (2026-09-28, Greg: "compare our
+// THE TABLE STAKES, AND WHO ELSE HAS THEM (2026-09-28, the maintainer: "compare our
 // features with top 10 coding agents"). Every "also in" comes from that agent's
 // own README or docs, read on 2026-09-28; an agent missing from a row is not
 // a claim that it lacks the feature, only that its docs did not say so where
@@ -29,7 +29,7 @@ export const SHARED: { feature: string; detail: string; also: string }[] = [
   { feature: 'Sandbox around commands', detail: 'no, by choice: file tools stay in your project and commands start there', also: 'Claude Code, Codex CLI, Gemini CLI' },
 ];
 
-// THE DOORS (Greg, 2026-10-12: "one gateway, every door" on every page): every
+// THE DOORS (the maintainer, 2026-10-12: "one gateway, every door" on every page): every
 // run is a conversation on a gateway on your machine, and each surface is a
 // door onto the same one (docs/headless.md).
 export const DOORS: { feature: string; detail: string }[] = [
@@ -60,7 +60,7 @@ export const ONLY: { feature: string; detail: string }[] = [
 ];
 
 
-// FeaturesPage is /features (Greg, 2026-09-28: "no scope creep in landing
+// FeaturesPage is /features (the maintainer, 2026-09-28: "no scope creep in landing
 // page", "we need a page features with the top features"): the landing stays
 // one claim about one coding agent; the full list lives here.
 export function FeaturesPage() {
@@ -123,7 +123,7 @@ export function FeaturesPage() {
           ))}
         </div>
 
-        {/* Remote control has a block of its own (Greg, 2026-09-29: "the /remote
+        {/* Remote control has a block of its own (the maintainer, 2026-09-29: "the /remote
             is a killer feature", "let's add /remote in features page"). */}
         <h2 className="mb-6 text-center text-2xl font-bold tracking-tight text-neutral-900">
           The same terminal, on your phone

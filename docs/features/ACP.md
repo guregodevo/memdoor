@@ -10,7 +10,7 @@ extension (for example "ACP Client", id `formulahendry.acp-client`):
 "acp.agents": { "Memdoor": { "command": "memdoor", "args": ["acp"] } }
 ```
 
-What it is (2026-10-10, Greg: "i want to be able to use the agents with VS
+What it is (2026-10-10, the maintainer: "i want to be able to use the agents with VS
 code", "this acp should not be too intrusive"): a thin client of the local
 gateway, like the window and the remote-control page — `cmd/cli/cmd/acp.go`
 and `acp_agent.go`, nothing in the gateway, the tools or the TUI changed.

@@ -13,7 +13,7 @@ import (
 	"memdoor/tools"
 )
 
-// THE AGENT SCHEDULES ITS OWN WAKE-UP (Greg, 2026-10-01: "we should have cron
+// THE AGENT SCHEDULES ITS OWN WAKE-UP (the maintainer, 2026-10-01: "we should have cron
 // tool so that an agent can repeat a check for example every x seconds", "like
 // the polling cron"). Waiting inside a turn burns the turn: a sleep holds the
 // model, the window, and the person. Scheduling a check hands the time back —

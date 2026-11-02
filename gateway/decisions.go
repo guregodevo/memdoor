@@ -25,8 +25,8 @@ import (
 // Decision models, the OpenClaw way: providers sit behind one service,
 // consumers call one Evaluate and handle "unavailable" themselves. Nothing
 // here ever turns a missing decision model into a chat completion. There is
-// no switch (Greg, 2026-09-29: "remove the toggle on and off"). JEV IS NOT
-// PRO (Greg, 2026-10-03: "Jev at user key by default", "jev decision model is
+// no switch (the maintainer, 2026-09-29: "remove the toggle on and off"). JEV IS NOT
+// PRO (the maintainer, 2026-10-03: "Jev at user key by default", "jev decision model is
 // not pro"): a decision key, or the person's own OpenRouter key, judges —
 // never a seat through the broker (no seat supplies a key, 2026-10-04) — and
 // otherwise nothing is judged (autoDecisionModel, decision_model.go).
@@ -84,7 +84,7 @@ func newDecisionService(read func(key string) string) (decision.Service, error) 
 // codingKey says it is the latter: on a company's vendor key that one must not
 // be used, since nothing but the vendor may be contacted (autoDecisionModel).
 //
-// THE CODING KEY JUDGES BY DEFAULT (Greg, 2026-10-03: "Jev at user key by
+// THE CODING KEY JUDGES BY DEFAULT (the maintainer, 2026-10-03: "Jev at user key by
 // default", "jev decision model is not pro"). This reverses 2026-09-27, when
 // the decision model was what a seat bought: Pi 1.0 hands any user Jev on
 // their own key, so selling access to it is selling nothing.
@@ -92,7 +92,7 @@ func systemOneFromEnv() (p decision.Provider, codingKey bool) {
 	key, base, model := "", os.Getenv(envSystemOneURL), os.Getenv(envSystemOneModel)
 	// A DECISION PROVIDER FIRST, connected or from the environment
 	// (`memdoor connect typesafe`, providers/registry.go): Jev on its own
-	// key, whatever provider answers the chat (Greg, 2026-10-03: "how pi do
+	// key, whatever provider answers the chat (the maintainer, 2026-10-03: "how pi do
 	// without OpenRouter?" → decisions need no OpenRouter account).
 	if dp, ok := providers.DecisionProvider(); ok {
 		key = dp.Key

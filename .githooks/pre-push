@@ -1,0 +1,5 @@
+#!/bin/sh
+# Installed by `make hooks`. The repo is public: nothing leaves with a secret.
+OPS="${MEMDOOR_OPS:-$HOME/Dev/memdoor-ops}"
+[ -f "$OPS/scan-patterns" ] && export MEMDOOR_SCAN_PATTERNS="$OPS/scan-patterns"
+exec make -s scan

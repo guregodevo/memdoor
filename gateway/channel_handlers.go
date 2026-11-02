@@ -32,7 +32,7 @@ func (cs *ChatServer) handleRooms(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// The signed-in user's workspace, pinned by the auth middleware: a
-		// person lists the channels of their workspace and no other (Greg,
+		// person lists the channels of their workspace and no other (the maintainer,
 		// 2026-10-20: "one user one workspace").
 		allChannels, err := cs.channelRepo.ListActive(r.Context(), requestWorkspace(r.Context()), shared.AllPages())
 		if err != nil {

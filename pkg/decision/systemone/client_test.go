@@ -105,7 +105,7 @@ func TestHTTPStatusClassification(t *testing.T) {
 	}
 }
 
-// If there is a Jev model, use it, otherwise don't (Greg, 2026-10-03): a key
+// If there is a Jev model, use it, otherwise don't (the maintainer, 2026-10-03): a key
 // the endpoint refuses stands the client down, so a turn does not ask again on
 // every call; a transient failure does not.
 func TestARefusedKeyStandsDown(t *testing.T) {

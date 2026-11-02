@@ -26,8 +26,8 @@ note	the runs marked cut-at-2h-run-cap hit memdoor workflow run's default 2h clo
 p3	arc196_c	-	no code	$0.000	0 tokens
 note	runs marked stopped-for-20min-client-fix were stopped mid-run to restart the gateway with workflow calls on their own clock (the providers' 20-minute total per request cut long thinking calls); rerun
 p2	arc196_c	-	no code	$0.000	0 tokens
-p2	arc196_c	verdict from the run cut at the 2h run clock after worker 2: its solution passed 43/43 hidden; not rerun (Greg: no need to rerun a cut run that passed)
-note	p3 arc196_c arc196_d arc196_b abc400_g stopped at 23:15 (Greg: pause; slow hosts), kept as *.paused-slow-hosts, rerun later
+p2	arc196_c	verdict from the run cut at the 2h run clock after worker 2: its solution passed 43/43 hidden; not rerun (the maintainer: no need to rerun a cut run that passed)
+note	p3 arc196_c arc196_d arc196_b abc400_g stopped at 23:15 (the maintainer: pause; slow hosts), kept as *.paused-slow-hosts, rerun later
 p3	abc400_e	1/1	5/5	$0.056	20081 tokens
 p3	3765	2/2	42/42	$0.138	57973 tokens
 p4	3717	2/2	42/42	$0.134	58044 tokens

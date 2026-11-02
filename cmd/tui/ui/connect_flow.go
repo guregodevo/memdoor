@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// /connect — a provider from inside the window (Greg, 2026-10-02: "i dont
+// /connect — a provider from inside the window (the maintainer, 2026-10-02: "i dont
 // see the /connect … omp does it with a slash command right?"). omp's
 // /login is a provider list, then "Paste your X API key", then "✓ logged in
 // to X". Here: pick the kind (1-5, as the ask_user_question picker), the
@@ -33,7 +33,7 @@ const (
 )
 
 var ConnectKinds = []ConnectKind{
-	// Sign in with OpenRouter (2026-10-31, Greg: "they dont know the key"):
+	// Sign in with OpenRouter (2026-10-31, the maintainer: "they dont know the key"):
 	// first, so Enter on an empty machine signs in instead of asking for a
 	// key a newcomer does not have (gateway/providers_openrouter_login.go).
 	{KindOpenRouterLogin, "Sign in with OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "no key? sign in or sign up free in the browser", false, "", false},
@@ -50,7 +50,7 @@ var ConnectKinds = []ConnectKind{
 	{"groq", "Groq", "chat", "https://api.groq.com/openai/v1", "an API key from console.groq.com", false, "GROQ_API_KEY", false},
 	{"deepseek", "DeepSeek", "chat", "https://api.deepseek.com/v1", "an API key from platform.deepseek.com", false, "DEEPSEEK_API_KEY", false},
 	{"typesafe", "TypeSafe (Jev, decisions)", "decisions", "https://api.typesafe.ai", "a key from typesafe.ai: the decision model, with any chat provider", false, "TYPESAFE_API_KEY", false},
-	// A local runtime (2026-10-25, Greg: "janis should work like a llama.cpp or
+	// A local runtime (2026-10-25, the maintainer: "janis should work like a llama.cpp or
 	// ollama, independent from memdoor"): an OpenAI-compatible server on this
 	// machine or the box, no token; nothing leaves the machine it runs on.
 	{"local", "Local runtime (janis, Ollama, llama.cpp, LM Studio)", "chat", "", "blank finds one on the gateway's machine (janis :8090, Ollama :11434, llama.cpp :8080, LM Studio :1234); or its address; no key", true, "", true},
@@ -127,7 +127,7 @@ type ConnectOps struct {
 	// Found is the model keys already on this machine (this shell under any
 	// name, the project's .env), one label each ("OpenRouter  $MY_OR_KEY"),
 	// listed before the kinds; ConnectFound probes and keeps the i-th
-	// (cmd/cli/cmd/connect_found.go, Greg 2026-10-31: "scan keys").
+	// (cmd/cli/cmd/connect_found.go, the maintainer 2026-10-31: "scan keys").
 	Found        func() []string
 	ConnectFound func(i int) (ConnectResult, error)
 }
@@ -317,7 +317,7 @@ func (m *Model) connectPrefill() {
 		m.input.SetValue(f.kind.Base)
 		m.input.CursorEnd()
 	case connectStepKey:
-		// The variable NAME, prefilled (Greg, 2026-10-03: "prefill default
+		// The variable NAME, prefilled (the maintainer, 2026-10-03: "prefill default
 		// KEY NAME or value if you find it … unless it's not obvious like for
 		// company gateway"): the kind's usual name, or the one the gateway
 		// already holds — Enter keeps it. The value itself is never on screen.

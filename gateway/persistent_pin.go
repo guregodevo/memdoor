@@ -10,7 +10,7 @@ import (
 	"memdoor/pkg/shared"
 )
 
-// THE PIN STAYS (Greg, 2026-10-03: "it didnt pin it when i opened another
+// THE PIN STAYS (the maintainer, 2026-10-03: "it didnt pin it when i opened another
 // session" → "it stays persistent", "the pin does not depend on workdir").
 // A pin used to belong to the conversation, and a new window started fresh
 // on the first rung. Now `/model` also writes the pin to the gateway's
@@ -138,7 +138,7 @@ func applyPersistentPin(actor string, sessions ...*Session) bool {
 
 // pinsToPlan moves each kept pin on the OpenAI key ("openai:<id>") that the
 // signed-in plan also lists to the plan ("chatgpt:<id>"), and says which it
-// moved. Signing in with ChatGPT is choosing the plan over the key (Greg,
+// moved. Signing in with ChatGPT is choosing the plan over the key (the maintainer,
 // 2026-10-31: a pin kept from before billed the API for a model the plan
 // serves); a pin on an id only the key lists stays where it is.
 func pinsToPlan(plan []providers.Model) []string {

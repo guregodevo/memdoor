@@ -5,15 +5,19 @@ description: Deploy Memdoor to production VPS
 
 # Deploy Skill
 
-Deploy Memdoor to production at `memdoor.ai`.
+Deploy Memdoor to production at `memdoor.ai`. This repository is the source
+of truth (2026-11-02); the deploy script, the server's name and the nginx
+routes live in memdoor-ops, a private repo beside it.
 
 ## Full Deploy (code + rebuild)
 
 ```bash
-source .envrc && ./scripts/deploy.sh
+make -C ~/Dev/memdoor-ops deploy        # builds ~/Dev/memdoor at its pushed main, tags it, ships
 ```
 
-Syncs code, builds on VPS, restarts gateway. Does NOT sync data or the DB. The
+Syncs code, builds on VPS, restarts gateway. HEAD must be `origin/main`: the
+tag the deploy makes names public code. Never run it from a turn of the
+coder (the gateway it restarts is the one running the turn). Does NOT sync data or the DB. The
 flag that used to push a workspace's data (reset → rsync → reindex) went with
 the CLI it called, so deploy takes no other flag now.
 

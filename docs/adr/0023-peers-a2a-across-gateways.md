@@ -1,6 +1,6 @@
 # ADR-0023: Peers: an agent on another gateway, asked by name, answering into the thread
 
-Date: 2026-10-24 (Greg: "it should be a2a with reply across gateway") ·
+Date: 2026-10-24 (the maintainer: "it should be a2a with reply across gateway") ·
 Status: accepted, experimental. Record: `docs/features/PEERS.md`,
 `pkg/message/peers.go`, `gateway/peers.go`, `cmd/cli/cmd/peers.go`.
 

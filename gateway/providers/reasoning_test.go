@@ -44,3 +44,37 @@ func TestEffortIsSentOnlyToAModelThatTakesIt(t *testing.T) {
 		t.Fatalf("reasoning sent = %v, want [{effort:low} nil nil]", sent)
 	}
 }
+
+// A model whose thinking is mandatory refuses "thinking off" with a 400; the
+// request is sent once more with effort low, and the step gets its answer.
+func TestMandatoryReasoningIsAskedAgainWithLowEffort(t *testing.T) {
+	var sent []map[string]any
+	c, done := oaiTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Reasoning map[string]any `json:"reasoning"`
+		}
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		sent = append(sent, body.Reasoning)
+		if body.Reasoning["enabled"] == false {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, `{"error":{"message":"Reasoning is mandatory for this endpoint and cannot be disabled.","code":400}}`)
+			return
+		}
+		sse(w, `{"choices":[{"index":0,"delta":{"content":"OK"}}]}`, `{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":1}}`)
+	})
+	defer done()
+	c.(*oaiClient).attribute = true
+	old := reasoningSupport
+	t.Cleanup(func() { reasoningSupport = old })
+	reasoningSupport = func(string) bool { return true }
+	params := llm.MessageNewParams{MaxTokens: 8, Messages: []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("hi"))}}
+	off := context.WithValue(context.Background(), sharedctx.EffortKey, "off")
+	msg, err := c.Messages().New(off, params)
+	if err != nil || msg.Content[0].Text != "OK" {
+		t.Fatalf("the step is answered: err=%v", err)
+	}
+	if len(sent) != 2 || sent[0]["enabled"] != false || sent[1]["effort"] != "low" {
+		t.Fatalf("reasoning sent = %v, want [{enabled:false} {effort:low}]", sent)
+	}
+}

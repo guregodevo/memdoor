@@ -14,7 +14,7 @@ import (
 	"memdoor/tools"
 )
 
-// Greg, 2026-10-02: a company that approves coding agents forbids "the
+// The maintainer, 2026-10-02: a company that approves coding agents forbids "the
 // default yolo mode". With MEMDOOR_APPROVE=changes a tool that changes or
 // runs something waits for the person's answer through the picker; "no"
 // ends the call with a result the model can act on, "always" keeps the tool

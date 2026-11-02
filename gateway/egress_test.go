@@ -10,7 +10,7 @@ import (
 )
 
 // Every host the binary can name is in docs/SECURITY.md, the page a company's
-// security reviewer reads (Greg, 2026-10-02: a monitored laptop allows a tool
+// security reviewer reads (the maintainer, 2026-10-02: a monitored laptop allows a tool
 // only when where its data goes is known). A new host literal anywhere in
 // non-test Go — a call, a default, a tool's description — fails this test
 // until the page says what it is and when, if ever, it is contacted.

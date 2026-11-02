@@ -21,7 +21,7 @@ func TestARunningTurnAlwaysSaysEscStopsIt(t *testing.T) {
 	}
 }
 
-// THE CODER'S EMPTY BOX SHOWS THE NEXT THING (Greg, 2026-09-27: "contextual
+// THE CODER'S EMPTY BOX SHOWS THE NEXT THING (the maintainer, 2026-09-27: "contextual
 // hint in the input. the next action. The hint for free user to upgrade. The
 // hint for slash command that can be useful with jev"). One line, from what
 // just happened; and an upgrade line is information Tab can never send.
@@ -70,7 +70,7 @@ func TestTheCoderHintIsTheNextThing(t *testing.T) {
 }
 
 // No decision model: the empty input says how to connect one, and Tab
-// sends nothing (Greg, 2026-10-03: "we should have a hint for users to
+// sends nothing (the maintainer, 2026-10-03: "we should have a hint for users to
 // connect").
 func TestTheHintSaysHowToConnectDecisions(t *testing.T) {
 	m := NewPage(PageConfig{GatewayAddr: "http://x", Workspace: "w", ChannelID: "c", Agent: "coder", Plan: "free", DecisionsOff: true})

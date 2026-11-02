@@ -4,7 +4,7 @@ The coder can use tools from MCP servers the person connects: their issue
 tracker, database, docs, any service with an MCP server. Added in the
 TUI with `/mcp`, or from a shell with `memdoor mcp`.
 
-Decided 2026-10-01 (Greg), after reading omp's MCP support
+Decided 2026-10-01 (the maintainer), after reading omp's MCP support
 (`~/Dev/oh-my-pi/packages/coding-agent/src/mcp`): its auth detection and
 sign-in screen are copied, its rough edges are not (transport asked by
 hand, failures saved silently, a thin status list, a repo's servers
@@ -157,7 +157,7 @@ completion; a tool list that changes while connected
 - `@modelcontextprotocol/server-everything` over stdio: 13 tools, `echo`.
 - Linear and Notion: needs sign-in detected, discovery, client
   registration and the authorize URL; the panel's sign-in screen.
-- A real sign-in end to end, approved in the browser on Greg's account:
+- A real sign-in end to end, approved in the browser on the maintainer's account:
   "It works" (2026-10-01).
 - A refused add: `nosuchbinary-xyz`, `cat` ("did not answer the MCP
   handshake — is it an MCP server?"), `https://example.com/mcp` ("connection

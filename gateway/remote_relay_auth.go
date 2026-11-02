@@ -16,7 +16,7 @@ import (
 // of it. So a token this gateway issued names its user, and any other token
 // is asked of billing's GET /v1/me, whose workspace is the account.
 //
-// On the hosted relay remote control is Pro (Greg, 2026-10-04: "Remote should
+// On the hosted relay remote control is Pro (the maintainer, 2026-10-04: "Remote should
 // be pro only"; it was free on every plan from 2026-09-29): billing's answer
 // carries the plan, and an account without a seat is refused with what to do.
 // A gateway relaying for its own users (a token it issued, someone hosting

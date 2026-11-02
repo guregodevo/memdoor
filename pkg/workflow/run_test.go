@@ -604,7 +604,7 @@ func TestLoadRefusesACycle(t *testing.T) {
 }
 
 // `model:` on an agent task is part of the task: the runner pins the
-// task's session with it (a workflow on Groq, Greg 2026-10-02).
+// task's session with it (a workflow on Groq, the maintainer 2026-10-02).
 func TestAnAgentTaskCarriesItsModel(t *testing.T) {
 	dir := t.TempDir()
 	p := filepath.Join(dir, "steps", "write.yaml")

@@ -1,7 +1,7 @@
 // Package savings is the receipt for the one claim Memdoor makes: that the
 // decision model makes the same work cost less (docs/features/DECIDE.md).
 //
-// Greg, 2026-09-27, reading OpenRouter's app ranking: "let's focus on cheaper
+// The maintainer, 2026-09-27, reading OpenRouter's app ranking: "let's focus on cheaper
 // by efficiency". A claim measured once in a lab is marketing; a claim measured
 // on the person's own turns, every turn, is a receipt they can check against
 // their provider's invoice. So every place that drops bytes before they reach a

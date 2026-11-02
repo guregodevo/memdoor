@@ -33,7 +33,7 @@ import (
 	"memdoor/pkg/workflow"
 )
 
-// THE ORCHESTRATOR (ADR-0019; Greg, 2026-10-02: "cron is the schedule.
+// THE ORCHESTRATOR (ADR-0019; the maintainer, 2026-10-02: "cron is the schedule.
 // workflow + mario is the orchestrator"). A workflow is .memdoor/workflows/<name>.yaml
 // in the project the TUI was launched from: a DAG of tasks, each one bounded
 // turn of an agent, each done when its target exists. pkg/workflow runs it
@@ -105,7 +105,7 @@ func (s *Server) workflows() *workflowRuns {
 // (infra.EventEmitter, a callback seam); a run listens for the tool calls
 // of ITS tasks' turns — a turn runs under "workflow:<wf>:<partition>:<task>"
 // — and relays them into the window as a progress line under the task, so a
-// running task is not a frozen ▶ for two minutes (Greg: "more events
+// running task is not a frozen ▶ for two minutes (the maintainer: "more events
 // emitted and updates in real time").
 func (s *Server) listen(run *workflowRun) func() {
 	if s.broadcaster == nil || s.agent == nil || s.agent.events == nil {
@@ -658,7 +658,7 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 // project (.memdoor/workflows/<name>/) or a path to any directory of task YAML — one
 // a person committed, or one an agent just wrote for this run.
 // workflowPartition names the partition a run is for. A run is fresh by
-// default (Greg: "fresh is the default") — its own partition, the moment it
+// default (the maintainer: "fresh is the default") — its own partition, the moment it
 // started, so nothing from an earlier run is taken as done. Naming an
 // earlier run's partition resumes it: what it finished is skipped, what it
 // did not runs. "today" is the day, for a DAG meant to run once a day.
@@ -672,7 +672,7 @@ func workflowPartition(asked string) string {
 	return strings.TrimSpace(asked)
 }
 
-// LOCAL RUNS ARE FREE (Greg, 2026-10-04: "everyone can run schedule with
+// LOCAL RUNS ARE FREE (the maintainer, 2026-10-04: "everyone can run schedule with
 // local cron"; Pro is the hosted scheduler — schedules with the laptop off
 // and external dependencies across workspaces). The 2026-10-02 seat check
 // on starting a run is gone.
@@ -922,7 +922,7 @@ func (s *Server) approveWorkflowTask(id, task string) (*workflowRun, error) {
 	return run, nil
 }
 
-// REQUEST CHANGES AT A GATE (Greg, 2026-10-03: "Workflow need hil"). A
+// REQUEST CHANGES AT A GATE (the maintainer, 2026-10-03: "Workflow need hil"). A
 // reviewer who will not approve says why; the step they name runs again
 // with its own prompt and the comment, then every agent step after it that
 // leads to the gate, and the run comes back to the same gate. Nothing in
@@ -1197,7 +1197,7 @@ func oneLine(s string, max int) string {
 	return s
 }
 
-// THE RUN TABLE (Greg, 2026-10-03: "runs you can see later"). A run is
+// THE RUN TABLE (the maintainer, 2026-10-03: "runs you can see later"). A run is
 // readable after the gateway that ran it is gone: mario's sqlite repository,
 // one per project, at .memdoor/runs.db beside the run outputs. A person who
 // runs a workflow on Monday reads what it did on Friday.

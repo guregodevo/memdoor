@@ -17,7 +17,7 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-// REMOTE CONTROL (Greg, 2026-09-28: "remote control"): /remote gives this
+// REMOTE CONTROL (the maintainer, 2026-09-28: "remote control"): /remote gives this
 // conversation a link and a QR code to open it on another device, and the
 // TUI runs the terminal side of the relay while the conversation is open.
 //

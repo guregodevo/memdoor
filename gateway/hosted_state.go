@@ -24,7 +24,7 @@ import (
 // THE HOSTED STATE (Pro, 2026-10-05). A Pro account keeps EVERY run's state
 // in mario-state on memdoor.ai — one table per workspace, written by every
 // project and every person on it — instead of the project's .memdoor/runs.db.
-// The workspace is the unit of sharing (Greg: "a project id is a workspace",
+// The workspace is the unit of sharing (the maintainer: "a project id is a workspace",
 // "a user has its workspace"): an `external: true` task of one workflow is a
 // task another workflow of the workspace produced, by name and partition, as
 // in mario, from whichever machine ran it. Where the state lives is decided
@@ -187,7 +187,7 @@ func (h *hostedState) repository() (mario.WorkflowRepository, error) {
 		case h.knownPlan(token) != "":
 			// THE PLAN LAST NAMED STANDS THROUGH AN OUTAGE: a Pro account's
 			// run is never local, a free account's never blocked, because
-			// of a billing service that is down (strict, Greg 2026-10-05:
+			// of a billing service that is down (strict, the maintainer 2026-10-05:
 			// "it's structural").
 			h.plan, h.checked = h.knownPlan(token), h.now()
 			log.Warn("billing did not answer; the plan it last named stands", slog.String("plan", string(h.plan)), slog.String("error", err.Error()))

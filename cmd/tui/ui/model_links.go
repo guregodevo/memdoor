@@ -9,7 +9,7 @@ import (
 
 // model_links: every path and URL the TUI shows is clickable.
 //
-// Greg, 2026-09-02: "the links are always clickable, the path as well". A
+// The maintainer, 2026-09-02: "the links are always clickable, the path as well". A
 // person reads "/Users/…/main.go:42" in a tool frame and wants to open it,
 // not retype it. OSC 8 hyperlinks make that a cmd-click in Ghostty, kitty,
 // WezTerm, iTerm2; terminals that ignore OSC 8 show the plain text. The
@@ -23,7 +23,7 @@ var linkTargets = regexp.MustCompile(`(https?://[^\s<>"')\]]+)|((?:~|/)[\w.\-+@%
 // bareFiles finds a file name the model wrote without a directory —
 // "REVIEW.md", "notes.txt", "out.json" — when it is not
 // already part of a path (the character before it is not "/" or "~"). An
-// agent names its outputs relative to the session directory (Greg,
+// agent names its outputs relative to the session directory (the maintainer,
 // 2026-09-03: "the files should be clickable"); such a name links only when
 // the file exists there, so "app.js" in prose about code stays plain.
 var bareFiles = regexp.MustCompile(`(^|[\s(\[{"'` + "`" + `,;:])([\w][\w.\-]*\.(?:gif|jpg|jpeg|png|webp|txt|json|md|csv|pdf))\b`)

@@ -1,6 +1,6 @@
 # ADR-0020: Every request goes through a provider; a seat never supplies a key
 
-Date: 2026-10-02 (providers, each with a list) · 2026-10-04 (Greg: "no
+Date: 2026-10-02 (providers, each with a list) · 2026-10-04 (the maintainer: "no
 exception. all request for llm goes through provider"; "a seat never
 supplies a model key") · Status: accepted, in force. Record:
 `docs/features/PROVIDERS.md`, `gateway/providers/`.
