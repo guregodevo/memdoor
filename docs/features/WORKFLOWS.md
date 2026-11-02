@@ -213,7 +213,7 @@ name the seed did not write is left alone.
 |---|---|---|
 | `pr-review` | The change (a PR against its base, else the branch or the last commit) reviewed by the coder with the `review` skill, verified by running; `.memdoor/runs/pr-review-<partition>.md` with **P0**/**P1**/**P2** findings | there is a P0: what must not merge |
 | `fix-tests` | The project's test command (`$MEMDOOR_TEST_COMMAND`, else found from go.mod, Cargo.toml, package.json, pyproject.toml, a Makefile); when it fails, the coder fixes the code and reruns until it passes; the fix stays in the working tree, the report in `.memdoor/runs/fix-tests-<partition>.md` | the tests still fail |
-| `team-solve` | A programming problem (`task.md`, `tests/N.in`/`.out`; an empty folder gets the sample) solved by GVS5H's team of fresh contexts: plan, two ideators, solve, test, review, repair; the steps name no model, so a local one answers (2026-11-01) | `verify`: a sample differs |
+| `team-solve-enhanced` | A programming problem (`task.md`, `tests/N.in`/`.out`; an empty folder gets the sample) solved by GVS5H's team of fresh contexts: plan, two ideators, solve, test, review, repair; the steps name no model, so a local one answers (2026-11-01) | `verify`: a sample differs |
 | `release-notes` | Every commit since the tag before the release (the partition, else HEAD) into `.memdoor/runs/release-notes-<partition>.md`: Added / Changed / Fixed, what a person notices | — |
 
 Receipt, 2026-10-27, each through the action's own step on a fresh HOME:

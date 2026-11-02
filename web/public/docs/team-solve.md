@@ -62,11 +62,13 @@ curl -fsSL https://memdoor.ai/install.sh | bash
 memdoor connect openrouter          # or anthropic, openai, gemini, chatgpt
 memdoor connect local               # or no key: a model on this machine (Ollama, llama.cpp, vLLM, LM Studio)
 mkdir my-problem && cd my-problem
-memdoor workflow run team-solve --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
+memdoor workflow run team-solve-enhanced --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
 ```
 
-`team-solve` ships in the binary, seeded into `~/.memdoor/workflows` at the
-gateway's first boot. Your problem: `task.md` and paired `tests/N.in` /
+`team-solve-enhanced`, the built-in version of this workflow, ships in the
+binary, seeded into `~/.memdoor/workflows` at the gateway's first boot. The
+published runs used the steps in `examples/workflows/team-solve`, kept as they
+were. Your problem: `task.md` and paired `tests/N.in` /
 `tests/N.out` in the folder. Program:
 `solution.py`, stdin in, compared to the samples with `diff`. The steps name
 no model; the `/model` pin answers, a local one included.

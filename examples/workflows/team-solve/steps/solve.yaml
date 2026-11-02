@@ -1,0 +1,16 @@
+type: agent
+agent: coder
+requires:
+  - table_pattern: ideate-a
+  - table_pattern: ideate-b
+prompt: |
+  You are the solver in a fresh context. Read task.md, plan.md, and notes.md
+  from disk, including both proposals. Select and justify an approach in the
+  Solver decision section of notes.md, with a brief correctness argument and
+  complexity. Write the complete solution.py using Python's standard library,
+  reading stdin and printing only the answer. Meet the stated constraints.
+  Run solution.py on at least one sample to verify it executes. Do not change
+  the problem or sample tests. The downstream command runs all samples and
+  the manager owns any repair round. Do not spawn agents or use chat context.
+timeout: 10m
+max_retries: 1

@@ -1,8 +1,8 @@
 type: command
 command: |
   if [ ! -f task.md ]; then
-    src=.memdoor/workflows/team-solve/sample
-    [ -d "$src" ] || src="$HOME/.memdoor/workflows/team-solve/sample"
+    src=.memdoor/workflows/team-solve-enhanced/sample
+    [ -d "$src" ] || src="$HOME/.memdoor/workflows/team-solve-enhanced/sample"
     cp -R "$src"/. . && printf 'no task.md here: the sample problem was copied in (task.md, tests/)\n'
   fi
   ls tests/*.in > /dev/null

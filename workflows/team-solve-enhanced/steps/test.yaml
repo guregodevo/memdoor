@@ -1,0 +1,13 @@
+type: command
+requires:
+  - table_pattern: solve
+command: |
+  check=.memdoor/workflows/team-solve-enhanced/check-samples.sh
+  [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-enhanced/check-samples.sh"
+  bash "$check" > test-output.log 2>&1
+  result=$?
+  printf '%s\n' "$result" > test-status.txt
+  cat test-output.log
+  printf 'Initial sample-test exit status: %s\n' "$result"
+timeout: 5m
+max_retries: 0

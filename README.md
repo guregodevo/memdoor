@@ -170,7 +170,7 @@ Built in:
 - **`issue-triage`**: labels, kind, summary, duplicates.
 - **`fix-tests`**: finds the test command, fixes the code until the tests pass, leaves the fix in the working tree.
 - **`release-notes`**: commits since the last tag as Added / Changed / Fixed.
-- **`team-solve`**: a programming problem solved by a team of fresh contexts, GVS5H's method, on any model, a local one included; the samples decide.
+- **`team-solve-enhanced`**: a programming problem solved by a team of fresh contexts, GVS5H's method with a first step that gives an empty folder the sample, on any model, a local one included; the samples decide.
 
 `local-model: Qwen3-8B-4bit` in place of the key: the model runs inside the
 runner ([janis](https://github.com/guregodevo/janis), one file, cached), one

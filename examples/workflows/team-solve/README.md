@@ -57,20 +57,21 @@ on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
     curl -fsSL https://memdoor.ai/install.sh | bash
     memdoor connect openrouter        # or anthropic, openai, gemini, chatgpt
     # or no key: memdoor connect local   (Ollama, llama.cpp, vLLM, LM Studio; Ollama needs a 32K window, not its 4K default)
-    mkdir my-problem && cd my-problem
-    memdoor workflow run team-solve --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
+    git clone --depth 1 https://github.com/guregodevo/memdoor
 
-`team-solve` ships in the binary ([workflows/team-solve](../../../workflows/team-solve/)),
-seeded into `~/.memdoor/workflows` at the gateway's first boot. No clone, no
-copy. Your problem: `task.md` and paired `tests/N.in` / `tests/N.out` in the
-folder. Program: `solution.py`, stdin in, compared to the samples with `diff`.
-Needs Python 3 and bash. `/workflow` in `memdoor tui` draws the run live. To
-change a role, copy the folder into your project's `.memdoor/workflows/` and
-edit the step; the project's copy wins.
+    mkdir -p ~/.memdoor/workflows
+    cp -r memdoor/examples/workflows/team-solve ~/.memdoor/workflows/
+    mkdir my-problem && cd my-problem
+    cp -r ../memdoor/examples/workflows/team-solve/sample/* .    # task.md + tests/1.in … 5.out
+    memdoor workflow run team-solve --wait   # exit 0 when every sample passes
+
+Your problem: `task.md` and paired `tests/N.in` / `tests/N.out`. Program:
+`solution.py`, stdin in, compared to the samples with `diff`. Needs Python 3
+and bash. `/workflow` in `memdoor tui` draws the run live.
 
 The steps name no model; the `/model` pin answers, a local one included
 ([how to connect one](https://memdoor.ai/docs/providers#a-local-runtime-no-key)).
-A role is its prompt in [`steps/`](../../../workflows/team-solve/steps/).
+A role is its prompt in `steps/`.
 
 ## How it works
 
