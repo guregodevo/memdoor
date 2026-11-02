@@ -48,10 +48,11 @@ func TestPeerAddNeedsASessionAndKeepsThePeer(t *testing.T) {
 	if err != nil || peers["box"].Gateway != srv.URL || peers["box"].Dir != "/srv/app" {
 		t.Fatalf("kept: %+v %v", peers, err)
 	}
-	c, err := peerClient(srv.URL)
+	c, closeTunnel, err := peerClient(context.Background(), srv.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
+	closeTunnel()
 	agents, version, err := peerProbe(c)
 	if err != nil || version != "v1.651.0" || strings.Join(agents, ",") != "chief,coder" {
 		t.Fatalf("probe: %v %s %v", agents, version, err)

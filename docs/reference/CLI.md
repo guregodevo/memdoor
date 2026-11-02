@@ -204,7 +204,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `remove` — Remove a schedule
   - `stats` — How often a schedule ran, and how it went
 - `peers` — memdoor peers                                              each peer: answering or not, its agents
-  - `add` — Name a gateway you are signed in to; @<name>:<agent> reaches it
+  - `add` — Name a gateway you are signed in to; @<name>:<agent> reaches it (an ssh address, ssh://you@box, is a peer too: the turn reaches it through its own tunnel, the box opens nothing)
   - `remove` — Forget a peer (the sign-in stays)
 - `remote` — memdoor remote <id>                    print the link on stdout; the gateway holds the conversation on it
 - `resume` — Resume a previous conversation.
