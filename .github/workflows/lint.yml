@@ -25,6 +25,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v5
 
+    - name: Scan for secrets and personal paths
+      run: make scan
+
     - name: Set up Go
       uses: actions/setup-go@v6
       with:

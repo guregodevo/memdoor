@@ -1,7 +1,6 @@
 <!--
-External pull requests are not merged at this stage (see CONTRIBUTING.md); they
-are read as proposals and closed once answered. If this is one, say what it
-fixes and how to see the problem, so the maintainer can act on it.
+Say what it fixes and how to see the problem. Sign off each commit
+(git commit -s): the Developer Certificate of Origin, see CONTRIBUTING.md.
 -->
 
 **What changes, and why**
