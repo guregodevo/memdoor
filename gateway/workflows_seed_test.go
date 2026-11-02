@@ -98,16 +98,16 @@ func TestSeedKeepsAnEditedStep(t *testing.T) {
 	}
 }
 
-// team-solve-enhanced ships with what its steps run on: the sample problem an
+// team-solve-v2 ships with what its steps run on: the sample problem an
 // empty folder gets, and the check script `test` and `verify` call.
 func TestSeedWritesTeamSolveWithItsSampleAndCheck(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	SeedEmbeddedWorkflows()
-	dir := filepath.Join(home, ".memdoor", "workflows", "team-solve-enhanced")
+	dir := filepath.Join(home, ".memdoor", "workflows", "team-solve-v2")
 	for _, rel := range []string{"check-samples.sh", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
-			t.Fatalf("team-solve-enhanced seeded without %s: %v", rel, err)
+			t.Fatalf("team-solve-v2 seeded without %s: %v", rel, err)
 		}
 	}
 }

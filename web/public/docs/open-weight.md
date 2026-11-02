@@ -93,7 +93,7 @@ local` found:
 
 ```
 mkdir my-problem && cd my-problem
-memdoor workflow run team-solve-enhanced --wait   # built in; an empty folder gets the sample problem
+memdoor workflow run team-solve-v2 --wait   # built in; an empty folder gets the sample problem
 ```
 
 Cost of a hard problem: about 300K output tokens over eight steps, about

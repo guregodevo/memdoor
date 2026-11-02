@@ -2,8 +2,8 @@ type: command
 requires:
   - table_pattern: repair
 command: |
-  check=.memdoor/workflows/team-solve-enhanced/check-samples.sh
-  [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-enhanced/check-samples.sh"
+  check=.memdoor/workflows/team-solve-v2/check-samples.sh
+  [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-v2/check-samples.sh"
   bash "$check" > final-test-output.log 2>&1
   result=$?
   cat final-test-output.log
