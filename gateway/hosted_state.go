@@ -77,7 +77,7 @@ func billingAccount(client *http.Client, base, token string) (workspace string, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("billing refused the token: %s", resp.Status)
+		return "", "", billingRefusal{status: resp.StatusCode, text: resp.Status}
 	}
 	var me struct {
 		Workspace string `json:"workspace"`
@@ -94,6 +94,22 @@ func billingAccount(client *http.Client, base, token string) (workspace string, 
 		return me.Workspace, plan.Free, nil
 	}
 	return me.Workspace, p, nil
+}
+
+// billingRefusal is billing answering the token with a status: 401 is a
+// token it does not know, 410 is memdoor.ai's hosted services switched off
+// (MEMDOOR_HOSTED=off there), which is not an outage.
+type billingRefusal struct {
+	status int
+	text   string
+}
+
+func (e billingRefusal) Error() string { return "billing refused the token: " + e.text }
+
+// hostedServicesOff reports billing saying the hosted services are off.
+func hostedServicesOff(err error) bool {
+	var r billingRefusal
+	return errors.As(err, &r) && r.status == http.StatusGone
 }
 
 // hostedState decides, per run start, whether this gateway's runs live on
@@ -182,6 +198,15 @@ func (h *hostedState) repository() (mario.WorkflowRepository, error) {
 		case err == nil:
 			h.plan, h.checked = p, h.now()
 			h.rememberPlan(token, p)
+		case hostedServicesOff(err):
+			// Not an outage: memdoor.ai runs no hosted state for anyone
+			// while the switch is off, so the run is local whatever the
+			// plan last named (2026-11-02: a Pro machine's runs executed
+			// their last step alone, the state server refusing every read
+			// and the REST client answering an empty graph). Asked again
+			// after the TTL, so the switch going back on is seen.
+			h.plan, h.checked, h.repo = plan.Free, h.now(), nil
+			log.Info("memdoor.ai's hosted services are off: runs keep their state here")
 		case h.plan != "":
 			log.Warn("billing did not answer; the plan last known stands", slog.String("plan", string(h.plan)), slog.String("error", err.Error()))
 		case h.knownPlan(token) != "":
