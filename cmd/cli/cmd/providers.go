@@ -348,11 +348,18 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 			if !term.IsTerminal(int(os.Stdin.Fd())) && pick.Base != "" {
 				base = pick.Base
 			} else {
-				prompt := "Base URL"
-				if pick.Keyless {
-					prompt = "Base URL (blank: find a runtime on the gateway's machine — janis :8090, Ollama :11434, llama.cpp :8080, LM Studio :1234)"
+				if pick.Keyless && term.IsTerminal(int(os.Stdin.Fd())) {
+					var err error
+					if base, err = chooseLocalRuntime(ask, func(t string) { fmt.Print(t) }); err != nil {
+						return err
+					}
+				} else {
+					prompt := "Base URL"
+					if pick.Keyless {
+						prompt = "Base URL (blank: find a runtime on the gateway's machine — janis :8090, Ollama :11434, llama.cpp :8080, LM Studio :1234, vLLM :8000)"
+					}
+					base = ask(prompt, pick.Base)
 				}
-				base = ask(prompt, pick.Base)
 			}
 		}
 		key, _ := cmd.Flags().GetString("key")

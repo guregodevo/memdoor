@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"memdoor/gateway/logs"
@@ -37,6 +39,53 @@ var localRuntimeBases = []string{
 	"http://localhost:11434/v1", // ollama
 	"http://localhost:8080/v1",  // llama-server
 	"http://localhost:1234/v1",  // LM Studio
+	"http://localhost:8000/v1",  // vLLM
+}
+
+// runtimeNames are the runtimes by default port, for the menu.
+var runtimeNames = map[string]string{"8090": "janis", "11434": "Ollama", "8080": "llama.cpp", "1234": "LM Studio", "8000": "vLLM"}
+
+// localRuntime is a default address whose model list answered.
+type localRuntime struct {
+	Name   string `json:"name"`
+	Base   string `json:"base"`
+	Models int    `json:"models"`
+}
+
+// answeringRuntimes asks every default address at once and keeps the ones
+// that list models, in localRuntimeBases order.
+func answeringRuntimes(ctx context.Context) (found []localRuntime, tried []string) {
+	results := make([]*localRuntime, len(localRuntimeBases))
+	var wg sync.WaitGroup
+	for i, base := range localRuntimeBases {
+		tried = append(tried, base)
+		wg.Add(1)
+		go func(i int, base string) {
+			defer wg.Done()
+			pctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			defer cancel()
+			id := fmt.Sprintf("local-probe-%d", i)
+			list, err := providers.ModelsOf(pctx, providers.Provider{ID: id, API: providers.APIChat, Base: base, Keyless: true})
+			providers.ForgetModels(id)
+			if err != nil || len(list) == 0 {
+				return
+			}
+			name := "a model server"
+			if u, err := url.Parse(base); err == nil {
+				if n, ok := runtimeNames[u.Port()]; ok {
+					name = n
+				}
+			}
+			results[i] = &localRuntime{Name: name, Base: base, Models: len(list)}
+		}(i, base)
+	}
+	wg.Wait()
+	for _, r := range results {
+		if r != nil {
+			found = append(found, *r)
+		}
+	}
+	return found, tried
 }
 
 // findLocalRuntime is the first default address whose model list answers.
@@ -97,6 +146,10 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	switch r.Method {
+	case http.MethodGet:
+		found, tried := answeringRuntimes(r.Context())
+		_ = json.NewEncoder(w).Encode(map[string]any{"runtimes": found, "tried": tried})
+		return
 	case http.MethodDelete:
 		id := r.URL.Query().Get("id")
 		if err := providers.RemoveProvider(id); err != nil {
@@ -114,7 +167,7 @@ func (s *Server) handleProvidersConnect(w http.ResponseWriter, r *http.Request) 
 		return
 	case http.MethodPost:
 	default:
-		http.Error(w, `{"error": "POST or DELETE"}`, http.StatusMethodNotAllowed)
+		http.Error(w, `{"error": "GET, POST or DELETE"}`, http.StatusMethodNotAllowed)
 		return
 	}
 	var req connectRequest
