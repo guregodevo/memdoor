@@ -1,6 +1,6 @@
 <!--
 Say what it fixes and how to see the problem. A first pull request signs
-the CLA (CLA.md) when the check asks; once is enough.
+the CLA (CLA.md) with one comment, "I agree to CLA.md"; once is enough.
 -->
 
 **What changes, and why**

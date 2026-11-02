@@ -27,6 +27,6 @@ By signing it you state the following.
 5. **No warranty.** Unless the law requires otherwise, the contribution is
    provided as is, with no warranty of any kind.
 
-You sign once, for every contribution that follows, by stating your
-agreement on your first pull request as the CLA check asks. If the facts in
+You sign once, for every contribution that follows, with one comment on
+your first pull request: "I agree to CLA.md". If the facts in
 point 3 change, say so on the pull request.

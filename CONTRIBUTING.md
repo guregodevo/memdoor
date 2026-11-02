@@ -30,15 +30,17 @@ Before a first pull request is merged, its author signs the
 [CLA](CLA.md), once: the copyright in the contribution is assigned to the
 maintainer (an exclusive, irrevocable licence where the law allows no
 assignment), with a patent licence for what it practises; the author gets a
-licence back to reuse their own work. The CLA check on the pull request
-asks for it.
+licence back to reuse their own work. Until a CLA check runs on pull
+requests, the signature is one comment on the first pull request:
+"I agree to CLA.md".
 
 ## Ownership and licence
 
 The code is copyright the maintainer, guregodevo, and licensed to you under Apache 2.0
-([LICENSE](LICENSE), [NOTICE](NOTICE)). Every merged contribution is his
-copyright too, under the CLA, so the project is one work with one owner,
-who can relicense it. The name and the project stay with him.
+([LICENSE](LICENSE), [NOTICE](NOTICE)). Every merged contribution is the
+maintainer's copyright too, under the CLA, so the project is one work with
+one owner, who can relicense it. The name and the project stay with the
+maintainer.
 
 ## Building it
 
