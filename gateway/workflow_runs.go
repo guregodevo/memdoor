@@ -112,11 +112,17 @@ func (s *Server) listen(run *workflowRun) func() {
 		return func() {}
 	}
 	return s.agent.events.OnEvent(func(ev infra.AgentEvent) {
-		if ev.Stream != infra.EventStreamTool {
-			return
-		}
 		task := run.taskOfSession(ev.SessionID)
 		if task == "" {
+			return
+		}
+
+		switch ev.Stream {
+		case infra.EventStreamTool:
+		case workflowQuestion, workflowQuestionAnswered:
+			s.relayQuestion(run, task, ev)
+			return
+		default:
 			return
 		}
 		tool, _ := ev.Data["tool"].(string)
@@ -134,13 +140,50 @@ func (s *Server) listen(run *workflowRun) func() {
 	})
 }
 
+// workflowSessionPrefix prefixes the session ID of every workflow task's turn.
+const workflowSessionPrefix = "workflow:"
+
+// A task's turn runs in its own session, and no window subscribes to it.
+// Every window of the project gets workflow_event, so ask_user_question is
+// relayed as one:
+//   - workflowQuestion carries the question, its options and question_id; AnswerQuestion delivers the answer by that id;
+//   - workflowQuestionAnswered closes the picker in the windows that did not answer.
+const (
+	workflowQuestion         = "question"
+	workflowQuestionAnswered = "question_answered"
+)
+
+func (s *Server) relayQuestion(run *workflowRun, task string, ev infra.AgentEvent) {
+	data := map[string]interface{}{
+		"run":         run.ID,
+		"workflow":    run.Workflow,
+		"task":        task,
+		"question_id": ev.Data["question_id"],
+	}
+
+	if ev.Stream == workflowQuestionAnswered {
+		data["state"] = "answered"
+	} else {
+		data["state"] = "question"
+		data["text"] = ev.Data["question"]
+		data["options"] = ev.Data["options"]
+	}
+
+	s.sendRunEvent(run, data)
+}
+
+// attended reports whether a window started the run. The window and the
+// coder's workflow tool pass a session. The shell, the GitHub Action and cron
+// pass none.
+func (r *workflowRun) attended() bool { return r.Session != "" }
+
 // taskSession is the session a task's turn runs under; taskOfSession reads it back.
 func (r *workflowRun) taskSession(task string) string {
-	return "workflow:" + r.Workflow + ":" + r.Partition + ":" + task
+	return workflowSessionPrefix + r.Workflow + ":" + r.Partition + ":" + task
 }
 
 func (r *workflowRun) taskOfSession(session string) string {
-	prefix := "workflow:" + r.Workflow + ":" + r.Partition + ":"
+	prefix := workflowSessionPrefix + r.Workflow + ":" + r.Partition + ":"
 	if strings.HasPrefix(session, prefix) {
 		return strings.TrimPrefix(session, prefix)
 	}
@@ -723,7 +766,7 @@ func (s *Server) triggerWorkflow(run *workflowRun) {
 	// line of an llm task then says which run it belongs to, and a bench
 	// running eight problems at once can bill each (2026-10-26, the GVS5H
 	// rows: the entries had no session at all).
-	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID))
+	ctx, cancel := context.WithCancel(context.WithValue(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID), sharedctx.AttendedKey, run.attended()))
 	var exe *workflow.Execution
 	repo, err := s.runRepository(run.Dir)
 	if err == nil {

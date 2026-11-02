@@ -34,6 +34,11 @@ const (
 	// sent as reasoning.effort to a model that takes it.
 	EffortKey ContextKey = "route_effort"
 
+	// AttendedKey (bool): a window started the workflow run, so a person can
+	// answer a step's question. Absent or false, the run is unattended and a
+	// question gives up after five minutes.
+	AttendedKey ContextKey = "run_attended"
+
 	// WorkspaceIDKey is the context key for the authenticated user's workspace ID
 	WorkspaceIDKey ContextKey = "workspace_id"
 

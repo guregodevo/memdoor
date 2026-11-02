@@ -198,6 +198,8 @@ func (a *WebSocketAdapter) setupHandlers() {
 		ev.task, _ = data["task"].(string)
 		ev.state, _ = data["state"].(string)
 		ev.text, _ = data["text"].(string)
+		ev.questionID, _ = data["question_id"].(string)
+		ev.options = stringsOf(data["options"])
 		// A run reaches every window of its workspace; this one shows it only when it
 		// is in the project the window was launched from (an older gateway
 		// sends no dir: its events were addressed to this window already).
@@ -212,7 +214,7 @@ func (a *WebSocketAdapter) setupHandlers() {
 				}
 			}
 		}
-		if a.program != nil && (ev.text != "" || ev.status != nil) {
+		if a.program != nil && (ev.text != "" || ev.status != nil || ev.questionID != "") {
 			a.program.Send(ev)
 		}
 		return nil
@@ -315,14 +317,7 @@ func (a *WebSocketAdapter) handleAgentEvent(msg protocol.Message) {
 	if stream == "question" && a.program != nil {
 		qid, _ := eventData["question_id"].(string)
 		question, _ := eventData["question"].(string)
-		var options []string
-		if raw, ok := eventData["options"].([]interface{}); ok {
-			for _, o := range raw {
-				if s, ok := o.(string); ok {
-					options = append(options, s)
-				}
-			}
-		}
+		options := stringsOf(eventData["options"])
 		if qid != "" && question != "" && len(options) > 0 {
 			a.program.Send(questionMsg{id: qid, question: question, options: options})
 			return
@@ -432,4 +427,19 @@ func RefusalAdvice(reason string) string {
 
 func refusalNote(reason string) string {
 	return "⚠ the gateway refused this window: " + RefusalAdvice(reason)
+}
+
+// stringsOf reads a JSON array of strings, such as a question's options;
+// anything that is not a string is skipped.
+func stringsOf(v interface{}) []string {
+	raw, _ := v.([]interface{})
+
+	var out []string
+	for _, o := range raw {
+		if s, ok := o.(string); ok {
+			out = append(out, s)
+		}
+	}
+
+	return out
 }
