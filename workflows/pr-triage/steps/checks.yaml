@@ -13,8 +13,15 @@ command: |
   elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f pytest.ini ]; then c='python3 -m pytest -q'
   elif [ -f Makefile ] && grep -qE '^test:' Makefile; then c='make test'
   else c=; fi
+  # The tests get MEMDOOR_TEST_TIMEOUT (5m): a run that does not finish is a
+  # fact in the report, never a failing verdict. Without coreutils' timeout
+  # (macOS) the step's own clock is the bound.
+  limit=${MEMDOOR_TEST_TIMEOUT:-5m}
+  if command -v timeout >/dev/null 2>&1; then wrap="timeout $limit"; else wrap=; fi
   if [ -n "$c" ]; then
-    if sh -c "$c" > "$r.tests" 2>&1; then tests="pass (\`$c\`)"
+    rc=0; $wrap sh -c "$c" > "$r.tests" 2>&1 || rc=$?
+    if [ "$rc" = 0 ]; then tests="pass (\`$c\`)"
+    elif [ "$rc" = 124 ]; then tests="not finished in $limit (\`$c\`)"
     else tests="FAIL (\`$c\`): $(grep -E -m3 -- '--- FAIL|FAILED|Error|error:' "$r.tests" | tr '\n' ' ' | cut -c1-300)"; fi
   else tests="no test command found"; fi
   files=$(wc -l < "$r.numstat" | tr -d ' ')
