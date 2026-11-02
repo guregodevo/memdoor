@@ -56,8 +56,7 @@ reconnects and sends what was typed meanwhile.
 `/remote` prints a link and a QR code. The page is the TUI, served by your
 gateway, so it works with the window closed. Screen and keystrokes are
 end-to-end encrypted with a key held only in the link; the relay forwards
-ciphertext. `/remote off` revokes the link. Free on your gateway. The
-memdoor.ai relay, for a gateway kept to localhost, is the hosted part.
+ciphertext. `/remote off` revokes the link. Free on your gateway.
 
 → **[Remote control](/docs/remote)**
 

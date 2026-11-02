@@ -41,7 +41,7 @@ No configuration is required. The settings, when wanted:
 | Variable | Effect |
 |---|---|
 | `MEMDOOR_HOST` | The address the gateway binds: `0.0.0.0` by default (this machine and its network, so a phone reaches it); `localhost` keeps it to this machine |
-| `MEMDOOR_REMOTE_URL` | The relay a `/remote` link uses for a gateway kept to localhost (default `https://memdoor.ai`; only memdoor.ai or this machine is accepted) |
+| `MEMDOOR_REMOTE_URL` | A relay for a `/remote` link when the gateway is kept to localhost; unset, the link is served on the gateway's address |
 | `MEMDOOR_TELEMETRY_ENABLED` | Send warnings and errors upstream (off by default) |
 | `MEMDOOR_BILLING_TOKEN` | The `memdoor-billing` service on memdoor.ai only; a developer's gateway never reads it |
 

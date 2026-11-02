@@ -22,8 +22,6 @@ Everything you can type in the TUI. `/` opens a dropdown that filters as you typ
 | `/copy [N\|all]` | Copy the last exchange (or the last N, or all) to the clipboard |
 | `/remote` | Open this conversation on your phone: prints a link and a QR code. The page is the TUI itself, end-to-end encrypted |
 | `/remote view` | A watch-only link: it sees the same screen and cannot type |
-| `/share` | A read-only link to this conversation as it is now: end-to-end encrypted, secrets removed |
-| `/unshare` | Delete this conversation's shared links. They open nothing |
 | `/remote off` | Revoke both links. The old ones open nothing |
 | `/update` | Install the published build and reopen this conversation on it |
 | `/skill:<name> [args]` | Run a named skill as this turn's task. Tab-completes from disk |

@@ -9,9 +9,7 @@ The gateway listens on this machine's network. The link is `http://<its
 address>:18789/r/…` and the gateway is its own relay. A phone on the same
 Wi-Fi, VPN or Tailscale opens the conversation with no account and no plan.
 Same on [a box that stays on](/docs/gateway). A gateway kept to localhost
-(`MEMDOOR_HOST=localhost`) goes through the memdoor.ai relay, part of the
-hosted gateway; `/remote` says so. A relay of yours at `MEMDOOR_REMOTE_URL`
-is free.
+(`MEMDOOR_HOST=localhost`) has no link a phone can open.
 
 ## Turn it on
 
@@ -31,14 +29,6 @@ In the conversation:
 
 Scan the code or open the link in any browser. No account, no plan: the
 gateway serves the page on its own address.
-
-A gateway kept to localhost (`MEMDOOR_HOST=localhost`) goes through the
-memdoor.ai relay; its link reads `https://memdoor.ai/r/<id>#k=…`. That one
-needs a sign-in, once:
-
-```
-$ memdoor login you@example.com
-```
 
 Once on, the gateway's process holds the link as the terminal end of the
 relay. The window may close; a laptop may sleep when the gateway is on a box;
@@ -148,33 +138,8 @@ held by your gateway, on 192.168.1.20:18789: it works with nothing open here, an
 
 ### Finishing a CI run from your phone
 
-The job starts the gateway in the step, runs `memdoor run`, prints the link,
-and `wait`s on the gateway until you are done or the job's timeout ends it. A
-runner's address is not reachable from a phone, so the job keeps its gateway
-to localhost (`MEMDOOR_HOST: localhost`) and the link goes through the
-memdoor.ai relay. The runner needs the hosted gateway's account token in
-`MEMDOOR_BILLING_TOKEN`; on your machine `memdoor login` keeps it in
-`~/.memdoor/billing-token`.
-
-```yaml
-      - name: Review, then wait for me on the phone
-        env:
-          OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
-          MEMDOOR_BILLING_TOKEN: ${{ secrets.MEMDOOR_BILLING_TOKEN }}
-          MEMDOOR_HOST: localhost            # a runner's address is no door for a phone: the link goes through memdoor.ai
-        timeout-minutes: 30
-        run: |
-          curl -fsSL "https://memdoor.ai/install.sh?ci=1" | MEMDOOR_CI=1 bash
-          export PATH="$HOME/.local/bin:$PATH"
-          memdoor gateway &                  # the job's gateway: the run lives in it
-          until memdoor gateway status >/dev/null 2>&1; do sleep 1; done
-          git diff origin/${{ github.base_ref }}...HEAD \
-            | memdoor run "review this diff; one finding per line; change nothing"
-          memdoor remote --last              # the link and its code, in the job's log
-          wait                               # the job stays on its gateway while you finish the run from the phone
-```
-
-The run ends with the job. A run that must outlive it belongs on [a box that
+Off for now. A runner's address is no door for a phone, and the relay that
+bridged it is off. A run you finish from a phone belongs on [a box that
 stays on](/docs/gateway).
 
 ### The receipt
@@ -193,28 +158,12 @@ order:
 
 ## Sharing a conversation
 
-`/share`: the conversation as it is now, read-only, for later reading.
-
-```
-> /share
-
-  A read-only link to this conversation as it is now — 12 messages, secrets removed.
-
-  https://memdoor.ai/s/z8eKiSvRuHMsIGES#k=…
-```
-
-What was asked and answered, without tool output. Anything that looks like a
-key, a token or a password is replaced by `[redacted]` before it leaves your
-computer; the rest is encrypted there with a key that is only in the link, so
-memdoor.ai stores bytes it cannot read. `/unshare` deletes every shared link
-to the conversation. Sharing needs a memdoor.ai sign-in (`memdoor login
-you@example.com`); `/remote` on your gateway does not.
+Off for now. `/share` and `/unshare` make no link.
 
 ## What travels, and who can read it
 
 Files stay on your computer. What travels: the screen and your keystrokes,
-end-to-end encrypted, through your gateway or through the memdoor.ai relay
-when the gateway is kept to localhost. The key is only in the link, after
+end-to-end encrypted, through your gateway. The key is only in the link, after
 the `#`, the part a browser never sends to a server. The relay forwards what
 it cannot read.
 
@@ -233,7 +182,6 @@ nothing and the next `/remote` makes a new one.
 | `/remote view` | Print the watch-only link and its QR code |
 | `/remote off` | Revoke both links |
 | `memdoor remote <id>` | The link on stdout, from a script; the gateway holds it (`--last`, `--view`, `off <id>`) |
-| `memdoor login you@example.com` | Sign in, once per computer: for the memdoor.ai relay (a gateway kept to localhost) and `/share`; `/remote` on your own gateway needs none |
 
 ## Where to next
 

@@ -98,13 +98,6 @@ address, runs with the laptop closed on [a box that stays on](/docs/gateway).
 Open source, Apache-2.0; a company self-hosts the same way. Enterprise:
 support, by invoice.
 
-Hosted gateway, the one paid thing: memdoor.ai relays the phone to a
-gateway kept to localhost and keeps workflow run state, one table per
-workspace, so a workflow can wait on what another produced from any
-machine. $10 a month, cancel any month. memdoor.ai never supplies a model
-key. A box run by memdoor.ai is next. See
-[memdoor.ai/enterprise](https://memdoor.ai/enterprise).
-
 Install:
 
 ```bash
