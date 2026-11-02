@@ -109,12 +109,18 @@ window's run.
 ```
 memdoor workflow                       the project's workflows and runs
 memdoor workflow run <name>            a fresh run
+memdoor workflow run <name> --model <id>   every agent and llm step on that model
 memdoor workflow status <run-id>
 memdoor workflow resume <run-id>       continue a failed or stopped run
 memdoor workflow approve <run-id> <task>
 memdoor workflow diff <run-id>         every line the run changed
 memdoor workflow stop <run-id>
 ```
+
+The model: `--model` names it for the run, an id `memdoor model search`
+shows, `provider:id` when two providers list it. Without it, the person's
+`/model` pin, else each agent's ladder. A step with a `model:` of its own
+keeps it.
 
 ## Bigger ones
 
