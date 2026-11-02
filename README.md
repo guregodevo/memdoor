@@ -45,12 +45,6 @@ memdoor --gateway ssh://you@box run "fix the failing test" # the same box from a
 
 <p align="center"><img src="docs/img/memdoor-window.png" alt="The window: a task typed, the files read and patched, the tests run, and the receipt line: checked, 2 files changed, tests PASS" width="880"></p>
 
-`memdoor` reads files, writes patches, runs the build, fixes the errors, in
-the directory it was launched from. A run is a conversation on a gateway on
-your machine. Doors: a terminal window, `memdoor run` from a script or CI, a
-cron schedule, the editor, the page on the phone. Model calls go from your
-machine to the provider at list price.
-
 **Decision model.** Jev (TypeSafe) answers a typed question about a turn
 with a calibrated probability in under half a second. Judged reads: search,
 file and log reads return what counts. Per-turn toolbox: only the tools the
