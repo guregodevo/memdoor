@@ -54,6 +54,23 @@ key, or direct on a decision key. On a vendor key or a company gateway alone
 it is off; every read returns unjudged. `memdoor connect typesafe` turns it
 on with your key.
 
+## Verifying a download
+
+| File | Covers | Checked by |
+|---|---|---|
+| `https://memdoor.ai/dl/SHA256SUMS` | A corrupted or swapped binary. A host that serves both the manifest and the binaries can change both. | `install.sh`, `install.ps1`, always |
+| `https://memdoor.ai/dl/SHA256SUMS.minisig` | A manifest changed on the host. The private key is not on the server. | `install.sh`, when `minisign` is installed |
+
+Public key: `RWSK9n9HNsGeFjIZtMEamdZ6jMRnnmMCi/4lAzMOy65pfOxvDa5I631B`
+
+```bash
+curl -fsSLO https://memdoor.ai/dl/SHA256SUMS
+curl -fsSLO https://memdoor.ai/dl/SHA256SUMS.minisig
+minisign -Vm SHA256SUMS -P RWSK9n9HNsGeFjIZtMEamdZ6jMRnnmMCi/4lAzMOy65pfOxvDa5I631B
+```
+
+A bad signature refuses the install. A release without a signature, or a machine without `minisign`, installs on the checksum alone and says so. `MEMDOOR_REQUIRE_SIGNATURE=1` refuses both. `install.ps1` checks the checksum only. Releases made before signing began have no signature.
+
 ## Attribution headers
 
 `MEMDOOR_ATTRIBUTION="user=…;team=…"` and `MEMDOOR_ATTRIBUTION_HEADERS=

@@ -211,6 +211,43 @@ sha256_of() {
         shasum -a 256 "$1" | awk '{print $1}'  # macOS
     fi
 }
+# SHA256SUMS is signed with minisign (SHA256SUMS.minisig, signed at deploy,
+# deploy.sh step 4.556). The public key is this one; the private key is not on
+# the server. With minisign installed a bad signature refuses the install. A
+# release without a signature, or a machine without minisign, installs on the
+# checksum alone and says so; MEMDOOR_REQUIRE_SIGNATURE=1 refuses both.
+MINISIGN_PUBKEY="RWSK9n9HNsGeFjIZtMEamdZ6jMRnnmMCi/4lAzMOy65pfOxvDa5I631B"
+verify_signature() {
+    # $1 = the manifest text. 0: verified, or unsigned and allowed. 2: the
+    # signature does not verify (download_verified fetches both again once).
+    if ! command -v minisign >/dev/null 2>&1; then
+        if [ "${MEMDOOR_REQUIRE_SIGNATURE:-0}" = "1" ]; then
+            echo "ERROR: MEMDOOR_REQUIRE_SIGNATURE=1 and minisign is not installed." >&2
+            exit 1
+        fi
+        echo "  (signature not checked: minisign is not installed)"
+        return 0
+    fi
+    _sigdir=$(mktemp -d /tmp/memdoor-sig.XXXXXX)
+    printf '%s\n' "$1" > "$_sigdir/SHA256SUMS"
+    if ! curl -fsSL "$SUMS_URL.minisig" -o "$_sigdir/SHA256SUMS.minisig" 2>/dev/null; then
+        rm -rf "$_sigdir"
+        if [ "${MEMDOOR_REQUIRE_SIGNATURE:-0}" = "1" ]; then
+            echo "ERROR: MEMDOOR_REQUIRE_SIGNATURE=1 and $SUMS_URL.minisig could not be fetched." >&2
+            exit 1
+        fi
+        echo "  (this release has no signature on its manifest)"
+        return 0
+    fi
+    if minisign -V -P "$MINISIGN_PUBKEY" -m "$_sigdir/SHA256SUMS" -x "$_sigdir/SHA256SUMS.minisig" >/dev/null 2>&1; then
+        rm -rf "$_sigdir"
+        echo "  ✓ signature verified (minisign)"
+        return 0
+    fi
+    rm -rf "$_sigdir"
+    echo "ERROR: the signature of SHA256SUMS does not verify." >&2
+    return 2
+}
 verify_download() {
     # $1 = path to the downloaded binary. Aborts the script on any failure.
     _file="$1"
@@ -221,6 +258,7 @@ verify_download() {
         echo "       Refusing to install an unverified binary (fail-closed)." >&2
         exit 1
     }
+    verify_signature "$_sums" || return 2
     # Pull the expected hash for our exact filename. The manifest lines
     # are `<hash>  <name>`; match on whitespace + end-of-line so e.g.
     # 'memdoor-darwin-amd64' can't accidentally match a longer name.
