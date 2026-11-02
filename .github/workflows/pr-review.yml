@@ -39,7 +39,7 @@ jobs:
           model: z-ai/glm-5.3-flash
           timeout: 15m
 
-      - name: Review on a model inside the job (no secret: a fork)
+      - name: Review on a model inside the job (a fork has no secret)
         if: env.HAS_KEY != 'yes'
         uses: guregodevo/memdoor-action@v1
         with:
