@@ -250,8 +250,7 @@ auth login-direct --email <email> --password <pass>`: switch to another.
 ## From your phone
 
 `/remote`: a link and a QR code. The page is this TUI, run by your
-gateway, usable with this window closed. Free on your gateway; the
-memdoor.ai relay, for a gateway kept to localhost, is the hosted part.
+gateway, usable with this window closed. Free on your gateway.
 
 See [Remote control](/docs/remote).
 

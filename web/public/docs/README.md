@@ -7,8 +7,7 @@ the run stops only where you decide. A decision model in front of the chat
 model cuts input and cost: 44 paired runs, 74% fewer input tokens on a
 codebase question, no change on edits, 22 of 22 passed each way. The agent,
 the decision model, workflows and every door onto your gateway are open
-source (Apache-2.0) and free. The gateway memdoor.ai hosts (workflow state
-across machines, the relay for a gateway kept to localhost) is $10 a month.
+source (Apache-2.0) and free.
 
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
@@ -56,8 +55,7 @@ cd your-project && memdoor
 OpenAI, Gemini, DeepSeek, …). Mac, Linux or Windows. One binary.
 
 **Do you resell me tokens?** No. You hold the provider account and pay list
-price. No code passes through memdoor.ai. The hosted gateway's $10 is never
-for inference.
+price. No code passes through memdoor.ai.
 
 **Does my code leave my machine?** Files, sessions, memory and command output
 stay local. The prompt and the excerpts a model must read leave, with

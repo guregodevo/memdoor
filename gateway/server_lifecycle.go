@@ -368,14 +368,14 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	server.remoteRelay = remoteHub
 	accountAuth := newRelayAuth(server.authAdapter, brokerBaseURL())
 	server.hostedState = newHostedState(brokerBaseURL(), hostedStateURL(), accountToken)
-	http.Handle("/api/relay", remoteHub.HandleRelayWS(accountAuth))
-	http.HandleFunc("/api/relay/browser", remoteHub.HandleRelayBrowser)
+	http.Handle("/api/relay", hostedOr(remoteHub.HandleRelayWS(accountAuth)))
+	http.Handle("/api/relay/browser", hostedOr(http.HandlerFunc(remoteHub.HandleRelayBrowser)))
 	// /share: sealed transcripts behind https://memdoor.ai/s/<id>#k=<key>
 	// (share_store.go). Kept beside the database, never under the deploy dir.
 	if dataDir := shared.MemdoorHome("data"); dataDir != "" {
 		if shares, err := newShareStore(filepath.Join(dataDir, "shares"), accountAuth); err == nil {
-			http.HandleFunc("/api/share", shares.Handle)
-			http.HandleFunc("/api/share/", shares.Handle)
+			http.Handle("/api/share", hostedOr(http.HandlerFunc(shares.Handle)))
+			http.Handle("/api/share/", hostedOr(http.HandlerFunc(shares.Handle)))
 		} else {
 			logs.New("Share").Warn("share store unavailable: " + err.Error())
 		}
@@ -509,18 +509,18 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 
 	// Authentication endpoints (using pkg/auth with DDD architecture)
 	if server.authAdapter != nil {
-		http.Handle("/api/auth/register", addCORS(http.HandlerFunc(server.authAdapter.HandleRegister)))
-		http.Handle("/api/auth/login", addCORS(http.HandlerFunc(server.authAdapter.HandleLogin)))
-		http.Handle("/api/auth/whoami", addCORS(http.HandlerFunc(server.authAdapter.HandleWhoami)))
-		http.Handle("/api/auth/logout", addCORS(http.HandlerFunc(server.authAdapter.HandleLogout)))
-		http.Handle("/api/auth/verify-email", addCORS(http.HandlerFunc(server.authAdapter.HandleVerifyEmail)))               // Email verification
-		http.Handle("/api/auth/resend-verification", addCORS(http.HandlerFunc(server.authAdapter.HandleResendVerification))) // Resend verification
-		http.Handle("/api/auth/forgot-password", addCORS(http.HandlerFunc(server.authAdapter.HandleForgotPassword)))         // Password reset request
-		http.Handle("/api/auth/reset-password", addCORS(http.HandlerFunc(server.authAdapter.HandleResetPassword)))           // Password reset
-		http.Handle("/api/auth/change-password", addCORS(http.HandlerFunc(server.authAdapter.HandleChangePassword)))         // Self-service password change (authenticated via Bearer token)
+		http.Handle("/api/auth/register", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleRegister))))
+		http.Handle("/api/auth/login", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleLogin))))
+		http.Handle("/api/auth/whoami", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleWhoami))))
+		http.Handle("/api/auth/logout", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleLogout))))
+		http.Handle("/api/auth/verify-email", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleVerifyEmail))))               // Email verification
+		http.Handle("/api/auth/resend-verification", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleResendVerification)))) // Resend verification
+		http.Handle("/api/auth/forgot-password", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleForgotPassword))))         // Password reset request
+		http.Handle("/api/auth/reset-password", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleResetPassword))))           // Password reset
+		http.Handle("/api/auth/change-password", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleChangePassword))))         // Self-service password change (authenticated via Bearer token)
 		for _, p := range server.authAdapter.SocialProviders() {
-			http.Handle("/api/auth/"+p, http.HandlerFunc(server.authAdapter.HandleSocialStart))                // Sign in with Google / GitHub: to the provider
-			http.Handle("/api/auth/"+p+"/callback", http.HandlerFunc(server.authAdapter.HandleSocialCallback)) // ...and back, signed in
+			http.Handle("/api/auth/"+p, hostedOr(http.HandlerFunc(server.authAdapter.HandleSocialStart)))                // Sign in with Google / GitHub: to the provider
+			http.Handle("/api/auth/"+p+"/callback", hostedOr(http.HandlerFunc(server.authAdapter.HandleSocialCallback))) // ...and back, signed in
 		}
 	}
 	http.Handle("/api/invite/validate", addCORS(http.HandlerFunc(server.handleValidateInvite))) // Validate invite token (public)
@@ -537,7 +537,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	http.Handle("/api/setup", addCORS(http.HandlerFunc(server.handleSetup)))                                  // First-time workspace setup (public, one-time)
 	http.Handle("/api/telemetry", addCORS(http.HandlerFunc(server.handleTelemetry)))                          // Receives event batches from remote memdoor installs (public; bearer-token spam deterrent)
 	http.Handle("/api/auth/csrf", addCORS(http.HandlerFunc(server.handleGetCSRFToken)))                       // CSRF token endpoint (still using old handler)
-	http.Handle("/api/auth/cli", addCORS(http.HandlerFunc(server.handleCLIAuth)))                             // CLI authentication endpoint (still using old handler)
+	http.Handle("/api/auth/cli", addCORS(hostedOr(http.HandlerFunc(server.handleCLIAuth))))                   // CLI authentication endpoint (still using old handler)
 
 	// Web UI is served from the embedded React bundle (//go:embed
 	// web/dist via memdoor/web). The binary is self-contained: no

@@ -10,9 +10,6 @@ export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, â
 cd your-project && memdoor        # the first run sets the machine up: gateway, workspace, account, then the window
 memdoor tui                       # the coding agent, on the directory you launch from (the bare `memdoor` opens it too)
 memdoor resume                    # pick up a previous conversation where you left off
-memdoor login you@example.com     # sign in to memdoor.ai: workflow state there, and the relay for a gateway kept to localhost
-memdoor account status            # this Mac's engine user, and the memdoor.ai account
-memdoor logout                    # sign out of memdoor.ai; the agent keeps working on your key
 memdoor doctor                    # diagnose an install
 memdoor upgrade                   # install a newer build (--check only compares)
 memdoor version                   # this build's version, commit and date

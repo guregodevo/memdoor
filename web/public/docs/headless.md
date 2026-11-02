@@ -119,11 +119,8 @@ To finish a CI run from a phone: the job starts its gateway (`memdoor gateway
 the link with `memdoor remote --last` and `wait`s on the gateway. The link
 and its QR code are in the job's log; the job stays up until you are done or
 its timeout ends it. The full step: [Remote control](/docs/remote). A
-runner's address is not reachable from a phone, so the job keeps its gateway
-to localhost (`MEMDOOR_HOST: localhost` in the step's env) and the link goes
-through the memdoor.ai relay. That needs the hosted gateway's account token
-on the runner: `MEMDOOR_BILLING_TOKEN`, or `~/.memdoor/billing-token` written
-by `memdoor login`.
+runner's address is not reachable from a phone, so this step needs a
+gateway the phone can reach: a box, not a runner.
 
 ## Coming back in
 

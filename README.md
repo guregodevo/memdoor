@@ -93,7 +93,6 @@ applied): [memdoor.ai/workflows](https://memdoor.ai/workflows).
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |
 | `/remote view` | A watch-only link: live, no typing, no account, up to 200 viewers. `?live=1` is the terminal alone, for a stream or OBS |
-| `/share` | A read-only link to the conversation, encrypted, secrets removed. `/unshare` deletes it |
 | `/files` or `ctrl+f` | The project's files, the ones this conversation read or changed first, each with what happened to it. Enter previews, `ctrl+d` diffs, `ctrl+e` opens in `$EDITOR`, tab puts `@path` in the prompt |
 | `/graph` or `ctrl+g` | The turn as a graph: the reads, the edits that depended on them, the runs that depended on the edits, the failing check in red |
 | `/mcp` | MCP servers from a URL, a command or a `.mcp.json` snippet |

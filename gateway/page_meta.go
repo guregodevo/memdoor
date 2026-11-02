@@ -65,6 +65,14 @@ var compareRivals = map[string]string{
 // routeMeta is the head of a route: a known page, a comparison, a doc (its
 // first heading and first paragraph, as the client's docMeta reads them), or
 // the home for anything else.
+// enterpriseTitle names the hosted gateway only while the hosted services are on.
+func enterpriseTitle() string {
+	if hostedOff() {
+		return "Enterprise — Memdoor is open source: self-host it"
+	}
+	return "Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway"
+}
+
 func routeMeta(p string, dist fs.FS) pageMeta {
 	p = strings.TrimSuffix(path.Clean("/"+strings.TrimPrefix(p, "/")), "/")
 	if p == "" {
@@ -72,6 +80,9 @@ func routeMeta(p string, dist fs.FS) pageMeta {
 	}
 	if m, ok := routeMetas[p]; ok {
 		m.Path = p
+		if p == "/enterprise" {
+			m.Title = enterpriseTitle()
+		}
 		return m
 	}
 	if name, ok := compareRivals[strings.TrimPrefix(p, "/compare/")]; ok && strings.HasPrefix(p, "/compare/") {
@@ -167,6 +178,7 @@ var (
 
 // renderIndex is the HTML page with this route's head and crawler text.
 func renderIndex(index []byte, m pageMeta) []byte {
+	index = withHostedMeta(index)
 	if m.Path == "/" || m.Path == "" {
 		return index
 	}
