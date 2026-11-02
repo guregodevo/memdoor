@@ -155,7 +155,7 @@ grep -r "duplicate_code" .    # Search before coding
 - `.agents/skills/refactoring.md` - Refactoring patterns (eliminate duplication, DDD)
 - `.agents/skills/quick-test.md` - Pre-commit testing workflow (always-on)
 - `.agents/skills/ddd-workflow.md` - DDD patterns and examples
-- `.agents/skills/roadmap.md` - The roadmap: docs/ROADMAP.md, Now / Next / Not now, every item with a done-when
+- `.agents/skills/roadmap.md` - The roadmap: the quarter in docs/ROADMAP.md; features are issues labelled now or next
 - `.agents/skills/verify-assumptions.md` - Verify runtime changes via CLI and logs (always-on)
 - `.agents/skills/test-tui.md` - Drive the real TUI from tmux: which gateway, which keys, what to assert
 - `.agents/skills/doc-writing.md` - How docs, READMEs, landing copy and llms.txt are written: an engineer's documentation, no AI slop (always-on for any doc change)
