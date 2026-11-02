@@ -1,6 +1,6 @@
 # A pull request from this repository is triaged by Memdoor's own pr-triage
-# workflow, through the published action, on the OpenRouter secret: glm-5.3-flash
-# reads what the job measured in one call (MEMDOOR_LEAN). The verdict comes from
+# workflow, through the published action, on the OpenRouter secret: the default
+# model (GLM 5.3 Flash) reads what the job measured in one call (MEMDOOR_LEAN). The verdict comes from
 # what the job measures (the test suite on the pull request's code, tests
 # claimed but not changed, functions nothing calls); the model writes the
 # summary. Advisory: the job never fails on the verdict. A pull request from a
@@ -60,5 +60,4 @@ jobs:
         with:
           workflow: pr-triage
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
-          model: z-ai/glm-5.3-flash
           timeout: 15m
