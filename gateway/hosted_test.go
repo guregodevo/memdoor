@@ -43,3 +43,15 @@ func TestHostedOffMarksThePageHead(t *testing.T) {
 		t.Fatalf("hosted off: a doc page must carry the tag: %s", got)
 	}
 }
+
+// Off, the enterprise page's title names no hosted gateway.
+func TestHostedOffDropsTheHostedGatewayFromTheEnterpriseTitle(t *testing.T) {
+	t.Setenv("MEMDOOR_HOSTED", "off")
+	if m := routeMeta("/enterprise", nil); strings.Contains(m.Title, "memdoor.ai") {
+		t.Fatalf("hosted off: %q", m.Title)
+	}
+	t.Setenv("MEMDOOR_HOSTED", "")
+	if m := routeMeta("/enterprise", nil); !strings.Contains(m.Title, "memdoor.ai") {
+		t.Fatalf("hosted on: %q", m.Title)
+	}
+}

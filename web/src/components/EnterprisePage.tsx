@@ -122,7 +122,9 @@ export function EnterprisePage() {
   const [open, setOpen] = useState<number | null>(null);
   useEffect(() => {
     setMeta({
-      title: 'Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway',
+      title: HOSTED_ON
+        ? 'Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway'
+        : 'Enterprise — Memdoor is open source: self-host it',
       description:
         'Memdoor is Apache-2.0: the coding agent, workflows, the gateway and every door onto it. Self-host it for one person or a whole company, free, on your own provider key; Enterprise adds full support. The gateway hosted on memdoor.ai is $10 a month.',
       path: '/enterprise',
@@ -138,8 +140,8 @@ export function EnterprisePage() {
           All of it is open source. Run it where you want.
         </h1>
         <p className="mx-auto mb-12 max-w-2xl text-center text-base leading-relaxed text-neutral-500">
-          Memdoor is Apache-2.0. Run it on your laptop, or on your company&rsquo;s machines, for free. If you would rather
-          not keep a gateway running, memdoor.ai hosts one for $10 a month.
+          Memdoor is Apache-2.0. Run it on your laptop, or on your company&rsquo;s machines, for free.
+          {HOSTED_ON && ' If you would rather not keep a gateway running, memdoor.ai hosts one for $10 a month.'}
         </p>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
