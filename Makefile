@@ -1,4 +1,4 @@
-.PHONY: up build web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose start stop stop-gateway deploy setup quickstart all skills-sync indexnow
+.PHONY: up build web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose start stop stop-gateway setup quickstart all skills-sync indexnow scan hooks
 
 # Ports
 GATEWAY_PORT ?= 18789
@@ -57,70 +57,28 @@ up: build stop-gateway
 	@./memdoor providers 2>/dev/null | grep -E "connected \(" \
 		|| echo "  ⚠ no provider connected: the gateway has no key — put one in ./.envrc or run: memdoor connect <kind>"
 
-# THE PRODUCTION UPDATE IN ONE COMMAND. scripts/deploy.sh is the whole ritual:
-# rsync source, build ON the VPS, systemd restart, nginx/TLS, publish the /dl/
-# binaries + VERSION. It sources .envrc itself (VPS_HOST, DOMAIN), so a bare
-# `make deploy` needs nothing else; override the host with
-# `make deploy VPS_HOST=root@host`. It takes no other flags any more — the
-# data-push flag went with the CLI it called on 2026-10-03.
-deploy:
-	@./scripts/deploy.sh $(VPS_HOST) $(ARGS)
+# Deploying memdoor.ai, rolling back, the adoption metrics and the GitHub
+# branch rules live in a private repo, memdoor-ops: it names the server. This
+# repo is the source of truth it builds from (2026-11-02).
+
+# scan fails on a secret, a personal path or a private host in the tree: the
+# repo is public, so this runs in CI and from the pre-push hook (make hooks).
+scan:
+	@./scripts/scan.sh
+
+# hooks installs the repo's git hooks (.githooks): pre-push runs the scan.
+hooks:
+	@git config core.hooksPath .githooks && echo "hooks on: .githooks/pre-push runs make scan"
 
 # cli-index rewrites the command index in docs/reference/CLI.md from the
 # binary's own --help (hidden commands included), so the index cannot drift
 # from the commands. Run it after adding, removing or renaming a command.
-# oss-tree builds the PUBLIC tree at /tmp/memdoor-oss — fresh history, the
-# private docs and ops scripts left out, secret scan run. Prepares; never
-# publishes (2026-10-04: "keep it private for now and prepare it for opensource").
-oss-tree:
-	@./scripts/oss-tree.sh
-
-# oss-publish puts the current release on the public repo (guregodevo/memdoor):
-# the oss-tree laid over a clone of it, one commit named after the version, a tag,
-# pushed (scripts/oss-publish.sh). Private commit messages never travel.
-oss-publish:
-	@./scripts/oss-publish.sh
-
 # indexnow tells Bing, DuckDuckGo, Yandex and the other IndexNow engines that
 # the sitemap's pages changed (scripts/indexnow.sh). Run after a deploy that
 # changed what pages say. Google is not among them: resubmit the sitemap in
 # Search Console and request indexing there.
 indexnow:
 	@./scripts/indexnow.sh
-
-# github-protect sets the repository's rules on GitHub: squash-only, main behind
-# a PR that CI passed and the code owner approved, no force push, fork PR runs
-# wait for approval. Run after the repo is public (scripts/github-protect.sh).
-github-protect:
-	@./scripts/github-protect.sh
-
-# metrics prints adoption from the prod access log (installs, active installs,
-# landing visitors), accounts and seats, GitHub stars/views/clones and the HN
-# post, and saves a snapshot under .memdoor/metrics/.
-metrics:
-	@mkdir -p .memdoor/metrics && ./scripts/metrics.sh | tee .memdoor/metrics/$$(date +%Y-%m-%dT%H%M).txt
-
-# metrics-apps reads other people's use from the providers' app statistics:
-# OpenRouter's daily chart for memdoor.ai minus this machine's ledger, per UTC day
-# and model, written to .memdoor/metrics/openrouter.tsv (the whole series each
-# run); and whether LLM Gateway, EUrouter and Vercel list us yet. Daily, from this
-# Mac's crontab, so a snapshot exists even if the page changes:
-#   0 9 * * * cd ~/Dev/aktapus && PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin make metrics-apps >/dev/null 2>&1
-# (installed on Greg's Mac 2026-10-25)
-metrics-apps:
-	@./scripts/metrics-apps.sh
-
-# rollback puts the previous release back on memdoor.ai (scripts/rollback.sh);
-# releases lists what the deploys kept.
-rollback:
-	@./scripts/rollback.sh
-releases:
-	@. ./.envrc && ssh $$VPS_HOST 'ls -1t /var/lib/memdoor/releases 2>/dev/null || echo none'
-
-# rotate-admin rotates the prod admin password through the API (owner-run:
-# needs your admin session; see scripts/rotate-admin.sh).
-rotate-admin:
-	@./scripts/rotate-admin.sh
 
 # workflow-selftest runs this project's own selftest workflow
 # (.memdoor/workflows/workflow-selftest, committed with the repo) here, against
@@ -328,14 +286,7 @@ help:
 	@echo "  make web-build          - Build the web bundle alone"
 	@echo ""
 	@echo "=== Release ==="
-	@echo "  make deploy             - Deploy to memdoor.ai (tags itself; VPS_HOST=root@host overrides)"
-	@echo "  make rollback           - Put the previous release back (releases: what the deploys kept)"
-	@echo "  make oss-publish        - Push this release to the public repo (oss-tree: prepare only)"
 	@echo "  make indexnow           - Tell the IndexNow engines the sitemap changed"
-	@echo "  make github-protect     - Set the public repo's branch rules"
-	@echo "  make metrics            - Adoption, accounts, stars, other people on OpenRouter; snapshot under .memdoor/metrics/
-	@echo "  make metrics-apps       - Other people's use from the providers' app stats (OpenRouter per day minus this machine; who lists us)""
-	@echo "  make rotate-admin       - Rotate the prod admin password"
 	@echo "  make clean              - Remove the binary"
 
 # Default target

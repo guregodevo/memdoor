@@ -130,7 +130,7 @@ grep -r "duplicate_code" .    # Search before coding
 # a turn asked by a peer (asked_by_peer) wakes nobody on the peer. A turn woken by a reply now
 # gets the project and the mode of the turn before it (asyncTurnContext), not the scratch dir.
 # A mention nobody answers to now fails the turn instead of hanging the window and the run.
-# A new websocket path needs its own nginx location in scripts/deploy.sh.
+# A new websocket path needs its own nginx location in the deploy (memdoor-ops, private).
 # MEMDOOR_REMOTE_URL=http://localhost:18789 tests it against a local gateway.
 
 # Models & sessions (post 2026-08-16)
@@ -164,8 +164,8 @@ grep -r "duplicate_code" .    # Search before coding
 
 ## Documentation
 - Read `docs/` directory for project documentation and architecture details
-- **`docs/roadmap/MUST.md`** — READ FIRST. The epoch note at the top states what
-  Memdoor is now (2026-09-27): a **coding agent for solo devs that cuts their
+- **What Memdoor is** (the epoch note of 2026-09-27; the roadmap itself is kept
+  outside this repo): a **coding agent for solo devs that cuts their
   model bill, on THEIR OWN key** (BYOK — `gateway/providers/byok.go`; any
   provider's key works). The decision model (Jev) is what does the cutting:
   judged reads, a per-turn toolbox, a stop instead of a cap, `/model` with real
@@ -445,7 +445,7 @@ serves it, driving tmux, what to assert, negative paths).
 - WARN/ERROR events flow through `gateway/telemetry` to https://memdoor.ai when `MEMDOOR_TELEMETRY_ENABLED=1`
 - Agents can emit structured anomalies via the `report_bug` tool (universal palette)
 - Sender opt-in (default OFF); same `memdoor logs query` UX works against the receiver
-- Full design + env-var contract: [`docs/internal/TELEMETRY.md`](docs/internal/TELEMETRY.md)
+- Full design + env-var contract: `gateway/telemetry` (the design note is kept outside this repo)
 
 ## Architecture Patterns
 
@@ -474,8 +474,9 @@ memdoor.ai runs TWO units from the same binary: `memdoor` (gateway) and
 state must never live under `/opt/memdoor`** — the deploy rsyncs with
 `--delete` and will erase it (live incident 2026-08-18). Secrets live in
 `/etc/memdoor/billing.env`, ledgers in `/var/lib/memdoor/`. nginx routes
-are written from an INLINE heredoc in `scripts/deploy.sh`, not from
-`scripts/nginx-memdoor.conf`. Full runbook: `docs/internal/OPS.md`.
+are written from an INLINE heredoc in the deploy script. The deploy, the
+rollback and the metrics live in memdoor-ops, a private repo that names the
+server; this public repo is the source of truth it builds from (2026-11-02).
 **Every LLM request goes through a provider** (2026-10-04, Greg: "no
 exception. all request for llm goes through provider"): `providers.ClientFactory`
 resolves a pinned model to the provider that lists it, else the engine chosen at
