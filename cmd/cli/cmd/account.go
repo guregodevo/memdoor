@@ -229,7 +229,7 @@ var accountSubscribeCmd = &cobra.Command{
 	// buys remote control and the hosted workflow state (laptop-closed runs coming), never a model key
 	// (the maintainer, 2026-10-04). The number is safe to say here from
 	// 2026-09-27: the live price was changed and a real checkout session
-	// quotes $10.00 USD (scripts/set-seat-price.sh switches it again if it moves).
+	// quotes $10.00 USD.
 	Short: "Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		period := "monthly"

@@ -22,7 +22,7 @@ concurrency:
 # the public tree carries these same files, so its runs are the checks.
 jobs:
   review:
-    if: github.repository != 'guregodevo/memdoor-private'
+    if: github.repository == 'guregodevo/memdoor'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

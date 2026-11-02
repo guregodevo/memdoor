@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""The cost table: the same coder tasks with the decision model off and on,
-measured the way a reader will believe (docs/internal/GROWTH_STRATEGY.md,
-move 3): did it pass, what did it read and write, how much of that was the
+"""The cost table: the same coder tasks with the decision model off and on:
+did it pass, what did it read and write, how much of that was the
 provider's cache, what did OpenRouter bill, how long did it take.
 
 Two scratch gateways run the same binary on the same OpenRouter key and the

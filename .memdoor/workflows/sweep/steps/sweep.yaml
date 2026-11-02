@@ -15,8 +15,8 @@ prompt: |
     free, with local cron schedules (`memdoor cron add`);
   - Pro = 10 dollars a month, for remote control (`/remote`) and the hosted
     workflow state on memdoor.ai; Enterprise by invoice;
-  - the public repo `github.com/guregodevo/memdoor` and the private
-    `memdoor-private`; `aktapus.ai` redirects to `memdoor.ai`;
+  - the public repo `github.com/guregodevo/memdoor`; `aktapus.ai` redirects
+    to `memdoor.ai`;
   - and there is NO local model, NO GPU rental, NO broker, NO clipper, NO fitness
     product, NO Mac app, NO hosted scheduler, NO device-code or `--browser`
     login, and NO heartbeat checklist (no `HEARTBEAT.md`).
@@ -36,7 +36,7 @@ prompt: |
   Needles worth trying: `local model`, `Mac app`, `macOS`, `device code`,
   `--browser`, `broker`, `clipper`, `GPU`, `fitness`, `heartbeat`, `HEARTBEAT.md`,
   `hosted scheduler`, `waitlist`, `beta`, `Jev`, `seat`, `rent`, `per month`,
-  `$`, `aktapus`, `memdoor-private`, `latency`.
+  `$`, `aktapus`, `latency`.
 
   FOR EVERY FINDING, all five of these, no exceptions:
   1. `path/to/file:LINE` — the line number in the file as it is now;

@@ -29,7 +29,7 @@ OpenRouter key or a decision key, off on a vendor key alone); workflows on mario
 (one YAML per task, done = target exists, a gate = an external task, resume),
 free with local cron schedules; Pro = $10 a month for remote control and the
 hosted workflow state on memdoor.ai; Enterprise by invoice; public repo
-`github.com/guregodevo/memdoor`, private `memdoor-private`; `aktapus.ai`
+`github.com/guregodevo/memdoor`; `aktapus.ai`
 redirects to `memdoor.ai`; and there is **no** local model, GPU rental, broker,
 clipper, fitness product, Mac app, hosted scheduler, device-code or `--browser`
 login, heartbeat checklist.
