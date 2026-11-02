@@ -33,6 +33,8 @@ export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, G
 cd your-project && memdoor             # the first run sets the machine up
 ```
 
+The install or the first run did not finish: [open an Install issue](https://github.com/guregodevo/memdoor/issues/new?template=install.md).
+
 On a box reachable by ssh, nothing installed there:
 
 ```bash
