@@ -25,6 +25,12 @@ func (cs *ChatServer) handleRooms(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
+		// Signed in: anonymous, requestWorkspace is "" and the list was every
+		// workspace's channels with their member ids (memdoor.ai, 2026-11-02),
+		// the same hole the agent list had until 2026-10-30.
+		if _, ok := requireAuth(w, r); !ok {
+			return
+		}
 		// Fetch active channels from repository
 		if cs.channelRepo == nil {
 			http.Error(w, "Channel repository not available", http.StatusInternalServerError)
