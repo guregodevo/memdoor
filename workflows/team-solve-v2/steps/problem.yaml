@@ -1,10 +1,14 @@
 type: command
+# The task is task.md: any prompt. A programming problem may bring paired
+# tests/N.in and tests/N.out; a task without them is judged by a fresh
+# reviewer at the end. An empty folder gets the sample problem.
 command: |
   if [ ! -f task.md ]; then
     src=.memdoor/workflows/team-solve-v2/sample
     [ -d "$src" ] || src="$HOME/.memdoor/workflows/team-solve-v2/sample"
     cp -R "$src"/. . && printf 'no task.md here: the sample problem was copied in (task.md, tests/)\n'
   fi
-  ls tests/*.in > /dev/null
+  test -s task.md
+  if ls tests/*.in > /dev/null 2>&1; then printf 'samples: %s\n' "$(ls tests/*.in | wc -l | tr -d ' ')"; else printf 'samples: none, the judge decides\n'; fi
 timeout: 1m
 max_retries: 0

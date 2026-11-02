@@ -3,14 +3,15 @@ agent: coder
 requires:
   - table_pattern: review
 prompt: |
-  You are the single repair worker in a fresh context. Read test-status.txt,
-  review.md, and notes.md from disk. If the initial test status is zero,
-  leave solution.py unchanged and report that repair was unnecessary.
-  Otherwise read task.md, plan.md, solution.py, test-output.log, and the
-  relevant samples, then correct solution.py using the manager's instructions.
-  Append a concise repair explanation to notes.md. Run solution.py on a
-  failing sample to verify the change, but do not start another repair round
-  or change any test inputs/expected outputs. The next strict command alone
-  determines workflow success. Do not spawn agents or rely on chat history.
+  You are the single repair worker in a fresh context. Read review.md,
+  test-status.txt and notes.md from disk. If review.md says `verdict: PASS`,
+  leave the deliverable unchanged and report that repair was unnecessary.
+  Otherwise read task.md, plan.md, the deliverable plan.md names,
+  test-output.log and the relevant samples, then correct the deliverable
+  using the manager's instructions. Append a concise repair explanation to
+  notes.md. A program: run it on a failing sample to verify the change. Do
+  not start another repair round and do not change task.md, test inputs or
+  expected outputs. The final check alone determines the run's success. Do
+  not spawn agents or rely on chat history.
 timeout: 10m
 max_retries: 1

@@ -1,12 +1,19 @@
 type: command
+# Samples: all of them must pass. No samples: the judge's verdict. Either
+# way a nonzero exit fails the run.
 requires:
   - table_pattern: repair
+  - table_pattern: judge
 command: |
-  check=.memdoor/workflows/team-solve-v2/check-samples.sh
-  [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-v2/check-samples.sh"
-  bash "$check" > final-test-output.log 2>&1
-  result=$?
-  cat final-test-output.log
-  exit "$result"
+  if ls tests/*.in > /dev/null 2>&1; then
+    check=.memdoor/workflows/team-solve-v2/check-samples.sh
+    [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-v2/check-samples.sh"
+    bash "$check" > final-test-output.log 2>&1
+    result=$?
+    cat final-test-output.log
+    exit "$result"
+  fi
+  head -1 verdict.md | tee final-test-output.log
+  grep -q '^verdict: PASS' verdict.md
 timeout: 5m
 max_retries: 0

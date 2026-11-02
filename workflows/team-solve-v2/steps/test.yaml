@@ -1,13 +1,20 @@
 type: command
+# Samples when there are samples: every tests/N.in through solution.py
+# against tests/N.out. No samples: nothing to run, the reviewer judges.
 requires:
   - table_pattern: solve
 command: |
-  check=.memdoor/workflows/team-solve-v2/check-samples.sh
-  [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-v2/check-samples.sh"
-  bash "$check" > test-output.log 2>&1
-  result=$?
+  if ls tests/*.in > /dev/null 2>&1; then
+    check=.memdoor/workflows/team-solve-v2/check-samples.sh
+    [ -f "$check" ] || check="$HOME/.memdoor/workflows/team-solve-v2/check-samples.sh"
+    bash "$check" > test-output.log 2>&1
+    result=$?
+  else
+    printf 'no samples: the reviewer judges the deliverable against task.md\n' > test-output.log
+    result=none
+  fi
   printf '%s\n' "$result" > test-status.txt
   cat test-output.log
-  printf 'Initial sample-test exit status: %s\n' "$result"
+  printf 'Initial check status: %s\n' "$result"
 timeout: 5m
 max_retries: 0

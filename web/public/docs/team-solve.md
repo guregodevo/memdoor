@@ -65,8 +65,10 @@ mkdir my-problem && cd my-problem
 memdoor workflow run team-solve-v2 --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
 ```
 
-`team-solve-v2`, the built-in version of this workflow, ships in the
-binary, seeded into `~/.memdoor/workflows` at the gateway's first boot. The
+`team-solve-v2`, the built-in, is the same team on any task: `task.md` in a
+folder, a program checked by its samples or a document checked by a fresh
+judge. It ships in the binary, seeded into `~/.memdoor/workflows` at the
+gateway's first boot; `--model <id>` puts every step on one model. The
 published runs used the steps in `examples/workflows/team-solve`, kept as they
 were. Your problem: `task.md` and paired `tests/N.in` /
 `tests/N.out` in the folder. Program:

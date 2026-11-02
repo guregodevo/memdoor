@@ -1,0 +1,21 @@
+type: agent
+agent: coder
+# The final word on a deliverable no sample can check: a fresh context that
+# has seen none of the team's reasoning reads task.md and the deliverable
+# only. Skipped when samples exist: the samples are the judge.
+when: "! ls tests/*.in > /dev/null 2>&1"
+requires:
+  - table_pattern: repair
+prompt: |
+  You are the judge in a fresh context. Read task.md and the first line of
+  plan.md to learn the deliverable's name, then read the deliverable. Read
+  nothing else. Decide whether the deliverable does what task.md asks,
+  completely and correctly, for the audience and in the form the task
+  states or implies. Write verdict.md whose first line is `verdict: PASS` or
+  `verdict: FAIL`, then at most ten lines saying why, each tied to a
+  requirement of the task. Do not change any file but verdict.md. Do not
+  spawn agents or rely on chat context.
+target:
+  file: verdict.md
+timeout: 10m
+max_retries: 1
