@@ -21,18 +21,17 @@ is what memdoor.ai ships.
 - The rules are in `AGENTS.md` and `.agents/skills/`: search before coding,
   test through the CLI, factories return interfaces, no obvious comments,
   the logger and never `fmt.Println`, docs with no AI slop.
-- One squash commit per pull request, signed CLA. The maintainer reviews every one;
+- One squash commit per pull request. The maintainer reviews every one;
   a review may ask for a change or decline the change with the reason.
 
 ## Contributor Licence Agreement
 
-Before a first pull request is merged, its author signs the
-[CLA](CLA.md), once: the copyright in the contribution is assigned to the
+Opening a pull request is the author's agreement to the [CLA](CLA.md). No
+comment is needed. The copyright in the contribution is assigned to the
 maintainer (an exclusive, irrevocable licence where the law allows no
-assignment), with a patent licence for what it practises; the author gets a
-licence back to reuse their own work. Until a CLA check runs on pull
-requests, the signature is one comment on the first pull request:
-"I agree to CLA.md".
+assignment), with a patent licence for what it practises. The author gets a
+licence back to reuse their own work. An author who does not agree says so on
+the pull request, and the maintainer does not merge it.
 
 ## Ownership and licence
 

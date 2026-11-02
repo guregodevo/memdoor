@@ -4,7 +4,7 @@ Memdoor is maintained by guregodevo on GitHub ("the maintainer"). This agreement
 covers every contribution you submit to the project: code, documentation,
 tests, examples, in a pull request or by any other means.
 
-By signing it you state the following.
+By submitting a contribution you state the following.
 
 1. **Ownership.** You assign to the maintainer the copyright in your
    contribution, in full. Where the law of your country does not allow an
@@ -27,6 +27,8 @@ By signing it you state the following.
 5. **No warranty.** Unless the law requires otherwise, the contribution is
    provided as is, with no warranty of any kind.
 
-You sign once, for every contribution that follows, with one comment on
-your first pull request: "I agree to CLA.md". If the facts in
-point 3 change, say so on the pull request.
+Opening a pull request, or submitting a contribution by any other means, is
+your agreement to this document for that contribution. No comment is needed.
+To decline, say so on the pull request before it is merged: the maintainer
+then does not merge it. If the facts in point 3 change, say so on the pull
+request.
