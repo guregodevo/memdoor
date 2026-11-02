@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -62,5 +63,21 @@ func TestPersistWorkspaceSlug(t *testing.T) {
 	_ = json.Unmarshal(raw2, &got2)
 	if got2["workspace_id"] != "trading" {
 		t.Errorf("empty slug must be a no-op; workspace_id = %v, want %q", got2["workspace_id"], "trading")
+	}
+}
+
+func TestSetupNextStepsNamesTheGatewayOnlyWhenNoneAnswers(t *testing.T) {
+	up := setupNextSteps(true)
+	if strings.Contains(up, "Start the gateway") {
+		t.Errorf("a gateway answers, yet the text says to start one:\n%s", up)
+	}
+	if !strings.Contains(up, "--admin-email") {
+		t.Errorf("the scripted form is missing:\n%s", up)
+	}
+	down := setupNextSteps(false)
+	for _, want := range []string{"Start the gateway", "Re-run onboarding", "--admin-email"} {
+		if !strings.Contains(down, want) {
+			t.Errorf("no gateway answers, the text lacks %q:\n%s", want, down)
+		}
 	}
 }

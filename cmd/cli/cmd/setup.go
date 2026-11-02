@@ -99,13 +99,7 @@ command does all of this on its first run; setup is the same from a script.
 			fmt.Println("  Start it with 'memdoor gateway &', then re-run 'memdoor setup'.")
 		}
 
-		fmt.Println("\nNext steps:")
-		fmt.Println("  1. Start the gateway:  memdoor gateway &")
-		fmt.Println("  2. Re-run onboarding:  memdoor setup")
-		fmt.Println("")
-		fmt.Println("  (Scripted alternative: memdoor setup --admin-email <email>")
-		fmt.Println("   --admin-password <pass> --workspace-name <name>)")
-		fmt.Println("")
+		fmt.Print(setupNextSteps(gatewayReachable()))
 		// No `memdoor workspace use` hint here — the gateway didn't
 		// run, so the workspace_slug the server picks is still unknown.
 		// `memdoor workspace which` after the next setup run prints
@@ -338,6 +332,19 @@ func ensureGatewayRunning() {
 
 // gatewayReachable probes /api/setup/status to see if the gateway is up.
 // Used to decide whether interactive onboarding can proceed.
+// setupNextSteps is what a setup that created no account tells the person to
+// do: the scripted form when a gateway answers, the gateway first when none does.
+func setupNextSteps(gatewayUp bool) string {
+	const scripted = "memdoor setup --admin-email <email> --admin-password <pass> --workspace-name <name>"
+	if gatewayUp {
+		return "\nNext step:\n  Create the first admin:  " + scripted + "\n\n"
+	}
+	return "\nNext steps:\n" +
+		"  1. Start the gateway:  memdoor gateway &\n" +
+		"  2. Re-run onboarding:  memdoor setup\n\n" +
+		"  (Scripted alternative: " + scripted + ")\n\n"
+}
+
 func gatewayReachable() bool {
 	c := NewClient()
 	var status struct {
