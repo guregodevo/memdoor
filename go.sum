@@ -79,6 +79,8 @@ github.com/guregodevo/mario v0.0.0-20261029181449-f2e603ea1425 h1:SPcYKrXfJHfQ3c
 github.com/guregodevo/mario v0.0.0-20261029181449-f2e603ea1425/go.mod h1:Fq3X8gIsnxhposBXzijCIg9QE14nYhG9NdEsiDta/2k=
 github.com/guregodevo/mario v0.0.0-20261030100200-608f44f01d8b h1:3iOESj3J6MMgAN3b7iB6LEf83/cGcS0rQRd9LnGgsB0=
 github.com/guregodevo/mario v0.0.0-20261030100200-608f44f01d8b/go.mod h1:Fq3X8gIsnxhposBXzijCIg9QE14nYhG9NdEsiDta/2k=
+github.com/guregodevo/mario v0.0.0-20261102145012-e053aaf6d021 h1:PuINliP898arrNp/rvGYl6PaMGAhXnISSHuXWfHKDtU=
+github.com/guregodevo/mario v0.0.0-20261102145012-e053aaf6d021/go.mod h1:Fq3X8gIsnxhposBXzijCIg9QE14nYhG9NdEsiDta/2k=
 github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs4luLUK2k=
 github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=

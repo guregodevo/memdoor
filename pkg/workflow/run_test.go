@@ -663,3 +663,27 @@ func TestEnsureIgnoredCoversTheRunTable(t *testing.T) {
 		t.Fatalf("a person's own file that ignores everything is left alone: %q", b)
 	}
 }
+
+// A command step that inlines a large upstream output (guregodevo/memdoor#4):
+// the rendered line passes Linux's 128 KB cap on one argument, which failed
+// the step with "argument list too long" before mario ran it on stdin.
+func TestACommandStepInlinesAnOutputPastTheArgumentCap(t *testing.T) {
+	root := t.TempDir()
+	dir := writeWorkflow(t, root, "inline", map[string]string{
+		"answer": "type: command\ncommand: head -c 300000 /dev/zero | tr '\\0' x\n",
+		"write":  "type: command\ncommand: |\n  cat > answer.md <<'MEMDOOR_ANSWER_EOF'\n  {{ output \"answer\" }}\n  MEMDOOR_ANSWER_EOF\nrequires:\n  - table_pattern: answer\ntarget:\n  file: answer.md\n",
+	})
+	r := &fakeRunner{}
+	wf := load(t, dir, r)
+	res, err := Run(context.Background(), wf, types(r), Options{Workdir: root, Partition: "2026-11-02", Retry: 20 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Failed() || res.Tasks["write"].Status != StatusDone {
+		t.Fatalf("the write step must run:\n%s", res.Summary())
+	}
+	b, err := os.ReadFile(filepath.Join(root, "answer.md"))
+	if err != nil || len(b) < 300000 {
+		t.Fatalf("answer.md holds %d bytes (%v), want the 300000 of the output", len(b), err)
+	}
+}
