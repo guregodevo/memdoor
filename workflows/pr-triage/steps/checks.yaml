@@ -6,16 +6,25 @@ type: command
 command: |
   r=.memdoor/runs/pr-triage-{{.partition}}
   test_re='(_test\.go|(^|/)test_[^/]*\.py|_test\.py|\.(test|spec)\.[cm]?[jt]sx?|(^|/)(tests?|__tests__|spec)/.*)$'
-  if [ -n "${MEMDOOR_TEST_COMMAND:-}" ]; then c=$MEMDOOR_TEST_COMMAND
+  if [ "${MEMDOOR_TEST_COMMAND:-}" = skip ]; then c=; skipped=1
+  elif [ -n "${MEMDOOR_TEST_COMMAND:-}" ]; then c=$MEMDOOR_TEST_COMMAND
   elif [ -f go.mod ]; then c='go test ./...'
   elif [ -f Cargo.toml ]; then c='cargo test'
   elif [ -f package.json ] && grep -q '"test"[[:space:]]*:' package.json; then c='npm test'
   elif [ -f pyproject.toml ] || [ -f setup.py ] || [ -f pytest.ini ]; then c='python3 -m pytest -q'
   elif [ -f Makefile ] && grep -qE '^test:' Makefile; then c='make test'
   else c=; fi
+  # The tests get MEMDOOR_TEST_TIMEOUT (5m): a run that does not finish is a
+  # fact in the report, never a failing verdict. Without coreutils' timeout
+  # (macOS) the step's own clock is the bound.
+  limit=${MEMDOOR_TEST_TIMEOUT:-5m}
+  if command -v timeout >/dev/null 2>&1; then wrap="timeout $limit"; else wrap=; fi
   if [ -n "$c" ]; then
-    if sh -c "$c" > "$r.tests" 2>&1; then tests="pass (\`$c\`)"
+    rc=0; $wrap sh -c "$c" > "$r.tests" 2>&1 || rc=$?
+    if [ "$rc" = 0 ]; then tests="pass (\`$c\`)"
+    elif [ "$rc" = 124 ]; then tests="not finished in $limit (\`$c\`)"
     else tests="FAIL (\`$c\`): $(grep -E -m3 -- '--- FAIL|FAILED|Error|error:' "$r.tests" | tr '\n' ' ' | cut -c1-300)"; fi
+  elif [ -n "${skipped:-}" ]; then tests="not run here (MEMDOOR_TEST_COMMAND=skip: the project's CI runs them)"
   else tests="no test command found"; fi
   files=$(wc -l < "$r.numstat" | tr -d ' ')
   added=$(awk '{a+=$1} END {print a+0}' "$r.numstat"); removed=$(awk '{d+=$2} END {print d+0}' "$r.numstat")
