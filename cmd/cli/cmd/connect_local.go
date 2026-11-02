@@ -1,8 +1,13 @@
 package cmd
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -62,10 +67,11 @@ func noLocalRuntimeText(where, goos string) string {
 	b.WriteString("No model is running on " + where + ".\n")
 	switch goos {
 	case "linux":
-		b.WriteString("  Run one with janis (Linux, no GPU needed, slow without one):\n")
+		b.WriteString("  Run one with janis (no GPU needed, slow without one):\n")
 		b.WriteString("    " + janisInstall + "\n")
-		b.WriteString("    janis serve --detach --model Qwen3-8B-4bit\n")
-		b.WriteString("  Then run this again. Ollama, LM Studio, llama.cpp and vLLM work too.\n")
+		b.WriteString("    janis pull                                  # the model that fits this machine\n")
+		b.WriteString("    janis serve --detach --model <that model>\n")
+		b.WriteString("  Ollama, LM Studio, llama.cpp and vLLM work too.\n")
 	case "darwin":
 		b.WriteString("  Run one with Ollama:  ollama pull qwen3:8b   (ollama.com)\n")
 		b.WriteString("  or build janis for MLX: https://github.com/guregodevo/janis#build\n")
@@ -90,14 +96,22 @@ var errNoRuntimeChosen = errors.New("nothing connected: no address given")
 // chooseLocalRuntime asks the gateway which runtimes answer and lets the
 // person pick by number. It returns the base to connect to. A gateway that
 // cannot list them (an older one) gets the plain address prompt.
-func chooseLocalRuntime(ask func(prompt, def string) string, say func(string)) (string, error) {
-	var list localRuntimeList
-	if err := NewClient().GetJSON("/api/providers/connect", &list); err != nil {
+func chooseLocalRuntime(ask func(prompt, def string) string, say func(string), offer func() error) (string, error) {
+	list, err := listLocalRuntimes()
+	if err != nil {
 		return ask("Address of the model server (blank: look for one)", ""), nil
 	}
 	where := runtimeWhere(gatewayAddr)
 	if len(list.Runtimes) == 0 {
 		say(noLocalRuntimeText(where, hereOS(where)))
+		if offer != nil && yes(ask("Run these now? (y/n)", "y")) {
+			if err := offer(); err != nil {
+				say("✗ " + err.Error() + "\n")
+			} else if again, err := listLocalRuntimes(); err == nil && len(again.Runtimes) > 0 {
+				say("✓ " + again.Runtimes[0].Name + " is running at " + again.Runtimes[0].Base + "\n")
+				return again.Runtimes[0].Base, nil
+			}
+		}
 		if base := ask("Address (Enter to cancel)", ""); base != "" {
 			return base, nil
 		}
@@ -115,4 +129,77 @@ func chooseLocalRuntime(ask func(prompt, def string) string, say func(string)) (
 		return base, nil
 	}
 	return "", errNoRuntimeChosen
+}
+
+func listLocalRuntimes() (localRuntimeList, error) {
+	var list localRuntimeList
+	err := NewClient().GetJSON("/api/providers/connect", &list)
+	return list, err
+}
+
+func yes(answer string) bool {
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "n", "no":
+		return false
+	}
+	return true
+}
+
+// janisHome is where janis's installer puts the binary; the shell expands it.
+const janisHome = "$HOME/.local/bin/janis"
+
+// janisPulled reads the model name from `janis pull`'s last line, "✓ NAME
+// installed" (or "is installed" when it was there already). Only name
+// characters, since it goes back into a shell command.
+var janisPulled = regexp.MustCompile(`✓ ([A-Za-z0-9._-]+) (?:is )?installed`)
+
+// runShell runs a command line with the person's terminal, copying its output
+// to tee when given.
+type runShell func(script string, tee io.Writer) error
+
+func shellRunner(script string, tee io.Writer) error {
+	cmd := exec.Command("sh", "-c", script)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	if tee != nil {
+		cmd.Stdout = io.MultiWriter(os.Stdout, tee)
+	}
+	return cmd.Run()
+}
+
+// installJanis is what the "nothing running" text shows: the installer unless
+// janis is there (janis is its path, "" when it is not), then the model that
+// fits this machine, then the server in the background. It returns once the
+// server answered, so the connect that follows finds it.
+func installJanis(run runShell, janis string) error {
+	if janis == "" {
+		if err := run(janisInstall, nil); err != nil {
+			return fmt.Errorf("the janis installer did not finish: %w", err)
+		}
+		janis = janisHome
+	}
+	var pulled bytes.Buffer
+	if err := run(janis+" pull", &pulled); err != nil {
+		return fmt.Errorf("janis could not fetch a model: %w", err)
+	}
+	serve := janis + " serve --detach"
+	if m := janisPulled.FindAllStringSubmatch(pulled.String(), -1); len(m) > 0 {
+		serve += " --model " + m[len(m)-1][1]
+	}
+	if err := run(serve, nil); err != nil {
+		return fmt.Errorf("janis did not start: %w", err)
+	}
+	return nil
+}
+
+// janisOffer is the install on offer, or nil: only on Linux with the gateway
+// on this machine, where the janis release runs.
+func janisOffer() func() error {
+	if runtimeWhere(gatewayAddr) != "this computer" || runtime.GOOS != "linux" {
+		return nil
+	}
+	return func() error {
+		path, _ := exec.LookPath("janis")
+		return installJanis(shellRunner, path)
+	}
 }
