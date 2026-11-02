@@ -1,27 +1,27 @@
 # Roadmap
 
 Memdoor is the workflow harness that makes a small model beat a frontier
-one, on your machine, with the runs published. The terminal, a shell, CI,
+one, on your machine. The runs are published. The terminal, a shell, CI,
 cron, an editor and a phone are doors onto it.
 
-Decided 2026-11-02, after the LiveCodeBench Hard result and its thread: the
-harness is the product. The people who want it run local models. The other
-surfaces are kept and not extended until a user asks.
+Decided on 2026-11-02 after the LiveCodeBench Hard thread. The harness is the
+product. The people who want it run local models. The other surfaces are
+kept and not extended until a user asks.
 
 ## Now
 
-1. **The receipt on a local model.** team-solve on Qwen3.8-27B on one
-   24 GB card and one 32 GB Mac, through Ollama, llama.cpp and janis, every
-   run published like the OpenRouter one. Done when the result page shows
-   each setup with its score and its hours.
+1. **The receipt on a local model.** team-solve on Qwen3.8-27B on a 24 GB
+   card and on a 32 GB Mac, through Ollama, llama.cpp and janis. Each run
+   published like the OpenRouter one. Done when the result page shows each
+   setup with its score and its hours.
 2. **Ten users.** The people who came back (version checks, issues, PRs):
    what they ran it on, what broke, what they wanted next. Done when ten
    answers are written down.
 3. **The first run is a workflow on a local model.** `memdoor connect
-   local`, then `memdoor workflow run team-solve --wait` in an empty folder
-   gets the sample problem (built in, PR #11); `pr-review` runs in CI from
-   one `uses:` line. Done when the README's first screen and the
-   getting-started page open on that, and a stranger's first run is on the
+   local`, then `memdoor workflow run team-solve --wait` in an empty folder.
+   The folder gets the sample problem (built in, PR #11). `pr-review` runs
+   in CI from one `uses:` line. Done when the README's first screen and the
+   getting-started page open on that and a stranger's first run is on the
    result page.
 4. **Lean review on a key.** `review-lean` sets thinking off; a model that
    refuses (HTTP 400, reasoning mandatory) fails the run. Retry without the
@@ -31,9 +31,9 @@ surfaces are kept and not extended until a user asks.
 
 ## Next
 
-- Hosted workflow state for a team: one table per workspace on memdoor.ai,
-  so a step on one machine waits on a step from another. Built; sold only
-  when a team asks. $10 a month, unchanged.
+- Hosted workflow state for a team: one table per workspace on memdoor.ai.
+  A step on one machine waits on a step from another. Built. Sold when a
+  team asks. $10 a month.
 - The decision model: message gate on by default, a stop reason on every cut
   reply, "which tool did it mean" before giving up on an unparseable call.
 - Provider listings: DeepSeek's agent list, Hugging Face hub docs, Vercel's
