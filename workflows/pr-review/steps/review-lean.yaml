@@ -3,8 +3,9 @@ model: thinking off
 # The review in one model call, for a slow model (MEMDOOR_LEAN: the GitHub
 # Action sets it with local-model, a model on the runner's CPU): the diff in
 # the prompt, no tools, no loop. The agent's review (review.yaml) runs instead
-# when it is not set.
-when: test -s .memdoor/runs/pr-review-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
+# when it is not set. The diff is what trim kept: code, no comment-only
+# hunks, within the CPU budget.
+when: test -s .memdoor/runs/pr-review-{{.partition}}.lean.diff && [ -n "${MEMDOOR_LEAN:-}" ]
 prompt: |
   You review a code change. The unified diff is below: lines starting with + are added, lines starting with - are removed.
 
@@ -21,10 +22,10 @@ prompt: |
   P0 is only what must not merge: a bug a user hits, a security hole, data loss, a broken build. P1 is what should be fixed soon; P2 a nit. A finding is a fault in the new code: what the change fixes or improves is never a finding, say it in the Summary. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
 
   ```diff
-  {{ file (printf ".memdoor/runs/pr-review-%s.diff" .partition) }}
+  {{ file (printf ".memdoor/runs/pr-review-%s.lean.diff" .partition) }}
   ```
 requires:
-  - table_pattern: diff
+  - table_pattern: trim
 target:
   file: .memdoor/runs/pr-review-{{.partition}}.md
 timeout: 30m

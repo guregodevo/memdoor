@@ -8,7 +8,18 @@ command: |
   rm -f "$r".p0-1 "$r".p0-2 "$r".p0-3
   grep -E '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P0([^0-9]|$)' "$r".md | head -3 |
     awk -v r="$r" '{ print > (r ".p0-" NR) }'
-  ls "$r".p0-* 2>/dev/null | wc -l | tr -d ' '
+  # The re-check reads the file the finding names, not the whole diff: a
+  # CPU prefills the diff once per question otherwise.
+  for n in 1 2 3; do
+    [ -s "$r.p0-$n" ] || continue
+    f=$(grep -oE '`[^`:]+' "$r.p0-$n" | head -1 | tr -d '`')
+    if [ -n "$f" ] && grep -q "^diff --git a/$f " "$r.lean.diff"; then
+      awk -v f="$f" '/^diff --git /{p = ($0 == "diff --git a/" f " b/" f)} p' "$r.lean.diff" > "$r.p0-$n.diff"
+    else
+      cp "$r.lean.diff" "$r.p0-$n.diff"
+    fi
+  done
+  ls "$r".p0-? 2>/dev/null | wc -l | tr -d ' '
 requires:
   - table_pattern: review-lean
 timeout: 1m
