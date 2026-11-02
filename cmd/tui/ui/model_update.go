@@ -54,6 +54,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if title := (&nm).titleCmd(); title != nil {
 		cmd = tea.Batch(cmd, title)
 	}
+	if status := (&nm).programStatusCmd(); status != nil {
+		cmd = tea.Batch(cmd, status)
+	}
 	nm, flush := nm.flushSettled()
 	if flush == nil {
 		return nm, cmd

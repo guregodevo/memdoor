@@ -111,6 +111,7 @@ func (m *Model) titleCmd() tea.Cmd {
 // Called once per busy→idle transition (model_update.go).
 func (m *Model) turnEnded() tea.Cmd {
 	m.doneUnseen = true
+	m.lastOutcome = "done"
 	status := cmuxTurnEnded()
 	if !m.blurred {
 		return status
@@ -132,11 +133,19 @@ func (m *Model) seen() { m.doneUnseen = false }
 // use, model_render.go); the BEL needs none — tmux marks the window itself.
 func ringTerminal(text string) tea.Cmd {
 	return func() tea.Msg {
-		osc := "\x1b]9;" + strings.ReplaceAll(text, "\x07", "") + "\x07"
-		if os.Getenv("TMUX") != "" {
-			osc = "\x1bPtmux;" + strings.ReplaceAll(osc, "\x1b", "\x1b\x1b") + "\x1b\\"
-		}
+		osc := tmuxPassthrough("\x1b]9;" + strings.ReplaceAll(text, "\x07", "") + "\x07")
 		_, _ = os.Stdout.WriteString("\a" + osc)
 		return nil
 	}
+}
+
+// tmuxPassthrough wraps an escape in tmux's DCS passthrough when $TMUX is set,
+// with every ESC in the payload doubled, per the tmux protocol. tmux drops a
+// bare OSC otherwise. The pane needs allow-passthrough on, which the TUI
+// enables at startup.
+func tmuxPassthrough(seq string) string {
+	if os.Getenv("TMUX") == "" {
+		return seq
+	}
+	return "\x1bPtmux;" + strings.ReplaceAll(seq, "\x1b", "\x1b\x1b") + "\x1b\\"
 }

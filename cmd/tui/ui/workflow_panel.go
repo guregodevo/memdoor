@@ -318,6 +318,7 @@ func (m *Model) updateWorkflowPanel(msg tea.Msg) (bool, tea.Cmd) {
 			default:
 				if m.workflowRunning == t.status.ID {
 					m.workflowRunning = "" // the clock stops with the run
+					m.workflowRunEnded(*t.status)
 				}
 				if p != nil {
 					p.err = "" // a refusal like "already running" is stale once a run ends

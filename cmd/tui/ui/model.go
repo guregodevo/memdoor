@@ -139,6 +139,11 @@ type Model struct {
 	// for the end-of-turn signal (window_title.go).
 	blurred    bool
 	doneUnseen bool
+	// lastStatus is the OSC 7501 state already sent, so an unchanged state is
+	// not sent again; lastOutcome ("done" or "error") is what the tab shows
+	// once nothing runs (program_status.go).
+	lastStatus  string
+	lastOutcome string
 	// spinFrame and spinning drive the running mark in the title (window_title.go).
 	spinFrame int
 	spinning  bool
