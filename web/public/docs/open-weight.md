@@ -48,7 +48,7 @@ memdoor connect local            # finds the runtime on this machine, probes it,
 memdoor model                    # the model that answers, and what it lists for: nothing
 ```
 
-Blank address: janis, Ollama, llama.cpp or LM Studio on their usual ports.
+Memdoor lists the model servers running on the gateway's machine (janis, Ollama, llama.cpp, LM Studio, vLLM, on their usual ports) and you pick one by number.
 `--base http://localhost:8000/v1` names another. The probe reads the model
 list and makes one call; a large model may take minutes to load. `/model
 search` lists what the runtime serves, `/model qwen3:8b-32k` pins one. A
