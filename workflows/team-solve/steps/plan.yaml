@@ -1,5 +1,7 @@
 type: agent
 agent: coder
+requires:
+  - table_pattern: problem
 prompt: |
   You are the planner in a ledger-based team with fresh contexts. Read task.md
   from disk. Write plan.md with the decomposition, correctness requirements,

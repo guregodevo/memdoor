@@ -354,7 +354,15 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 // probeCall is the one-token test: a reply, any reply, proves the URL, the
 // token and the shape. An unknown-model error still proves the first two.
 func probeCall(ctx context.Context, p providers.Provider, model string) (string, error) {
-	ctx, cancel := context.WithTimeout(llm.WithUtilityCall(ctx), 60*time.Second)
+	// A hosted API answers in seconds. A local runtime first loads the model
+	// into memory, minutes for a 5 GB file on a laptop, and the probe's 60 s
+	// read as "not connected: context deadline exceeded" on a working Ollama
+	// (2026-11-01, qwen3:8b with a 32K window on a 16 GB Mac).
+	wait := 60 * time.Second
+	if p.Keyless {
+		wait = 5 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(llm.WithUtilityCall(ctx), wait)
 	defer cancel()
 	msg, err := p.Client(ctx, model).Messages().New(ctx, llm.MessageNewParams{
 		Model: llm.Model(model), MaxTokens: 512, Agent: "connect", // a reasoning model thinks first (gpt-5, 2026-10-02)

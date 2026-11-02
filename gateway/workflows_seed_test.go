@@ -97,3 +97,18 @@ func TestSeedKeepsAnEditedStep(t *testing.T) {
 		t.Fatalf("a deleted seeded file of our own workflow was not written again: %v", err)
 	}
 }
+
+// team-solve ships with what its steps run on: the sample problem an empty
+// folder gets, and the check script `test` and `verify` call (P0, Greg
+// 2026-11-01: "make team-solve a built-in with local model").
+func TestSeedWritesTeamSolveWithItsSampleAndCheck(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	SeedEmbeddedWorkflows()
+	dir := filepath.Join(home, ".memdoor", "workflows", "team-solve")
+	for _, rel := range []string{"check-samples.sh", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml"} {
+		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
+			t.Fatalf("team-solve seeded without %s: %v", rel, err)
+		}
+	}
+}

@@ -97,7 +97,7 @@ refused both a write; they download the model when `main` has none saved. A
 
 ## The built-in workflows
 
-Nine, no file in your repository. On your key: an agent that reads the code
+Ten, no file in your repository. On your key: an agent that reads the code
 around the change and runs it. On a runner model: one model call with
 everything in the prompt.
 

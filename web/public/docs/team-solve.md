@@ -61,16 +61,13 @@ Parity check, hosts, what the rebuild took, where it lost:
 curl -fsSL https://memdoor.ai/install.sh | bash
 memdoor connect openrouter          # or anthropic, openai, gemini, chatgpt
 memdoor connect local               # or no key: a model on this machine (Ollama, llama.cpp, vLLM, LM Studio)
-git clone --depth 1 https://github.com/guregodevo/memdoor
-
-mkdir -p ~/.memdoor/workflows
-cp -r memdoor/examples/workflows/team-solve ~/.memdoor/workflows/
 mkdir my-problem && cd my-problem
-cp -r ../memdoor/examples/workflows/team-solve/sample/* .     # task.md + tests/1.in … 5.out
-memdoor workflow run team-solve --wait                        # exit 0 when every sample passes
+memdoor workflow run team-solve --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
 ```
 
-Your problem: `task.md` and paired `tests/N.in` / `tests/N.out`. Program:
+`team-solve` ships in the binary, seeded into `~/.memdoor/workflows` at the
+gateway's first boot. Your problem: `task.md` and paired `tests/N.in` /
+`tests/N.out` in the folder. Program:
 `solution.py`, stdin in, compared to the samples with `diff`. The steps name
 no model; the `/model` pin answers, a local one included.
 
