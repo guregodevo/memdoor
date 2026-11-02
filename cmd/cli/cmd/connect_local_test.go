@@ -21,11 +21,20 @@ func TestLocalRuntimeMenuListsEachAndAnotherAddress(t *testing.T) {
 }
 
 func TestNothingRunningIsSaidInWordsWithAWayOut(t *testing.T) {
-	got := noLocalRuntimeText("this computer")
-	for _, want := range []string{"No model is running on this computer.", "Start one", "memdoor connect openrouter"} {
-		if !strings.Contains(got, want) {
-			t.Errorf("text lacks %q:\n%s", want, got)
+	for goos, wants := range map[string][]string{
+		"linux":  {"No model is running on this computer.", janisInstall, "janis serve --detach --model Qwen3-8B-4bit", "memdoor connect openrouter"},
+		"darwin": {"ollama pull qwen3:8b", "janis#build", "memdoor connect openrouter"},
+		"":       {"Start janis, Ollama", "memdoor connect openrouter"},
+	} {
+		got := noLocalRuntimeText("this computer", goos)
+		for _, want := range wants {
+			if !strings.Contains(got, want) {
+				t.Errorf("%q text lacks %q:\n%s", goos, want, got)
+			}
 		}
+	}
+	if strings.Contains(noLocalRuntimeText("the gateway's machine", hereOS("the gateway's machine")), "curl -fsSL") {
+		t.Error("a gateway elsewhere gets no command for this machine's OS")
 	}
 	if runtimeWhere("http://localhost:18789") != "this computer" || runtimeWhere("http://box.example:18789") != "the gateway's machine" {
 		t.Error("a gateway here is this computer, any other is its own machine")

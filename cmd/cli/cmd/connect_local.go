@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -49,12 +50,39 @@ func localRuntimeMenu(rs []localRuntimeRow, where string) string {
 	return b.String()
 }
 
-// noLocalRuntimeText is said when nothing answers. A key is the way out for a
-// machine that cannot run a model.
-func noLocalRuntimeText(where string) string {
-	return "No model is running on " + where + ".\n" +
-		"  Start one (Ollama, LM Studio, llama.cpp, vLLM, janis) and run this again, or type its address.\n" +
-		"  No model here? Use a key: memdoor connect openrouter\n"
+// janisInstall is the one-line Linux installer; janis serve --detach pulls the
+// model and returns once it has answered (guregodevo/janis README).
+const janisInstall = "curl -fsSL https://github.com/guregodevo/janis/releases/latest/download/install.sh | sh"
+
+// noLocalRuntimeText is said when nothing answers. It names janis with the
+// command for this OS, and a key for a machine that cannot run a model well.
+// goos is the OS of the machine the gateway runs on; "" when that is not this one.
+func noLocalRuntimeText(where, goos string) string {
+	var b strings.Builder
+	b.WriteString("No model is running on " + where + ".\n")
+	switch goos {
+	case "linux":
+		b.WriteString("  Run one with janis (Linux, no GPU needed, slow without one):\n")
+		b.WriteString("    " + janisInstall + "\n")
+		b.WriteString("    janis serve --detach --model Qwen3-8B-4bit\n")
+		b.WriteString("  Then run this again. Ollama, LM Studio, llama.cpp and vLLM work too.\n")
+	case "darwin":
+		b.WriteString("  Run one with Ollama:  ollama pull qwen3:8b   (ollama.com)\n")
+		b.WriteString("  or build janis for MLX: https://github.com/guregodevo/janis#build\n")
+		b.WriteString("  Then run this again. LM Studio, llama.cpp and vLLM work too.\n")
+	default:
+		b.WriteString("  Start janis, Ollama, LM Studio, llama.cpp or vLLM on that machine and run this again.\n")
+	}
+	b.WriteString("  Or type its address below. No model here? Use a key: memdoor connect openrouter\n")
+	return b.String()
+}
+
+// hereOS is this machine's OS when the gateway runs on it, else "".
+func hereOS(where string) string {
+	if where == "this computer" {
+		return runtime.GOOS
+	}
+	return ""
 }
 
 var errNoRuntimeChosen = errors.New("nothing connected: no address given")
@@ -69,7 +97,7 @@ func chooseLocalRuntime(ask func(prompt, def string) string, say func(string)) (
 	}
 	where := runtimeWhere(gatewayAddr)
 	if len(list.Runtimes) == 0 {
-		say(noLocalRuntimeText(where))
+		say(noLocalRuntimeText(where, hereOS(where)))
 		if base := ask("Address (Enter to cancel)", ""); base != "" {
 			return base, nil
 		}
