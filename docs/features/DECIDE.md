@@ -14,7 +14,7 @@ falls back to a chat completion**.
 
 ## Setup
 
-**THE DECISION MODEL IS NOT PRO** (Greg, 2026-10-03: "Jev at user key by
+**THE DECISION MODEL IS NOT PRO** (the maintainer, 2026-10-03: "Jev at user key by
 default", "jev decision model is not pro"). It reverses 2026-09-27, when the
 seat was the decision model: Pi 1.0 hands any user Jev on their own key, so
 selling access to it sells nothing. Pro is what memdoor.ai hosts: the relay
@@ -28,7 +28,7 @@ chosen in this order (`autoDecisionModel`, gateway/decision_model.go):
    (`OPENROUTER_API_KEY`). On by default: nothing
    to configure. The log says `System One decision provider registered
    endpoint=… own_openrouter_key=true`.
-No seat supplies a decision key (Greg, 2026-10-04: "Pro seat never offer
+No seat supplies a decision key (the maintainer, 2026-10-04: "Pro seat never offer
 key. It's always with user key"): with neither of the above, decisions are
 off. The broker no longer serves decisions at all.
 
@@ -37,7 +37,7 @@ be contacted, so neither the broker nor OpenRouter on the coding key judges;
 only an explicit decision key does. With none of the above, decisions answer
 `unavailable: not-configured` and the agent works unjudged.
 
-There is no switch (Greg, 2026-09-29: "remove the toggle on and off"): the
+There is no switch (the maintainer, 2026-09-29: "remove the toggle on and off"): the
 `decision_model` setting and `memdoor config decision-model` are gone, and a
 row left in a workspace is ignored. A seat changes nothing: decisions run on
 the person's own key or none.
@@ -52,7 +52,7 @@ memdoor savings     # judged reads: bytes read by the judge, bytes passed on, ca
 The typed-question API stays for programs: `POST /api/decisions/evaluate`
 with a state and `choice` / `yesno` / `score` questions.
 
-**Without OpenRouter** (2026-10-03, Greg: "how pi do without OpenRouter?"):
+**Without OpenRouter** (2026-10-03, the maintainer: "how pi do without OpenRouter?"):
 Jev is TypeSafe's model and TypeSafe serves it directly. `memdoor connect
 typesafe` (or the window's `/connect`) takes a TypeSafe key, probes it with
 one real yes/no, and keeps it; decisions then run on it whatever provider
@@ -142,7 +142,7 @@ family "change", confidence 1.00, 524 ms). Families err wide because a tool
 the turn needs but cannot see gets called with guessed arguments: an investigate turn keeps `apply_patch` because an
 investigation that finds the bug fixes it, and the always-allowed core keeps
 the file, shell and notes tools. The cut is smaller for it (change −20%,
-investigate −16%, answer −37%) — Greg, 2026-09-27: "no risk no quality
+investigate −16%, answer −37%) — the maintainer, 2026-09-27: "no risk no quality
 degradation". Since 2026-09-29 the coder carries no `jlogs` and no `cron`
 (and no "schedule" family): ~760 tokens off every call, routed or not.
 Since 2026-09-30 it carries `web_search` and `web_fetch`
@@ -163,7 +163,7 @@ does the reply address the request at all? — retried at P ≥ 0.8 (three
 off-request replies 0.89–0.98; answers, a clarifying question and an honest
 "it does not exist" 0.06–0.29). Costs one decision per turn end.
 
-**When verifiable, don't ask** (`gateway/ask_gate.go`, 2026-10-03, Greg:
+**When verifiable, don't ask** (`gateway/ask_gate.go`, 2026-10-03, the maintainer:
 "anything verifiable could save question babysitting", "when verifiable",
 "dont ask") — the one interruption a turn has is a question to the person,
 and models reach for it to settle what the repository or a command would
@@ -174,7 +174,7 @@ check and act on what it finds; the same question asked again reaches the
 person, so an insisting model is not walled off. Not yet measured live.
 
 **Done means the receipts show it** (`gateway/turn_done.go`, 2026-10-03,
-Greg: "let's use Jev for the harness", "let's start with no babysitting") —
+The maintainer: "let's use Jev for the harness", "let's start with no babysitting") —
 the verdict above reads the model's last sentence; this reads what the turn
 did. From the tool records: the files a mutating tool changed, every `verify`
 result and every build `apply_patch` folded into its own result, and whether
@@ -292,7 +292,7 @@ tools; they return their input unjudged.
 
 ### Paired runs, 2026-09-27 (coder on its ladder, Jev on vs off)
 
-Greg: "Let's take a task and compare results on and off … prove it's
+The maintainer: "Let's take a task and compare results on and off … prove it's
 worth." Three tasks, each run with `decision_model=off` and `systemone`
 in alternating order (that setting is since removed: to reproduce, run without
 and with a decision key), a fresh channel per run, on rung 1 (GLM 5.3 Flash,
@@ -329,7 +329,7 @@ What it says:
   time. Same answers. This is the 2026-09-26 result (−63%) again, on a
   different model and a month later.
 - **A named-file edit: no saving, +11–17% tokens — found and fixed the same
-  day** (Greg: "Fix edit tokens with jev. it should not be higher"). See
+  day** (the maintainer: "Fix edit tokens with jev. it should not be higher"). See
   *The edit regression* below: after the fix the same task runs at −48%.
 - **The dollar saving scales with the price of the model being saved.**
   On rung 1 the chat model's input ($0.04/M) costs what Jev's does
@@ -436,7 +436,7 @@ families, off against Jev, same tasks, alternating order, rung 1:
   verification round), not the decisions.
 - **All 20 answers were right**: every edit passed `go test` and `go vet`
   on its own copy with the env var present in code and test, every question
-  named the right file. "No risk no quality degradation" (Greg,
+  named the right file. "No risk no quality degradation" (the maintainer,
   2026-09-27) is why the families carry more than they strictly need and why
   the tighter keep cap was dropped.
 - **The dollar saving is smaller than the token saving** because most of the
@@ -514,7 +514,7 @@ hunk this harness accepts. The catalogue only says a model *advertises* tools
 (`gateway/model_check.go`; reports in `~/.memdoor/model-checks.json`,
 `--saved` prints them without spending anything).
 
-Greg, 2026-09-27: "we need our coding agent to work with any model … try to
+The maintainer, 2026-09-27: "we need our coding agent to work with any model … try to
 identify common pattern of failure so we can generalize the adapter and not have
 too many coding paths".
 

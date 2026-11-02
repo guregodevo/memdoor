@@ -1,6 +1,6 @@
 # Contributing to Memdoor
 
-Memdoor is open source under the Apache License 2.0 and has one maintainer, Gregory Desvaux. Issues are welcome: a bug with the steps to reproduce it, or a request with the problem it would solve. External pull requests are not merged at this stage; a PR is still useful as a proposal (see `CONTRIBUTING.md`).
+Memdoor is open source under the Apache License 2.0 and has one maintainer, guregodevo. Issues are welcome: a bug with the steps to reproduce it, or a request with the problem it would solve. External pull requests are not merged at this stage; a PR is still useful as a proposal (see `CONTRIBUTING.md`).
 
 ---
 

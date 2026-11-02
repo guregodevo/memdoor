@@ -65,7 +65,7 @@ func SetDecisionService(svc decision.Service) {
 }
 
 // judgedTools only do their job with a decision model; without one they are
-// plain grep and read under longer descriptions (Greg, 2026-09-29: "it's using
+// plain grep and read under longer descriptions (the maintainer, 2026-09-29: "it's using
 // tool like jgrep with it off", "it wont work").
 var judgedTools = map[string]bool{"jgrep": true, "jread": true}
 

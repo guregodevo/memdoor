@@ -32,7 +32,7 @@ const (
 	// it costs us nothing.
 	Free Plan = "free"
 
-	// Solo was the developer product's prepaid tier. It is RETIRED (2026-09-05, Greg: "there is no balance…
+	// Solo was the developer product's prepaid tier. It is RETIRED (2026-09-05, the maintainer: "there is no balance…
 	// it's now subscription… Free or subscription"). The constant stays
 	// because it is a storage key rows were written under, and it reads as
 	// Pro: the workspaces that held it are subscribers now.

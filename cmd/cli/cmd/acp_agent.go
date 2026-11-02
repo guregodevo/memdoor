@@ -11,7 +11,7 @@ import (
 	"github.com/coder/acp-go-sdk"
 )
 
-// MEMDOOR IN THE EDITOR (Greg, 2026-10-10: "i want to be able to use the
+// MEMDOOR IN THE EDITOR (the maintainer, 2026-10-10: "i want to be able to use the
 // agents with VS code"). The Agent Client Protocol is what Zed and JetBrains
 // host natively and what VS Code hosts through an ACP client extension: a
 // JSON-RPC agent over stdio that the editor spawns. `memdoor acp` is that

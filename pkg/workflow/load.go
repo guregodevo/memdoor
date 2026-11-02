@@ -212,7 +212,7 @@ func WorkflowsDir(workdir string) string {
 }
 
 // ProjectRoot is the directory a workdir belongs to: workdir itself, or the
-// nearest parent up to $HOME that has a .memdoor/ or is a git root (Greg,
+// nearest parent up to $HOME that has a .memdoor/ or is a git root (the maintainer,
 // 2026-10-02: "they should also be looked up in current dir /.memdoor") — a
 // TUI opened in a subdirectory still sees the project's workflows, and a
 // run's outputs land at the project's root, not in the subdirectory. With
@@ -235,7 +235,7 @@ func ProjectRoot(workdir string) string {
 }
 
 // SharedDir is the person's own library of workflows, ~/.memdoor/workflows:
-// a DAG kept there runs in any project (Greg, 2026-10-02: "workflow can be
+// a DAG kept there runs in any project (the maintainer, 2026-10-02: "workflow can be
 // reusable … do the shared library of workflows"). A project's own workflow
 // of the same name wins.
 func SharedDir() string {
@@ -271,7 +271,7 @@ func Find(workdir, name string) (string, error) {
 
 // Entry is a workflow a project can run, with where it comes from and what
 // its README says (the first paragraph) — so a shared one explains itself
-// (Greg, 2026-10-02: "so users can share them, with a readme file").
+// (the maintainer, 2026-10-02: "so users can share them, with a readme file").
 type Entry struct {
 	Name        string
 	Dir         string
@@ -376,7 +376,7 @@ const ignoreFile = "# written by memdoor: run outputs, the run table, the rules 
 // run outputs and the run table (sqlite, with its -wal and -shm), the kept
 // rules, this machine's workspace marker (a slug, not the project's) and the
 // worktrees. What is left — workflows/ — is the project's, so a person can
-// commit .memdoor and every clone gets its workflows (Greg, 2026-10-04: "so
+// commit .memdoor and every clone gets its workflows (the maintainer, 2026-10-04: "so
 // that a user can have it in its git repo").
 var ignoredPaths = []string{"runs/", "runs.db", "runs.db-*", "AGENTS.md", "workspace", "worktrees/", "paste-*.png"}
 
@@ -389,7 +389,7 @@ const pasteOnlyIgnore = "*\n"
 // EnsureIgnored writes .memdoor/.gitignore in a project the first time
 // outputs are kept there, so a run's outputs and its run table never land
 // in a commit while .memdoor/workflows stays the person's to commit or not
-// (Greg: "… and is git ignore"). An existing file keeps every line it has
+// (the maintainer: "… and is git ignore"). An existing file keeps every line it has
 // and gains the ones it lacks (the run table arrived after the first
 // files were written, 2026-10-03); one that ignores everything (`*`) is
 // left alone.

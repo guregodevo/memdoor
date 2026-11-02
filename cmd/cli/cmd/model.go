@@ -11,7 +11,7 @@ import (
 )
 
 // memdoor model: the same catalogue the window's /model-search reads, from
-// the shell (Greg, 2026-09-26: "update also command line"). Pinning is per
+// the shell (the maintainer, 2026-09-26: "update also command line"). Pinning is per
 // conversation, so it lives in the window (/model <id>); here you find the
 // id and see each agent's ladder.
 var modelCmd = &cobra.Command{
@@ -72,7 +72,7 @@ In the window, /model shows this conversation's model and pins one:
 	},
 }
 
-// `memdoor model check` — can this model actually run the loop? (Greg,
+// `memdoor model check` — can this model actually run the loop? (the maintainer,
 // 2026-09-27: "the coding agent should work with any model!? … Maybe we should
 // detect it".) The catalogue says a model advertises tools; this asks it to emit
 // a call, pick the right one, carry on after a result, and write a patch our

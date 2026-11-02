@@ -7,7 +7,7 @@ import (
 )
 
 // An absolute WRITE outside the coder workdir is refused with an instructive
-// message (the stray-main.go incidents); a READ anywhere is allowed (Greg,
+// message (the stray-main.go incidents); a READ anywhere is allowed (the maintainer,
 // 2026-10-05, "like omp": oh-my-pi confines no read, and bash could read the
 // same file anyway). Absolute paths INSIDE the workdir and relative paths
 // stay allowed — the rewrite layer roots the relative ones.

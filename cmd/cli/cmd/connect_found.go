@@ -16,7 +16,7 @@ import (
 	"memdoor/pkg/modelkey"
 )
 
-// FIND THE KEY BEFORE ASKING FOR ONE (Greg, 2026-10-31: "when they connect we
+// FIND THE KEY BEFORE ASKING FOR ONE (the maintainer, 2026-10-31: "when they connect we
 // should scan keys … easy frictionless"; "they dont know the key"). A key in
 // this shell under any name, or in the project's .env, is offered first:
 // Enter connects it. Nothing leaves but the probe `memdoor connect` makes to
@@ -217,7 +217,7 @@ func printConnected(out io.Writer, res ui.ConnectResult) {
 }
 
 // offerFoundKey gets a gateway with no model one, with as few questions as
-// can be (Greg, 2026-10-31: "less friction"), when a person is at the
+// can be (the maintainer, 2026-10-31: "less friction"), when a person is at the
 // terminal: a key in this shell is connected without a word asked (the
 // person's own session, as aider does); a key in the project's files is
 // asked about once (it may be the project's production key, someone else's
@@ -286,7 +286,7 @@ func offerFileKeys(found []modelkey.Found, in *bufio.Reader) {
 }
 
 // offerSignIn is the first run with no key anywhere: a choice instead of a
-// sentence (Greg, 2026-10-31: "they dont know the key"). Enter signs in with
+// sentence (the maintainer, 2026-10-31: "they dont know the key"). Enter signs in with
 // OpenRouter, free; 2 with a ChatGPT plan; n leaves it.
 func offerSignIn(in *bufio.Reader) {
 	fmt.Fprintln(os.Stderr, "No model connected yet, and no key here that works.")

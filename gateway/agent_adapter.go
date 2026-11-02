@@ -64,7 +64,7 @@ type AgentResponse struct {
 	ToolsExecuted []ToolExecutionInfo `json:"tools_executed,omitempty"`
 	Error         string              `json:"error,omitempty"`
 	// Model is the model that answered the turn's last inference, as the
-	// vendor names it. The person sees which model answers (Greg,
+	// vendor names it. The person sees which model answers (the maintainer,
 	// 2026-09-26: the product routes across agents and models, so the model
 	// is shown — never its upstream hosts).
 	Model string `json:"model,omitempty"`
@@ -294,7 +294,7 @@ func NewAgentRuntimeWithFactory(clientFactory *providers.ClientFactory, apiKey s
 	compactionCfg := resolveCompactionConfig(cfg, agentCfg)
 
 	// The compaction percent from config; 0 takes the preflight default, 60%
-	// of the answering model's window (Greg, 2026-09-29: "60%, capped at
+	// of the answering model's window (the maintainer, 2026-09-29: "60%, capped at
 	// 200k"). It was 45 here, and compacted at 49.8% (live 2026-09-29).
 	compactionPercent := 0
 	if compactionCfg != nil && compactionCfg.CompactionPercent > 0 {
@@ -486,7 +486,7 @@ var guessedWindows sync.Map
 
 // warnGuessedWindow says, once per model, that its window is the provider's
 // default because neither the provider's list nor the reference states it
-// (Greg, 2026-10-02: "will it work for any model?" — for any model someone
+// (the maintainer, 2026-10-02: "will it work for any model?" — for any model someone
 // states; this is the other case, made loud).
 func warnGuessedWindow(provider, model string, window int) {
 	if _, seen := guessedWindows.LoadOrStore(provider+"/"+model, true); seen {

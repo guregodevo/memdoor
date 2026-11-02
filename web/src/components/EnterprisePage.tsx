@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { CoderHeader } from './CoderLandingPage';
 import { SeatCheckout } from './SeatCheckout';
 
-// THE ENTERPRISE PAGE (Greg, 2026-10-29: "it should be 100% opensource. Self
+// THE ENTERPRISE PAGE (the maintainer, 2026-10-29: "it should be 100% opensource. Self
 // hosted as enterprise", the hosted gateway kept at "the existing 10 euros per
 // month", the Stripe seat sold since 2026-09-27; "the landing page Pricing is misleading. It can make
 // people scared"). It was /pricing, with a $10 Pro seat and an Enterprise "by
@@ -18,7 +18,7 @@ import { SeatCheckout } from './SeatCheckout';
 //  2. CAN MY COMPANY RUN IT? Yes, on its own machines: the gateway installed on
 //     a box in its network, its own AI gateway or vendor key, approval mode and
 //     tool guards, every host the binary can contact listed, and it costs
-//     nothing. Enterprise is that with full support, by invoice (Greg,
+//     nothing. Enterprise is that with full support, by invoice (the maintainer,
 //     2026-10-29: "Enterprise is for full support").
 //  3. WHAT IS PAID? Only the gateway memdoor.ai runs for you: $10 a month,
 //     cancel any month. On your own machine or box, nothing.

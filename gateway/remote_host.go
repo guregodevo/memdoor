@@ -12,7 +12,7 @@ import (
 	"memdoor/pkg/shared"
 )
 
-// THE GATEWAY HOLDS THE PHONE'S LINK (Greg, 2026-10-23, reviewing the
+// THE GATEWAY HOLDS THE PHONE'S LINK (the maintainer, 2026-10-23, reviewing the
 // commands: "the daemon owns the work"). Until now the phone's terminal, the
 // second TUI program on a conversation, ran inside the window or inside
 // the old `memdoor remote`, so a link lived exactly as long as that process: closing

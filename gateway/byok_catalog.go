@@ -17,7 +17,7 @@ import (
 // The model catalogue for a gateway on the person's own OpenRouter key
 // (providers/byok.go), read from OpenRouter itself, so `/model-search` and
 // `memdoor model search` show the real list price per million tokens — the
-// number they are choosing on (Greg, 2026-09-26: "show the real price").
+// number they are choosing on (the maintainer, 2026-09-26: "show the real price").
 
 type byokModel struct {
 	ID      string  `json:"id"`

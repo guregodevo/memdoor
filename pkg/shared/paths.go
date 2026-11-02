@@ -11,7 +11,7 @@ const MemdoorDirName = ".memdoor"
 
 // MemdoorHome is ~/.memdoor joined with parts: where Memdoor keeps a person's
 // state. Every path under it is built here, so the place is decided once
-// (Greg, 2026-10-04: "DRY"). With no home directory it falls back to
+// (the maintainer, 2026-10-04: "DRY"). With no home directory it falls back to
 // ./.memdoor rather than to the filesystem root.
 func MemdoorHome(parts ...string) string {
 	home, err := os.UserHomeDir()

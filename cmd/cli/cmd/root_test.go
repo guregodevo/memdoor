@@ -2,7 +2,7 @@ package cmd
 
 import "testing"
 
-// A coding agent's binary lists a coding agent's commands (Greg, 2026-09-27:
+// A coding agent's binary lists a coding agent's commands (the maintainer, 2026-09-27:
 // "this is coding agent only", "less is more"). Hidden is not removed: the
 // command must still be there to run.
 func TestOnlyCodingCommandsAreListed(t *testing.T) {

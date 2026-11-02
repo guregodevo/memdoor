@@ -6,7 +6,7 @@ import (
 )
 
 // ClientFactory hands out the client for a turn. Every request goes through
-// a provider (registry.go) — no exception (Greg, 2026-10-04: "all request for
+// a provider (registry.go) — no exception (the maintainer, 2026-10-04: "all request for
 // llm goes through provider"): a model pinned by id takes the provider that
 // lists it, else the active engine's provider answers on the agent's rung,
 // else the first connected provider.

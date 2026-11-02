@@ -92,7 +92,7 @@ function App() {
   if (location.pathname === '/devs') {
     return <CoderLandingPage />;
   }
-  // /enterprise is what /pricing was (Greg, 2026-10-29: all of it open source,
+  // /enterprise is what /pricing was (the maintainer, 2026-10-29: all of it open source,
   // self-hosted as enterprise, the hosted gateway at the existing $10 a month). The gateway redirects
   // /pricing; a client-side link to it still lands here.
   if (location.pathname === '/enterprise' || location.pathname === '/pricing') {
@@ -111,7 +111,7 @@ function App() {
 
   // Show the landing page for the root path, whatever the auth state, unless
   // this is an invite/register flow. The landing is the canonical home.
-  // THE PITCH IS THE CODING AGENT (2026-09-27 epoch, Greg: "the landing page
+  // THE PITCH IS THE CODING AGENT (2026-09-27 epoch, the maintainer: "the landing page
   // should be targetting solo dev … they bring their own open router key,
   // memdoor cuts the bill"). The root serves it, and so does /devs; /enterprise is its own page.
   const searchParams_root = new URLSearchParams(location.search);

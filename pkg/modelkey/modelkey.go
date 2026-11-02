@@ -28,7 +28,7 @@ const (
 )
 
 // keyShapes are the model providers' key formats, most specific first. A
-// key is found by its value, never its variable's name (Greg, 2026-10-31:
+// key is found by its value, never its variable's name (the maintainer, 2026-10-31:
 // "if a key name does not match our memdoor key name"): OPENROUTER_API_KEY,
 // OPEN_ROUTER_API_KEY and MY_OR_KEY are the same key. An Anthropic OAuth
 // token (sk-ant-oat…, a Claude subscription's) and an Anthropic admin key

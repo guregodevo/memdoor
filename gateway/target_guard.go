@@ -13,7 +13,7 @@ import (
 	"memdoor/tools"
 )
 
-// THE AGENT CANNOT EDIT ITS OWN CHECK (Greg, 2026-10-24: "fix the hole, the
+// THE AGENT CANNOT EDIT ITS OWN CHECK (the maintainer, 2026-10-24: "fix the hole, the
 // agent can't edit its own check"). Measuring what a retry loop costs, a task
 // whose target was `command: ./never.sh`, a script that always exits 1, was
 // marked done on its third attempt: the agent rewrote never.sh to exit 0 and

@@ -200,7 +200,7 @@ func Start(ctx context.Context, wf Workflow, types []tasks.Base, opts Options) (
 	}
 	// A run happens at the PROJECT's root, wherever the TUI was opened: every
 	// task — a command, a target, an agent's turn — works there, and the
-	// outputs are kept there (Greg, 2026-10-02: "make the agent task run at
+	// outputs are kept there (the maintainer, 2026-10-02: "make the agent task run at
 	// the project root too").
 	opts.Workdir = ProjectRoot(opts.Workdir)
 	if opts.Partition == "" {

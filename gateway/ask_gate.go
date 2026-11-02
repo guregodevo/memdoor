@@ -16,7 +16,7 @@ import (
 	"memdoor/tools"
 )
 
-// ask_gate: WHEN VERIFIABLE, DON'T ASK (Greg, 2026-10-03: "anything
+// ask_gate: WHEN VERIFIABLE, DON'T ASK (the maintainer, 2026-10-03: "anything
 // verifiable could save question babysitting", "when verifiable", "dont
 // ask", "everything gated by Jev").
 //
@@ -97,7 +97,7 @@ func (v *turnVerdict) askGate(ctx context.Context, session interface {
 // decisionNote puts a harness decision in the window as a system line (the
 // provider-notice event the window already renders), so the person sees the
 // harness act instead of wondering why a turn went on or a question never
-// came (Greg, 2026-10-03: "add notes when a decision is made").
+// came (the maintainer, 2026-10-03: "add notes when a decision is made").
 func (ar *AgentRuntime) decisionNote(runID, sessionID, text string) {
 	if ar == nil || ar.events == nil {
 		return

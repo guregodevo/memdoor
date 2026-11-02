@@ -28,7 +28,7 @@ func NewModel(gatewayAddr, workspace, channelID, token string, poster func(agent
 // HTTP client lives in cmd/cli, so cmd/cli hands them in. A nil op means
 // "not in this build" and the command says so. Everything a page needs is
 // here at construction — no setters afterwards, so a page is consistent
-// from the moment it exists (Greg, 2026-09-26: "fail fast constructor",
+// from the moment it exists (the maintainer, 2026-09-26: "fail fast constructor",
 // "at build time its state is consistent").
 type Ops struct {
 	Usage          func() (string, error)                         // /usage
@@ -189,7 +189,7 @@ func welcomeHint() string {
 	return "Ask for a change and it reads what it needs, patches, builds and runs the tests before it answers. **@** mentions a file or folder · **/model** chooses which model answers · **/remote** opens this on your phone · **/help** for the rest."
 }
 
-// ONE LINE, NOT TWO (Greg, 2026-09-27: "less is more"). The second message
+// ONE LINE, NOT TWO (the maintainer, 2026-09-27: "less is more"). The second message
 // repeated the mode badge that is already in the header and printed the channel
 // UUID, which identifies the session to the gateway and tells the reader
 // nothing.
@@ -243,7 +243,7 @@ func (s Status) line() string {
 	}
 	// WHERE THE WORK IS, WHAT THE BRAIN IS DOING, AND WHICH MODEL ANSWERS.
 	//
-	// The hourly rate and the balance are gone from the window (Greg,
+	// The hourly rate and the balance are gone from the window (the maintainer,
 	// 2026-09-05): what it costs is the operator's business. The MODEL came
 	// back on 2026-09-26: the product routes each agent to a model and will
 	// move between them, so the person sees which one answers — never its
@@ -254,7 +254,7 @@ func (s Status) line() string {
 	if s.Model != "" {
 		// PROVIDER · MODEL: where the turn goes, always on screen — the check
 		// Claude Code's docs make a developer run by hand (/status, "Anthropic
-		// base URL"), here in the footer (Greg, 2026-10-02).
+		// base URL"), here in the footer (the maintainer, 2026-10-02).
 		model := s.Model
 		if s.Provider != "" {
 			model = s.Provider + " · " + model

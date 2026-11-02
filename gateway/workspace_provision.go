@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// Every sign-up gets a workspace of its own, like Slack (Greg, 2026-10-20:
+// Every sign-up gets a workspace of its own, like Slack (the maintainer, 2026-10-20:
 // "Should be like slack", "Workspace will be important for enterprise but
 // for solo"): a solo person types nothing more than their email and password
 // and lands in "<their name>'s workspace", admin of it, with the coding team

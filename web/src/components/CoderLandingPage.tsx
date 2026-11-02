@@ -6,7 +6,7 @@ import { WorkflowDemo } from './WorkflowDemo';
 import { Cast } from './Cast';
 import { DemoGallery } from './DemoGallery';
 
-// The landing page, 2026-09-27 epoch (Greg: "the value proposition is a tui
+// The landing page, 2026-09-27 epoch (the maintainer: "the value proposition is a tui
 // layer that uses decision model to reduce your byod model bill", "the landing
 // page should be targetting solo dev"). One reader: the developer who pays for
 // their own tokens. One claim, with the day's measured numbers behind it, and
@@ -19,10 +19,10 @@ import { DemoGallery } from './DemoGallery';
 // /features and /enterprise; remote control is free on your own daemon since
 // 2026-10-23, the memdoor.ai relay is part of the hosted gateway.
 //
-// Copy pass 2026-10-05 (Greg: "review landing ai slop"): each fact once, plain
+// Copy pass 2026-10-05 (the maintainer: "review landing ai slop"): each fact once, plain
 // declaratives, no "X, not Y" refrains, no list-of-three cadence.
 //
-// No price section any more (Greg, 2026-10-29: "100% opensource", "the landing
+// No price section any more (the maintainer, 2026-10-29: "100% opensource", "the landing
 // page Pricing is misleading. It can make people scared"): all of it is free,
 // self-hosted is Enterprise, and only the gateway memdoor.ai hosts is paid, the
 // existing $10 a month (checkout on /enterprise).
@@ -136,7 +136,7 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
       <button onClick={() => navigate('/')} aria-label="Memdoor home">
         <img src="/memdoor-logo.png" alt="Memdoor" width={1409} height={351} className={`h-9 w-auto ${dark ? 'invert' : ''}`} />
       </button>
-        {/* GitHub first, beside the logo, with the star count memdoor.ai's nginx caches (Greg, 2026-11-01: "GitHub on top left", "adds the Github stars"). */}
+        {/* GitHub first, beside the logo, with the star count memdoor.ai's nginx caches (the maintainer, 2026-11-01: "GitHub on top left", "adds the Github stars"). */}
         <a
           href="https://github.com/guregodevo/memdoor"
           className={`inline-flex items-center gap-1.5 text-sm ${link}`}
@@ -168,7 +168,7 @@ export function CoderHeader({ dark = false }: { dark?: boolean }) {
         >
           Docs
         </a>
-        {/* Who is signed in, and the way out; else the way in (Greg, 2026-10-20). */}
+        {/* Who is signed in, and the way out; else the way in (the maintainer, 2026-10-20). */}
         {isAuthenticated && user ? (
           <>
             <a href="/welcome" className={`hidden sm:inline ${link}`} title={user.email}>
@@ -364,7 +364,7 @@ export function CoderLandingPage() {
       <main className="flex-1">
         <HackerNewsSection />
 
-        {/* ORCHESTRATION — the Airflow analogy (Greg, 2026-10-04: "it does not
+        {/* ORCHESTRATION — the Airflow analogy (the maintainer, 2026-10-04: "it does not
             give you the orchestration"). Cron+make existed; teams still moved
             to Airflow. Pi+a Makefile is cron+make for agents. */}
         <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
@@ -397,7 +397,7 @@ export function CoderLandingPage() {
           </div>
         </section>
 
-        {/* THE DOORS — one gateway, every door (Greg, 2026-10-11). */}
+        {/* THE DOORS — one gateway, every door (the maintainer, 2026-10-11). */}
         <section className="border-t border-neutral-100 bg-neutral-50">
           <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-12">
             <div className="mb-3 text-center text-xs uppercase tracking-widest text-neutral-500">One gateway, every door</div>

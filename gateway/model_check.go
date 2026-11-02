@@ -17,7 +17,7 @@ import (
 	"memdoor/tools"
 )
 
-// CAN THIS MODEL RUN THE LOOP? (Greg, 2026-09-27: "the coding agent should work
+// CAN THIS MODEL RUN THE LOOP? (the maintainer, 2026-09-27: "the coding agent should work
 // with any model!? we should test all of model with our provider. Maybe we
 // should detect it", and the OpenRouter ranking: someone arriving from it will
 // pin whatever they already pay for.)

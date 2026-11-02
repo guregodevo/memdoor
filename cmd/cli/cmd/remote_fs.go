@@ -88,7 +88,7 @@ func remoteProjectDir(c *Client, dir string) (string, error) {
 }
 
 // remoteDefaultDir is where a turn on another machine works when no --dir
-// says (Greg, 2026-10-24: "good default please"; before, the laptop's own
+// says (the maintainer, 2026-10-24: "good default please"; before, the laptop's own
 // directory was sent and refused by name there). The same path as here,
 // relative to home, when that machine has it: a repo cloned at the same
 // place on both. Else that machine's home, where ssh itself lands you.
@@ -119,7 +119,7 @@ func remoteDefaultDir(c *Client) (abs, why string, err error) {
 // resumeCommand is the command that reopens a conversation, with the gateway
 // named when it is not this machine's: a run through a door prints
 // "memdoor --gateway ssh://box resume <id>", so the person retypes it
-// without knowing the door is part of it (Greg, 2026-10-24).
+// without knowing the door is part of it (the maintainer, 2026-10-24).
 func resumeCommand(id string) string {
 	if _, local := localGatewayPort(); local {
 		return "memdoor resume " + id

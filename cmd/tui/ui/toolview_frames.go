@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// The frames that used to be a generic line of text (Greg, 2026-10-11: "we
+// The frames that used to be a generic line of text (the maintainer, 2026-10-11: "we
 // need better visualization in general for some tools"): a spawned run with
 // its own trail, a search as its hits grouped by file, a workflow call as its
 // tasks. Each says what happened in the shape the reader scans for, and
@@ -352,7 +352,7 @@ var workflowTaskLineRe = regexp.MustCompile(`^  (\S+)\s+(\S+)(.*)$`)
 // Body: the run's head line only — which run, how many tasks. The tasks
 // are drawn by the live graph that follows in the conversation and keeps
 // updating; a copy here went stale at "0/2 waiting" the moment the run
-// moved (Greg, 2026-10-11). An answer with no run in it (a list, a stop)
+// moved (the maintainer, 2026-10-11). An answer with no run in it (a list, a stop)
 // falls through to the generic body.
 func (workflowView) Body(r ToolRender) string {
 	if r.Err != "" || r.Expand {

@@ -223,11 +223,11 @@ func engineLine(email string) string {
 
 var accountSubscribeCmd = &cobra.Command{
 	Use: "subscribe",
-	// PRO IS THE HOSTED SCHEDULER (Greg, 2026-10-04: "everyone can run
+	// PRO IS THE HOSTED SCHEDULER (the maintainer, 2026-10-04: "everyone can run
 	// schedule with local cron"). Workflows, local schedules, inference and
 	// the decision model run free on the person's own machine and key; a seat
 	// buys remote control and the hosted workflow state (laptop-closed runs coming), never a model key
-	// (Greg, 2026-10-04). The number is safe to say here from
+	// (the maintainer, 2026-10-04). The number is safe to say here from
 	// 2026-09-27: the live price was changed and a real checkout session
 	// quotes $10.00 USD (scripts/set-seat-price.sh switches it again if it moves).
 	Short: "Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month",
@@ -417,7 +417,7 @@ func localSessionFor(email string) error {
 // written, and a session is opened on it.
 //
 // "The user should be redirected to auth page" and "it should be with the
-// user logged in" (Greg, 2026-09-18): a note telling a person to type a
+// user logged in" (the maintainer, 2026-09-18): a note telling a person to type a
 // command in a terminal is not the app, and the engine's user is whoever
 // signed in — not a name from before the app existed.
 func adoptLocalEngine(accountEmail string) error {

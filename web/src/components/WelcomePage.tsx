@@ -6,7 +6,7 @@ import { InstallBlock, StepList, STEPS } from './DownloadPage';
 // WelcomePage — /welcome, where a sign-in lands (the form, Google, GitHub).
 //
 // Before it, a sign-in dropped the person on the landing page with nothing
-// said (Greg, 2026-10-20: "the confirmation page is the landing page", "i
+// said (the maintainer, 2026-10-20: "the confirmation page is the landing page", "i
 // want a proper confirmation page with next step"). This page says who is
 // signed in and which workspace is theirs, then the three steps that make
 // the account useful: install, a key, a project. The steps are the download

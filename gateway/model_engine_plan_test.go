@@ -24,7 +24,7 @@ func planGateway(t *testing.T, signedIn *bool) {
 	t.Cleanup(func() { chatGPTPlanEngine = saved })
 }
 
-// Signed in with ChatGPT, the plan answers before the OpenRouter key (Greg,
+// Signed in with ChatGPT, the plan answers before the OpenRouter key (the maintainer,
 // 2026-10-31: "if you login to chatgpt you should get chatgpt model by
 // default"); signed out, the key answers again (the mutation check: drop the
 // plan's step and the key answers while the plan is signed in).

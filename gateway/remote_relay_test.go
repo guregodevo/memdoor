@@ -369,7 +369,7 @@ func TestAPageJoiningAnEndedSessionIsRevoked(t *testing.T) {
 
 // Watch-only pages are an audience, not the phone: they do not count
 // against the driving pages' cap, and each of them gets what the terminal
-// sends (Greg, 2026-10-24: a stream's followers see the window).
+// sends (the maintainer, 2026-10-24: a stream's followers see the window).
 func TestRelayWatchersAreAnAudience(t *testing.T) {
 	_, srv := newRelayTestServer(t)
 	terminal, _ := dialTerminal(t, srv, "tok-a")

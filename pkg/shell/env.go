@@ -30,7 +30,7 @@ func IsModelKey(name string) bool {
 // workflow needs them (pkg/workflow hands this to mario as Base.Env, so a
 // step's command, when and command target run with it too), and a command that prints its environment (an `env` while debugging,
 // a test that dumps it, a line a pull request planted for the agent) would
-// put them in the model's context, a log or a CI job's summary (Greg,
+// put them in the model's context, a log or a CI job's summary (the maintainer,
 // 2026-10-27: "dont share key"). Defense in depth, not a boundary: a
 // process of the same user can still read a parent's starting environment
 // (/proc/<pid>/environ on Linux). A project's tests that need one of these

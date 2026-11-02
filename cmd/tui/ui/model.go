@@ -312,7 +312,7 @@ func loadSlashCommands(agent string) []string {
 		commands = append(commands, "/skill:"+name)
 	}
 	// The project's workflows, the same way: "/workflow:release" runs one —
-	// the dropdown completes it (Greg, 2026-10-02: "this workflow slash
+	// the dropdown completes it (the maintainer, 2026-10-02: "this workflow slash
 	// command should be autocomplete with existing workflows").
 	for _, name := range workflowNames(wd) {
 		commands = append(commands, "/workflow:"+name)

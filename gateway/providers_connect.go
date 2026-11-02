@@ -16,7 +16,7 @@ import (
 	"memdoor/pkg/llm"
 )
 
-// /connect (Greg, 2026-10-02, after reading how Cursor, Claude Code, Codex
+// /connect (the maintainer, 2026-10-02, after reading how Cursor, Claude Code, Codex
 // and omp do it): pick the kind of provider, give its base URL and token,
 // and the gateway PROBES before it keeps anything — the provider's model
 // list, then one tiny call — so a wrong URL or token fails here, in words,

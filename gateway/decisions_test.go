@@ -154,7 +154,7 @@ func TestMessageGateAsksOnlyForTheGatewaysOwnChannels(t *testing.T) {
 	}
 }
 
-// JEV IS NOT PRO (Greg, 2026-10-03: "Jev at user key by default"): the key
+// JEV IS NOT PRO (the maintainer, 2026-10-03: "Jev at user key by default"): the key
 // the person codes with registers the decision provider, marked as the coding
 // key; an explicit decision key wins over it and is not marked.
 func TestTheCodingKeyJudgesByDefault(t *testing.T) {

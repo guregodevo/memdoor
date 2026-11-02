@@ -15,7 +15,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// THE FILES PANEL (Greg, 2026-10-10: "TUI but better than emacs for files
+// THE FILES PANEL (the maintainer, 2026-10-10: "TUI but better than emacs for files
 // navigation", "less mental burning out feature is welcome"). What a person
 // wants after a turn is not a file tree, it is "what did it touch, and where":
 // ctrl+f (or /files) opens the project's files with the ones THIS

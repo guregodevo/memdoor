@@ -134,7 +134,7 @@ func TestSignInAdoptsTheEnginesOwnUser(t *testing.T) {
 // working, so the key is the step (a seat never supplies one, 2026-10-04).
 func TestTheBrainGateNamesTheNextStep(t *testing.T) {
 	g := brainGate("none")
-	// One way out: a key of your own. A seat never supplies one (Greg,
+	// One way out: a key of your own. A seat never supplies one (the maintainer,
 	// 2026-10-04: "Pro seat never offer key"), so it is not offered here.
 	if !strings.Contains(g, "OPENROUTER_API_KEY") || !strings.Contains(g, "memdoor connect <provider>") || !strings.Contains(g, "/connect") || strings.Contains(g, "subscribe") || strings.Contains(g, "memdoor tui again") {
 		t.Fatalf("nothing configured names the key, never a seat: %q", g)
@@ -154,7 +154,7 @@ func TestTheBrainGateNamesTheNextStep(t *testing.T) {
 // first command after paying, typed in whatever directory they are in, and it
 // used to refuse with "no workspace resolved for \"account\"" and four ways to
 // fix a problem they do not have — the workspace is named after the account the
-// command is about to create (paid onboarding walk, 2026-09-27: Greg paid, then
+// command is about to create (paid onboarding walk, 2026-09-27: the maintainer paid, then
 // could not sign in).
 func TestSignInNeedsNoWorkspace(t *testing.T) {
 	for _, name := range []string{"account", "login", "auth"} {
@@ -198,7 +198,7 @@ func TestFirstContactCommandsRunBeforeAnythingIsSetUp(t *testing.T) {
 	}
 }
 
-// `memdoor login` is `memdoor account login` under its short name (Greg,
+// `memdoor login` is `memdoor account login` under its short name (the maintainer,
 // 2026-09-29: "shortcut memdoor login"): the same flags, the same sign-in.
 // Before, it was the browser flow only and ignored an email given to it.
 func TestLoginIsTheShortNameOfAccountLogin(t *testing.T) {

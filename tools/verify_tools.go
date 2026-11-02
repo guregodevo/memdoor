@@ -77,7 +77,7 @@ func Verify(input json.RawMessage) (string, error) {
 	return fmt.Sprintf("PASS — `%s`\n\n%s", in.Command, trimmed), nil
 }
 
-// THE VERIFIER ASKS JEV WHEN THERE IS A SEAT (Greg, 2026-09-27: "the verifier
+// THE VERIFIER ASKS JEV WHEN THERE IS A SEAT (the maintainer, 2026-09-27: "the verifier
 // should use jev", "if there is a seat").
 //
 // An exit code is the toolchain's own word, and a non-zero one is final: that

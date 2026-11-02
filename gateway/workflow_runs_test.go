@@ -339,7 +339,7 @@ func TestTheToolDescribesAListAndARun(t *testing.T) {
 	}
 }
 
-// Greg, 2026-10-02: "workflow is for Pro only". Without a seat every way of
+// The maintainer, 2026-10-02: "workflow is for Pro only". Without a seat every way of
 // starting a run is refused in words that say where Pro is; with one it runs.
 // Local runs are free: no seat, the run starts (2026-10-04).
 func TestLocalWorkflowsNeedNoSeat(t *testing.T) {

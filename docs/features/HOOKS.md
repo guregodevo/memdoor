@@ -17,7 +17,7 @@ for a person by default. So: a small, deterministic layer, off until asked for.
 
 ## Memdoor's own, not Claude Code's
 
-Greg, 2026-10-01: **"no hook on claude."** Hooks are configured the way the
+The maintainer, 2026-10-01: **"no hook on claude."** Hooks are configured the way the
 rest of Memdoor is — a workspace setting beside `tool_guards`, read per call —
 not through Claude Code's `settings.json` contract, and Memdoor never again
 installs a hook *into* Claude Code (the old `memdoor hook install` is gone).
@@ -81,7 +81,7 @@ loader and the published Claude Code exploit alike.
 ## Not building
 
 - Session-end learning — "write what you learned" — measured at −3% success and
-  +20% cost for LLM-written context files; Greg: "skip it entirely."
+  +20% cost for LLM-written context files; the maintainer: "skip it entirely."
 - Hooks on by default. Four tools ship zero.
 - Claude Code's events, format or `settings.json`. See above.
 - An in-process hook API: one Go binary, subprocess hooks, nothing to compile.

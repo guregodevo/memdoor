@@ -61,7 +61,7 @@ type emailSetter interface {
 
 // adoptUser resolves the engine's user and makes it the account's.
 //
-// "It should be with the user logged in" (Greg, 2026-09-18): the engine
+// "It should be with the user logged in" (the maintainer, 2026-09-18): the engine
 // user on this Mac IS whoever signed in — the user keeps its id, so every
 // workspace, session and page it owns comes along; only the address and
 // the password change. When the account already has a user here, that one

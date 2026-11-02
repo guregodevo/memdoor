@@ -8,7 +8,7 @@ import (
 // A recap after a lot of work.
 //
 // "We need a recap when there is a lot of work, like here in Claude"
-// (Greg, 2026-09-19). A turn that ran a dozen tools and ended on "Done."
+// (the maintainer, 2026-09-19). A turn that ran a dozen tools and ended on "Done."
 // leaves the person to scroll the frames for what was made. The last
 // reply of a long turn must stand on its own: what was made (file,
 // length), what changed, what is next. When it does not, the turn is

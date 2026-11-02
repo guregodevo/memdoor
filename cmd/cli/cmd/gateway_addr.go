@@ -7,7 +7,7 @@ import (
 )
 
 // canonicalGatewayAddr makes `--gateway 192.168.1.10`, `host:18799` and
-// `https://box` all work (Greg, 2026-10-11: "use --gateway ip_address
+// `https://box` all work (the maintainer, 2026-10-11: "use --gateway ip_address
 // work too"): no scheme is http, no port is the gateway's default.
 func canonicalGatewayAddr(s string) string {
 	s = strings.TrimSpace(strings.TrimRight(s, "/"))

@@ -1,6 +1,6 @@
 # Peers — @<peer>:<agent>, a gateway's agent asked from another gateway (experimental, 2026-10-24)
 
-Greg, 2026-10-24: "we need A2A from one gateway to another", "we already have
+The maintainer, 2026-10-24: "we need A2A from one gateway to another", "we already have
 @mention mechanism", "we can do @<host>:agent_name", "we have a quorum of
 gateway; from quorum we can see which gateway are available", "this is
 experimental". The peer-to-peer problems it is for: a laptop that sleeps hands
@@ -48,7 +48,7 @@ first, v1.697.0).
 - `pkg/message/peers.go`: `executeAgentTurn` branches before the buddy
   lookup: `finishPeerTurn` strips the mention from the text, asks the peer,
   saves the answer as the thread's reply from that actor and broadcasts it.
-- **The reply is A2A across the gateways** (Greg, 2026-10-24: "it should be
+- **The reply is A2A across the gateways** (the maintainer, 2026-10-24: "it should be
   a2a with reply across gateway"). The peer's reply is an agent's message in
   this thread, so the names in it are resolved here as a local agent's
   would be (`peerReplyMentions`: agents of this gateway, people, this

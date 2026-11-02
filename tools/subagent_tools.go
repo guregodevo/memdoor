@@ -330,7 +330,7 @@ func (t *SessionsSpawnTool) ExecuteWithSession(input json.RawMessage, requesterS
 }
 
 // spawnedLine is what the spawning agent (and the window) reads back: one
-// line, like the cron tool's, not a JSON record (Greg, 2026-10-05). The
+// line, like the cron tool's, not a JSON record (the maintainer, 2026-10-05). The
 // run id and the session are in it for anyone who needs them.
 func spawnedLine(runID, label, agentID, session string, timeout int) string {
 	name := runID

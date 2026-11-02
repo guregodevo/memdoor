@@ -10,7 +10,7 @@ import (
 	sharedctx "memdoor/pkg/shared/context"
 )
 
-// ATTRIBUTION AS A FIELD (Greg, 2026-10-02: a company gateway "tags every
+// ATTRIBUTION AS A FIELD (the maintainer, 2026-10-02: a company gateway "tags every
 // request with your email and team for cost attribution"; the UX read of
 // omp found only static headers). Four fields travel on every vendor and
 // gateway request — user, team, project, session — as headers whose names

@@ -3,11 +3,11 @@ import { CoderHeader } from './CoderLandingPage';
 import { Cast } from './Cast';
 import { setMeta } from '../meta';
 
-// THE WORKFLOW CATALOG (Greg, 2026-10-04: "instead of Features let's write
+// THE WORKFLOW CATALOG (the maintainer, 2026-10-04: "instead of Features let's write
 // Workflows", "like a catalog of workflows"). Every entry is a workflow that
 // exists as files and has run; the steps column is its real graph, read from
 // its task files. A cast is a real session of that workflow, never a mock —
-// and an entry WITHOUT a cast is not listed (Greg, 2026-10-05: "remove those
+// and an entry WITHOUT a cast is not listed (the maintainer, 2026-10-05: "remove those
 // that don't have demo").
 type Entry = {
   name: string;

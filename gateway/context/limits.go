@@ -24,7 +24,7 @@ func SetRemoteOutput(fn func(model string) int) { remoteOutput = fn }
 
 // CompactionCeiling is the most a conversation carries before it compacts,
 // however large the model's window: a 1M-token model at 60% would carry
-// 600K tokens into every request, each one paid for and read (Greg,
+// 600K tokens into every request, each one paid for and read (the maintainer,
 // 2026-09-29: "60%, capped at 200k").
 const CompactionCeiling = 200_000
 

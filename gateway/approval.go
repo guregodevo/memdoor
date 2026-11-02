@@ -15,7 +15,7 @@ import (
 	"memdoor/pkg/llm"
 )
 
-// APPROVAL MODE (Greg, 2026-10-02). Memdoor is always-auto: no permission
+// APPROVAL MODE (the maintainer, 2026-10-02). Memdoor is always-auto: no permission
 // modes, the picker is the only interruption. A company that approves
 // coding agents forbids exactly that — "avoid the default yolo mode" — so
 // this is the one mode beside it: before a tool that changes or runs

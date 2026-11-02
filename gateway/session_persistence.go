@@ -161,7 +161,7 @@ func (sp *SessionPersistence) resolveSessionStorePath(sessionID string) (string,
 	// doesn't filter by session) loads the entire history of every prior coder
 	// subagent — which makes the coder copy its own past ```go narration instead of
 	// writing. This is the pollution that made a correctly-built coder "not act".
-	// A workflow task is the same kind of run (Greg's no-babysitting
+	// A workflow task is the same kind of run (the maintainer's no-babysitting
 	// workflows, 2026-10-03): "workflow:<name>:<partition>:<task>" fell
 	// through to the agent's file, so every task of every run loaded all the
 	// ones before it — 105k input tokens for a one-line task, growing each

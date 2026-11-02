@@ -301,7 +301,7 @@ func guardSyntaxRegression(target, newContent string) error {
 	return nil
 }
 
-// APPLY_PATCH WRITES WHAT THE PATCH SAYS (Greg, 2026-09-28: "it should be
+// APPLY_PATCH WRITES WHAT THE PATCH SAYS (the maintainer, 2026-09-28: "it should be
 // language agnostic", "it was done for small model. We dont need it for
 // frontier models", "no opt-in"). The Go rewriters — import add/prune,
 // declaration dedup, module-ref collapse, syntax repair, gofmt — changed code

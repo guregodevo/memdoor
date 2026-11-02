@@ -14,7 +14,7 @@ import (
 	"memdoor/pkg/shared"
 )
 
-// THE FIRST COMMAND IS `memdoor tui` (Greg, 2026-10-08: "it should be 100%
+// THE FIRST COMMAND IS `memdoor tui` (the maintainer, 2026-10-08: "it should be 100%
 // frictionless"). A stranger walk on a clean machine found three walls
 // between the installer and a first answer, and the logs agreed: about
 // twenty installs on 2026-10-07, not one TUI opened. The installer's PATH

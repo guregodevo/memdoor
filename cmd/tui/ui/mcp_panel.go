@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// /mcp — the person's MCP servers, in one panel (Greg, 2026-10-01: "a nice
+// /mcp — the person's MCP servers, in one panel (the maintainer, 2026-10-01: "a nice
 // ui experience for adding mcp and auth"). One overlay, four screens:
 //
 //   list     every server: ● connected (its tools), ◐ needs sign-in, ✗ failed

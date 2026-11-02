@@ -24,7 +24,7 @@ import (
 // evidence of what the turn actually did sits in the tool records and was
 // never judged: a verify that returned FAIL, a patch whose build failed, a
 // file changed with no build or test after it, a "done" with nothing run.
-// Greg, 2026-10-03: "let's use Jev for the harness", "let's start with no
+// The maintainer, 2026-10-03: "let's use Jev for the harness", "let's start with no
 // babysitting" — the person should never come back to a "done" that isn't.
 //
 // Two parts. turnReceipts is mechanical: what changed, what was checked, and
@@ -53,7 +53,7 @@ const (
 
 	// settingTurnBudget is the person's token budget for running on without
 	// them: after the first continuation, the turn keeps going while it is
-	// judged unfinished and the budget is not spent (Greg, 2026-10-03: "a
+	// judged unfinished and the budget is not spent (the maintainer, 2026-10-03: "a
 	// token budget the user can set until it do it autonomously"). 0, the
 	// default, is one continuation, as before.
 	settingTurnBudget = "turn_token_budget"
@@ -153,7 +153,7 @@ func continueAllowed(rounds int, spent, budget int64) bool {
 
 // unattendedPrompt is added to the system prompt of a turn with a budget:
 // the model will not be stopped round by round, so what it needs from the
-// person it must ask for first (Greg, 2026-10-03: "the model should ask
+// person it must ask for first (the maintainer, 2026-10-03: "the model should ask
 // question early if it feels it wont do it without asking").
 func unattendedPrompt(budget int64) string {
 	return fmt.Sprintf("You run unattended on this request, up to about %s tokens, continuing until the work is shown done by a build, test or run. "+
@@ -174,7 +174,7 @@ func approxTokens(n int64) string {
 
 // continueNudge turns the model's own last words into its next instruction:
 // a reply that ended on "next I'll run the tests" is told to do exactly that
-// (Greg, 2026-10-03: "the model to say what is next as prompt so it
+// (the maintainer, 2026-10-03: "the model to say what is next as prompt so it
 // continues"). The receipts' reasons stay under it.
 func continueNudge(said string, r turnReceipts) string {
 	said = strings.TrimSpace(clipTail(strings.TrimSpace(said), continueMaxSaid))
@@ -562,7 +562,7 @@ func (v *turnVerdict) unfinished(ctx context.Context, agent, request, reply stri
 // receipt read PASS). The decision model reads the output of the bash runs
 // the receipt shows — the last few, the deciding one among them — and a run
 // whose output shows a failure becomes a failing check. Model- and
-// language-agnostic (Greg, 2026-10-03): the question names no language, tool
+// language-agnostic (the maintainer, 2026-10-03): the question names no language, tool
 // or test runner, and a run that only lists or reads is not a failure.
 // Each output is judged once per process (exitZeroSeen).
 

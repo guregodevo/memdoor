@@ -108,7 +108,7 @@ machines, and the relay for a gateway kept to localhost.`,
 	// errors ("not authenticated", "no LLM key") print just the
 	// message instead of pages of usage noise.
 	SilenceUsage: true,
-	// THE BARE NAME IS THE WINDOW (Greg, 2026-10-21: "Why not memdoor
+	// THE BARE NAME IS THE WINDOW (the maintainer, 2026-10-21: "Why not memdoor
 	// directly?"): like claude, codex, aider and pi, `memdoor` at a terminal
 	// opens the window in the current directory; `memdoor tui` stays. In a
 	// pipe or CI there is no window to open, so the help is printed and
@@ -150,7 +150,7 @@ func Execute() {
 	}
 }
 
-// THIS IS A CODING AGENT (Greg, 2026-09-27: "this is coding agent only",
+// THIS IS A CODING AGENT (the maintainer, 2026-09-27: "this is coding agent only",
 // "less is more"). The binary grew commands for every epoch it has lived
 // through — a creator funnel, workspace administration, an operator's billing
 // service — and a solo developer who installed a coding agent should not have

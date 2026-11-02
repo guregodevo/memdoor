@@ -208,7 +208,7 @@ func sameDir(a, b string) bool {
 	return clean(a) == clean(b)
 }
 
-// THERE IS A DEFAULT WORKSPACE (Greg, 2026-09-27, walking onboarding: "there is
+// THERE IS A DEFAULT WORKSPACE (the maintainer, 2026-09-27, walking onboarding: "there is
 // a default workspace"). When a person has exactly ONE, asking which one is a
 // question with a single possible answer, and answering it wrong — by refusing —
 // is what a command did in any directory they had not pinned.

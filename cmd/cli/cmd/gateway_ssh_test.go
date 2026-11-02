@@ -251,7 +251,7 @@ func boxOnFakeSSH(t *testing.T) (dir string, port int, commands func() string) {
 
 // A box with nothing on it answers the door: no memdoor there, the
 // installer puts it; its gateway not running, it is installed as a service
-// on the door's port; then the tunnel sees it (Greg, 2026-10-24: "accessible
+// on the door's port; then the tunnel sees it (the maintainer, 2026-10-24: "accessible
 // from http and ssh like github").
 func TestTheSSHDoorSetsUpABoxWithNothingOnIt(t *testing.T) {
 	withFakeSSH(t)

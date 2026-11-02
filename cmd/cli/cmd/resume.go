@@ -194,7 +194,7 @@ every one.`,
 		}
 
 		r := recs[pick]
-		// The Unix rule, no flag to remember (Greg, 2026-10-11): at a
+		// The Unix rule, no flag to remember (the maintainer, 2026-10-11): at a
 		// terminal the conversation is a window; into a pipe it is text.
 		if follow, _ := cmd.Flags().GetBool("follow"); follow || !stdoutIsTerminal() {
 			limit, _ := cmd.Flags().GetInt("limit")
