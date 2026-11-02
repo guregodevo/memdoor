@@ -249,3 +249,42 @@ func TestConnectAKeyWithNoCreditYet(t *testing.T) {
 		t.Fatalf("want connected with the no-credit note, got %+v", res)
 	}
 }
+
+// The menu behind `connect local` lists every default address whose model list
+// answers, in order, and names a runtime by its default port.
+func TestAnsweringRuntimesListsEachThatAnswers(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/models" {
+			_, _ = io.WriteString(w, `{"data":[{"id":"a"},{"id":"b"}]}`)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer srv.Close()
+	empty := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, `{"data":[]}`)
+	}))
+	defer empty.Close()
+
+	saved := localRuntimeBases
+	defer func() { localRuntimeBases = saved }()
+	localRuntimeBases = []string{"http://localhost:1/v1", empty.URL + "/v1", srv.URL + "/v1", srv.URL + "/v1"}
+	found, tried := answeringRuntimes(context.Background())
+	if len(tried) != 4 {
+		t.Fatalf("every address is tried: %v", tried)
+	}
+	if len(found) != 2 || found[0].Base != srv.URL+"/v1" || found[0].Models != 2 || found[0].Name != "a model server" {
+		t.Fatalf("only an address that lists models is offered, models counted: %+v", found)
+	}
+
+	localRuntimeBases = []string{"http://localhost:1/v1"}
+	if found, _ := answeringRuntimes(context.Background()); len(found) != 0 {
+		t.Fatalf("nothing listening offers nothing: %+v", found)
+	}
+	for port, name := range map[string]string{"8090": "janis", "11434": "Ollama", "8080": "llama.cpp", "1234": "LM Studio", "8000": "vLLM"} {
+		if runtimeNames[port] != name {
+			t.Errorf("port %s is %q, not %q", port, runtimeNames[port], name)
+		}
+	}
+}
