@@ -48,11 +48,6 @@ catalogue are in `internal/PLANS_AND_CAPACITY.md` (removed 2026-10-03).
 - **[Always-Valid Pattern](architecture/ALWAYS_VALID_PATTERN.md)** — Constructor factories that fail fast
 - **[ADRs](adr/)** — [0015 decisions on the person's own key](adr/0015-decisions-through-jev-on-openrouter.md) · [0018 hue is what, luminance is how much](adr/0018-hue-is-what-luminance-is-how-much.md) · [0019 workflows run on mario](adr/0019-workflow-runs-on-mario.md) · [0020 every request through a provider](adr/0020-every-request-through-a-provider.md) · [0021 the gateway owns the work](adr/0021-the-gateway-owns-the-work-every-door-is-free.md) · [0022 a wake, not a heartbeat](adr/0022-a-wake-not-a-heartbeat.md) · [0023 peers](adr/0023-peers-a2a-across-gateways.md)
 
-### Operations
-
-- **[Operations runbook](internal/OPS.md)** — Running memdoor.ai: units, paths, secrets, deploy traps
-- **[Telemetry](internal/TELEMETRY.md)** — Shipping local-gateway events to memdoor.ai
-
 ---
 
 ## For AI Agents
