@@ -20,6 +20,19 @@ make cli-index                # Regenerate the command index in docs/reference/C
 ./memdoor logs query --regex "PATTERN" --limit N --since Xm
 grep -r "duplicate_code" .    # Search before coding
 
+# THE METRICS (2026-11-03, `make metrics` in memdoor-ops, private): two numbers lead, OTHER
+# PEOPLE'S ONLY (the maintainer: "we only care about other than me"). 1. Other people's tokens
+# through OpenRouter per UTC day, ours subtracted; OpenRouter is the one provider with a per-app
+# total, a vendor key's tokens are on the person's own account and are not counted. It swings
+# 10x between days with the same number of people (one long run on a free model is 26 M a day).
+# 2. DAU and MAU as a FLOOR ("we need those stats"): the addresses whose window fetched
+# /dl/VERSION that day (the TUI checks once a day), minus the maintainer and GitHub's runners;
+# headless use is never seen; nothing is added to the binary for it. What the launch said: 95%
+# of other people's tokens go to open or free models (Qwen, DeepSeek, GLM, North), Claude about
+# 1%; people come for the cheap end, the bet the roadmap makes. The maintainer tried
+# cohere/north-mini-code:free on 2026-11-03: a turn finishes on it. Never add telemetry, a
+# phone-home or a sign-in to count users better; the floor is the number.
+
 # Plans (2026-10-04, doors opened 2026-10-23): free = the agent, the decision model AND
 # workflows (local cron schedules included) on your own machine and key, and EVERY DOOR onto a
 # gateway of your own: `memdoor gateway install` on a box, the window on a laptop (--gateway
