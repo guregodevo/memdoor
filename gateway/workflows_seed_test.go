@@ -73,6 +73,33 @@ func TestSeedMovesASameNameCopyAsideForTheBuiltin(t *testing.T) {
 	}
 }
 
+// A copy of a built-in made by hand, its shipped files unchanged and a file
+// of its own beside them (the published example copied with its bench/), is
+// adopted where it is: nothing moves.
+func TestSeedAdoptsAnIdenticalCopyOfABuiltin(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	lib := filepath.Join(home, ".memdoor", "workflows")
+	src, err := fs.Sub(workflows.FS, "team-solve")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.CopyFS(filepath.Join(lib, "team-solve"), src); err != nil {
+		t.Fatal(err)
+	}
+	extra := filepath.Join(lib, "team-solve", "NOTES.md")
+	if err := os.WriteFile(extra, []byte("mine\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	SeedEmbeddedWorkflows()
+	if _, err := os.Stat(filepath.Join(lib, "team-solve-mine")); !os.IsNotExist(err) {
+		t.Fatalf("an identical copy was moved aside: %v", err)
+	}
+	if b, err := os.ReadFile(extra); err != nil || string(b) != "mine\n" {
+		t.Fatalf("the copy's own file is gone: %q %v", b, err)
+	}
+}
+
 // An edit to a seeded step survives the next boot, and a step the seed wrote
 // and the person deleted is written again (the workflow is still ours).
 func TestSeedKeepsAnEditedStep(t *testing.T) {
@@ -97,16 +124,16 @@ func TestSeedKeepsAnEditedStep(t *testing.T) {
 	}
 }
 
-// team ships with what its steps run on: the sample problem an
+// team-solve ships with what its steps run on: the sample problem an
 // empty folder gets, and the check script `test` and `verify` call.
 func TestSeedWritesTeamSolveWithItsSampleAndCheck(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	SeedEmbeddedWorkflows()
-	dir := filepath.Join(home, ".memdoor", "workflows", "team")
+	dir := filepath.Join(home, ".memdoor", "workflows", "team-solve")
 	for _, rel := range []string{"check-samples.sh", "changes.sh", "check.sh", "done.sh", "task.template.md", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml", "steps/judge.yaml"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
-			t.Fatalf("team seeded without %s: %v", rel, err)
+			t.Fatalf("team-solve seeded without %s: %v", rel, err)
 		}
 	}
 }

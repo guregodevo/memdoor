@@ -76,17 +76,40 @@ func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 	// A BUILT-IN TAKES ITS NAME. A unit of that name the seed never wrote (a
 	// copy made by hand before it shipped, 2026-11-03: an old team-solve-v2
 	// kept every later fix out) is moved aside to <name>-mine, kept whole,
-	// and the shipped one is written in its place.
+	// and the shipped one is written in its place. A copy whose files are the
+	// shipped ones is adopted; a file the built-in does not ship counts only
+	// when it is a step.
+	differs, kept := map[string]bool{}, map[string]bool{}
 	for _, rel := range files {
 		u := unit(rel)
 		if u == rel || ours[u] {
 			continue
 		}
-		ours[u] = true
-		from := filepath.Join(dir, filepath.FromSlash(u))
-		if _, err := os.Stat(from); err != nil {
+		onDisk, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(rel)))
+		if err != nil {
 			continue
 		}
+		if shipped, err := fs.ReadFile(fsys, rel); err == nil && hashBytes(onDisk) != hashBytes(shipped) {
+			differs[u] = true
+		}
+	}
+	// A step the built-in does not have makes it another DAG: a different
+	// workflow of the same name.
+	for _, rel := range files {
+		u := unit(rel)
+		if u == rel || ours[u] || differs[u] {
+			continue
+		}
+		steps, _ := filepath.Glob(filepath.Join(dir, filepath.FromSlash(u), "steps", "*.yaml"))
+		for _, st := range steps {
+			if r, err := filepath.Rel(dir, st); err == nil && !shippedNow[filepath.ToSlash(r)] {
+				differs[u] = true
+				break
+			}
+		}
+	}
+	for u := range differs {
+		from := filepath.Join(dir, filepath.FromSlash(u))
 		to := from + "-mine"
 		for i := 2; ; i++ {
 			if _, err := os.Stat(to); os.IsNotExist(err) {
@@ -96,11 +119,16 @@ func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 		}
 		if err := os.Rename(from, to); err != nil {
 			log.Warn(fmt.Sprintf("%s %s: a copy not written by the seed is in the way and could not be moved", strings.ToLower(kind), u), slog.String("path", from), slog.String("error", err.Error()))
+			kept[u] = true
 			continue
 		}
+		ours[u] = true
 		log.Warn(fmt.Sprintf("%s %s is built in: the copy that was there is kept as %s", strings.ToLower(kind), u, filepath.Base(to)), slog.String("path", to))
 	}
 	for _, rel := range files {
+		if kept[unit(rel)] {
+			continue
+		}
 		shipped, err := fs.ReadFile(fsys, rel)
 		if err != nil {
 			continue

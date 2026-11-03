@@ -4,7 +4,7 @@ requires:
   - table_pattern: ideate-a
   - table_pattern: ideate-b
 prompt: |
-  You are the solver in a fresh context. The run's files are in .memdoor/runs/team-{{.partition}}/: task.md (the task: the prompt
+  You are the solver in a fresh context. The run's files are in .memdoor/runs/team-solve-{{.partition}}/: task.md (the task: the prompt
   and what plan settled), plan.md, notes.md (the ledger every role writes
   to). They are never part of the work and never committed.
   Read task.md, plan.md, notes.md, proposal-a.md and proposal-b.md there. Select
@@ -17,6 +17,6 @@ prompt: |
   work and the manager owns any repair round. Do not spawn agents or use
   chat context.
 target:
-  command: bash .memdoor/runs/team-{{.partition}}/done.sh solve .memdoor/runs/team-{{.partition}}
+  command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh solve .memdoor/runs/team-solve-{{.partition}}
 timeout: 90m
 max_retries: 1

@@ -59,15 +59,18 @@ on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
     # or no key: memdoor connect local   (Ollama, llama.cpp, vLLM, LM Studio; Ollama needs a 32K window, not its 4K default)
     git clone --depth 1 https://github.com/guregodevo/memdoor
 
-    mkdir -p ~/.memdoor/workflows
-    cp -r memdoor/examples/workflows/team-solve ~/.memdoor/workflows/
-    mkdir my-problem && cd my-problem
+    mkdir -p my-problem/.memdoor/workflows/team-solve && cd my-problem
+    cp -r ../memdoor/examples/workflows/team-solve/{steps,check-samples.sh} .memdoor/workflows/team-solve/   # these steps, not the built-in's
     cp -r ../memdoor/examples/workflows/team-solve/sample/* .    # task.md + tests/1.in … 5.out
     memdoor workflow run team-solve --wait   # exit 0 when every sample passes
 
 Your problem: `task.md` and paired `tests/N.in` / `tests/N.out`. Program:
 `solution.py`, stdin in, compared to the samples with `diff`. Needs Python 3
 and bash. `/workflow` in `memdoor tui` draws the run live.
+
+`team-solve` is also built in, with its own prompts (a task from a prompt,
+any project): [workflows/team-solve](../../../workflows/team-solve/). The
+copy in `.memdoor/workflows` runs these steps instead, the ones measured above.
 
 The steps name no model; the `/model` pin answers, a local one included
 ([how to connect one](https://memdoor.ai/docs/providers#a-local-runtime-no-key)).

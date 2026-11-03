@@ -1,4 +1,4 @@
-# team runs, 2026-11-02
+# Built-in team-solve runs, 2026-11-02
 
 Four runs of the built-in, then named `team-solve-v2`, on a scratch gateway with a fresh HOME (the seed
 alone provided the workflow), each folder holding every file the run left:
@@ -24,4 +24,4 @@ partition, so the rows are not split): 114 calls, 1.40 M input tokens, 31.6 K
 output tokens, $0.046 at OpenRouter's list price.
 
 Not a benchmark: one problem, one prompt, one pass each. The published
-benchmark of the method is the `team-solve` example beside this folder.
+benchmark is the published steps' run, two folders up in `examples/workflows/team-solve`.

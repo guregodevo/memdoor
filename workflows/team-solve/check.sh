@@ -5,8 +5,14 @@
 set -u
 r="$1"; log="$2"; w="$(cd "$(dirname "$0")" && pwd)"
 section=$(sed -n '/^## Check/,/^## /p' "$r/task.md" | grep -v '^## ' | grep -v '^<!--')
+# A Check that starts with the word samples or judge is that, whatever it
+# quotes after; otherwise its first command in backticks.
+first=$(printf '%s\n' "$section" | grep -m1 '[^[:space:]]' | tr -cs 'A-Za-z' ' ' | awk '{print tolower($1)}')
 cmd=$(printf '%s\n' "$section" | grep -o '`[^`]*`' | head -1 | tr -d '`')
 case "$cmd" in samples|judge) cmd="" ;; esac
+case "$first" in samples|judge) cmd="" ;; esac
+[ "$first" = judge ] && section=judge
+[ "$first" = samples ] && section=samples
 if [ -n "$cmd" ]; then
   echo command > "$r/check-kind.txt"; printf 'check: %s\n' "$cmd" > "$log"
   bash -c "$cmd" >> "$log" 2>&1 && exit 0 || exit 1
