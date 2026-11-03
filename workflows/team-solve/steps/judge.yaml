@@ -3,22 +3,22 @@ agent: coder
 # The last word on fit to the task: a fresh context that has seen none of the
 # team's reasoning reads the task and the change, nothing else. Skipped when
 # the samples are the check: they decide.
-when: "! grep -qx samples .memdoor/runs/team-{{.partition}}/check-kind.txt"
+when: "! grep -qx samples .memdoor/runs/team-solve-{{.partition}}/check-kind.txt"
 requires:
   - table_pattern: repair
 prompt: |
   You are the judge in a fresh context. Run `bash
-  .memdoor/workflows/team/changes.sh .memdoor/runs/team-{{.partition}}` (or
-  $HOME/.memdoor/workflows/team/changes.sh when the first is
-  missing) so changes.diff is current. Then read .memdoor/runs/team-{{.partition}}/task.md
-  and .memdoor/runs/team-{{.partition}}/changes.diff, and the files the Deliverable names
+  .memdoor/workflows/team-solve/changes.sh .memdoor/runs/team-solve-{{.partition}}` (or
+  $HOME/.memdoor/workflows/team-solve/changes.sh when the first is
+  missing) so changes.diff is current. Then read .memdoor/runs/team-solve-{{.partition}}/task.md
+  and .memdoor/runs/team-solve-{{.partition}}/changes.diff, and the files the Deliverable names
   when they are new. Read nothing else of the run. Decide whether the change
   does what the task asks, completely and correctly, within the Scope, and
-  nothing the task did not ask. Write .memdoor/runs/team-{{.partition}}/verdict.md whose
+  nothing the task did not ask. Write .memdoor/runs/team-solve-{{.partition}}/verdict.md whose
   first line is `verdict: PASS` or `verdict: FAIL`, then at most ten lines
   saying why, each tied to a line of the task. Change no other file. Do not
   spawn agents or rely on chat context.
 target:
-  command: bash .memdoor/runs/team-{{.partition}}/done.sh judge .memdoor/runs/team-{{.partition}}
+  command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh judge .memdoor/runs/team-solve-{{.partition}}
 timeout: 40m
 max_retries: 1

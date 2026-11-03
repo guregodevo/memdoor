@@ -1,4 +1,4 @@
-# team runs, 2026-11-02: the prompt defines the task
+# Built-in team-solve runs, 2026-11-02: the prompt defines the task
 
 Three runs of the built-in, then named `team-solve-v2`, on a scratch gateway with a fresh HOME (the seed
 alone provided the workflow), every step on z-ai/glm-5.3-flash through
