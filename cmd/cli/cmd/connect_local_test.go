@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -25,7 +26,7 @@ func TestLocalRuntimeMenuListsEachAndAnotherAddress(t *testing.T) {
 func TestNothingRunningIsSaidInWordsWithAWayOut(t *testing.T) {
 	for goos, wants := range map[string][]string{
 		"linux":  {"No model is running on this computer.", janisInstall, "janis pull", "janis serve --detach --model <that model>", "memdoor connect openrouter"},
-		"darwin": {"ollama pull qwen3:8b", "janis#build", "memdoor connect openrouter"},
+		"darwin": {"No model is running on this computer.", "MLX on Apple silicon", janisInstall, "janis pull", "janis serve --detach --model <that model>", "memdoor connect openrouter"},
 		"":       {"Start janis, Ollama", "memdoor connect openrouter"},
 	} {
 		got := noLocalRuntimeText("this computer", goos)
@@ -185,6 +186,20 @@ func TestOfferedInstallIsAskedAndTakenOnYes(t *testing.T) {
 		t.Fatalf("a failed install is said: %q", said.String())
 	}
 	if janisOffer() != nil && (runtimeWhere(gatewayAddr) != "this computer") {
+		t.Fatal("no offer for a gateway elsewhere")
+	}
+}
+
+func TestJanisIsOfferedOnLinuxAndMacOnly(t *testing.T) {
+	saved := gatewayAddr
+	defer func() { gatewayAddr = saved }()
+	gatewayAddr = "http://localhost:18789"
+	_, known := janisHardware[runtime.GOOS]
+	if (janisOffer() != nil) != known {
+		t.Fatalf("on %s the offer is %v, janis has a release for it: %v", runtime.GOOS, janisOffer() != nil, known)
+	}
+	gatewayAddr = "http://box.example:18789"
+	if janisOffer() != nil {
 		t.Fatal("no offer for a gateway elsewhere")
 	}
 }

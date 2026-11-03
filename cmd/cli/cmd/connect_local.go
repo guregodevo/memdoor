@@ -55,9 +55,16 @@ func localRuntimeMenu(rs []localRuntimeRow, where string) string {
 	return b.String()
 }
 
-// janisInstall is the one-line Linux installer; janis serve --detach pulls the
-// model and returns once it has answered (guregodevo/janis README).
+// janisInstall is the one-line installer of janis's release, for Linux and
+// macOS; janis serve --detach pulls the model and returns once it has answered
+// (guregodevo/janis README).
 const janisInstall = "curl -fsSL https://github.com/guregodevo/janis/releases/latest/download/install.sh | sh"
+
+// janisHardware says what janis runs on, by OS: its release is Linux and macOS.
+var janisHardware = map[string]string{
+	"linux":  "no GPU needed, slow without one",
+	"darwin": "MLX on Apple silicon",
+}
 
 // noLocalRuntimeText is said when nothing answers. It names janis with the
 // command for this OS, and a key for a machine that cannot run a model well.
@@ -66,16 +73,12 @@ func noLocalRuntimeText(where, goos string) string {
 	var b strings.Builder
 	b.WriteString("No model is running on " + where + ".\n")
 	switch goos {
-	case "linux":
-		b.WriteString("  Run one with janis (no GPU needed, slow without one):\n")
+	case "linux", "darwin":
+		b.WriteString("  Run one with janis (" + janisHardware[goos] + "):\n")
 		b.WriteString("    " + janisInstall + "\n")
 		b.WriteString("    janis pull                                  # the model that fits this machine\n")
 		b.WriteString("    janis serve --detach --model <that model>\n")
 		b.WriteString("  Ollama, LM Studio, llama.cpp and vLLM work too.\n")
-	case "darwin":
-		b.WriteString("  Run one with Ollama:  ollama pull qwen3:8b   (ollama.com)\n")
-		b.WriteString("  or build janis for MLX: https://github.com/guregodevo/janis#build\n")
-		b.WriteString("  Then run this again. LM Studio, llama.cpp and vLLM work too.\n")
 	default:
 		b.WriteString("  Start janis, Ollama, LM Studio, llama.cpp or vLLM on that machine and run this again.\n")
 	}
@@ -192,10 +195,10 @@ func installJanis(run runShell, janis string) error {
 	return nil
 }
 
-// janisOffer is the install on offer, or nil: only on Linux with the gateway
-// on this machine, where the janis release runs.
+// janisOffer is the install on offer, or nil: only with the gateway on this
+// machine and an OS the janis release runs on.
 func janisOffer() func() error {
-	if runtimeWhere(gatewayAddr) != "this computer" || runtime.GOOS != "linux" {
+	if _, ok := janisHardware[hereOS(runtimeWhere(gatewayAddr))]; !ok {
 		return nil
 	}
 	return func() error {

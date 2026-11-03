@@ -63,17 +63,22 @@ same id: `/model groq:qwen/qwen3.8-27b`.
 ## A local LLM with janis
 
 A model on your machine, no key, no provider:
-[janis](https://github.com/guregodevo/janis) is Memdoor's runtime. One Go
-server runs open models on a Mac's GPU through MLX and on an NVIDIA box
-through CUDA. It serves the chat model and the
+[janis](https://github.com/guregodevo/janis) is Memdoor's runtime, the one
+we recommend. One Go server runs open models on a Mac's GPU through MLX and
+on an NVIDIA box through CUDA. It serves the chat model and the
 [decision model](/docs/no-babysitting#who-decides-the-decision-model).
 Ollama, llama.cpp and LM Studio serve the chat half.
 
 ```
-git clone https://github.com/guregodevo/janis && cd janis
-make build && go build -o janis ./cmd/janis   # on Linux with a GPU: ./scripts/fetch-ggml.sh --cuda first, then -tags ggml
-./janis pull                                  # the model that fits this machine; or: pull Qwen3-Coder-30B-A3B-Instruct-4bit
-./janis serve                                 # http://127.0.0.1:8090/v1 — chat completions, tools, decisions
+memdoor connect local                         # nothing running: installs janis and the model that fits, serves it, connects
+```
+
+By hand (a CUDA build: janis's README):
+
+```
+curl -fsSL https://github.com/guregodevo/janis/releases/latest/download/install.sh | sh   # Linux, macOS (Apple silicon)
+janis pull                                    # the model that fits this machine; or: pull Qwen3-Coder-30B-A3B-Instruct-4bit
+janis serve                                   # http://127.0.0.1:8090/v1 — chat completions, tools, decisions
 memdoor connect local                         # finds it; chat and decisions, no token
 ```
 
