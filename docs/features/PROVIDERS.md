@@ -326,47 +326,39 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
 
 ## How a provider knows it is Memdoor (2026-10-24)
 
-`make metrics-apps` (scripts/metrics-apps.sh, 2026-10-25) reads those statistics back:
-OpenRouter's app page (all-time totals per model, and a chart per model per UTC day) minus
-this machine's own ledger (`memdoor meter`, read in UTC), per day, written to
-.memdoor/metrics/openrouter.tsv; and whether LLM Gateway, EUrouter or Vercel list a Memdoor
-row yet. The remainder on a day is other people on their own key; before the launch
-(2026-10-21) it includes Memdoor's own machines of the time.
+Nothing phones home. Some providers read an app header and some do not.
+Researched provider by provider, web only. What the binary sends is
+`pkg/attribution` (one definition, the User-Agent from
+`gateway/providers/app_headers.go`).
 
-The maintainer: "for each provider key we can see who is using our app… the idea is to
-promote memdoor." Nothing phones home (decided the same day); the count of
-people on Memdoor is whatever each provider shows for the app. Researched
-provider by provider, web only; what the binary sends is `pkg/attribution`
-(one definition, the User-Agent from `gateway/providers/app_headers.go`).
-
-| Provider | Reads an app header? | Where it shows | How a tool gets listed |
-|---|---|---|---|
-| OpenRouter | `HTTP-Referer` + `X-Title` | openrouter.ai/apps, public, daily chart; app_id 5145054 | By sending the headers |
-| Vercel AI Gateway | `http-referer` + `x-title` | vercel.com/ai-gateway/leaderboards/apps (public, CC-BY data) | By sending the headers ("your app can be featured") |
-| LLM Gateway | `X-Source` (falls back to `HTTP-Referer`, then the User-Agent of known agents) | llmgateway.io/apps and /rankings | By sending the header |
-| EUrouter | `HTTP-Referer` + `X-EUrouter-Title` | eurouter.ai rankings, 7/30/90-day | By sending the headers |
-| Requesty | `HTTP-Referer` + `X-Title` | The customer's own analytics only | — |
-| Google Gemini | `x-goog-api-client: memdoor-oai/<version>`, required of every partner integration | Google's side only (segmentation, outreach on error patterns) | No public list; libraries page is SDKs + frameworks |
-| OpenAI API | None (`OpenAI-Organization` is the key holder) | Nothing | — |
-| Sign in with ChatGPT | `agent_name_hint=Memdoor` at registration (we send it, `pkg/chatgpt`) | OpenAI's own page lists open-source integrations (OpenClaw, OpenCode, Pi, T3), no form | Codex for Open Source: credits + Pro for maintainers, tool-agnostic — developers.openai.com/codex/community/codex-for-oss |
-| Anthropic | None documented; first-party-only headers were used by third parties to ride plans and cut off | Console by key/workspace only | "Powered by Claude" directory has no submit path, sales only |
-| DeepSeek | None | Nothing | PR to github.com/deepseek-ai/awesome-deepseek-agent (CONTRIBUTING.md: `docs/<tool>.md` + zh-CN, a README row, alphabetical; Pi, OpenCode, Cline, Kilo are there) |
-| Baseten | None (`x-session-affinity` is cache pinning) | Nothing | docs.baseten.co/inference/integrations: "reach out to support@baseten.co" |
-| Groq | None | Nothing | console.groq.com/docs/coding-with-groq lists tools, no stated path; "Powered by Groq" badge at console.groq.com/docs/badge |
-| xAI | None | Nothing | No directory; news posts per negotiated OAuth integration |
-| Z.ai (GLM Coding Plan) | None | Nothing | docs.z.ai/devpack/tool/others; the plan is "limited to officially supported tools", no published path |
-| Moonshot (Kimi for Coding) | None; tampering with the User-Agent is a violation (ours is real) | Nothing | kimi.com/code/docs third-party list; contact-sales or the forum |
-| Mistral, Together, Fireworks, Cerebras | None | Nothing | Tool lists without a submission path (Fireworks harnesses, Cerebras integrations, Together Link repo); Mistral ambassador program |
-| Hugging Face Inference Providers | None | Nothing | PR to github.com/huggingface/hub-docs `docs/inference-providers/integrations/` (staff wrote every entry so far) |
+| Provider | Reads an app header? | Where it shows |
+|---|---|---|
+| OpenRouter | `HTTP-Referer` + `X-Title` | openrouter.ai/apps, public, daily chart |
+| Vercel AI Gateway | `http-referer` + `x-title` | vercel.com/ai-gateway/leaderboards/apps (public, CC-BY data) |
+| LLM Gateway | `X-Source` (falls back to `HTTP-Referer`, then the User-Agent of known agents) | llmgateway.io/apps and /rankings |
+| EUrouter | `HTTP-Referer` + `X-EUrouter-Title` | eurouter.ai rankings, 7/30/90-day |
+| Requesty | `HTTP-Referer` + `X-Title` | The customer's own analytics only |
+| Google Gemini | `x-goog-api-client: memdoor-oai/<version>`, required of every partner integration | Google's side only (segmentation, outreach on error patterns) |
+| OpenAI API | None (`OpenAI-Organization` is the key holder) | Nothing |
+| Sign in with ChatGPT | `agent_name_hint=Memdoor` at registration (we send it, `pkg/chatgpt`) | Nothing public |
+| Anthropic | None documented; first-party-only headers were used by third parties to ride plans and cut off | Console by key/workspace only |
+| DeepSeek | None | Nothing |
+| Baseten | None (`x-session-affinity` is cache pinning) | Nothing |
+| Groq | None | Nothing |
+| xAI | None | Nothing |
+| Z.ai (GLM Coding Plan) | None | Nothing |
+| Moonshot (Kimi for Coding) | None; tampering with the User-Agent is a violation (ours is real) | Nothing |
+| Mistral, Together, Fireworks, Cerebras | None | Nothing |
+| Hugging Face Inference Providers | None | Nothing |
 
 What changed in the binary: the pair goes to every host that reads it, Google
 gets its partner header, and a vendor key (Anthropic, OpenAI, xAI, Baseten,
 Groq, DeepSeek) still carries only the User-Agent and the company's own
 `MEMDOOR_VENDOR_HEADERS`. No new host is contacted (`gateway/egress_test.go`).
 
-Two plan providers matter beyond promotion: Z.ai's and Moonshot's coding plans
-are limited to the tools they list, so a person on one of those plans in
-Memdoor is outside the list until Memdoor is on it.
+Z.ai's and Moonshot's coding plans are limited to the tools they list. A
+person on one of those plans cannot use it in Memdoor until Memdoor is on
+that list.
 
 ## Sign in with ChatGPT (2026-10-10)
 

@@ -445,8 +445,7 @@ families, off against Jev, same tasks, alternating order, rung 1:
 
 ### Cost table, 2026-10-10 (44 runs, decisions off and on)
 
-The measurement in the shape a reader believes (docs/internal/GROWTH_STRATEGY.md,
-move 3): did it pass, what did it read, what did the key get billed. Two
+The measurement: did it pass, what did it read, what did the key get billed. Two
 scratch gateways ran this binary on the same OpenRouter key and the same first
 rung (`z-ai/glm-5.3-flash`); one had no decision provider (a non-local
 `MEMDOOR_SYSTEMONE_URL` with no key, which the client refuses at

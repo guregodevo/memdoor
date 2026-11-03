@@ -229,8 +229,8 @@ func NewAgentRuntimeWithFactory(clientFactory *providers.ClientFactory, apiKey s
 		tools.AgentLogDefinition,
 		// Agent-driven bug reporting — the agent's judgment becomes a
 		// WARN/ERROR event in gateway/logs, which flows through
-		// gateway/telemetry to the monitoring inbox when enabled. See
-		// docs/internal/TELEMETRY.md. Available to every agent so any
+		// gateway/telemetry to the monitoring inbox when enabled.
+		// Available to every agent so any
 		// observation worth surfacing has a path out of the silent-
 		// failure zone.
 		tools.ReportBugDefinition,

@@ -6,7 +6,7 @@
 // that can recognise the app must). A request counts toward an app only when
 // it carries the headers that provider reads:
 //
-//   - OpenRouter (openrouter.ai/apps, app_id 5145054, docs/internal/OPS.md),
+//   - OpenRouter (openrouter.ai/apps),
 //     Vercel AI Gateway (its apps leaderboard), Requesty (private analytics) and
 //     LLM Gateway (as a fallback) read HTTP-Referer + X-Title.
 //   - LLM Gateway lists apps by X-Source (llmgateway.io/apps).

@@ -11,7 +11,7 @@ metadata:
 
 # Roadmap
 
-Two public places, one private.
+Two places, both public.
 
 - **`docs/ROADMAP.md`**: the quarter. What it is for, how it is judged on
   its last day, what is not this quarter. Public.
@@ -19,9 +19,6 @@ Two public places, one private.
   what is being built this week or next, at most five. Label `next` for
   what follows, with the evidence that would move it to `now`. An issue
   closes when its done-when holds.
-- **Internal** (usage metrics, user research, pricing and sales, growth and
-  listings, enterprise): memdoor-private, its issues and
-  `docs/internal/ROADMAP_Q4_2026.md`. Never in this repo or its issues.
 
 ## An issue
 

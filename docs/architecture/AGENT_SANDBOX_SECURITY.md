@@ -203,4 +203,4 @@ Path access denied`, and for approval mode `Approval asked`, `Approval
 given`, `Approval refused` and `Approval not answered`.
 `memdoor logs query --regex "blocked|Approval|Sandbox security" --since 1h`
 shows them. With `MEMDOOR_TELEMETRY_ENABLED=1` the WARN lines also reach the
-memdoor.ai monitoring inbox (`docs/internal/TELEMETRY.md`).
+memdoor.ai monitoring inbox (`gateway/telemetry`).

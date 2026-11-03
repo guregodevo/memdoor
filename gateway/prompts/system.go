@@ -104,7 +104,6 @@ func (spb *SystemPromptBuilder) Build() (string, error) {
 	// 2b. Anomaly Reporting Section — tells the model WHEN to call
 	// the report_bug tool. Without this nudge the tool sits in the
 	// palette but the model only invokes it on explicit user request.
-	// docs/internal/TELEMETRY.md captures the design rationale.
 	sections = append(sections, spb.buildAnomalyReportingSection())
 
 	// 3. Agent Collaboration Section (for channels)

@@ -57,10 +57,6 @@ up: build stop-gateway
 	@./memdoor providers 2>/dev/null | grep -E "connected \(" \
 		|| echo "  ⚠ no provider connected: the gateway has no key — put one in ./.envrc or run: memdoor connect <kind>"
 
-# Deploying memdoor.ai, rolling back, the adoption metrics and the GitHub
-# branch rules live in a private repo, memdoor-ops: it names the server. This
-# repo is the source of truth it builds from (2026-11-02).
-
 # scan fails on a secret, a personal path or a private host in the tree: the
 # repo is public, so this runs in CI and from the pre-push hook (make hooks).
 scan:

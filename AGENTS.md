@@ -130,7 +130,6 @@ grep -r "duplicate_code" .    # Search before coding
 # a turn asked by a peer (asked_by_peer) wakes nobody on the peer. A turn woken by a reply now
 # gets the project and the mode of the turn before it (asyncTurnContext), not the scratch dir.
 # A mention nobody answers to now fails the turn instead of hanging the window and the run.
-# A new websocket path needs its own nginx location in the deploy (memdoor-ops, private).
 # MEMDOOR_REMOTE_URL=http://localhost:18789 tests it against a local gateway.
 
 # Models & sessions (post 2026-08-16)
@@ -468,11 +467,8 @@ serves it, driving tmux, what to assert, negative paths).
 - Flow: User message → Agent response → Subagent spawns → Completion announces → Threaded reply
 - Key fields: `parent_message_id` in session metadata, job context, and message entities
 
-## Production Operations
+## Every LLM Request Goes Through a Provider
 
-memdoor.ai is deployed from this repo by memdoor-ops, a private repo: the
-deploy, the rollback, the server layout and the metrics live there. This
-public repo is the source of truth it builds from (2026-11-02).
 **Every LLM request goes through a provider** (2026-10-04, the maintainer: "no
 exception. all request for llm goes through provider"): `providers.ClientFactory`
 resolves a pinned model to the provider that lists it, else the engine chosen at
