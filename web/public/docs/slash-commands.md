@@ -40,7 +40,7 @@ Everything you can type in the TUI. `/` opens a dropdown that filters as you typ
 | `/mcp test <name>` | Connect now and list the server's tools |
 | `/mcp on\|off <name>` | Turn a server on or off |
 | `/workflow` | The project's workflows and runs; enter runs one or opens a run's graph; `a` approves, `c` continues, `s s` stops |
-| `/workflow:<name>` | Run a workflow straight from the dropdown, which completes it with what the project has |
+| `/workflow:<name> [the task]` | Run a workflow straight from the dropdown, which completes it with what the project has; the words after it are the task (`/workflow:team-solve <the task>`), `--partition <p>` names the partition |
 | `/workflow run <name>` / `resume <run-id>` / `approve <task>` / `stop <run-id>` | The same from the line |
 | `/mcp remove <name>` | Delete a server from its file |
 | `/mcp trust` | Let this project's `.mcp.json` servers start |

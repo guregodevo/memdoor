@@ -98,7 +98,9 @@ share: the directory, by `cp -R`, a gist, or a repo cloned into
 
 `/workflow`: the project's workflows, then its runs. Enter on a workflow
 runs it; on a run, opens its graph. The dropdown completes
-`/workflow:<name>`. In the graph: `a` approves, `d` the full diff, `c`
+`/workflow:<name>`; the words after it are the task, for a workflow that
+reads one (`/workflow:team-solve <the task>`), and `--partition <p>` names
+the partition. In the graph: `a` approves, `d` the full diff, `c`
 continues a failed or stopped run, `s` twice stops one, `Esc` stops this
 window's run.
 
