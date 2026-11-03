@@ -87,7 +87,7 @@ from 32 GB. `/model search` lists what janis serves, at no price. `/model <id>` 
 one; the footer names it. janis loads a model at the first request naming
 it and swaps when another is asked for, so pin the one you mean.
 
-janis keeps the prompt prefix across conversations (janis 0.1.9). The
+janis keeps the prompt prefix across conversations (janis 0.1.11). The
 system prompt and tools are prefilled once. A new conversation starts where
 the last two parted; the first two after a start prefill the whole prompt.
 
