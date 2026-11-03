@@ -88,7 +88,7 @@ environment variable, or `!command`, so a secret in your company's tooling is
 never copied onto disk. The gateway probes a provider (its model list, one
 small call) before keeping it and contacts it afterwards only when one of its
 models is pinned or its list is read. A local runtime (`memdoor connect
-local`: Ollama, llama.cpp, janis, LM Studio on this machine or on the box) is
+local`: janis on this machine or on the box, or Ollama, llama.cpp, LM Studio) is
 kept with no credential; its requests go to the address you gave, normally
 localhost.
 

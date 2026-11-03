@@ -502,7 +502,7 @@ export function CoderLandingPage() {
                 ['curl -fsSL https://memdoor.ai/install.sh | bash', 'the binary, SHA-256 checked, no sudo'],
                 ['export OPENROUTER_API_KEY=sk-or-…', 'your key, your account; or OPENAI_API_KEY, GEMINI_API_KEY, DEEPSEEK_API_KEY, …, ANTHROPIC_API_KEY'],
                 ['memdoor connect chatgpt', 'no key: Sign in with ChatGPT, and your Plus/Pro plan answers'],
-                ['memdoor connect local', 'no key, nothing leaves the machine: Ollama, llama.cpp, vLLM, LM Studio or janis on this box'],
+                ['memdoor connect local', 'no key, nothing leaves the machine: janis on this box, or Ollama, llama.cpp, vLLM, LM Studio'],
                 ['cd your-project && memdoor tui', 'the first run sets the machine up; the agent works where you launch it'],
                 ['/model nvidia/nemotron-3-super-120b-a12b:free', 'no money on the key yet: a free model, 50 requests a day; its hosts train on what they are sent'],
                 ['/model', 'which model is answering, and what it lists for'],
