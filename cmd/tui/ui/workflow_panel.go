@@ -21,7 +21,7 @@ import (
 // WorkflowOps is how the panel reaches the gateway — injected by the CLI,
 // declared here so the TUI imports nothing of the CLI (duck typing).
 type WorkflowOps struct {
-	List    func() ([]WorkflowRun, []WorkflowEntry, error)    // runs, and the workflows this project can run
+	List    func() ([]WorkflowRun, []WorkflowEntry, error)            // runs, and the workflows this project can run
 	Run     func(name, partition, prompt string) (WorkflowRun, error) // partition "" = a fresh run; a scheme's word (a commit, a day, a version) otherwise. prompt: the task, for a workflow that reads one (team-solve)
 	Status  func(runID string) (WorkflowRun, error)
 	Stop    func(runID string) (WorkflowRun, error)
