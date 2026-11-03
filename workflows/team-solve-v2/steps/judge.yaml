@@ -19,6 +19,6 @@ prompt: |
   saying why, each tied to a line of the task. Change no other file. Do not
   spawn agents or rely on chat context.
 target:
-  file: .memdoor/runs/team-solve-v2-{{.partition}}/verdict.md
+  command: bash .memdoor/runs/team-solve-v2-{{.partition}}/done.sh judge .memdoor/runs/team-solve-v2-{{.partition}}
 timeout: 40m
 max_retries: 1

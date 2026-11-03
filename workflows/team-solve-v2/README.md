@@ -12,7 +12,19 @@ The output is whatever the task asks for: changes to the tree (a refactor, a fix
 
 **The task.** The prompt goes into the workflow's task template (`task.template.md`) as `task.md` in the run's folder. `plan` reads the project and fills in the rest of it: the Deliverable, the Check (one command that exits 0 when the work is right, such as `go test ./...`; or the samples; or the judge), the Scope (the files the work may touch) and Done when. Every later role works from that file.
 
-**The team.** `problem` writes the task and records the tree's state. `plan` fills the task and writes `plan.md` and `notes.md`, the ledger. `ideate-a` and `ideate-b`, in parallel, each add a proposal to the ledger and change no project file. `solve` does the work within the Scope. `test` writes `changes.diff` (everything the run changed) and runs the Check. `review` reads the diff and the check's output and writes `review.md`, `verdict: PASS` or `verdict: FAIL` first, with repair instructions. `repair` is one fresh worker on them. `judge`, unless the samples are the check, is a fresh context that reads only the task and the diff and writes `verdict.md`. `verify` runs the Check on the final tree and fails the run when it fails or the verdict is FAIL. Each role starts from nothing and reads only the files on disk.
+**The team.** `problem` writes the task and records the tree's state. `plan` fills the task and writes `plan.md` and `notes.md`, the ledger. `ideate-a` and `ideate-b`, in parallel, each write a proposal to its own file, `proposal-a.md` and `proposal-b.md`, and change no project file. `solve` does the work within the Scope. `test` writes `changes.diff` (everything the run changed) and runs the Check. `review` reads the diff and the check's output and writes `review.md`, `verdict: PASS` or `verdict: FAIL` first, with repair instructions. `repair` is one fresh worker on them. `judge`, unless the samples are the check, is a fresh context that reads only the task and the diff and writes `verdict.md`. `verify` runs the Check on the final tree and fails the run when it fails or the verdict is FAIL. Each role starts from nothing and reads only the files on disk.
+
+**A step is done when its file is.** Each agent step's target is `done.sh <step>`, copied into the run's folder, so the step's own turn cannot edit it:
+
+| step | done when |
+|---|---|
+| `plan` | `task.md` has the Deliverable, a Check (a command in backticks, samples or judge), the Scope and Done when filled in, the Prompt unchanged; `plan.md` and `notes.md` are written |
+| `ideate-a`, `ideate-b` | `proposal-a.md`, `proposal-b.md` have five lines or more |
+| `solve` | `changes.diff` is not empty |
+| `review`, `judge` | `review.md`, `verdict.md` start with `verdict: PASS` or `verdict: FAIL` |
+| `repair` | `repair.md` is written; skipped when the review passed |
+
+A turn that ends with its target failing is told what is missing and goes on; when it never passes, the step fails and the run stops there instead of handing an empty file to the next role.
 
 **Without a prompt** a `task.md` in the folder is the prompt, and an empty folder gets the sample problem: `task.md` and five `tests/N.in` / `tests/N.out`, checked by `check-samples.sh`.
 

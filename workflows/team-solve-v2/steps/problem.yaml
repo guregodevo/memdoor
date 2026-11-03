@@ -4,6 +4,7 @@ type: command
 # the folder is the prompt; an empty folder gets the sample problem. The
 # prompt goes into the workflow's task template, which plan fills in. The
 # tree's state is recorded now, so the run's changes can be told apart.
+# done.sh, each agent step's target, is copied into the run's folder.
 command: |
   set -e
   r=.memdoor/runs/team-solve-v2-{{.partition}}
@@ -21,6 +22,7 @@ command: |
   template, prompt, out = sys.argv[1:]
   open(out, "w").write(open(template).read().replace("@@PROMPT@@", open(prompt).read().strip()))
   PY
+  cp "$w/done.sh" "$r/done.sh"
   touch "$r/start"
   if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     b=$(git stash create 2>/dev/null || true)

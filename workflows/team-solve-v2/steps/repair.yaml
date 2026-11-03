@@ -10,9 +10,12 @@ prompt: |
   `verdict: PASS`, change nothing and report that repair was unnecessary.
   Otherwise read task.md, plan.md, changes.diff and test-output.log, then
   correct the work using the manager's instructions, within the Scope.
-  Append a concise repair explanation to notes.md. Run the Check to verify
-  the correction. Do not start another repair round and do not change
+  Run the Check to verify the correction. Write
+  .memdoor/runs/team-solve-v2-{{.partition}}/repair.md: what you changed
+  and what the Check printed, and append a short repair note to notes.md. Do not start another repair round and do not change
   task.md, the prompt, test inputs or expected outputs. The final check
   alone decides the run. Do not spawn agents or rely on chat history.
+target:
+  command: bash .memdoor/runs/team-solve-v2-{{.partition}}/done.sh repair .memdoor/runs/team-solve-v2-{{.partition}}
 timeout: 90m
 max_retries: 1

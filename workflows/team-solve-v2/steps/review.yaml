@@ -19,5 +19,7 @@ prompt: |
   test data or bypass a failing check. Verify the review is on disk. There is
   exactly one conditional repair round followed by a final check; do not
   claim completion before it passes.
+target:
+  command: bash .memdoor/runs/team-solve-v2-{{.partition}}/done.sh review .memdoor/runs/team-solve-v2-{{.partition}}
 timeout: 40m
 max_retries: 1

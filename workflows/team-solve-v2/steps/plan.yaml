@@ -26,13 +26,11 @@ prompt: |
   candidate approaches with their tradeoffs, and instructions for
   independent ideators, the solver and the reviewer. Initialize
   .memdoor/runs/team-solve-v2-{{.partition}}/notes.md with a title, the run identifier
-  {{.partition}}, and separate headings for Proposal A, Proposal B, Solver
-  decision, Review, and Repair, with the unique literal markers
-  <!-- proposal-a --> and <!-- proposal-b --> under their headings and enough
-  blank lines that it is at least 50 lines long. Parallel workers insert at
-  the markers with small patches, never overwrite the ledger. Do not do the
-  task and do not change any project file. Verify the three files and the
-  two markers. Communicate only through these files; do not rely on prior
+  {{.partition}}, and the headings Solver decision, Review and Repair. Do
+  not do the task and do not change any project file. Verify the three
+  files. Communicate only through these files; do not rely on prior
   conversation or delegate agents yourself.
+target:
+  command: bash .memdoor/runs/team-solve-v2-{{.partition}}/done.sh plan .memdoor/runs/team-solve-v2-{{.partition}}
 timeout: 40m
 max_retries: 1

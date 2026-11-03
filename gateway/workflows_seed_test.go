@@ -105,7 +105,7 @@ func TestSeedWritesTeamSolveWithItsSampleAndCheck(t *testing.T) {
 	t.Setenv("HOME", home)
 	SeedEmbeddedWorkflows()
 	dir := filepath.Join(home, ".memdoor", "workflows", "team-solve-v2")
-	for _, rel := range []string{"check-samples.sh", "changes.sh", "check.sh", "task.template.md", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml", "steps/judge.yaml"} {
+	for _, rel := range []string{"check-samples.sh", "changes.sh", "check.sh", "done.sh", "task.template.md", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml", "steps/judge.yaml"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
 			t.Fatalf("team-solve-v2 seeded without %s: %v", rel, err)
 		}
