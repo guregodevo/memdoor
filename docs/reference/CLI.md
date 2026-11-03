@@ -2249,7 +2249,7 @@ memdoor cron add --help
 
 ## See Also
 
-- [Cron Jobs Guide](CRON.md)
+- [Cron Jobs Guide](../features/cron-jobs.md)
 - [Skills Reference](SKILLS.md)
 
 ---

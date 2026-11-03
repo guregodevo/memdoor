@@ -693,8 +693,7 @@ Decision model on, averages of three runs:
 
 ## Not wired yet
 
-The queue lives in the roadmap: [`../roadmap/SHOULD.md`](../roadmap/SHOULD.md),
-"Decisions (Jev) — where next".
+What comes next is in the [issues](https://github.com/guregodevo/memdoor/issues).
 
 ## A local decision model, no key (2026-10-25)
 

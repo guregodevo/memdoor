@@ -293,7 +293,7 @@ the CLI, never the database or raw HTTP (`memdoor run`, `memdoor messages`,
 
 ## References
 
-- [CLI reference](CLI.md), [skills](SKILLS.md), [logs](LOGS.md), [queue](QUEUE.md), [cron](CRON.md), [authorization](AUTHORIZATION.md)
+- [CLI reference](CLI.md), [skills](SKILLS.md), [logs](LOGS.md), [queue](QUEUE.md), [cron](../features/cron-jobs.md), [authorization](AUTHORIZATION.md)
 - [The gateway and its doors](../architecture/GATEWAY_AND_DOORS.md), [the turn loop](../architecture/TURN_LOOP.md), [model routing](../architecture/MODEL_ROUTING.md), [multi-agent architecture](../architecture/MULTI_AGENT_ARCHITECTURE.md)
 - [ExecutionContext](../architecture/EXECUTION_CONTEXT.md), [configuration](../architecture/CONFIG_SYSTEM_DESIGN.md), [agent sandbox](../architecture/AGENT_SANDBOX_SECURITY.md), [always valid](../architecture/ALWAYS_VALID_PATTERN.md)
 - [Where your data goes](../SECURITY.md), [client API](../developers/CLIENT_API.md), [gateway internals](gateway/README.md)

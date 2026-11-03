@@ -12,9 +12,8 @@ AI gateway, or one added with `memdoor connect`).
 Pro is remote control and the hosted workflow state on memdoor.ai. The CLI and TUI are the product; the web UI is login/admin.
 The coder uses the person's MCP servers ([features/MCP.md](features/MCP.md), 2026-10-01) and runs
 on any provider's key — the company's gateway, Anthropic, OpenAI, Gemini, Groq, xAI, DeepSeek,
-Baseten or OpenRouter ([features/PROVIDERS.md](features/PROVIDERS.md), 2026-10-02). The current direction is the 2026-09-27
-direction note (blockquote) in [`roadmap/MUST.md`](roadmap/MUST.md); plans, pools and the
-catalogue are in `internal/PLANS_AND_CAPACITY.md` (removed 2026-10-03).
+Baseten or OpenRouter ([features/PROVIDERS.md](features/PROVIDERS.md), 2026-10-02). The plan for the quarter is
+[ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -99,10 +98,8 @@ Feature-focused walkthroughs (`docs/features/`):
 
 ## Roadmap & Strategy
 
-- **[Roadmap](roadmap/ROADMAP.md)** — Vision and priorities
-- **[MUST / SHOULD / COULD](roadmap/MUST.md)** — Priority tiers; MUST.md opens with a "What is left" list and carries the 2026-09-27 direction note below it
+- **[Roadmap](ROADMAP.md)** — the quarter plan; features are [issues](https://github.com/guregodevo/memdoor/issues) labelled `now` and `next`
 - **[ADRs](adr/)** — the decisions still in force; the index is above
-- **[Authentication Roadmap](roadmap/AUTHENTICATION.md)**
 
 ---
 
