@@ -5,7 +5,7 @@
 # target (gateway/target_guard.go).
 set -u
 step="$1"; r="$2"; miss=0
-w=.memdoor/workflows/team-solve-v2; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve-v2"
+w=.memdoor/workflows/team; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team"
 no() { printf 'not done: %s\n' "$1"; miss=1; }
 # section <file> <heading>: the lines under "## <heading>", comments and blanks dropped.
 section() { sed -n "/^## $2\$/,/^## /p" "$1" | sed '1d;/^## /d;/^<!--.*-->$/d;/^[[:space:]]*$/d'; }

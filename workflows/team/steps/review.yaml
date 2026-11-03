@@ -3,13 +3,13 @@ agent: coder
 requires:
   - table_pattern: test
 prompt: |
-  You are the manager/reviewer in a fresh context. The run's files are in .memdoor/runs/team-solve-v2-{{.partition}}/: task.md (the task: the prompt
+  You are the manager/reviewer in a fresh context. The run's files are in .memdoor/runs/team-{{.partition}}/: task.md (the task: the prompt
   and what plan settled), plan.md, notes.md (the ledger every role writes
   to). They are never part of the work and never committed.
   Read task.md, plan.md, notes.md, changes.diff (everything the run
   changed), test-status.txt and test-output.log there. Inspect the actual
   captured results and the actual change, not a previous agent's claims.
-  Write .memdoor/runs/team-solve-v2-{{.partition}}/review.md whose first line is `verdict: PASS`
+  Write .memdoor/runs/team-{{.partition}}/review.md whose first line is `verdict: PASS`
   or `verdict: FAIL`, then the findings, and append the review to notes.md.
   FAIL when the check status is nonzero, when the change misses a line of
   Done when, touches files outside the Scope, or does what the task did not
@@ -20,6 +20,6 @@ prompt: |
   exactly one conditional repair round followed by a final check; do not
   claim completion before it passes.
 target:
-  command: bash .memdoor/runs/team-solve-v2-{{.partition}}/done.sh review .memdoor/runs/team-solve-v2-{{.partition}}
+  command: bash .memdoor/runs/team-{{.partition}}/done.sh review .memdoor/runs/team-{{.partition}}
 timeout: 40m
 max_retries: 1

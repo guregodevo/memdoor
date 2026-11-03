@@ -3,7 +3,7 @@ agent: coder
 requires:
   - table_pattern: plan
 prompt: |
-  You are independent ideator A in a fresh context. The run's files are in .memdoor/runs/team-solve-v2-{{.partition}}/: task.md (the task: the prompt
+  You are independent ideator A in a fresh context. The run's files are in .memdoor/runs/team-{{.partition}}/: task.md (the task: the prompt
   and what plan settled), plan.md, notes.md (the ledger the later roles write
   to). They are never part of the work and never committed.
   Read task.md, plan.md and the current notes.md there, and the project
@@ -12,10 +12,10 @@ prompt: |
   cases. For a change to a codebase: the files and the edits in order, what
   could break and how the Check will show it. For a document: the outline,
   the claims and what backs each. Write it to
-  .memdoor/runs/team-solve-v2-{{.partition}}/proposal-a.md, your own file: the other ideator
+  .memdoor/runs/team-{{.partition}}/proposal-a.md, your own file: the other ideator
   writes its own at the same time. Change no other file. Verify your
   proposal is on disk. Do not spawn other agents or rely on chat context.
 target:
-  command: bash .memdoor/runs/team-solve-v2-{{.partition}}/done.sh ideate-a .memdoor/runs/team-solve-v2-{{.partition}}
+  command: bash .memdoor/runs/team-{{.partition}}/done.sh ideate-a .memdoor/runs/team-{{.partition}}
 timeout: 40m
 max_retries: 1

@@ -1,6 +1,6 @@
-# team-solve-v2 runs, 2026-11-02: the prompt defines the task
+# team runs, 2026-11-02: the prompt defines the task
 
-Three runs of the built-in on a scratch gateway with a fresh HOME (the seed
+Three runs of the built-in, then named `team-solve-v2`, on a scratch gateway with a fresh HOME (the seed
 alone provided the workflow), every step on z-ai/glm-5.3-flash through
 `--model`, started at the same time. Each folder holds the run's own files
 (`run/`: the prompt, the filled `task.md`, `plan.md`, the `notes.md` ledger,

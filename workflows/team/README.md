@@ -1,14 +1,14 @@
-# team-solve-v2
+# team
 
 A team of fresh contexts does the task a prompt defines, in the project it runs in, and checks the work before the run passes:
 
 ```
-memdoor workflow run team-solve-v2 "Rename ReadGGUFMetadata to ParseGGUFMetadata everywhere; go test ./... must pass"
-memdoor workflow run team-solve-v2 - < task.md           # a long prompt from a file
-memdoor workflow run team-solve-v2 --model qwen/qwen3.8-27b "…"
+memdoor workflow run team "Rename ReadGGUFMetadata to ParseGGUFMetadata everywhere; go test ./... must pass"
+memdoor workflow run team - < task.md           # a long prompt from a file
+memdoor workflow run team --model qwen/qwen3.8-27b "…"
 ```
 
-The output is whatever the task asks for: changes to the tree (a refactor, a fix, a feature across many files), a new program, a document. The run's own files never mix with the project's: they are in `.memdoor/runs/team-solve-v2-<run>/`, out of git.
+The output is whatever the task asks for: changes to the tree (a refactor, a fix, a feature across many files), a new program, a document. The run's own files never mix with the project's: they are in `.memdoor/runs/team-<run>/`, out of git.
 
 **The task.** The prompt goes into the workflow's task template (`task.template.md`) as `task.md` in the run's folder. `plan` reads the project and fills in the rest of it: the Deliverable, the Check (one command that exits 0 when the work is right, such as `go test ./...`; or the samples; or the judge), the Scope (the files the work may touch) and Done when. Every later role works from that file.
 
@@ -32,6 +32,6 @@ A turn that ends with its target failing is told what is missing and goes on; wh
 
 **The time.** On a hosted model a run is minutes. On a model on this machine every step is slower: the agent steps allow 40 minutes, solve and repair 90, and a run takes hours, as a background job (`--timeout` raises the run's clock, 2 hours by default).
 
-**The score.** The method is [GVS5H](https://github.com/slee-persis/GVS5H)'s. Its published benchmark, 9.8 of 10 on the first ten LiveCodeBench Hard problems against Fable 5's 8.0, is the `team-solve` workflow's, run with the authors' exact prompts: [examples/workflows/team-solve](../../examples/workflows/team-solve/). v2's prompts differ, so v2 has no benchmark score of its own yet; its runs are under [examples/workflows/team-solve-v2/results](../../examples/workflows/team-solve-v2/results/).
+**The score.** The method is [GVS5H](https://github.com/slee-persis/GVS5H)'s. Its published benchmark, 9.8 of 10 on the first ten LiveCodeBench Hard problems against Fable 5's 8.0, is the `team-solve` workflow's, run with the authors' exact prompts: [examples/workflows/team-solve](../../examples/workflows/team-solve/). `team`'s prompts differ, so it has no benchmark score of its own yet; its runs are under [examples/workflows/team/results](../../examples/workflows/team/results/).
 
 Needs bash, git for a change to a repository, and Python 3 for the samples.

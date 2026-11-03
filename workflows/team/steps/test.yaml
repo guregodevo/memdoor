@@ -5,8 +5,8 @@ type: command
 requires:
   - table_pattern: solve
 command: |
-  r=.memdoor/runs/team-solve-v2-{{.partition}}
-  w=.memdoor/workflows/team-solve-v2; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve-v2"
+  r=.memdoor/runs/team-{{.partition}}
+  w=.memdoor/workflows/team; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team"
   bash "$w/changes.sh" "$r"
   bash "$w/check.sh" "$r" "$r/test-output.log"
   result=$?

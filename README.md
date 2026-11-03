@@ -170,7 +170,7 @@ Built in:
 - **`issue-triage`**: labels, kind, summary, duplicates.
 - **`fix-tests`**: finds the test command, fixes the code until the tests pass, leaves the fix in the working tree.
 - **`release-notes`**: commits since the last tag as Added / Changed / Fixed.
-- **`team-solve-v2`**: the task a prompt defines (`memdoor workflow run team-solve-v2 "<the task>"`), done by a team of fresh contexts, GVS5H's method on any task and any model: changes across a repository checked by its own tests, a program by its samples, a document by a fresh judge. No benchmark score of its own yet; the 9.8 above is `team-solve`'s.
+- **`team`**: the task a prompt defines (`memdoor workflow run team "<the task>"`), done by a team of fresh contexts, GVS5H's method on any task and any model: changes across a repository checked by its own tests, a program by its samples, a document by a fresh judge. No benchmark score of its own yet; the 9.8 above is `team-solve`'s.
 
 `local-model: Qwen3-8B-4bit` in place of the key: the model runs inside the
 runner ([janis](https://github.com/guregodevo/janis), one file, cached), one

@@ -1,6 +1,6 @@
-# team-solve-v2 runs, 2026-11-02
+# team runs, 2026-11-02
 
-Four runs of the built-in on a scratch gateway with a fresh HOME (the seed
+Four runs of the built-in, then named `team-solve-v2`, on a scratch gateway with a fresh HOME (the seed
 alone provided the workflow), each folder holding every file the run left:
 `task.md`, `plan.md`, `notes.md` (the ledger), the deliverable, `review.md`,
 `verdict.md` where the judge ran, the check logs and `run.log` (the progress

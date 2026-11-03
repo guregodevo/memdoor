@@ -88,13 +88,13 @@ first answer comes in seconds.
 ## 5. The team on your GPU
 
 The [team-solve workflow](/docs/team-solve) names no model. Its built-in
-version, `team-solve-v2`, runs the same team on whatever `connect local`
+version, `team`, runs the same team on whatever `connect local`
 found. The 9.8 of 10 on LiveCodeBench Hard is the original's, with the
-authors' prompts; v2 has no score of its own yet:
+authors' prompts; `team` has no score of its own yet:
 
 ```
 mkdir my-problem && cd my-problem
-memdoor workflow run team-solve-v2 --wait   # built in; an empty folder gets the sample problem
+memdoor workflow run team --wait   # built in; an empty folder gets the sample problem
 ```
 
 Cost of a hard problem: about 300K output tokens over eight steps, about
