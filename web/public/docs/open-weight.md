@@ -82,7 +82,7 @@ Ask it to read a file and fix something small. `memdoor meter` shows input
 tokens per call; 4,096 on every call means the window of step 2 is not set.
 
 On janis the first two conversations after a start prefill the whole
-prompt. Later ones start where the last two parted (janis 0.1.9), and the
+prompt. Later ones start where the last two parted (janis 0.1.11), and the
 first answer comes in seconds.
 
 ## 5. The team on your GPU
