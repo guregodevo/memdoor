@@ -60,6 +60,8 @@ memdoor connect local            # finds the runtime on this machine, probes it,
 memdoor model                    # the model that answers, and what it lists for: nothing
 ```
 
+![memdoor connect local finds janis on this machine, tests Qwen3.5-9B, keeps it and pins it](/connect-local.cast)
+
 `memdoor connect local` lists the model servers on the gateway's machine (janis, Ollama, llama.cpp, LM Studio, vLLM, on their default ports). Pick one by number. With none running on Linux or macOS, it offers to install janis and the model that fits the machine.
 `--base http://localhost:8000/v1` names another. The probe reads the model
 list and makes one call; a large model may take minutes to load. `/model
