@@ -6,7 +6,20 @@ team-solve workflow on your GPU.
 
 ## 1. Run a model
 
-Any OpenAI-compatible server. Four common ones:
+[janis](https://github.com/guregodevo/janis) is the runtime we recommend:
+one Go server, open models on a Mac's GPU through MLX or on an NVIDIA box
+through CUDA, on port 8090. It also answers the decision model, so the
+token savings run locally. With nothing running, `memdoor connect local`
+(step 3) installs it and the model that fits the machine. By hand:
+
+```
+curl -fsSL https://github.com/guregodevo/janis/releases/latest/download/install.sh | sh
+janis pull                                  # the model that fits this machine
+janis serve --detach --model <that model>   # http://127.0.0.1:8090/v1
+```
+
+Any other OpenAI-compatible server serves the chat half; decisions stay off
+on it. Four common ones:
 
 | runtime | start it | listens on |
 |---|---|---|
@@ -14,10 +27,6 @@ Any OpenAI-compatible server. Four common ones:
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | `llama-server -m model.gguf -c 32768` | 8080 |
 | [LM Studio](https://lmstudio.ai) | load a model, start the server | 1234 |
 | [vLLM](https://github.com/vllm-project/vllm) | `vllm serve Qwen/Qwen3.8-27B` | 8000 |
-
-[janis](https://github.com/guregodevo/janis), our server for Apple silicon
-and CUDA, listens on 8090 and also answers the decision model, so the token
-savings run locally.
 
 Model: one trained for tool calls, since a coder turn reads files, calls
 tools and writes patches. Qwen3.8-27B is the one the published result ran

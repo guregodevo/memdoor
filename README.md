@@ -20,7 +20,8 @@
 > (across their full 100: 92.4 and 90.4). All 50 runs are published: every
 > request, reply, program and grader output. The workflow is YAML and names no
 > model. Point it at yours, or at a local one with `memdoor connect local`
-> (Ollama, llama.cpp, vLLM, LM Studio; [how to run it on an open-weight model,
+> (janis, the runtime we recommend; Ollama, llama.cpp, vLLM and LM Studio
+> work too; [how to run it on an open-weight model,
 > no key](https://memdoor.ai/docs/open-weight)).
 > [examples/workflows/team-solve](examples/workflows/team-solve/) · [the result page](https://memdoor.ai/docs/team-solve) · [the HN thread](https://news.ycombinator.com/item?id=50320995)
 
@@ -34,7 +35,7 @@ On this machine:
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
-# or no key: memdoor connect local    # an open-weight model on this machine — https://memdoor.ai/docs/open-weight
+# or no key: memdoor connect local    # janis and an open-weight model on this machine — https://memdoor.ai/docs/open-weight
 cd your-project && memdoor             # the first run sets the machine up
 ```
 
@@ -188,8 +189,8 @@ first `memdoor` signs in with OpenRouter in the browser, from this machine,
 over ssh or on a box. No credit: a free model, 50 requests a day; its hosts
 train on what they are sent. For a trial, not private code.
 
-Local: `memdoor connect local` connects a model on this machine
-([janis](https://github.com/guregodevo/janis), Ollama, llama.cpp, LM Studio).
+Local: `memdoor connect local` installs [janis](https://github.com/guregodevo/janis),
+the runtime we recommend, or connects a running Ollama, llama.cpp or LM Studio.
 Nothing leaves it. janis: one Go server, open models on a Mac's GPU through
 MLX or an NVIDIA box through CUDA, serves chat and the decision model, no
 key; Qwen3-Coder-30B-A3B on a $0.71-an-hour Google L4. On a box: `memdoor
