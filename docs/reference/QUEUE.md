@@ -706,7 +706,7 @@ case <-time.After(30 * time.Second):
 ## Related Documentation
 
 - [Architecture Overview](./ARCHITECTURE.md)
-- [Cron Jobs](./CRON.md)
+- [Cron Jobs](../features/cron-jobs.md)
 - [Logging](./LOGS.md)
 - [CLI Reference](./CLI.md)
 
