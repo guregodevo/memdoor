@@ -25,19 +25,19 @@ func TestLocalRuntimeMenuListsEachAndAnotherAddress(t *testing.T) {
 
 func TestNothingRunningIsSaidInWordsWithAWayOut(t *testing.T) {
 	for goos, wants := range map[string][]string{
-		"linux":  {"No model is running on this computer.", janisInstall, "janis pull", "janis serve --detach --model <that model>", "memdoor connect openrouter"},
-		"darwin": {"No model is running on this computer.", "MLX on Apple silicon", janisInstall, "janis pull", "janis serve --detach --model <that model>", "memdoor connect openrouter"},
-		"":       {"Start janis, Ollama", "memdoor connect openrouter"},
+		"linux":  {"No model is running on this computer. Run one:", "1. janis", "installed now", "no GPU needed", "2. Ollama", "ollama pull qwen3:8b", "5. vLLM", "6. Another address", "memdoor connect openrouter"},
+		"darwin": {"1. janis", "installed now", "MLX on Apple silicon", "6. Another address"},
 	} {
-		got := noLocalRuntimeText("this computer", goos)
+		got := noLocalRuntimeMenu("this computer", goos, true)
 		for _, want := range wants {
 			if !strings.Contains(got, want) {
-				t.Errorf("%q text lacks %q:\n%s", goos, want, got)
+				t.Errorf("%q menu lacks %q:\n%s", goos, want, got)
 			}
 		}
 	}
-	if strings.Contains(noLocalRuntimeText("the gateway's machine", hereOS("the gateway's machine")), "curl -fsSL") {
-		t.Error("a gateway elsewhere gets no command for this machine's OS")
+	elsewhere := noLocalRuntimeMenu("the gateway's machine", "", false)
+	if !strings.Contains(elsewhere, "1. janis") || !strings.Contains(elsewhere, "github.com/guregodevo/janis") || strings.Contains(elsewhere, "installed now") {
+		t.Errorf("a gateway elsewhere gets janis to install there, no install from here:\n%s", elsewhere)
 	}
 	if runtimeWhere("http://localhost:18789") != "this computer" || runtimeWhere("http://box.example:18789") != "the gateway's machine" {
 		t.Error("a gateway here is this computer, any other is its own machine")
@@ -88,8 +88,11 @@ func TestChooseLocalRuntime(t *testing.T) {
 
 	said.Reset()
 	body = `{"runtimes":[]}`
-	if _, err := chooseLocalRuntime(answers(""), say, nil); err != errNoRuntimeChosen {
-		t.Fatalf("nothing running and no address cancels: %v", err)
+	if _, err := chooseLocalRuntime(answers("6", ""), say, nil); err != errNoRuntimeChosen {
+		t.Fatalf("nothing running, another address, none given: cancels: %v", err)
+	}
+	if _, err := chooseLocalRuntime(answers(""), say, nil); err == nil || !strings.Contains(err.Error(), "install janis on this computer") {
+		t.Fatalf("Enter is janis; with no install from here it says where to install it: %v", err)
 	}
 	if !strings.Contains(said.String(), "No model is running") {
 		t.Fatalf("nothing running is said: %q", said.String())
@@ -169,14 +172,18 @@ func TestOfferedInstallIsAskedAndTakenOnYes(t *testing.T) {
 	}
 
 	calls, body = 0, `{"runtimes":[]}`
-	no := func(prompt, def string) string {
-		if strings.HasPrefix(prompt, "Run these now") {
-			return "n"
+	another := func(prompt, def string) string {
+		if prompt == "Number" {
+			return "6"
 		}
 		return "http://x:1/v1"
 	}
-	if base, _ := chooseLocalRuntime(no, say, install); base != "http://x:1/v1" || calls != 0 {
-		t.Fatalf("n installs nothing and asks for an address: %q (%d calls)", base, calls)
+	if base, _ := chooseLocalRuntime(another, say, install); base != "http://x:1/v1" || calls != 0 {
+		t.Fatalf("6 installs nothing and asks for an address: %q (%d calls)", base, calls)
+	}
+	ollama := func(prompt, def string) string { return "2" }
+	if _, err := chooseLocalRuntime(ollama, say, install); err == nil || !strings.Contains(err.Error(), "start Ollama (ollama pull qwen3:8b)") || calls != 0 {
+		t.Fatalf("2 says how to start Ollama and installs nothing: %v (%d calls)", err, calls)
 	}
 
 	said.Reset()

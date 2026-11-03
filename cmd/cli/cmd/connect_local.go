@@ -66,23 +66,36 @@ var janisHardware = map[string]string{
 	"darwin": "MLX on Apple silicon",
 }
 
-// noLocalRuntimeText is said when nothing answers. It names janis with the
-// command for this OS, and a key for a machine that cannot run a model well.
-// goos is the OS of the machine the gateway runs on; "" when that is not this one.
-func noLocalRuntimeText(where, goos string) string {
+// localRuntimeChoice is one runtime a person can run when none answers: its
+// name and how to start it.
+type localRuntimeChoice struct{ name, how string }
+
+// otherRuntimes are the runtimes after janis, with the command that starts them.
+var otherRuntimes = []localRuntimeChoice{
+	{"Ollama", "ollama pull qwen3:8b"},
+	{"llama.cpp", "llama-server -m model.gguf -c 32768"},
+	{"LM Studio", "load a model, start the server"},
+	{"vLLM", "vllm serve <model>"},
+}
+
+// noLocalRuntimeMenu is the numbered choice when nothing answers: janis first
+// and by default, installed from here when the gateway is on this machine and
+// janis's release runs on its OS (canInstall), the other runtimes with the
+// command that starts them, then an address of one's own. goos is the OS of
+// the machine the gateway runs on; "" when that is not this one.
+func noLocalRuntimeMenu(where, goos string, canInstall bool) string {
 	var b strings.Builder
-	b.WriteString("No model is running on " + where + ".\n")
-	switch goos {
-	case "linux", "darwin":
-		b.WriteString("  Run one with janis (" + janisHardware[goos] + "):\n")
-		b.WriteString("    " + janisInstall + "\n")
-		b.WriteString("    janis pull                                  # the model that fits this machine\n")
-		b.WriteString("    janis serve --detach --model <that model>\n")
-		b.WriteString("  Ollama, LM Studio, llama.cpp and vLLM work too.\n")
-	default:
-		b.WriteString("  Start janis, Ollama, LM Studio, llama.cpp or vLLM on that machine and run this again.\n")
+	fmt.Fprintf(&b, "No model is running on %s. Run one:\n", where)
+	janis := "github.com/guregodevo/janis, then run this again"
+	if canInstall {
+		janis = "installed now, with the model that fits this machine (" + janisHardware[goos] + ")"
 	}
-	b.WriteString("  Or type its address below. Without a model on this machine, use a key: memdoor connect openrouter\n")
+	rows := append([]localRuntimeChoice{{"janis", janis}}, otherRuntimes...)
+	for i, r := range rows {
+		fmt.Fprintf(&b, "  %d. %-10s %s\n", i+1, r.name, r.how)
+	}
+	fmt.Fprintf(&b, "  %d. Another address\n", len(rows)+1)
+	b.WriteString("  No model on this machine: a key instead, memdoor connect openrouter\n")
 	return b.String()
 }
 
@@ -106,14 +119,23 @@ func chooseLocalRuntime(ask func(prompt, def string) string, say func(string), o
 	}
 	where := runtimeWhere(gatewayAddr)
 	if len(list.Runtimes) == 0 {
-		say(noLocalRuntimeText(where, hereOS(where)))
-		if offer != nil && yes(ask("Run these now? (y/n)", "y")) {
+		say(noLocalRuntimeMenu(where, hereOS(where), offer != nil))
+		n, err := strconv.Atoi(ask("Number", "1"))
+		switch {
+		case err != nil || n < 1 || n > len(otherRuntimes)+2:
+			return "", fmt.Errorf("pick a number from the list")
+		case n == 1 && offer != nil:
 			if err := offer(); err != nil {
 				say("✗ " + err.Error() + "\n")
 			} else if again, err := listLocalRuntimes(); err == nil && len(again.Runtimes) > 0 {
 				say("✓ " + again.Runtimes[0].Name + " is running at " + again.Runtimes[0].Base + "\n")
 				return again.Runtimes[0].Base, nil
 			}
+		case n == 1:
+			return "", fmt.Errorf("install janis on %s (%s), then run memdoor connect local again", where, janisInstall)
+		case n <= len(otherRuntimes)+1:
+			r := otherRuntimes[n-2]
+			return "", fmt.Errorf("start %s (%s), then run memdoor connect local again", r.name, r.how)
 		}
 		if base := ask("Address (Enter to cancel)", ""); base != "" {
 			return base, nil
@@ -138,14 +160,6 @@ func listLocalRuntimes() (localRuntimeList, error) {
 	var list localRuntimeList
 	err := NewClient().GetJSON("/api/providers/connect", &list)
 	return list, err
-}
-
-func yes(answer string) bool {
-	switch strings.ToLower(strings.TrimSpace(answer)) {
-	case "n", "no":
-		return false
-	}
-	return true
 }
 
 // janisHome is where janis's installer puts the binary; the shell expands it.
