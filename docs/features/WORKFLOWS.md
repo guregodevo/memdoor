@@ -207,7 +207,8 @@ into the library at the gateway's boot (`SeedEmbeddedWorkflows`, the skill
 seed's rules): so they run in a repository with no `.memdoor` at all, a
 GitHub job's first included. A project's own workflow of the same name wins;
 an edited library copy is never overwritten; a library directory of that
-name the seed did not write is left alone.
+name the seed did not write is moved to `<name>-mine` and the built-in takes
+the name.
 
 | Workflow | What it does | Fails when |
 |---|---|---|
