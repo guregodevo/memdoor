@@ -18,6 +18,9 @@ janis pull                                  # the model that fits this machine
 janis serve --detach --model <that model>   # http://127.0.0.1:8090/v1
 ```
 
+`janis pull` with no name picks by RAM: Qwen3.5-9B at 16 GB, Qwen3.8-27B
+from 32 GB.
+
 Any other OpenAI-compatible server serves the chat half; decisions stay off
 on it. Four common ones:
 
@@ -77,6 +80,10 @@ cd your-project && memdoor tui
 
 Ask it to read a file and fix something small. `memdoor meter` shows input
 tokens per call; 4,096 on every call means the window of step 2 is not set.
+
+On janis the first two conversations after a start prefill the whole
+prompt. Later ones start where the last two parted (janis 0.1.9), and the
+first answer comes in seconds.
 
 ## 5. The team on your GPU
 

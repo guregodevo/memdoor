@@ -82,9 +82,14 @@ janis serve                                   # http://127.0.0.1:8090/v1 — cha
 memdoor connect local                         # finds it; chat and decisions, no token
 ```
 
-`/model search` lists what janis serves, at no price. `/model <id>` pins
+`janis pull` with no name picks by RAM: Qwen3.5-9B at 16 GB, Qwen3.8-27B
+from 32 GB. `/model search` lists what janis serves, at no price. `/model <id>` pins
 one; the footer names it. janis loads a model at the first request naming
 it and swaps when another is asked for, so pin the one you mean.
+
+janis keeps the prompt prefix across conversations (janis 0.1.9). The
+system prompt and tools are prefilled once. A new conversation starts where
+the last two parted; the first two after a start prefill the whole prompt.
 
 On a GPU box, through the ssh door, laptop and phone as windows onto it:
 
