@@ -200,11 +200,11 @@ func TestStopUnknownRunIsAnError(t *testing.T) {
 
 func TestStartWorkflowRefusesARelativeDirAndAMissingFile(t *testing.T) {
 	s := &Server{}
-	if _, err := s.startWorkflow("relative", "x", "", "", "", "", "", 0); err == nil {
+	if _, err := s.startWorkflow("relative", "x", "", "", "", "", "", "", 0); err == nil {
 		t.Fatal("a relative dir must be refused")
 	}
 	dir := t.TempDir()
-	if _, err := s.startWorkflow(dir, "missing", "", "", "", "", "", 0); err == nil || !strings.Contains(err.Error(), "missing") {
+	if _, err := s.startWorkflow(dir, "missing", "", "", "", "", "", "", 0); err == nil || !strings.Contains(err.Error(), "missing") {
 		t.Fatalf("a missing workflow must be named: %v", err)
 	}
 }
@@ -346,7 +346,7 @@ func TestLocalWorkflowsNeedNoSeat(t *testing.T) {
 	s, _, dir := workflowServerWithRun(t)
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "")
 	t.Setenv("HOME", t.TempDir())
-	if _, err := s.startWorkflow(dir, "release", "", "", "", "", "", 0); err != nil && strings.Contains(err.Error(), "Pro") {
+	if _, err := s.startWorkflow(dir, "release", "", "", "", "", "", "", 0); err != nil && strings.Contains(err.Error(), "Pro") {
 		t.Fatalf("a local run must not ask for a seat: %v", err)
 	}
 }
@@ -411,7 +411,7 @@ func TestWorkflowHistoryListsARealRun(t *testing.T) {
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
 	first := &Server{}
-	run, err := first.startWorkflow(dir, "release", "", "", "", "", "", 0)
+	run, err := first.startWorkflow(dir, "release", "", "", "", "", "", "", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -444,7 +444,7 @@ func TestResumeAfterARestartFindsTheRunInTheTable(t *testing.T) {
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
 	first := &Server{}
-	run, err := first.startWorkflow(dir, "release", "", "", "", "", "", 0)
+	run, err := first.startWorkflow(dir, "release", "", "", "", "", "", "", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -474,7 +474,7 @@ func TestResumeAfterARestartFindsTheRunInTheTable(t *testing.T) {
 
 	// A RERUN's id (a later trigger of the same partition) is found by the
 	// span its own movement left in the table.
-	rerun, err := (&Server{}).startWorkflow(dir, "release", "", "", "", run.Partition, "", 0)
+	rerun, err := (&Server{}).startWorkflow(dir, "release", "", "", "", run.Partition, "", "", 0)
 	if err != nil {
 		t.Fatal(err)
 	}

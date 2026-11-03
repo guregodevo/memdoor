@@ -73,6 +73,33 @@ func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 	for _, rel := range files {
 		shippedNow[rel] = true
 	}
+	// A BUILT-IN TAKES ITS NAME. A unit of that name the seed never wrote (a
+	// copy made by hand before it shipped, 2026-11-03: an old team-solve-v2
+	// kept every later fix out) is moved aside to <name>-mine, kept whole,
+	// and the shipped one is written in its place.
+	for _, rel := range files {
+		u := unit(rel)
+		if u == rel || ours[u] {
+			continue
+		}
+		ours[u] = true
+		from := filepath.Join(dir, filepath.FromSlash(u))
+		if _, err := os.Stat(from); err != nil {
+			continue
+		}
+		to := from + "-mine"
+		for i := 2; ; i++ {
+			if _, err := os.Stat(to); os.IsNotExist(err) {
+				break
+			}
+			to = fmt.Sprintf("%s-mine-%d", from, i)
+		}
+		if err := os.Rename(from, to); err != nil {
+			log.Warn(fmt.Sprintf("%s %s: a copy not written by the seed is in the way and could not be moved", strings.ToLower(kind), u), slog.String("path", from), slog.String("error", err.Error()))
+			continue
+		}
+		log.Warn(fmt.Sprintf("%s %s is built in: the copy that was there is kept as %s", strings.ToLower(kind), u, filepath.Base(to)), slog.String("path", to))
+	}
 	for _, rel := range files {
 		shipped, err := fs.ReadFile(fsys, rel)
 		if err != nil {
@@ -83,11 +110,6 @@ func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 		onDisk, readErr := os.ReadFile(target)
 		switch {
 		case os.IsNotExist(readErr):
-			if u := unit(rel); u != rel && !ours[u] {
-				if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(u))); err == nil {
-					continue // the person's own, of the same name
-				}
-			}
 			if os.MkdirAll(filepath.Dir(target), 0o755) == nil && os.WriteFile(target, shipped, 0o644) == nil {
 				manifest[rel] = shippedHash
 				ours[unit(rel)] = true

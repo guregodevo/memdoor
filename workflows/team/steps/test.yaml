@@ -1,0 +1,18 @@
+type: command
+# What the run changed (changes.diff) and the task's check as task.md names
+# it: the command, the samples, or nothing (the judge decides). Records the
+# result for the reviewer; never fails the run itself.
+requires:
+  - table_pattern: solve
+command: |
+  r=.memdoor/runs/team-{{.partition}}
+  w=.memdoor/workflows/team; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team"
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/test-output.log"
+  result=$?
+  [ "$result" = 3 ] && result=none
+  printf '%s\n' "$result" > "$r/test-status.txt"
+  tail -40 "$r/test-output.log"
+  printf 'Initial check status: %s\n' "$result"
+timeout: 30m
+max_retries: 0

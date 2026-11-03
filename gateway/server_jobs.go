@@ -318,7 +318,7 @@ func (s *Server) executeCronJob(ctx context.Context, job *config.CronJob, agentI
 		if job.Workdir == "" {
 			return fmt.Errorf("cron job %s runs workflow %s but names no project directory", job.ID, name)
 		}
-		run, err := s.startWorkflow(job.Workdir, name, "", shared.ParseSessionID(sessionKey).WorkspaceID, string(authorization.GetActorID(ctx)), partition, "", 0)
+		run, err := s.startWorkflow(job.Workdir, name, "", shared.ParseSessionID(sessionKey).WorkspaceID, string(authorization.GetActorID(ctx)), partition, "", "", 0)
 		if err != nil {
 			log.Warn("Scheduled workflow did not start", slog.String("job_id", job.ID), slog.String("workflow", name), slog.String("error", err.Error()))
 			return err

@@ -202,17 +202,19 @@ the run's receipt in its README) and are copied the same way.
 
 ### Built in
 
-Three workflows ship in the binary (`workflows/`, embedded) and are seeded
+Ten workflows ship in the binary (`workflows/`, embedded) and are seeded
 into the library at the gateway's boot (`SeedEmbeddedWorkflows`, the skill
 seed's rules): so they run in a repository with no `.memdoor` at all, a
 GitHub job's first included. A project's own workflow of the same name wins;
 an edited library copy is never overwritten; a library directory of that
-name the seed did not write is left alone.
+name the seed did not write is moved to `<name>-mine` and the built-in takes
+the name.
 
 | Workflow | What it does | Fails when |
 |---|---|---|
 | `pr-review` | The change (a PR against its base, else the branch or the last commit) reviewed by the coder with the `review` skill, verified by running; `.memdoor/runs/pr-review-<partition>.md` with **P0**/**P1**/**P2** findings | there is a P0: what must not merge |
 | `fix-tests` | The project's test command (`$MEMDOOR_TEST_COMMAND`, else found from go.mod, Cargo.toml, package.json, pyproject.toml, a Makefile); when it fails, the coder fixes the code and reruns until it passes; the fix stays in the working tree, the report in `.memdoor/runs/fix-tests-<partition>.md` | the tests still fail |
+| `team` | The task a prompt defines (`workflow run team "<prompt>"`, kept in `.memdoor/runs/team-<run>/` with the ledger) done by GVS5H's team of fresh contexts: plan fills the task template (Deliverable, Check, Scope, Done when), two ideators, solve, test (the Check: a project command, the samples, or none), review on the diff, repair, judge (a fresh context, task and diff only, unless the samples decide); without a prompt a `task.md` here, an empty folder gets the sample; the steps name no model, `--model` or the pin answers; no benchmark score of its own yet | `verify`: the Check fails, or the judge says FAIL |
 | `release-notes` | Every commit since the tag before the release (the partition, else HEAD) into `.memdoor/runs/release-notes-<partition>.md`: Added / Changed / Fixed, what a person notices | — |
 
 Receipt, 2026-10-27, each through the action's own step on a fresh HOME:

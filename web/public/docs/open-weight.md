@@ -89,15 +89,14 @@ first answer comes in seconds.
 
 ## 5. The team on your GPU
 
-The [team-solve workflow](/docs/team-solve) names no model. The harness
-that scored 9.8 of 10 on LiveCodeBench Hard runs on whatever `connect
-local` found:
+The [team-solve workflow](/docs/team-solve) names no model. Its built-in
+version, `team`, runs the same team on whatever `connect local`
+found. The 9.8 of 10 on LiveCodeBench Hard is the original's, with the
+authors' prompts; `team` has no score of its own yet:
 
 ```
-git clone --depth 1 https://github.com/guregodevo/memdoor
-mkdir -p ~/.memdoor/workflows && cp -r memdoor/examples/workflows/team-solve ~/.memdoor/workflows/
-mkdir my-problem && cd my-problem && cp -r ../memdoor/examples/workflows/team-solve/sample/* .
-memdoor workflow run team-solve --wait
+mkdir my-problem && cd my-problem
+memdoor workflow run team --wait   # built in; an empty folder gets the sample problem
 ```
 
 Cost of a hard problem: about 300K output tokens over eight steps, about
@@ -110,4 +109,4 @@ holding up where Q3 does not. Each step keeps its files; a stopped run
 resumes where it stopped.
 
 Nothing leaves the machine: the runtime answers on localhost, state is under
-`~/.memdoor`. The one outside address is GitHub, for the clone.
+`~/.memdoor`.

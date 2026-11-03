@@ -3,9 +3,11 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -219,7 +221,12 @@ func listProviders() []providerRow {
 // tuiConnect is the window's /connect: one request, probed by the gateway.
 func tuiConnect(req ui.ConnectRequest) (ui.ConnectResult, error) {
 	var res ui.ConnectResult
-	err := NewClient().PostJSON("/api/providers/connect", req, &res)
+	// The gateway's probe waits up to five minutes for a local runtime to
+	// load its model (probeCall); this call must outlast it, or a working
+	// Ollama reads as a hang-up here (2026-11-01).
+	c := NewClient()
+	c.HTTPClient = &http.Client{Timeout: 6 * time.Minute}
+	err := c.PostJSON("/api/providers/connect", req, &res)
 	return res, err
 }
 

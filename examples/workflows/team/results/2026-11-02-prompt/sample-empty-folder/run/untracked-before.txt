@@ -1,0 +1,12 @@
+.memdoor/.gitignore
+task.md
+tests/1.in
+tests/1.out
+tests/2.in
+tests/2.out
+tests/3.in
+tests/3.out
+tests/4.in
+tests/4.out
+tests/5.in
+tests/5.out

@@ -1,0 +1,9 @@
+Welcome aboard! We're glad you're here, and we hope you'll enjoy working with us. Here's how we name our git branches in this team.
+
+- **Lowercase only.** Branch names stay all lowercase, never capitals and never underscores, so they stay easy to read and type everywhere git prints them.
+- **Short type prefix.** Every branch starts with one short type prefix naming the kind of change: `fix/` for bug fixes, `feat/` for new features, `docs/` for documentation changes.
+- **Hyphen-joined words.** Separate words with hyphens, never spaces, keeping each name short and scannable at a glance.
+
+Some examples of the convention in action: `fix/login-crash`, `feat/export-csv`, and `docs/api-reference` — three prefixes, three everyday cases.
+
+That's it — welcome to the team!

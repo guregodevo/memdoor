@@ -1,0 +1,22 @@
+type: agent
+agent: coder
+requires:
+  - table_pattern: ideate-a
+  - table_pattern: ideate-b
+prompt: |
+  You are the solver in a fresh context. The run's files are in .memdoor/runs/team-{{.partition}}/: task.md (the task: the prompt
+  and what plan settled), plan.md, notes.md (the ledger every role writes
+  to). They are never part of the work and never committed.
+  Read task.md, plan.md, notes.md, proposal-a.md and proposal-b.md there. Select
+  and justify an approach in the Solver decision section of notes.md. Then do
+  the task as task.md's Deliverable says: change the project's files within
+  the Scope, or write the new files it names, complete. Touch nothing outside
+  the Scope and change nothing the task did not ask for. Run the Check
+  (the command, or a sample) before you finish and fix what it shows. Do not
+  change task.md, the prompt or test data. The steps after you check the
+  work and the manager owns any repair round. Do not spawn agents or use
+  chat context.
+target:
+  command: bash .memdoor/runs/team-{{.partition}}/done.sh solve .memdoor/runs/team-{{.partition}}
+timeout: 90m
+max_retries: 1

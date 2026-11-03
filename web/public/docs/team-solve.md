@@ -61,16 +61,21 @@ Parity check, hosts, what the rebuild took, where it lost:
 curl -fsSL https://memdoor.ai/install.sh | bash
 memdoor connect openrouter          # or anthropic, openai, gemini, chatgpt
 memdoor connect local               # or no key: a model on this machine (Ollama, llama.cpp, vLLM, LM Studio)
-git clone --depth 1 https://github.com/guregodevo/memdoor
-
-mkdir -p ~/.memdoor/workflows
-cp -r memdoor/examples/workflows/team-solve ~/.memdoor/workflows/
 mkdir my-problem && cd my-problem
-cp -r ../memdoor/examples/workflows/team-solve/sample/* .     # task.md + tests/1.in … 5.out
-memdoor workflow run team-solve --wait                        # exit 0 when every sample passes
+memdoor workflow run team --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
 ```
 
-Your problem: `task.md` and paired `tests/N.in` / `tests/N.out`. Program:
+`team`, the built-in, is the same team on any task a prompt
+defines: `memdoor workflow run team "<the task>"` in the project.
+The output is what the task asks for: changes across a repository, a
+program, a document. A fresh judge checks what no command can. It ships in
+the binary, seeded into `~/.memdoor/workflows` at the gateway's first boot;
+`--model <id>` puts every step on one model. Its prompts are not the
+authors', so the 9.8 above is `team-solve`'s, not `team`'s: `team` has no
+benchmark score yet. The published runs used the steps in
+`examples/workflows/team-solve`, kept as they were. Your problem without a
+prompt: `task.md` and paired `tests/N.in` / `tests/N.out` in the folder.
+Program:
 `solution.py`, stdin in, compared to the samples with `diff`. The steps name
 no model; the `/model` pin answers, a local one included.
 

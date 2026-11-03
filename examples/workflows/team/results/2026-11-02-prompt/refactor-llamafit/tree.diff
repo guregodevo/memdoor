@@ -1,0 +1,91 @@
+diff --git a/cmd/llamafit/main.go b/cmd/llamafit/main.go
+index 9bbdc1c..9667d8d 100644
+--- a/cmd/llamafit/main.go
++++ b/cmd/llamafit/main.go
+@@ -59,7 +59,7 @@ func main() {
+ 	}
+ 
+ 	// Read model metadata
+-	meta, err := llamafit.ReadGGUFMetadata(resolvedPath)
++	meta, err := llamafit.ParseGGUFMetadata(resolvedPath)
+ 	if err != nil {
+ 		fmt.Fprintf(os.Stderr, "Error reading model: %v\n", err)
+ 		os.Exit(1)
+diff --git a/gguf.go b/gguf.go
+index e2ce29d..6646048 100644
+--- a/gguf.go
++++ b/gguf.go
+@@ -308,8 +308,8 @@ func AvailableMemory() int64 {
+ 	return int64(budget)
+ }
+ 
+-// ReadGGUFMetadata reads model parameters from a GGUF file header.
+-func ReadGGUFMetadata(path string) (*GGUFMetadata, error) {
++// ParseGGUFMetadata reads model parameters from a GGUF file header.
++func ParseGGUFMetadata(path string) (*GGUFMetadata, error) {
+ 	f, err := os.Open(path)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("open GGUF: %w", err)
+diff --git a/gguf_test.go b/gguf_test.go
+index c5a823d..afab56a 100644
+--- a/gguf_test.go
++++ b/gguf_test.go
+@@ -14,12 +14,12 @@ func testGGUFPath(t *testing.T) string {
+ 	return ""
+ }
+ 
+-func TestReadGGUFMetadata(t *testing.T) {
++func TestParseGGUFMetadata(t *testing.T) {
+ 	path := testGGUFPath(t)
+ 
+-	meta, err := ReadGGUFMetadata(path)
++	meta, err := ParseGGUFMetadata(path)
+ 	if err != nil {
+-		t.Fatalf("ReadGGUFMetadata: %v", err)
++		t.Fatalf("ParseGGUFMetadata: %v", err)
+ 	}
+ 
+ 	if meta.Architecture == "" {
+@@ -50,14 +50,14 @@ func TestReadGGUFMetadata(t *testing.T) {
+ 		meta.KeyLengthSWA, meta.SWALayerCount)
+ }
+ 
+-// TestReadGGUFMetadata_Gemma4Fields verifies the sliding window fields
++// TestParseGGUFMetadata_Gemma4Fields verifies the sliding window fields
+ // are correctly parsed from the sara-q4 (gemma4) GGUF file.
+-func TestReadGGUFMetadata_Gemma4Fields(t *testing.T) {
++func TestParseGGUFMetadata_Gemma4Fields(t *testing.T) {
+ 	path := testGGUFPath(t)
+ 
+-	meta, err := ReadGGUFMetadata(path)
++	meta, err := ParseGGUFMetadata(path)
+ 	if err != nil {
+-		t.Fatalf("ReadGGUFMetadata: %v", err)
++		t.Fatalf("ParseGGUFMetadata: %v", err)
+ 	}
+ 
+ 	if meta.Architecture != "gemma4" {
+@@ -108,8 +108,8 @@ func TestReadGGUFMetadata_Gemma4Fields(t *testing.T) {
+ 	}
+ }
+ 
+-func TestReadGGUFMetadata_InvalidFile(t *testing.T) {
+-	_, err := ReadGGUFMetadata("/nonexistent.gguf")
++func TestParseGGUFMetadata_InvalidFile(t *testing.T) {
++	_, err := ParseGGUFMetadata("/nonexistent.gguf")
+ 	if err == nil {
+ 		t.Error("expected error for nonexistent file")
+ 	}
+diff --git a/server.go b/server.go
+index 5ea3c16..98cfb63 100644
+--- a/server.go
++++ b/server.go
+@@ -212,7 +212,7 @@ func New(cfg Config) (*Server, error) {
+ 	}
+ 
+ 	// Read GGUF metadata for auto-configuration
+-	meta, err := ReadGGUFMetadata(cfg.ModelPath)
++	meta, err := ParseGGUFMetadata(cfg.ModelPath)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("read model metadata: %w", err)
+ 	}

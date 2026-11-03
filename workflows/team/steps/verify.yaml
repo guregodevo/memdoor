@@ -1,0 +1,18 @@
+type: command
+# The check again on the final tree, then the judge's verdict when it ran.
+# A failing check or a FAIL verdict fails the run.
+requires:
+  - table_pattern: repair
+  - table_pattern: judge
+command: |
+  r=.memdoor/runs/team-{{.partition}}
+  w=.memdoor/workflows/team; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team"
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/final-check.log"
+  result=$?
+  tail -40 "$r/final-check.log"
+  [ "$result" = 1 ] && exit 1
+  if [ -f "$r/verdict.md" ]; then head -1 "$r/verdict.md"; grep -q '^verdict: PASS' "$r/verdict.md" || exit 1; fi
+  [ "$result" = 0 ] || [ -f "$r/verdict.md" ]
+timeout: 30m
+max_retries: 0
