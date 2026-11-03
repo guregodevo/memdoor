@@ -494,9 +494,9 @@ func tuiWorkflowOps(dir func() string, workspace, channel string) ui.WorkflowOps
 			}
 			return runs, entries, nil
 		},
-		Run: func(name, partition string) (ui.WorkflowRun, error) {
+		Run: func(name, partition, prompt string) (ui.WorkflowRun, error) {
 			var out workflowRunStatus
-			err := workflowPost("run", map[string]interface{}{"dir": dir(), "name": name, "partition": partition, "workspace": workspace, "channel": channel}, &out)
+			err := workflowPost("run", map[string]interface{}{"dir": dir(), "name": name, "partition": partition, "prompt": prompt, "workspace": workspace, "channel": channel}, &out)
 			return conv(out), err
 		},
 		Status: func(id string) (ui.WorkflowRun, error) {

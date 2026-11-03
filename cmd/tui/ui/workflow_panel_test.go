@@ -187,7 +187,7 @@ func TestTheProjectsWorkflowsAreSlashCommands(t *testing.T) {
 	}
 	started := ""
 	m := NewModel("http://x", "ws/demo", "chan", "", nil)
-	m.workflow.Run = func(name, partition string) (WorkflowRun, error) {
+	m.workflow.Run = func(name, partition, prompt string) (WorkflowRun, error) {
 		started = name + "@" + partition
 		return WorkflowRun{ID: "r"}, nil
 	}
@@ -243,23 +243,47 @@ func TestWorkflowRunCommandPassesThePartition(t *testing.T) {
 	got := ""
 	m := NewModel("http://x", "ws/demo", "chan", "", nil)
 	m.workflow.List = func() ([]WorkflowRun, []WorkflowEntry, error) { return nil, nil, nil }
-	m.workflow.Run = func(name, partition string) (WorkflowRun, error) {
-		got = name + "@" + partition
+	m.workflow.Run = func(name, partition, prompt string) (WorkflowRun, error) {
+		got = name + "@" + partition + "|" + prompt
 		return WorkflowRun{ID: "r"}, nil
 	}
-	if cmd := m.workflowCommand([]string{"run", "digest", "today"}); cmd == nil {
+	if cmd := m.workflowCommand([]string{"run", "digest", "--partition", "today"}); cmd == nil {
 		t.Fatal("run is a command")
 	} else {
 		cmd()
 	}
-	if got != "digest@today" {
+	if got != "digest@today|" {
 		t.Fatalf("got %q", got)
 	}
-	if cmd := m.runNetworkCmd([]string{"/workflow:digest", "2026-10-02"}); cmd != nil {
+	if cmd := m.runNetworkCmd([]string{"/workflow:digest", "--partition", "2026-10-02"}); cmd != nil {
 		cmd()
 	}
-	if got != "digest@2026-10-02" {
-		t.Fatalf("/workflow:<name> <partition> → %q", got)
+	if got != "digest@2026-10-02|" {
+		t.Fatalf("/workflow:<name> --partition <p> → %q", got)
+	}
+}
+
+// The words after the name are the task, as on the command line:
+// `memdoor workflow run team-solve "<the task>"`.
+func TestWorkflowRunCommandPassesThePrompt(t *testing.T) {
+	got := ""
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	m.workflow.List = func() ([]WorkflowRun, []WorkflowEntry, error) { return nil, nil, nil }
+	m.workflow.Run = func(name, partition, prompt string) (WorkflowRun, error) {
+		got = name + "@" + partition + "|" + prompt
+		return WorkflowRun{ID: "r"}, nil
+	}
+	if cmd := m.runNetworkCmd(strings.Fields(`/workflow:team-solve Rename ReadGGUFMetadata to ParseGGUFMetadata; go test ./... must pass`)); cmd != nil {
+		cmd()
+	}
+	if got != "team-solve@|Rename ReadGGUFMetadata to ParseGGUFMetadata; go test ./... must pass" {
+		t.Fatalf("/workflow:<name> <task> → %q", got)
+	}
+	if cmd := m.workflowCommand(strings.Fields(`run team-solve "Write answer.md" --partition p1`)); cmd != nil {
+		cmd()
+	}
+	if got != "team-solve@p1|Write answer.md" {
+		t.Fatalf("/workflow run <name> \"<task>\" --partition p1 → %q", got)
 	}
 }
 

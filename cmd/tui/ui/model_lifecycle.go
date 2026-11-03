@@ -65,11 +65,8 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 		return m.runMCPPrompt(p, fields[1:])
 	}
 	if name, ok := strings.CutPrefix(fields[0], "/workflow:"); ok && name != "" {
-		partition := ""
-		if len(fields) > 1 {
-			partition = fields[1]
-		}
-		return m.workflowStart(name, partition)
+		partition, prompt := workflowRunArgs(fields[1:])
+		return m.workflowStart(name, partition, prompt)
 	}
 	switch fields[0] {
 	case "/connect":

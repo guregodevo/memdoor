@@ -22,7 +22,7 @@ import (
 // declared here so the TUI imports nothing of the CLI (duck typing).
 type WorkflowOps struct {
 	List    func() ([]WorkflowRun, []WorkflowEntry, error)    // runs, and the workflows this project can run
-	Run     func(name, partition string) (WorkflowRun, error) // partition "" = a fresh run; a scheme's word (a commit, a day, a version) otherwise
+	Run     func(name, partition, prompt string) (WorkflowRun, error) // partition "" = a fresh run; a scheme's word (a commit, a day, a version) otherwise. prompt: the task, for a workflow that reads one (team-solve)
 	Status  func(runID string) (WorkflowRun, error)
 	Stop    func(runID string) (WorkflowRun, error)
 	Approve func(runID, task string) (WorkflowRun, error)
@@ -136,14 +136,11 @@ func (m *Model) workflowCommand(args []string) tea.Cmd {
 	switch args[0] {
 	case "run":
 		if len(args) < 2 {
-			m.note("Which workflow? **/workflow run <name>** [partition] — a directory in .memdoor/workflows/ of this project.")
+			m.note("Which workflow? **/workflow run <name>** [the task] [--partition <p>] — a directory in .memdoor/workflows/ of this project, or a built-in.")
 			return nil
 		}
-		partition := ""
-		if len(args) > 2 {
-			partition = args[2]
-		}
-		return m.workflowStart(args[1], partition)
+		partition, prompt := workflowRunArgs(args[2:])
+		return m.workflowStart(args[1], partition, prompt)
 	case "resume", "continue":
 		if len(args) < 2 {
 			m.note("Which run? **/workflow resume <run-id>** — a failed or stopped run; what it finished is skipped.")
@@ -251,9 +248,29 @@ func renderGateDiff(runID, diff string, width int) string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func (m *Model) workflowStart(name, partition string) tea.Cmd {
+func (m *Model) workflowStart(name, partition, prompt string) tea.Cmd {
 	op := m.workflow.Run
-	return func() tea.Msg { r, err := op(name, partition); return workflowRunMsg{run: r, err: err} }
+	return func() tea.Msg { r, err := op(name, partition, prompt); return workflowRunMsg{run: r, err: err} }
+}
+
+// workflowRunArgs reads what follows the workflow's name the way `memdoor
+// workflow run <name> [prompt]` does: the words are the prompt, the task of a
+// workflow that reads one (team-solve); --partition <p> names the partition.
+func workflowRunArgs(words []string) (partition, prompt string) {
+	var rest []string
+	for i := 0; i < len(words); i++ {
+		if words[i] == "--partition" && i+1 < len(words) {
+			partition = words[i+1]
+			i++
+			continue
+		}
+		rest = append(rest, words[i])
+	}
+	prompt = strings.TrimSpace(strings.Join(rest, " "))
+	if len(prompt) >= 2 && (prompt[0] == '"' && prompt[len(prompt)-1] == '"' || prompt[0] == '\'' && prompt[len(prompt)-1] == '\'') {
+		prompt = prompt[1 : len(prompt)-1]
+	}
+	return partition, prompt
 }
 
 func (m *Model) workflowRefresh() tea.Cmd {
@@ -489,7 +506,7 @@ func (m *Model) workflowKey(k tea.KeyMsg) tea.Cmd {
 	case tea.KeyEnter:
 		if p.index < len(p.files) {
 			p.loading = "Starting " + p.files[p.index].Name + " …"
-			return m.workflowStart(p.files[p.index].Name, "")
+			return m.workflowStart(p.files[p.index].Name, "", "")
 		}
 		if i := p.index - len(p.files); i >= 0 && i < len(p.runs) {
 			r := p.runs[i]
