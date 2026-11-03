@@ -95,7 +95,7 @@ applied): [memdoor.ai/workflows](https://memdoor.ai/workflows).
 | Command | What it does |
 |---|---|
 | `/model` | The agent's ladder, cheapest rung first. Pin any model of your providers. List prices |
-| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, a company AI gateway. `/connect local`: a runtime on this machine or the box (Ollama, llama.cpp, janis), no key. `/connect chatgpt`: a ChatGPT Plus/Pro plan, no key |
+| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, a company AI gateway. `/connect local`: janis on this machine or the box, or Ollama, llama.cpp, LM Studio, vLLM; no key. `/connect chatgpt`: a ChatGPT Plus/Pro plan, no key |
 | `/workflow` | The project's workflows and runs. Enter opens a run's graph, `a` approves a gate, `/workflow:<name>` runs one |
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |

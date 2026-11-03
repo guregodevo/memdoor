@@ -13,7 +13,7 @@
 
 Memdoor reads files, writes patches, runs the build and fixes what it broke, in the launch directory (`memdoor tui`). Doors onto the same gateway: `memdoor run "<prompt>"`, one headless turn (answer on stdout; exit code 0 checked / 2 unverified or a failing check / 3 it needed you); `memdoor workflow run <name> --wait`, a workflow from a shell or CI; `memdoor cron add`, a schedule; `memdoor acp`, the editor; `/remote` in a window or `memdoor remote <id>` from a script, the phone (link on stdout, conversation held on the relay); `memdoor resume <id>`, any of those runs in a window, live, same session. Guide: https://memdoor.ai/docs/headless; the gateway: https://memdoor.ai/docs/gateway
 
-Every model call is on your key: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or a company AI gateway (`memdoor connect`, or export the key). Or no key: `memdoor connect local` finds Ollama, llama.cpp, vLLM, LM Studio or janis on the box, and nothing leaves it (https://memdoor.ai/docs/open-weight). Memdoor adds nothing to the bill; code does not pass through memdoor.ai.
+Every model call is on your key: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI or a company AI gateway (`memdoor connect`, or export the key). Or no key: `memdoor connect local` finds janis on the box, or Ollama, llama.cpp, vLLM, LM Studio, and nothing leaves it (https://memdoor.ai/docs/open-weight). Memdoor adds nothing to the bill; code does not pass through memdoor.ai.
 
 A decision model (Jev, by TypeSafe, hosted) in front of the chat model answers typed questions with a calibrated probability in under half a second. The judged excerpts go to it, through OpenRouter on your OpenRouter key or directly on a decision key (`memdoor connect typesafe`). On an Anthropic, OpenAI or Gemini key alone: off, no savings. Every host the binary can contact: https://memdoor.ai/docs/security. The harness acts on the answers:
 
@@ -61,7 +61,7 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 - Docs: https://memdoor.ai/docs/getting-started
 - Features, with the comparison to other coding agents: https://memdoor.ai/features — one page each: https://memdoor.ai/compare/claude-code, /compare/codex-cli, /compare/gemini-cli, /compare/aider, /compare/pi
 - Workflows: https://memdoor.ai/workflows (catalog), https://memdoor.ai/docs/workflows (guide), https://memdoor.ai/docs/cron (schedules)
-- Open-weight models, no key: https://memdoor.ai/docs/open-weight (Ollama, llama.cpp, vLLM, LM Studio or janis on your machine, memdoor connect local, the window, the team-solve workflow on your GPU)
+- Open-weight models, no key: https://memdoor.ai/docs/open-weight (janis on your machine, or Ollama, llama.cpp, vLLM, LM Studio; memdoor connect local, the window, the team-solve workflow on your GPU)
 - Team solve, the result: https://memdoor.ai/docs/team-solve (five Qwen3.8-27B agents at 9.8 of 10 against Fable 5's 8.0 on LiveCodeBench Hard, all runs published)
 - Remote control: https://memdoor.ai/docs/remote
 - Installer (plain shell, SHA-256 verified): https://memdoor.ai/install.sh

@@ -23,7 +23,7 @@ cd your-project && memdoor
 
 ## Open-weight models
 
-- **[No key: run on an open-weight model](/docs/open-weight)** — Ollama, llama.cpp, vLLM, LM Studio or janis on your machine; `memdoor connect local`; the window, the model, the team on your GPU.
+- **[No key: run on an open-weight model](/docs/open-weight)** — janis on your machine, or Ollama, llama.cpp, vLLM, LM Studio; `memdoor connect local`; the window, the model, the team on your GPU.
 - **[Team solve: the result](/docs/team-solve)** — five Qwen3.8-27B agents at 9.8 of 10 against Fable 5's 8.0, every run published.
 
 ## Guides

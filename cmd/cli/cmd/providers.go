@@ -241,8 +241,8 @@ take a key.
 The token is read without
 echo; it can be the value, the NAME of an environment variable that holds it,
 or !command that prints it (Keychain, 1Password, Vault). A local runtime
-(memdoor connect local: Ollama, llama.cpp, janis, LM Studio on this machine or
-the box) has no token and is asked for none. Before anything is
+(memdoor connect local: janis on this machine or the box, or Ollama,
+llama.cpp, LM Studio, vLLM) has no token and is asked for none. Before anything is
 kept, the gateway reads the provider's model list and makes one tiny call;
 a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 (0600). --probe tests without keeping. The gateway starts if none is running.`,
