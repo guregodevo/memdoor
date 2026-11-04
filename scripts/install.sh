@@ -432,6 +432,4 @@ else
     echo "  export OPENROUTER_API_KEY=sk-or-...    # optional: any provider's key (ANTHROPIC_API_KEY, OPENAI_API_KEY, …)"
     echo "  cd <your-project> && memdoor           # no key? it finds one on this machine, or signs you in with OpenRouter (free)"
     echo "  memdoor --gateway ssh://you@box          # or on a box you can ssh to: set up there on first use"
-    echo
-    echo "Pro (remote control)? memdoor login you@example.com"
 fi
