@@ -1,0 +1,33 @@
+type: llm
+each: [a, b]
+model: thinking off
+# Reviewer a and b (one file, each:): a fresh context, one call. The diff comes first, in the words of
+# the p0 checks, so the model's cache serves it. It reads only the diff and the
+# commit message and writes its own findings file; the other reviewer writes
+# its own at the same time.
+when: test -s .memdoor/runs/pr-team-review-{{.partition}}.lean.diff
+prompt: |
+  Here is a code change: a unified diff, lines starting with + are added, lines starting with - are removed.
+
+  ```diff
+  {{ file (printf ".memdoor/runs/pr-team-review-%s.lean.diff" .partition) }}
+  ```
+
+  The author says of the change:
+  {{ file (printf ".memdoor/runs/pr-team-review-%s.intent" .partition) }}
+
+  You are an independent reviewer. Your job: {{ if eq .item "a" }}bugs in the NEW code. Read each added line for a wrong condition, an off-by-one, a nil or empty value not handled, a changed behaviour a caller relies on, an error ignored.{{ else }}what the change puts at risk. Look for a security hole (missing auth check, injection, a secret written out), data loss, a broken build or test, and a path the change skips or leaves without a test.{{ end }}
+
+  Write one line per finding, nothing else, in this shape:
+  - **P0** `path/to/file.go:42` — what is wrong, why it breaks, the fix.
+  - **P1** `path:line` — …
+  - **P2** `path:line` — …
+
+  P0 is only what must not merge: a bug a user hits, a security hole, data loss, a broken build or test. P1 is what should be fixed soon; P2 a nit. A finding is a fault in the new code: what the change fixes or improves is never a finding. Each finding is about a line of the diff, in a file the diff shows. With nothing to report, write `No findings.`
+requires:
+  - table_pattern: trim
+  - table_pattern: intent
+target:
+  file: .memdoor/runs/pr-team-review-{{.partition}}.{{.item}}.md
+timeout: 30m
+max_retries: 0

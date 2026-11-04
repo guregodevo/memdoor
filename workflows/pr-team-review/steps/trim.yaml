@@ -1,0 +1,81 @@
+type: command
+# The part of the diff a model on a CPU reads (MEMDOOR_LEAN): the runner's 8B
+# prefills about 12 tokens a second, so a 54K-token diff (a rename across 184
+# files, 2026-11-02) outlived review-lean's timeout and the review never came.
+# Dropped: files that are not code, hunks whose changed lines are all comments
+# or blank; then files by changed lines, biggest first, within
+# MEMDOOR_LEAN_BUDGET bytes (24000, about 6K tokens, a few minutes). The note
+# of what was left out goes to the job summary (verdict). Nothing left to
+# read: the review is written here and review-lean is skipped.
+when: test -s .memdoor/runs/pr-team-review-{{.partition}}.diff
+command: |
+  set -e
+  r=.memdoor/runs/pr-team-review-{{.partition}}
+  budget=${MEMDOOR_LEAN_BUDGET:-24000}
+  : > "$r.lean.diff"
+  awk -v budget="$budget" -v OUT="$r.lean.diff" -v NOTE="$r.trim.txt" '
+  # trim.awk: the part of a unified diff a small model should read.
+  # Drops files that are not code (docs, images, lockfiles), hunks whose changed
+  # lines are all comments or blank, then keeps files by changed lines, biggest
+  # first, until the byte budget is spent. Writes the kept diff to OUT and a
+  # note of what was left out to NOTE.
+  function flush_hunk() {
+      if (hunk == "") return
+      if (hunk_code > 0) { kept = kept hunk; file_changed += hunk_changed } else { comment_hunks++ }
+      hunk = ""; hunk_code = 0; hunk_changed = 0
+  }
+  function flush_file() {
+      if (path == "") return
+      flush_hunk()
+      if (skip) { noncode++ }
+      else if (kept != "" && file_changed > 0) {
+          n++; P[n] = path; T[n] = header kept; L[n] = file_changed; B[n] = length(header kept)
+      } else if (file_changed == 0 && header != "") { commentonly++ }
+      path = ""; header = ""; kept = ""; file_changed = 0; skip = 0
+  }
+  /^diff --git / {
+      flush_file()
+      path = $0; sub(/^diff --git a\//, "", path); sub(/ b\/.*$/, "", path)
+      skip = (path ~ /\.(md|markdown|txt|rst|cast|png|jpe?g|gif|svg|ico|webp|woff2?|ttf|pdf|lock|sum|csv|tsv)$/ || path ~ /(^|\/)(LICENSE|NOTICE|CHANGELOG|package-lock\.json|yarn\.lock|go\.sum)$/ || path ~ /(^|\/)node_modules\//)
+      header = $0 "\n"; inhunk = 0; next
+  }
+  path == "" { next }
+  /^@@ / { flush_hunk(); inhunk = 1; hunk = $0 "\n"; next }
+  !inhunk { header = header $0 "\n"; next }
+  {
+      hunk = hunk $0 "\n"
+      if ($0 ~ /^[-+]/ && $0 !~ /^(---|\+\+\+) /) {
+          hunk_changed++
+          if ($0 !~ /^[-+][ \t]*(\/\/|#|\*|\/\*|\{\/\*|--|<!--|\*\/|#\})/ && $0 !~ /^[-+][ \t]*$/) hunk_code++
+      }
+  }
+  END {
+      flush_file()
+      total = 0; for (i = 1; i <= n; i++) total += B[i]
+      # biggest change first, within the budget
+      for (i = 1; i <= n; i++) order[i] = i
+      for (i = 1; i <= n; i++) for (j = i + 1; j <= n; j++) if (L[order[j]] > L[order[i]]) { t = order[i]; order[i] = order[j]; order[j] = t }
+      used = 0; kept_n = 0; left = ""
+      for (k = 1; k <= n; k++) { i = order[k]
+          if (used + B[i] <= budget) { printf "%s", T[i] > OUT; used += B[i]; kept_n++; kept_list = kept_list "  " P[i] " (" L[i] " lines)\n" }
+          else { left_n++; left = left "  " P[i] " (" L[i] " lines)\n" }
+      }
+      printf "" >> OUT
+      printf "Code files with a change: %d (%d bytes). Reviewed: %d (%d bytes).\n", n, total, kept_n, used > NOTE
+      if (kept_n) printf "%s", kept_list > NOTE
+      if (left_n) printf "Left out, over the %d-byte budget of a model on a CPU (run the review on your key for these):\n%s", budget, left > NOTE
+      if (noncode) printf "Not code, not reviewed: %d files (docs, images, lockfiles).\n", noncode > NOTE
+      if (commentonly) printf "Only comments or blank lines changed, not reviewed: %d files.\n", commentonly > NOTE
+      if (comment_hunks) printf "Comment-only hunks dropped inside reviewed files: %d.\n", comment_hunks > NOTE
+  }
+  ' "$r.diff"
+  if [ ! -s "$r.lean.diff" ]; then
+    printf '## Summary\nThe change touches no code line a model on a CPU can judge: see what was left out below.\n\n## Findings\nNo findings.\n' > "$r.md"
+  fi
+  cat "$r.trim.txt"
+requires:
+  - table_pattern: diff
+target:
+  file: .memdoor/runs/pr-team-review-{{.partition}}.trim.txt
+timeout: 2m
+max_retries: 0
