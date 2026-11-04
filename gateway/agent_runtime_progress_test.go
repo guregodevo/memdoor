@@ -222,3 +222,53 @@ func TestTheMirrorLandsOnTheSubscribedScreen(t *testing.T) {
 	}
 	t.Fatalf("the watching screen was sent nothing about the run it spawned (%d frames)", len(watching.frames))
 }
+
+// A MODEL CALL IN FLIGHT MUST KEEP SAYING SO.
+//
+// A local model on a CPU read a 7,219-token prompt for 500 s before its first
+// token. The stream was silent, and the screen's stall watchdog cleared the
+// spinner of a healthy turn.
+func TestAModelCallInFlightKeepsSayingSo(t *testing.T) {
+	ee := infra.NewEventEmitter(false)
+	ar := &AgentRuntime{events: ee}
+	got, mu := collect(ee)
+
+	old := modelWaitEveryVar
+	modelWaitEveryVar = 10 * time.Millisecond
+	defer func() { modelWaitEveryVar = old }()
+
+	stop := ar.watchModelCall("run-1", "workspace:w:channel:c")
+	time.Sleep(60 * time.Millisecond)
+	stop()
+	stop()
+	beatsAt := func() int {
+		mu.Lock()
+		defer mu.Unlock()
+		n := 0
+		for _, e := range *got {
+			if e.Stream == infra.EventStreamAssistant && e.Data["event"] == modelWaitEvent {
+				if e.SessionID != "workspace:w:channel:c" || e.RunID != "run-1" {
+					t.Fatalf("a beat went to the wrong run or session: %+v", e)
+				}
+				n++
+			}
+		}
+		return n
+	}
+	beats := beatsAt()
+	if beats < 2 {
+		t.Fatalf("a model call in flight for six intervals beat %d times", beats)
+	}
+	time.Sleep(40 * time.Millisecond)
+	if after := beatsAt(); after != beats {
+		t.Fatalf("the beat went on after the call returned: %d then %d", beats, after)
+	}
+
+	// A call outside a run (a memory flush, a warmup) has no screen to tell.
+	stop = ar.watchModelCall("", "workspace:w:channel:c")
+	time.Sleep(40 * time.Millisecond)
+	stop()
+	if after := beatsAt(); after != beats {
+		t.Fatalf("a call with no run beat anyway")
+	}
+}

@@ -78,6 +78,9 @@ func (a *TUIEventAdapter) handleAssistantUpdate(event *consumer.ProcessedEvent) 
 	case "thinking":
 		a.program.Send(assistantThinkingMsg{})
 
+	case "waiting":
+		a.program.Send(modelWaitMsg{})
+
 	case "text_start":
 		// Text streaming started (after thinking)
 		// No specific message needed - handled by text_delta

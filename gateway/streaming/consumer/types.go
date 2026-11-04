@@ -95,7 +95,7 @@ type ToolEventData struct {
 // AssistantEventData represents parsed assistant event data
 // Stream: "assistant"
 type AssistantEventData struct {
-	Event string `json:"event"` // "thinking", "text_start", "text_delta", "text_end", "text"
+	Event string `json:"event"` // "thinking", "waiting", "text_start", "text_delta", "text_end", "text"
 	Text  string `json:"text"`  // Text content (for text_end / text / thinking)
 	// Delta is the chunk on a text_delta event. The emitter names it "delta"
 	// (agent_runtime_inference.go), and this struct had only Text — so every

@@ -37,6 +37,41 @@ const (
 	subagentEvent     = "subagent"
 )
 
+// modelWaitEvent is the beat sent while a model call is in flight. A local
+// model on a CPU can read a 7,000-token prompt for eight minutes before its
+// first token, and the stream says nothing in that time: the screen's stall
+// watchdog took the silence for a lost run and cleared the spinner.
+const modelWaitEvent = "waiting"
+
+// modelWaitEveryVar is how often a model call in flight says so. Well under
+// the screen's stall watchdog; a var so a test does not wait it out.
+var modelWaitEveryVar = 30 * time.Second
+
+// watchModelCall beats on the assistant stream until the returned stop
+// function is called.
+func (ar *AgentRuntime) watchModelCall(runID, sessionID string) func() {
+	if ar == nil || ar.events == nil || runID == "" {
+		return func() {}
+	}
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(modelWaitEveryVar)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				ar.events.EmitEvent(runID, infra.EventStreamAssistant, sessionID, map[string]interface{}{
+					"event": modelWaitEvent,
+				})
+			}
+		}
+	}()
+	var once sync.Once
+	return func() { once.Do(func() { close(done) }) }
+}
+
 // toolProgressEveryVar is how often a running tool says it is still running.
 // The events are tiny; the point is that the number on screen moves. A var so
 // a test does not wait out five seconds a beat.

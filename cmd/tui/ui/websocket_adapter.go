@@ -53,6 +53,10 @@ type toolCallCompleteMsg struct {
 // toolProgressMsg is a running tool saying it is still running: the same tool,
 // N seconds in. It carries no output — it exists so a long render is
 // distinguishable from a hang.
+// modelWaitMsg: the gateway is still waiting on the model. It carries
+// nothing; it proves the run is alive.
+type modelWaitMsg struct{}
+
 type toolProgressMsg struct {
 	toolName string
 	seconds  int

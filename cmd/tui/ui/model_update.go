@@ -89,7 +89,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg.(type) {
 	case assistantThinkingMsg, assistantStreamingMsg, assistantResponseMsg,
 		toolCallStartMsg, toolCallCompleteMsg, questionMsg, planProposalMsg, contextUpdateMsg,
-		toolProgressMsg, subagentWorkMsg,
+		toolProgressMsg, subagentWorkMsg, modelWaitMsg,
 		subagentStartMsg, subagentEndMsg, runCompleteMsg:
 		m.lastEventAt = time.Now()
 	}

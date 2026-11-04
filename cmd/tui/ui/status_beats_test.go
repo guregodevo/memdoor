@@ -2,6 +2,7 @@ package ui
 
 import (
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"memdoor/gateway/infra"
@@ -44,5 +45,36 @@ func TestStatusBeatsReachTheScreen(t *testing.T) {
 	m = next.(Model)
 	if len(m.subagentWork) != 1 || m.subagentWork["agent:coder:subagent:run-1"].tool != "apply_patch" {
 		t.Fatalf("the screen did not record the spawned run's work: %#v", m.subagentWork)
+	}
+}
+
+// The gateway's "waiting" beat (a model call in flight) reaches the screen and
+// keeps the stall watchdog from clearing the spinner of a turn whose local
+// model reads its prompt for minutes.
+func TestTheModelWaitBeatKeepsTheTurnAlive(t *testing.T) {
+	spy := &sinkSpy{}
+	a := NewTUIEventAdapter(nil)
+	a.SetSink(spy)
+	a.OnAgentEvent(infra.AgentEvent{RunID: "r1", Seq: 1, Stream: infra.EventStreamAssistant, SessionID: "s",
+		Data: map[string]interface{}{"event": "waiting"}})
+	if len(spy.got) != 1 {
+		t.Fatalf("want 1 message, got %d: %#v", len(spy.got), spy.got)
+	}
+	if _, ok := spy.got[0].(modelWaitMsg); !ok {
+		t.Fatalf("waiting: got %#v", spy.got[0])
+	}
+
+	m := NewModel("http://x", "ws/demo", "chan", "", func(a, w, tx, mode string) error { return nil })
+	step := func(msg tea.Msg) { nm, cmd := m.Update(msg); m = nm.(Model); runCmd(cmd) }
+	step(tea.WindowSizeMsg{Width: 100, Height: 40})
+	step(websocketConnectedMsg{})
+	m.isThinking = true
+	m.turnRunning = true
+	m.thinkingStartTime = time.Now().Add(-watchdogStallTimeout - time.Minute)
+	m.lastEventAt = m.thinkingStartTime
+	step(spy.got[0])
+	step(thinkingTickMsg(time.Now()))
+	if !m.isThinking || !m.turnRunning {
+		t.Fatal("a turn still waiting on its model was cleared as stalled")
 	}
 }
