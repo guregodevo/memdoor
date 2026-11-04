@@ -1,0 +1,43 @@
+type: command
+command: |
+  r=.memdoor/runs/pr-team-review-{{.partition}}
+  f=$r.md
+  [ -f "$f" ] || { echo "nothing to review"; exit 0; }
+  # A finding line: a bullet, then P0 (bold, bracketed or bare), never P01.
+  re='^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P0([^0-9]|$)'
+  # The lean review's re-check (p0-check-N): a P0 answered BEFORE is about the
+  # code the change removes, not a fault of the change: demoted to P2.
+  drop=
+  for n in 1 2 3; do
+    a=$(grep -oE 'AFTER|BEFORE' "$r.p0check-$n" 2>/dev/null | head -1)
+    [ "$a" = BEFORE ] && drop="$drop $n"
+  done
+  if [ -n "$drop" ]; then
+    DROP="$drop" RE="$re" awk '
+      BEGIN { split(ENVIRON["DROP"], d, " "); for (k in d) gone[d[k]] = 1 }
+      $0 ~ ENVIRON["RE"] { i++; if (i in gone) { sub(/P0/, "P2"); $0 = $0 " (P0 dropped by the re-check: about the code before the change)" } }
+      { print }' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+  fi
+  p0=$(grep -E "$re" "$f" || true)
+  others=$(grep -cE '^[[:space:]]*[-*][[:space:]]+(\*\*|\[)?P[12]([^0-9]|$)' "$f" || true)
+  # A model on the runner's CPU (MEMDOOR_LEAN) runs nothing to check a finding,
+  # and files an opinion as a P0 ("hardcoded to Qwen3-8B-4bit, which may not
+  # be suitable": mario and janis, 2026-10-29) that no question to it told from
+  # a real bug (three wordings, at best 30 of 33 right). Its P0s are advisory:
+  # in the review, never the job's failure.
+  if [ -n "$p0" ]; then
+    echo "$(printf '%s\n' "$p0" | wc -l | tr -d ' ') P0 finding(s) to check before merging (advisory on a local model):"
+    printf '%s\n' "$p0"
+    [ -s "$r.trim.txt" ] && { echo; cat "$r.trim.txt"; } || true
+    exit 0
+  fi
+  echo "no blocking finding; $others to consider in $f"
+  [ -s "$r.trim.txt" ] && { echo; cat "$r.trim.txt"; } || true
+requires:
+  - table_pattern: trim
+  - table_pattern: merge
+  - table_pattern: p0-check-1
+  - table_pattern: p0-check-2
+  - table_pattern: p0-check-3
+timeout: 1m
+max_retries: 0

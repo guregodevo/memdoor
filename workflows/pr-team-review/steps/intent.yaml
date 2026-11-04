@@ -1,0 +1,12 @@
+type: command
+# What the change says it does: the last commit's message. The reviewers and the
+# merge read it, so what the change fixes is not filed as its fault (a small
+# model blames a change for the bug it removes; see p0-check-1).
+requires:
+  - table_pattern: diff
+command: |
+  git log -1 --format=%B 2>/dev/null | head -40 > .memdoor/runs/pr-team-review-{{.partition}}.intent
+  [ -s .memdoor/runs/pr-team-review-{{.partition}}.intent ] || echo "(no commit message)" > .memdoor/runs/pr-team-review-{{.partition}}.intent
+  wc -l < .memdoor/runs/pr-team-review-{{.partition}}.intent
+timeout: 1m
+max_retries: 0

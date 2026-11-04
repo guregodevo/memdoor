@@ -1,0 +1,41 @@
+type: llm
+model: thinking off
+# The manager: one fresh call that reads the diff, the author's message and both
+# reviewers' findings, drops what the author says the change fixes, merges
+# duplicates and writes the review in pr-review's shape, so verdict and the P0
+# re-checks work as in pr-review.
+when: test -s .memdoor/runs/pr-team-review-{{.partition}}.lean.diff
+prompt: |
+  Here is a code change: a unified diff, lines starting with + are added, lines starting with - are removed.
+
+  ```diff
+  {{ file (printf ".memdoor/runs/pr-team-review-%s.lean.diff" .partition) }}
+  ```
+
+  The author says of the change:
+  {{ file (printf ".memdoor/runs/pr-team-review-%s.intent" .partition) }}
+
+  Two reviewers worked on it separately. Reviewer A:
+  {{ file (printf ".memdoor/runs/pr-team-review-%s.a.md" .partition) }}
+
+  Reviewer B:
+  {{ file (printf ".memdoor/runs/pr-team-review-%s.b.md" .partition) }}
+
+  You are the manager. Write the review in exactly this Markdown shape, and nothing else:
+
+  ## Summary
+  Two sentences: what the change does and whether it does it correctly.
+
+  ## Findings
+  - **P0** `path/to/file.go:42` — what is wrong, why it breaks, the fix.
+  - **P1** `path:line` — …
+  - **P2** `path:line` — …
+
+  Keep a finding only when the diff shows its line and it is a fault of the new code. Merge two findings about the same line into one. Drop one that is about what the change removes or fixes, one that is an opinion ("may not suit every use"), and one you cannot tie to a line of the diff. P0 is only what must not merge. One line per finding, most severe first. With no findings, write `No findings.` under the heading.
+requires:
+  - table_pattern: reviewer-a
+  - table_pattern: reviewer-b
+target:
+  file: .memdoor/runs/pr-team-review-{{.partition}}.md
+timeout: 30m
+max_retries: 0
