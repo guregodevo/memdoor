@@ -58,7 +58,7 @@ func localRuntimeMenu(rs []localRuntimeRow, where string) string {
 // janisInstall is the one-line installer of janis's release, for Linux and
 // macOS; janis serve --detach pulls the model and returns once it has answered
 // (guregodevo/janis README).
-const janisInstall = "curl -fsSL https://github.com/guregodevo/janis/releases/latest/download/install.sh | sh"
+const janisInstall = "curl -fsSL " + janisReleaseURL + "install.sh | sh"
 
 // janisHardware says what janis runs on, by OS: its release is Linux and macOS.
 var janisHardware = map[string]string{
@@ -185,15 +185,19 @@ func shellRunner(script string, tee io.Writer) error {
 }
 
 // installJanis is what the "nothing running" text shows: the installer unless
-// janis is there (janis is its path, "" when it is not), then the model that
+// janis is there (janis is its path, "" when it is not), an update when the
+// janis there is older than the latest release (rel), then the model that
 // fits this machine, then the server in the background. It returns once the
 // server answered, so the connect that follows finds it.
-func installJanis(run runShell, janis string) error {
+func installJanis(run runShell, janis string, rel janisRelease) error {
 	if janis == "" {
 		if err := run(janisInstall, nil); err != nil {
 			return fmt.Errorf("the janis installer did not finish: %w", err)
 		}
+		rel.keep("")
 		janis = janisHome
+	} else {
+		rel.renew(run, janis)
 	}
 	var pulled bytes.Buffer
 	if err := run(janis+" pull", &pulled); err != nil {
@@ -217,6 +221,6 @@ func janisOffer() func() error {
 	}
 	return func() error {
 		path, _ := exec.LookPath("janis")
-		return installJanis(shellRunner, path)
+		return installJanis(shellRunner, path, thisJanisRelease(func(s string) { fmt.Print(s) }))
 	}
 }
