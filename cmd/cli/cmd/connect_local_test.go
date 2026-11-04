@@ -113,7 +113,7 @@ func TestInstallJanisRunsTheInstallerThePullAndTheServer(t *testing.T) {
 		}
 		return nil
 	}
-	if err := installJanis(run, ""); err != nil {
+	if err := installJanis(run, "", janisRelease{}); err != nil {
 		t.Fatal(err)
 	}
 	want := []string{janisInstall, janisHome + " pull", janisHome + " serve --detach --model Qwen3-1.7B-4bit"}
@@ -122,7 +122,7 @@ func TestInstallJanisRunsTheInstallerThePullAndTheServer(t *testing.T) {
 	}
 
 	ran = nil
-	if err := installJanis(run, "/usr/local/bin/janis"); err != nil {
+	if err := installJanis(run, "/usr/local/bin/janis", janisRelease{}); err != nil {
 		t.Fatal(err)
 	}
 	if len(ran) != 2 || ran[0] != "/usr/local/bin/janis pull" {
@@ -137,13 +137,13 @@ func TestInstallJanisRunsTheInstallerThePullAndTheServer(t *testing.T) {
 		}
 		return nil
 	}
-	if err := installJanis(failPull, "janis"); err == nil || len(ran) != 1 {
+	if err := installJanis(failPull, "janis", janisRelease{}); err == nil || len(ran) != 1 {
 		t.Fatalf("a failed pull stops before the server: %v %q", err, ran)
 	}
 
 	ran = nil
 	noName := func(script string, tee io.Writer) error { ran = append(ran, script); return nil }
-	_ = installJanis(noName, "janis")
+	_ = installJanis(noName, "janis", janisRelease{})
 	if ran[len(ran)-1] != "janis serve --detach" {
 		t.Fatalf("a pull that names no model serves without one: %q", ran)
 	}

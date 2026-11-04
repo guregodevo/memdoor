@@ -62,7 +62,7 @@ memdoor model                    # the model that answers, and what it lists for
 
 ![memdoor connect local finds janis on this machine, tests Qwen3.5-9B, keeps it and pins it](/connect-local.cast)
 
-`memdoor connect local` lists the model servers on the gateway's machine (janis, Ollama, llama.cpp, LM Studio, vLLM, on their default ports). Pick one by number. With none running on Linux or macOS, it offers to install janis and the model that fits the machine.
+`memdoor connect local` lists the model servers on the gateway's machine (janis, Ollama, llama.cpp, LM Studio, vLLM, on their default ports). Pick one by number. With none running on Linux or macOS, it offers to install janis and the model that fits the machine. A janis older than the latest release is updated first when it is in `~/.local/bin`, where janis's installer puts it. A janis elsewhere is left as is, with the command to update it. On a Mac the check needs a janis that memdoor installed: it keeps the release's checksum in `~/.memdoor/janis-release.sha256`.
 `--base http://localhost:8000/v1` names another. The probe reads the model
 list and makes one call; a large model may take minutes to load. `/model
 search` lists what the runtime serves, `/model qwen3:8b-32k` pins one. A
