@@ -423,6 +423,8 @@ func (ar *AgentRuntime) runInference(ctx context.Context, conversation []llm.Mes
 	// and there is nothing to gain by pinning them together.
 	ctx = llm.WithRouteKey(ctx, transcriptKey(sessionID, agentName))
 
+	stopWaiting := ar.watchModelCall(runID, sessionID)
+	defer stopWaiting()
 	message, err := llmClient.Messages().New(ctx, params)
 
 	// THE SERVER'S COUNT IS THE COUNT. Our estimate is chars/4 and the

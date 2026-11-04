@@ -310,14 +310,15 @@ func (m Model) renderMessage(msg Message) string {
 		Render(body)
 }
 
-// watchdogStallTimeout is how long the TUI waits with NO run event before it
-// assumes a completion event was lost and clears the spinner. It must exceed the
-// longest silent stretch of a healthy run — a slow model writing a large tool
-// call, which streams no text deltas — or it fires on live runs.
 // liveTailLines is the fixed height of a streaming bash tool's live-output
 // pane: the last N lines are shown, older ones scroll off the top.
 const liveTailLines = 10
 
+// watchdogStallTimeout is how long the TUI waits with NO run event before it
+// assumes a completion event was lost and clears the spinner. A gateway beats
+// every 30 s while a model call is in flight (modelWaitMsg), so on one that
+// does, only a gateway gone silent trips it. An older gateway sends no beat:
+// the timeout still has to outlast a slow model writing a large tool call.
 const watchdogStallTimeout = 8 * time.Minute
 
 // pickDisplayKey chooses which input parameter to show in a tool-call label.
