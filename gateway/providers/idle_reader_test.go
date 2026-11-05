@@ -77,3 +77,77 @@ func TestIdleReaderWaitsLongerForTheFirstByte(t *testing.T) {
 		t.Fatalf("after the first byte the idle limit rules, got %v", err)
 	}
 }
+
+func withKeepAliveOnlyAfter(t *testing.T, d time.Duration) {
+	t.Helper()
+	old := keepAliveOnlyAfter
+	keepAliveOnlyAfter = d
+	t.Cleanup(func() { keepAliveOnlyAfter = old })
+}
+
+// OpenRouter keeps a stalled request open with comment lines: they hold the
+// stream only keepAliveOnlyAfter, then it is cut, and the error says so (#99:
+// an ideator's call sat over ten minutes on them).
+func TestKeepAliveCommentsAloneAreCut(t *testing.T) {
+	withKeepAliveOnlyAfter(t, 250*time.Millisecond)
+	pr, pw := io.Pipe()
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() {
+		for {
+			select {
+			case <-stop:
+				return
+			case <-time.After(20 * time.Millisecond):
+				if _, err := pw.Write([]byte(": keep-alive\n\n")); err != nil {
+					return
+				}
+			}
+		}
+	}()
+	r := newIdleTimeoutReader(pr, 80*time.Millisecond)
+	defer r.Close()
+	start := time.Now()
+	_, err := io.ReadAll(r)
+	if !errors.Is(err, errKeepAliveOnly) || !errors.Is(err, errStreamIdle) {
+		t.Fatalf("want the keep-alive cut, got %v", err)
+	}
+	if e := time.Since(start); e < 200*time.Millisecond || e > 2*time.Second {
+		t.Fatalf("cut after %s, want about 250ms", e)
+	}
+}
+
+// Content between the comments keeps the stream: a model that thinks behind
+// keep-alives and then writes is never cut, however long the whole stream.
+func TestContentBetweenKeepAlivesKeepsTheStream(t *testing.T) {
+	withKeepAliveOnlyAfter(t, 250*time.Millisecond)
+	pr, pw := io.Pipe()
+	go func() {
+		for round := 0; round < 3; round++ {
+			for i := 0; i < 8; i++ { // 160ms of comments, under the 250ms
+				time.Sleep(20 * time.Millisecond)
+				_, _ = pw.Write([]byte(": OPENROUTER PROCESSING\n\n"))
+			}
+			_, _ = pw.Write([]byte("data: {\"x\":1}\n\n"))
+		}
+		pw.Close()
+	}()
+	r := newIdleTimeoutReader(pr, 80*time.Millisecond)
+	defer r.Close()
+	if _, err := io.ReadAll(r); err != nil {
+		t.Fatalf("a stream with content every 160ms was cut: %v", err)
+	}
+}
+
+// A comment split across two reads is still a comment; a data line is content.
+func TestTheIdleReaderTellsCommentsFromContent(t *testing.T) {
+	it := &idleTimeoutReader{lineStart: true}
+	for _, c := range []struct {
+		in   string
+		want bool
+	}{{": keep", false}, {"-alive\n", false}, {"\n", false}, {"\r\n", false}, {"data: {}", true}, {"\n:x\n", false}, {"event: ping\n", true}} {
+		if got := it.content([]byte(c.in)); got != c.want {
+			t.Errorf("content(%q) = %v, want %v", c.in, got, c.want)
+		}
+	}
+}

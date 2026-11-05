@@ -28,6 +28,7 @@ func newDirectOpenRouterClient(ctx context.Context, re *RemoteEngine, model stri
 // oaiStallAfter is how long an OpenRouter request may go without a byte —
 // no headers, then no token and no keep-alive comment (OpenRouter sends one
 // while a model thinks) — before the attempt is abandoned and asked again.
+// Keep-alives alone hold it at most keepAliveOnlyAfter (idle_reader.go, #99).
 // The 20-minute client limit alone held a turn four minutes with nothing
 // on screen but a clock, until the person gave up (live 2026-09-29).
 var oaiStallAfter = 60 * time.Second

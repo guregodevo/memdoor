@@ -287,14 +287,20 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		consumeErr = acc.consume(body, cb, llm.StreamGuardFromContext(ctx))
 		body.Close()
 		if errors.Is(consumeErr, errStreamIdle) && ctx.Err() == nil {
+			// Nothing at all for the stall, or only OpenRouter's keep-alive
+			// comments for keepAliveOnlyAfter (#99).
+			quiet, what, sent := stall, "went silent", "sent nothing"
+			if errors.Is(consumeErr, errKeepAliveOnly) {
+				quiet, what, sent = keepAliveOnlyAfter, "sent only keep-alive comments", "sent only keep-alive comments"
+			}
 			if acc.content.Len() == 0 && len(acc.toolCalls) == 0 && attempt < len(oaiRetryAfter) {
-				logs.New("Remote").Warn("provider went silent before any text; asking again", slog.Duration("silent_for", stall),
+				logs.New("Remote").Warn("provider "+what+" before any text; asking again", slog.Duration("silent_for", quiet),
 					slog.Int("attempt", attempt+1), slog.String("model", modelLabel))
-				llm.Notify(ctx, fmt.Sprintf("The model's provider went silent for %s — asking again.", stall))
+				llm.Notify(ctx, fmt.Sprintf("The model's provider %s for %s — asking again.", what, quiet))
 				time.Sleep(oaiRetryAfter[attempt])
 				continue
 			}
-			consumeErr = errProviderSilent(stall)
+			consumeErr = fmt.Errorf("the model's provider %s for %s", sent, quiet)
 		}
 		// The connection dropped mid-stream (a reset, an unexpected EOF) with
 		// nothing shown yet: ask again, as for silence and provider errors. A
