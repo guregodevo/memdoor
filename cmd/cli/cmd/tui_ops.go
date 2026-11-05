@@ -22,7 +22,7 @@ import (
 // renders as a chat message instead of printing to stdout.
 
 func tuiPageStatus(launchDir, workspace, channelID, agent string) ui.Status {
-	st := ui.Status{Branch: gitBranch(launchDir)}
+	st := ui.Status{Branch: gitBranch(launchDir), Version: Version}
 	if workspace != "" && channelID != "" && agent != "" {
 		if rv, err := readRoute(workspace, channelID, agent); err == nil {
 			st.Rung, st.Rungs, st.Reason, st.Pinned, st.Effort = rv.Rung, len(rv.Rungs), rv.Reason, rv.Pinned, rv.Effort

@@ -40,7 +40,7 @@ func tuiUpdateNotice() string {
 	if err != nil || remote == "" || !versionNewer(remote, Version) {
 		return ""
 	}
-	updateNotice = "memdoor " + remote + " is out — /update installs it"
+	updateNotice = updateLine(remote, Version, "/update")
 	return updateNotice
 }
 

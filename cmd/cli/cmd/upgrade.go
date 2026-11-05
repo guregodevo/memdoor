@@ -139,9 +139,19 @@ running gateway is stopped, the binary swapped, the gateway started again.
 // fetchRemoteVersion reads the one-line plaintext VERSION file the
 // deploy publishes alongside the binary. Trims surrounding whitespace
 // since CDNs and editors occasionally add a trailing newline.
-func fetchRemoteVersion() (string, error) {
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(versionEndpoint)
+func fetchRemoteVersion() (string, error) { return fetchRemoteVersionFrom("", 10*time.Second) }
+
+// fetchRemoteVersionFrom is fetchRemoteVersion with the door that asks named
+// in the query (?from=cli for a headless command): memdoor-ops' metrics count
+// only the window's daily check as a person that day, so the headless one is
+// marked and left out (#90). Nothing about the person is sent.
+func fetchRemoteVersionFrom(from string, timeout time.Duration) (string, error) {
+	client := &http.Client{Timeout: timeout}
+	u := versionEndpoint
+	if from != "" {
+		u += "?from=" + from
+	}
+	resp, err := client.Get(u)
 	if err != nil {
 		return "", err
 	}
