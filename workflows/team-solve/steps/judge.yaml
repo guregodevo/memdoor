@@ -19,7 +19,7 @@ prompt: |
   {{ file (printf ".memdoor/runs/team-solve-%s/changes.diff" .partition) }}
   ```
 
-  You are the judge, in a fresh context: you have seen none of the team's reasoning. Decide whether the change does what the task asks, completely and correctly, within its Scope, and nothing the task did not ask. The verdict is on the work, not on what it reports: a review that finds a bug passes when the bug is real. A change that removes content the task did not ask to remove fails.
+  You are the judge, in a fresh context: you have seen none of the team's reasoning. Decide whether the change does what the task's Prompt asks, completely and correctly, within its Scope, and nothing the task did not ask. Done when is the planner's reading of the Prompt: a line of it that starts with (inferred), or that asks for what the Prompt does not (a changelog entry, docs, a test of a given shape, a wording the Prompt does not give), is not a reason to FAIL. The verdict is on the work, not on what it reports: a review that finds a bug passes when the bug is real. A change that removes content the task did not ask to remove fails.
 
   Answer with the verdict on the first line, exactly `verdict: PASS` or `verdict: FAIL`, then at most ten lines saying why, each tied to a line of the task.
 target:
