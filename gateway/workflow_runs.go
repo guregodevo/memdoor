@@ -50,6 +50,37 @@ type workflowRuns struct {
 	runs map[string]*workflowRun
 }
 
+// workflowRunsKept is how many finished runs the gateway remembers, the
+// newest: each keeps its loaded workflow, mario's last result and every agent
+// step's rendered prompt, about 100 KB on a small task and far more on a
+// large one, and a long-lived gateway (a TUI left open, cron, a benchmark)
+// never let one go (#104). A run that is running or waiting is never dropped.
+const workflowRunsKept = 100
+
+// forgetOldRuns drops the oldest finished runs past workflowRunsKept. Called
+// with w.mu held; it takes each run's mu after it, as workflowList does.
+func (w *workflowRuns) forgetOldRuns() {
+	type ended struct {
+		id string
+		at time.Time
+	}
+	var done []ended
+	for id, r := range w.runs {
+		r.mu.Lock()
+		if r.state == "done" || r.state == "failed" || r.state == "stopped" {
+			done = append(done, ended{id, r.ended})
+		}
+		r.mu.Unlock()
+	}
+	if len(done) <= workflowRunsKept {
+		return
+	}
+	sort.Slice(done, func(i, j int) bool { return done[i].at.Before(done[j].at) })
+	for _, d := range done[:len(done)-workflowRunsKept] {
+		delete(w.runs, d.id)
+	}
+}
+
 // runModelKey carries a run's --model to its llm steps (the agent steps
 // read it off the run).
 type runModelKey struct{}
@@ -791,6 +822,7 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, 
 		base: gitHead(dir),
 	}
 	w.runs[run.ID] = run
+	w.forgetOldRuns()
 	w.mu.Unlock()
 	if err := writeRunPrompt(dir, spec.Name, run.Partition, prompt); err != nil {
 		w.mu.Lock()

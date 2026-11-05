@@ -271,3 +271,45 @@ func TestReadFileMissingListsSiblings(t *testing.T) {
 		t.Fatalf("error should list the real files, got: %v", err)
 	}
 }
+
+// Only a few indexes stay in memory, the most recently used, and the index of
+// a folder that is gone is dropped: every workflow run in a fresh worktree
+// made one (210 MB for Django) that was never let go, and a gateway that ran
+// 60 SWE-bench tasks held 32 GB (#104).
+func TestLocateKeepsOnlyTheRecentIndexes(t *testing.T) {
+	withDecisions(t, nil)
+	cached := func(dir string) bool {
+		repoIndexMu.Lock()
+		defer repoIndexMu.Unlock()
+		_, ok := repoIndexes[dir]
+		return ok
+	}
+	var dirs []string
+	for i := 0; i < locateMaxIndexes+3; i++ {
+		d := locateFixture(t)
+		dirs = append(dirs, d)
+		indexFor(d)
+		time.Sleep(2 * time.Millisecond) // distinct use times
+	}
+	repoIndexMu.Lock()
+	n := len(repoIndexes)
+	repoIndexMu.Unlock()
+	if n > locateMaxIndexes {
+		t.Fatalf("%d indexes kept, want at most %d", n, locateMaxIndexes)
+	}
+	if cached(dirs[0]) || !cached(dirs[len(dirs)-1]) {
+		t.Fatal("the least recently used index must go first, the newest stay")
+	}
+	last := dirs[len(dirs)-1]
+	if first := indexFor(last); indexFor(last) != first {
+		t.Fatal("a kept index must be reused")
+	}
+	gone := dirs[len(dirs)-2]
+	if err := os.RemoveAll(gone); err != nil {
+		t.Fatal(err)
+	}
+	indexFor(locateFixture(t))
+	if cached(gone) {
+		t.Fatal("the index of a folder that is gone must be dropped")
+	}
+}
