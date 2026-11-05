@@ -18,15 +18,15 @@ import { DemoGallery } from './DemoGallery';
 // the workflow rule; the numbers section says the saving with its caveat.
 // Remote control, MCP, the model picker and scheduled checks are on
 // /features and /enterprise; remote control is free on your own daemon since
-// 2026-10-23, the memdoor.ai relay is part of the hosted gateway.
+// 2026-10-23.
 //
 // Copy pass 2026-10-05 (the maintainer: "review landing ai slop"): each fact once, plain
 // declaratives, no "X, not Y" refrains, no list-of-three cadence.
 //
 // No price section any more (the maintainer, 2026-10-29: "100% opensource", "the landing
 // page Pricing is misleading. It can make people scared"): all of it is free,
-// self-hosted is Enterprise, and only the gateway memdoor.ai hosts is paid, the
-// existing $10 a month (checkout on /enterprise).
+// self-hosted is Enterprise. No plan is sold (the maintainer, 2026-11-05: "remove
+// pricing. It's enterprise, call me only"): Enterprise is by writing to us.
 
 const INSTALL = 'curl -fsSL https://memdoor.ai/install.sh | bash';
 
@@ -64,7 +64,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Is it free?',
-    a: 'Yes, and open source (Apache-2.0): the agent, workflows and every door onto your gateway, your phone included, on your laptop or your company\'s machines. Only the gateway memdoor.ai hosts for you is paid, $10 a month; it never buys inference.',
+    a: 'Yes, and open source (Apache-2.0): the agent, workflows and every door onto your gateway, your phone included, on your laptop or your company\'s machines. Enterprise, with support from us, is by writing to hello@memdoor.ai.',
   },
   {
     q: 'Can I use my ChatGPT subscription?',
@@ -474,19 +474,16 @@ export function CoderLandingPage() {
               <InstallLine />
             </div>
             <div className="rounded-2xl border border-neutral-200 bg-white p-7">
-              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Hosted gateway</div>
-              <div className="mb-4 text-3xl font-bold text-neutral-900">
-                $10<span className="text-lg font-medium text-neutral-500"> / month</span>
-              </div>
+              <div className="mb-1 text-sm font-semibold uppercase tracking-wider text-neutral-500">Enterprise</div>
+              <div className="mb-4 text-3xl font-bold text-neutral-900">Full support</div>
               <p className="mb-4 text-sm leading-relaxed text-neutral-500">
-                If you would rather not run the gateway yourself: memdoor.ai relays your phone to a laptop behind NAT
-                and keeps workflow state across machines. Still your key; cancel any month.
+                The same binary on your company&rsquo;s machines, set up and supported by us.
               </p>
               <a
-                href="/enterprise"
+                href="mailto:hello@memdoor.ai?subject=Memdoor%20Enterprise"
                 className="inline-block rounded-full border border-neutral-300 px-6 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:border-neutral-900"
               >
-                Subscribe — $10 / month
+                Write to hello@memdoor.ai
               </a>
             </div>
           </div>

@@ -53,16 +53,6 @@ export const STEPS: { title: string; body: React.ReactNode }[] = [
       </>
     ),
   },
-  {
-    title: 'If you subscribed, sign in',
-    body: (
-      <>
-        <code className="text-neutral-700">memdoor login you@example.com</code> with the email you paid with. A
-        six-digit code arrives there; type it, and remote control is on. Without it the agent still works, decision model
-        and workflows included.
-      </>
-    ),
-  },
 ];
 
 export function DownloadPage() {

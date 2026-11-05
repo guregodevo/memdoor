@@ -31,8 +31,8 @@ var homeMeta = pageMeta{
 
 var routeMetas = map[string]pageMeta{
 	"/enterprise": {
-		Title:       "Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway",
-		Description: "Memdoor is Apache-2.0: the coding agent, workflows, the gateway and every door onto it. Self-host it for one person or a whole company, free, on your own provider key; Enterprise adds full support. The gateway hosted on memdoor.ai is $10 a month.",
+		Title:       "Enterprise — Memdoor is open source: self-host it",
+		Description: "Memdoor is Apache-2.0: the coding agent, workflows, the gateway and every door onto it. Self-host it for one person or a whole company, free, on your own provider key; Enterprise adds full support: hello@memdoor.ai.",
 	},
 	"/features": {
 		Title:       "Features — Memdoor: workflows, judged reads, every coding-agent table stake",
@@ -65,12 +65,9 @@ var compareRivals = map[string]string{
 // routeMeta is the head of a route: a known page, a comparison, a doc (its
 // first heading and first paragraph, as the client's docMeta reads them), or
 // the home for anything else.
-// enterpriseTitle names the hosted gateway only while the hosted services are on.
+// enterpriseTitle: no hosted plan is sold (2026-11-05), so the title names none.
 func enterpriseTitle() string {
-	if hostedOff() {
-		return "Enterprise — Memdoor is open source: self-host it"
-	}
-	return "Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway"
+	return "Enterprise — Memdoor is open source: self-host it"
 }
 
 func routeMeta(p string, dist fs.FS) pageMeta {

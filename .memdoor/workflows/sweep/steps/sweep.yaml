@@ -13,8 +13,8 @@ prompt: |
   - workflows on mario: one YAML per task, done = the target exists, a gate = an
     external task (`external: true`, approved by a person), resume by partition;
     free, with local cron schedules (`memdoor cron add`);
-  - Pro = 10 dollars a month, for remote control (`/remote`) and the hosted
-    workflow state on memdoor.ai; Enterprise by invoice;
+  - no plan sold and no price anywhere (no Pro, no seat, no dollars a month);
+    Enterprise by writing to hello@memdoor.ai;
   - the public repo `github.com/guregodevo/memdoor`; `aktapus.ai` redirects
     to `memdoor.ai`;
   - and there is NO local model, NO GPU rental, NO broker, NO clipper, NO fitness

@@ -891,7 +891,7 @@ func remoteWSURL(base string) (string, error) {
 // expired: /remote in a window hands over a fresh one).
 var errRemoteSessionGone = errors.New("the relay refused this session: /remote again from a window")
 
-var errRemoteIsPro = errors.New("remote control is a Pro feature on memdoor.ai: memdoor account subscribe, then /remote again")
+var errRemoteIsPro = errors.New("remote control through the memdoor.ai relay is not sold; on your own gateway it needs no account (memdoor.ai/docs/remote), and Enterprise is by writing to hello@memdoor.ai")
 
 // remoteNeedsPro reports whether the signed-in account is on the free plan.
 // An unanswered question is not a refusal: the relay decides then.

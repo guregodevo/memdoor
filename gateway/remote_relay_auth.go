@@ -23,7 +23,7 @@ import (
 // Memdoor themselves) is not asked: they pay for that hosting.
 
 // errRemoteIsPro is what a free account hears from the hosted relay.
-var errRemoteIsPro = errors.New("remote control is a Pro feature on memdoor.ai: memdoor account subscribe, then /remote again")
+var errRemoteIsPro = errors.New("remote control through the memdoor.ai relay is not sold; on your own gateway it needs no account (memdoor.ai/docs/remote), and Enterprise is by writing to hello@memdoor.ai")
 
 const (
 	relayAccountPrefix   = "acct:"

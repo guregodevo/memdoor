@@ -45,13 +45,12 @@ func TestHostedOffMarksThePageHead(t *testing.T) {
 }
 
 // Off, the enterprise page's title names no hosted gateway.
-func TestHostedOffDropsTheHostedGatewayFromTheEnterpriseTitle(t *testing.T) {
-	t.Setenv("MEMDOOR_HOSTED", "off")
-	if m := routeMeta("/enterprise", nil); strings.Contains(m.Title, "memdoor.ai") {
-		t.Fatalf("hosted off: %q", m.Title)
-	}
-	t.Setenv("MEMDOOR_HOSTED", "")
-	if m := routeMeta("/enterprise", nil); !strings.Contains(m.Title, "memdoor.ai") {
-		t.Fatalf("hosted on: %q", m.Title)
+// No hosted plan is sold (2026-11-05): the title names none, hosted on or off.
+func TestTheEnterpriseTitleNamesNoHostedGateway(t *testing.T) {
+	for _, v := range []string{"off", ""} {
+		t.Setenv("MEMDOOR_HOSTED", v)
+		if m := routeMeta("/enterprise", nil); strings.Contains(m.Title, "memdoor.ai") {
+			t.Fatalf("MEMDOOR_HOSTED=%q: %q", v, m.Title)
+		}
 	}
 }

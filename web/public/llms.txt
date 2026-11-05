@@ -33,15 +33,14 @@ Describe the steps; the coder writes the workflow, the deterministic harness: on
 - team-solve (2026-10-31): GVS5H's multi-agent harness (a planner, two ideators, a solver, a manager and a repair worker, each from a fresh context, talking only through files) rebuilt as a Memdoor workflow with the authors' exact prompts, temperatures, 128K reply cap and loop, on the same model, Qwen3.8-27B. On the first ten problems of the authors' LiveCodeBench Hard list, five passes each, graded on every hidden test: a mean of 9.8 of 10, against 9.6 for the authors' own harness and 8.0 for Fable 5 in a single call. Ten problems, not the authors' 100, so 9.8 and 9.6 are parity; on these ten the authors' own data put Fable 5 at 80 and their harness at 96, the gap the workflow reproduces (across their full 100: 92.4 and 90.4); contamination cannot be ruled out; Fable 5 was not given the harness. A run took a median of 40 minutes and $0.39. All 50 runs, every request, reply, program, grade and cost: https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve/bench/results/parity-5pass. The page: https://memdoor.ai/docs/team-solve. The Hacker News thread (front page, 2026-10-31): https://news.ycombinator.com/item?id=50320995
 - decisions (2026-10): 44 paired runs, 22 of 22 passed each way; a question about the codebase went from 54,661 to 14,367 input tokens (−74%); edits unchanged within ±11%. https://github.com/guregodevo/memdoor/blob/main/docs/features/DECIDE.md
 
-## Remote control (Pro)
+## Remote control
 
-`/remote` prints a link and a QR code. The page on the phone is the terminal, running on your computer. Screen and keystrokes are end-to-end encrypted; the relay on memdoor.ai forwards ciphertext. `/remote off` revokes the link.
+`/remote` prints a link and a QR code. The page on the phone is the terminal, running on your computer, reached on your gateway's own address (same Wi-Fi, VPN or Tailscale), no account. `/remote off` revokes the link.
 
 ## Price
 
-- Free: the agent, the decision model (on an OpenRouter key or a decision key) and workflows with local schedules.
-- Pro, $10/month: remote control through the memdoor.ai relay, and every workflow run's state kept on memdoor.ai, one table per workspace, so a workflow can wait on a task another workflow produced, from any machine; `memdoor workflow history` answers from anywhere. Coming: runs with the laptop closed. A seat never supplies a model key. https://memdoor.ai/pricing or `memdoor account subscribe`.
-- Enterprise: the hosted state and the relay served for a company on its own instance or host, people and admins set up by us, invoiced. hello@memdoor.ai.
+- Free, Apache-2.0: the agent, the decision model (on an OpenRouter key or a decision key), workflows with local schedules, and remote control on your own gateway. Inference is on your own key.
+- Enterprise: the same binary on a company's machines, set up and supported by us. hello@memdoor.ai.
 
 ## Install
 
@@ -65,6 +64,5 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 - Team solve, the result: https://memdoor.ai/docs/team-solve (five Qwen3.8-27B agents at 9.8 of 10 against Fable 5's 8.0 on LiveCodeBench Hard, all runs published)
 - Remote control: https://memdoor.ai/docs/remote
 - Installer (plain shell, SHA-256 verified): https://memdoor.ai/install.sh
-- Pricing: https://memdoor.ai/pricing
-- Enterprise: hello@memdoor.ai
+- Enterprise: https://memdoor.ai/enterprise, hello@memdoor.ai
 - Listed on AlternativeTo: https://alternativeto.net/software/memdoor/
