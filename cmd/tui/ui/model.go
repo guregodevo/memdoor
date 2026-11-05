@@ -46,7 +46,8 @@ type Model struct {
 	modelProviders     func() ([]ProviderSummary, error)              // a bare /model-search: providers and counts
 	modelHosts         func(id string) ([]ModelHost, error)           // a model's hosts, to prefer or reorder
 	pinModel           func(id, sortBy, order string) (string, error) // pin a model with the picker's preference
-	effortOp           func(level string) (string, error)             // Shift+Tab: set the reasoning effort
+	effortOp           func(level string) (string, error)             // set the reasoning effort (its key: #87)
+	modeOp             func(mode string) (string, error)              // Shift+Tab: flip the mode, auto | team
 	routePicker        *routePicker                                   // the model / hosts picker, when open
 	mcp                MCPOps                                         // /mcp — the person's MCP servers (mcp_panel.go)
 	workflow           WorkflowOps                                    // /workflow — DAG runs on mario (workflow_panel.go)

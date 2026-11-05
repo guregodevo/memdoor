@@ -210,16 +210,20 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// SHIFT+TAB CYCLES THE REASONING EFFORT (omp's app.thinking.cycle): auto,
-	// low, medium, high, auto. Auto lets the decision model pick per request
-	// (gateway/turn_effort.go); a chosen level holds for the conversation.
-	if k, ok := msg.(tea.KeyMsg); ok && k.Type == tea.KeyShiftTab && m.pendingQuestion == nil && m.effortOp != nil {
-		next := nextEffort(m.status.Effort)
-		m.status.Effort = next
-		op := m.effortOp
+	// SHIFT+TAB FLIPS THE MODE: auto, one turn; team, the turn runs as
+	// team-solve on this project and model (gateway/team_mode.go). The
+	// reasoning effort is its own setting (#87). The mode holds for the
+	// conversation.
+	if k, ok := msg.(tea.KeyMsg); ok && k.Type == tea.KeyShiftTab && m.pendingQuestion == nil && m.modeOp != nil {
+		next := "team"
+		if m.status.Mode == "team" {
+			next = "auto"
+		}
+		m.status.Mode = next
+		op := m.modeOp
 		return m, func() tea.Msg {
 			if _, err := op(next); err != nil {
-				return noteResultMsg{err: fmt.Errorf("effort not changed: %w", err)}
+				return noteResultMsg{err: fmt.Errorf("mode not changed: %w", err)}
 			}
 			return statusTickMsg{}
 		}
