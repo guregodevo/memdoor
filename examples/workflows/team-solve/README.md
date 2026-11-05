@@ -9,6 +9,10 @@ The method of [GVS5H](https://github.com/slee-persis/GVS5H) (Lee, 2026) as a
 [Memdoor](../../../README.md) workflow: eight YAML files, no code, no model
 named.
 
+Try it on your own problem, free models included: `curl -fsSL https://memdoor.ai/install.sh | bash`,
+then [Run it](#run-it). Memdoor is a coding agent that runs workflows like this one
+headless or in a terminal UI: [memdoor.ai](https://memdoor.ai).
+
 ## The result
 
 The authors' harness on the same model, Qwen3.8-27B, with their prompts,
