@@ -5,7 +5,7 @@ type: command
 # judge decide then); else 1, and the ideators and the solver take over.
 requires:
   - table_pattern: direct
-  - table_pattern: settle
+  - table_pattern: baseline
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
@@ -14,9 +14,15 @@ command: |
   check=$?
   bash "$w/scope.sh" "$r" >> "$r/direct-check.log"
   scope=$?
+  # The Check decides, not the Scope: a correct SWE-bench patch touched three
+  # middleware files the planner had not named, was failed here, and the team
+  # replaced it with a wrong one (django-13344, 2026-11-05). Files outside the
+  # Scope are the review's to judge (scope.txt).
   status=1
-  if [ -s "$r/changes.diff" ] && [ "$scope" = 0 ] && { [ "$check" = 0 ] || [ "$check" = 3 ]; }; then status=0; fi
+  if [ -s "$r/changes.diff" ] && { [ "$check" = 0 ] || [ "$check" = 3 ]; }; then status=0; fi
   printf '%s\n' "$status" > "$r/direct-status.txt"
+  # The direct attempt as it is, for the net (keep.yaml).
+  bash "$w/snapshot.sh" save "$r" direct
   tail -20 "$r/direct-check.log"
   printf 'direct attempt: %s (check %s, scope %s, %s lines changed)\n' "$([ $status = 0 ] && echo passes || echo 'does not pass: the team takes over')" "$check" "$scope" "$(wc -l < "$r/changes.diff" | tr -d ' ')"
 timeout: 30m

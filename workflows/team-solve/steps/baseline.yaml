@@ -1,0 +1,21 @@
+type: command
+# The Check on the tree as the run found it, in a clean copy (a git worktree
+# of the start): when it already fails there, it is broken in this place, not
+# by the work, and check.sh leaves the decision to the judge. A Django test
+# that trips over the machine's asgiref failed every attempt the same, and the
+# team "fixed" a correct one (django-13344, 2026-11-05).
+requires:
+  - table_pattern: settle
+command: |
+  r=$(pwd)/.memdoor/runs/team-solve-{{.partition}}
+  w=$(pwd)/.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  [ -s "$r/base.txt" ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "baseline: not in git, none taken"; exit 0; }
+  t="$r/baseline-tree"
+  git worktree add -q --detach "$t" "$(cat "$r/base.txt")" 2>/dev/null || { echo "baseline: no clean copy, none taken"; exit 0; }
+  ( cd "$t" && bash "$w/check.sh" "$r" "$r/baseline-check.log" ); status=$?
+  git worktree remove --force "$t" 2>/dev/null
+  printf '%s\n' "$status" > "$r/baseline-status.txt"
+  tail -5 "$r/baseline-check.log"
+  printf 'baseline: the Check on the tree as found: %s\n' "$([ $status = 0 ] && echo passes || { [ $status = 3 ] && echo 'nothing to run' || echo 'FAILS before any change: the judge decides'; })"
+timeout: 30m
+max_retries: 0

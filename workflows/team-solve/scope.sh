@@ -52,9 +52,23 @@ if [ -z "$scope" ]; then
 else
   printf 'scope: %s\n' "$(printf '%s' "$scope" | tr '\n' ' ')" >> "$out"
 fi
+# A NEW file under the directory of a file the Scope names is inside it: a
+# test needs its fixture beside it, and its name is not known in advance (a
+# correct SWE-bench patch added tests/utils_tests/test_module/__main__.py next
+# to the scoped tests/utils_tests/test_autoreload.py and was failed, 2026-11-05).
+# An edit to an existing file outside the Scope still fails.
+beside() {
+  [ -s "$r/base.txt" ] && git cat-file -e "$(cat "$r/base.txt"):$1" 2>/dev/null && return 1
+  while IFS= read -r s; do
+    [ -f "$s" ] || [ -f "$(git rev-parse --show-toplevel 2>/dev/null)/$s" ] || continue
+    d=$(dirname "$s"); [ "$d" = . ] && continue
+    case "$1" in "$d"/*) return 0 ;; esac
+  done <<< "$scope"
+  return 1
+}
 while read -r add del f; do
   [ -n "${f:-}" ] || continue
-  if inside "$f"; then
+  if inside "$f" || beside "$f"; then
     printf 'changed: %s +%s -%s\n' "$f" "$add" "$del" >> "$out"
   else
     printf 'OUTSIDE THE SCOPE: %s +%s -%s (undo it: git checkout the file, or delete it when the run made it)\n' "$f" "$add" "$del" >> "$out"; fail=1

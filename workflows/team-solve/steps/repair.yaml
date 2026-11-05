@@ -13,9 +13,8 @@ prompt: |
   Read review.md, test-status.txt and notes.md there. If review.md says
   `verdict: PASS`, change nothing and report that repair was unnecessary.
   Otherwise read task.md, plan.md, changes.diff and test-output.log, then
-  correct the work using the manager's instructions, within the Scope. Undo
-  every file scope.txt lists OUTSIDE THE SCOPE (git checkout it, or delete it
-  when the run made it).
+  correct the work using the manager's instructions, as the task needs. Undo a change outside the Scope only when the review names it as one the
+  task does not need; a change the fix needs stays, wherever it is.
   Run the Check to verify the correction. Write
   .memdoor/runs/team-solve-{{.partition}}/repair.md: what you changed
   and what the Check printed, and append a short repair note to notes.md. Do not start another repair round and do not change
