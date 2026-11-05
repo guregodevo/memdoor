@@ -1,12 +1,36 @@
 # Peers — @<peer>:<agent>, a gateway's agent asked from another gateway (experimental, 2026-10-24)
 
-The maintainer, 2026-10-24: "we need A2A from one gateway to another", "we already have
-@mention mechanism", "we can do @<host>:agent_name", "we have a quorum of
-gateway; from quorum we can see which gateway are available", "this is
-experimental". The peer-to-peer problems it is for: a laptop that sleeps hands
-the run to a box that stays on; a step runs on the machine that has the repo;
-each peer has its own key and its own project; a company's data answers
-from the machine that holds it, only the answer crossing.
+## Why
+
+Memdoor is a gateway on a machine, and people have several machines: the
+laptop that sleeps, the box that stays on, the box that holds the repo, the
+box that holds the data. Each has its own gateway with its own agents, its
+own key and its own project. Today the only way to use a second gateway is
+to leave this conversation and go open one on that machine. A peer closes
+that gap (the maintainer, 2026-10-24: "we need A2A from one gateway to another",
+"we have a quorum of gateway; from quorum we can see which gateway are
+available"): **you name a gateway once, and from then on its agents are
+agents of this conversation**, asked the way agents are asked here — an
+@mention. Four jobs it does:
+
+- **The run outlives the laptop.** A laptop that sleeps hands the run to a
+  box that stays on: `@box:coder fix the failing test`, close the lid, the
+  turn keeps going there.
+- **The step runs where the work is.** The box that has the repo, the
+  credentials or the data answers from the machine that holds it; only the
+  answer crosses. Nothing of the company's data has to move for a question
+  to be asked.
+- **Each machine keeps its own key and its own bill.** A turn run on a peer
+  spends that peer's key, in that peer's project — a free tier on one
+  machine, a company gateway on another.
+- **Nothing is opened to the network for it.** With an ssh peer (2026-10-25)
+  the far gateway is reached through an ssh tunnel: the box that answers is
+  invisible except to the machine asking.
+
+The ask is the @mention mechanism this gateway already has (the maintainer: "we
+already have @mention mechanism", "we can do @<host>:agent_name"), so there
+is nothing new to learn: the same window, the same run command, one name
+before the agent's.
 
 ## What it is
 
@@ -20,12 +44,31 @@ A **peer** is a gateway this person has signed in to once and named:
 The sign-in is the one `--gateway <box>` already keeps per gateway in
 `~/.memdoor/credentials.json`; `peers add` refuses without it and says how.
 
+**The gateway on the box need not be on its network** (2026-10-25): the peer
+may be an ssh address, and the ask reaches it through the ssh door's tunnel —
+nothing on the box is opened to the network:
+
+    memdoor --gateway ssh://you@box run "…"     # installs memdoor there, starts its gateway, signs you in
+    memdoor peers add box ssh://you@box --dir /srv/app
+    memdoor peers        # box answers through its own tunnel
+
+Each ssh peer gets its own tunnel for the turn it serves and it ends with the
+ask; the ssh address as typed is the credentials' key (the tunnel's port
+changes every run), and a lapsed session is renewed over the same ssh, with
+the login the box generated for itself — the one `--gateway ssh://box` uses.
+The process's own ssh door, if one is up, is not touched.
+
 From then on **`@box:coder <what>`** in any conversation on this gateway — the
 window, `memdoor run "@box:coder …"`, `memdoor agent -m "@box:coder …"` — is a
 mention of box's coder: the turn runs on box, in `/srv/app`, as `memdoor
 --gateway box run` would run it, and the answer is this thread's reply from
 `box:coder`. The run on the peer is a conversation there (`memdoor --gateway
 box resume <id>` opens it; the reply ends with that line).
+
+**In one line:** a peer is a remote gateway's agent that answers in this
+thread — named once, reached by @mention, run on the machine that has what
+the turn needs, with that machine's key, through a tunnel when the machine
+is not on the network.
 
 ## Recorded
 
