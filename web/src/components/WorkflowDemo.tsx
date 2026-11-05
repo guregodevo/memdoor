@@ -22,6 +22,18 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // of local model with peer features"). Each is a real session.
 const TAKES = [
   {
+    // Team mode plays first: the main feature (the maintainer, 2026-11-05).
+    // Recorded 2026-11-05 on a clean checkout of this repository, the
+    // window on deepseek-v4.1-flash: Shift+Tab to team, the task typed, the
+    // team-solve run drawn until its ■ line.
+    key: 'team',
+    label: 'Team mode',
+    ask: 'Shift+Tab to team, then: scripts/scan.sh must pass outside a git checkout too.',
+    cast: '/team-mode.cast',
+    poster: 'npt:0:41',
+    what: 'the single call first → checked → reviewed → kept, never worse than one turn',
+  },
+  {
     key: 'workflows',
     label: 'Workflows',
     ask: 'Vet and tests in parallel, release notes from the last 8 commits, wait for my approval, announce.',

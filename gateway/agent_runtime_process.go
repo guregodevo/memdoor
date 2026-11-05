@@ -210,6 +210,13 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 		userMessage = expanded
 	}
 
+	// TEAM MODE (Shift+Tab flips auto and team): the turn is team-solve on
+	// this project and model, the person's prompt as typed its task, and the
+	// run reports back here (team_mode.go).
+	if resp, ok := ar.teamTurn(ctx, trimmedMessage, session, runID); ok {
+		return resp, nil
+	}
+
 	// LEARNING: Inject relevant past memories before the user message
 	agentName, _ := ctx.Value("buddy_agent_name").(string)
 	logs.New("Agent").Info(fmt.Sprintf("AGENT TASK [%s]: %s", agentName, truncateForLog(userMessage, 600)))

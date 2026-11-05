@@ -28,7 +28,9 @@ cd your-project && memdoor
 Header: the conversation's name, "new session" until the first request,
 then that request (the title `memdoor resume` lists). Footer: git branch,
 the model that answered, its rung and the reason (`first rung · the
-default`, or `pinned by you` after `/model 3`), then the keys that apply.
+default`, or `pinned by you` after `/model 3`), the mode (`auto` or `team`,
+Shift+Tab flips it: [team mode](/docs/team-mode)), the thinking effort, then
+the keys that apply. The header names the version that runs.
 
 ![A question on this repository: judged reads, the answer with file:line](/demo.cast)
 

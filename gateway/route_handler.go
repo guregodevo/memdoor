@@ -33,6 +33,7 @@ const (
 	sessionEffortKey      = "route_effort"      // reasoning effort the person chose (Shift+Tab); "" = auto
 	sessionMaxTokensKey   = "route_max_tokens"  // a task's own reply ceiling (`max_tokens N` on its model line); "" = the model's
 	sessionTemperatureKey = "route_temperature" // a task's own sampling temperature (`temperature T` on its model line); "" = the agent's
+	sessionTeamKey        = "route_team"        // the mode (Shift+Tab): "on" = team, a turn runs as team-solve; "" = auto, one turn
 	sessionEffortUsed     = "route_effort_used" // the last turn's effort, and where it came from:
 	sessionEffortFrom     = "route_effort_from" // "chosen", "decision model" or "default"
 	reasonPinned          = "pinned by you"
@@ -78,6 +79,7 @@ type routeView struct {
 	Sort          string   `json:"sort,omitempty"`     // host preference for a pin by id
 	Order         string   `json:"order,omitempty"`    // the person's host order for it
 	Effort        string   `json:"effort"`             // low | medium | high, or "" for auto
+	Mode          string   `json:"mode"`               // auto | team (Shift+Tab, team_mode.go)
 	// EffortUsed and EffortFrom are what the last turn ran at and why, so
 	// the footer shows the effort in use, not only "auto".
 	EffortUsed string `json:"effort_used,omitempty"`
@@ -155,6 +157,7 @@ func viewRoute(re *providers.RemoteEngine, s *Session, agent string) routeView {
 	}
 	v := routeView{Agent: agent, Tier: tier, Rung: tier + 1, Rungs: rungs, Pinned: sessionPinned(s), Reason: routeReason(tier, sessionPinned(s), sessionReason(s)), Effort: sessionString(s, sessionEffortKey),
 		EffortUsed: sessionString(s, sessionEffortUsed), EffortFrom: sessionString(s, sessionEffortFrom)}
+	v.Mode = sessionMode(s)
 	if tier < len(rungs) {
 		v.Model = rungs[tier]
 	}
@@ -246,6 +249,7 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 		Sort      string      `json:"sort"`   // with it: price | throughput | latency | default
 		Order     string      `json:"order"`  // with it: the person's host order, comma-separated
 		Effort    *string     `json:"effort"` // alone: the reasoning effort, low | medium | high | auto
+		Mode      *string     `json:"mode"`   // alone: the mode, auto | team (team_mode.go)
 	}
 	switch r.Method {
 	case http.MethodGet:
@@ -303,7 +307,9 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var perr error
-	if in.Effort != nil && in.Model == "" && in.Tier == nil {
+	if in.Mode != nil && in.Effort == nil && in.Model == "" && in.Tier == nil {
+		perr = setMode(sess, *in.Mode)
+	} else if in.Effort != nil && in.Model == "" && in.Tier == nil {
 		perr = setEffort(sess, *in.Effort)
 	} else if in.Model != "" {
 		perr = pinModel(sess, in.Model, in.Sort, in.Order)
@@ -314,7 +320,7 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf(`{"error": %q}`, perr.Error()), http.StatusBadRequest)
 		return
 	}
-	if in.Effort == nil || in.Model != "" || in.Tier != nil {
+	if (in.Effort == nil && in.Mode == nil) || in.Model != "" || in.Tier != nil {
 		// THE PIN STAYS (persistent_pin.go): kept for every new
 		// conversation until auto.
 		var keep *persistentPin

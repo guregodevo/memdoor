@@ -42,7 +42,8 @@ type Ops struct {
 	ModelHosts     func(id string) ([]ModelHost, error)           // a model's hosts
 	ModelProviders func() ([]ProviderSummary, error)              // a bare /model-search: the providers and their counts
 	PinModel       func(id, sortBy, order string) (string, error) // pin from the picker
-	Effort         func(level string) (string, error)             // Shift+Tab: reasoning effort, auto | low | medium | high
+	Effort         func(level string) (string, error)             // the reasoning effort, auto | low | medium | high (its key: #87)
+	Mode           func(mode string) (string, error)              // Shift+Tab: the mode, auto | team
 	Status         func() Status                                  // the footer
 	Update         func() (string, error)                         // /update — install the published build
 	MCP            MCPOps                                         // /mcp — the person's MCP servers (mcp_panel.go)
@@ -149,6 +150,7 @@ func NewPage(cfg PageConfig) Model {
 		modelProviders: cfg.Ops.ModelProviders,
 		pinModel:       cfg.Ops.PinModel,
 		effortOp:       cfg.Ops.Effort,
+		modeOp:         cfg.Ops.Mode,
 		statusOp:       cfg.Ops.Status,
 		updateOp:       cfg.Ops.Update,
 		mcp:            cfg.Ops.MCP,
@@ -207,7 +209,8 @@ func welcomeMessages(agent string) []Message {
 // Status is the footer line, in parts — so each can be coloured for what it
 // means rather than the whole line sharing one tone.
 type Status struct {
-	Effort     string // reasoning effort the person chose (Shift+Tab); "" = auto
+	Effort     string // reasoning effort the person chose; "" = auto
+	Mode       string // auto | team, flipped with Shift+Tab
 	EffortUsed string // what the last turn ran at
 	EffortFrom string // "chosen", "decision model" or "default"
 	Branch     string // git branch of the project, "" outside a repo
@@ -291,13 +294,20 @@ func (s Status) line() string {
 		}
 		parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color(colour)).Render(rung))
 	}
-	// THE EFFORT, chosen with Shift+Tab: auto lets the decision model (or
-	// high) decide per request; a chosen one holds until changed.
+	// THE MODE, flipped with Shift+Tab: auto is one turn, team runs the turn
+	// as team-solve (gateway/team_mode.go).
+	mode, colour := "auto", colDim
+	if s.Mode == "team" {
+		mode, colour = "team", colRead
+	}
+	parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color(colour)).Render(mode+" (shift+tab)"))
+	// THE EFFORT: auto lets the decision model (or high) decide per request;
+	// a chosen one holds until changed.
 	effort, colour := "effort "+effortLabel(s), colDim
 	if s.Effort != "" {
 		colour = colRead
 	}
-	parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color(colour)).Render(effort+" (shift+tab)"))
+	parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color(colour)).Render(effort))
 	if len(parts) == 0 {
 		return ""
 	}

@@ -95,6 +95,7 @@ func (w *tuiWiring) baseConfig(agent, chID, chName string, page int) ui.PageConf
 			ModelProviders: tuiModelProviders,
 			PinModel:       tuiPinModel(wsID, chID, agent),
 			Effort:         tuiEffort(wsID, chID, agent),
+			Mode:           tuiMode(wsID, chID, agent),
 			MCP:            tuiMCPOps(curDir),
 			Workflow:       tuiWorkflowOps(curDir, wsID, chID),
 			Connect:        ui.ConnectOps{Connect: tuiConnect, KeySource: providerKeySource, LoginStart: tuiConnectLoginStart, LoginWait: signInWait, LoginPaste: signInPaste, LoginCancel: signInCancel, Found: tuiFoundKeys, ConnectFound: tuiConnectFound},

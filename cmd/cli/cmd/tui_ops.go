@@ -26,7 +26,7 @@ func tuiPageStatus(launchDir, workspace, channelID, agent string) ui.Status {
 	if workspace != "" && channelID != "" && agent != "" {
 		if rv, err := readRoute(workspace, channelID, agent); err == nil {
 			st.Rung, st.Rungs, st.Reason, st.Pinned, st.Effort = rv.Rung, len(rv.Rungs), rv.Reason, rv.Pinned, rv.Effort
-			st.EffortUsed, st.EffortFrom = rv.EffortUsed, rv.EffortFrom
+			st.EffortUsed, st.EffortFrom, st.Mode = rv.EffortUsed, rv.EffortFrom, rv.Mode
 			st.Provider = rv.Provider
 			if rv.Model != "" {
 				st.AgentModels = map[string]string{agent: rv.Model}
@@ -362,9 +362,23 @@ type routeView struct {
 	Custom        bool     `json:"custom"` // pinned by id, off the ladder
 	Sort          string   `json:"sort,omitempty"`
 	Order         string   `json:"order,omitempty"`
-	Effort        string   `json:"effort"` // chosen with Shift+Tab; "" = auto
+	Effort        string   `json:"effort"` // the reasoning effort chosen; "" = auto
+	Mode          string   `json:"mode"`   // auto | team, flipped with Shift+Tab
 	EffortUsed    string   `json:"effort_used"`
 	EffortFrom    string   `json:"effort_from"`
+}
+
+// tuiMode is Shift+Tab: the conversation's mode, auto or team
+// (gateway/team_mode.go).
+func tuiMode(workspace, channelID, agent string) func(mode string) (string, error) {
+	return func(mode string) (string, error) {
+		if mode == "" {
+			mode = "auto"
+		}
+		var rv routeView
+		err := NewClient().PostJSON("/api/route", map[string]interface{}{"workspace": workspace, "channel_id": channelID, "agent": agent, "mode": mode}, &rv)
+		return rv.Mode, err
+	}
 }
 
 func readRoute(workspace, channelID, agent string) (routeView, error) {
@@ -375,8 +389,8 @@ func readRoute(workspace, channelID, agent string) (routeView, error) {
 
 // tuiRoute is /model for one page: no argument shows the ladder with this
 // conversation's rung marked; a number pins that rung; "auto" lets go.
-// tuiEffort is Shift+Tab: the conversation's reasoning effort (auto hands it
-// back to the decision model, else high — gateway/turn_effort.go).
+// tuiEffort sets the conversation's reasoning effort (auto hands it back to
+// the decision model, else high — gateway/turn_effort.go); its key is #87.
 func tuiEffort(workspace, channelID, agent string) func(level string) (string, error) {
 	return func(level string) (string, error) {
 		if level == "" {
