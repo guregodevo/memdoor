@@ -199,13 +199,28 @@ func (s *Server) relayQuestion(run *workflowRun, task string, ev infra.AgentEven
 // pass none.
 func (r *workflowRun) attended() bool { return r.Session != "" }
 
-// taskSession is the session a task's turn runs under; taskOfSession reads it back.
+// taskSession is the session a task's turn runs under; taskOfSession reads it
+// back. It names the RUN, not only the partition: two runs of one workflow
+// with the same partition, in two projects (started in the same second, or a
+// daily partition), shared every step's conversation and its saved history,
+// so their turns queued behind one another and read each other's
+// (2026-11-05: ten bench runs, four on one "direct" session).
 func (r *workflowRun) taskSession(task string) string {
-	return workflowSessionPrefix + r.Workflow + ":" + r.Partition + ":" + task
+	return workflowSessionPrefix + r.Workflow + ":" + r.sessionRun() + ":" + task
+}
+
+// sessionRun is the partition and the run's own stamp ("2026-11-05T151249@
+// 20261105-151249-2"): the run ID is unique, deduplicated within the second.
+func (r *workflowRun) sessionRun() string {
+	stamp := strings.TrimPrefix(r.ID, r.Workflow+"-")
+	if stamp == "" || stamp == r.ID {
+		return r.Partition
+	}
+	return r.Partition + "@" + stamp
 }
 
 func (r *workflowRun) taskOfSession(session string) string {
-	prefix := workflowSessionPrefix + r.Workflow + ":" + r.Partition + ":"
+	prefix := workflowSessionPrefix + r.Workflow + ":" + r.sessionRun() + ":"
 	if strings.HasPrefix(session, prefix) {
 		return strings.TrimPrefix(session, prefix)
 	}

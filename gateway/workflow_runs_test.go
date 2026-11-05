@@ -614,3 +614,30 @@ func TestTheRunListIsThisProjectsOnly(t *testing.T) {
 		t.Fatalf("this project's runs only: %+v", runs)
 	}
 }
+
+// TWO RUNS NEVER SHARE A STEP'S SESSION: the same workflow and partition in
+// two projects (started in the same second, or a daily partition) had one
+// session per step, so their turns queued behind each other and read each
+// other's saved history (2026-11-05, ten bench runs at once). Mutation check:
+// key the session by the partition alone and the sessions are equal.
+func TestTwoRunsNeverShareAStepsSession(t *testing.T) {
+	a := &workflowRun{ID: "team-solve-20261105-151249", Workflow: "team-solve", Partition: "2026-11-05T151249"}
+	b := &workflowRun{ID: "team-solve-20261105-151249-2", Workflow: "team-solve", Partition: "2026-11-05T151249"}
+	if a.taskSession("direct") == b.taskSession("direct") {
+		t.Fatalf("one session for two runs: %q", a.taskSession("direct"))
+	}
+	if got := a.taskOfSession(b.taskSession("direct")); got != "" {
+		t.Fatalf("a run reads another run's step as its own: %q", got)
+	}
+	if got := b.taskOfSession(b.taskSession("direct")); got != "direct" {
+		t.Fatalf("round trip = %q", got)
+	}
+	daily := &workflowRun{ID: "nightly-20261106-020000", Workflow: "nightly", Partition: "2026-11-06"}
+	other := &workflowRun{ID: "nightly-20261106-020001", Workflow: "nightly", Partition: "2026-11-06"}
+	if daily.taskSession("build") == other.taskSession("build") {
+		t.Fatal("a daily partition in two projects shares a session")
+	}
+	if !strings.HasPrefix(a.taskSession("direct"), "workflow:team-solve:") {
+		t.Fatalf("still a workflow session: %q", a.taskSession("direct"))
+	}
+}
