@@ -5,6 +5,7 @@ import (
 	"golang.org/x/term"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -295,6 +296,9 @@ func init() {
 			gatewayAddr = local
 		}
 		gatewayAddr = canonicalGatewayAddr(gatewayAddr)
+		if notice := headlessUpdateNotice(cmd, time.Now()); notice != "" {
+			fmt.Fprintln(os.Stderr, notice)
+		}
 		return requireWorkspaceSlug(cmd, args)
 	}
 	// After a command succeeds, print a consistent "what to do next" line

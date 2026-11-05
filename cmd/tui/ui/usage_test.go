@@ -87,11 +87,19 @@ func TestFooterForAModelPinnedById(t *testing.T) {
 	}
 }
 
-// A published newer build is named in the footer; /update's success quits
+// A published newer build is named on its own line above the footer, and
+// the footer always names the running version (#90); /update's success quits
 // the window with the restart flag set.
 func TestUpdateNoticeAndRestart(t *testing.T) {
-	if line := (Status{Model: "m", Update: "memdoor v1.305 is out — /update installs it"}).line(); !strings.Contains(line, "/update installs it") {
-		t.Fatalf("%q", line)
+	st := Status{Model: "m", Version: "v1.304.0", Update: "memdoor v1.305.0 is out (this is v1.304.0) — /update installs it"}
+	if line := st.updateLine(); !strings.Contains(line, "/update installs it") || !strings.Contains(line, "this is v1.304.0") {
+		t.Fatalf("update line %q", line)
+	}
+	if line := st.line(); strings.Contains(line, "is out") || !strings.Contains(line, "memdoor v1.304.0") {
+		t.Fatalf("the footer names the version, not the update: %q", line)
+	}
+	if (Status{Model: "m"}).updateLine() != "" {
+		t.Fatal("no newer build, no update line")
 	}
 	m := NewPage(PageConfig{Agent: "coder", Ops: Ops{Update: func() (string, error) { return "Installed v1.305.", nil }}})
 	next, cmd := m.Update(updateResultMsg{summary: "Installed v1.305."})

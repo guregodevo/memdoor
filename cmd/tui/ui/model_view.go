@@ -668,6 +668,9 @@ func (m Model) renderFooter() string {
 		line := lipgloss.NewStyle().PaddingLeft(2).Render(status)
 		help = line + "\n" + help
 	}
+	if update := m.status.updateLine(); update != "" {
+		help = lipgloss.NewStyle().PaddingLeft(2).Render(update) + "\n" + help
+	}
 
 	// Input sits in the bordered box (delineated above and below); the mode/help
 	// line goes BELOW the box, not inside it.
