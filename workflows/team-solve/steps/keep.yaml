@@ -1,8 +1,8 @@
 type: command
 # THE NET: team-solve never ends worse than its own single call. The work
-# after the direct attempt (the team's solve, or a repair) replaces it only
-# when it passes a check the attempt did not: the Check passes, or with no
-# Check to run the judge says PASS. Otherwise the direct attempt is put back
+# after a direct attempt that failed test-0 (the team's solve) replaces it
+# only when it passes a check the attempt did not: the Check passes, or with
+# no Check to run the judge says PASS. Otherwise the direct attempt is put back
 # (snapshot.sh). On ctrl-t (2026-11-05) the team path undid a correct direct
 # attempt; the maintainer: "no failure in case of single call pass".
 requires:
@@ -18,12 +18,21 @@ command: |
   if [ "$touched" = no ]; then
     echo "kept: the direct attempt, untouched" | tee "$r/keep.txt"; exit 0
   fi
+  # A direct attempt that passed test-0 stays: a repair after the review is
+  # kept aside in repair.patch, never applied. On astropy-13033 (2026-11-05)
+  # the review failed a correct attempt on requirements the planner had made
+  # up, the repair changed the error message the hidden test expects, and the
+  # judge, reading the same plan, said PASS. A model's verdict is no proof.
+  if [ "$direct" = 0 ]; then
+    bash "$w/snapshot.sh" save "$r" repair > /dev/null
+    bash "$w/snapshot.sh" restore "$r" direct
+    echo "put back: the direct attempt, which passed test-0 (the repair after the review is in $r/repair.patch, not applied: check ${final:-?}, judge $judged)" | tee "$r/keep.txt"
+    bash "$w/changes.sh" "$r" > /dev/null
+    exit 0
+  fi
   proven=no
   if [ "$final" = 0 ] && [ "$judged" != FAIL ]; then proven=yes; fi
   if [ "$final" = none ] && [ "$judged" = PASS ]; then proven=yes; fi
-  # A direct attempt that passed is replaced only on an explicit PASS: a
-  # judge that narrated instead of answering is no proof (django-13344 net4).
-  if [ "$direct" = 0 ] && [ "$judged" != PASS ]; then proven=no; fi
   if [ "$proven" = yes ]; then
     echo "kept: the team's work (check $final, judge $judged; the direct attempt's check was ${direct:-?})" | tee "$r/keep.txt"
   else
