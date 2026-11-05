@@ -21,7 +21,7 @@ prompt: |
   Each file or directory the work may touch, in backticks, one per line (`scripts/scan.sh`, `docs/`). What the prompt allows is the Scope: when it says "files under cmd/cli/cmd/ only", the Scope is `cmd/cli/cmd/`. A new file whose name the prompt does not give (a test to add, a page to write) is covered by its directory, never by a name you guess: a guessed `auth_test.go` failed a correct `auth_status_test.go` (2026-11-05). `.` only when the task is the whole tree.
 
   ## Done when
-  What the reviewer and the judge check, one line each, each a thing the prompt asks for.
+  What the reviewer and the judge check, one line each, each a thing the prompt asks for, in the prompt's terms. Nothing the prompt does not ask: not the project's conventions (a changelog entry, docs, a release note), not a test of the shape you would write, not a wording the prompt does not give. A line you infer because the prompt is unclear starts with `(inferred)`.
 
   ## Approach
   The decomposition, and two or three candidate approaches with their tradeoffs, for the solver if the first attempt fails.
