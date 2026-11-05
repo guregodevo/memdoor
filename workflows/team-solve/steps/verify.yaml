@@ -1,5 +1,5 @@
 type: command
-# The check again on the final tree, then the judge's verdict when it ran.
+# The check and the Scope (scope.sh) again on the final tree, then the judge's verdict when it ran.
 # A failing check or a FAIL verdict fails the run.
 requires:
   - table_pattern: repair
@@ -10,6 +10,7 @@ command: |
   bash "$w/changes.sh" "$r"
   bash "$w/check.sh" "$r" "$r/final-check.log"
   result=$?
+  bash "$w/scope.sh" "$r" >> "$r/final-check.log" || result=1
   tail -40 "$r/final-check.log"
   [ "$result" = 1 ] && exit 1
   if [ -f "$r/verdict.md" ]; then head -1 "$r/verdict.md"; grep -q '^verdict: PASS' "$r/verdict.md" || exit 1; fi

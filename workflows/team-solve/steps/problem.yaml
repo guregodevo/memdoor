@@ -20,7 +20,9 @@ command: |
   python3 - "$w/task.template.md" "$r/prompt.md" "$r/task.md" <<'PY'
   import sys
   template, prompt, out = sys.argv[1:]
-  open(out, "w").write(open(template).read().replace("@@PROMPT@@", open(prompt).read().strip()))
+  # A prompt's own headings would read as task.md's sections: one level down.
+  text = "\n".join("#" + l if l.startswith("## ") else l for l in open(prompt).read().strip().split("\n"))
+  open(out, "w").write(open(template).read().replace("@@PROMPT@@", text))
   PY
   cp "$w/done.sh" "$r/done.sh"
   touch "$r/start"

@@ -19,14 +19,11 @@ plan)
   done
   { section "$t" Check | grep -q '`[^`]*`' || section "$t" Check | grep -qwE 'samples|judge'; } \
     || no 'task.md: Check names no command in backticks, nor samples, nor judge'
+  section "$t" Scope | grep -q '`[^`]*`' || no 'task.md: Scope names no file or directory in backticks'
   first=$(grep -m1 '[^[:space:]]' "$r/prompt.md")
   grep -qF -- "$first" "$t" || no 'task.md: the Prompt section was changed; put it back as prompt.md has it'
   grep -q '[^[:space:]]' "$r/plan.md" 2>/dev/null || no 'plan.md is missing or empty'
   [ -f "$r/notes.md" ] || no 'notes.md is missing' ;;
-ideate-a|ideate-b)
-  f="$r/proposal-${step#ideate-}.md"
-  n=$(grep -c '[^[:space:]]' "$f" 2>/dev/null)
-  [ "${n:-0}" -ge 5 ] || no "$f: no proposal yet (5 lines at least)" ;;
 solve)
   bash "$w/changes.sh" "$r" > /dev/null
   [ -s "$r/changes.diff" ] || no 'nothing in the project changed yet: do the task as the Deliverable says' ;;
