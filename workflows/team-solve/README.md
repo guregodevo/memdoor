@@ -47,4 +47,4 @@ A turn that ends with its target failing is told what is missing and goes on; wh
 
 **The score.** The method is [GVS5H](https://github.com/slee-persis/GVS5H)'s. The published benchmark, 9.8 of 10 on the first ten LiveCodeBench Hard problems against Fable 5's 8.0, was run with the authors' exact prompts, in the steps kept at [examples/workflows/team-solve](../../examples/workflows/team-solve/). This built-in's prompts differ (a task from a prompt, a target on every step), so it has no benchmark score of its own yet; its runs are under [examples/workflows/team-solve/built-in](../../examples/workflows/team-solve/built-in/).
 
-Needs bash, git for a change to a repository, and Python 3 for the samples.
+Needs bash and awk, git for a change to a repository, and Python 3 only for the samples.
