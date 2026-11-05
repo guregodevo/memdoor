@@ -131,7 +131,7 @@ func TestSeedWritesTeamSolveWithItsSampleAndCheck(t *testing.T) {
 	t.Setenv("HOME", home)
 	SeedEmbeddedWorkflows()
 	dir := filepath.Join(home, ".memdoor", "workflows", "team-solve")
-	for _, rel := range []string{"check-samples.sh", "changes.sh", "check.sh", "done.sh", "task.template.md", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml", "steps/judge.yaml", "scope.sh", "steps/context.yaml", "steps/ideate.yaml", "steps/direct.yaml", "steps/test-0.yaml", "steps/outline.yaml", "steps/settle.yaml", "steps/recheck.yaml", "verdict.sh", "snapshot.sh", "steps/keep.yaml", "steps/baseline.yaml", "task.sh", "settle.sh"} {
+	for _, rel := range []string{"check-samples.sh", "changes.sh", "check.sh", "done.sh", "task.template.md", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml", "steps/judge.yaml", "scope.sh", "steps/context.yaml", "steps/ideate.yaml", "steps/direct.yaml", "steps/test-0.yaml", "steps/outline.yaml", "steps/settle.yaml", "steps/recheck.yaml", "verdict.sh", "snapshot.sh", "steps/keep.yaml", "steps/baseline.yaml", "task.sh", "settle.sh", "failures.sh"} {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err != nil {
 			t.Fatalf("team-solve seeded without %s: %v", rel, err)
 		}

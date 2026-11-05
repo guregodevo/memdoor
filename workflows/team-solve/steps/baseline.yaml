@@ -1,7 +1,8 @@
 type: command
 # The Check on the tree as the run found it, in a clean copy (a git worktree
 # of the start): when it already fails there, it is broken in this place, not
-# by the work, and check.sh leaves the decision to the judge. A Django test
+# by the work, and check.sh counts only the failing tests the work adds (or,
+# when the log lists none, leaves the decision to the judge). A Django test
 # that trips over the machine's asgiref failed every attempt the same, and the
 # team "fixed" a correct one (django-13344, 2026-11-05).
 requires:
