@@ -228,7 +228,8 @@ type Status struct {
 	// Update, when set, says a newer build is published ("memdoor v1.305 is
 	// out — /update installs it"); the footer shows it until it is done.
 	Update string
-	// Version is the build the window runs, always in the footer (#90).
+	// Version is the build the window runs, always in the header, next to
+	// live (#90).
 	Version string
 	// Gate, when set, is why a turn cannot run now ("no model configured —
 	// export a provider key …"). Enter shows it instead of sending; the
@@ -297,9 +298,6 @@ func (s Status) line() string {
 		colour = colRead
 	}
 	parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color(colour)).Render(effort+" (shift+tab)"))
-	if s.Version != "" {
-		parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color(colDim)).Render("memdoor "+s.Version))
-	}
 	if len(parts) == 0 {
 		return ""
 	}

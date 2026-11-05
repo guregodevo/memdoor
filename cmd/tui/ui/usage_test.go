@@ -95,8 +95,8 @@ func TestUpdateNoticeAndRestart(t *testing.T) {
 	if line := st.updateLine(); !strings.Contains(line, "/update installs it") || !strings.Contains(line, "this is v1.304.0") {
 		t.Fatalf("update line %q", line)
 	}
-	if line := st.line(); strings.Contains(line, "is out") || !strings.Contains(line, "memdoor v1.304.0") {
-		t.Fatalf("the footer names the version, not the update: %q", line)
+	if line := st.line(); strings.Contains(line, "is out") {
+		t.Fatalf("the footer does not carry the update: %q", line)
 	}
 	if (Status{Model: "m"}).updateLine() != "" {
 		t.Fatal("no newer build, no update line")

@@ -180,8 +180,15 @@ func (m Model) renderHeader() string {
 	} else {
 		title = titleStyle.Render(title)
 	}
-	left := sessionStyle.Render(fmt.Sprintf("%s %s · %s · %s",
-		coloredDotStyle.Render(statusDot), scopeStyle.Render(m.scopeLabel()), title, m.modeLabel()))
+	// THE VERSION, next to live (#90): in the footer it came last and a
+	// terminal under 150 columns cut it (v1.794.0, a tmux check at 120 and
+	// 100); here it is near the start and only the title can run out.
+	status := coloredDotStyle.Render(statusDot)
+	if m.status.Version != "" {
+		status += " " + lipgloss.NewStyle().Foreground(lipgloss.Color(colDim)).Render(m.status.Version)
+	}
+	left := sessionStyle.Render(fmt.Sprintf("%s · %s · %s · %s",
+		status, scopeStyle.Render(m.scopeLabel()), title, m.modeLabel()))
 
 	// Right: persistent context-window usage (Claude-style), color-graded by
 	// utilization so it warns as the window fills.
