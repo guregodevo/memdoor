@@ -1650,6 +1650,9 @@ func pinTaskModel(sess *Session, model, actor string) error {
 		if tm.MaxTokens > 0 {
 			sess.SetMetadata(sessionMaxTokensKey, strconv.FormatInt(tm.MaxTokens, 10))
 		}
+		if tm.Temperature > 0 {
+			sess.SetMetadata(sessionTemperatureKey, strconv.FormatFloat(tm.Temperature, 'f', -1, 64))
+		}
 		return nil
 	}
 	applyPersistentPin(actor, sess)
@@ -1711,7 +1714,9 @@ func parseTaskModel(model string) (m taskModel) {
 				i++
 			}
 		case "temperature", "temp":
-			// The sampling temperature for an llm task. GVS5H's harness sets
+			// The sampling temperature for the task: an llm task's one call,
+			// or every call of an agent task's turn (withTaskTemperature).
+			// GVS5H's harness sets
 			// one per role, 0.2 to 0.4; left out, the host's default answered
 			// (2026-10-29: the authors' 27B solved in five calls what ours
 			// took thirty-five on).

@@ -279,6 +279,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	if n, err := strconv.ParseInt(sessionString(session, sessionMaxTokensKey), 10, 64); err == nil && n > 0 {
 		ctx = withMaxOutputOverride(ctx, replyLimit(maxOutputTokens(sessionModel(session)), n))
 	}
+	ctx = withTaskTemperature(ctx, session)
 	ctx = context.WithValue(ctx, sharedctx.EffortKey, effort)
 	reportRoute(ctx, sessionEffortUsed, effort)
 	reportRoute(ctx, sessionEffortFrom, effortFrom)
@@ -1256,4 +1257,15 @@ func withLeadingText(p llm.MessageParam, text string) llm.MessageParam {
 	}
 	p.Content = append([]llm.ContentBlockParamUnion{llm.NewTextBlock(text)}, p.Content...)
 	return p
+}
+
+// withTaskTemperature puts a workflow task's own temperature (`temperature T`
+// on its model line) on the turn, over the agent's own: an agent step on a
+// free model ran at the host's default with no way to set it (2026-11-05).
+// The empty-step retry still samples hotter on top of it.
+func withTaskTemperature(ctx context.Context, session *Session) context.Context {
+	if t, err := strconv.ParseFloat(sessionString(session, sessionTemperatureKey), 64); err == nil && t > 0 {
+		return context.WithValue(ctx, sharedctx.BuddyTemperatureKey, t)
+	}
+	return ctx
 }

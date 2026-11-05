@@ -1,6 +1,11 @@
 package gateway
 
-import "testing"
+import (
+	"context"
+	"testing"
+
+	sharedctx "memdoor/pkg/shared/context"
+)
 
 // A task's model line carries the host preference the way /model does.
 func TestATaskModelLineNamesTheHostPreference(t *testing.T) {
@@ -77,5 +82,32 @@ func TestATaskModelLineSetsTopPAndTopK(t *testing.T) {
 		if m := parseTaskModel(bad); m.TopP != 0 || m.TopK != 0 {
 			t.Errorf("%q: top_p %v top_k %d, want the defaults", bad, m.TopP, m.TopK)
 		}
+	}
+}
+
+// AN AGENT STEP TAKES ITS TEMPERATURE TOO: the model line's `temperature T`
+// reached only llm tasks, and an agent step on a free model sampled at the
+// host's default (2026-11-05). Mutation check: drop the SetMetadata in
+// pinTaskModel, or withTaskTemperature's ctx value, and this fails.
+func TestAnAgentStepTakesItsTemperature(t *testing.T) {
+	step := &Session{ID: "workflow:w:p:fix", Metadata: map[string]interface{}{}}
+	if err := pinTaskModel(step, "openrouter:nvidia/nemotron-3.5-lightning:free thinking off temperature 0.2", "greg"); err != nil {
+		t.Fatal(err)
+	}
+	ctx := withTaskTemperature(context.Background(), step)
+	if got, _ := ctx.Value(sharedctx.BuddyTemperatureKey).(float64); got != 0.2 {
+		t.Fatalf("the turn's temperature = %v, want 0.2", got)
+	}
+	if e, _ := step.GetMetadataValue(sessionEffortKey); e != "off" {
+		t.Fatalf("thinking off still applies: %v", e)
+	}
+	// None on the line: the agent's own temperature stays.
+	plain := &Session{ID: "workflow:w:p:other", Metadata: map[string]interface{}{}}
+	if err := pinTaskModel(plain, "openrouter:nvidia/nemotron-3.5-lightning:free", "greg"); err != nil {
+		t.Fatal(err)
+	}
+	ctx = context.WithValue(context.Background(), sharedctx.BuddyTemperatureKey, 0.6)
+	if got, _ := withTaskTemperature(ctx, plain).Value(sharedctx.BuddyTemperatureKey).(float64); got != 0.6 {
+		t.Fatalf("no temperature on the line keeps the agent's: %v", got)
 	}
 }
