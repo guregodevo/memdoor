@@ -216,8 +216,7 @@ Go 1.25:
 
 ```bash
 git clone https://github.com/guregodevo/memdoor && cd memdoor
-make build                             # ./memdoor, stamped with the tag it was built from
-cp memdoor ~/.local/bin/               # or anywhere on your PATH
+make install                           # builds ./memdoor, then installs it as install.sh does
 ```
 
 ## Documentation
