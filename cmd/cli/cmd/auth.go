@@ -194,11 +194,16 @@ var authStatusCmd = &cobra.Command{
 			return nil
 		}
 		fmt.Printf("Authenticated as: %s\n", creds.Email)
+		if machineOwnSession(creds.Email) {
+			// A free account never signs in (#88): nothing to renew by hand.
+			fmt.Println("This machine's own session: it does not run out, and it renews itself if the gateway asks.")
+			return nil
+		}
 		if !creds.ExpiresAt.IsZero() {
 			remaining := time.Until(creds.ExpiresAt)
 			if remaining <= 0 {
-				fmt.Printf("Token expired %s ago — sign in again with 'memdoor login'\n",
-					humanizeDuration(-remaining))
+				fmt.Printf("Token expired %s ago — this account was signed in by hand: memdoor auth login-direct --email %s --password …\n",
+					humanizeDuration(-remaining), creds.Email)
 			} else {
 				fmt.Printf("Token expires in %s (%s)\n",
 					humanizeDuration(remaining),

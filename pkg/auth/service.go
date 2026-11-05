@@ -27,6 +27,28 @@ type Logger interface {
 // gateway restarts; only natural expiry or `memdoor auth logout` clears them.
 const SessionTTL = 30 * 24 * time.Hour
 
+// A FREE ACCOUNT NEVER SIGNS IN (#88). The machine's own user, the one its
+// first run generated, keeps its password in ~/.memdoor/local-login, which
+// never expires and with which the CLI can sign in at any moment: a 30-day
+// session on top of it bought no safety and was the one way that person got
+// stuck (2026-11-05: `memdoor workflow status` answered "Authentication
+// required" on a machine whose session had lapsed). Its sessions do not run
+// out, and one issued before this, with 30 days, is still taken after them.
+
+// MachineSessionTTL is the machine's own user's session: in practice, never.
+const MachineSessionTTL = 100 * 365 * 24 * time.Hour
+
+// MachineUser names the user this machine generated at its first run (the
+// email ~/.memdoor/local-login holds), "" when there is none. The gateway sets
+// it; pkg/auth reads no files.
+var MachineUser = func() string { return "" }
+
+// isMachineUser reports whether u is the machine's own user.
+func isMachineUser(u *User) bool {
+	m := strings.TrimSpace(MachineUser())
+	return u != nil && m != "" && strings.EqualFold(strings.TrimSpace(u.Email), m)
+}
+
 // service implements the Service interface
 // Pattern: Dependency injection with interfaces
 type service struct {
@@ -180,10 +202,14 @@ func (s *service) openSession(ctx context.Context, user *User) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to generate token: %w", err)
 	}
+	ttl := SessionTTL
+	if isMachineUser(user) {
+		ttl = MachineSessionTTL
+	}
 	session := &Session{
 		UserID:      user.ID,
 		WorkspaceID: user.WorkspaceID,
-		ExpiresAt:   time.Now().Add(SessionTTL),
+		ExpiresAt:   time.Now().Add(ttl),
 		CreatedAt:   time.Now(),
 	}
 	if err := s.repo.CreateSession(ctx, session, s.tokenGenerator.HashToken(token)); err != nil {
@@ -334,15 +360,16 @@ func (s *service) VerifyToken(ctx context.Context, token string) (*User, error) 
 		return nil, fmt.Errorf("invalid token: %w", err)
 	}
 
-	// Check expiration
-	if time.Now().After(session.ExpiresAt) {
-		return nil, fmt.Errorf("token expired")
-	}
-
 	// Get user
 	user, err := s.repo.GetUserByID(ctx, session.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("user not found")
+	}
+
+	// Check expiration: the machine's own user's session does not run out,
+	// even one issued with 30 days before it stopped running out.
+	if time.Now().After(session.ExpiresAt) && !isMachineUser(user) {
+		return nil, fmt.Errorf("token expired")
 	}
 
 	return user, nil
