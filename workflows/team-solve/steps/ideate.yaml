@@ -1,0 +1,23 @@
+type: llm
+each: [a, b]
+# Ideators A and B (one file, each:): one call each, no tools, so an ideator
+# proposes and cannot do the task; an agent ideator on a free model made the
+# fix itself, twice (2026-11-05). It reads context.md (task.md, plan.md and
+# the Scope's files) and its answer is the proposal file.
+requires:
+  - table_pattern: context
+prompt: |
+  {{ file (printf ".memdoor/runs/team-solve-%s/context.md" .partition) }}
+
+  You are independent ideator {{ if eq .item "a" }}A{{ else }}B{{ end }} on the task above: task.md is the task, plan.md the planner's
+  decomposition, and the files after them are the ones the Scope names, as they are now. Another ideator writes a proposal at the same time; a solver then does the work from the two.
+
+  Your proposal: {{ if eq .item "a" }}the most direct approach you can argue meets every line of Done when.{{ else }}an alternative from a different family than the obvious approach (a program: if the obvious one is dynamic programming, try greedy, math or a data structure; a change to a codebase: a different place to cut, a different sequence of steps; a document: a different structure or angle), with its tradeoffs against the obvious one.{{ end }}
+
+  For a program: pseudocode, the invariant, correctness, complexity, edge cases. For a change to a codebase: the files and the edits in order (the lines as they are now and as they should be), what could break and how the Check will show it. For a document: the outline, the claims and what backs each. Stay within the Scope and change nothing the task did not ask for.
+
+  Answer with the proposal alone, in markdown, five lines at least.
+target:
+  file: .memdoor/runs/team-solve-{{.partition}}/proposal-{{.item}}.md
+timeout: 30m
+max_retries: 1

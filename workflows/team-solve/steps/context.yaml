@@ -1,0 +1,30 @@
+type: command
+# What the ideators read, in one file: task.md, plan.md and the files the
+# Scope names (a directory: its file list). The ideators are llm steps, one
+# call each and no tools: an agent ideator on a free model did the task
+# itself instead of proposing (2026-11-05, twice).
+requires:
+  - table_pattern: plan
+command: |
+  r=.memdoor/runs/team-solve-{{.partition}}; out="$r/context.md"
+  {
+    printf '# task.md\n\n'; cat "$r/task.md"
+    printf '\n\n# plan.md\n\n'; cat "$r/plan.md"
+    sed -n '/^## Scope$/,/^## /p' "$r/task.md" | sed '1d;/^## /d' | grep -o '`[^`]*`' | tr -d '`' | sed 's#^\./##; s#/*$##; s#^$#.#' \
+      | while IFS= read -r p; do
+        if [ -f "$p" ]; then
+          printf '\n\n# %s\n\n```\n' "$p"; head -c 40000 "$p"; printf '\n```\n'
+        elif [ -d "$p" ]; then
+          printf '\n\n# %s (the files in it)\n\n' "$p"
+          { git ls-files -- "$p" 2>/dev/null || find "$p" -type f; } | grep -v '^\.memdoor/' | head -300
+          [ "$p" = . ] && [ -f README.md ] && { printf '\n\n# README.md\n\n'; head -c 20000 README.md; }
+        else
+          printf '\n\n# %s: not there yet (a file the work makes)\n' "$p"
+        fi
+      done
+  } > "$out"
+  printf 'context: %s bytes in %s\n' "$(wc -c < "$out" | tr -d ' ')" "$out"
+target:
+  file: .memdoor/runs/team-solve-{{.partition}}/context.md
+timeout: 2m
+max_retries: 0

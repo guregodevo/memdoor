@@ -6,7 +6,8 @@ requires:
 prompt: |
   You are the solver in a fresh context. The run's files are in .memdoor/runs/team-solve-{{.partition}}/: task.md (the task: the prompt
   and what plan settled), plan.md, notes.md (the ledger every role writes
-  to). They are never part of the work and never committed.
+  to). They are never part of the work and never committed. Keep
+  no rule with the notes tool: it writes the project's AGENTS.md.
   Read task.md, plan.md, notes.md, proposal-a.md and proposal-b.md there. Select
   and justify an approach in the Solver decision section of notes.md. Then do
   the task as task.md's Deliverable says: change the project's files within
