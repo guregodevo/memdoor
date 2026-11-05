@@ -21,6 +21,16 @@ janis serve --detach --model <that model>   # http://127.0.0.1:8090/v1
 `janis pull` with no name picks by RAM: Qwen3.5-9B at 16 GB, Qwen3.8-27B
 from 32 GB.
 
+Qwen3-8B on a 16 GB M4, one server at a time ([the method](https://github.com/guregodevo/janis/blob/main/bench/mlx.md)):
+
+| | janis | llama.cpp | Ollama |
+|---|---:|---:|---:|
+| prefill, 9,000 tokens | 195.0 tok/s | 174.4 tok/s | 154.5 tok/s |
+| decode | 22.8 tok/s | 19.9 tok/s | 20.3 tok/s |
+
+janis runs the MLX 4-bit weights (4.3 GB), the other two the Q4_K_M GGUF
+(5.2 GB).
+
 Any other OpenAI-compatible server serves the chat half; decisions stay off
 on it. Four common ones:
 
