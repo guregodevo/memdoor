@@ -49,11 +49,12 @@ from nothing and reads only the files on disk, in
 
 ## Never worse than its own single call
 
-The direct attempt is saved before the team touches it. The team's work
-replaces it only when it passes a check the attempt did not: the Check
-passes, or, with no Check to run, the judge says PASS. A repair over an
-attempt that passed needs the judge's PASS. Otherwise the attempt is put
-back, new and deleted files included, and `keep.txt` says why.
+The direct attempt is saved before the team touches it. When it passed
+`test-0`, it stays: a repair after the review is saved as `repair.patch`
+and not applied, since a model's verdict is no proof. When it failed, the
+team's work replaces it only when it passes a check the attempt did not: the
+Check passes, or, with no Check to run, the judge says PASS. Otherwise the
+attempt is put back, new and deleted files included, and `keep.txt` says why.
 
 The Check decides, not the planner's Scope: a change outside the Scope goes
 to the review, which fails it only when the task does not need it (an
