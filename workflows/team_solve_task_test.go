@@ -67,7 +67,7 @@ func TestTeamSolveTaskNeedsNoPythonAndKeepsAnyText(t *testing.T) {
 	task := string(b)
 	for _, want := range []string{
 		"Fix pkg/x/a.go — the café test says “hi”.", // every byte as written
-		"\n### Context\n",                            // the prompt's heading one level down
+		"\n### Context\n", // the prompt's heading one level down
 		"## Deliverable\n\nchanges to this tree\n",
 		"## Check\n\n`go test ./pkg/x/`\n", // the Check the prompt names
 		"`pkg/x/a.go`",                     // a path the prompt names that exists
