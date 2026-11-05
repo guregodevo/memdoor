@@ -1,7 +1,7 @@
 # A pull request from this repository is reviewed by Memdoor's own pr-review
 # workflow, through the published action, on the OpenRouter secret: glm-5.3-flash
-# (it refuses thinking off; the release after 2026-11-02 retries it with effort
-# low, and until then this step fails with HTTP 400) reads the diff in one call (MEMDOOR_LEAN, no agent loop that builds and runs
+# (it refuses thinking off with HTTP 400, and the call is asked again with effort
+# low: #25) reads the diff in one call (MEMDOOR_LEAN, no agent loop that builds and runs
 # the tests: seconds, not minutes) and each P0 gets a second look. Its P0s are
 # advisory: the review is the job summary. A pull request from a fork has no
 # secret and is not reviewed here. It runs on pull_request, never
