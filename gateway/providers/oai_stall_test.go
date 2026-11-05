@@ -188,3 +188,67 @@ func TestAKeylessRuntimeMayReadInSilence(t *testing.T) {
 		t.Fatalf("err=%v body=%s", err, body)
 	}
 }
+
+// keepAlives answers with OpenRouter's keep-alive comments only, until the
+// client hangs up.
+func keepAlives(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	for {
+		if _, err := io.WriteString(w, ": OPENROUTER PROCESSING\n\n"); err != nil {
+			return
+		}
+		w.(http.Flusher).Flush()
+		select {
+		case <-r.Context().Done():
+			return
+		case <-time.After(30 * time.Millisecond):
+		}
+	}
+}
+
+// A request stalled upstream gets keep-alive comments and nothing else: it is
+// cut after keepAliveOnlyAfter and asked again, not held until the step's
+// timeout (#99: an ideator sat over ten minutes, a CI review was cut at 10).
+func TestKeepAlivesAloneAreCutAndAskedAgain(t *testing.T) {
+	withStallAfter(t, 150*time.Millisecond)
+	withKeepAliveOnlyAfter(t, 400*time.Millisecond)
+	var calls int32
+	c, done := oaiTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if atomic.AddInt32(&calls, 1) == 1 {
+			keepAlives(w, r)
+			return
+		}
+		sse(w, `{"choices":[{"index":0,"delta":{"content":"OK"}}]}`, `{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":1}}`)
+	})
+	defer done()
+	start := time.Now()
+	msg, err := ask(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if atomic.LoadInt32(&calls) != 2 || msg.Content[0].Text != "OK" {
+		t.Fatalf("calls=%d reply=%+v", calls, msg.Content)
+	}
+	if time.Since(start) > 3*time.Second {
+		t.Fatalf("the keep-alives were waited out: %s", time.Since(start))
+	}
+}
+
+// Keep-alives on every attempt: the call fails saying what the provider sent.
+func TestKeepAlivesEveryTimeFailSayingSo(t *testing.T) {
+	withStallAfter(t, 150*time.Millisecond)
+	withKeepAliveOnlyAfter(t, 300*time.Millisecond)
+	var calls int32
+	c, done := oaiTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&calls, 1)
+		keepAlives(w, r)
+	})
+	defer done()
+	_, err := ask(c)
+	if err == nil || !strings.Contains(err.Error(), "only keep-alive comments") {
+		t.Fatalf("want the keep-alives named, got %v", err)
+	}
+	if n := atomic.LoadInt32(&calls); int(n) != len(oaiRetryAfter)+1 {
+		t.Fatalf("every attempt is spent before failing: %d", n)
+	}
+}
