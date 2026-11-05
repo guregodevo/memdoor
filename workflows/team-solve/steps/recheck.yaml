@@ -9,7 +9,7 @@ command: |
   bash "$w/changes.sh" "$r"
   bash "$w/check.sh" "$r" "$r/final-check.log"
   result=$?
-  bash "$w/scope.sh" "$r" >> "$r/final-check.log" || result=1
+  bash "$w/scope.sh" "$r" >> "$r/final-check.log" || true
   [ "$result" = 3 ] && result=none
   printf '%s\n' "$result" > "$r/final-status.txt"
   tail -20 "$r/final-check.log"

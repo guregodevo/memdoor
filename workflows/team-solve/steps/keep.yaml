@@ -1,0 +1,35 @@
+type: command
+# THE NET: team-solve never ends worse than its own single call. The work
+# after the direct attempt (the team's solve, or a repair) replaces it only
+# when it passes a check the attempt did not: the Check passes, or with no
+# Check to run the judge says PASS. Otherwise the direct attempt is put back
+# (snapshot.sh). On ctrl-t (2026-11-05) the team path undid a correct direct
+# attempt; the maintainer: "no failure in case of single call pass".
+requires:
+  - table_pattern: judge
+command: |
+  r=.memdoor/runs/team-solve-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  direct=$(cat "$r/direct-status.txt" 2>/dev/null)
+  final=$(cat "$r/final-status.txt" 2>/dev/null)
+  judged=$(bash "$w/verdict.sh" "$r/verdict.md")
+  touched=no
+  { [ "$direct" != 0 ] || [ -s "$r/repair.md" ]; } && touched=yes
+  if [ "$touched" = no ]; then
+    echo "kept: the direct attempt, untouched" | tee "$r/keep.txt"; exit 0
+  fi
+  proven=no
+  if [ "$final" = 0 ] && [ "$judged" != FAIL ]; then proven=yes; fi
+  if [ "$final" = none ] && [ "$judged" = PASS ]; then proven=yes; fi
+  # A direct attempt that passed is replaced only on an explicit PASS: a
+  # judge that narrated instead of answering is no proof (django-13344 net4).
+  if [ "$direct" = 0 ] && [ "$judged" != PASS ]; then proven=no; fi
+  if [ "$proven" = yes ]; then
+    echo "kept: the team's work (check $final, judge $judged; the direct attempt's check was ${direct:-?})" | tee "$r/keep.txt"
+  else
+    bash "$w/snapshot.sh" restore "$r" direct
+    echo "put back: the direct attempt (the team's work did not prove better: check ${final:-?}, judge $judged)" | tee "$r/keep.txt"
+    bash "$w/changes.sh" "$r" > /dev/null
+  fi
+timeout: 5m
+max_retries: 0
