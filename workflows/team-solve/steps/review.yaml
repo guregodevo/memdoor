@@ -1,29 +1,36 @@
-type: agent
-agent: coder
+type: llm
+# The review: one call on what the run did, as captured: the task, the
+# change, what the Check printed and the Scope report. An agent review took 4
+# to 6 minutes on the bench's tasks after the Check had already passed
+# (2026-11-05, #93); this one reads the same evidence and writes the verdict.
+system: "You answer in this one message. You have no tools: you cannot open a file, list a directory or run a command, and nothing you write will be run. Everything you need is in the message. Do not say what you will look at: answer. Start your answer with the line verdict: PASS or verdict: FAIL."
 requires:
   - table_pattern: test
 prompt: |
-  You are the manager/reviewer in a fresh context. The run's files are in .memdoor/runs/team-solve-{{.partition}}/: task.md (the task: the prompt
-  and what plan settled), plan.md, notes.md (the ledger every role writes
-  to). They are never part of the work and never committed. Keep
-  no rule with the notes tool: it writes the project's AGENTS.md.
-  Read task.md, plan.md, notes.md, changes.diff (everything the run
-  changed), test-status.txt, test-output.log and scope.txt there. Inspect the actual
-  captured results and the actual change, not a previous agent's claims.
-  Write .memdoor/runs/team-solve-{{.partition}}/review.md whose first line is `verdict: PASS`
-  or `verdict: FAIL`, then the findings, and append the review to notes.md.
-  The verdict is on the work against Done when, not on what the work
-  reports: a review or an audit that finds problems passes when its findings
-  are true and grounded. FAIL when the check status is nonzero, when the change misses a line of
-  Done when, touches files outside the Scope (scope.txt says OUTSIDE THE SCOPE), does
-  what the task did not ask, or removes content the task did not ask to
-  remove (scope.txt counts the lines each file lost). A status of none means nothing could be run: judge the change against
-  task.md yourself. On FAIL, append concrete repair instructions to notes.md
-  for the next fresh worker. Do not change any project file. Do not alter
-  test data or bypass a failing check. Verify the review is on disk. There is
-  exactly one conditional repair round followed by a final check; do not
-  claim completion before it passes.
+  # The task
+
+  {{ file (printf ".memdoor/runs/team-solve-%s/task.md" .partition) }}
+
+  # What the run changed (a unified diff; new files in full)
+
+  ```diff
+  {{ file (printf ".memdoor/runs/team-solve-%s/changes.diff" .partition) }}
+  ```
+
+  # What the Check printed, and the Scope report
+
+  ```
+  {{ file (printf ".memdoor/runs/team-solve-%s/test-output.log" .partition) }}
+  ```
+
+  Check status: {{ file (printf ".memdoor/runs/team-solve-%s/test-status.txt" .partition) }} (0 passed, 1 failed, none: nothing could be run).
+
+  You are the reviewer. Judge the change above against the task's Done when, from this evidence alone. The verdict is on the work, not on what it says of itself: a review or an audit the task asked for passes when its findings are true and grounded.
+
+  FAIL when the check status is 1, when the change misses a line of Done when, touches a file the report says is OUTSIDE THE SCOPE, does what the task did not ask, or removes content the task did not ask to remove (the report counts the lines each file lost). With a status of none, judge the change against the task yourself. Otherwise PASS.
+
+  Answer with the verdict on the first line, exactly `verdict: PASS` or `verdict: FAIL`, then the findings, one per line. On FAIL, end with the repair instructions for the worker who fixes it: what to change, in which file, and why.
 target:
-  command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh review .memdoor/runs/team-solve-{{.partition}}
-timeout: 40m
+  file: .memdoor/runs/team-solve-{{.partition}}/review.md
+timeout: 20m
 max_retries: 1

@@ -1,0 +1,16 @@
+type: agent
+agent: coder
+# The single call, first, while plan writes the task beside it: one turn on
+# the person's prompt as they wrote it, in the tree. When its attempt passes
+# the Check and the Scope (test-0), the team after it only verifies; when it
+# does not, the ideators and the solver take over from it. A single call fixed
+# two scoped tasks in a minute and lost its way on an open-ended one that the
+# team passed (2026-11-05, #84, #93): first the minute, then the team if needed.
+requires:
+  - table_pattern: problem
+prompt: |
+  {{ file (printf ".memdoor/runs/team-solve-%s/prompt.md" .partition) }}
+
+  Do not commit, check out, reset or stash: the tree's HEAD stays where it is. Write what the task asks for as soon as you have a first version, then improve it: a turn that ends without it has done nothing. Keep no rule with the notes tool (it writes the project's AGENTS.md), and leave .memdoor/ alone.
+timeout: 30m
+max_retries: 0

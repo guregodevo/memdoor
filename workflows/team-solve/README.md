@@ -10,18 +10,32 @@ memdoor workflow run team-solve --model qwen/qwen3.8-27b "…"
 
 The output is whatever the task asks for: changes to the tree (a refactor, a fix, a feature across many files), a new program, a document. The run's own files never mix with the project's: they are in `.memdoor/runs/team-solve-<run>/`, out of git.
 
-**The task.** The prompt goes into the workflow's task template (`task.template.md`) as `task.md` in the run's folder. `plan` reads the project and fills in the rest of it: the Deliverable, the Check (one command that exits 0 when the work is right, such as `go test ./...`; or the samples; or the judge), the Scope (the files the work may touch) and Done when. Every later role works from that file.
+**The task.** The prompt goes into the workflow's task template (`task.template.md`) as `task.md` in the run's folder. `plan` settles the rest of it: the Deliverable, the Check (one command that exits 0 when the work is right, such as `go test ./...`; or the samples; or the judge), the Scope (the files and directories the work may touch, in backticks) and Done when. Every later role works from that file.
 
-**The team.** `problem` writes the task and records the tree's state. `plan` fills the task and writes `plan.md` and `notes.md`, the ledger. `context` gathers `task.md`, `plan.md` and the Scope's files into `context.md`. `ideate-a` and `ideate-b` (one file, `ideate.yaml`, with `each: [a, b]`), in parallel, are one model call each with no tools: each answers with a proposal, kept as `proposal-a.md` and `proposal-b.md`, and cannot change a project file. `solve` does the work within the Scope. `test` writes `changes.diff` (everything the run changed), runs the Check, and checks the Scope (`scope.sh`: a file changed outside it fails the check). `review` reads the diff and the check's output and writes `review.md`, `verdict: PASS` or `verdict: FAIL` first, with repair instructions. `repair` is one fresh worker on them. `judge`, unless the samples are the check, is a fresh context that reads only the task and the diff and writes `verdict.md`. `verify` runs the Check and the Scope check on the final tree and fails the run when either fails or the verdict is FAIL. Each role starts from nothing and reads only the files on disk.
+**First the single call, then the team if it is needed.** The run starts the way one agent turn would, and spends the team only when that turn's attempt does not pass:
 
-**A step is done when its file is.** An llm step's target is the file its answer goes to; each agent step's target is `done.sh <step>`, copied into the run's folder, so the step's own turn cannot edit it:
+```
+problem ─┬─ direct ──────────────────────┬─ test-0 ─┬─ (passed) ──────────────────────────────┬─ test ─ review ─ repair ─ recheck ─ judge ─ verify
+         └─ outline ─ plan ─ settle ─────┘          └─ (failed) context ─ ideate-a ‖ ideate-b ─ solve ┘
+```
+
+- `direct` is one agent turn on the prompt as written, in the tree: the single call. At the same time `outline` gathers the project's shape and `plan`, one model call, settles the Check and the Scope; `settle` writes them into `task.md` (the Prompt untouched) and fills a missing one safely: the Check the prompt names, else the judge; the Scope from the paths the prompt names.
+- `test-0` runs the Check and the Scope (`scope.sh`: every changed file and the lines it added and removed, a file outside the Scope fails) on the direct attempt. When it passes, nothing more is built: `review` checks it.
+- When it does not, the team takes over from it: `context` gathers `task.md`, `plan.md` and the Scope's files; `ideate-a` and `ideate-b` (one file, `ideate.yaml`, `each: [a, b]`), one model call each with no tools, propose two approaches side by side; `solve` corrects the attempt from them.
+- `test` runs the Check and the Scope on the work; `review`, one model call on the task, the diff, the Check's output and the Scope report, writes `verdict: PASS` or `verdict: FAIL` with repair instructions; `repair`, one fresh agent turn, runs only on a FAIL (or no verdict with a failing Check); `recheck` takes the diff again; `judge`, one model call that has seen none of the team's reasoning, decides what a command cannot (no Check, a repaired change, a review that did not pass); `verify` fails the run on a failing Check, a file outside the Scope, or a FAIL from the judge.
+
+The planner, the ideators, the reviewer and the judge are model calls with no tools (`type: llm`): they read what the commands gathered and answer. Only `direct`, `solve` and `repair` are agent turns that change the tree. Every role starts from nothing and reads only the files on disk; no role keeps a rule with the notes tool (it writes the project's AGENTS.md).
+
+**Measured** (2026-11-05, #93; deepseek/deepseek-v4.1-flash; five real tasks, each in a clean worktree, each judged by an independent check written before the runs): the team that ran every role as an agent took 8 to 10 minutes a task; this one took 31 s to 6 minutes and passed all five, the single call's time when its attempt passes, with the Check, the Scope and the review on top. On the open-ended task (review a commit) the single call passed 2 runs of 4: twice it read for 11 and 15 minutes and wrote nothing, once it checked out the parent commit and left the tree there; this team passed 2 of 2.
+
+**A step is done when its file is.** An llm step's target is the file its answer goes to; an agent step's target is `done.sh <step>`, copied into the run's folder, so the step's own turn cannot edit it:
 
 | step | done when |
 |---|---|
-| `plan` | `task.md` has the Deliverable, a Check (a command in backticks, samples or judge), the Scope and Done when filled in, the Prompt unchanged; `plan.md` and `notes.md` are written |
 | `solve` | `changes.diff` is not empty |
-| `review`, `judge` | `review.md`, `verdict.md` start with `verdict: PASS` or `verdict: FAIL` |
-| `repair` | `repair.md` is written; skipped when the review passed |
+| `repair` | `repair.md` is written |
+
+`verdict.sh` reads a review's or a judge's verdict (PASS, FAIL, or none when the call narrated instead of answering).
 
 A turn that ends with its target failing is told what is missing and goes on; when it never passes, the step fails and the run stops there instead of handing an empty file to the next role.
 

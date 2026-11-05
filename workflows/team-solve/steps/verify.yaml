@@ -2,7 +2,6 @@ type: command
 # The check and the Scope (scope.sh) again on the final tree, then the judge's verdict when it ran.
 # A failing check or a FAIL verdict fails the run.
 requires:
-  - table_pattern: repair
   - table_pattern: judge
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}
@@ -13,7 +12,13 @@ command: |
   bash "$w/scope.sh" "$r" >> "$r/final-check.log" || result=1
   tail -40 "$r/final-check.log"
   [ "$result" = 1 ] && exit 1
-  if [ -f "$r/verdict.md" ]; then head -1 "$r/verdict.md"; grep -q '^verdict: PASS' "$r/verdict.md" || exit 1; fi
-  [ "$result" = 0 ] || [ -f "$r/verdict.md" ]
+  # The judge's verdict when it gave one; a judge that answered nothing
+  # leaves the check and the review to decide (verdict.sh).
+  judged=$(bash "$w/verdict.sh" "$r/verdict.md")
+  reviewed=$(bash "$w/verdict.sh" "$r/review.md")
+  printf 'judge: %s, review: %s\n' "$judged" "$reviewed"
+  [ "$judged" = FAIL ] && exit 1
+  [ "$judged" = PASS ] && exit 0
+  [ "$result" = 0 ] && [ "$reviewed" != FAIL ]
 timeout: 30m
 max_retries: 0
