@@ -62,6 +62,11 @@ jobs:
       # with "undefined reference to log". macOS links libm implicitly.
       run: CGO_CFLAGS="-DSQLITE_ENABLE_FTS5" CGO_LDFLAGS="-lm" go test ./... -v
 
+    - name: make install (a build from source, installed by scripts/install.sh)
+      run: |
+        make install
+        ~/.local/bin/memdoor --version
+
 env:
   CGO_ENABLED: "1"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

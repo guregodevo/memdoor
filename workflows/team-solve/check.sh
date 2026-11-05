@@ -15,7 +15,14 @@ case "$first" in samples|judge) cmd="" ;; esac
 [ "$first" = samples ] && section=samples
 if [ -n "$cmd" ]; then
   echo command > "$r/check-kind.txt"; printf 'check: %s\n' "$cmd" > "$log"
-  bash -c "$cmd" >> "$log" 2>&1 && exit 0 || exit 1
+  bash -c "$cmd" >> "$log" 2>&1 && exit 0
+  # A Check that fails on the tree as the run found it (baseline.yaml) is
+  # broken here, not by the work: the judge decides.
+  if [ "$(cat "$r/baseline-status.txt" 2>/dev/null)" = 1 ]; then
+    printf '\nthe Check also fails on the tree as the run found it (baseline-check.log): nothing it says counts, the judge decides\n' >> "$log"
+    echo judge > "$r/check-kind.txt"; exit 3
+  fi
+  exit 1
 elif ls tests/*.in > /dev/null 2>&1 && ! printf '%s\n' "$section" | grep -qw judge; then
   echo samples > "$r/check-kind.txt"; printf 'check: samples\n' > "$log"
   bash "$w/check-samples.sh" >> "$log" 2>&1 && exit 0 || exit 1

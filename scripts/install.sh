@@ -1,6 +1,7 @@
 #!/bin/sh
 # Memdoor CLI installer.
 # Usage: curl -fsSL https://memdoor.ai/install.sh | bash
+#        make install   (from a clone: builds, then this script installs that binary)
 #
 # What it does:
 #   1. Download the right memdoor binary for OS+arch, SHA-256 checked, to
@@ -166,7 +167,11 @@ elif curl -sf --max-time 3 "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&
     WAS_RUNNING=1
 fi
 
-echo "==> Downloading $URL"
+if [ -n "${MEMDOOR_BINARY:-}" ]; then
+    echo "==> Installing $MEMDOOR_BINARY"
+else
+    echo "==> Downloading $URL"
+fi
 # macOS binary distribution has two failure modes we have to defeat
 # at install time. Both bit a 64 GB M-series Mac 2026-05-28:
 # post-upgrade memdoor was SIGKILLed before it could print --version,
@@ -297,6 +302,19 @@ download_verified() {
     exit 1
 }
 
+# make install (a build from source, the README) hands the binary it built in
+# MEMDOOR_BINARY: the download and its checksum are skipped, everything else
+# (where it goes, the gateway stopped and started again, PATH, what comes
+# next) is this script's, the same as curl | bash.
+fetch_binary() {
+    # $1 = destination path.
+    if [ -n "${MEMDOOR_BINARY:-}" ]; then
+        cp "$MEMDOOR_BINARY" "$1"
+    else
+        download_verified "$1"
+    fi
+}
+
 TMP_DEST=$(mktemp /tmp/memdoor.XXXXXX)
 case "$INSTALL_MODE" in
     user|prefix|existing)
@@ -307,7 +325,7 @@ case "$INSTALL_MODE" in
             echo "  Pick a directory you own: MEMDOOR_PREFIX=\$HOME/bin curl -fsSL https://memdoor.ai/install.sh | bash" >&2
             exit 1
         fi
-        download_verified "$TMP_DEST"
+        fetch_binary "$TMP_DEST"
         chmod +x "$TMP_DEST"
         xattr -c "$TMP_DEST" 2>/dev/null || true
         codesign --force --sign - "$TMP_DEST" 2>/dev/null || true
@@ -317,7 +335,7 @@ case "$INSTALL_MODE" in
         # Download as the regular user (curl doesn't need root), sudo
         # only the mv into the root-owned dir. Avoids leaving a temp
         # file owned by root in /tmp if the install fails mid-way.
-        download_verified "$TMP_DEST"
+        fetch_binary "$TMP_DEST"
         chmod +x "$TMP_DEST"
         xattr -c "$TMP_DEST" 2>/dev/null || true
         codesign --force --sign - "$TMP_DEST" 2>/dev/null || true

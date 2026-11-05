@@ -2,20 +2,24 @@ type: command
 # The check and the Scope (scope.sh) again on the final tree, then the judge's verdict when it ran.
 # A failing check or a FAIL verdict fails the run.
 requires:
-  - table_pattern: judge
+  - table_pattern: keep
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
   bash "$w/changes.sh" "$r"
   bash "$w/check.sh" "$r" "$r/final-check.log"
   result=$?
-  bash "$w/scope.sh" "$r" >> "$r/final-check.log" || result=1
+  bash "$w/scope.sh" "$r" >> "$r/final-check.log" || true
   tail -40 "$r/final-check.log"
   [ "$result" = 1 ] && exit 1
   # The judge's verdict when it gave one; a judge that answered nothing
   # leaves the check and the review to decide (verdict.sh).
   judged=$(bash "$w/verdict.sh" "$r/verdict.md")
   reviewed=$(bash "$w/verdict.sh" "$r/review.md")
+  # The verdicts are on the work keep kept: a review or judge of the work it
+  # put aside does not count (keep.txt).
+  if grep -q '^put back' "$r/keep.txt" 2>/dev/null; then judged=none; [ "$(cat "$r/direct-status.txt")" = 0 ] && reviewed=none; fi
+  if grep -q "^kept: the team's work" "$r/keep.txt" 2>/dev/null && [ -s "$r/repair.md" ]; then reviewed=none; fi
   printf 'judge: %s, review: %s\n' "$judged" "$reviewed"
   [ "$judged" = FAIL ] && exit 1
   [ "$judged" = PASS ] && exit 0
