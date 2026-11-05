@@ -42,8 +42,54 @@ func NewClient() *Client {
 	return c
 }
 
-// Do executes a raw HTTP request with auth headers
+// Do executes a raw HTTP request with auth headers. A request the gateway
+// refuses for its session is renewed once and sent again (renewOnRefusal).
 func (c *Client) Do(method, path string, body interface{}) (*http.Response, error) {
+	resp, err := c.do(method, path, body)
+	if err != nil || resp.StatusCode != http.StatusUnauthorized || c.token == "" || strings.HasPrefix(path, "/api/auth/") {
+		return resp, err
+	}
+	if token := renewOnRefusal(c.token); token != "" {
+		resp.Body.Close()
+		c.token = token
+		return c.do(method, path, body)
+	}
+	return resp, nil
+}
+
+// renewOnRefusal signs in again the way the first run does, when the gateway
+// refused the session it was sent: from this machine's generated login on a
+// local gateway, from the box's through the ssh door. It returns the new
+// token, or "" when nothing on disk renews it (an account made by hand). Every
+// command renews this way, not only the ones that check the session first:
+// `memdoor workflow status` on a lapsed session answered "Authentication
+// required" while `memdoor run` renewed it (2026-11-05, #88).
+var renewOnRefusal func(refused string) string
+
+func init() { renewOnRefusal = renewRefusedSession }
+
+func renewRefusedSession(refused string) string {
+	var err error
+	switch {
+	case sshDoorUp != nil:
+		err = sshRenewSession()
+	default:
+		if _, local := localGatewayPort(); !local {
+			return ""
+		}
+		err = renewLocalSession()
+	}
+	if err != nil {
+		return ""
+	}
+	creds, err := loadCredentials()
+	if err != nil || creds.Token == "" || creds.Token == refused {
+		return ""
+	}
+	return creds.Token
+}
+
+func (c *Client) do(method, path string, body interface{}) (*http.Response, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"memdoor/pkg/auth"
 	"memdoor/pkg/shared"
 	"net/http"
 	"os"
@@ -465,7 +466,22 @@ func loginLocal(email, password string) error {
 	if err := c.PostJSON("/api/auth/login", map[string]string{"email": email, "password": password}, &result); err != nil {
 		return err
 	}
-	return saveCredentials(&credentials{Token: result.Token, Email: result.User.Email})
+	// The machine's own user: its session does not run out (#88). A gateway
+	// from before that still ends it at 30 days; the client renews it then
+	// (renewOnRefusal).
+	return saveCredentials(&credentials{Token: result.Token, Email: result.User.Email, ExpiresAt: time.Now().Add(auth.MachineSessionTTL)})
+}
+
+// machineOwnSession reports whether email is the user this machine generated
+// at its first run (~/.memdoor/local-login): a free account, whose session
+// does not run out and which never signs in by hand.
+func machineOwnSession(email string) bool {
+	var ll localLogin
+	b, err := os.ReadFile(homePath(localLoginFile))
+	if err != nil || json.Unmarshal(b, &ll) != nil || ll.Email == "" {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(ll.Email), strings.TrimSpace(email))
 }
 
 func describePlan(p, billing string) string {
