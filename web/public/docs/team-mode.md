@@ -58,9 +58,10 @@ attempt is put back, new and deleted files included, and `keep.txt` says why.
 
 The Check decides, not the planner's Scope: a change outside the Scope goes
 to the review, which fails it only when the task does not need it (an
-instruction file, an unrelated module). A Check that already fails on the
-tree as it was does not count; the judge decides then. HEAD stays where the
-run found it.
+instruction file, an unrelated module). When the Check already fails on the
+tree as it was, only the tests the change makes fail count, as pytest,
+unittest, Django's runner or go test list them; when its output lists none,
+the judge decides. HEAD stays where the run found it.
 
 ## Measured
 
