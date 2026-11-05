@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -34,6 +36,7 @@ type sshDoor struct {
 	exited <-chan error // ssh's exit, waited for once
 }
 
+var sshDoorMu sync.Mutex
 var sshDoorUp *sshDoor
 
 // sshDoorWait is how long the gateway on the box has to answer through the
@@ -83,19 +86,17 @@ func sshDoorArgs(target, sshPort, localPort, gatewayPort string) []string {
 	return append(args, target, "cat")
 }
 
-// openSSHDoor opens the tunnel and answers the local address to talk to.
-// Opened once per process; a second call answers the same address.
-func openSSHDoor(addr string) (string, error) {
-	if sshDoorUp != nil {
-		return sshDoorUp.local, nil
-	}
+// openSSHTunnel opens one tunnel to the gateway on the box and answers
+// the local address to talk to. Each call is its own tunnel: two peers,
+// two tunnels, neither touching the other or the process's door.
+func openSSHTunnel(ctx context.Context, addr string) (*sshDoor, error) {
 	target, sshPort, gatewayPort, err := sshDoorSpec(addr)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return "", fmt.Errorf("no local port for the ssh tunnel: %v", err)
+		return nil, fmt.Errorf("no local port for the ssh tunnel: %v", err)
 	}
 	localPort := ln.Addr().(*net.TCPAddr).Port
 	_ = ln.Close()
@@ -103,27 +104,37 @@ func openSSHDoor(addr string) (string, error) {
 	cmd := exec.Command("ssh", sshDoorArgs(target, sshPort, strconv.Itoa(localPort), gatewayPort)...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = io.Discard, &stderr
 	if err := cmd.Start(); err != nil {
-		return "", fmt.Errorf("ssh is not on this machine (%v): the ssh door needs it", err)
+		return nil, fmt.Errorf("ssh is not on this machine (%v): the ssh door needs it", err)
 	}
 	exited := make(chan error, 1)
-	go func() { exited <- cmd.Wait() }()
-	giveUp := func(err error) (string, error) {
+	done := make(chan struct{}) // closed once cmd.Wait has returned: close waits here
+	go func() {
+		err := cmd.Wait()
+		close(done)
+		exited <- err
+	}()
+	giveUp := func(err error) (*sshDoor, error) {
 		_ = stdin.Close()
 		_ = cmd.Process.Kill()
-		<-exited // ssh is done writing its stderr once it has exited
-		return "", err
+		<-done // ssh is done writing its stderr once it has exited
+		return nil, err
 	}
 	deadline := time.Now().Add(sshDoorWait)
 	firstLook, looked := time.Now().Add(sshFirstLook), false
 	for {
 		select {
+		case <-ctx.Done():
+			_ = stdin.Close()
+			_ = cmd.Process.Kill()
+			<-done
+			return nil, ctx.Err()
 		case <-exited:
-			return "", fmt.Errorf("ssh to %s: %s", target, sshReason(target, stderr.String()))
+			return nil, fmt.Errorf("ssh to %s: %s", target, sshReason(target, stderr.String()))
 		default:
 		}
 		if ok, _ := probeGatewayHealth("127.0.0.1", localPort); ok {
@@ -145,23 +156,54 @@ func openSSHDoor(addr string) (string, error) {
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
-	sshDoorUp = &sshDoor{name: strings.TrimSpace(addr), local: "http://127.0.0.1:" + strconv.Itoa(localPort), stdin: stdin, cmd: cmd, exited: exited}
-	return sshDoorUp.local, nil
+	return &sshDoor{name: strings.TrimSpace(addr), local: "http://127.0.0.1:" + strconv.Itoa(localPort), stdin: stdin, cmd: cmd, exited: exited}, nil
+}
+
+// openSSHDoor opens the tunnel and answers the local address to talk to.
+// Opened once per process; a second call answers the same address.
+func openSSHDoor(addr string) (string, error) {
+	sshDoorMu.Lock()
+	defer sshDoorMu.Unlock()
+	if sshDoorUp != nil {
+		return sshDoorUp.local, nil
+	}
+	d, err := openSSHTunnel(context.Background(), addr)
+	if err != nil {
+		return "", err
+	}
+	sshDoorUp = d
+	return d.local, nil
+}
+
+// close ends one tunnel: the pipe closes, cat on the box ends, ssh exits.
+func (d *sshDoor) close() {
+	if d == nil {
+		return
+	}
+	if d.stdin == nil {
+		return
+	}
+	_ = d.stdin.Close()
+	if d.cmd == nil || d.cmd.Process == nil { // a fake in a test
+		return
+	}
+	select {
+	case <-d.exited:
+	case <-time.After(2 * time.Second):
+		_ = d.cmd.Process.Kill()
+		<-d.exited
+	}
 }
 
 // closeSSHDoor ends the tunnel: the pipe closes, cat on the box ends, ssh
 // exits. The process's own exit does the same without being asked.
 func closeSSHDoor() {
+	sshDoorMu.Lock()
+	defer sshDoorMu.Unlock()
 	if sshDoorUp == nil {
 		return
 	}
-	_ = sshDoorUp.stdin.Close()
-	select {
-	case <-sshDoorUp.exited:
-	case <-time.After(2 * time.Second):
-		_ = sshDoorUp.cmd.Process.Kill()
-		<-sshDoorUp.exited
-	}
+	sshDoorUp.close()
 	sshDoorUp = nil
 }
 
@@ -279,10 +321,22 @@ func sshBoxSetup(target, sshPort, gatewayPort string) error {
 // same ssh: whoever may ssh in as that user may read it, so the door asks
 // for no password of its own. The session is saved under the ssh address.
 func sshRenewSession() error {
-	if sshDoorUp == nil {
+	sshDoorMu.Lock()
+	d := sshDoorUp
+	sshDoorMu.Unlock()
+	if d == nil {
 		return fmt.Errorf("no ssh door")
 	}
-	target, sshPort, gwPort, err := sshDoorSpec(sshDoorUp.name)
+	return sshRenewSessionFor(context.Background(), d)
+}
+
+// sshRenewSessionFor is the sign-in for one tunnel, the process's door or
+// a peer's: no global state is touched.
+func sshRenewSessionFor(ctx context.Context, d *sshDoor) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	target, sshPort, gwPort, err := sshDoorSpec(d.name)
 	if err != nil {
 		return err
 	}
@@ -304,7 +358,7 @@ func sshRenewSession() error {
 	// just made is kept for the box's own address too, so `--gateway box`
 	// over its network needs no password the person never saw.
 	if creds, err := loadCredentials(); err == nil {
-		_ = saveCredentialsFor("http://"+net.JoinHostPort(sshDoorHost(), gwPort), creds)
+		_ = saveCredentialsFor("http://"+net.JoinHostPort(sshDoorHostFor(d.name), gwPort), creds)
 	}
 	return nil
 }
@@ -330,10 +384,15 @@ func sshDoorHost() string {
 	if sshDoorUp == nil {
 		return ""
 	}
-	if u, err := url.Parse(sshDoorUp.name); err == nil && u.Hostname() != "" {
+	return sshDoorHostFor(sshDoorUp.name)
+}
+
+// sshDoorHostFor is the box's name in that address, without the user.
+func sshDoorHostFor(name string) string {
+	if u, err := url.Parse(name); err == nil && u.Hostname() != "" {
 		return u.Hostname()
 	}
-	return sshDoorUp.name
+	return name
 }
 
 // gatewayKey names the gateway in the credentials file: the address as
