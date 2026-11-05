@@ -641,3 +641,31 @@ func TestTwoRunsNeverShareAStepsSession(t *testing.T) {
 		t.Fatalf("still a workflow session: %q", a.taskSession("direct"))
 	}
 }
+
+// A long-lived gateway keeps the newest finished runs only; a run that is
+// running or waiting stays whatever its age (#104: every run was kept, with
+// its workflow and every step's rendered prompt).
+func TestTheGatewayForgetsTheOldestFinishedRuns(t *testing.T) {
+	w := &workflowRuns{runs: map[string]*workflowRun{}}
+	start := time.Now().Add(-time.Hour)
+	for i := 0; i < workflowRunsKept+5; i++ {
+		id := fmt.Sprintf("done-%03d", i)
+		w.runs[id] = &workflowRun{ID: id, state: "done", ended: start.Add(time.Duration(i) * time.Second)}
+	}
+	w.runs["old-running"] = &workflowRun{ID: "old-running", state: "running"}
+	w.runs["old-waiting"] = &workflowRun{ID: "old-waiting", state: "waiting", ended: start.Add(-time.Hour)}
+	w.forgetOldRuns()
+	if len(w.runs) != workflowRunsKept+2 {
+		t.Fatalf("%d runs kept, want %d finished and the 2 unfinished", len(w.runs), workflowRunsKept)
+	}
+	for _, id := range []string{"old-running", "old-waiting", fmt.Sprintf("done-%03d", workflowRunsKept+4), "done-005"} {
+		if _, ok := w.runs[id]; !ok {
+			t.Errorf("%s was dropped", id)
+		}
+	}
+	for i := 0; i < 5; i++ {
+		if _, ok := w.runs[fmt.Sprintf("done-%03d", i)]; ok {
+			t.Errorf("done-%03d, among the oldest, was kept", i)
+		}
+	}
+}

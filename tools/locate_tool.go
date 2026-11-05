@@ -57,6 +57,11 @@ const (
 	locateExcerpts    = 3         // sections shown with their code
 	locateFileMaxSize = 512 << 10 // larger files are data, not source
 	locateMaxFiles    = 20000     // a repo past this is indexed by its first files
+	// locateMaxIndexes is how many repos' indexes stay in memory, the most
+	// recently used. One index of Django's 7,000 files is 210 MB, and every
+	// workflow run in a fresh worktree made one that was never let go: a
+	// gateway that ran 60 SWE-bench tasks held 32 GB and was killed (#104).
+	locateMaxIndexes = 2
 )
 
 // locateSection is one indexed slice of a file.
@@ -70,6 +75,7 @@ type locateSection struct {
 // indexed file changes (the stamp: file count, newest mtime, total size).
 type repoIndex struct {
 	stamp    string
+	used     time.Time // the last locate on it, for the eviction
 	sections []locateSection
 	byID     map[string]int
 	index    *bm25.Index
@@ -179,6 +185,7 @@ func indexFor(dir string) *repoIndex {
 	repoIndexMu.Lock()
 	defer repoIndexMu.Unlock()
 	if ri, ok := repoIndexes[dir]; ok && ri.stamp == stamp {
+		ri.used = time.Now()
 		return ri
 	}
 	ri := &repoIndex{stamp: stamp, byID: map[string]int{}}
@@ -200,8 +207,31 @@ func indexFor(dir string) *repoIndex {
 		}
 	}
 	ri.index = bm25.New(docs)
+	ri.used = time.Now()
 	repoIndexes[dir] = ri
+	pruneIndexes()
 	return ri
+}
+
+// pruneIndexes drops the index of a folder that is gone (a worktree a run
+// removed), then the least recently used past locateMaxIndexes. Called with
+// repoIndexMu held. A dropped repo is indexed again on its next locate, a
+// second or two for Django.
+func pruneIndexes() {
+	for d := range repoIndexes {
+		if _, err := os.Stat(d); err != nil {
+			delete(repoIndexes, d)
+		}
+	}
+	for len(repoIndexes) > locateMaxIndexes {
+		oldest := ""
+		for d, ri := range repoIndexes {
+			if oldest == "" || ri.used.Before(repoIndexes[oldest].used) {
+				oldest = d
+			}
+		}
+		delete(repoIndexes, oldest)
+	}
 }
 
 // existingFileInQuery returns the first token in the query that names a file
