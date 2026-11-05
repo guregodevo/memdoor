@@ -1,4 +1,4 @@
-.PHONY: up build web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose start stop stop-gateway setup quickstart all skills-sync indexnow scan hooks
+.PHONY: up build install web-build fmt check check-fmt clean test test-verbose test-a2a help gateway gateway-verbose start stop stop-gateway setup quickstart all skills-sync indexnow scan hooks
 
 # Ports
 GATEWAY_PORT ?= 18789
@@ -56,6 +56,14 @@ up: build stop-gateway
 		|| echo "⚠️  the gateway did not answer on :$(GATEWAY_PORT) — see gateway.log"
 	@./memdoor providers 2>/dev/null | grep -E "connected \(" \
 		|| echo "  ⚠ no provider connected: the gateway has no key — put one in ./.envrc or run: memdoor connect <kind>"
+
+# install puts the binary it built where curl -fsSL https://memdoor.ai/install.sh
+# | bash puts a downloaded one, through the same script (scripts/install.sh with
+# MEMDOOR_BINARY): the same directory, PATH line, gateway restart and next
+# steps. up is the developer's loop (a symlink to ./memdoor, the gateway
+# started from here).
+install: build
+	@MEMDOOR_BINARY=$(CURDIR)/memdoor sh scripts/install.sh
 
 # scan fails on a secret, a personal path or a private host in the tree: the
 # repo is public, so this runs in CI and from the pre-push hook (make hooks).
@@ -263,6 +271,7 @@ help:
 	@echo ""
 	@echo "=== Every day ==="
 	@echo "  make build              - Build the memdoor binary"
+	@echo "  make install            - Build, then install it as curl | bash does (scripts/install.sh)"
 	@echo "  make up                 - Rebuild and restart the gateway in the background (sources .envrc)"
 	@echo "  make start              - Gateway + vite dev server (background)"
 	@echo "  make stop               - Stop the gateway and the dev server"
