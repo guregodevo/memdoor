@@ -4,8 +4,12 @@ each: [a, b]
 # proposes and cannot do the task; an agent ideator on a free model made the
 # fix itself, twice (2026-11-05). It reads context.md (task.md, plan.md and
 # the Scope's files) and its answer is the proposal file.
+# Only when the direct attempt did not pass (test-0): a passing one needs no
+# proposals, only the review.
+when: test "$(cat .memdoor/runs/team-solve-{{.partition}}/direct-status.txt 2>/dev/null)" != 0
 requires:
   - table_pattern: context
+  - table_pattern: test-0
 prompt: |
   {{ file (printf ".memdoor/runs/team-solve-%s/context.md" .partition) }}
 

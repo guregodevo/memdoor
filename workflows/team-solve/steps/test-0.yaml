@@ -1,0 +1,23 @@
+type: command
+# The direct attempt against what plan settled: the Check and the Scope, on
+# the tree as direct left it. direct-status.txt is 0 when something changed,
+# within the Scope, and the Check passed or there is none to run (review and
+# judge decide then); else 1, and the ideators and the solver take over.
+requires:
+  - table_pattern: direct
+  - table_pattern: settle
+command: |
+  r=.memdoor/runs/team-solve-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/direct-check.log"
+  check=$?
+  bash "$w/scope.sh" "$r" >> "$r/direct-check.log"
+  scope=$?
+  status=1
+  if [ -s "$r/changes.diff" ] && [ "$scope" = 0 ] && { [ "$check" = 0 ] || [ "$check" = 3 ]; }; then status=0; fi
+  printf '%s\n' "$status" > "$r/direct-status.txt"
+  tail -20 "$r/direct-check.log"
+  printf 'direct attempt: %s (check %s, scope %s, %s lines changed)\n' "$([ $status = 0 ] && echo passes || echo 'does not pass: the team takes over')" "$check" "$scope" "$(wc -l < "$r/changes.diff" | tr -d ' ')"
+timeout: 30m
+max_retries: 0

@@ -1,0 +1,28 @@
+type: command
+# What the planner reads, in one file: the prompt, the project's files, its
+# README and instructions, the build and test files. The planner is one llm
+# call (plan.yaml): an agent planner took 1m41s to 4 minutes on the bench's
+# real tasks while the direct attempt beside it took 21 seconds to 2 minutes,
+# and the attempt's check waited on it (2026-11-05, #93).
+requires:
+  - table_pattern: problem
+command: |
+  r=.memdoor/runs/team-solve-{{.partition}}; out="$r/outline.md"
+  {
+    printf '# The prompt\n\n'; cat "$r/prompt.md"
+    printf '\n\n# The files of the project\n\n```\n'
+    { git ls-files 2>/dev/null || find . -type f -not -path './.git/*' | sed 's#^\./##'; } | grep -v '^\.memdoor/' | head -600
+    printf '```\n'
+    if git rev-parse --verify -q HEAD >/dev/null 2>&1; then
+      printf '\n\n# The last commit\n\n```\n'; git log -1 --stat --format='%h %s%n%n%b' | head -60; printf '```\n\n```diff\n'; git show --format= HEAD | head -c 15000; printf '\n```\n'
+    fi
+    for f in README.md AGENTS.md CLAUDE.md CONTRIBUTING.md Makefile go.mod package.json pyproject.toml Cargo.toml; do
+      [ -f "$f" ] || continue
+      printf '\n\n# %s (the start)\n\n```\n' "$f"; head -c 6000 "$f"; printf '\n```\n'
+    done
+  } > "$out"
+  printf 'outline: %s bytes in %s\n' "$(wc -c < "$out" | tr -d ' ')" "$out"
+target:
+  file: .memdoor/runs/team-solve-{{.partition}}/outline.md
+timeout: 2m
+max_retries: 0

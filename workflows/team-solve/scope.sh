@@ -33,6 +33,20 @@ inside() {
 }
 
 fail=0
+# HEAD WHERE THE RUN STARTED (problem.yaml's head.txt). A direct attempt
+# reviewing a commit ran `git checkout HEAD~1` and left the tree on the code
+# before the commit (2026-11-05): put it back first, then measure.
+if [ -s "$r/head.txt" ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  want=$(cat "$r/head.txt")
+  now=$(git symbolic-ref -q --short HEAD || git rev-parse -q --verify HEAD)
+  if [ "$now" != "$want" ] && [ "$(git rev-parse -q --verify "$now")" != "$(git rev-parse -q --verify "$want")" ]; then
+    if git checkout -q "$want" 2>/dev/null; then
+      echo "HEAD had moved to $now; put back on $want" >> "$out"
+    else
+      echo "HEAD MOVED to $now and could not be put back on $want" >> "$out"; fail=1
+    fi
+  fi
+fi
 if [ -z "$scope" ]; then
   echo 'scope: none named in backticks in task.md, so not checked' >> "$out"
 else

@@ -1,0 +1,18 @@
+type: command
+# The change as it stands after the repair round, for the judge: the diff
+# again (the repair may have changed it), the Check and the Scope again.
+requires:
+  - table_pattern: repair
+command: |
+  r=.memdoor/runs/team-solve-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/final-check.log"
+  result=$?
+  bash "$w/scope.sh" "$r" >> "$r/final-check.log" || result=1
+  [ "$result" = 3 ] && result=none
+  printf '%s\n' "$result" > "$r/final-status.txt"
+  tail -20 "$r/final-check.log"
+  printf 'Final check status: %s\n' "$result"
+timeout: 30m
+max_retries: 0

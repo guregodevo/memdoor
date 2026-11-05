@@ -1,39 +1,31 @@
-type: agent
-agent: coder
+type: llm
+# The planner: one call, no tools, on the outline (outline.yaml). It settles
+# what the work is checked against; settle.yaml writes its sections into
+# task.md, so the Prompt stays as the person wrote it. A first worker does the
+# task beside it at the same time (direct.yaml).
+system: "You answer in this one message. You have no tools: you cannot open a file, list a directory or run a command, and nothing you write will be run. Everything you need is in the message. Do not say what you will look at: answer. Start your answer with the line ## Deliverable."
 requires:
-  - table_pattern: problem
+  - table_pattern: outline
 prompt: |
-  You are the planner in a ledger-based team with fresh contexts. The run's files are in .memdoor/runs/team-solve-{{.partition}}/: task.md (the task: the prompt
-  and what plan settled), plan.md, notes.md (the ledger every role writes
-  to). They are never part of the work and never committed. Keep
-  no rule with the notes tool: it writes the project's AGENTS.md.
-  Read .memdoor/runs/team-solve-{{.partition}}/task.md: its Prompt is the task. Look at the
-  project as far as the task needs: the files it names, the build and test
-  files, the README. Then fill in the other sections of
-  .memdoor/runs/team-solve-{{.partition}}/task.md in place, replacing each comment, keeping
-  the Prompt exactly as it is:
-  - Deliverable: "changes to this tree" when the task changes the project,
-    or the new files by name (a program: solution.py, Python standard library
-    only, stdin in, the answer alone on stdout; a document: answer.md).
-  - Check: one command in backticks that exits 0 when the work is right
-    (the project's own: `go test ./...`, `npm test`, `make check`, scoped to
-    what the task touches when the whole suite is slow), run once now on the
-    current tree and its result noted in plan.md; the word samples when
-    tests/N.in and tests/N.out are in the folder; the word judge when
-    nothing can be run.
-  - Scope: each file or directory the work may touch, in backticks
-    (`scripts/scan.sh`, `docs/`; `.` only when the task is the whole tree).
-    A file outside it fails the run.
-  - Done when: what the reviewer and the judge check, one line each.
-  Write .memdoor/runs/team-solve-{{.partition}}/plan.md: the decomposition, two or three
-  candidate approaches with their tradeoffs, and instructions for
-  independent ideators, the solver and the reviewer. Initialize
-  .memdoor/runs/team-solve-{{.partition}}/notes.md with a title, the run identifier
-  {{.partition}}, and the headings Solver decision, Review and Repair. Do
-  not do the task and do not change any project file. Verify the three
-  files. Communicate only through these files; do not rely on prior
-  conversation or delegate agents yourself.
+  {{ file (printf ".memdoor/runs/team-solve-%s/outline.md" .partition) }}
+
+  You are the planner of a team that does the task in the prompt above, in this project. Settle what the work is checked against. Answer with exactly these five sections, in this order, and nothing before them:
+
+  ## Deliverable
+  "changes to this tree" when the task changes the project; or the new files by name (a program: solution.py, Python standard library only, stdin in, the answer alone on stdout; a document: answer.md).
+
+  ## Check
+  One command in backticks that exits 0 when the work is right: the one the prompt names when it names one, else the project's own (`go test ./pkg/x/`, `npm test`, `make check`), scoped to what the task touches. The word samples when tests/N.in and tests/N.out are in the files above. The word judge when nothing can be run.
+
+  ## Scope
+  Each file or directory the work may touch, in backticks, one per line (`scripts/scan.sh`, `docs/`). What the prompt allows is the Scope: when it says "files under cmd/cli/cmd/ only", the Scope is `cmd/cli/cmd/`. A new file whose name the prompt does not give (a test to add, a page to write) is covered by its directory, never by a name you guess: a guessed `auth_test.go` failed a correct `auth_status_test.go` (2026-11-05). `.` only when the task is the whole tree.
+
+  ## Done when
+  What the reviewer and the judge check, one line each, each a thing the prompt asks for.
+
+  ## Approach
+  The decomposition, and two or three candidate approaches with their tradeoffs, for the solver if the first attempt fails.
 target:
-  command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh plan .memdoor/runs/team-solve-{{.partition}}
-timeout: 40m
+  file: .memdoor/runs/team-solve-{{.partition}}/plan.md
+timeout: 20m
 max_retries: 1

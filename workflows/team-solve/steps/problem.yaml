@@ -31,6 +31,9 @@ command: |
     [ -n "$b" ] || b=$(git rev-parse -q --verify HEAD 2>/dev/null || true)
     [ -z "$b" ] || printf '%s\n' "$b" > "$r/base.txt"
     git ls-files --others --exclude-standard > "$r/untracked-before.txt"
+    # Where HEAD is, so a role that moves it is put back (scope.sh): the
+    # branch, or the commit when detached.
+    { git symbolic-ref -q --short HEAD || git rev-parse -q --verify HEAD; } > "$r/head.txt" 2>/dev/null || true
   fi
   printf 'task: %s\n' "$r/task.md"
 timeout: 1m

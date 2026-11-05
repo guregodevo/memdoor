@@ -1,27 +1,28 @@
-type: agent
-agent: coder
-# The last word on fit to the task: a fresh context that has seen none of the
-# team's reasoning reads the task and the change, nothing else. Skipped when
-# the samples are the check: they decide.
-when: "! grep -qx samples .memdoor/runs/team-solve-{{.partition}}/check-kind.txt"
+type: llm
+# The last word on fit to the task: one call that has seen none of the team's
+# reasoning, only the task and the change. Skipped when the samples are the
+# check (they decide), and when the Check passed and the review passed with
+# no repair: the judge is for what a command cannot settle, and for a
+# repaired change.
+when: "! grep -qx samples .memdoor/runs/team-solve-{{.partition}}/check-kind.txt && { [ \"$(cat .memdoor/runs/team-solve-{{.partition}}/test-status.txt)\" != 0 ] || [ -s .memdoor/runs/team-solve-{{.partition}}/repair.md ] || [ \"$(bash $([ -d .memdoor/workflows/team-solve ] && echo .memdoor/workflows/team-solve || echo $HOME/.memdoor/workflows/team-solve)/verdict.sh .memdoor/runs/team-solve-{{.partition}}/review.md)\" != PASS ]; }"
+system: "You answer in this one message. You have no tools: you cannot open a file, list a directory or run a command, and nothing you write will be run. Everything you need is in the message. Do not say what you will look at: answer. Start your answer with the line verdict: PASS or verdict: FAIL."
 requires:
-  - table_pattern: repair
+  - table_pattern: recheck
 prompt: |
-  You are the judge in a fresh context. Run `bash
-  .memdoor/workflows/team-solve/changes.sh .memdoor/runs/team-solve-{{.partition}}` (or
-  $HOME/.memdoor/workflows/team-solve/changes.sh when the first is
-  missing) so changes.diff is current. Then read .memdoor/runs/team-solve-{{.partition}}/task.md
-  and .memdoor/runs/team-solve-{{.partition}}/changes.diff, and the files the Deliverable names
-  when they are new. Read nothing else of the run. Decide whether the change
-  does what the task asks, completely and correctly, within the Scope, and
-  nothing the task did not ask. The verdict is on the work, not on what it
-  reports: a review that finds a bug passes when the bug is real. Write .memdoor/runs/team-solve-{{.partition}}/verdict.md whose
-  first line is `verdict: PASS` or `verdict: FAIL`, then at most ten lines
-  saying why, each tied to a line of the task. A change that removes content
-  the task did not ask to remove fails. Change no other file, and keep no
-  rule with the notes tool: it writes the project's AGENTS.md. Do not
-  spawn agents or rely on chat context.
+  # The task
+
+  {{ file (printf ".memdoor/runs/team-solve-%s/task.md" .partition) }}
+
+  # The change (a unified diff; new files in full)
+
+  ```diff
+  {{ file (printf ".memdoor/runs/team-solve-%s/changes.diff" .partition) }}
+  ```
+
+  You are the judge, in a fresh context: you have seen none of the team's reasoning. Decide whether the change does what the task asks, completely and correctly, within its Scope, and nothing the task did not ask. The verdict is on the work, not on what it reports: a review that finds a bug passes when the bug is real. A change that removes content the task did not ask to remove fails.
+
+  Answer with the verdict on the first line, exactly `verdict: PASS` or `verdict: FAIL`, then at most ten lines saying why, each tied to a line of the task.
 target:
-  command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh judge .memdoor/runs/team-solve-{{.partition}}
-timeout: 40m
+  file: .memdoor/runs/team-solve-{{.partition}}/verdict.md
+timeout: 20m
 max_retries: 1

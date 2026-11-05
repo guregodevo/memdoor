@@ -1,17 +1,29 @@
 type: agent
 agent: coder
+# The team's solver, when the direct attempt did not pass (test-0); it starts
+# from that attempt, still in the tree.
+when: test "$(cat .memdoor/runs/team-solve-{{.partition}}/direct-status.txt 2>/dev/null)" != 0
 requires:
   - table_pattern: ideate-a
   - table_pattern: ideate-b
+  - table_pattern: test-0
 prompt: |
   You are the solver in a fresh context. The run's files are in .memdoor/runs/team-solve-{{.partition}}/: task.md (the task: the prompt
   and what plan settled), plan.md, notes.md (the ledger every role writes
   to). They are never part of the work and never committed. Keep
   no rule with the notes tool: it writes the project's AGENTS.md.
+  Do not commit, check out, reset or stash: the tree's HEAD stays where it is.
+  A first attempt at the task is already in the tree, and it did not pass:
+  changes.diff is what it changed, direct-check.log what the Check and the
+  Scope said of it. Keep what is right in it, correct what is wrong, undo
+  what the task did not ask for.
   Read task.md, plan.md, notes.md, proposal-a.md and proposal-b.md there. Select
   and justify an approach in the Solver decision section of notes.md. Then do
   the task as task.md's Deliverable says: change the project's files within
-  the Scope, or write the new files it names, complete. Touch nothing outside
+  the Scope, or write the new files it names, complete. Write a first version
+  of the deliverable early and improve it after: a turn that ends without it
+  has done nothing (an agent on an open-ended task read for fifteen minutes
+  and wrote nothing, 2026-11-05). Touch nothing outside
   the Scope and change nothing the task did not ask for. Run the Check
   (the command, or a sample) before you finish and fix what it shows. Do not
   change task.md, the prompt or test data. The steps after you check the
