@@ -1,6 +1,6 @@
 # A pull request from this repository is triaged by Memdoor's own pr-triage
-# workflow, through the published action, on the OpenRouter secret: the default
-# model (GLM 5.3 Flash) reads the diff and the description in one call
+# workflow, through the published action, on the OpenRouter secret:
+# deepseek/deepseek-v4.1-flash reads the diff and the description in one call
 # (MEMDOOR_LEAN). The tests are not run here (MEMDOOR_TEST_COMMAND=skip): the
 # CI job runs them. Advisory: the job never fails on the verdict. A pull
 # request from a fork has no secret and is not triaged here. It runs on
@@ -41,4 +41,5 @@ jobs:
         with:
           workflow: pr-triage
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
+          model: deepseek/deepseek-v4.1-flash
           timeout: 8m
