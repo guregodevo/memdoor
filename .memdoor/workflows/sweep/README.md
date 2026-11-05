@@ -27,8 +27,8 @@ Memdoor today: a coding agent in the terminal on the user's own API key at any
 of eight providers; a decision model (Jev by TypeSafe, a hosted model, on an
 OpenRouter key or a decision key, off on a vendor key alone); workflows on mario
 (one YAML per task, done = target exists, a gate = an external task, resume),
-free with local cron schedules; Pro = $10 a month for remote control and the
-hosted workflow state on memdoor.ai; Enterprise by invoice; public repo
+free with local cron schedules; no plan sold and no price anywhere, Enterprise
+by writing to hello@memdoor.ai; public repo
 `github.com/guregodevo/memdoor`; `aktapus.ai`
 redirects to `memdoor.ai`; and there is **no** local model, GPU rental, broker,
 clipper, fitness product, Mac app, hosted scheduler, device-code or `--browser`

@@ -204,7 +204,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `remove` — Remove a schedule
   - `stats` — How often a schedule ran, and how it went
 - `peers` — memdoor peers                                              each peer: answering or not, its agents
-  - `add` — Name a gateway you are signed in to; @<name>:<agent> reaches it (an ssh address, ssh://you@box, is a peer too: the turn reaches it through its own tunnel, the box opens nothing)
+  - `add` — Name a gateway you are signed in to; @<name>:<agent> reaches it
   - `remove` — Forget a peer (the sign-in stays)
 - `remote` — memdoor remote <id>                    print the link on stdout; the gateway holds the conversation on it
 - `resume` — Resume a previous conversation.
@@ -257,9 +257,8 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **Workspace and account**
 
-- `account` — The memdoor.ai account: status, subscribe (sign in with memdoor login)
+- `account` — The memdoor.ai account: status (sign in with memdoor login)
   - `status` — Who is signed in on this machine, and what the seat is
-  - `subscribe` — Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month
 - `login` — Sign in to memdoor.ai with your email: a six-digit code arrives there, and you
 - `logout` — Sign out of memdoor.ai on this machine (the gateway account stays signed in)
 - `setup` — Sets a fresh install up: the workspace directory under ~/.memdoor
@@ -1695,7 +1694,6 @@ the account). The command line runs exactly these steps; a person types them.
 ```bash
 memdoor login sara@example.com              # a code is emailed; type it when asked
 memdoor account status                      # this Mac's engine user, and the memdoor.ai account and seat
-memdoor account subscribe                   # Pro ($10/month), in the browser
 memdoor logout                              # sign out of memdoor.ai
 ```
 

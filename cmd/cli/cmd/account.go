@@ -30,7 +30,6 @@ import (
 //
 //	memdoor login sara@example.com      # mails a code, asks for it
 //	memdoor account status                      # who is signed in, what plan
-//	memdoor account subscribe                   # Pro's checkout (remote control), in the browser
 //	memdoor logout
 
 const (
@@ -93,7 +92,7 @@ var (
 
 var accountCmd = &cobra.Command{
 	Use:   "account",
-	Short: "The memdoor.ai account: status, subscribe (sign in with memdoor login)",
+	Short: "The memdoor.ai account: status (sign in with memdoor login)",
 }
 
 var loginCmd = &cobra.Command{
@@ -229,8 +228,10 @@ var accountSubscribeCmd = &cobra.Command{
 	// buys remote control and the hosted workflow state (laptop-closed runs coming), never a model key
 	// (the maintainer, 2026-10-04). The number is safe to say here from
 	// 2026-09-27: the live price was changed and a real checkout session
-	// quotes $10.00 USD.
-	Short: "Subscribe to Pro, what memdoor.ai hosts: workflow state across machines and the relay; always on your own key; $10 a month",
+	// quotes $10.00 USD. Hidden since 2026-11-05: no plan is sold (the
+	// maintainer: "remove pricing. It's enterprise, call me only").
+	Hidden: true,
+	Short:  "The hosted plan's checkout (not sold: Enterprise is by writing to hello@memdoor.ai)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		period := "monthly"
 		if accountYearly {

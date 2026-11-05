@@ -1,9 +1,7 @@
-import { HOSTED as HOSTED_ON } from '../config';
 import { useEffect, useState, type ReactNode } from 'react';
 import { setMeta } from '../meta';
 import { useNavigate } from 'react-router-dom';
 import { CoderHeader } from './CoderLandingPage';
-import { SeatCheckout } from './SeatCheckout';
 
 // THE ENTERPRISE PAGE (the maintainer, 2026-10-29: "it should be 100% opensource. Self
 // hosted as enterprise", the hosted gateway kept at "the existing 10 euros per
@@ -21,8 +19,8 @@ import { SeatCheckout } from './SeatCheckout';
 //     tool guards, every host the binary can contact listed, and it costs
 //     nothing. Enterprise is that with full support, by invoice (the maintainer,
 //     2026-10-29: "Enterprise is for full support").
-//  3. WHAT IS PAID? Only the gateway memdoor.ai runs for you: $10 a month,
-//     cancel any month. On your own machine or box, nothing.
+//  3. WHAT IS PAID? Nothing is sold (the maintainer, 2026-11-05: "remove pricing.
+//     It's enterprise, call me only"): Enterprise is by writing to us.
 //
 // Inference is always on the person's own key: memdoor.ai never supplies a model.
 
@@ -48,13 +46,6 @@ const ENTERPRISE: string[] = [
   'Full support from a named person: we set up the gateway, your people and admins, and your AI gateway or key.',
 ];
 
-const HOSTED: string[] = [
-  'The relay: your phone reaches a gateway behind a laptop\'s NAT.',
-  'Workflow state across machines: a workflow can wait on what another produced.',
-  'Next: the gateway itself run on memdoor.ai, so nothing of yours needs to stay on.',
-  'Still your key: memdoor.ai never supplies a model.',
-];
-
 const FAQ_ALL: { q: string; a: string }[] = [
   {
     q: 'Is all of it open source?',
@@ -65,20 +56,15 @@ const FAQ_ALL: { q: string; a: string }[] = [
     a: 'Yes, for free: install the gateway on a box in your network, point it at your AI gateway or vendor key, turn on approval mode. /docs/security lists every host the binary can contact. Enterprise adds full support, by invoice.',
   },
   {
-    q: 'What does the hosted gateway cost?',
-    a: '$10 a month, cancel any month in the Stripe portal the receipt links to. It never buys inference: your key pays the model. Run the gateway yourself, on your laptop or a box, and it costs nothing.',
-  },
-  {
     q: 'Do I need an account or a card?',
-    a: 'No. Install it, connect a provider key, and the agent runs. An account is only for the hosted gateway.',
+    a: 'No. Install it, connect a provider key, and the agent runs.',
   },
   {
     q: 'What is Enterprise?',
     a: 'The same open-source binary on your machines, with full support from a named person: setup, your people and admins, your AI gateway or key. Invoiced. Write to hello@memdoor.ai: say how many people and where it should run.',
   },
 ];
-// The hosted gateway's price is a question only while the hosted services are on.
-const FAQ = HOSTED_ON ? FAQ_ALL : FAQ_ALL.filter((f) => !f.q.startsWith('What does the hosted gateway cost'));
+const FAQ = FAQ_ALL;
 
 function Check() {
   return (
@@ -122,11 +108,9 @@ export function EnterprisePage() {
   const [open, setOpen] = useState<number | null>(null);
   useEffect(() => {
     setMeta({
-      title: HOSTED_ON
-        ? 'Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway'
-        : 'Enterprise — Memdoor is open source: self-host it',
+      title: 'Enterprise — Memdoor is open source: self-host it',
       description:
-        'Memdoor is Apache-2.0: the coding agent, workflows, the gateway and every door onto it. Self-host it for one person or a whole company, free, on your own provider key; Enterprise adds full support. The gateway hosted on memdoor.ai is $10 a month.',
+        'Memdoor is Apache-2.0: the coding agent, workflows, the gateway and every door onto it. Self-host it for one person or a whole company, free, on your own provider key; Enterprise adds full support: hello@memdoor.ai.',
       path: '/enterprise',
     });
   }, []);
@@ -141,10 +125,9 @@ export function EnterprisePage() {
         </h1>
         <p className="mx-auto mb-12 max-w-2xl text-center text-base leading-relaxed text-neutral-500">
           Memdoor is Apache-2.0. Run it on your laptop, or on your company&rsquo;s machines, for free.
-          {HOSTED_ON && ' If you would rather not keep a gateway running, memdoor.ai hosts one for $10 a month.'}
         </p>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card name="Open source" price="Free" note="Apache-2.0. No account." items={OPEN_SOURCE}>
             <div className="flex flex-wrap gap-3">
               <a href="/#install" className={BUTTON}>
@@ -172,15 +155,6 @@ export function EnterprisePage() {
             </p>
           </Card>
 
-          {HOSTED_ON && (
-            <Card name="Hosted gateway" price="$10 / month" note="What memdoor.ai runs for you. Cancel any month." items={HOSTED}>
-              <SeatCheckout />
-              <p className="mt-4 text-xs leading-relaxed text-neutral-400">
-                Already installed? <code className="text-neutral-600">memdoor account subscribe</code> opens the same
-                checkout from the terminal.
-              </p>
-            </Card>
-          )}
         </div>
       </section>
 

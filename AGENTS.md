@@ -175,7 +175,10 @@ grep -r "duplicate_code" .    # Search before coding
   own (2026-10-23: a box that stays on, the window on a laptop, ssh, the phone
   on the box's address); Pro is what memdoor.ai hosts: the relay for a gateway
   behind a laptop's NAT and the hosted workflow state (one table per workspace
-  on memdoor.ai, shipped 2026-10-05). A seat never supplies a key: every model
+  on memdoor.ai, shipped 2026-10-05). None of it is sold (2026-11-05, the
+  maintainer: "remove pricing. It's enterprise, call me only"): no price on the
+  site, in the CLI or in the docs; Enterprise is by writing to hello@memdoor.ai.
+  A seat never supplies a key: every model
   and decision call is on the user's own (`autoDecisionModel` never picks the
   broker; every chat request goes through a provider, `providers/factory.go`).
   Command line only — one binary, no app, no feature flags. The

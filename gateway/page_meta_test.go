@@ -23,7 +23,7 @@ func TestEveryRouteCarriesItsOwnHead(t *testing.T) {
 	}
 	enterprise := string(r.For("/enterprise"))
 	for _, want := range []string{
-		"<title>Enterprise — Memdoor is open source: self-host it, or let memdoor.ai host the gateway</title>",
+		"<title>Enterprise — Memdoor is open source: self-host it</title>",
 		`<link rel="canonical" href="https://memdoor.ai/enterprise" />`,
 		`<meta property="og:url" content="https://memdoor.ai/enterprise" />`,
 		"<h1>Enterprise — Memdoor",

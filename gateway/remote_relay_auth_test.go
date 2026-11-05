@@ -115,11 +115,12 @@ func TestRelayAttachesATerminalWithAnAccountToken(t *testing.T) {
 }
 
 // REMOTE IS PRO ON THE HOSTED RELAY (2026-10-04): a free account is refused
-// with what to do; a Pro one gets in; a gateway's own user is never asked.
+// with what to do (2026-11-05: no plan is sold, so the gateway of their own and
+// Enterprise); a Pro one gets in; a gateway's own user is never asked.
 func TestRelayAuthRefusesAFreeAccount(t *testing.T) {
 	billing, _ := fakeBilling(t)
 	auth := newRelayAuth(relayUsers{"tok-a": "alice"}, billing.URL)
-	if _, err := auth.ValidateToken("acct-free"); err == nil || !strings.Contains(err.Error(), "Pro") || !strings.Contains(err.Error(), "subscribe") {
+	if _, err := auth.ValidateToken("acct-free"); err == nil || !strings.Contains(err.Error(), "own gateway") || !strings.Contains(err.Error(), "hello@memdoor.ai") {
 		t.Fatalf("a free account is refused, told how to get it: %v", err)
 	}
 	if id, err := auth.ValidateToken("acct-good"); err != nil || id != "acct:ws-1" {
@@ -145,7 +146,7 @@ func TestRelayTellsAFreeAccountWhy(t *testing.T) {
 	}
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusPaymentRequired || !strings.Contains(string(b), "Pro") {
+	if resp.StatusCode != http.StatusPaymentRequired || !strings.Contains(string(b), "own gateway") {
 		t.Fatalf("status %d body %q", resp.StatusCode, b)
 	}
 }
