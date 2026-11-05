@@ -7,49 +7,8 @@ requires:
   - table_pattern: plan
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}
-  python3 - "$r/plan.md" "$r/task.md" "$r/prompt.md" <<'PY'
-  import os, re, sys
-  plan, task, prompt = (open(p).read() for p in sys.argv[1:])
-  def section(text, name):
-      m = re.search(r"^##\s*" + re.escape(name) + r"\s*$(.*?)(?=^##\s|\Z)", text, re.M | re.S)
-      return m.group(1).strip() if m else ""
-  got = {n: section(plan, n) for n in ("Deliverable", "Check", "Scope", "Done when")}
-  notes = []
-  if not got["Deliverable"]:
-      got["Deliverable"] = "changes to this tree"; notes.append("Deliverable")
-  first = (got["Check"].split() or [""])[0].strip("`*").lower()
-  if not (re.search(r"`[^`]+`", got["Check"]) or first in ("samples", "judge")):
-      # The check the prompt names ("Check: go test ./x/ passes."), else the judge.
-      m = re.search(r"Check:\s*`?([^`\n]+?)`?\s+(?:passes|exits 0)\b", prompt)
-      got["Check"] = ("`%s`" % m.group(1).strip()) if m else "judge"; notes.append("Check")
-  if not re.search(r"`[^`]+`", got["Scope"]):
-      named = sorted({p.rstrip(".,:;)") for p in re.findall(r"[\w./-]+/[\w./-]+|[\w-]+\.\w{1,5}\b", prompt) if os.path.exists(p.rstrip(".,:;)"))})
-      got["Scope"] = "\n".join("`%s`" % p for p in named) or "`.`"; notes.append("Scope")
-  if not got["Done when"]:
-      got["Done when"] = "The Prompt is done as written."; notes.append("Done when")
-  # task.md's own sections, split at their "## " headings; the Prompt's own
-  # headings were put one level down by problem.yaml, so they do not split.
-  parts, cur = [], None
-  for line in task.split("\n"):
-      if line.startswith("## "):
-          cur = [line, []]; parts.append(cur)
-      elif cur is None:
-          parts.append([None, [line]])
-      else:
-          cur[1].append(line)
-  out = []
-  for head, body in parts:
-      name = head[3:].strip() if head else None
-      if head:
-          out.append(head)
-      if name in got:
-          out += ["", got[name], ""]
-      else:
-          out += body
-  out = "\n".join(out)
-  open(sys.argv[2], "w").write(out)
-  print("settled: " + ", ".join("%s %s" % (n, "(filled safely)" if n in notes else "") for n in got))
-  PY
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  bash "$w/settle.sh" "$r"
   [ -f "$r/notes.md" ] || printf '# Notes, run {{.partition}}\n\n## Solver decision\n\n## Review\n\n## Repair\n' > "$r/notes.md"
   sed -n '/^## Check/,/^## Done when/p' "$r/task.md"
 timeout: 1m

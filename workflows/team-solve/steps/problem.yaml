@@ -17,13 +17,7 @@ command: |
     [ -f task.md ] || { echo 'no prompt: memdoor workflow run team-solve "<what to do>", or a task.md in this folder'; exit 1; }
     cp task.md "$r/prompt.md"
   fi
-  python3 - "$w/task.template.md" "$r/prompt.md" "$r/task.md" <<'PY'
-  import sys
-  template, prompt, out = sys.argv[1:]
-  # A prompt's own headings would read as task.md's sections: one level down.
-  text = "\n".join("#" + l if l.startswith("## ") else l for l in open(prompt).read().strip().split("\n"))
-  open(out, "w").write(open(template).read().replace("@@PROMPT@@", text))
-  PY
+  bash "$w/task.sh" "$w/task.template.md" "$r/prompt.md" "$r/task.md"
   cp "$w/done.sh" "$r/done.sh"
   touch "$r/start"
   if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
