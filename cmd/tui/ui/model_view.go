@@ -63,7 +63,7 @@ func (m Model) View() string {
 	if m.showAutocomplete {
 		autocompleteDropdown = "\n" + m.renderAutocomplete()
 	} else if m.showFileMentions {
-		autocompleteDropdown = "\n" + m.renderDropdown(m.fileMatches, m.fileIndex)
+		autocompleteDropdown = "\n" + m.renderDropdown(m.fileMatches, m.fileIndex, nil)
 	}
 
 	// Interactive /model picker (shows above footer when open)
@@ -510,12 +510,16 @@ func (m Model) renderTodosBar() string {
 
 // renderAutocomplete renders the slash command autocomplete dropdown
 func (m Model) renderAutocomplete() string {
-	return m.renderDropdown(m.filteredCommands, m.autocompleteIndex)
+	return m.renderDropdown(m.filteredCommands, m.autocompleteIndex, func(c string) string { return slashDescriptions[c] })
 }
 
 // renderDropdown renders a picker of entries above the footer, windowed
-// around the selection (slash commands, @file mentions).
-func (m Model) renderDropdown(entries []string, index int) string {
+// around the selection (slash commands, @file mentions); describe, when it
+// says something, is the entry's line in grey beside it.
+func (m Model) renderDropdown(entries []string, index int, describe func(string) string) string {
+	if describe == nil {
+		describe = func(string) string { return "" }
+	}
 	if len(entries) == 0 {
 		return ""
 	}
@@ -548,6 +552,19 @@ func (m Model) renderDropdown(entries []string, index int) string {
 	}
 
 	moreStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim)).Italic(true)
+	// What each one does, in grey on its right (#132): a column for the
+	// names, the description cut to what is left of the box.
+	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
+	nameW := 0
+	for i := start; i < end; i++ {
+		if n := lipgloss.Width(entries[i]); n > nameW {
+			nameW = n
+		}
+	}
+	if nameW > 28 {
+		nameW = 28
+	}
+	descW := m.width - 4 - 2 - nameW - 6 // the box's border and padding, the gap
 
 	var items []string
 	if start > 0 {
@@ -555,18 +572,26 @@ func (m Model) renderDropdown(entries []string, index int) string {
 	}
 	for i := start; i < end; i++ {
 		cmd := entries[i]
+		desc := ""
+		if d := describe(cmd); d != "" && descW >= 12 {
+			pad := nameW - lipgloss.Width(cmd)
+			if pad < 0 {
+				pad = 0
+			}
+			desc = strings.Repeat(" ", pad) + "   " + descStyle.Render(truncateEnd(d, descW))
+		}
 		if i == index {
 			// Highlight selected item
 			selectedStyle := lipgloss.NewStyle().
 				Foreground(lipgloss.Color(colSelFG)).
 				Background(lipgloss.Color(colSelBG)).
 				Bold(true)
-			items = append(items, selectedStyle.Render(" "+cmd+" "))
+			items = append(items, selectedStyle.Render(" "+cmd+" ")+desc)
 		} else {
 			// Normal item
 			normalStyle := lipgloss.NewStyle().
 				Foreground(lipgloss.Color(colText)) // Light gray
-			items = append(items, normalStyle.Render(" "+cmd))
+			items = append(items, normalStyle.Render(" "+cmd)+" "+desc)
 		}
 	}
 	if end < len(entries) {

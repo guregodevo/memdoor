@@ -48,40 +48,7 @@ func (m *Model) handleSlashCommand(text string) (string, bool) {
 		// looking and the writing; this is only the brief.
 		return initPrompt, false
 	case "/help":
-		helpText := `Available slash commands:
-- /init - Write the project's AGENTS.md (build, test, conventions) so every turn starts from it
-- /update - Install the newest memdoor build; the window restarts into this conversation
-- /dir <path> - Re-root the session on another directory (bare /dir shows the current one)
-- /model - Which model answers this conversation and why; /model 2 pins a rung, /model vendor/name pins any model, /model auto lets it go
-- /model vendor/name price|throughput|latency|default - How its hosts are chosen; /model vendor/name order host1,host2 - your own host order
-- /model-search <name> - Find a model in the catalogue (id, context, cost band); /model-search vendor/name lists its hosts
-- /usage - What this workspace has used this month: model requests, tokens, cost on your key
-- /remote - Open this conversation on your phone: a link and a QR code, end-to-end encrypted; /remote off revokes the link
-- /share - A read-only link to this conversation, end-to-end encrypted, secrets removed; /unshare deletes it
-- /context - View current context usage and status
-- /compact [focus] - Summarize the conversation now; the focus says what to keep in mind
-- /handoff [request] - The model summarizes goals, decisions, progress and next steps; a clean session starts from it
-- /doctor - Run diagnostics on TUI session health
-- /agents - List all configured agents
-- /copy [N|all] - Copy the last interaction (or last N, or all) to the clipboard
-- /clear - Wipe the agent's memory of this conversation: its next turn starts from nothing
-- /fresh [request] - A clean session: the agent forgets this conversation (the screen stays); with a request, sends it
-- /new - Start a new session (requires restart)
-- /exit or /quit - Close this window (ctrl+c does too); the gateway and the conversation stay
-- /help - Show this help message
-- /skill:<name> [args] - Run a named skill as the turn's task (tab-complete lists them)
-- /mcp - The MCP servers the coder can use: add one, sign in, see their state (/mcp add, login, test, on, off, remove, trust)
-- /<server>:<prompt> [args] - Run an MCP server's prompt as the turn's task (args in order, or name=value)
-
-Keys:
-- Esc - Interrupt a running turn
-- ctrl+o - Expand tool frames (full tool output instead of the truncated preview)
-- End - Jump to the latest message
-- Shift+Tab - Cycle the reasoning effort (auto, low, medium, high)
-
-Custom commands can be added in .agents/commands/ directory (.claude/commands/
-still works); skills live in .agents/skills/ (project) and ~/.memdoor/skills/
-(global).`
+		helpText := slashHelpText() // one table with the dropdown's descriptions (slash_help.go)
 
 		// Add help message as assistant response
 		helpMsg := Message{

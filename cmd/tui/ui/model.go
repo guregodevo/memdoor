@@ -328,6 +328,7 @@ func loadSlashCommands(agent string) []string {
 		commands = append(commands, "/w "+name)
 	}
 
+	describeSlashCommands(commands, wd)
 	return commands
 }
 
