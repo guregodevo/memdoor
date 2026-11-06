@@ -21,7 +21,7 @@ import (
 // update has a couple of dozen early returns, and a flush call in each of them
 // is a rule that only holds until someone adds the next return.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	wasBusy := m.busy()
+	wasBusy := m.working()
 	next, cmd := m.update(msg)
 	nm, ok := next.(Model)
 	if !ok {
@@ -30,12 +30,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// The end of a turn, detected once, where every path through update
 	// meets: running before this message, idle after it, and not stopped to
 	// ask a question (that has its own "?" in the title).
-	if !wasBusy && nm.busy() {
+	if !wasBusy && nm.working() {
 		if c := cmuxTurnStarted(); c != nil {
 			cmd = tea.Batch(cmd, c)
 		}
 	}
-	if wasBusy && !nm.busy() && nm.pendingQuestion == nil {
+	if wasBusy && !nm.working() && nm.pendingQuestion == nil {
 		if ring := (&nm).turnEnded(); ring != nil {
 			cmd = tea.Batch(cmd, ring)
 		}

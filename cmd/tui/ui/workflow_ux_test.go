@@ -116,9 +116,12 @@ func TestALongGraphFitsTheWindow(t *testing.T) {
 		switch {
 		case i < 6:
 			t.State = "done"
+			t.Outcome = n + ".md"
 		case i == 6:
 			t.State, t.Started = "running", &started
 			t.Lines = []stepLine{{text: "⏺ bash · 4s"}}
+			t.About = "The check before the team: the direct attempt, as the project tests it."
+			t.InputTokens, t.OutputTokens = 1200, 300
 		case i == 7:
 			t.State, t.Error = "failed", "exit status 1 — no prompt"
 		}
@@ -129,11 +132,11 @@ func TestALongGraphFitsTheWindow(t *testing.T) {
 	full := workflowGraphMessage(r, 120, true).Content
 	compact := workflowGraphMessage(r, 120, false).Content
 	nFull, nCompact := strings.Count(full, "\n")+1, strings.Count(compact, "\n")+1
-	if nCompact > 10 || nFull < 20 {
+	if nCompact > 14 || nFull < 20 {
 		t.Fatalf("compact %d lines, full %d:\n%s", nCompact, nFull, plainText(compact))
 	}
 	plain := plainText(compact)
-	for _, want := range []string{"✓✓✓✓✓✓▶✗○", "6 done", "problem, outline", "running", "test-0 12s", "test-0: ⏺ bash · 4s", "failed", "context — exit status 1 — no prompt", "10 waiting", "ctrl+o shows every step (18)"} {
+	for _, want := range []string{"✓✓✓✓✓✓▶✗○", "6 done", "problem, outline", "running", "test-0 12s", "⏺ bash · 4s", "The check before the team: the direct attempt", "1.5k tokens", "baseline: baseline.md", "direct: direct.md", "failed", "context — exit status 1 — no prompt", "10 waiting", "ctrl+o shows every step (18)"} {
 		if !strings.Contains(plain, want) {
 			t.Errorf("compact misses %q:\n%s", want, plain)
 		}
@@ -141,5 +144,35 @@ func TestALongGraphFitsTheWindow(t *testing.T) {
 	small := WorkflowRun{ID: "r2", Workflow: "release", State: "running", Total: 3, Tasks: tasks[:3]}
 	if strings.Contains(plainText(workflowGraphMessage(small, 120, false).Content), "ctrl+o shows every step") {
 		t.Error("a short graph is drawn in full")
+	}
+}
+
+// The tab and cmux say Running while this window's run goes on after its
+// turn: a team-mode turn answers at once and the team works for minutes (the
+// maintainer, 2026-11-06: "in cmux i dont see running when runnning team mode").
+func TestTheTabSaysRunningWhileTheTeamRuns(t *testing.T) {
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	if m.working() {
+		t.Fatal("an idle window is not working")
+	}
+	m.workflowRunning = "r1"
+	m.workflowLast = map[string]WorkflowRun{"r1": {ID: "r1", State: "running"}}
+	if !m.working() || !strings.HasPrefix(m.windowTitle(), spinFrames[0]) {
+		t.Fatalf("a running run, no turn: working %v, title %q", m.working(), m.windowTitle())
+	}
+	if m.busy() {
+		t.Fatal("busy stays the turn's")
+	}
+	m.workflowLast["r1"] = WorkflowRun{ID: "r1", State: "waiting"}
+	if m.working() {
+		t.Fatal("a run waiting at a gate is blocked, not working")
+	}
+	m.workflowLast["r1"] = WorkflowRun{ID: "r1", State: "running"}
+	before := m
+	m.workflowRunning = "" // the run ended
+	next, cmd := before.Update(workflowTickMsg(time.Now()))
+	_ = next
+	if !before.working() || cmd == nil {
+		t.Fatal("the run's end is a transition the window acts on")
 	}
 }

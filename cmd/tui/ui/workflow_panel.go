@@ -69,6 +69,7 @@ type WorkflowTask struct {
 	Note     string     // the task's latest progress line (a tool it called), from events
 	Receipt  string     // what proved a finished agent task: its turn's receipt line
 	Outcome  string     `json:"outcome"` // a finished step's file and its verdict ("review.md: verdict: PASS")
+	About    string     `json:"about"`   // what the step does, from its file's opening comment
 	// Lines are what the step did, one per call (`✎ path`, `$ cmd → exit 0`),
 	// oldest first, from the run's progress events; kept in the window only.
 	Lines []stepLine `json:"-"`
@@ -859,18 +860,30 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 		}
 		switch st {
 		case "running", "retrying":
-			var parts []string
-			for _, t := range ts {
+			// Each running step on its own line, with what it does and what it
+			// has spent so far: a step that is one model call has no lines of
+			// its own, and "▶ plan running 56s" alone read as stuck (the
+			// maintainer, 2026-11-06: "it says running but users dont see
+			// anything more").
+			for i, t := range ts {
+				lead := strings.Repeat(" ", 15)
+				if i == 0 {
+					lead = label(st, len(ts))
+				}
 				p := t.Name
 				if t.Started != nil {
 					p += " " + time.Since(*t.Started).Round(time.Second).String()
 				}
-				parts = append(parts, p)
-			}
-			rows = append(rows, "  "+label(st, len(ts))+text.Render(truncateEnd(strings.Join(parts, " · "), room)))
-			for _, t := range ts {
+				line := text.Render(p)
+				if u := usageDetail(t.InputTokens, t.OutputTokens, t.CostUSD); u != "" {
+					line += dim.Render(" · " + u)
+				}
+				rows = append(rows, "  "+lead+line)
+				if t.About != "" {
+					rows = append(rows, "      "+dim.Render(truncateEnd(t.About, width-10)))
+				}
 				for _, l := range stepLinesOf(t, false) {
-					rows = append(rows, "      "+dim.Render(truncateEnd(t.Name+": "+l, width-10)))
+					rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
 				}
 			}
 		case "failed":
@@ -880,7 +893,26 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 					rows = append(rows, "    "+bad.Render(truncateEnd(t.Name+" — "+t.Error, width-8)))
 				}
 			}
-		case "done", "stopped":
+		case "done":
+			rows = append(rows, "  "+label(st, len(ts))+text.Render(names(ts)))
+			// What the last two finished steps produced, so the run reads as
+			// moving between them ("review: review.md: verdict: PASS").
+			var said []string
+			for _, t := range ts {
+				for _, l := range []string{t.Outcome, t.Receipt} {
+					if l != "" {
+						said = append(said, t.Name+": "+l)
+						break
+					}
+				}
+			}
+			if len(said) > 2 {
+				said = said[len(said)-2:]
+			}
+			for _, l := range said {
+				rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
+			}
+		case "stopped":
 			rows = append(rows, "  "+label(st, len(ts))+text.Render(names(ts)))
 		default: // waiting, skipped: nothing to read yet
 			rows = append(rows, "  "+label(st, len(ts))+dim.Render(names(ts)))

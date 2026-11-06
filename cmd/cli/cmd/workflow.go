@@ -29,6 +29,7 @@ type workflowTaskStatus struct {
 	Took     string     `json:"took"`
 	Started  *time.Time `json:"started,omitempty"`
 	Receipt  string     `json:"receipt,omitempty"`
+	About    string     `json:"about,omitempty"`
 }
 
 type workflowRunStatus struct {
@@ -466,7 +467,7 @@ func tuiWorkflowOps(dir func() string, workspace, channel string) ui.WorkflowOps
 		out := ui.WorkflowRun{ID: r.ID, Workflow: r.Workflow, Dir: r.Dir, State: r.State, Started: r.Started, Error: r.Error, Done: r.Done, Total: r.Total, Review: r.Review, Results: r.Results}
 		for _, t := range r.Tasks {
 			out.Tasks = append(out.Tasks, ui.WorkflowTask{Name: t.Name, Agent: t.Agent, Requires: t.Requires, Target: t.Target,
-				External: t.External, State: t.State, Error: t.Error, Attempt: t.Attempt, Took: t.Took, Started: t.Started, Receipt: t.Receipt})
+				External: t.External, State: t.State, Error: t.Error, Attempt: t.Attempt, Took: t.Took, Started: t.Started, Receipt: t.Receipt, About: t.About})
 		}
 		return out
 	}
