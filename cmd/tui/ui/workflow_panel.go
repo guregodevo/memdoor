@@ -692,7 +692,10 @@ func workflowGlyph(state string) (string, string) {
 	case "failed":
 		return "✗", colErr
 	case "stopped":
-		return "■", colDim // asked for, not an error: no error hue
+		// Asked for, not an error: no error hue, and not grey either — a
+		// stopped step did not finish and should be seen (#133: "stopped
+		// should have a color maybe"). The warning hue; ■ tells it from ▶.
+		return "■", colWarn
 	case "retrying":
 		return "↻", colWarn
 	}
@@ -718,8 +721,20 @@ func workflowGraphRows(r WorkflowRun, width int, expanded bool) []string {
 		}
 		for _, t := range layer {
 			g, c := workflowGlyph(t.State)
-			glyph := lipgloss.NewStyle().Foreground(lipgloss.Color(c)).Render(g)
-			detail := t.State
+			// Hue says what the state is, on the glyph and its word; luminance
+			// says how much the step matters now: a step that ran, runs or
+			// failed is read, one waiting or skipped is not (ADR 0018, #133).
+			hue := lipgloss.NewStyle().Foreground(lipgloss.Color(c))
+			glyph := hue.Render(g)
+			nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(colText))
+			if t.State == "" || t.State == "waiting" || t.State == "skipped" {
+				nameStyle = dim
+			}
+			state := t.State
+			if state == "" {
+				state = "waiting"
+			}
+			detail := ""
 			switch {
 			case t.State == "running" && t.Started != nil:
 				detail += " " + time.Since(*t.Started).Round(time.Second).String() // ticks between events
@@ -735,7 +750,11 @@ func workflowGraphRows(r WorkflowRun, width int, expanded bool) []string {
 			if t.External && t.State != "done" && t.State != "skipped" {
 				detail += " · external — a approves"
 			}
-			line := fmt.Sprintf("%s %-*s  %s", glyph, w, t.Name, dim.Render(detail))
+			stateWord := hue.Render(state)
+			if t.State == "" || t.State == "waiting" || t.State == "skipped" {
+				stateWord = dim.Render(state) // nothing to look at yet, or nothing done
+			}
+			line := fmt.Sprintf("%s %s  %s%s", glyph, nameStyle.Render(fmt.Sprintf("%-*s", w, t.Name)), stateWord, dim.Render(detail))
 			if len(t.Requires) > 0 {
 				line += dim.Render("  ← " + strings.Join(t.Requires, ", "))
 			}
@@ -780,6 +799,97 @@ func stepLinesOf(t WorkflowTask, expanded bool) []string {
 	return out
 }
 
+// workflowCompactAfter is how many steps a graph draws in full in the
+// conversation; past it, the steps are grouped by state (#134: "listing all
+// workflow steps can not fit the full window"). team-solve has 18 steps, 36
+// lines with the layers' separators. ctrl+o draws every step; the panel
+// always does.
+const workflowCompactAfter = 8
+
+// workflowCompactRows is a long graph in a few lines: a strip with every
+// step's glyph in run order, then one line per state that has steps — what
+// is done, what runs (with its time and its last lines), what failed (with
+// its error), what waits — and how to see every step.
+func workflowCompactRows(r WorkflowRun, width int) []string {
+	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
+	text := lipgloss.NewStyle().Foreground(lipgloss.Color(colText))
+	bad := lipgloss.NewStyle().Foreground(lipgloss.Color(colErr))
+	var strip strings.Builder
+	groups := map[string][]WorkflowTask{}
+	for _, layer := range workflowLayers(r.Tasks) {
+		for _, t := range layer {
+			g, c := workflowGlyph(t.State)
+			strip.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(c)).Render(g))
+			st := t.State
+			if st == "" {
+				st = "waiting"
+			}
+			groups[st] = append(groups[st], t)
+		}
+	}
+	rows := []string{"  " + strip.String()}
+	room := width - 22
+	if room < 20 {
+		room = 20
+	}
+	names := func(ts []WorkflowTask) string {
+		var out []string
+		used := 0
+		for i, t := range ts {
+			if used+len(t.Name)+2 > room && i > 0 {
+				return strings.Join(out, ", ") + fmt.Sprintf(", … +%d", len(ts)-i)
+			}
+			out = append(out, t.Name)
+			used += len(t.Name) + 2
+		}
+		return strings.Join(out, ", ")
+	}
+	label := func(state string, n int) string {
+		g, c := workflowGlyph(state)
+		word := state
+		if n > 1 || state == "done" || state == "waiting" || state == "skipped" {
+			word = fmt.Sprintf("%d %s", n, state)
+		}
+		return lipgloss.NewStyle().Foreground(lipgloss.Color(c)).Render(g+" "+fmt.Sprintf("%-11s", word)) + "  "
+	}
+	for _, st := range []string{"done", "skipped", "running", "retrying", "failed", "stopped", "waiting"} {
+		ts := groups[st]
+		if len(ts) == 0 {
+			continue
+		}
+		switch st {
+		case "running", "retrying":
+			var parts []string
+			for _, t := range ts {
+				p := t.Name
+				if t.Started != nil {
+					p += " " + time.Since(*t.Started).Round(time.Second).String()
+				}
+				parts = append(parts, p)
+			}
+			rows = append(rows, "  "+label(st, len(ts))+text.Render(truncateEnd(strings.Join(parts, " · "), room)))
+			for _, t := range ts {
+				for _, l := range stepLinesOf(t, false) {
+					rows = append(rows, "      "+dim.Render(truncateEnd(t.Name+": "+l, width-10)))
+				}
+			}
+		case "failed":
+			rows = append(rows, "  "+label(st, len(ts))+text.Render(names(ts)))
+			for _, t := range ts {
+				if t.Error != "" {
+					rows = append(rows, "    "+bad.Render(truncateEnd(t.Name+" — "+t.Error, width-8)))
+				}
+			}
+		case "done", "stopped":
+			rows = append(rows, "  "+label(st, len(ts))+text.Render(names(ts)))
+		default: // waiting, skipped: nothing to read yet
+			rows = append(rows, "  "+label(st, len(ts))+dim.Render(names(ts)))
+		}
+	}
+	rows = append(rows, "  "+dim.Render(fmt.Sprintf("ctrl+o shows every step (%d)", len(r.Tasks))))
+	return rows
+}
+
 // workflowGraphMessage is the DAG as one block in the conversation, redrawn
 // in place on every event (the maintainer, 2026-10-02: "a tool to run workflow that
 // we can see in real time the dag running"). Keyed by the run's id.
@@ -792,7 +902,18 @@ func workflowGraphMessage(r WorkflowRun, width int, expanded bool) Message {
 		head += " — " + r.Error
 	}
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
-	body := "  " + dim.Render(head) + "\n" + strings.Join(workflowGraphRows(r, width, expanded), "\n")
+	// The run's state in its hue, the rest of the line grey (#133).
+	_, hc := workflowGlyph(r.State)
+	if r.State == "stopping" {
+		hc = colWarn
+	}
+	pre, post, _ := strings.Cut(head, " · "+r.State)
+	headLine := dim.Render(pre+" · ") + lipgloss.NewStyle().Foreground(lipgloss.Color(hc)).Render(r.State) + dim.Render(post)
+	rows := workflowGraphRows(r, width, expanded)
+	if !expanded && len(r.Tasks) > workflowCompactAfter {
+		rows = workflowCompactRows(r, width)
+	}
+	body := "  " + headLine + "\n" + strings.Join(rows, "\n")
 	// A running graph is still changing: like a streaming reply it stays in
 	// the live view, never frozen into scrollback, or its later redraws land
 	// on a copy nobody sees (2026-10-04: a finished run's header still read
