@@ -13,8 +13,8 @@ doing nothing, when that release already exists.
 
 The partition is the version tag, so it is required: run
 `/w release-notes v1.601.0` (or `memdoor workflow run
-release-notes --partition v1.601.0`); approve the gate with `a` in
-`/workflow` or `memdoor workflow approve <run> approve`. A tag is released
+release-notes --partition v1.601.0`); approve the gate with `a` at
+the prompt (or in `/workflow`) or `memdoor workflow approve <run> approve`. A tag is released
 once: a rerun finds its entry already in CHANGELOG.md and skips `notes`.
 
 It needs the tag to exist locally, CHANGELOG.md to be the only thing you want

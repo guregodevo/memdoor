@@ -968,7 +968,7 @@ func (s *Server) triggerWorkflow(run *workflowRun) {
 		// note carries the run's whole state, so the block reads the end
 		// (done, failed, waiting) with the same message as the line.
 		if state == "waiting" {
-			run.note(s, fmt.Sprintf("⏸ %s waiting for %s — **a** in /workflow, or `memdoor workflow approve %s %s`",
+			run.note(s, fmt.Sprintf("⏸ %s waiting for %s — **a** here approves it, or `memdoor workflow approve %s %s`",
 				run.Workflow, strings.Join(blocked, ", "), run.ID, blocked[0]))
 		} else if state == "done" {
 			run.note(s, doneNote(run)+teamReport(run))
@@ -1199,7 +1199,7 @@ func (s *Server) requestChanges(id, task, comment string) (*workflowRun, error) 
 		if len(blocked) > 0 {
 			gate = blocked[0]
 		}
-		run.note(s, fmt.Sprintf("⏸ back at %s after the changes — **a** in /workflow, or `memdoor workflow approve %s %s`", gate, run.ID, gate))
+		run.note(s, fmt.Sprintf("⏸ back at %s after the changes — **a** here approves it, or `memdoor workflow approve %s %s`", gate, run.ID, gate))
 	}()
 	return run, nil
 }

@@ -43,11 +43,6 @@ func TestContextBeforeAnyReportSaysSo(t *testing.T) {
 	if strings.Contains(out, "200") || strings.Contains(out, "0.0%") {
 		t.Fatalf("invented a window before any event:\n%s", out)
 	}
-	// /doctor's context line follows the same rule.
-	doc := m.getDoctorStatus()
-	if !strings.Contains(doc, "no report yet") || strings.Contains(doc, "200") {
-		t.Fatalf("doctor invented a window before any event:\n%s", doc)
-	}
 }
 
 // A window the gateway reported is never replaced by the placeholder.

@@ -409,38 +409,6 @@ func (m *Model) dispatch(agent, text string) tea.Cmd {
 	return nil
 }
 
-// lastAssistantContent returns the most recent assistant message's text (the
-// plan, when the last turn produced one), or "" if none.
-func (m Model) lastAssistantContent() string {
-	for i := len(m.messages) - 1; i >= 0; i-- {
-		if m.messages[i].Role == "assistant" {
-			return m.messages[i].Content
-		}
-	}
-	return ""
-}
-
-// runPlan is the /go entry point (also /run, /approve): hand the plan the last
-// turn produced back to the coding agent to implement and verify. Returns nil
-// (and notes) if there's no plan to run.
-func (m *Model) runPlan() tea.Cmd {
-	plan := m.lastAssistantContent()
-	if strings.TrimSpace(plan) == "" {
-		m.note("No plan to run yet.")
-		m.viewport.SetContent(m.renderMessages())
-		m.gotoBottom()
-		return nil
-	}
-	m.interrupted = false
-	m.messages = append(m.messages, Message{Role: "system", Content: "Plan accepted → implementing", Timestamp: time.Now()})
-	cmd := m.dispatch("coder", "Implement this plan exactly. Write the file(s), build and run to verify, and fix until it works:\n\n"+plan)
-	m.isThinking = true
-	m.thinkingStartTime = time.Now()
-	m.viewport.SetContent(m.renderMessages())
-	m.gotoBottom()
-	return tea.Batch(cmd, m.tickThinking())
-}
-
 // answerQuestion sends the user's choice for the pending interactive question back
 // to the (blocked) agent and clears the picker.
 func (m *Model) answerQuestion(selected string) tea.Cmd {
