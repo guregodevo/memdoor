@@ -62,6 +62,9 @@ func (m Model) hint() (text, send string) {
 	if strings.TrimSpace(m.input.Value()) != "" || m.busy() || m.pendingQuestion != nil {
 		return "", ""
 	}
+	if _, gate := m.windowGate(); gate != "" {
+		return "a approves " + gate + " · /w opens the run", "a"
+	}
 	changed, replied := m.sinceLastAsk()
 	if !replied {
 		return "", ""

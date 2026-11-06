@@ -136,7 +136,10 @@ func TestALongGraphFitsTheWindow(t *testing.T) {
 		t.Fatalf("compact %d lines, full %d:\n%s", nCompact, nFull, plainText(compact))
 	}
 	plain := plainText(compact)
-	for _, want := range []string{"✓✓✓✓✓✓▶✗○", "6 done", "problem, outline", "running", "test-0 12s", "⏺ bash · 4s", "The check before the team: the direct attempt", "1.5k tokens", "baseline: baseline.md", "direct: direct.md", "failed", "context — exit status 1 — no prompt", "10 waiting", "ctrl+o shows every step (18)"} {
+	if strings.Contains(plain, "✓✓✓") {
+		t.Errorf("a strip of one glyph per step, the list of checks:\n%s", plain)
+	}
+	for _, want := range []string{"team-solve · running test-0 · 6/18 done", "6 done", "problem, outline", "running", "test-0 12s", "⏺ bash · 4s", "The check before the team: the direct attempt", "1.5k tokens", "baseline: baseline.md", "direct: direct.md", "failed", "context — exit status 1 — no prompt", "10 waiting", "ctrl+o shows every step (18)"} {
 		if !strings.Contains(plain, want) {
 			t.Errorf("compact misses %q:\n%s", want, plain)
 		}
@@ -174,5 +177,59 @@ func TestTheTabSaysRunningWhileTheTeamRuns(t *testing.T) {
 	_ = next
 	if !before.working() || cmd == nil {
 		t.Fatal("the run's end is a transition the window acts on")
+	}
+}
+
+// A gate says "a approves" only once the run is waiting at it. Before, the
+// step is one the run has not reached, and the line read as if a could
+// approve it already (the maintainer, 2026-11-06: "why we always see ○
+// approve  waiting · external — a approves").
+func TestAGateAsksOnlyWhenTheRunIsAtIt(t *testing.T) {
+	tasks := []WorkflowTask{
+		{Name: "notes", State: "running"},
+		{Name: "approve", Requires: []string{"notes"}, External: true, State: "waiting"},
+		{Name: "commit", Requires: []string{"approve"}, State: "waiting"},
+	}
+	before := plainText(strings.Join(workflowGraphRows(WorkflowRun{State: "running", Tasks: tasks}, 100, false), "\n"))
+	if strings.Contains(before, "a approves") || !strings.Contains(before, "approve  waiting · gate") {
+		t.Errorf("a gate the run has not reached asks nobody:\n%s", before)
+	}
+	tasks[0].State = "done"
+	at := plainText(strings.Join(workflowGraphRows(WorkflowRun{State: "waiting", Tasks: tasks}, 100, false), "\n"))
+	if !strings.Contains(at, "⏸ approve  waiting · your gate — a approves") {
+		t.Errorf("at the gate, the person's turn:\n%s", at)
+	}
+	// The compact view (more than 8 steps) names the gate under the waiting line.
+	many := append([]WorkflowTask{}, tasks...)
+	for _, n := range []string{"a", "b", "c", "d", "e", "f"} {
+		many = append(many, WorkflowTask{Name: n, State: "done"})
+	}
+	compact := plainText(workflowGraphMessage(WorkflowRun{ID: "r", Workflow: "release-notes", State: "waiting", Total: 9, Done: 7, Tasks: many}, 100, false).Content)
+	if !strings.Contains(compact, "⏸ approve — your gate — a approves") {
+		t.Errorf("the compact view names the gate:\n%s", compact)
+	}
+}
+
+// a alone at the prompt approves this window's run at its gate, and the hint
+// says so; with no run at a gate, a is a message like any other.
+func TestAAloneApprovesTheWindowsGate(t *testing.T) {
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	if _, send := m.hint(); send == "a" {
+		t.Fatal("no run, no gate to approve")
+	}
+	if id, task := m.windowGate(); id != "" || task != "" {
+		t.Fatalf("no run: %q %q", id, task)
+	}
+	m.workflowRunning = "r1"
+	m.workflowLast = map[string]WorkflowRun{"r1": {ID: "r1", State: "waiting", Tasks: []WorkflowTask{
+		{Name: "notes", State: "done"},
+		{Name: "approve", Requires: []string{"notes"}, External: true, State: "waiting"},
+		{Name: "commit", Requires: []string{"approve"}, State: "waiting"},
+	}}}
+	if id, task := m.windowGate(); id != "r1" || task != "approve" {
+		t.Fatalf("the window's gate: %q %q", id, task)
+	}
+	if text, send := m.hint(); send != "a" || !strings.Contains(text, "a approves approve") {
+		t.Fatalf("hint = %q, %q", text, send)
 	}
 }

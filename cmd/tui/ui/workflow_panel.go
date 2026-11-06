@@ -253,12 +253,15 @@ func (m *Model) workflowCommand(args []string) tea.Cmd {
 		}
 		return m.workflowDiff(id)
 	case "approve":
-		if len(args) < 3 {
-			m.note("**/workflow approve <run-id> <task>** completes an external task.")
+		op := m.workflow.Approve
+		id, task := m.windowGate()
+		if len(args) >= 3 {
+			id, task = args[1], args[2]
+		}
+		if task == "" {
+			m.note("**/workflow approve <run-id> <task>** completes an external task; **a** alone approves this window's run at its gate.")
 			return nil
 		}
-		op := m.workflow.Approve
-		id, task := args[1], args[2]
 		return func() tea.Msg { r, err := op(id, task); return workflowRunMsg{run: r, err: err} }
 	}
 	// Anything else is a workflow's name, and the words after it its task.
@@ -725,10 +728,16 @@ func workflowGraphRows(r WorkflowRun, width int, expanded bool) []string {
 			// Hue says what the state is, on the glyph and its word; luminance
 			// says how much the step matters now: a step that ran, runs or
 			// failed is read, one waiting or skipped is not (ADR 0018, #133).
+			// A gate the run has reached is the person's turn: the pause mark
+			// in the hue of a question, its name read.
+			gate := atGate(r, t)
+			if gate {
+				g, c = "⏸", colPlan
+			}
 			hue := lipgloss.NewStyle().Foreground(lipgloss.Color(c))
 			glyph := hue.Render(g)
 			nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(colText))
-			if t.State == "" || t.State == "waiting" || t.State == "skipped" {
+			if !gate && (t.State == "" || t.State == "waiting" || t.State == "skipped") {
 				nameStyle = dim
 			}
 			state := t.State
@@ -748,14 +757,22 @@ func workflowGraphRows(r WorkflowRun, width int, expanded bool) []string {
 			if t.Attempt > 1 {
 				detail += fmt.Sprintf(" (try %d)", t.Attempt)
 			}
-			if t.External && t.State != "done" && t.State != "skipped" {
-				detail += " · external — a approves"
+			// "a approves" only once the run is at the gate: before, the step
+			// is a gate the run has not reached and a cannot approve it yet
+			// (the maintainer, 2026-11-06: "why we always see ○ approve
+			// waiting · external — a approves").
+			gateHint := ""
+			switch {
+			case gate:
+				gateHint = " · your gate — a approves"
+			case t.External && t.State != "done" && t.State != "skipped":
+				detail += " · gate"
 			}
 			stateWord := hue.Render(state)
-			if t.State == "" || t.State == "waiting" || t.State == "skipped" {
+			if !gate && (t.State == "" || t.State == "waiting" || t.State == "skipped") {
 				stateWord = dim.Render(state) // nothing to look at yet, or nothing done
 			}
-			line := fmt.Sprintf("%s %s  %s%s", glyph, nameStyle.Render(fmt.Sprintf("%-*s", w, t.Name)), stateWord, dim.Render(detail))
+			line := fmt.Sprintf("%s %s  %s%s%s", glyph, nameStyle.Render(fmt.Sprintf("%-*s", w, t.Name)), stateWord, dim.Render(detail), hue.Render(gateHint))
 			if len(t.Requires) > 0 {
 				line += dim.Render("  ← " + strings.Join(t.Requires, ", "))
 			}
@@ -807,20 +824,20 @@ func stepLinesOf(t WorkflowTask, expanded bool) []string {
 // always does.
 const workflowCompactAfter = 8
 
-// workflowCompactRows is a long graph in a few lines: a strip with every
-// step's glyph in run order, then one line per state that has steps — what
-// is done, what runs (with its time and its last lines), what failed (with
-// its error), what waits — and how to see every step.
+// workflowCompactRows is a long graph in a few lines: one line per state
+// that has steps — what is done, what runs (with its time and its last
+// lines), what failed (with its error), what waits — and how to see every
+// step. No strip of one glyph per step above them: the header's "6/18 done"
+// already counts, and a row of ✓ read as a list of checks (the maintainer,
+// 2026-11-06: "i dont like this list of checks").
 func workflowCompactRows(r WorkflowRun, width int) []string {
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
 	text := lipgloss.NewStyle().Foreground(lipgloss.Color(colText))
 	bad := lipgloss.NewStyle().Foreground(lipgloss.Color(colErr))
-	var strip strings.Builder
+	faint := lipgloss.NewStyle().Foreground(lipgloss.Color(colFaint))
 	groups := map[string][]WorkflowTask{}
 	for _, layer := range workflowLayers(r.Tasks) {
 		for _, t := range layer {
-			g, c := workflowGlyph(t.State)
-			strip.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(c)).Render(g))
 			st := t.State
 			if st == "" {
 				st = "waiting"
@@ -828,7 +845,7 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 			groups[st] = append(groups[st], t)
 		}
 	}
-	rows := []string{"  " + strip.String()}
+	var rows []string
 	room := width - 22
 	if room < 20 {
 		room = 20
@@ -880,7 +897,10 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 				}
 				rows = append(rows, "  "+lead+line)
 				if t.About != "" {
-					rows = append(rows, "      "+dim.Render(truncateEnd(t.About, width-10)))
+					// A shade quieter than the step's own lines under it, or the
+					// sentence and the commands read as one list (the maintainer,
+					// 2026-11-06: "should be grey or highlighted").
+					rows = append(rows, "      "+faint.Render(truncateEnd(t.About, width-10)))
 				}
 				for _, l := range stepLinesOf(t, false) {
 					rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
@@ -916,6 +936,11 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 			rows = append(rows, "  "+label(st, len(ts))+text.Render(names(ts)))
 		default: // waiting, skipped: nothing to read yet
 			rows = append(rows, "  "+label(st, len(ts))+dim.Render(names(ts)))
+			for _, t := range ts {
+				if atGate(r, t) {
+					rows = append(rows, "      "+lipgloss.NewStyle().Foreground(lipgloss.Color(colPlan)).Render("⏸ "+t.Name+" — your gate — a approves"))
+				}
+			}
 		}
 	}
 	rows = append(rows, "  "+dim.Render(fmt.Sprintf("ctrl+o shows every step (%d)", len(r.Tasks))))
@@ -926,21 +951,28 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 // in place on every event (the maintainer, 2026-10-02: "a tool to run workflow that
 // we can see in real time the dag running"). Keyed by the run's id.
 func workflowGraphMessage(r WorkflowRun, width int, expanded bool) Message {
-	head := fmt.Sprintf("%s · %s · %d/%d done", r.Workflow, r.State, r.Done, r.Total)
+	post := fmt.Sprintf(" · %d/%d done", r.Done, r.Total)
 	if u := usageDetail(r.InputTokens, r.OutputTokens, r.CostUSD); u != "" {
-		head += " · " + u
+		post += " · " + u
 	}
 	if r.Error != "" {
-		head += " — " + r.Error
+		post += " — " + r.Error
 	}
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
-	// The run's state in its hue, the rest of the line grey (#133).
+	// The run's state in its hue, the rest of the line grey (#133); after
+	// the state, the step running now, the one bright thing on the line:
+	// what the run is doing is what a person looks for (the maintainer,
+	// 2026-11-06: "we dont see what is the task running", "more highlighted
+	// at the name of the running task, in header").
 	_, hc := workflowGlyph(r.State)
 	if r.State == "stopping" {
 		hc = colWarn
 	}
-	pre, post, _ := strings.Cut(head, " · "+r.State)
-	headLine := dim.Render(pre+" · ") + lipgloss.NewStyle().Foreground(lipgloss.Color(hc)).Render(r.State) + dim.Render(post)
+	headLine := dim.Render(r.Workflow+" · ") + lipgloss.NewStyle().Foreground(lipgloss.Color(hc)).Render(r.State)
+	if names := runningStepNames(r); names != "" {
+		headLine += " " + lipgloss.NewStyle().Foreground(lipgloss.Color(colText)).Bold(true).Render(names)
+	}
+	headLine += dim.Render(post)
 	rows := workflowGraphRows(r, width, expanded)
 	if !expanded && len(r.Tasks) > workflowCompactAfter {
 		rows = workflowCompactRows(r, width)
@@ -952,6 +984,54 @@ func workflowGraphMessage(r WorkflowRun, width int, expanded bool) Message {
 	// "running" in the scrollback).
 	live := r.State == "running" || r.State == "stopping"
 	return Message{Role: "workflow", Content: body, ToolID: "workflow:" + r.ID, Timestamp: time.Now(), Streaming: live}
+}
+
+// windowGate is this window's run and the gate it waits at, "" when it is
+// not waiting: what a alone at the prompt approves, and what the hint names.
+func (m Model) windowGate() (runID, task string) {
+	r, ok := m.workflowLast[m.workflowRunning]
+	if !ok || m.workflowRunning == "" || r.State != "waiting" {
+		return "", ""
+	}
+	for _, t := range r.Tasks {
+		if atGate(r, t) {
+			return r.ID, t.Name
+		}
+	}
+	return "", ""
+}
+
+// atGate says the run is waiting at this external step: it is the person's
+// turn, not a step the run has yet to reach. The run waits, the step is not
+// done, and everything it requires is.
+func atGate(r WorkflowRun, t WorkflowTask) bool {
+	if r.State != "waiting" || !t.External || t.State == "done" || t.State == "skipped" {
+		return false
+	}
+	done := map[string]bool{}
+	for _, o := range r.Tasks {
+		done[o.Name] = o.State == "done" || o.State == "skipped"
+	}
+	for _, req := range t.Requires {
+		if !done[req] {
+			return false
+		}
+	}
+	return true
+}
+
+// runningStepNames is the steps running now, in the graph's order: "direct",
+// "direct, plan"; "" when none is.
+func runningStepNames(r WorkflowRun) string {
+	var names []string
+	for _, layer := range workflowLayers(r.Tasks) {
+		for _, t := range layer {
+			if t.State == "running" || t.State == "retrying" {
+				names = append(names, t.Name)
+			}
+		}
+	}
+	return strings.Join(names, ", ")
 }
 
 func (m Model) renderWorkflowPanel() string {
@@ -981,6 +1061,9 @@ func (m Model) renderWorkflowPanel() string {
 	if p.screen == workflowScreenRun && p.run != nil {
 		r := p.run
 		head := fmt.Sprintf("%s · run %s · %s · %d/%d done", r.Workflow, r.ID, r.State, r.Done, r.Total)
+		if names := runningStepNames(*r); names != "" {
+			head = fmt.Sprintf("%s · run %s · %s %s · %d/%d done", r.Workflow, r.ID, r.State, names, r.Done, r.Total)
+		}
 		if u := usageDetail(r.InputTokens, r.OutputTokens, r.CostUSD); u != "" {
 			head += " · " + u
 		}

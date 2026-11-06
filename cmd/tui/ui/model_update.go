@@ -491,6 +491,17 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				originalText := text // Keep original for display
 
+				// a alone, with this window's run waiting at a gate, approves it:
+				// the graph says "a approves", and typed at the prompt it went to
+				// the coder as a message (the maintainer, 2026-11-06: "> a").
+				if text == "a" {
+					if id, task := m.windowGate(); task != "" {
+						m.input.Reset()
+						m.messages = append(m.messages, Message{Role: "user", Content: text, Timestamp: time.Now()})
+						return m, m.workflowCommand([]string{"approve", id, task})
+					}
+				}
+
 				// /go (/run, /approve): execute the planner's plan — hand it to the
 				// coder, whose bash/write_file tool events then stream into the TUI.
 				if text == "/go" || text == "/run" || text == "/approve" {
