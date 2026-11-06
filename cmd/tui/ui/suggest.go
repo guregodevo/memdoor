@@ -20,6 +20,23 @@ func (m Model) busy() bool {
 	return m.turnRunning || m.isThinking || m.pendingCall != "" || len(m.activeTools) > 0 || len(m.activeSubagents) > 0 || len(m.subagentWork) > 0
 }
 
+// working is busy, or this window's workflow run going on after its turn
+// ended: a team-mode turn answers at once and the team works for minutes.
+// The tab, cmux's Running and the end's ring follow it, so they say
+// Running while the team runs (the maintainer, 2026-11-06: "in cmux i dont see
+// running when runnning team mode"). busy stays the turn's: the hint and the
+// keys that act on a turn read it.
+func (m Model) working() bool {
+	if m.busy() {
+		return true
+	}
+	if id := m.workflowRunning; id != "" {
+		r, ok := m.workflowLast[id]
+		return !ok || r.State == "running" || r.State == "stopping"
+	}
+	return false
+}
+
 // suggestion is what Tab sends from the empty box, or "" when nothing is.
 func (m Model) suggestion() string {
 	_, send := m.hint()

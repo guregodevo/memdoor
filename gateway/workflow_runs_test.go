@@ -599,6 +599,15 @@ func TestAStoppedRunsKilledStepReadsStopped(t *testing.T) {
 			t.Fatalf("a real failure stays failed: %q", tj.State)
 		}
 	}
+	// A step that failed on its own before the stop stays failed, with its
+	// error, in the stopped run.
+	run.state = "stopped"
+	run.last = workflow.Result{Tasks: map[string]workflow.TaskResult{"tests": {Status: workflow.StatusFailed, Error: "exit status 1 — disk full"}}}
+	for _, tj := range run.snapshot().Tasks {
+		if tj.Name == "tests" && (tj.State != "failed" || tj.Error == "") {
+			t.Fatalf("a failure before the stop: %q %q", tj.State, tj.Error)
+		}
+	}
 }
 
 // A project's panel lists its own runs, not another project's (dogfood

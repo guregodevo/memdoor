@@ -45,7 +45,7 @@ func (m Model) windowTitle() string {
 	switch {
 	case m.pendingQuestion != nil:
 		return "? " + name
-	case m.busy():
+	case m.working():
 		return spinFrames[m.spinFrame%len(spinFrames)] + " " + name
 	case m.doneUnseen:
 		return "✓ " + name
@@ -71,11 +71,11 @@ type titleSpinMsg struct{}
 func (m *Model) spin(msg tea.Msg) tea.Cmd {
 	if _, ok := msg.(titleSpinMsg); ok {
 		m.spinning = false
-		if m.busy() {
+		if m.working() {
 			m.spinFrame++
 		}
 	}
-	if !m.busy() || m.spinning {
+	if !m.working() || m.spinning {
 		return nil
 	}
 	m.spinning = true

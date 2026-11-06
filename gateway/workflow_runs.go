@@ -725,6 +725,7 @@ type workflowTaskJSON struct {
 	Error    string   `json:"error,omitempty"`
 	Receipt  string   `json:"receipt,omitempty"` // what proved it: the turn's receipt line
 	Outcome  string   `json:"outcome,omitempty"` // a finished step's file and its verdict (stepOutcome)
+	About    string   `json:"about,omitempty"`   // what the step does, from its file's opening comment
 	Attempt  int      `json:"attempt,omitempty"`
 	// What the step's model calls cost so far, from the ledger (meterRun).
 	InputTokens  int64      `json:"input_tokens,omitempty"`
@@ -798,7 +799,7 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 	}
 	r.mu.Unlock()
 	for _, t := range r.WF.Tasks {
-		tj := workflowTaskJSON{Name: t.Name, Agent: t.Agent, Requires: t.Requires, External: t.External, State: "waiting", Target: t.Target, Receipt: receipts[t.Name]}
+		tj := workflowTaskJSON{Name: t.Name, Agent: t.Agent, Requires: t.Requires, External: t.External, State: "waiting", Target: t.Target, Receipt: receipts[t.Name], About: t.About}
 		if tr, ok := res.Tasks[t.Name]; ok {
 			tj.State, tj.Error, tj.Attempt = string(tr.Status), tr.Error, tr.Attempt
 			if tr.Took > 0 {
@@ -809,9 +810,11 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 				tj.Started = &st
 			}
 		}
-		if tj.State == "failed" && (out.State == "stopped" || out.State == "stopping") {
+		if tj.State == "failed" && (out.State == "stopped" || out.State == "stopping") && endedByStop(tj.Error) {
 			// Killed by the stop the person asked for, not a failure (a
 			// stopped run read "✗ long failed — signal: killed", 2026-10-04).
+			// A step that failed on its own before the stop stays failed, its
+			// error shown (2026-11-06: "disk full" read "■ stopped").
 			tj.State, tj.Error = "stopped", ""
 		}
 		if tj.State == "done" || tj.State == "skipped" {
@@ -1701,6 +1704,27 @@ func resultFiles(dir, partition string, wf workflow.Workflow) []string {
 	return out
 }
 
+// endedByStop reports whether a step's error is the stop's own: its process
+// killed, or its context cancelled.
+func endedByStop(err string) bool {
+	return err == "" || strings.Contains(err, "signal: killed") || strings.Contains(err, "context canceled") || strings.Contains(err, "signal: terminated")
+}
+
+// resultsLine names a run's files: their folder once when they share one
+// (team-solve's four in .memdoor/runs/team-solve-<run>/ were four long
+// paths, wrapped over four lines), else each path.
+func resultsLine(files []string) string {
+	dir := filepath.Dir(files[0])
+	names := make([]string, 0, len(files))
+	for _, f := range files {
+		if filepath.Dir(f) != dir || dir == "." {
+			return "results: " + strings.Join(files, " · ")
+		}
+		names = append(names, filepath.Base(f))
+	}
+	return "results in " + dir + "/: " + strings.Join(names, " · ")
+}
+
 // resultPreviewLines is how much of the final file a done run shows.
 const resultPreviewLines = 20
 
@@ -1713,7 +1737,7 @@ func doneNote(run *workflowRun) string {
 	if len(files) == 0 {
 		return b.String()
 	}
-	b.WriteString(" — results: " + strings.Join(files, " · "))
+	b.WriteString(" — " + resultsLine(files))
 	final := ""
 	for _, sink := range run.WF.Sinks() {
 		if t, ok := run.WF.Task(sink); ok && strings.HasPrefix(t.Target, "file ") {

@@ -52,6 +52,10 @@ type Task struct {
 	Target       string // "file …", "command: …", or "output" (what the task answers, kept as the proof)
 	Retries      int
 	Timeout      time.Duration
+	// About is what the step does, for a person watching it run: the first
+	// sentence of the comment its file opens with ("The planner: one call,
+	// no tools, on the outline"). "" when the file opens with none.
+	About string
 }
 
 // Load reads the workflow at dir and validates every task against the
@@ -95,6 +99,7 @@ func (w Workflow) tasks() ([]Task, error) {
 	byFull := map[string]Task{}
 	for full, d := range w.Defs {
 		t := taskOf(full, d)
+		t.About = aboutOf(w.Dir, w.Name, full)
 		if d.Timeout != "" {
 			to, err := tasks.ParseTimeout(d.Timeout)
 			if err != nil {
@@ -135,6 +140,46 @@ func (w Workflow) tasks() ([]Task, error) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out, nil
+}
+
+// aboutOf is the first sentence of the comment a step's file opens with:
+// <workflow>.<group>.<task> is <group>/<task>.yaml, or the file a sibling task
+// shares (ideate.yaml defines ideate-a and ideate-b).
+func aboutOf(dir, name, full string) string {
+	rel := strings.Split(strings.TrimPrefix(full, name+"."), ".")
+	if len(rel) == 0 {
+		return ""
+	}
+	base := filepath.Join(append([]string{dir}, rel...)...)
+	data, err := os.ReadFile(base + ".yaml")
+	if err != nil {
+		i := strings.LastIndex(base, "-")
+		if i <= len(dir) {
+			return ""
+		}
+		if data, err = os.ReadFile(base[:i] + ".yaml"); err != nil {
+			return ""
+		}
+	}
+	var lead []string
+	for _, l := range strings.Split(string(data), "\n") {
+		t := strings.TrimSpace(l)
+		if !strings.HasPrefix(t, "#") {
+			if len(lead) > 0 || (t != "" && !strings.HasPrefix(t, "type:") && !strings.HasPrefix(t, "agent:")) {
+				break
+			}
+			continue
+		}
+		lead = append(lead, strings.TrimSpace(strings.TrimLeft(t, "#")))
+	}
+	s := strings.Join(lead, " ")
+	if i := strings.Index(s, ". "); i > 0 {
+		s = s[:i+1]
+	}
+	if r := []rune(s); len(r) > 140 {
+		s = string(r[:139]) + "…"
+	}
+	return s
 }
 
 // taskOf reads a definition for a person.
