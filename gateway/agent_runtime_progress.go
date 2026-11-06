@@ -48,13 +48,17 @@ const modelWaitEvent = "waiting"
 var modelWaitEveryVar = 30 * time.Second
 
 // watchModelCall beats on the assistant stream until the returned stop
-// function is called.
+// function is called; when stop returns, no beat is sent any more. stop used
+// to close the channel and return while a tick already taken (or one ready
+// beside the close, select picks either) still went out: a beat after the
+// call had returned (CI on main, 2026-11-06: 5 beats, then 6).
 func (ar *AgentRuntime) watchModelCall(runID, sessionID string) func() {
 	if ar == nil || ar.events == nil || runID == "" {
 		return func() {}
 	}
-	done := make(chan struct{})
+	done, exited := make(chan struct{}), make(chan struct{})
 	go func() {
+		defer close(exited)
 		ticker := time.NewTicker(modelWaitEveryVar)
 		defer ticker.Stop()
 		for {
@@ -62,6 +66,11 @@ func (ar *AgentRuntime) watchModelCall(runID, sessionID string) func() {
 			case <-done:
 				return
 			case <-ticker.C:
+				select {
+				case <-done:
+					return
+				default:
+				}
 				ar.events.EmitEvent(runID, infra.EventStreamAssistant, sessionID, map[string]interface{}{
 					"event": modelWaitEvent,
 				})
@@ -69,7 +78,10 @@ func (ar *AgentRuntime) watchModelCall(runID, sessionID string) func() {
 		}
 	}()
 	var once sync.Once
-	return func() { once.Do(func() { close(done) }) }
+	return func() {
+		once.Do(func() { close(done) })
+		<-exited
+	}
 }
 
 // toolProgressEveryVar is how often a running tool says it is still running.
