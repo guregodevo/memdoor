@@ -807,20 +807,20 @@ func stepLinesOf(t WorkflowTask, expanded bool) []string {
 // always does.
 const workflowCompactAfter = 8
 
-// workflowCompactRows is a long graph in a few lines: a strip with every
-// step's glyph in run order, then one line per state that has steps — what
-// is done, what runs (with its time and its last lines), what failed (with
-// its error), what waits — and how to see every step.
+// workflowCompactRows is a long graph in a few lines: one line per state
+// that has steps — what is done, what runs (with its time and its last
+// lines), what failed (with its error), what waits — and how to see every
+// step. No strip of one glyph per step above them: the header's "6/18 done"
+// already counts, and a row of ✓ read as a list of checks (the maintainer,
+// 2026-11-06: "i dont like this list of checks").
 func workflowCompactRows(r WorkflowRun, width int) []string {
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
 	text := lipgloss.NewStyle().Foreground(lipgloss.Color(colText))
 	bad := lipgloss.NewStyle().Foreground(lipgloss.Color(colErr))
-	var strip strings.Builder
+	faint := lipgloss.NewStyle().Foreground(lipgloss.Color(colFaint))
 	groups := map[string][]WorkflowTask{}
 	for _, layer := range workflowLayers(r.Tasks) {
 		for _, t := range layer {
-			g, c := workflowGlyph(t.State)
-			strip.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(c)).Render(g))
 			st := t.State
 			if st == "" {
 				st = "waiting"
@@ -828,7 +828,7 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 			groups[st] = append(groups[st], t)
 		}
 	}
-	rows := []string{"  " + strip.String()}
+	var rows []string
 	room := width - 22
 	if room < 20 {
 		room = 20
@@ -880,7 +880,10 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 				}
 				rows = append(rows, "  "+lead+line)
 				if t.About != "" {
-					rows = append(rows, "      "+dim.Render(truncateEnd(t.About, width-10)))
+					// A shade quieter than the step's own lines under it, or the
+					// sentence and the commands read as one list (the maintainer,
+					// 2026-11-06: "should be grey or highlighted").
+					rows = append(rows, "      "+faint.Render(truncateEnd(t.About, width-10)))
 				}
 				for _, l := range stepLinesOf(t, false) {
 					rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
@@ -926,21 +929,28 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 // in place on every event (the maintainer, 2026-10-02: "a tool to run workflow that
 // we can see in real time the dag running"). Keyed by the run's id.
 func workflowGraphMessage(r WorkflowRun, width int, expanded bool) Message {
-	head := fmt.Sprintf("%s · %s · %d/%d done", r.Workflow, r.State, r.Done, r.Total)
+	post := fmt.Sprintf(" · %d/%d done", r.Done, r.Total)
 	if u := usageDetail(r.InputTokens, r.OutputTokens, r.CostUSD); u != "" {
-		head += " · " + u
+		post += " · " + u
 	}
 	if r.Error != "" {
-		head += " — " + r.Error
+		post += " — " + r.Error
 	}
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
-	// The run's state in its hue, the rest of the line grey (#133).
+	// The run's state in its hue, the rest of the line grey (#133); after
+	// the state, the step running now, the one bright thing on the line:
+	// what the run is doing is what a person looks for (the maintainer,
+	// 2026-11-06: "we dont see what is the task running", "more highlighted
+	// at the name of the running task, in header").
 	_, hc := workflowGlyph(r.State)
 	if r.State == "stopping" {
 		hc = colWarn
 	}
-	pre, post, _ := strings.Cut(head, " · "+r.State)
-	headLine := dim.Render(pre+" · ") + lipgloss.NewStyle().Foreground(lipgloss.Color(hc)).Render(r.State) + dim.Render(post)
+	headLine := dim.Render(r.Workflow+" · ") + lipgloss.NewStyle().Foreground(lipgloss.Color(hc)).Render(r.State)
+	if names := runningStepNames(r); names != "" {
+		headLine += " " + lipgloss.NewStyle().Foreground(lipgloss.Color(colText)).Bold(true).Render(names)
+	}
+	headLine += dim.Render(post)
 	rows := workflowGraphRows(r, width, expanded)
 	if !expanded && len(r.Tasks) > workflowCompactAfter {
 		rows = workflowCompactRows(r, width)
@@ -952,6 +962,20 @@ func workflowGraphMessage(r WorkflowRun, width int, expanded bool) Message {
 	// "running" in the scrollback).
 	live := r.State == "running" || r.State == "stopping"
 	return Message{Role: "workflow", Content: body, ToolID: "workflow:" + r.ID, Timestamp: time.Now(), Streaming: live}
+}
+
+// runningStepNames is the steps running now, in the graph's order: "direct",
+// "direct, plan"; "" when none is.
+func runningStepNames(r WorkflowRun) string {
+	var names []string
+	for _, layer := range workflowLayers(r.Tasks) {
+		for _, t := range layer {
+			if t.State == "running" || t.State == "retrying" {
+				names = append(names, t.Name)
+			}
+		}
+	}
+	return strings.Join(names, ", ")
 }
 
 func (m Model) renderWorkflowPanel() string {
@@ -981,6 +1005,9 @@ func (m Model) renderWorkflowPanel() string {
 	if p.screen == workflowScreenRun && p.run != nil {
 		r := p.run
 		head := fmt.Sprintf("%s · run %s · %s · %d/%d done", r.Workflow, r.ID, r.State, r.Done, r.Total)
+		if names := runningStepNames(*r); names != "" {
+			head = fmt.Sprintf("%s · run %s · %s %s · %d/%d done", r.Workflow, r.ID, r.State, names, r.Done, r.Total)
+		}
 		if u := usageDetail(r.InputTokens, r.OutputTokens, r.CostUSD); u != "" {
 			head += " · " + u
 		}
