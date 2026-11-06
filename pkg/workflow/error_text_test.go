@@ -29,3 +29,26 @@ func TestErrorLinesKeepTheStatusAndTheTail(t *testing.T) {
 		t.Fatalf("a short error is itself: %q", got)
 	}
 }
+
+// The paths around a command's failure: a status with nothing printed, a
+// nested status in the output, a kill, an agent step's error and an empty
+// error pass through or trim at the first status only.
+func TestErrorTextEdges(t *testing.T) {
+	for in, want := range map[string]string{
+		"task w.steps.quiet: exit 1\n: exit status 1":                                    "exit status 1",
+		"task w.steps.build: make: exit status 2 — make: *** [all] Error: exit status 1": "exit status 2 — make: *** [all] Error: exit status 1",
+		"task w.steps.long: sleep 60: signal: killed":                                    "task w.steps.long: sleep 60: signal: killed",
+		"task w.steps.solve: the model answered nothing":                                 "task w.steps.solve: the model answered nothing",
+		"": "",
+	} {
+		if got := ErrorText(in); got != want {
+			t.Errorf("ErrorText(%q) = %q, want %q", in, got, want)
+		}
+	}
+	if got := ErrorLines("", 3); len(got) != 1 || got[0] != "" {
+		t.Errorf("no error, one empty line: %q", got)
+	}
+	if got := ErrorLines("task x: c: exit status 1 — a\nb\nc\nd", 3); strings.Join(got, "|") != "exit status 1 — a|b|c|d" {
+		t.Errorf("four lines fit three plus the status: %q", got)
+	}
+}
