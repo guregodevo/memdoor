@@ -52,6 +52,18 @@ func localGatewayPort() (string, bool) {
 	return port, true
 }
 
+// portTaken names what the CLI reads to go elsewhere: MEMDOOR_GATEWAY or
+// --gateway, where the gateway it starts listens. It said MEMDOOR_PORT, which
+// only the installer and the ssh door read (#123): run as told, the window
+// went back to the same port.
+func portTaken(port string) error {
+	other := "18790"
+	if n, err := strconv.Atoi(port); err == nil && n > 0 && n < 65535 {
+		other = strconv.Itoa(n + 1)
+	}
+	return fmt.Errorf("port %s is taken by something that is not a Memdoor gateway: stop it, or start Memdoor on another port, e.g. MEMDOOR_GATEWAY=http://localhost:%s memdoor (or --gateway localhost:%s)", port, other, other)
+}
+
 // firstRunReady leaves a machine that has never run Memdoor with a running
 // gateway, a workspace and a session, without a question: the local user is
 // generated (~/.memdoor/local-login, the same file the Pro sign-in writes).
@@ -75,7 +87,7 @@ func machineReady() error {
 		// answers HTTP but not as a gateway: said at once, before a start
 		// that cannot bind and a 15 s wait that ended in that program's
 		// HTML error page.
-		taken := fmt.Errorf("port %s is taken by something that is not a Memdoor gateway: stop it, or run with MEMDOOR_PORT=<another port>", port)
+		taken := portTaken(port)
 		if !gatewayReachable() && portAnswers(port) {
 			return taken
 		}
