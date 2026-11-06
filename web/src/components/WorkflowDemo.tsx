@@ -18,19 +18,24 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
 // poster is the frame before the cast loads, and the still for anyone who
 // prefers reduced motion.
 // Five tabs, the things it is (the maintainer, 2026-10-11: "Workflows / Headless /
-// Cost saving", "No babysitting? the top 4 features"; 2026-10-26: "the story
-// of local model with peer features"). Each is a real session.
+// Cost saving"; 2026-10-26: "the story of local model with peer features";
+// 2026-11-06: the No babysitting tab removed, the review loop stays in the
+// gallery and the docs). Each is a real session.
 const TAKES = [
   {
     // Team mode plays first: the main feature (the maintainer, 2026-11-05).
-    // Recorded 2026-11-05 on a clean checkout of this repository, the
-    // window on deepseek-v4.1-flash: Shift+Tab to team, the task typed, the
-    // team-solve run drawn until its ■ line.
+    // Recorded 2026-11-06 on a clean checkout of this repository, the
+    // window on deepseek-v4.1-flash: Shift+Tab to team, the task typed, PgUp
+    // once the run is on (the 18-step graph is taller than the 30-row window,
+    // which follows its bottom; scrolled up it shows the steps that run, their
+    // tokens and cost and one line per call, #118 #119), End at the finish,
+    // the run's ■ line, the verdict and the diff. Tightened to 43 s
+    // (tighten-cast.py 40 19).
     key: 'team',
     label: 'Team mode',
     ask: 'Shift+Tab to team, then: scripts/scan.sh must pass outside a git checkout too.',
     cast: '/team-mode.cast',
-    poster: 'npt:0:41',
+    poster: 'npt:0:42',
     what: 'the single call first → checked → reviewed → kept, never worse than one turn',
   },
   {
@@ -40,14 +45,6 @@ const TAKES = [
     cast: '/workflow-release.cast',
     poster: 'npt:0:31',
     what: 'two at once → a merge → waits for you → goes on',
-  },
-  {
-    key: 'nobabysitting',
-    label: 'No babysitting',
-    ask: 'Reproduce GitHub issue #3, fix it, write the PR, wait for my review.',
-    cast: '/review-loop.cast',
-    poster: 'npt:0:31',
-    what: 'failing test → fix → gate → your one comment → fixed → PR',
   },
   {
     // Recorded 2026-10-24 against Google Cloud Shell: one line from a laptop,

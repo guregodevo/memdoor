@@ -6,14 +6,56 @@ footer names, with your prompt as its task. The run reports back into the
 conversation when it ends.
 
 ```
-  openrouter · deepseek/deepseek-v4.1-flash  ·  pinned by you  ·  team (shift+tab)  ·  effort auto
+  ⎇ main  ·  openrouter · deepseek/deepseek-v4.1-flash  ·  pinned by you  ·  team (shift+tab)  ·  effort auto
 ```
 
 ```
 > scripts/scan.sh must pass outside a git checkout too …
 
-  ▶ Team mode: team-solve is on it as team-solve-20261105-191225, 18 steps, each
+  ▶ Team mode: team-solve is on it as team-solve-20261106-113402, 18 steps, each
   role a fresh context. It reports here when it ends, with the verdict.
+```
+
+While it runs, the window draws the graph: the run's total, each step's time,
+tokens and cost, and under a running step one line per call of its turn
+(ctrl+o shows every line). The graph is taller than the window; PgUp reads
+the steps above, End jumps back to the latest.
+
+```
+  team-solve · running · 6/18 done · 54.1k tokens · $0.001
+  ✓ problem   done 0s
+  │
+  ▶ direct    running 51s · 26.5k tokens · $0.001  ← problem
+      … 1 more (ctrl+o)
+      $ bash scripts/scan.sh; echo "exit=$?" → exit 0
+      $ tmp=$(mktemp -d); rsync -a --exclude .git ./ "$tmp/repo/"; bash "$tmp/repo/…
+      ✎ scripts/scan.sh
+  ✓ outline   done 0s  ← problem
+      wrote outline.md
+  │
+  ✓ plan      done 13s · 27.6k tokens · $0.001  ← outline
+      wrote plan.md
+  │
+  ✓ settle    done 0s  ← plan
+  │
+  ✓ baseline  done 5s  ← settle
+```
+
+At the end, the verdict, what was kept, the Scope and the diff:
+
+```
+  ■ team-solve done — results: .memdoor/runs/team-solve-2026-11-06T113402/context.md ·
+  .memdoor/runs/team-solve-2026-11-06T113402/outline.md · … /plan.md · … /review.md
+
+  verdict: review PASS
+  kept: the direct attempt, untouched
+
+  Scope:
+      scope: scripts/scan.sh
+      changed: scripts/scan.sh +3 -1
+
+  The diff:
+      diff --git a/scripts/scan.sh b/scripts/scan.sh
 ```
 
 Shift+Tab again is `auto`: one turn, as before. The thinking effort is a

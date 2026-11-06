@@ -1,6 +1,6 @@
 # Memdoor
 
-> The workflow harness that makes a small model beat a frontier one, on your machine. Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account. Open source, on your gateway, on your key.
+> One small model can't. A team beats a frontier model. Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account. Open source, on your gateway, on your key.
 
 ## Why Memdoor
 
@@ -27,6 +27,17 @@ Measured over 44 paired runs (same tasks, decisions off and on, alternating): 22
 ## Workflows
 
 Describe the steps; the coder writes the workflow, the deterministic harness: one YAML per task in `.memdoor/workflows/<name>/steps/`, run as a DAG by mario. Task kinds: `command` (a shell line; its exit code is the proof), `llm` (one model call), `agent` (a turn of the coder). Independent tasks run in parallel. A task is done when its target exists (a file, a command that exits 0); a target already true is skipped. An `external: true` task is a gate: the run waits until a person approves (`a` in /workflow, `memdoor workflow approve <run> <task>`). A failed run resumes at the failed step. `memdoor cron add --workflow <name>` runs one on your local cron. The catalog at /workflows lists workflows that exist as files and have run, each with a recording: team-solve, karpathy-recipe, ship, review, tui-check, issue-to-pr, release-check, digest.
+
+## Team mode
+
+Shift+Tab flips the window between `auto` and `team`. In team, a turn is the team-solve workflow on this project and the model the footer names, with your prompt as its task; the run reports back into the conversation with the verdict. From the shell: `memdoor workflow run team-solve --model <id> "<task>"`. Guide: https://memdoor.ai/docs/team-mode
+
+- First the single call, then the team if it is needed: `direct` is one agent turn on the prompt; beside it `plan` settles the Check and the Scope and `baseline` runs the Check on the tree as it was; `test-0` runs the Check on the direct attempt.
+- When it passes, the rest only verifies it: a review, and a judge when a command cannot decide. When it fails, two ideators propose side by side and `solve` corrects the attempt from their proposals.
+- Never worse than its own single call: the direct attempt is saved before the team touches it, and the team's work replaces it only when it passes a check the attempt did not. Otherwise the attempt is put back and `keep.txt` says why.
+- The planner, the ideators, the reviewer and the judge are model calls with no tools. Every role starts from a fresh context and reads only the files on disk in `.memdoor/runs/team-solve-<run>/`.
+- Measured: nine SWE-bench Verified Django instances labelled "1-4 hours", deepseek/deepseek-v4.1-flash, the official harness, one run each: the single call resolved 8 of 9, team mode 9 of 9. One run per instance is a sample, not a rate.
+- Cost: about two to three times the single call; on deepseek-v4.1-flash, one to five cents a task.
 
 ## Results
 
@@ -61,6 +72,7 @@ Windows: `irm https://memdoor.ai/install.ps1 | iex`
 - Features, with the comparison to other coding agents: https://memdoor.ai/features — one page each: https://memdoor.ai/compare/claude-code, /compare/codex-cli, /compare/gemini-cli, /compare/aider, /compare/pi
 - Workflows: https://memdoor.ai/workflows (catalog), https://memdoor.ai/docs/workflows (guide), https://memdoor.ai/docs/cron (schedules)
 - Open-weight models, no key: https://memdoor.ai/docs/open-weight (janis on your machine, or Ollama, llama.cpp, vLLM, LM Studio; memdoor connect local, the window, the team-solve workflow on your GPU)
+- Team mode: https://memdoor.ai/docs/team-mode (Shift+Tab; a turn as the team-solve workflow on your project and model; never worse than the single call)
 - Team solve, the result: https://memdoor.ai/docs/team-solve (five Qwen3.8-27B agents at 9.8 of 10 against Fable 5's 8.0 on LiveCodeBench Hard, all runs published)
 - Remote control: https://memdoor.ai/docs/remote
 - Installer (plain shell, SHA-256 verified): https://memdoor.ai/install.sh
