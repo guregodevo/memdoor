@@ -9,6 +9,9 @@
 //   - OpenRouter (openrouter.ai/apps),
 //     Vercel AI Gateway (its apps leaderboard), Requesty (private analytics) and
 //     LLM Gateway (as a fallback) read HTTP-Referer + X-Title.
+//   - OpenRouter lists apps by category (openrouter.ai/apps/category/coding)
+//     from X-OpenRouter-Categories; without it the app is in no category
+//     list (#145).
 //   - LLM Gateway lists apps by X-Source (llmgateway.io/apps).
 //   - EUrouter lists apps by HTTP-Referer + X-EUrouter-Title.
 //   - Google asks every partner integration for x-goog-api-client
@@ -43,12 +46,16 @@ const (
 	AppURL = "https://memdoor.ai"
 	// AppSource is LLM Gateway's X-Source, a bare domain.
 	AppSource = "memdoor.ai"
+	// AppCategories is OpenRouter's X-OpenRouter-Categories: up to two per
+	// request, from its list; cli-agent is a coding one.
+	AppCategories = "cli-agent"
 
 	HeaderReferer       = "HTTP-Referer"
 	HeaderTitle         = "X-Title"
 	HeaderGoogleClient  = "x-goog-api-client"
 	HeaderLLMGateway    = "X-Source"
 	HeaderEUrouterTitle = "X-EUrouter-Title"
+	HeaderCategories    = "X-OpenRouter-Categories"
 )
 
 // pairHosts read HTTP-Referer + X-Title.
@@ -75,14 +82,14 @@ func Off() bool {
 	return v == "0" || strings.EqualFold(v, "off")
 }
 
-// Set names this app on a request bound for OpenRouter or another host that
-// reads the pair.
+// Set names this app on a request bound for OpenRouter, its category too.
 func Set(h http.Header) {
 	if Off() {
 		return
 	}
 	h.Set(HeaderReferer, AppURL)
 	h.Set(HeaderTitle, AppName)
+	h.Set(HeaderCategories, AppCategories)
 }
 
 // Headers is what a request to endpoint carries to name the app: nothing for
@@ -100,6 +107,8 @@ func Headers(endpoint string) map[string]string {
 		}
 	}
 	switch {
+	case isHost(host, "openrouter.ai"):
+		out[HeaderCategories] = AppCategories
 	case isHost(host, "googleapis.com"):
 		out[HeaderGoogleClient] = GoogleClient()
 	case isHost(host, "llmgateway.io"):
