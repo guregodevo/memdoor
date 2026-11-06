@@ -244,13 +244,16 @@ func TestAgentsListIsFetchedAsThePerson(t *testing.T) {
 		t.Fatalf("no op: %q", got)
 	}
 	m.agents = func() (string, error) {
-		return `{"agents":[{"id":"coder","name":"Coder","description":"writes code","tools":["bash"]},{"id":"chief"}],"default_id":"coder"}`, nil
+		return `{"agents":[{"id":"agent:coder","name":"coder","tools":["bash","edit_file","read_file","write_file","locate","cron"],"status":"online"},{"id":"agent:chief","name":"chief","tools":["bash"],"status":"online"},{"id":"agent:narrator","tools":[],"status":"offline"}]}`, nil
 	}
 	got := m.getAgentsList()
-	for _, want := range []string{"### coder (default)", "**Name**: Coder", "**Tools**: 1 configured", "### chief"} {
+	for _, want := range []string{"**3 agents**", "- **coder** · 6 tools: bash, edit_file, read_file, write_file, … +2\n", "- **chief** · 1 tool: bash\n", "- **narrator** · no tools · offline\n"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in:\n%s", want, got)
 		}
+	}
+	if strings.Contains(got, "###") || strings.Contains(got, "agent:") {
+		t.Errorf("headings and ids are the old form:\n%s", got)
 	}
 	m.agents = func() (string, error) { return "", fmt.Errorf("API error (401)") }
 	if got := m.getAgentsList(); !strings.Contains(got, "Error loading agents: API error (401)") {

@@ -381,10 +381,13 @@ func (m *Model) getDoctorStatus() string {
 	return response.String()
 }
 
-// getAgentsList formats the gateway's agents. The fetch is the CLI's, with
-// the person's token (Ops.Agents): the agent-side tool it called before sent
-// the gateway's internal service token, which a window does not hold, and
-// every /agents answered 401 (2026-11-06).
+// getAgentsList formats the gateway's agents, one line each: the name, its
+// tools. The fetch is the CLI's, with the person's token (Ops.Agents): the
+// agent-side tool it called before sent the gateway's internal service
+// token, which a window does not hold, and every /agents answered 401
+// (2026-11-06). A heading per agent with "Name: coder" under "agent:coder"
+// and "Tools: 20 configured" read as a form, not a list (the maintainer, the
+// same day: "ugly").
 func (m *Model) getAgentsList() string {
 	if m.agents == nil {
 		return "Agents aren't available in this build."
@@ -393,83 +396,44 @@ func (m *Model) getAgentsList() string {
 	if err != nil {
 		return fmt.Sprintf("Error loading agents: %s", err.Error())
 	}
-
-	// Parse the JSON response
-	type AgentInfo struct {
-		ID          string   `json:"id"`
-		Name        string   `json:"name,omitempty"`
-		Description string   `json:"description,omitempty"`
-		Workspace   string   `json:"workspace,omitempty"`
-		Tools       []string `json:"tools,omitempty"`
-		Skills      []string `json:"skills,omitempty"`
+	var resp struct {
+		Agents []struct {
+			ID     string   `json:"id"`
+			Name   string   `json:"name"`
+			Tools  []string `json:"tools"`
+			Status string   `json:"status"`
+		} `json:"agents"`
 	}
-
-	type AgentsResponse struct {
-		Agents    []AgentInfo `json:"agents"`
-		DefaultID string      `json:"default_id,omitempty"`
-	}
-
-	var agentsResp AgentsResponse
-	if err := json.Unmarshal([]byte(result), &agentsResp); err != nil {
+	if err := json.Unmarshal([]byte(result), &resp); err != nil {
 		return fmt.Sprintf("Error parsing agents list: %s", err.Error())
 	}
-
-	// Build formatted response
-	var response strings.Builder
-	response.WriteString("## Configured Agents\n\n")
-
-	if len(agentsResp.Agents) == 0 {
-		response.WriteString("No agents configured.\n")
-		return response.String()
+	if len(resp.Agents) == 0 {
+		return "No agents on this gateway."
 	}
-
-	// Show default agent if set
-	if agentsResp.DefaultID != "" {
-		response.WriteString(fmt.Sprintf("**Default Agent**: %s\n\n", agentsResp.DefaultID))
+	var b strings.Builder
+	fmt.Fprintf(&b, "**%d agents** · @name in a message asks one · `memdoor agent show <name>` has the rest\n", len(resp.Agents))
+	for _, a := range resp.Agents {
+		name := a.Name
+		if name == "" {
+			name = strings.TrimPrefix(a.ID, "agent:")
+		}
+		fmt.Fprintf(&b, "- **%s**", name)
+		switch n := len(a.Tools); {
+		case n == 0:
+			b.WriteString(" · no tools")
+		case n == 1:
+			fmt.Fprintf(&b, " · 1 tool: %s", a.Tools[0])
+		case n <= 4:
+			fmt.Fprintf(&b, " · %d tools: %s", n, strings.Join(a.Tools, ", "))
+		default:
+			fmt.Fprintf(&b, " · %d tools: %s, … +%d", n, strings.Join(a.Tools[:4], ", "), n-4)
+		}
+		if a.Status != "" && a.Status != "online" {
+			b.WriteString(" · " + a.Status)
+		}
+		b.WriteString("\n")
 	}
-
-	// List each agent
-	for i, agent := range agentsResp.Agents {
-		// Agent header with ID
-		isDefault := agent.ID == agentsResp.DefaultID
-		if isDefault {
-			response.WriteString(fmt.Sprintf("### %s (default)\n", agent.ID))
-		} else {
-			response.WriteString(fmt.Sprintf("### %s\n", agent.ID))
-		}
-
-		// Name if different from ID
-		if agent.Name != "" && agent.Name != agent.ID {
-			response.WriteString(fmt.Sprintf("**Name**: %s\n", agent.Name))
-		}
-
-		// Description
-		if agent.Description != "" {
-			response.WriteString(fmt.Sprintf("**Description**: %s\n", agent.Description))
-		}
-
-		// Workspace
-		if agent.Workspace != "" {
-			response.WriteString(fmt.Sprintf("**Workspace**: %s\n", agent.Workspace))
-		}
-
-		// Tools count
-		if len(agent.Tools) > 0 {
-			response.WriteString(fmt.Sprintf("**Tools**: %d configured\n", len(agent.Tools)))
-		}
-
-		// Skills
-		if len(agent.Skills) > 0 {
-			response.WriteString(fmt.Sprintf("**Skills**: %d loaded\n", len(agent.Skills)))
-		}
-
-		// Add separator between agents
-		if i < len(agentsResp.Agents)-1 {
-			response.WriteString("\n")
-		}
-	}
-
-	return response.String()
+	return b.String()
 }
 
 // isSlashEcho reports whether a message is a slash-command invocation echoed
