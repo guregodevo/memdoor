@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"sync"
 	"time"
 
 	"memdoor/gateway/logs"
@@ -25,6 +26,30 @@ func RecordMeter(e MeterEntry) {
 	if err := l.Append(e); err != nil {
 		logs.New("Meter").Warn("meter append failed: " + err.Error())
 	}
+	meterObservers.Range(func(_, fn any) bool {
+		fn.(func(MeterEntry))(e)
+		return true
+	})
+}
+
+// meterObservers are told of every ledger row as it is written: a workflow
+// run sums its steps' tokens from them while it runs (the run panel shows
+// each step's tokens live, #94), with no read of the whole ledger.
+var (
+	meterObservers  sync.Map // int → func(MeterEntry)
+	meterObserverMu sync.Mutex
+	meterObserverN  int
+)
+
+// OnMeter calls fn with each ledger row written from now on, until the
+// returned func is called. fn runs on the caller's goroutine: keep it short.
+func OnMeter(fn func(MeterEntry)) func() {
+	meterObserverMu.Lock()
+	meterObserverN++
+	key := meterObserverN
+	meterObserverMu.Unlock()
+	meterObservers.Store(key, fn)
+	return func() { meterObservers.Delete(key) }
 }
 
 // ReadMeter returns all ledger entries, oldest first.

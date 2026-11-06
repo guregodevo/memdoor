@@ -46,6 +46,10 @@ type WorkflowRun struct {
 	Total    int
 	Review   string   // at a gate: the commits and files the run changed
 	Results  []string // when done: the files the run produced
+	// The steps' tokens and cost so far, summed (gateway meterRun).
+	InputTokens  int64   `json:"input_tokens"`
+	OutputTokens int64   `json:"output_tokens"`
+	CostUSD      float64 `json:"cost_usd"`
 }
 
 // WorkflowTask is one node.
@@ -62,6 +66,25 @@ type WorkflowTask struct {
 	Started  *time.Time // the clock ticks a running task's time from it between events
 	Note     string     // the task's latest progress line (a tool it called), from events
 	Receipt  string     // what proved a finished agent task: its turn's receipt line
+	// What the step's model calls cost so far, live: the gateway sums the
+	// ledger's rows for the step's session as they are written.
+	InputTokens  int64   `json:"input_tokens"`
+	OutputTokens int64   `json:"output_tokens"`
+	CostUSD      float64 `json:"cost_usd"`
+	Calls        int     `json:"calls"`
+}
+
+// usageDetail is a step's or a run's tokens and cost as the row shows them
+// ("12.3k tokens · $0.004"); "" before its first model call.
+func usageDetail(in, out int64, cost float64) string {
+	if in+out == 0 {
+		return ""
+	}
+	d := formatTokens(int(in + out))
+	if cost >= 0.0005 {
+		d += fmt.Sprintf(" · $%.3f", cost)
+	}
+	return d
 }
 
 // workflowEventMsg is one transition from the gateway, with the run's whole
@@ -613,6 +636,9 @@ func workflowGraphRows(r WorkflowRun, width int) []string {
 			case t.Took != "" && (t.State == "done" || t.State == "failed" || t.State == "running"):
 				detail += " " + t.Took
 			}
+			if u := usageDetail(t.InputTokens, t.OutputTokens, t.CostUSD); u != "" {
+				detail += " · " + u
+			}
 			if t.Attempt > 1 {
 				detail += fmt.Sprintf(" (try %d)", t.Attempt)
 			}
@@ -643,6 +669,9 @@ func workflowGraphRows(r WorkflowRun, width int) []string {
 // we can see in real time the dag running"). Keyed by the run's id.
 func workflowGraphMessage(r WorkflowRun, width int) Message {
 	head := fmt.Sprintf("%s · %s · %d/%d done", r.Workflow, r.State, r.Done, r.Total)
+	if u := usageDetail(r.InputTokens, r.OutputTokens, r.CostUSD); u != "" {
+		head += " · " + u
+	}
 	if r.Error != "" {
 		head += " — " + r.Error
 	}
@@ -683,6 +712,9 @@ func (m Model) renderWorkflowPanel() string {
 	if p.screen == workflowScreenRun && p.run != nil {
 		r := p.run
 		head := fmt.Sprintf("%s · run %s · %s · %d/%d done", r.Workflow, r.ID, r.State, r.Done, r.Total)
+		if u := usageDetail(r.InputTokens, r.OutputTokens, r.CostUSD); u != "" {
+			head += " · " + u
+		}
 		if r.Error != "" {
 			head += " — " + r.Error
 		}
