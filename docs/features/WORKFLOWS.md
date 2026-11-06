@@ -171,9 +171,12 @@ A run that reaches a missing external target builds everything it can and
 ends **waiting**:
 
 ```
-⏸ release waiting for approve — made outside this workflow. a in /workflow
-  approves it, or memdoor workflow approve 20261001-232930 approve.
+⏸ release waiting for approve — a here approves it, or memdoor workflow approve 20261001-232930 approve
 ```
+
+`a` alone at the prompt approves the gate the window's run waits at; the
+empty prompt hints it. Before the run reaches a gate, its row reads
+`waiting · gate` and names no key.
 
 Approving writes the target (`.memdoor/runs/release/steps/approve/<day>`)
 and triggers the **same run** again. Tasks whose targets exist are skipped,
@@ -275,7 +278,7 @@ dependency (`← requires`) and redrawn on every event the gateway sends:
 ```
 release · run 20261001-232930 · waiting · 2/4 done
 ╭───────────────────────────────────────────────────────╮
-│   ○ approve    waiting · external — a approves        │
+│   ⏸ approve    waiting · your gate — a approves       │
 │   ✓ tests      skipped                                │
 │   ✓ changelog  done 14s  ← tests                      │
 │   ○ release    waiting  ← changelog, approve          │
@@ -527,7 +530,7 @@ project with one Go test.
    0), `changelog` ran 14 s and wrote CHANGELOG.md, the run ended
    **waiting** at `approve` with the ⏸ line above. No turn was spent on the
    gate.
-2. `a` in the graph — the approval file written, the same run triggered
+2. `a` at the prompt (or in the graph) — the approval file written, the same run triggered
    again: `tests`, `changelog` skipped, `release` ran 7 s: RELEASE.md with
    `v0.1.0 released 2026-10-02`, commit `84fe059 v0.1.0` in the project.
    `■ release done · 4/4`.

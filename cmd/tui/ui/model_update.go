@@ -172,10 +172,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// same way the regular Enter path does.
 					m.messages = append(m.messages, Message{Role: "user", Content: selected, Timestamp: time.Now()})
 					m.input.Reset()
-					// /go runs the planner's plan with the coder (autocomplete path).
-					if selected == "/go" || selected == "/run" || selected == "/approve" {
-						return m, m.runPlan()
-					}
 					if _, prompt := m.mcpPromptFor(selected); isNetworkCmd(selected) || prompt {
 						cmd := m.runNetworkCmd(strings.Fields(selected))
 						m.viewport.SetContent(m.renderMessages())
@@ -500,14 +496,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.messages = append(m.messages, Message{Role: "user", Content: text, Timestamp: time.Now()})
 						return m, m.workflowCommand([]string{"approve", id, task})
 					}
-				}
-
-				// /go (/run, /approve): execute the planner's plan — hand it to the
-				// coder, whose bash/write_file tool events then stream into the TUI.
-				if text == "/go" || text == "/run" || text == "/approve" {
-					m.input.Reset()
-					m.messages = append(m.messages, Message{Role: "user", Content: text, Timestamp: time.Now()})
-					return m, m.runPlan()
 				}
 
 				// Check if this is a slash command

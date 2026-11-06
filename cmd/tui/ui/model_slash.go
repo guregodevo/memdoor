@@ -13,7 +13,7 @@ import (
 	"regexp"
 )
 
-// model_slash: slash-command handling and the /context /doctor /agents status views.
+// model_slash: slash-command handling and the /context and /agents views.
 // Split out of model.go (2026-08-28), one concern per file;
 // Pattern: OpenClaw one-file-per-concern. Same package, same behavior.
 
@@ -57,17 +57,6 @@ func (m *Model) handleSlashCommand(text string) (string, bool) {
 			Timestamp: time.Now(),
 		}
 		m.messages = append(m.messages, helpMsg)
-		return "", true // handled locally
-
-	case "/doctor":
-		doctorText := m.getDoctorStatus()
-		// Add doctor status as assistant response
-		doctorMsg := Message{
-			Role:      "assistant",
-			Content:   doctorText,
-			Timestamp: time.Now(),
-		}
-		m.messages = append(m.messages, doctorMsg)
 		return "", true // handled locally
 
 	case "/agents":
@@ -129,22 +118,6 @@ func (m *Model) handleSlashCommand(text string) (string, bool) {
 			Timestamp: time.Now(),
 		}
 		m.messages = append(m.messages, contextMsg)
-		return "", true // handled locally
-
-	case "/new":
-		newSessionText := `To start a new session:
-1. Exit the TUI (press Ctrl+C or Esc)
-2. Restart with: ./memdoor tui
-
-Your current session history is preserved on disk.`
-
-		// Add new session info as assistant response
-		newSessionMsg := Message{
-			Role:      "assistant",
-			Content:   newSessionText,
-			Timestamp: time.Now(),
-		}
-		m.messages = append(m.messages, newSessionMsg)
 		return "", true // handled locally
 
 	case "/dir":
@@ -319,64 +292,6 @@ func (m *Model) getContextStatus() string {
 		response.WriteString(fmt.Sprintf(", keeping the last %s word for word", formatTokens(k)))
 	}
 	response.WriteString(". Settings: `compaction` in ~/.memdoor/config.json (enabled, compactionPercent, thresholdTokens, keepRecentTokens).\n")
-
-	return response.String()
-}
-
-// getDoctorStatus returns TUI session health diagnostics
-func (m *Model) getDoctorStatus() string {
-	var response strings.Builder
-
-	// Header
-	response.WriteString("## TUI Session Diagnostics\n\n")
-
-	// Connection Status
-	if m.connected {
-		response.WriteString("**Gateway Connection**: Connected\n")
-		response.WriteString(fmt.Sprintf("   Session: %s\n\n", m.sessionKey))
-	} else {
-		response.WriteString("**Gateway Connection**: Disconnected\n\n")
-	}
-
-	// Session Information
-	response.WriteString(fmt.Sprintf("**Messages**: %d in current session\n", len(m.messages)))
-	// Same "no report yet" rule as /context: before the gateway's first
-	// context event there is no window to quote — 200.0k was the compaction
-	// ceiling, not the model's.
-	if m.contextTokens == 0 && m.contextLimit == 0 {
-		response.WriteString("**Context**: no report yet — run a turn\n\n")
-	} else {
-		response.WriteString(fmt.Sprintf("**Context**: %s / %s (%.1f%%)\n\n",
-			formatTokens(m.contextTokens),
-			formatTokens(m.contextLimit),
-			m.contextPercent))
-	}
-
-	// Active Operations
-	if len(m.activeTools) > 0 {
-		response.WriteString(fmt.Sprintf("**Active Tools**: %d running\n", len(m.activeTools)))
-	}
-	if len(m.activeSubagents) > 0 {
-		response.WriteString(fmt.Sprintf("**Active Subagents**: %d running\n", len(m.activeSubagents)))
-	}
-	if len(m.todos) > 0 {
-		response.WriteString(fmt.Sprintf("**Todos**: %d items tracked\n", len(m.todos)))
-	}
-
-	// Overall Health
-	response.WriteString("\n")
-	if m.connected && m.contextPercent < 90 {
-		response.WriteString("**Overall Health**: Good\n")
-		response.WriteString("- Gateway connected\n")
-		response.WriteString("- Context healthy\n")
-	} else if !m.connected {
-		response.WriteString("**Overall Health**: Gateway disconnected\n")
-		response.WriteString("- Check gateway is running: `./memdoor gateway`\n")
-	} else if m.contextPercent >= 90 {
-		response.WriteString("**Overall Health**: Context near limit\n")
-		response.WriteString("- AI compaction will trigger soon\n")
-		response.WriteString(fmt.Sprintf("- Context at %.1f%% utilization\n", m.contextPercent))
-	}
 
 	return response.String()
 }

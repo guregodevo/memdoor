@@ -11,8 +11,8 @@ and `go test` over `gateway pkg tools cmd` plus the web type check, and commits
 with a message that says why (no trailers); `check` reruns vet, the suite and
 the web type check on the result. The partition names the sweep file:
 `/w sweep` then `--partition today` (with no partition the file carries
-the run's own stamp, so every run is fresh). Approve the gate with `a` in
-`/workflow` or `memdoor workflow approve <run> approve`; a sweep with nothing
+the run's own stamp, so every run is fresh). Approve the gate with `a` at
+the prompt (or in `/workflow`) or `memdoor workflow approve <run> approve`; a sweep with nothing
 to fix is approved the same way and `fix` changes and commits nothing. Needs a
 model on your own key; leaves the sweep under `.memdoor/runs/` and, when there
 was something to fix, a commit.
