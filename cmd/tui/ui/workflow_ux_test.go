@@ -136,7 +136,10 @@ func TestALongGraphFitsTheWindow(t *testing.T) {
 		t.Fatalf("compact %d lines, full %d:\n%s", nCompact, nFull, plainText(compact))
 	}
 	plain := plainText(compact)
-	for _, want := range []string{"✓✓✓✓✓✓▶✗○", "6 done", "problem, outline", "running", "test-0 12s", "⏺ bash · 4s", "The check before the team: the direct attempt", "1.5k tokens", "baseline: baseline.md", "direct: direct.md", "failed", "context — exit status 1 — no prompt", "10 waiting", "ctrl+o shows every step (18)"} {
+	if strings.Contains(plain, "✓✓✓") {
+		t.Errorf("a strip of one glyph per step, the list of checks:\n%s", plain)
+	}
+	for _, want := range []string{"team-solve · running test-0 · 6/18 done", "6 done", "problem, outline", "running", "test-0 12s", "⏺ bash · 4s", "The check before the team: the direct attempt", "1.5k tokens", "baseline: baseline.md", "direct: direct.md", "failed", "context — exit status 1 — no prompt", "10 waiting", "ctrl+o shows every step (18)"} {
 		if !strings.Contains(plain, want) {
 			t.Errorf("compact misses %q:\n%s", want, plain)
 		}

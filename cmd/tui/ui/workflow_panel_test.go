@@ -643,7 +643,7 @@ func TestEachStepShowsItsTokensLive(t *testing.T) {
 			block = plainText(msg.Content)
 		}
 	}
-	for _, want := range []string{"running · 1/3 done · 14.3k tokens · $0.004", "plan    done 9s · 13.2k tokens · $0.004", "solve   running · 1.1k tokens  ← plan"} {
+	for _, want := range []string{"running solve · 1/3 done · 14.3k tokens · $0.004", "plan    done 9s · 13.2k tokens · $0.004", "solve   running · 1.1k tokens  ← plan"} {
 		if !strings.Contains(block, want) {
 			t.Errorf("missing %q in:\n%s", want, block)
 		}
