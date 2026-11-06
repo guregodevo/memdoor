@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -86,14 +87,15 @@ func machineReady() error {
 	if sessionProblem() == nil {
 		return nil
 	}
-	if renewLocalSession() == nil {
+	renewal := renewLocalSession()
+	if renewal == nil {
 		return nil
 	}
 	if sshDoorUp != nil && sshRenewSession() == nil {
 		return nil
 	}
 	if _, err := loadCredentials(); err == nil {
-		return sessionProblem()
+		return withRefusedRenewal(sessionProblem(), renewal)
 	}
 	var status struct {
 		Initialized bool `json:"initialized"`
@@ -111,6 +113,20 @@ func machineReady() error {
 		workspaceSlug = only
 	}
 	return nil
+}
+
+// withRefusedRenewal adds to a lapsed session's message that the generated
+// login was tried. Without it the person read "your session expired: run
+// login-direct" while ~/.memdoor/local-login sat there and the gateway had
+// refused it (2026-11-06): the renewal looked as if it had never run.
+func withRefusedRenewal(problem, renewal error) error {
+	if problem == nil || renewal == nil || errors.Is(renewal, errNoGeneratedLogin) {
+		return problem
+	}
+	if _, local := localGatewayPort(); !local {
+		return problem
+	}
+	return fmt.Errorf("%w; %v", problem, renewal)
 }
 
 // localUserEmail names this machine's own user. Nobody signs in with it by

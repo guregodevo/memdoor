@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"memdoor/pkg/auth"
 	"memdoor/pkg/shared"
@@ -445,13 +446,20 @@ func renewLocalSession() error {
 	var ll localLogin
 	b, err := os.ReadFile(homePath(localLoginFile))
 	if err != nil {
-		return fmt.Errorf("no generated login on this machine: %w", err)
+		return fmt.Errorf("%w: %v", errNoGeneratedLogin, err)
 	}
 	if json.Unmarshal(b, &ll) != nil || ll.Password == "" {
-		return fmt.Errorf("the generated login on this machine is unreadable")
+		return fmt.Errorf("this machine's generated login (~/.memdoor/%s) is unreadable", localLoginFile)
 	}
-	return loginLocal(ll.Email, ll.Password)
+	if err := loginLocal(ll.Email, ll.Password); err != nil {
+		return fmt.Errorf("the login this machine generated, %s in ~/.memdoor/%s, was tried and refused: %w", ll.Email, localLoginFile, err)
+	}
+	return nil
 }
+
+// errNoGeneratedLogin: the engine's user was made by hand, so there is
+// nothing on disk to renew with — not a failure worth naming.
+var errNoGeneratedLogin = errors.New("no generated login on this machine")
 
 // loginLocal signs in to this machine's gateway and saves the session, the way
 // `memdoor auth login-direct` does.
