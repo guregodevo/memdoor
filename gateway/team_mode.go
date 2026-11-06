@@ -3,6 +3,8 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"memdoor/gateway/infra"
@@ -114,4 +116,60 @@ func teamPrompt(message, agent string) string {
 		}
 	}
 	return m
+}
+
+// teamReportDiffLines is how much of the diff a team run's end shows; the
+// rest is in changes.diff.
+const teamReportDiffLines = 60
+
+// teamReport is what a team-solve run's end adds to its note in the
+// conversation (#94): the verdicts, what keep kept, the Scope report
+// (`changed: scripts/scan.sh +1 -1`) and the diff, so the person sees the
+// result without opening a file. "" for any other workflow.
+func teamReport(run *workflowRun) string {
+	if run.Workflow != teamWorkflow {
+		return ""
+	}
+	rel := filepath.Join(".memdoor", "runs", teamWorkflow+"-"+run.Partition)
+	r := filepath.Join(run.Dir, rel)
+	if _, err := os.Stat(r); err != nil {
+		return ""
+	}
+	var b strings.Builder
+	var verdicts []string
+	for _, f := range []struct{ who, file string }{{"judge", "verdict.md"}, {"review", "review.md"}} {
+		if v := fileVerdict(filepath.Join(r, f.file)); v != "" {
+			verdicts = append(verdicts, f.who+" "+v)
+		}
+	}
+	if len(verdicts) > 0 {
+		b.WriteString("\n\nverdict: " + strings.Join(verdicts, " · "))
+	}
+	if kept := firstLineOf(filepath.Join(r, "keep.txt")); kept != "" {
+		b.WriteString("\n" + kept)
+	}
+	if scope, err := os.ReadFile(filepath.Join(r, "scope.txt")); err == nil && strings.TrimSpace(string(scope)) != "" {
+		b.WriteString("\n\nScope:\n    " + strings.Join(strings.Split(strings.TrimRight(string(scope), "\n"), "\n"), "\n    "))
+	}
+	if diff, err := os.ReadFile(filepath.Join(r, "changes.diff")); err == nil && strings.TrimSpace(string(diff)) != "" {
+		lines := strings.Split(strings.TrimRight(string(diff), "\n"), "\n")
+		more := ""
+		if len(lines) > teamReportDiffLines {
+			more = fmt.Sprintf("\n… %d more lines in %s", len(lines)-teamReportDiffLines, filepath.Join(rel, "changes.diff"))
+			lines = lines[:teamReportDiffLines]
+		}
+		// Indented, not fenced: the window prints a note's fence marks literally.
+		b.WriteString("\n\nThe diff:\n    " + strings.Join(lines, "\n    ") + more)
+	}
+	return b.String()
+}
+
+// firstLineOf is a file's first line, trimmed; "" when it is missing or empty.
+func firstLineOf(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	l, _, _ := strings.Cut(string(data), "\n")
+	return strings.TrimSpace(l)
 }

@@ -170,11 +170,13 @@ func (s *Server) workflows() *workflowRuns {
 // of ITS tasks' turns — a turn runs under "workflow:<wf>:<partition>:<task>"
 // — and relays them into the window as a progress line under the task, so a
 // running task is not a frozen ▶ for two minutes (the maintainer: "more events
-// emitted and updates in real time").
+// emitted and updates in real time"). One line per call, keyed by the call:
+// what it read, changed or ran, and how it ended (workflow_step_lines.go).
 func (s *Server) listen(run *workflowRun) func() {
 	if s.broadcaster == nil || s.agent == nil || s.agent.events == nil {
 		return func() {}
 	}
+	var calls stepCalls
 	return s.agent.events.OnEvent(func(ev infra.AgentEvent) {
 		task := run.taskOfSession(ev.SessionID)
 		if task == "" {
@@ -189,18 +191,11 @@ func (s *Server) listen(run *workflowRun) func() {
 		default:
 			return
 		}
-		tool, _ := ev.Data["tool"].(string)
-		if tool == "" {
-			tool, _ = ev.Data["name"].(string)
-		}
-		if tool == "" {
+		key, line := calls.line(run.Dir, ev.Data)
+		if line == "" {
 			return
 		}
-		line := "⏺ " + tool
-		if secs, ok := ev.Data["seconds"].(int); ok && secs >= 2 {
-			line += fmt.Sprintf(" · %ds", secs)
-		}
-		s.sendRunEvent(run, map[string]interface{}{"run": run.ID, "workflow": run.Workflow, "task": task, "state": "progress", "text": line})
+		s.sendRunEvent(run, map[string]interface{}{"run": run.ID, "workflow": run.Workflow, "task": task, "state": "progress", "text": line, "key": key})
 	})
 }
 
@@ -729,6 +724,7 @@ type workflowTaskJSON struct {
 	State    string   `json:"state"`
 	Error    string   `json:"error,omitempty"`
 	Receipt  string   `json:"receipt,omitempty"` // what proved it: the turn's receipt line
+	Outcome  string   `json:"outcome,omitempty"` // a finished step's file and its verdict (stepOutcome)
 	Attempt  int      `json:"attempt,omitempty"`
 	// What the step's model calls cost so far, from the ledger (meterRun).
 	InputTokens  int64      `json:"input_tokens,omitempty"`
@@ -826,6 +822,9 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 			out.InputTokens += u.Input
 			out.OutputTokens += u.Output
 			out.CostUSD += u.Cost
+		}
+		if tj.State == "done" || tj.State == "failed" {
+			tj.Outcome = stepOutcome(r.Dir, r.Partition, t.Name, t.Target)
 		}
 		out.Tasks = append(out.Tasks, tj)
 	}
@@ -961,9 +960,9 @@ func (s *Server) triggerWorkflow(run *workflowRun) {
 			run.note(s, fmt.Sprintf("⏸ %s waiting for %s — **a** in /workflow, or `memdoor workflow approve %s %s`",
 				run.Workflow, strings.Join(blocked, ", "), run.ID, blocked[0]))
 		} else if state == "done" {
-			run.note(s, doneNote(run))
+			run.note(s, doneNote(run)+teamReport(run))
 		} else {
-			run.note(s, fmt.Sprintf("■ %s %s", run.Workflow, state))
+			run.note(s, fmt.Sprintf("■ %s %s", run.Workflow, state)+teamReport(run))
 		}
 		logs.New("Workflow").Info("Workflow run "+state, slog.String("run", run.ID), slog.String("workflow", run.Workflow))
 	}()

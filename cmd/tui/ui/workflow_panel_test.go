@@ -499,3 +499,63 @@ func TestEachStepShowsItsTokensLive(t *testing.T) {
 		t.Errorf("a step with no model call yet shows tokens:\n%s", block)
 	}
 }
+
+// Under a running step, its last calls, one line each, a call's end in place
+// of its start; ctrl+o shows every line of every step, and a finished step
+// otherwise shows how it ended (#94).
+func TestAStepShowsItsCallsAndCtrlOExpandsThem(t *testing.T) {
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	m.width = 120
+	run := func(state, outcome string) *WorkflowRun {
+		return &WorkflowRun{ID: "r1", Workflow: "team-solve", State: "running", Total: 2,
+			Tasks: []WorkflowTask{{Name: "solve", State: state, Outcome: outcome}, {Name: "review", State: "waiting", Requires: []string{"solve"}}}}
+	}
+	block := func() string {
+		for _, msg := range m.messages {
+			if msg.ToolID == "workflow:r1" {
+				return plainText(msg.Content)
+			}
+		}
+		return ""
+	}
+	m.updateWorkflowPanel(workflowEventMsg{runID: "r1", state: "started", status: run("running", "")})
+	line := func(key, text string) {
+		m.updateWorkflowPanel(workflowEventMsg{runID: "r1", task: "solve", state: "progress", key: key, text: text})
+	}
+	line("c1", "read task.md")
+	line("c2", "✎ scripts/scan.sh")
+	line("c3", "$ bash scripts/scan.sh")
+	line("c3", "$ bash scripts/scan.sh · 4s")
+	line("c4", "$ go test ./...")
+	line("c3", "$ bash scripts/scan.sh → exit 0")
+	got := block()
+	for _, want := range []string{"… 1 more (ctrl+o)", "✎ scripts/scan.sh", "$ bash scripts/scan.sh → exit 0", "$ go test ./..."} {
+		if !strings.Contains(got, want) {
+			t.Errorf("running: missing %q in:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "read task.md") || strings.Contains(got, "· 4s") {
+		t.Errorf("running: only the last three lines, each call once:\n%s", got)
+	}
+	// A new state from the gateway keeps the lines.
+	m.updateWorkflowPanel(workflowEventMsg{runID: "r1", task: "solve", state: "usage", status: run("running", "")})
+	if !strings.Contains(block(), "$ go test ./...") {
+		t.Fatalf("a snapshot dropped the lines:\n%s", block())
+	}
+	m.updateWorkflowPanel(workflowEventMsg{runID: "r1", task: "solve", state: "done", status: run("done", "wrote solution.py")})
+	got = block()
+	if !strings.Contains(got, "wrote solution.py") || strings.Contains(got, "scan.sh") {
+		t.Errorf("finished: its outcome, not its calls:\n%s", got)
+	}
+	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyCtrlO})
+	m = next.(Model)
+	got = block()
+	for _, want := range []string{"read task.md", "✎ scripts/scan.sh", "$ bash scripts/scan.sh → exit 0", "$ go test ./...", "wrote solution.py"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("ctrl+o: missing %q in:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "more (ctrl+o)") {
+		t.Errorf("ctrl+o: nothing left hidden:\n%s", got)
+	}
+}

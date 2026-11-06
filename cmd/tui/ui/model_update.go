@@ -413,6 +413,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Toggle expanded tool frames: show full tool outputs (questions, todo
 			// notes, build errors) instead of the truncated preview.
 			m.expandTools = !m.expandTools
+			m.redrawWorkflowGraphs() // a step's lines expand with the tool frames
 			if m.expandTools {
 				m.note("tool frames expanded — ctrl+o to collapse")
 			} else {

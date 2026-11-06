@@ -202,6 +202,7 @@ func (a *WebSocketAdapter) setupHandlers() {
 		ev.task, _ = data["task"].(string)
 		ev.state, _ = data["state"].(string)
 		ev.text, _ = data["text"].(string)
+		ev.key, _ = data["key"].(string)
 		ev.questionID, _ = data["question_id"].(string)
 		ev.options = stringsOf(data["options"])
 		// A run reaches every window of its workspace; this one shows it only when it
