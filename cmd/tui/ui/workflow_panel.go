@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"memdoor/pkg/workflow"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -788,7 +789,12 @@ func workflowGraphRows(r WorkflowRun, width int, expanded bool) []string {
 				}
 			}
 			if t.Error != "" && t.State != "done" {
-				rows = append(rows, "    "+bad.Render(truncateEnd(t.Error, width-8)))
+				// The exit status and the last lines the command printed
+				// (#128: a failed command step showed its script, cut off
+				// before the reason).
+				for _, l := range workflow.ErrorLines(t.Error, 3) {
+					rows = append(rows, "    "+bad.Render(truncateEnd(l, width-8)))
+				}
 			}
 		}
 	}
@@ -910,7 +916,12 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 			rows = append(rows, "  "+label(st, len(ts))+text.Render(names(ts)))
 			for _, t := range ts {
 				if t.Error != "" {
-					rows = append(rows, "    "+bad.Render(truncateEnd(t.Name+" — "+t.Error, width-8)))
+					for i, l := range workflow.ErrorLines(t.Error, 2) {
+						if i == 0 {
+							l = t.Name + " — " + l
+						}
+						rows = append(rows, "    "+bad.Render(truncateEnd(l, width-8)))
+					}
 				}
 			}
 		case "done":
