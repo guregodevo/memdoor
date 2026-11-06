@@ -72,3 +72,19 @@ func TestTurnGraphFromAnEditingTurn(t *testing.T) {
 		t.Error("an empty turn opens no graph")
 	}
 }
+
+// /graph typed as a command is echoed as a user message first; the graph
+// reads the turn before it, not the nothing after it.
+func TestGraphCommandReadsTheTurnBeforeItsOwnEcho(t *testing.T) {
+	now := time.Now()
+	msgs := []Message{
+		{Role: "user", Content: "Create add.py", Timestamp: now},
+		{Role: "tool_call", ToolName: "edit_file", ToolInput: `{"path":"add.py"}`, ToolID: "t1", ToolDone: true, Timestamp: now},
+		{Role: "tool_call", ToolName: "bash", ToolInput: `{"command":"python3 add.py"}`, ToolID: "t2", ToolDone: true, ToolOutput: "5", Timestamp: now},
+		{Role: "assistant", Content: "done", Timestamp: now},
+		{Role: "user", Content: "/graph", Timestamp: now},
+	}
+	if g := buildTurnGraph(msgs, 100); len(g.nodes) == 0 {
+		t.Fatal("the graph read from the /graph echo and found nothing")
+	}
+}
