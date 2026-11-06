@@ -227,6 +227,20 @@ reading that file over ssh (`sshRenewSession` → `loginLocal` →
 whoever may ssh in as that user may use every door onto that box without a
 password being typed.
 
+Nobody is left with a password they never had (2026-11-06). When the gateway
+refuses the generated login (the file overwritten by another gateway's first
+run, the account made by hand), the CLI signs in with the gateway's machine
+key instead: `~/.memdoor/machine-key`, 32 random bytes the gateway writes at
+boot (`ensureMachineKey`, `gateway/machine_login.go`), readable by its own
+user only. `POST /api/auth/machine-login` takes it from the machine itself
+(`fromThisMachine`) and opens a session for the account the CLI was signed in
+as when that account is the gateway's operator, else for the first account
+(`machineLoginUser`, `auth.Service.OpenSessionFor`). The ssh door reads the
+box's key over the same ssh when the box's login is refused (`sshSignIn`).
+Whoever can read the key can read the database beside it, so it grants
+nothing they could not already take; a gateway on another machine never sees
+this machine's key (`renewLocalSession`).
+
 That first account's workspace is the gateway's own (`gateway/gateway_owner.go`).
 Sign-up stays open once it exists (`/api/auth/register` refuses before it, so
 a stranger cannot become the owner of a freshly installed box), and each
