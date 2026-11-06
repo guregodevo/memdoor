@@ -39,9 +39,9 @@ Everything you can type in the TUI. `/` opens a dropdown that filters as you typ
 | `/mcp login <name>` / `/mcp logout <name>` | Sign in to (or forget the sign-in for) an HTTP server that asks for it |
 | `/mcp test <name>` | Connect now and list the server's tools |
 | `/mcp on\|off <name>` | Turn a server on or off |
-| `/workflow` | The project's workflows and runs; enter runs one or opens a run's graph; `a` approves, `c` continues, `s s` stops |
-| `/workflow:<name> [the task]` | Run a workflow straight from the dropdown, which completes it with what the project has; the words after it are the task (`/workflow:team-solve <the task>`), `--partition <p>` names the partition |
-| `/workflow run <name>` / `resume <run-id>` / `approve <task>` / `stop <run-id>` | The same from the line |
+| `/w` | The project's workflows and runs; enter runs one or opens a run's graph; `a` approves, `c` continues, `s s` stops |
+| `/w <name> [the task]` | Run a workflow; the dropdown completes the name with what the project has. The words after it are the task (`/w team-solve <the task>`), `--partition <p>` names the partition |
+| `/w resume <run-id>` / `approve <task>` / `stop <run-id>` | The same from the line. `/workflow` is the long name of `/w` |
 | `/mcp remove <name>` | Delete a server from its file |
 | `/mcp trust` | Let this project's `.mcp.json` servers start |
 | `/<server>:<prompt> [args]` | Run a connected server's prompt as your message; arguments in the declared order or as `name=value` |

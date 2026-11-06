@@ -169,6 +169,162 @@ func TestTheDAGBlockCopiesWithoutColours(t *testing.T) {
 	}
 }
 
+// #130: /w <workflow> <the task> runs a workflow, no "run" to type; the
+// dropdown lists "/w <name>" for each, never "/workflow:<name>"; the old
+// spellings still run.
+func TestSlashWRunsAWorkflowWithItsTask(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	dir := t.TempDir()
+	SetSessionDir(dir)
+	t.Cleanup(func() { SetSessionDir("") })
+	os.MkdirAll(filepath.Join(dir, ".memdoor", "workflows", "team-solve", "steps"), 0o755)
+	os.WriteFile(filepath.Join(dir, ".memdoor", "workflows", "team-solve", "steps", "a.yaml"), []byte("type: agent\nprompt: x\n"), 0o644)
+
+	cmds := loadSlashCommands("coder")
+	listed := strings.Join(cmds, ",")
+	if !strings.Contains(listed, ",/w,") || !strings.Contains(listed, "/w team-solve") || strings.Contains(listed, "/workflow") {
+		t.Fatalf("the dropdown must list /w and /w team-solve, and no /workflow: %v", cmds)
+	}
+	if got := filterCommands(cmds, "/w"); !strings.Contains(strings.Join(got, ","), "/w team-solve") {
+		t.Fatalf("typing /w offers /w team-solve: %v", got)
+	}
+
+	got := ""
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	m.workflow.List = func() ([]WorkflowRun, []WorkflowEntry, error) { return nil, nil, nil }
+	m.workflow.Run = func(name, partition, prompt string) (WorkflowRun, error) {
+		got = name + "@" + partition + "|" + prompt
+		return WorkflowRun{ID: "r"}, nil
+	}
+	for _, c := range []struct{ line, want string }{
+		{`/w team-solve Rename ParseGGUF; go test ./... must pass`, "team-solve@|Rename ParseGGUF; go test ./... must pass"},
+		{`/workflow team-solve Write answer.md`, "team-solve@|Write answer.md"},
+		{`/w release --partition today`, "release@today|"},
+		{`/workflow run team-solve "Write notes.md" --partition p1`, "team-solve@p1|Write notes.md"},
+		{`/workflow:team-solve Keep the old spelling`, "team-solve@|Keep the old spelling"},
+	} {
+		got = ""
+		if !isNetworkCmd(strings.Fields(c.line)[0]) {
+			t.Fatalf("%s: not a command", c.line)
+		}
+		cmd := m.runNetworkCmd(strings.Fields(c.line))
+		if cmd == nil {
+			t.Fatalf("%s: started nothing", c.line)
+		}
+		cmd()
+		if got != c.want {
+			t.Fatalf("%s → %q, want %q", c.line, got, c.want)
+		}
+	}
+	// A dropdown entry carries its workflow: "/w team-solve" picked with enter.
+	if !isNetworkCmd("/w team-solve") {
+		t.Fatal(`"/w team-solve" from the dropdown is the /w command`)
+	}
+}
+
+// #130, "always completion": the dropdown stays open on the workflow's name,
+// Tab completes it, and Enter on a half-typed name completes it rather than
+// running the first match; the space before the task closes it.
+func TestSlashWCompletesTheWorkflowsName(t *testing.T) {
+	type key = tea.KeyMsg
+	started := ""
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	m.workflow.List = func() ([]WorkflowRun, []WorkflowEntry, error) { return nil, nil, nil }
+	m.workflow.Run = func(name, partition, prompt string) (WorkflowRun, error) {
+		started = name
+		return WorkflowRun{ID: "r"}, nil
+	}
+	m.slashCommands = []string{"/w", "/w release-notes", "/w security-review", "/w team-solve", "/model"}
+	typed := func(s string) {
+		m.input.SetValue(s)
+		next, _ := m.Update(key{Type: tea.KeyRunes, Runes: nil})
+		m = next.(Model)
+	}
+
+	typed("/w te")
+	if !m.showAutocomplete || strings.Join(m.filteredCommands, ",") != "/w team-solve" {
+		t.Fatalf("/w te: open %v, offers %v", m.showAutocomplete, m.filteredCommands)
+	}
+	next, _ := m.Update(key{Type: tea.KeyTab})
+	m = next.(Model)
+	if m.input.Value() != "/w team-solve " {
+		t.Fatalf("Tab: the line is %q", m.input.Value())
+	}
+	typed("/w team-solve fix")
+	if m.showAutocomplete {
+		t.Fatal("typing the task closes the dropdown, so Enter runs what was typed")
+	}
+
+	typed("/w s")
+	next, cmd := m.Update(key{Type: tea.KeyEnter})
+	m = next.(Model)
+	if cmd != nil {
+		if msg := cmd(); msg != nil {
+			m.Update(msg)
+		}
+	}
+	if started != "" || m.input.Value() != "/w security-review " {
+		t.Fatalf("Enter on a half-typed name: started %q, line %q", started, m.input.Value())
+	}
+
+	typed("/w release-notes")
+	next, cmd = m.Update(key{Type: tea.KeyEnter})
+	m = next.(Model)
+	if cmd != nil {
+		cmd()
+	}
+	if started != "release-notes" {
+		t.Fatalf("Enter on a whole name runs it: started %q", started)
+	}
+}
+
+// #129: team-solve with no task is asked for it, typed on the line, instead
+// of a run that stops at its first step. A task.md in the project is a task.
+func TestTeamSolveWithNoTaskAsksForIt(t *testing.T) {
+	dir := t.TempDir()
+	SetSessionDir(dir)
+	t.Cleanup(func() { SetSessionDir("") })
+	started := 0
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	m.workflow.List = func() ([]WorkflowRun, []WorkflowEntry, error) { return nil, nil, nil }
+	m.workflow.Run = func(name, partition, prompt string) (WorkflowRun, error) {
+		started++
+		return WorkflowRun{ID: "r"}, nil
+	}
+	for _, line := range []string{"/w team-solve", "/workflow run team-solve", "/workflow:team-solve"} {
+		m.input.SetValue("")
+		if cmd := m.runNetworkCmd(strings.Fields(line)); cmd != nil {
+			cmd()
+		}
+		if started != 0 {
+			t.Fatalf("%s: a run started with no task", line)
+		}
+		if m.input.Value() != "/w team-solve " {
+			t.Fatalf("%s: the line is %q, want it ready for the task", line, m.input.Value())
+		}
+	}
+	if last := m.messages[len(m.messages)-1].Content; !strings.Contains(last, "What should the team do?") {
+		t.Fatalf("the note: %q", last)
+	}
+
+	// Picked in the panel: the same, the panel closes.
+	m.input.SetValue("")
+	m.workflowPanel = &workflowPanelState{screen: workflowScreenList, files: []WorkflowEntry{{Name: "team-solve"}}}
+	m.updateWorkflowPanel(tea.KeyMsg{Type: tea.KeyEnter})
+	if started != 0 || m.workflowPanel != nil || m.input.Value() != "/w team-solve " {
+		t.Fatalf("panel: started %d, panel %v, line %q", started, m.workflowPanel != nil, m.input.Value())
+	}
+
+	// A task.md in the folder is the task: team-solve reads it.
+	os.WriteFile(filepath.Join(dir, "task.md"), []byte("Fix add().\n"), 0o644)
+	if cmd := m.runNetworkCmd([]string{"/w", "team-solve"}); cmd != nil {
+		cmd()
+	}
+	if started != 1 {
+		t.Fatal("with a task.md, /w team-solve runs")
+	}
+}
+
 // The project's workflows are slash commands: the dropdown completes
 // "/workflow:" with what workflows/ holds, and the command runs it.
 func TestTheProjectsWorkflowsAreSlashCommands(t *testing.T) {

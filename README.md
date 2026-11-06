@@ -97,7 +97,7 @@ applied): [memdoor.ai/workflows](https://memdoor.ai/workflows).
 |---|---|
 | `/model` | The agent's ladder, cheapest rung first. Pin any model of your providers. List prices |
 | `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, DeepSeek, Baseten, Groq, xAI, any OpenAI-compatible endpoint, a company AI gateway. `/connect local`: janis on this machine or the box, or Ollama, llama.cpp, LM Studio, vLLM; no key. `/connect chatgpt`: a ChatGPT Plus/Pro plan, no key |
-| `/workflow` | The project's workflows and runs. Enter opens a run's graph, `a` approves a gate, `/workflow:<name> [the task]` runs one |
+| `/w` | The project's workflows and runs. `/w <name> [the task]` runs one (`/w team-solve <the task>`), enter opens a run's graph, `a` approves a gate |
 | `/usage` | This month on your key, per model, and what the decision model kept out of the bill |
 | `/remote` | This conversation on your phone: a link and a QR code, the terminal itself, end-to-end encrypted |
 | `/remote view` | A watch-only link: live, no typing, no account, up to 200 viewers. `?live=1` is the terminal alone, for a stream or OBS |

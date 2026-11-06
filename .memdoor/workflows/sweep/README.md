@@ -10,7 +10,7 @@ read the sweep; `fix` applies every Must fix exactly, runs `go build`, `go vet`
 and `go test` over `gateway pkg tools cmd` plus the web type check, and commits
 with a message that says why (no trailers); `check` reruns vet, the suite and
 the web type check on the result. The partition names the sweep file:
-`/workflow:sweep` then `--partition today` (with no partition the file carries
+`/w sweep` then `--partition today` (with no partition the file carries
 the run's own stamp, so every run is fresh). Approve the gate with `a` in
 `/workflow` or `memdoor workflow approve <run> approve`; a sweep with nothing
 to fix is approved the same way and `fix` changes and commits nothing. Needs a
@@ -37,7 +37,7 @@ login, heartbeat checklist.
 ## Running it
 
 ```
-/workflow:sweep            # sweep this repo as HEAD, gate, fix, check
+/w sweep                   # sweep this repo as HEAD, gate, fix, check
 ```
 
 The workflow is shared by copying this directory `.memdoor/workflows/sweep/`.

@@ -269,9 +269,10 @@ func loadSlashCommands(agent string) []string {
 		"/agents",  // Built-in
 	}
 	commands = append(commands,
-		"/go",               // run the planner's plan with the coder
-		"/init",             // write the project's AGENTS.md
-		"/mcp", "/workflow", // the MCP servers the coder can use: add, sign in, state
+		"/go",   // run the planner's plan with the coder
+		"/init", // write the project's AGENTS.md
+		"/mcp",  // the MCP servers the coder can use: add, sign in, state
+		"/w",    // the workflows: alone the panel, /w <name> <the task> runs one (/workflow still works)
 	)
 	commands = append(commands,
 		"/update",       // install the published build
@@ -318,11 +319,13 @@ func loadSlashCommands(agent string) []string {
 	for _, name := range ListedSkills(tools.AvailableSkillNames(wd)) {
 		commands = append(commands, "/skill:"+name)
 	}
-	// The project's workflows, the same way: "/workflow:release" runs one —
-	// the dropdown completes it (the maintainer, 2026-10-02: "this workflow slash
-	// command should be autocomplete with existing workflows").
+	// The project's workflows, the same way: "/w release" runs one — the
+	// dropdown completes it (the maintainer, 2026-10-02: "this workflow slash
+	// command should be autocomplete with existing workflows"). It was
+	// "/workflow:release"; that still runs, unlisted (#130: "remove the : …
+	// for backward compatibility").
 	for _, name := range workflowNames(wd) {
-		commands = append(commands, "/workflow:"+name)
+		commands = append(commands, "/w "+name)
 	}
 
 	return commands

@@ -65,7 +65,7 @@ Makefile recipe) remains the task's work.
 
 Commit `.memdoor/workflows/<name>/`: the team runs it.
 `~/.memdoor/workflows/`: the library, any project, in the dropdown, run by
-`/workflow:<name>`; a project's workflow of the same name wins. `args`: one
+`/w <name>`; a project's workflow of the same name wins. `args`: one
 workflow, many asks (`{{.version}}`). Partition: what a run is for
 (`{{.partition}}`). `README.md` beside the steps: what it does, needs, how
 to run; its first paragraph is what `/workflow` shows beside the name. To
@@ -96,10 +96,10 @@ share: the directory, by `cp -R`, a gist, or a repo cloned into
 
 ## In the TUI
 
-`/workflow`: the project's workflows, then its runs. Enter on a workflow
-runs it; on a run, opens its graph. The dropdown completes
-`/workflow:<name>`; the words after it are the task, for a workflow that
-reads one (`/workflow:team-solve <the task>`), and `--partition <p>` names
+`/w`: the project's workflows, then its runs. Enter on a workflow
+runs it; on a run, opens its graph. `/w <name>` runs one, and the dropdown
+completes the name; the words after it are the task, for a workflow that
+reads one (`/w team-solve <the task>`), and `--partition <p>` names
 the partition. In the graph: `a` approves, `d` the full diff, `c`
 continues a failed or stopped run, `s` twice stops one, `Esc` stops this
 window's run.

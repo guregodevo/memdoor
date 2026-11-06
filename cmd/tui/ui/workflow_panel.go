@@ -2,6 +2,8 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -15,7 +17,7 @@ import (
 // should render a dag of tasks"). A run is drawn as its graph: tasks in the
 // layers their dependencies impose, each with its state and what it requires,
 // updated live from the gateway's workflow_event broadcasts. /workflow lists
-// the project's workflows and runs; /workflow run <name> starts one; enter
+// the project's workflows and runs; /w <name> [the task] starts one; enter
 // on a run opens its graph; a approves an external task; s stops a run.
 
 // WorkflowOps is how the panel reaches the gateway — injected by the CLI,
@@ -181,7 +183,10 @@ type workflowPanelState struct {
 	confirm string // a stop waiting for its second s
 }
 
-// workflowCommand handles /workflow [run <name> | approve <task> | stop <run>].
+// workflowCommand handles /w and /workflow: alone, the panel; <name> [the task]
+// runs one; resume, stop, changes, diff and approve act on a run. "run" before
+// the name still works; nobody found it (#130: "/workflow run is not
+// intuitive … something easier like /w team-solve <prompt>").
 func (m *Model) workflowCommand(args []string) tea.Cmd {
 	if m.workflow.List == nil {
 		m.note("Workflows aren't available in this build.")
@@ -194,11 +199,10 @@ func (m *Model) workflowCommand(args []string) tea.Cmd {
 	switch args[0] {
 	case "run":
 		if len(args) < 2 {
-			m.note("Which workflow? **/workflow run <name>** [the task] [--partition <p>] — a directory in .memdoor/workflows/ of this project, or a built-in.")
+			m.note(workflowUsage)
 			return nil
 		}
-		partition, prompt := workflowRunArgs(args[2:])
-		return m.workflowStart(args[1], partition, prompt)
+		return m.workflowRunNamed(args[1], args[2:])
 	case "resume", "continue":
 		if len(args) < 2 {
 			m.note("Which run? **/workflow resume <run-id>** — a failed or stopped run; what it finished is skipped.")
@@ -256,8 +260,48 @@ func (m *Model) workflowCommand(args []string) tea.Cmd {
 		id, task := args[1], args[2]
 		return func() tea.Msg { r, err := op(id, task); return workflowRunMsg{run: r, err: err} }
 	}
-	m.note("**/workflow** opens the panel · **/workflow run <name>** · **/workflow stop <run-id>** · **/workflow approve <run-id> <task>**")
-	return nil
+	// Anything else is a workflow's name, and the words after it its task.
+	return m.workflowRunNamed(args[0], args[1:])
+}
+
+// workflowUsage is what /w says when it is not told enough.
+const workflowUsage = "**/w <workflow> <the task>** runs one (**/w team-solve <the task>**) · **/w** opens the panel · **/w stop <run-id>** · **/w approve <run-id> <task>**"
+
+// workflowRunNamed starts a workflow with the words after its name as the
+// task. team-solve with no task is asked for it instead: started without one
+// it stops at its first step, "no prompt", and the window showed only the
+// step's script (#129). A task.md in the project, or a partition (an earlier
+// run that has its prompt), is a task.
+func (m *Model) workflowRunNamed(name string, words []string) tea.Cmd {
+	partition, prompt := workflowRunArgs(words)
+	if name == teamSolveWorkflow && prompt == "" && partition == "" && !fileExists(filepath.Join(SessionDir(), "task.md")) {
+		m.askTeamSolveTask()
+		return nil
+	}
+	return m.workflowStart(name, partition, prompt)
+}
+
+// completesWorkflowName reports whether the line is "/w " and the start of a
+// workflow's name, the space before the task not typed yet: the dropdown
+// stays open and Tab completes the name.
+func completesWorkflowName(line string) bool {
+	rest, ok := strings.CutPrefix(line, "/w ")
+	return ok && !strings.Contains(rest, " ")
+}
+
+// teamSolveWorkflow is the workflow that needs a task.
+const teamSolveWorkflow = "team-solve"
+
+// askTeamSolveTask puts "/w team-solve " on the line, ready for the task.
+func (m *Model) askTeamSolveTask() {
+	m.note("What should the team do? Type the task after **/w team-solve** and press enter.")
+	m.input.SetValue("/w " + teamSolveWorkflow + " ")
+	m.input.CursorEnd()
+}
+
+func fileExists(path string) bool {
+	st, err := os.Stat(path)
+	return err == nil && !st.IsDir()
 }
 
 func (m *Model) workflowDiff(id string) tea.Cmd {
@@ -569,6 +613,11 @@ func (m *Model) workflowKey(k tea.KeyMsg) tea.Cmd {
 		}
 	case tea.KeyEnter:
 		if p.index < len(p.files) {
+			if name := p.files[p.index].Name; name == teamSolveWorkflow && !fileExists(filepath.Join(SessionDir(), "task.md")) {
+				m.workflowPanel = nil // the task is typed on the line
+				m.askTeamSolveTask()
+				return nil
+			}
 			p.loading = "Starting " + p.files[p.index].Name + " …"
 			return m.workflowStart(p.files[p.index].Name, "", "")
 		}

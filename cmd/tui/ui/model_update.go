@@ -157,6 +157,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(m.filteredCommands) > 0 {
 					selected := m.filteredCommands[m.autocompleteIndex]
 					m.showAutocomplete = false
+					// A workflow's name half typed ("/w s") is completed, not
+					// run: Enter on the first match would start security-review.
+					if strings.HasPrefix(selected, "/w ") && strings.TrimSpace(m.input.Value()) != selected {
+						m.input.SetValue(selected + " ")
+						m.input.CursorEnd()
+						return m, nil
+					}
 
 					// These REQUIRE an argument — complete into the input instead
 					// of executing, so the user types it. (/model's arg is
@@ -369,8 +376,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// leading "/" with no space yet. Once a space is typed (the user is entering
 	// arguments, e.g. "/model groq:qwen3.8-27b") or nothing matches, hide it — otherwise
 	// an open dropdown with no matches swallows Enter and the command can't run.
+	// One exception: /w completes the workflow's name too, "/w te" → "/w
+	// team-solve" on Tab, until the space before the task (#130: "always
+	// completion … allow tab completion … make it frictionless").
 	inputValue := m.input.Value()
-	if (inputValue == "/" || looksLikeSlashCommand(inputValue)) && !strings.Contains(strings.TrimSpace(inputValue), " ") {
+	if (inputValue == "/" || looksLikeSlashCommand(inputValue)) && (!strings.Contains(strings.TrimSpace(inputValue), " ") || completesWorkflowName(inputValue)) {
 		// Refresh the command list when the dropdown OPENS (bare "/"): skills
 		// created mid-session — including by the coder itself — appear without
 		// a TUI restart. One readdir per dropdown open, not per keystroke.

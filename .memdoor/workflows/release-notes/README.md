@@ -12,7 +12,7 @@ guregodevo/memdoor, with the entry's own text as its notes, and stays green,
 doing nothing, when that release already exists.
 
 The partition is the version tag, so it is required: run
-`/workflow:release-notes v1.601.0` (or `memdoor workflow run
+`/w release-notes v1.601.0` (or `memdoor workflow run
 release-notes --partition v1.601.0`); approve the gate with `a` in
 `/workflow` or `memdoor workflow approve <run> approve`. A tag is released
 once: a rerun finds its entry already in CHANGELOG.md and skips `notes`.
