@@ -219,6 +219,20 @@ func (s *service) openSession(ctx context.Context, user *User) (string, error) {
 	return token, nil
 }
 
+// OpenSessionFor opens a session for a user the caller has already vouched
+// for. It asks for no password, so only a caller with its own proof may reach it.
+func (s *service) OpenSessionFor(ctx context.Context, userID string) (*User, string, error) {
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil || user == nil {
+		return nil, "", fmt.Errorf("no such user")
+	}
+	token, err := s.openSession(ctx, user)
+	if err != nil {
+		return nil, "", err
+	}
+	return user, token, nil
+}
+
 // LoginVerifiedEmail is Sign in with Google or GitHub: the provider has
 // checked that the person owns the address, so a known address signs in
 // (and counts as verified from now on) and a new one gets an account, no

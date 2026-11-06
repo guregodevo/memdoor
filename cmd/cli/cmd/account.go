@@ -440,9 +440,69 @@ func adoptLocalEngine(accountEmail string) error {
 }
 
 // renewLocalSession signs in to the engine again with the user this Mac
-// generated at first sign-in (~/.memdoor/local-login). An engine whose user
-// was made by hand has no such file, and the error says so.
+// generated at first sign-in (~/.memdoor/local-login), and when there is
+// none or the gateway refuses it, with the key the gateway on this machine
+// wrote (~/.memdoor/host-key): nobody is left with a password they never
+// had (2026-11-06).
 func renewLocalSession() error {
+	err := renewFromGeneratedLogin()
+	if err == nil {
+		return nil
+	}
+	if _, local := localGatewayPort(); !local {
+		return err
+	}
+	key := readHostKey(func() (string, error) {
+		b, rerr := os.ReadFile(homePath(hostKeyFile))
+		return string(b), rerr
+	})
+	if key == "" {
+		return err
+	}
+	if kerr := loginWithHostKey(key); kerr != nil {
+		return fmt.Errorf("%v; this gateway's host key (~/.memdoor/%s) was refused too: %w", err, hostKeyFile, kerr)
+	}
+	return nil
+}
+
+// hostKeyFile is the key the gateway writes at boot (gateway/host_login.go).
+const hostKeyFile = "host-key"
+
+// readHostKey is the key read, from this machine's disk or a box's over
+// ssh; "" when there is none.
+func readHostKey(read func() (string, error)) string {
+	s, err := read()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(s)
+}
+
+// loginWithHostKey trades the gateway's host key for a session: for the
+// account this machine was signed in as when it is the gateway's operator,
+// else for the gateway's first account.
+func loginWithHostKey(key string) error {
+	email := ""
+	if creds, err := loadCredentials(); err == nil {
+		email = creds.Email
+	}
+	var result struct {
+		Token string `json:"token"`
+		User  struct {
+			Email string `json:"email"`
+		} `json:"user"`
+	}
+	if err := NewClient().PostJSON("/api/auth/host-login", map[string]string{"key": key, "email": email}, &result); err != nil {
+		return err
+	}
+	exp := time.Now().Add(auth.SessionTTL)
+	if machineOwnSession(result.User.Email) {
+		exp = time.Now().Add(auth.MachineSessionTTL)
+	}
+	return saveCredentials(&credentials{Token: result.Token, Email: result.User.Email, ExpiresAt: exp})
+}
+
+func renewFromGeneratedLogin() error {
 	var ll localLogin
 	b, err := os.ReadFile(homePath(localLoginFile))
 	if err != nil {

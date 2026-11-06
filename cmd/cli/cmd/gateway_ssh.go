@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -340,18 +341,7 @@ func sshRenewSessionFor(ctx context.Context, d *sshDoor) error {
 	if err != nil {
 		return err
 	}
-	out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+localLoginFile)
-	if err != nil {
-		return fmt.Errorf("no generated login on %s: %v", target, err)
-	}
-	// The first JSON object in what came back: a login shell on the box may
-	// print after it (Cloud Shell through gcloud, 2026-10-24: a trailing
-	// line the strict parse refused as "extra data").
-	var ll localLogin
-	if json.NewDecoder(strings.NewReader(strings.TrimLeft(out, " \r\n\t"))).Decode(&ll) != nil || ll.Password == "" {
-		return fmt.Errorf("the generated login on %s is unreadable", target)
-	}
-	if err := loginLocal(ll.Email, ll.Password); err != nil {
+	if err := sshSignIn(target, sshPort); err != nil {
 		return err
 	}
 	// One sign-in serves both doors onto the box: the session the ssh door
@@ -359,6 +349,40 @@ func sshRenewSessionFor(ctx context.Context, d *sshDoor) error {
 	// over its network needs no password the person never saw.
 	if creds, err := loadCredentials(); err == nil {
 		_ = saveCredentialsFor("http://"+net.JoinHostPort(sshDoorHostFor(d.name), gwPort), creds)
+	}
+	return nil
+}
+
+// sshSignIn signs in through the door with the box's generated login, and
+// when it has none or its gateway refuses it, with the box's host key:
+// whoever may ssh in as that user may read either.
+func sshSignIn(target, sshPort string) error {
+	loginErr := func() error {
+		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+localLoginFile)
+		if err != nil {
+			return fmt.Errorf("no generated login on %s: %v", target, err)
+		}
+		// The first JSON object in what came back: a login shell on the box may
+		// print after it (Cloud Shell through gcloud, 2026-10-24: a trailing
+		// line the strict parse refused as "extra data").
+		var ll localLogin
+		if json.NewDecoder(strings.NewReader(strings.TrimLeft(out, " \r\n\t"))).Decode(&ll) != nil || ll.Password == "" {
+			return fmt.Errorf("the generated login on %s is unreadable", target)
+		}
+		return loginLocal(ll.Email, ll.Password)
+	}()
+	if loginErr == nil {
+		return nil
+	}
+	key := readHostKey(func() (string, error) {
+		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+hostKeyFile)
+		return hostKeyIn(out), err
+	})
+	if key == "" {
+		return loginErr
+	}
+	if err := loginWithHostKey(key); err != nil {
+		return fmt.Errorf("%v; the host key on %s was refused too: %w", loginErr, target, err)
 	}
 	return nil
 }
@@ -419,4 +443,16 @@ func envOr(name, def string) string {
 		return v
 	}
 	return def
+}
+
+// hostKeyIn finds the key in what a login shell printed around it: the
+// 64 hex characters the gateway writes, on a line of their own.
+func hostKeyIn(out string) string {
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimSpace(line)
+		if _, err := hex.DecodeString(line); err == nil && len(line) == 64 {
+			return line
+		}
+	}
+	return ""
 }
