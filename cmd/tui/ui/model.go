@@ -36,6 +36,7 @@ type Model struct {
 	statusOp           func() Status                                  // footer status: where you are, what is thinking, what it costs
 	heldPrompt         string                                         // a prompt Enter refused behind the brain gate, back in the box once it lifts
 	usage              func() (string, error)                         // /usage — what this workspace has used
+	agents             func() (string, error)                         // /agents — the gateway's agents, fetched with the person's token
 	remote             func(arg string) (string, error)               // /remote — this conversation on another device
 	share              func(arg string) (string, error)               // /share, /unshare — a read-only link to this conversation
 	fresh              func(agent string) error                       // /fresh, /clear — wipe the agent's memory of this conversation

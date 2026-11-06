@@ -381,17 +381,15 @@ func (m *Model) getDoctorStatus() string {
 	return response.String()
 }
 
-// getAgentsList returns list of configured agents by calling the agents_list tool
-func (m *Model) getAgentsList() (out string) {
-	// A slash command must never crash the TUI — recover any panic (e.g. the
-	// tools package's "gateway base URL not set") into an inline error.
-	defer func() {
-		if r := recover(); r != nil {
-			out = fmt.Sprintf("Error loading agents: %v", r)
-		}
-	}()
-	// Call agents_list tool
-	result, err := tools.AgentsList(json.RawMessage("{}"))
+// getAgentsList formats the gateway's agents. The fetch is the CLI's, with
+// the person's token (Ops.Agents): the agent-side tool it called before sent
+// the gateway's internal service token, which a window does not hold, and
+// every /agents answered 401 (2026-11-06).
+func (m *Model) getAgentsList() string {
+	if m.agents == nil {
+		return "Agents aren't available in this build."
+	}
+	result, err := m.agents()
 	if err != nil {
 		return fmt.Sprintf("Error loading agents: %s", err.Error())
 	}
