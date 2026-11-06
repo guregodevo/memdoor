@@ -260,3 +260,29 @@ func TestAgentsListIsFetchedAsThePerson(t *testing.T) {
 		t.Errorf("the error, in words: %q", got)
 	}
 }
+
+// #128: a failed command step shows its exit status and the last lines it
+// printed, not its script. The gateway sends the error as mario wrote it
+// ("task <name>: <command>: exit status 1 — …") stripped of the command; the
+// window draws the status line and the tail, in the graph and the compact view.
+func TestAFailedCommandStepShowsItsStatusAndTail(t *testing.T) {
+	err := "exit status 1 — no prompt: memdoor workflow run team-solve \"<what to do>\", or a task.md in this folder\nline two\nline three\nline four\nline five"
+	tasks := []WorkflowTask{{Name: "problem", State: "failed", Error: err}}
+	plain := plainText(strings.Join(workflowGraphRows(WorkflowRun{State: "failed", Tasks: tasks}, 120, false), "\n"))
+	for _, want := range []string{"✗ problem  failed", "exit status 1 — no prompt: memdoor workflow run team-solve", "…", "line four", "line five"} {
+		if !strings.Contains(plain, want) {
+			t.Errorf("graph misses %q:\n%s", want, plain)
+		}
+	}
+	if strings.Contains(plain, "line two") {
+		t.Errorf("the graph shows the tail, not every line:\n%s", plain)
+	}
+	many := append([]WorkflowTask{}, tasks...)
+	for _, n := range []string{"a", "b", "c", "d", "e", "f", "g", "h"} {
+		many = append(many, WorkflowTask{Name: n, State: "waiting"})
+	}
+	compact := plainText(workflowGraphMessage(WorkflowRun{ID: "r", Workflow: "team-solve", State: "failed", Total: 9, Tasks: many}, 120, false).Content)
+	if !strings.Contains(compact, "problem — exit status 1 — no prompt") || !strings.Contains(compact, "line five") {
+		t.Errorf("compact view:\n%s", compact)
+	}
+}

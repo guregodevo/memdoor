@@ -651,7 +651,7 @@ func (e workflowEvents) TaskFailed(wf, task string, err error, willRetry bool) {
 	if willRetry {
 		state = "retrying"
 	}
-	e.run.emit(e.s, task, state, err.Error(), willRetry)
+	e.run.emit(e.s, task, state, workflow.ErrorText(err.Error()), willRetry)
 }
 
 // emit sends one transition to the log and the window, with the run's whole
@@ -801,7 +801,7 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 	for _, t := range r.WF.Tasks {
 		tj := workflowTaskJSON{Name: t.Name, Agent: t.Agent, Requires: t.Requires, External: t.External, State: "waiting", Target: t.Target, Receipt: receipts[t.Name], About: t.About}
 		if tr, ok := res.Tasks[t.Name]; ok {
-			tj.State, tj.Error, tj.Attempt = string(tr.Status), tr.Error, tr.Attempt
+			tj.State, tj.Error, tj.Attempt = string(tr.Status), workflow.ErrorText(tr.Error), tr.Attempt
 			if tr.Took > 0 {
 				tj.Took = tr.Took.Round(time.Second).String()
 			}
@@ -1182,11 +1182,11 @@ func (s *Server) requestChanges(id, task, comment string) (*workflowRun, error) 
 			}
 			run.emit(s, name, "running", "", false)
 			if _, err := runner.Run(context.Background(), tr); err != nil {
-				run.emit(s, name, "failed", err.Error(), false)
+				run.emit(s, name, "failed", workflow.ErrorText(err.Error()), false)
 				run.mu.Lock()
 				run.state = "waiting"
 				run.mu.Unlock()
-				run.note(s, fmt.Sprintf("✗ %s failed after the change request: %s — still waiting for review", name, oneLine(err.Error(), 160)))
+				run.note(s, fmt.Sprintf("✗ %s failed after the change request: %s — still waiting for review", name, oneLine(workflow.ErrorText(err.Error()), 160)))
 				return
 			}
 			run.emit(s, name, "done", "", false)

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"memdoor/pkg/workflow"
 	"os"
 	"path/filepath"
 	"strings"
@@ -127,7 +128,7 @@ func waitForWorkflowRun(id string, stopAtGate bool) error {
 		case workflowExitFailed:
 			for _, t := range st.Tasks {
 				if t.State == "failed" {
-					fmt.Fprintf(os.Stderr, "  ✗ %s — %s\n", t.Name, oneLineOf(taskErrorText(t.Error), 200))
+					fmt.Fprintf(os.Stderr, "  ✗ %s — %s\n", t.Name, oneLineOf(workflow.ErrorText(t.Error), 200))
 				}
 			}
 		case workflowExitGate:
@@ -140,17 +141,6 @@ func waitForWorkflowRun(id string, stopAtGate bool) error {
 		}
 		os.Exit(code)
 	}
-}
-
-// taskErrorText is a failed task's error as a person reads it: a command
-// task's error repeats its whole command before the exit status (mario's
-// "task <name>: <command>: exit status 1 — <stderr>"), and the command is in
-// the file; what failed is the status and what the command said.
-func taskErrorText(e string) string {
-	if i := strings.Index(e, ": exit status "); i >= 0 {
-		return e[i+2:]
-	}
-	return e
 }
 
 func oneLineOf(s string, n int) string {
@@ -444,7 +434,7 @@ func fprintWorkflowTasks(out io.Writer, r workflowRunStatus) {
 			fmt.Fprintln(out, "      "+t.Receipt)
 		}
 		if t.Error != "" && t.State != "done" {
-			fmt.Fprintln(out, "      "+strings.ReplaceAll(taskErrorText(t.Error), "\n", "\n      "))
+			fmt.Fprintln(out, "      "+strings.ReplaceAll(workflow.ErrorText(t.Error), "\n", "\n      "))
 		}
 	}
 }

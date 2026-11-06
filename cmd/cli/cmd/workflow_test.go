@@ -66,16 +66,3 @@ func TestWorkflowWaitEnds(t *testing.T) {
 		t.Errorf("a running run stands at no gate, got %q", g)
 	}
 }
-
-// A command task's error shows its exit status and what it said, not the
-// command it repeats (mario: "task <name>: <command>: exit status 1 — …").
-func TestTaskErrorText(t *testing.T) {
-	got := taskErrorText("task w.steps.verdict: f=x\n[ -f \"$f\" ] || exit 0\n: exit status 1 — 1 finding(s) that must not merge:\n- **P0** `a.go:6` — wrong")
-	want := "exit status 1 — 1 finding(s) that must not merge:\n- **P0** `a.go:6` — wrong"
-	if got != want {
-		t.Fatalf("got %q, want %q", got, want)
-	}
-	if got := taskErrorText("no model is configured"); got != "no model is configured" {
-		t.Fatalf("an error with no exit status changed: %q", got)
-	}
-}
