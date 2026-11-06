@@ -132,6 +132,16 @@ type workflowRun struct {
 	// base is the commit the run started from, so a gate can show what the
 	// run changed (the review loop, 2026-10-03); "" outside a git repository.
 	base string
+	// usage is each step's model calls so far, summed from the ledger rows
+	// as they are written (meterRun): the run view shows them live.
+	usage map[string]stepUsage
+}
+
+// stepUsage is what a step's model calls cost so far.
+type stepUsage struct {
+	Input, Output, Cached int64
+	Cost                  float64
+	Calls                 int
 }
 
 // newID names a run by its workflow and the second it started; two in the
@@ -191,6 +201,32 @@ func (s *Server) listen(run *workflowRun) func() {
 			line += fmt.Sprintf(" · %ds", secs)
 		}
 		s.sendRunEvent(run, map[string]interface{}{"run": run.ID, "workflow": run.Workflow, "task": task, "state": "progress", "text": line})
+	})
+}
+
+// meterRun sums each step's model calls as the ledger writes them: an agent
+// step's turns and an llm step's call carry the step's session (#117), so the
+// row names the step. Each row sends the run's state, and the window redraws
+// the step's tokens while it runs, as a single turn shows its own.
+func (s *Server) meterRun(run *workflowRun) func() {
+	return providers.OnMeter(func(e providers.MeterEntry) {
+		task := run.taskOfSession(e.Session)
+		if task == "" {
+			return
+		}
+		run.mu.Lock()
+		if run.usage == nil {
+			run.usage = map[string]stepUsage{}
+		}
+		u := run.usage[task]
+		u.Input += e.InputTokens
+		u.Output += e.OutputTokens
+		u.Cached += e.CachedTokens
+		u.Cost += e.CostUSD
+		u.Calls++
+		run.usage[task] = u
+		run.mu.Unlock()
+		s.sendRunEvent(run, map[string]interface{}{"run": run.ID, "workflow": run.Workflow, "task": task, "state": "usage", "status": run.snapshot()})
 	})
 }
 
@@ -685,17 +721,22 @@ func (r *workflowRun) note(s *Server, text string) {
 // ---- the JSON the TUI and CLI read -----------------------------------------
 
 type workflowTaskJSON struct {
-	Name     string     `json:"name"`
-	Agent    string     `json:"agent"`
-	Requires []string   `json:"requires"`
-	Target   string     `json:"target"`
-	External bool       `json:"external"`
-	State    string     `json:"state"`
-	Error    string     `json:"error,omitempty"`
-	Receipt  string     `json:"receipt,omitempty"` // what proved it: the turn's receipt line
-	Attempt  int        `json:"attempt,omitempty"`
-	Took     string     `json:"took,omitempty"`
-	Started  *time.Time `json:"started,omitempty"` // the window ticks a running task's time from it
+	Name     string   `json:"name"`
+	Agent    string   `json:"agent"`
+	Requires []string `json:"requires"`
+	Target   string   `json:"target"`
+	External bool     `json:"external"`
+	State    string   `json:"state"`
+	Error    string   `json:"error,omitempty"`
+	Receipt  string   `json:"receipt,omitempty"` // what proved it: the turn's receipt line
+	Attempt  int      `json:"attempt,omitempty"`
+	// What the step's model calls cost so far, from the ledger (meterRun).
+	InputTokens  int64      `json:"input_tokens,omitempty"`
+	OutputTokens int64      `json:"output_tokens,omitempty"`
+	CostUSD      float64    `json:"cost_usd,omitempty"`
+	Calls        int        `json:"calls,omitempty"`
+	Took         string     `json:"took,omitempty"`
+	Started      *time.Time `json:"started,omitempty"` // the window ticks a running task's time from it
 }
 
 type workflowRunJSON struct {
@@ -718,6 +759,10 @@ type workflowRunJSON struct {
 	// (2026-10-04: "we dont see the result"). A failed run has them too: a
 	// review that failed its verdict is the thing to read (2026-10-27).
 	Results []string `json:"results,omitempty"`
+	// The steps' tokens and cost, summed.
+	InputTokens  int64   `json:"input_tokens,omitempty"`
+	OutputTokens int64   `json:"output_tokens,omitempty"`
+	CostUSD      float64 `json:"cost_usd,omitempty"`
 }
 
 // status is the run's state as mario records it: the current trigger's
@@ -751,6 +796,10 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 	for k, v := range r.receipts {
 		receipts[k] = v
 	}
+	usage := make(map[string]stepUsage, len(r.usage))
+	for k, v := range r.usage {
+		usage[k] = v
+	}
 	r.mu.Unlock()
 	for _, t := range r.WF.Tasks {
 		tj := workflowTaskJSON{Name: t.Name, Agent: t.Agent, Requires: t.Requires, External: t.External, State: "waiting", Target: t.Target, Receipt: receipts[t.Name]}
@@ -771,6 +820,12 @@ func (r *workflowRun) snapshot() workflowRunJSON {
 		}
 		if tj.State == "done" || tj.State == "skipped" {
 			out.Done++
+		}
+		if u, ok := usage[t.Name]; ok {
+			tj.InputTokens, tj.OutputTokens, tj.CostUSD, tj.Calls = u.Input, u.Output, u.Cost, u.Calls
+			out.InputTokens += u.Input
+			out.OutputTokens += u.Output
+			out.CostUSD += u.Cost
 		}
 		out.Tasks = append(out.Tasks, tj)
 	}
@@ -879,10 +934,12 @@ func (s *Server) triggerWorkflow(run *workflowRun) {
 	run.exe, run.state, run.ended, run.finalErr = exe, "running", time.Time{}, ""
 	run.mu.Unlock()
 	stopListening := s.listen(run)
+	stopMetering := s.meterRun(run)
 	go func() {
 		defer cancel()
 		res := exe.Wait()
 		stopListening()
+		stopMetering()
 		run.mu.Lock()
 		run.exe, run.last, run.ended = nil, res, time.Now()
 		blocked := res.Blocked()

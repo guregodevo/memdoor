@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"github.com/charmbracelet/lipgloss"
 	"os"
 	"path/filepath"
@@ -464,5 +465,37 @@ func TestTheFinalStateIsDrawnWithThePanelClosed(t *testing.T) {
 	screen := regexp.MustCompile(`\x1b\[[0-9;]*m`).ReplaceAllString(m.viewport.View(), "")
 	if !strings.Contains(screen, "digest · done") || strings.Contains(screen, "digest · running") {
 		t.Fatalf("the screen shows the final state:\n%s", screen)
+	}
+}
+
+// Each step shows its tokens and cost while it runs, and the run its total,
+// read from the gateway's run state as it sends it (#94).
+func TestEachStepShowsItsTokensLive(t *testing.T) {
+	var run WorkflowRun
+	raw := `{"id":"r1","workflow":"team-solve","state":"running","done":1,"total":3,"input_tokens":13000,"output_tokens":1300,"cost_usd":0.0042,
+		"tasks":[{"name":"plan","state":"done","took":"9s","input_tokens":12000,"output_tokens":1200,"cost_usd":0.004,"calls":1},
+		         {"name":"solve","state":"running","requires":["plan"],"input_tokens":1000,"output_tokens":100,"cost_usd":0.0002,"calls":2},
+		         {"name":"review","state":"waiting","requires":["solve"]}]}`
+	if err := json.Unmarshal([]byte(raw), &run); err != nil {
+		t.Fatal(err)
+	}
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	m.updateWorkflowPanel(workflowEventMsg{runID: "r1", task: "solve", state: "usage", status: &run})
+	var block string
+	for _, msg := range m.messages {
+		if msg.ToolID == "workflow:r1" {
+			block = plainText(msg.Content)
+		}
+	}
+	for _, want := range []string{"running · 1/3 done · 14.3k tokens · $0.004", "plan    done 9s · 13.2k tokens · $0.004", "solve   running · 1.1k tokens  ← plan"} {
+		if !strings.Contains(block, want) {
+			t.Errorf("missing %q in:\n%s", want, block)
+		}
+	}
+	if strings.Contains(block, "1.1k tokens · $") {
+		t.Errorf("a cost under a tenth of a cent is not shown:\n%s", block)
+	}
+	if strings.Contains(strings.SplitAfter(block, "review")[1], "tokens") {
+		t.Errorf("a step with no model call yet shows tokens:\n%s", block)
 	}
 }
