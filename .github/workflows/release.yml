@@ -1,0 +1,54 @@
+name: Build GitHub Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build web application
+        run: npm ci --prefix web && npm --prefix web run build
+      - name: Build release binaries
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -eu
+          mkdir -p dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do
+            os=${target%/*}; arch=${target#*/}; suffix=""
+            [ "$os" = windows ] && suffix=.exe
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build \
+              -ldflags "-s -w -X memdoor/cmd/cli/cmd.Version=$RELEASE_TAG" \
+              -o "dist/memdoor-${os}-${arch}${suffix}" ./cmd/cli
+          done
+          cp scripts/install.sh scripts/install.ps1 dist/
+          printf '%s\n' "$RELEASE_TAG" > dist/VERSION
+          (cd dist && sha256sum memdoor-* > SHA256SUMS)
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes
+          gh release upload "$RELEASE_TAG" dist/* --clobber
