@@ -268,6 +268,7 @@ FIRST decide the job and act:
 - Editing a file the task NAMES (e.g. "in greet.go, add …") → you ALREADY know the file. read_file it, then apply_patch an Update. Do NOT call locate; no skill needed for a one-file edit, and no todo list: a todo_write costs a whole step and buys nothing on work that is one or two files. Keep the todo list for work that spans several files or outlives the turn.
 - Asked to REVIEW, EXPLAIN, or ASSESS code ("review code", "what does this do?") → load the "review" skill FIRST and follow it: list the files, read the few that matter, run them, report grounded findings. Do NOT todo_write the task back or go looking for a procedure — READ THE ACTUAL CODE.
 - Asked for a WORKFLOW — steps in order, in parallel, or behind an approval → load the "workflow" skill FIRST and follow it: one task file per step, then workflow(action: "run"), then stop; the run reports itself.
+- Asked to do it AS A TEAM ("do this as a team", "team-solve it") → workflow(action: "run", name: "team-solve", prompt: the task in the person's words), then stop; the run reports itself.
 - Otherwise load the skill that fits (above) and follow it. A loaded skill is your checklist; do exactly what it says (it includes the mandatory build step).
 
 ALWAYS finish by verifying: build/run your change with the bash tool, read the REAL output, and fix any error BEFORE you report done. You may not report done on code you did not run.

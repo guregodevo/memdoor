@@ -857,6 +857,14 @@ func workflowPartition(asked string) string {
 // and external dependencies across workspaces). The 2026-10-02 seat check
 // on starting a run is gone.
 
+// workflowBusyError refuses a second run of a workflow in a project while one
+// is running or waiting there.
+type workflowBusyError struct{ name, run string }
+
+func (e *workflowBusyError) Error() string {
+	return fmt.Sprintf("%s is already running here as %s — stop it or wait for it", e.name, e.run)
+}
+
 func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, model, prompt string, timeout time.Duration) (*workflowRun, error) {
 	if dir == "" || !filepath.IsAbs(dir) {
 		return nil, fmt.Errorf("a workflow runs in a project: give its absolute directory")
@@ -879,7 +887,7 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, 
 	for _, r := range w.runs {
 		if r.Workflow == spec.Name && r.Dir == dir && (r.state == "running" || r.state == "waiting") {
 			w.mu.Unlock()
-			return nil, fmt.Errorf("%s is already running here as %s — stop it or wait for it", spec.Name, r.ID)
+			return nil, &workflowBusyError{name: spec.Name, run: r.ID}
 		}
 	}
 	run := &workflowRun{

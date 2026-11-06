@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -37,6 +38,7 @@ type workflowToolInput struct {
 	RunID     string `json:"run_id"`
 	Task      string `json:"task"`
 	Partition string `json:"partition"`
+	Prompt    string `json:"prompt"`
 }
 
 // turnWorkflowTool is the workflow tool for THIS turn — it runs in this
@@ -61,7 +63,8 @@ func (ar *AgentRuntime) workflowTool(session, workdir, actor string) tools.ToolD
 			"`list` the workflows and runs; `run` one (it goes on in the " +
 			"background and reports here); `status` a run; `stop` a run gracefully — nothing more starts, the running " +
 			"task is told; `approve` an external task of a run that is waiting on it.\nA task's `target` is a CHECK (a file that must exist, " +
-			"a command that must exit 0), not the work: a target already true is skipped without a turn. A task with no target keeps the agent's answer as its proof.",
+			"a command that must exit 0), not the work: a target already true is skipped without a turn. A task with no target keeps the agent's answer as its proof.\n" +
+			"Asked to do a task as a team: `run` `team-solve` with the task as `prompt`, in the person's words; it plans, solves, reviews and judges in fresh contexts and reports here.",
 		InputSchema: llm.ToolInputSchemaParam{
 			Type: "object",
 			Properties: map[string]interface{}{
@@ -70,6 +73,7 @@ func (ar *AgentRuntime) workflowTool(session, workdir, actor string) tools.ToolD
 				"partition": map[string]interface{}{"type": "string", "description": "run: a run is fresh by default. Name an earlier run's partition (its status shows it) to resume it — what it finished is skipped; \"today\" for a DAG run once a day."},
 				"run_id":    map[string]interface{}{"type": "string", "description": "status, stop, approve, resume: which run"},
 				"task":      map[string]interface{}{"type": "string", "description": "approve: the external task"},
+				"prompt":    map[string]interface{}{"type": "string", "description": "run: the task, for a workflow that takes one (team-solve: what to do, as the person put it); the run keeps it as its prompt.md"},
 			},
 			Required: []string{"action"},
 		},
@@ -90,7 +94,19 @@ func (ar *AgentRuntime) workflowTool(session, workdir, actor string) tools.ToolD
 				if strings.TrimSpace(in.Name) == "" {
 					return "", fmt.Errorf("name is required: which workflow? (workflow(action:\"list\") shows them)")
 				}
-				run, err := ops.startWorkflow(workdir, strings.TrimSpace(in.Name), session, "", actor, in.Partition, "", "", 0)
+				name := strings.TrimSpace(in.Name)
+				// Without a prompt team-solve reads a task.md, or solves its sample
+				// problem: never what the turn was asked.
+				if name == teamWorkflow && strings.TrimSpace(in.Prompt) == "" {
+					return "", fmt.Errorf("prompt is required for %s: the task, in the person's words", teamWorkflow)
+				}
+				run, err := ops.startWorkflow(workdir, name, session, "", actor, in.Partition, "", in.Prompt, 0)
+				var busy *workflowBusyError
+				if errors.As(err, &busy) {
+					// "stop it" was read as leave to stop it: a turn refused here
+					// stopped the person's team-solve run and started its own.
+					return "", fmt.Errorf("%s is already running here as %s. It is the person's run: tell them, and stop it only if they ask", busy.name, busy.run)
+				}
 				if err != nil {
 					return "", err
 				}
