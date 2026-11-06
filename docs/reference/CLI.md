@@ -10,6 +10,7 @@ Complete command-line interface reference for Memdoor.
 ## Table of Contents
 
 - [Installation](#installation)
+- [In the window](#in-the-window)
 - [Global Flags](#global-flags)
 - [Workspace resolution](#workspace-resolution)
 - [Command index](#command-index) — every command and subcommand, generated from `memdoor --help`
@@ -168,6 +169,40 @@ Error: no workspace resolved for "channels". Set one of:
   • file:  memdoor workspace use <slug>   (writes ./.memdoor/workspace)
   • config: set workspace_id in ~/.memdoor/config.json
 ```
+
+## In the window
+
+The slash commands of `memdoor` (the window). `/` lists them with what each does; the same table is `/help`.
+
+| Command | What it does |
+|---|---|
+| `/w` | The workflows and their runs; /w <name> <the task> runs one (/w team-solve <the task>) |
+| `/init` | Write the project's AGENTS.md (build, test, conventions) so every turn starts from it |
+| `/model` | Which model answers this conversation and why; /model 2 pins a rung, /model vendor/name pins any model, /model auto lets it go |
+| `/model-search` | Find a model in the catalogue (id, context, cost band); /model-search vendor/name lists its hosts |
+| `/connect` | Add a provider: OpenRouter, Anthropic, OpenAI, Gemini, a company gateway, any endpoint; /connect local for a model on this machine |
+| `/usage` | What this workspace has used this month: model requests, tokens, cost on your key |
+| `/files` | The project's files, what this conversation touched first (ctrl+f) |
+| `/graph` | This turn as a graph: reads, edits, runs and what each depended on (ctrl+g) |
+| `/mcp` | The MCP servers the coder can use: add one, sign in, see their state (/mcp add, login, test, on, off, remove, trust) |
+| `/update` | Install the newest memdoor build; the window restarts into this conversation |
+| `/dir` | Re-root the session on another directory (bare /dir shows the current one) |
+| `/remote` | Open this conversation on your phone: a link and a QR code, end-to-end encrypted; /remote off revokes the link |
+| `/share` | A read-only link to this conversation, end-to-end encrypted, secrets removed |
+| `/unshare` | Delete this conversation's shared links |
+| `/context` | View current context usage and status |
+| `/compact` | Summarize the conversation now; /compact <focus> says what to keep in mind |
+| `/handoff` | The model summarizes goals, decisions, progress and next steps; a clean session starts from it |
+| `/agents` | List all configured agents |
+| `/copy` | Copy the last interaction (or /copy N, or /copy all) to the clipboard |
+| `/clear` | Wipe the agent's memory of this conversation: its next turn starts from nothing |
+| `/fresh` | A clean session: the agent forgets this conversation (the screen stays); with a request, sends it |
+| `/exit or /quit` | Close this window (ctrl+c does too); the gateway and the conversation stay |
+| `/help` | Show this help message |
+
+Keys: `Esc` interrupts a running turn; `Shift+Tab` switches the mode, auto (one turn) or team (the turn runs as team-solve); `ctrl+o` expands tool frames and a workflow's every step; `ctrl+f` is `/files`, `ctrl+g` is `/graph`; `End` jumps to the latest message; `a` alone approves the gate this window's run waits at.
+
+Custom commands are `.agents/commands/<name>.md` (`.claude/commands/` still works); skills are `.agents/skills/` in the project and `~/.memdoor/skills/` for every project, run as `/skill:<name> [args]`; an MCP server's prompt runs as `/<server>:<prompt> [args]`.
 
 ---
 

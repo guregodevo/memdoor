@@ -261,35 +261,35 @@ func (m Message) toolSettled() bool {
 // answering (2026-09-05: "remove slash command we don't need anymore… or
 // update them for this service").
 func loadSlashCommands(agent string) []string {
+	// One order, the table's (slash_help.go): /w first, since the team is
+	// what the window is for (the maintainer, 2026-11-06: "order correctly
+	// the slash command /w team-solve first on top"), /help last. The
+	// dropdown and /help never disagree: TestDropdownFollowsTheHelpTable.
 	commands := []string{
-		"/help",    // Built-in
-		"/compact", // Built-in
-		"/handoff", // summarize, then start over from the summary
-		"/context", // Built-in
-		"/agents",  // Built-in
-	}
-	commands = append(commands,
-		"/init", // write the project's AGENTS.md
-		"/mcp",  // the MCP servers the coder can use: add, sign in, state
-		"/w",    // the workflows: alone the panel, /w <name> <the task> runs one (/workflow still works)
-	)
-	commands = append(commands,
-		"/update",       // install the published build
-		"/model",        // which model answers this conversation; pin one
-		"/model-search", // find a model in the catalogue to pin
-		"/connect",      // add a provider: the company gateway, Anthropic, OpenAI, Gemini, any endpoint
-		"/files",        // the project's files, what this conversation touched first (ctrl+f)
-		"/graph",        // this turn as a graph: reads, edits, runs and what each depended on (ctrl+g)
-		"/usage",        // what this workspace has used this month
-		"/remote",       // open this conversation on another device (link + QR)
-		"/fresh",        // a clean session: the agent forgets this conversation; with a request, sends it
-		"/share",        // a read-only link to this conversation, end-to-end encrypted
-		"/unshare",      // delete this conversation's shared links
-		"/dir",          // re-root the session on another directory
-		"/copy",         // copy the last interaction to the clipboard
-		"/clear",
+		"/w",             // the workflows: alone the panel, /w <name> <the task> runs one (/workflow still works)
+		"/init",          // write the project's AGENTS.md
+		"/model",         // which model answers this conversation; pin one
+		"/model-search",  // find a model in the catalogue to pin
+		"/connect",       // add a provider: the company gateway, Anthropic, OpenAI, Gemini, any endpoint
+		"/usage",         // what this workspace has used this month
+		"/files",         // the project's files, what this conversation touched first (ctrl+f)
+		"/graph",         // this turn as a graph: reads, edits, runs and what each depended on (ctrl+g)
+		"/mcp",           // the MCP servers the coder can use: add, sign in, state
+		"/update",        // install the published build
+		"/dir",           // re-root the session on another directory
+		"/remote",        // open this conversation on another device (link + QR)
+		"/share",         // a read-only link to this conversation, end-to-end encrypted
+		"/unshare",       // delete this conversation's shared links
+		"/context",       // the window: system prompt, tools, conversation, when it compacts
+		"/compact",       // summarize the conversation now
+		"/handoff",       // summarize, then start over from the summary
+		"/agents",        // the gateway's agents
+		"/copy",          // copy the last interaction to the clipboard
+		"/clear",         // wipe the agent's memory of this conversation
+		"/fresh",         // a clean session: the agent forgets this conversation; with a request, sends it
 		"/exit", "/quit", // the same door, both names people type
-	)
+		"/help",
+	}
 
 	// Load custom commands — .agents/commands/ first, legacy .claude/commands/
 	// second (deduplicated so a name present in both is offered once).
@@ -322,8 +322,16 @@ func loadSlashCommands(agent string) []string {
 	// command should be autocomplete with existing workflows"). It was
 	// "/workflow:release"; that still runs, unlisted (#130: "remove the : …
 	// for backward compatibility").
+	// team-solve goes on top: the team is what the window is for (the
+	// maintainer, 2026-11-06: "order correctly the slash command /w team-solve
+	// first on top"). The other runs follow the built-ins, or a dozen library
+	// workflows would sit between / and /model.
 	for _, name := range workflowNames(wd) {
-		commands = append(commands, "/w "+name)
+		if name == "team-solve" {
+			commands = append([]string{"/w team-solve"}, commands...)
+		} else {
+			commands = append(commands, "/w "+name)
+		}
 	}
 
 	describeSlashCommands(commands, wd)
