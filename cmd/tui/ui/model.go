@@ -266,11 +266,9 @@ func loadSlashCommands(agent string) []string {
 		"/compact", // Built-in
 		"/handoff", // summarize, then start over from the summary
 		"/context", // Built-in
-		"/doctor",  // Built-in
 		"/agents",  // Built-in
 	}
 	commands = append(commands,
-		"/go",   // run the planner's plan with the coder
 		"/init", // write the project's AGENTS.md
 		"/mcp",  // the MCP servers the coder can use: add, sign in, state
 		"/w",    // the workflows: alone the panel, /w <name> <the task> runs one (/workflow still works)
@@ -290,7 +288,6 @@ func loadSlashCommands(agent string) []string {
 		"/dir",          // re-root the session on another directory
 		"/copy",         // copy the last interaction to the clipboard
 		"/clear",
-		"/new",
 		"/exit", "/quit", // the same door, both names people type
 	)
 
