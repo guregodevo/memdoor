@@ -3,7 +3,8 @@
 The parity result on the authors' first ten problems (9.8 of 10, five
 passes): [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
 SWE-bench Verified, all 500 instances against a single call on DeepSeek V4.1
-Flash (400 and 388): [guregodevo/swe-bench](https://github.com/guregodevo/swe-bench).
+Flash (400 and 388): [memdoor-swe-bench/](memdoor-swe-bench/README.md), the
+data in [guregodevo/swe-bench](https://github.com/guregodevo/swe-bench).
 This folder: the earlier 100-problem bench.
 
 GVS5H's 100 hardest LiveCodeBench problems (`ids.json`, release_v6, contests
