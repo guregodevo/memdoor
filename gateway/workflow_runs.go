@@ -23,6 +23,7 @@ import (
 
 	"github.com/guregodevo/mario/sqlite"
 	"github.com/guregodevo/mario/tasks"
+	"github.com/guregodevo/mario/templates"
 	mario "github.com/guregodevo/mario/workflow"
 
 	"memdoor/gateway/broadcast"
@@ -264,8 +265,19 @@ func (r *workflowRun) taskOfSession(session string) string {
 // (Memdoor's own type, run through the queue), mario's command, and
 // mario's llm on this gateway's model. The YAML names the type; the
 // factory behind it builds the task.
-func (s *Server) workflowTypes(runner workflow.Runner) []tasks.Base {
-	return []tasks.Base{workflow.Agent(runner), tasks.Command(), tasks.LLM(workflowCompleter{s: s})}
+func (s *Server) workflowTypes(runner *workflowRunner) []tasks.Base {
+	llmTask := tasks.LLM(workflowCompleter{s: s})
+	var agentRunner workflow.Runner
+	if runner != nil {
+		agentRunner = runner
+		complete := llmTask.Run
+		llmTask.Run = func(ctx context.Context, b *tasks.Base, def *templates.YamlTaskDefinition, name string) (string, error) {
+			task := name[strings.LastIndex(name, ".")+1:]
+			ctx = context.WithValue(ctx, sharedctx.SessionIDKey, runner.run.taskSession(task))
+			return complete(ctx, b, def, name)
+		}
+	}
+	return []tasks.Base{workflow.Agent(agentRunner), tasks.Command(), llmTask}
 }
 
 // workflowCompleter is one model call through the provider (factory.go):
@@ -840,10 +852,8 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, 
 // external target nobody has made yet — then approving (or any other way
 // the target appears) triggers it again, and what exists is skipped.
 func (s *Server) triggerWorkflow(run *workflowRun) {
-	// Every model call of the run carries the run as its session: the meter
-	// line of an llm task then says which run it belongs to, and a bench
-	// running eight problems at once can bill each (2026-10-26, the GVS5H
-	// rows: the entries had no session at all).
+	// The run session is the fallback. Agent and llm steps use their own
+	// task sessions so the meter can attribute each call to a step.
 	ctx, cancel := context.WithCancel(context.WithValue(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID), sharedctx.AttendedKey, run.attended()))
 	if run.Model != "" {
 		ctx = context.WithValue(ctx, runModelKey{}, run.Model)

@@ -6,10 +6,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"memdoor/gateway/providers"
+	"memdoor/pkg/metering"
 )
 
 // An llm task's `system:` reaches the model as the request's own system
@@ -31,7 +35,7 @@ func TestAnLLMTaskSystemMessageIsTheRequestsSystemRole(t *testing.T) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		chunk, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"index": 0, "delta": map[string]any{"content": "### PLAN\nok"}}}})
 		fmt.Fprintf(w, "data: %s\n\n", chunk)
-		done, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"index": 0, "delta": map[string]any{}, "finish_reason": "stop"}}})
+		done, _ := json.Marshal(map[string]any{"model": "qwen3:4b", "usage": map[string]any{"prompt_tokens": 12, "completion_tokens": 7, "total_tokens": 19, "cost": 0.0012}, "choices": []any{map[string]any{"index": 0, "delta": map[string]any{}, "finish_reason": "stop"}}})
 		fmt.Fprintf(w, "data: %s\n\ndata: [DONE]\n\n", done)
 	}))
 	t.Cleanup(srv.Close)
@@ -64,6 +68,75 @@ func TestAnLLMTaskSystemMessageIsTheRequestsSystemRole(t *testing.T) {
 	if got := strings.Join(roles(bodies[1]), " | "); strings.Contains(got, "system:") {
 		t.Errorf("without system, a system message was sent: %s", got)
 	}
+
+	t.Run("workflow steps have separate usage records", func(t *testing.T) {
+		s := &Server{clientFactory: providers.NewClientFactory()}
+		wantSessions := map[string]bool{}
+		for range 2 {
+			dir := t.TempDir()
+			steps := filepath.Join(dir, ".memdoor", "workflows", "meter-test", "steps")
+			if err := os.MkdirAll(steps, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			for name, yaml := range map[string]string{
+				"plan":  "type: llm\nsystem: You are the planner.\nprompt: Plan the task.\n",
+				"judge": "type: llm\nprompt: Judge the result.\nrequires:\n  - table_pattern: plan\n",
+			} {
+				if err := os.WriteFile(filepath.Join(steps, name+".yaml"), []byte(yaml), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			run, err := s.startWorkflow(dir, "meter-test", "", "", "", "same-day", "", "", 5*time.Second)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(run.cancel)
+			deadline := time.Now().Add(10 * time.Second)
+			for run.snapshot().State == "running" && time.Now().Before(deadline) {
+				time.Sleep(10 * time.Millisecond)
+			}
+			if got := run.snapshot(); got.State != "done" {
+				t.Fatalf("workflow: %+v", got)
+			}
+			wantSessions[run.taskSession("plan")] = true
+			wantSessions[run.taskSession("judge")] = true
+		}
+		if len(bodies) != 6 {
+			t.Fatalf("got %d requests, want 6", len(bodies))
+		}
+		for i, body := range bodies[2:] {
+			got := strings.Join(roles(body), " | ")
+			if i%2 == 0 && !strings.HasPrefix(got, "system:You are the planner. | user:") {
+				t.Errorf("plan request: %s", got)
+			}
+			if i%2 == 1 && strings.Contains(got, "system:") {
+				t.Errorf("judge request has a system message: %s", got)
+			}
+		}
+		ledger, err := metering.NewJSONLLedger("")
+		if err != nil {
+			t.Fatal(err)
+		}
+		entries, err := ledger.All()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(entries) != 6 || len(wantSessions) != 4 {
+			t.Fatalf("got %d ledger entries and %d distinct step sessions, want 6 and 4", len(entries), len(wantSessions))
+		}
+		for _, entry := range entries[2:] {
+			if !wantSessions[entry.Session] {
+				t.Errorf("unexpected or duplicate step session %q", entry.Session)
+			}
+			delete(wantSessions, entry.Session)
+			if entry.Model != "qwen3:4b" || entry.InputTokens != 12 || entry.OutputTokens != 7 || entry.CostUSD != 0.0012 {
+				t.Errorf("usage was not preserved: %+v", entry)
+			}
+		}
+		if len(wantSessions) != 0 {
+			t.Errorf("missing step usage: %v", wantSessions)
+		}
+	})
 }
 
 // top_p and top_k on a task's model line reach the request; left out, the
