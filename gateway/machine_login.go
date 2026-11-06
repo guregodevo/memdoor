@@ -7,12 +7,12 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"memdoor/gateway/logs"
 	"memdoor/pkg/shared"
 )
 
@@ -39,15 +39,15 @@ func ensureMachineKey() {
 	}
 	raw := make([]byte, 32)
 	if _, err := rand.Read(raw); err != nil {
-		slog.Warn("machine key not written", "error", err)
+		logs.New("MachineKey").Warn("machine key not written", "error", err)
 		return
 	}
 	if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
-		slog.Warn("machine key not written", "error", err)
+		logs.New("MachineKey").Warn("machine key not written", "error", err)
 		return
 	}
 	if err := os.WriteFile(p, []byte(hex.EncodeToString(raw)), 0o600); err != nil {
-		slog.Warn("machine key not written", "error", err)
+		logs.New("MachineKey").Warn("machine key not written", "error", err)
 	}
 }
 
@@ -101,7 +101,7 @@ func (s *Server) handleMachineLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "could not open a session"}`, http.StatusInternalServerError)
 		return
 	}
-	slog.Info("machine login", "email", user.Email)
+	s.log.Info("machine login", "email", user.Email)
 	_ = json.NewEncoder(w).Encode(AuthResponse{User: *user, Token: token})
 }
 
