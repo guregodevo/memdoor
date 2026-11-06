@@ -1,4 +1,5 @@
 type: command
+# Runs the Check and the Scope on the work and records the result for the reviewer.
 # What the run changed (changes.diff) and the task's check as task.md names
 # it: the command, the samples, or nothing (the judge decides). Records the
 # result for the reviewer, and the files changed against the Scope

@@ -1,4 +1,5 @@
 type: command
+# Keeps the team's work only where it beats the direct attempt, else puts the attempt back.
 # THE NET: team-solve never ends worse than its own single call. The work
 # after a direct attempt that failed test-0 (the team's solve) replaces it
 # only when it passes a check the attempt did not: the Check passes, or with

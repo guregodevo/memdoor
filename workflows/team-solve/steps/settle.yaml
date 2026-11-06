@@ -1,4 +1,5 @@
 type: command
+# Writes the plan's Check and Scope into task.md, filling a missing one safely.
 # The plan's sections into task.md, the Prompt untouched, then checked. A
 # section the planner left out or got wrong is filled safely: the Check by the
 # judge, the Scope by the paths the prompt names (else the whole tree), so a

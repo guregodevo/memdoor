@@ -1,4 +1,5 @@
 type: command
+# The last Check and Scope on the final tree: a failure, or the judge's FAIL, fails the run.
 # The check and the Scope (scope.sh) again on the final tree, then the judge's verdict when it ran.
 # A failing check or a FAIL verdict fails the run.
 requires:

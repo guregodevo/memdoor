@@ -1,4 +1,5 @@
 type: command
+# Runs the Check on an untouched copy of the tree: what already fails is not the work's.
 # The Check on the tree as the run found it, in a clean copy (a git worktree
 # of the start): when it already fails there, it is broken in this place, not
 # by the work, and check.sh counts only the failing tests the work adds (or,

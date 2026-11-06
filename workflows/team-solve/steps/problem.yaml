@@ -1,4 +1,5 @@
 type: command
+# Keeps the prompt as the run's task and records the tree's state before any work.
 # The task is the prompt: `memdoor workflow run team-solve "<what to do>"`
 # keeps it as .memdoor/runs/team-solve-{{.partition}}/prompt.md. Without one, a task.md in
 # the folder is the prompt; an empty folder gets the sample problem. The

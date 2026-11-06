@@ -165,7 +165,7 @@ func aboutOf(dir, name, full string) string {
 	for _, l := range strings.Split(string(data), "\n") {
 		t := strings.TrimSpace(l)
 		if !strings.HasPrefix(t, "#") {
-			if len(lead) > 0 || (t != "" && !strings.HasPrefix(t, "type:") && !strings.HasPrefix(t, "agent:")) {
+			if len(lead) > 0 || (t != "" && !isHeaderKey(t)) {
 				break
 			}
 			continue
@@ -180,6 +180,18 @@ func aboutOf(dir, name, full string) string {
 		s = string(r[:139]) + "…"
 	}
 	return s
+}
+
+// isHeaderKey is a line a step file may open with before its comment:
+// what it is, who runs it, which siblings it defines (ideate.yaml: each:
+// [a, b] sat before the comment and the ideators ran with no About).
+func isHeaderKey(line string) bool {
+	for _, k := range []string{"type:", "agent:", "each:", "model:"} {
+		if strings.HasPrefix(line, k) {
+			return true
+		}
+	}
+	return false
 }
 
 // taskOf reads a definition for a person.

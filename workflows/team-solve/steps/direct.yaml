@@ -1,5 +1,6 @@
 type: agent
 agent: coder
+# The single call: one agent turn on the prompt as written, while plan works beside it.
 # The single call, first, while plan writes the task beside it: one turn on
 # the person's prompt as they wrote it, in the tree. When its attempt passes
 # the Check and the Scope (test-0), the team after it only verifies; when it

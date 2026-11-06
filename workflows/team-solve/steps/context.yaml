@@ -1,4 +1,5 @@
 type: command
+# Gathers task.md, plan.md and the Scope's files into one file for the ideators.
 # What the ideators read, in one file: task.md, plan.md and the files the
 # Scope names (a directory: its file list). The ideators are llm steps, one
 # call each and no tools: an agent ideator on a free model did the task

@@ -1,4 +1,5 @@
 type: llm
+# One call on the task, the diff and the Check's output writes the verdict: PASS or FAIL.
 # The review: one call on what the run did, as captured: the task, the
 # change, what the Check printed and the Scope report. An agent review took 4
 # to 6 minutes on the bench's tasks after the Check had already passed

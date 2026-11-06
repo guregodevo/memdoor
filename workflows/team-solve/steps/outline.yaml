@@ -1,4 +1,5 @@
 type: command
+# Gathers the prompt and the project's shape into one file for the planner.
 # What the planner reads, in one file: the prompt, the project's files, its
 # README and instructions, the build and test files. The planner is one llm
 # call (plan.yaml): an agent planner took 1m41s to 4 minutes on the bench's
