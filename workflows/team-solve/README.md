@@ -8,6 +8,8 @@ memdoor workflow run team-solve - < task.md           # a long prompt from a fil
 memdoor workflow run team-solve --model qwen/qwen3.8-27b "…"
 ```
 
+In the window: `/w team-solve <the task>`, or Shift+Tab to team mode and type the task.
+
 The output is whatever the task asks for: changes to the tree (a refactor, a fix, a feature across many files), a new program, a document. The run's own files never mix with the project's: they are in `.memdoor/runs/team-solve-<run>/`, out of git.
 
 **The task.** The prompt goes into the workflow's task template (`task.template.md`) as `task.md` in the run's folder. `plan` settles the rest of it: the Deliverable, the Check (one command that exits 0 when the work is right, such as `go test ./...`; or the samples; or the judge), the Scope (the files and directories the work may touch, in backticks) and Done when. Every later role works from that file.

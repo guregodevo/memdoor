@@ -48,10 +48,15 @@ func (m Model) connectToGateway() tea.Msg {
 // isNetworkCmd reports whether a slash command is one of the async network /
 // background ops handled by runNetworkCmd.
 func isNetworkCmd(cmd string) bool {
+	// The command is its first word: a dropdown entry can carry an argument
+	// ("/w team-solve").
+	if f := strings.Fields(cmd); len(f) > 0 {
+		cmd = f[0]
+	}
 	switch cmd {
 	case "/model-search",
 		"/usage", "/meter", "/model", "/update", "/remote", "/share", "/unshare",
-		"/clear", "/fresh", "/compact", "/handoff", "/mcp", "/workflow", "/connect", "/files", "/graph":
+		"/clear", "/fresh", "/compact", "/handoff", "/mcp", "/w", "/workflow", "/connect", "/files", "/graph":
 		return true
 	}
 	return strings.HasPrefix(cmd, "/workflow:")
@@ -65,15 +70,19 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 		return m.runMCPPrompt(p, fields[1:])
 	}
 	if name, ok := strings.CutPrefix(fields[0], "/workflow:"); ok && name != "" {
-		partition, prompt := workflowRunArgs(fields[1:])
-		return m.workflowStart(name, partition, prompt)
+		// The old spelling of /w <name> (#130): kept so what people learned runs.
+		if m.workflow.Run == nil {
+			m.note("Workflows aren't available in this build.")
+			return nil
+		}
+		return m.workflowRunNamed(name, fields[1:])
 	}
 	switch fields[0] {
 	case "/connect":
 		return m.connectCommand(fields[1:])
 	case "/mcp":
 		return m.mcpCommand(fields[1:])
-	case "/workflow":
+	case "/w", "/workflow":
 		return m.workflowCommand(fields[1:])
 	case "/model-search":
 		// The model catalogue (every connected provider's): find a

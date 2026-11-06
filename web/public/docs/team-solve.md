@@ -65,8 +65,9 @@ mkdir my-problem && cd my-problem
 memdoor workflow run team-solve --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
 ```
 
-The built-in takes any task a prompt defines:
-`memdoor workflow run team-solve "<the task>"` in the project. The output is
+The built-in takes any task a prompt defines: `/w team-solve <the task>`
+in the window, or `memdoor workflow run team-solve "<the task>"` in the
+project. The output is
 what the task asks for: changes across a repository, a program, a document. A
 fresh judge checks what no command can. It ships in the binary, seeded into
 `~/.memdoor/workflows` at the gateway's first boot; `--model <id>` puts every

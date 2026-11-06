@@ -70,7 +70,7 @@ on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
 
 Your problem: `task.md` and paired `tests/N.in` / `tests/N.out`. Program:
 `solution.py`, stdin in, compared to the samples with `diff`. Needs Python 3
-and bash. `/workflow` in `memdoor tui` draws the run live.
+and bash. `/w` in `memdoor tui` draws the run live; `/w team-solve` runs it from there.
 
 `team-solve` is also built in, with its own prompts (a task from a prompt,
 any project): [workflows/team-solve](../../../workflows/team-solve/). The

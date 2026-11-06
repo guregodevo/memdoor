@@ -9,4 +9,4 @@ failing proof, a wrong file, an undeclared output, a timeout). Every scenario
 step writes PASS or FAIL with its evidence; the report collects them into
 `SELFTEST-<partition>.md` and fails if any failed. Model steps use DeepSeek
 Flash (`deepseek:deepseek-flash` in `fixtures/*/steps/*.yaml.in`). Run it with
-`/workflow:workflow-selftest`; it needs `memdoor` on the PATH (or MEMDOOR_BIN).
+`/w workflow-selftest`; it needs `memdoor` on the PATH (or MEMDOOR_BIN).

@@ -59,8 +59,8 @@ At the end, the verdict, what was kept, the Scope and the diff:
 ```
 
 Shift+Tab again is `auto`: one turn, as before. The thinking effort is a
-separate setting. From the shell, the same run:
-`memdoor workflow run team-solve --model <id> "<task>"`.
+separate setting. Without leaving auto: `/w team-solve <task>`. From the
+shell, the same run: `memdoor workflow run team-solve --model <id> "<task>"`.
 
 ![Team mode: Shift+Tab, a task, the team's steps, the verdict](/team-mode-2026-11-06.cast)
 

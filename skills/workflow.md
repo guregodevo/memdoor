@@ -162,7 +162,7 @@ requires:
 
 Every workflow gets `README.md` next to its `steps/` — one paragraph a
 stranger can read: what it does, what it needs (`args`, the partition, an
-approval), what it leaves behind, and how to run it (`/workflow:<name>`).
+approval), what it leaves behind, and how to run it (`/w <name>`).
 Its first paragraph is what `/workflow` and `memdoor workflow` show beside
 the name. A workflow is shared by copying its directory — the README is
 how the next person knows what they got.

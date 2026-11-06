@@ -13,7 +13,7 @@ Memdoor adds one task type, `agent`, the way
 `mario-llm` (a sibling, private factory) adds `llm_agent`.
 
 ```
-/workflow run release        in the TUI: starts it, draws the graph as it runs
+/w release                   in the TUI: starts it, draws the graph as it runs
 memdoor workflow run release from the shell, same gateway
 ```
 
@@ -237,7 +237,7 @@ same commit resumes and a new one reruns everything; a nightly → `today`;
 a release → its version, so approval resumes that release; a PR review →
 the PR number; "run it" from the TUI → the run's own stamp, **fresh by
 default** ("fresh is the default"). The caller passes it (`--partition`,
-`partition:` on the tool, `/workflow run <name> <partition>`); prompts read
+`partition:` on the tool, `/w <name> --partition <p>`); prompts read
 it as `{{.partition}}`.
 
 The person names **runs**, not partitions: to continue an earlier run — one
@@ -289,11 +289,13 @@ conversation (`▸ release.changelog — …`), the way a cron run does, and the
 run's end is one line (`■ release done`). `s` twice stops a run: nothing more
 starts, the running turn is told.
 
-`/workflow:<name>` runs one straight from the slash dropdown, which
-completes it with the project's workflows (the maintainer: "autocomplete with existing
-workflows"). `/workflow run <name> [partition]` · `/workflow resume
-<run-id>` · `/workflow approve <task>` (the open run) ·
-`/workflow stop <run-id>`. A run is named `<workflow>-<yyyymmdd-hhmmss>`.
+`/w <name> [the task]` runs one, and the slash dropdown completes it with
+the project's workflows (the maintainer: "autocomplete with existing
+workflows"); the words after the name are the task (`/w team-solve <the
+task>`), and team-solve with none asks for it. `/w <name> --partition <p>` ·
+`/w resume <run-id>` · `/w approve <task>` (the open run) ·
+`/w stop <run-id>`. `/workflow` is the long name; `/workflow run <name>` and
+`/workflow:<name>` still run, out of the dropdown (#130). A run is named `<workflow>-<yyyymmdd-hhmmss>`.
 **Esc** in the conversation stops this window's run, the way it interrupts
 a turn (the maintainer: "the user can escape using its esc").
 
@@ -521,7 +523,7 @@ factory, `Load` and `Run`.
 `.memdoor/workflows/release/steps/{tests,changelog,release}.yaml` as above, on a
 project with one Go test.
 
-1. `/workflow run release` — `tests` **skipped** (its command already exits
+1. `/w release` — `tests` **skipped** (its command already exits
    0), `changelog` ran 14 s and wrote CHANGELOG.md, the run ended
    **waiting** at `approve` with the ⏸ line above. No turn was spent on the
    gate.
@@ -581,7 +583,7 @@ Third batch ("yes try it"):
     starts; a running task is told and ends on its own`; the window then
     showed `✗ slow.nap failed — context canceled` and `■ slow stopped`),
     `workflow(action: "status")` → `stopped · 0/1`.
-13. **Esc**: `/workflow run slow`, Esc five seconds in → `■ slow stopped`,
+13. **Esc**: `/w slow`, Esc five seconds in → `■ slow stopped`,
     the run listed as `stopped 0/1`.
 14. **Two complex DAGs from a sentence** (the maintainer's gateway, 2026-10-02,
     "try to build more workflow … like complex ones"): `workflow-review` —
