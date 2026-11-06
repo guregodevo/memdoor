@@ -6,7 +6,8 @@ the per-problem logs (the run id) and the meter (every call stamped with its run
 usage: report.py <arm> [meter.jsonl] [--md]
   arm         the workflow's name (results/<arm>.tsv, logs/<arm>/<id>.log)
   meter.jsonl the gateway's ledger (default ~/.memdoor/meter.jsonl); a run's
-              calls carry session "workflow:<run id>"
+              calls carry "workflow:<name>:<partition>@<stamp>:<step>"
+              or the older "workflow:<run id>" session
 """
 import json, os, re, sys, glob
 
@@ -42,7 +43,11 @@ def main():
                 e = json.loads(line)
             except ValueError:
                 continue
-            r = runs.get(e.get("session", ""))
+            session = e.get("session", "")
+            step = re.fullmatch(r"workflow:([^:]+):.*@([^:]+):[^:]+", session)
+            if step:
+                session = "workflow:" + step.group(1) + "-" + step.group(2)
+            r = runs.get(session)
             if r is None:
                 continue
             r["calls"] += 1
