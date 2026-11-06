@@ -1,4 +1,5 @@
 type: command
+# Runs the Check and the Scope on the direct attempt: a pass skips the team.
 # The direct attempt against what plan settled: the Check and the Scope, on
 # the tree as direct left it. direct-status.txt is 0 when something changed,
 # within the Scope, and the Check passed or there is none to run (review and

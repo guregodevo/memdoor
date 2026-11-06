@@ -1,5 +1,6 @@
 type: llm
 each: [a, b]
+# Ideators A and B, one call each with no tools, propose two approaches side by side.
 # Ideators A and B (one file, each:): one call each, no tools, so an ideator
 # proposes and cannot do the task; an agent ideator on a free model made the
 # fix itself, twice (2026-11-05). It reads context.md (task.md, plan.md and

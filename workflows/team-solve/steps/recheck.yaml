@@ -1,4 +1,5 @@
 type: command
+# Takes the diff, the Check and the Scope again after the repair, for the judge.
 # The change as it stands after the repair round, for the judge: the diff
 # again (the repair may have changed it), the Check and the Scope again.
 requires:

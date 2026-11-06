@@ -1,4 +1,5 @@
 type: llm
+# The planner, one call with no tools, settles what the work is checked against.
 # The planner: one call, no tools, on the outline (outline.yaml). It settles
 # what the work is checked against; settle.yaml writes its sections into
 # task.md, so the Prompt stays as the person wrote it. A first worker does the

@@ -1,5 +1,6 @@
 type: agent
 agent: coder
+# A fresh agent turn fixes what the review failed; skipped when the review passed.
 # Skipped when the review passed.
 when: "v=\"$(bash $([ -d .memdoor/workflows/team-solve ] && echo .memdoor/workflows/team-solve || echo $HOME/.memdoor/workflows/team-solve)/verdict.sh .memdoor/runs/team-solve-{{.partition}}/review.md)\"; [ \"$v\" = FAIL ] || { [ \"$v\" = none ] && [ \"$(cat .memdoor/runs/team-solve-{{.partition}}/test-status.txt)\" != 0 ]; }"
 requires:

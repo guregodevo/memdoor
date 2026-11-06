@@ -1,5 +1,6 @@
 type: agent
 agent: coder
+# The solver, a fresh agent turn, corrects the direct attempt from the two proposals.
 # The team's solver, when the direct attempt did not pass (test-0); it starts
 # from that attempt, still in the tree.
 when: test "$(cat .memdoor/runs/team-solve-{{.partition}}/direct-status.txt 2>/dev/null)" != 0

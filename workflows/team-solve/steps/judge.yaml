@@ -1,4 +1,5 @@
 type: llm
+# One call that saw none of the team's reasoning judges the change against the task.
 # The last word on fit to the task: one call that has seen none of the team's
 # reasoning, only the task and the change. Skipped when the samples are the
 # check (they decide), and when the Check passed and the review passed with
