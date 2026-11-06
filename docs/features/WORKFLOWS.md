@@ -295,7 +295,7 @@ workflows"); the words after the name are the task (`/w team-solve <the
 task>`), and team-solve with none asks for it. `/w <name> --partition <p>` ·
 `/w resume <run-id>` · `/w approve <task>` (the open run) ·
 `/w stop <run-id>`. `/workflow` is the long name; `/workflow run <name>` and
-`/workflow:<name>` still run (#130). A run is named `<workflow>-<yyyymmdd-hhmmss>`.
+`/workflow:<name>` still run, out of the dropdown (#130). A run is named `<workflow>-<yyyymmdd-hhmmss>`.
 **Esc** in the conversation stops this window's run, the way it interrupts
 a turn (the maintainer: "the user can escape using its esc").
 

@@ -2,7 +2,8 @@
 
 A workflow is the deterministic harness: a graph of tasks, each proven done
 by something you can check. Say the steps; the coder builds one and runs
-it. Independent tasks run in parallel. The graph is drawn in the window.
+it. `/w <name> <the task>` runs one yourself (`/w team-solve <the task>`).
+Independent tasks run in parallel. The graph is drawn in the window.
 Free on your machine, schedules included: `memdoor cron add --id nightly
 --schedule "0 7 * * *" --workflow <name> --partition today` runs it in this
 project every morning. Hosted gateway: run state on memdoor.ai, one table
