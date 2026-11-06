@@ -3,15 +3,12 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
 	"memdoor/cmd/tui/ui"
-	"memdoor/tools"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
@@ -84,15 +81,6 @@ func runTUI(opts tuiOptions) error {
 	{
 		_ = os.Setenv("MEMDOOR_GATEWAY", gatewayAddr)
 		wsAddr := wsURLOf(gatewayAddr)
-
-		// The /agents slash command calls tools.AgentsList, which resolves
-		// /api/agents via the tools package's gateway base URL — set it here so
-		// the command works instead of panicking ("gateway base URL not set").
-		if u, perr := url.Parse(gatewayAddr); perr == nil && u.Hostname() != "" {
-			if port, aerr := strconv.Atoi(u.Port()); aerr == nil && port != 0 {
-				tools.SetGatewayBaseURL(u.Hostname(), port)
-			}
-		}
 
 		// Authenticate like the CLI: NewClient loads the saved credentials
 		// (~/.memdoor/credentials.json) and carries the Bearer token +

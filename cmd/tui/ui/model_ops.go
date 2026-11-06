@@ -32,6 +32,7 @@ func NewModel(gatewayAddr, workspace, channelID, token string, poster func(agent
 // "at build time its state is consistent").
 type Ops struct {
 	Usage          func() (string, error)                         // /usage
+	Agents         func() (string, error)                         // /agents: GET /api/agents as the signed-in person, the JSON
 	Remote         func(arg string) (string, error)               // /remote, /remote off
 	Share          func(arg string) (string, error)               // /share, /unshare
 	Fresh          func(agent string) error                       // /fresh, /clear: wipe the agent's memory of this conversation
@@ -139,6 +140,7 @@ func NewPage(cfg PageConfig) Model {
 		poster:         cfg.Poster,
 		fs:             cfg.FS,
 		usage:          cfg.Ops.Usage,
+		agents:         cfg.Ops.Agents,
 		remote:         cfg.Ops.Remote,
 		share:          cfg.Ops.Share,
 		fresh:          cfg.Ops.Fresh,

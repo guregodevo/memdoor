@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -88,7 +89,14 @@ func (w *tuiWiring) baseConfig(agent, chID, chName string, page int) ui.PageConf
 		Agent: agent, Poster: w.posterFor(chID, chName), Page: page, Paged: true, FS: w.fs,
 		Ops: ui.Ops{
 			// /model: list + pin the model this conversation runs on.
-			Usage:          tuiUsage,
+			Usage: tuiUsage,
+			Agents: func() (string, error) {
+				var raw json.RawMessage
+				if err := c.GetJSON("/api/agents", &raw); err != nil {
+					return "", err
+				}
+				return string(raw), nil
+			},
 			Route:          tuiRoute(wsID, chID, agent),
 			ModelCatalog:   tuiModelCatalog,
 			ModelHosts:     tuiModelHosts,

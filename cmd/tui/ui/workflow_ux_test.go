@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -231,5 +232,28 @@ func TestAAloneApprovesTheWindowsGate(t *testing.T) {
 	}
 	if text, send := m.hint(); send != "a" || !strings.Contains(text, "a approves approve") {
 		t.Fatalf("hint = %q, %q", text, send)
+	}
+}
+
+// /agents fetches with the person's token (Ops.Agents), never the agent-side
+// tool: that one sent the gateway's internal service token and every window
+// got 401 (2026-11-06).
+func TestAgentsListIsFetchedAsThePerson(t *testing.T) {
+	m := NewModel("http://x", "ws/demo", "chan", "", nil)
+	if got := m.getAgentsList(); !strings.Contains(got, "aren't available") {
+		t.Fatalf("no op: %q", got)
+	}
+	m.agents = func() (string, error) {
+		return `{"agents":[{"id":"coder","name":"Coder","description":"writes code","tools":["bash"]},{"id":"chief"}],"default_id":"coder"}`, nil
+	}
+	got := m.getAgentsList()
+	for _, want := range []string{"### coder (default)", "**Name**: Coder", "**Tools**: 1 configured", "### chief"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in:\n%s", want, got)
+		}
+	}
+	m.agents = func() (string, error) { return "", fmt.Errorf("API error (401)") }
+	if got := m.getAgentsList(); !strings.Contains(got, "Error loading agents: API error (401)") {
+		t.Errorf("the error, in words: %q", got)
 	}
 }
