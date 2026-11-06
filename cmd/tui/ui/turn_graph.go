@@ -58,9 +58,13 @@ func (m *Model) openTurnGraph() {
 // or check requires the edits since the previous run, and a check's state
 // is what its exit said.
 func buildTurnGraph(msgs []Message, width int) *turnGraphState {
+	// The last request is the last thing the person asked the model, not
+	// a slash command: /graph is echoed as a user message before the graph
+	// is built, and read from there it found nothing while ctrl+g drew the
+	// turn (2026-11-06).
 	start := 0
 	for i := len(msgs) - 1; i >= 0; i-- {
-		if msgs[i].Role == "user" {
+		if msgs[i].Role == "user" && !looksLikeSlashCommand(msgs[i].Content) {
 			start = i
 			break
 		}
