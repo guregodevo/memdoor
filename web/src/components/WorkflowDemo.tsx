@@ -30,11 +30,13 @@ const TAKES = [
     // which follows its bottom; scrolled up it shows the steps that run, their
     // tokens and cost and one line per call, #118 #119), End at the finish,
     // the run's ■ line, the verdict and the diff. Tightened to 43 s
-    // (tighten-cast.py 40 19).
+    // (tighten-cast.py 40 19). The file carries its date: the server sends a
+    // cast with a day's cache, and a retake under the old name played the
+    // old take from the browser's cache (2026-11-06, "i'm not seeing tokens").
     key: 'team',
     label: 'Team mode',
     ask: 'Shift+Tab to team, then: scripts/scan.sh must pass outside a git checkout too.',
-    cast: '/team-mode.cast',
+    cast: '/team-mode-2026-11-06.cast',
     poster: 'npt:0:42',
     what: 'the single call first → checked → reviewed → kept, never worse than one turn',
   },
