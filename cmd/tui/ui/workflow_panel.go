@@ -66,12 +66,46 @@ type WorkflowTask struct {
 	Started  *time.Time // the clock ticks a running task's time from it between events
 	Note     string     // the task's latest progress line (a tool it called), from events
 	Receipt  string     // what proved a finished agent task: its turn's receipt line
+	Outcome  string     `json:"outcome"` // a finished step's file and its verdict ("review.md: verdict: PASS")
+	// Lines are what the step did, one per call (`✎ path`, `$ cmd → exit 0`),
+	// oldest first, from the run's progress events; kept in the window only.
+	Lines []stepLine `json:"-"`
 	// What the step's model calls cost so far, live: the gateway sums the
 	// ledger's rows for the step's session as they are written.
 	InputTokens  int64   `json:"input_tokens"`
 	OutputTokens int64   `json:"output_tokens"`
 	CostUSD      float64 `json:"cost_usd"`
 	Calls        int     `json:"calls"`
+}
+
+// stepLine is one call of a step's turn as the run view shows it; key ties
+// the call's start, beats and end to one line.
+type stepLine struct{ key, text string }
+
+const (
+	// stepLinesShown is how many of a running step's lines the graph shows;
+	// ctrl+o shows them all.
+	stepLinesShown = 3
+	// stepLinesKept is how many a step keeps for ctrl+o.
+	stepLinesKept = 200
+)
+
+// addLine puts a line under the step: in place of the line with the same
+// key (a call's beat or end), else after the others.
+func (t *WorkflowTask) addLine(key, text string) {
+	t.Note = text
+	if key != "" {
+		for i := range t.Lines {
+			if t.Lines[i].key == key {
+				t.Lines[i].text = text
+				return
+			}
+		}
+	}
+	t.Lines = append(t.Lines, stepLine{key: key, text: text})
+	if len(t.Lines) > stepLinesKept {
+		t.Lines = t.Lines[len(t.Lines)-stepLinesKept:]
+	}
 }
 
 // usageDetail is a step's or a run's tokens and cost as the row shows them
@@ -104,8 +138,9 @@ type WorkflowEntry struct {
 type workflowEventMsg struct {
 	runID  string
 	task   string
-	state  string // started, done, failed, retrying, note, progress, question, answered
+	state  string // started, done, failed, retrying, note, progress, usage, question, answered
 	text   string
+	key    string // a progress line's call: its later lines replace it
 	status *WorkflowRun
 	// Set for state "question" (questionID, options; text is the question) and
 	// "answered" (questionID only), from workflow_runs.go relayQuestion.
@@ -320,7 +355,7 @@ func (m *Model) updateWorkflowPanel(msg tea.Msg) (bool, tea.Cmd) {
 			m.note(t.text)
 		}
 		if t.state == "progress" && t.status == nil {
-			m.noteTask(t.runID, t.task, t.text)
+			m.noteTaskLine(t.runID, t.task, t.key, t.text)
 			return true, nil
 		}
 		if t.status != nil {
@@ -340,7 +375,13 @@ func (m *Model) updateWorkflowPanel(msg tea.Msg) (bool, tea.Cmd) {
 			if last, ok := m.workflowLast[t.runID]; ok { // keep the progress lines across snapshots
 				for i := range t.status.Tasks {
 					for _, lt := range last.Tasks {
-						if lt.Name == t.status.Tasks[i].Name && t.status.Tasks[i].State == "running" {
+						if lt.Name != t.status.Tasks[i].Name {
+							continue
+						}
+						// A finished step keeps its lines for ctrl+o; a step
+						// that starts again (a retry) adds to them.
+						t.status.Tasks[i].Lines = lt.Lines
+						if t.status.Tasks[i].State == "running" {
 							t.status.Tasks[i].Note = lt.Note
 						}
 					}
@@ -612,7 +653,7 @@ func workflowGlyph(state string) (string, string) {
 // workflowGraphRows draws the DAG in dependency layers: one row per task,
 // a │ between layers, the state and its time, ← what it requires. The panel
 // and the conversation both draw from it.
-func workflowGraphRows(r WorkflowRun, width int) []string {
+func workflowGraphRows(r WorkflowRun, width int, expanded bool) []string {
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
 	bad := lipgloss.NewStyle().Foreground(lipgloss.Color(colErr))
 	var rows []string
@@ -650,11 +691,15 @@ func workflowGraphRows(r WorkflowRun, width int) []string {
 				line += dim.Render("  ← " + strings.Join(t.Requires, ", "))
 			}
 			rows = append(rows, "  "+line)
-			if t.Note != "" && t.State == "running" {
-				rows = append(rows, "      "+dim.Render(truncateEnd(t.Note, width-10)))
+			for _, l := range stepLinesOf(t, expanded) {
+				rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
 			}
-			if t.Receipt != "" && t.State != "running" {
-				rows = append(rows, "      "+dim.Render(truncateEnd(t.Receipt, width-10)))
+			if t.State != "running" {
+				for _, l := range []string{t.Receipt, t.Outcome} {
+					if l != "" {
+						rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
+					}
+				}
 			}
 			if t.Error != "" && t.State != "done" {
 				rows = append(rows, "    "+bad.Render(truncateEnd(t.Error, width-8)))
@@ -664,10 +709,32 @@ func workflowGraphRows(r WorkflowRun, width int) []string {
 	return rows
 }
 
+// stepLinesOf is what the graph draws under a step from its lines: a running
+// step's last few, every line of any step with ctrl+o, none of a finished
+// step otherwise (its receipt and outcome say how it ended).
+func stepLinesOf(t WorkflowTask, expanded bool) []string {
+	if len(t.Lines) == 0 && t.Note != "" && t.State == "running" {
+		return []string{t.Note} // a question, from an older gateway's event
+	}
+	if !expanded && t.State != "running" {
+		return nil
+	}
+	lines := t.Lines
+	var out []string
+	if !expanded && len(lines) > stepLinesShown {
+		out = append(out, fmt.Sprintf("… %d more (ctrl+o)", len(lines)-stepLinesShown))
+		lines = lines[len(lines)-stepLinesShown:]
+	}
+	for _, l := range lines {
+		out = append(out, l.text)
+	}
+	return out
+}
+
 // workflowGraphMessage is the DAG as one block in the conversation, redrawn
 // in place on every event (the maintainer, 2026-10-02: "a tool to run workflow that
 // we can see in real time the dag running"). Keyed by the run's id.
-func workflowGraphMessage(r WorkflowRun, width int) Message {
+func workflowGraphMessage(r WorkflowRun, width int, expanded bool) Message {
 	head := fmt.Sprintf("%s · %s · %d/%d done", r.Workflow, r.State, r.Done, r.Total)
 	if u := usageDetail(r.InputTokens, r.OutputTokens, r.CostUSD); u != "" {
 		head += " · " + u
@@ -676,7 +743,7 @@ func workflowGraphMessage(r WorkflowRun, width int) Message {
 		head += " — " + r.Error
 	}
 	dim := lipgloss.NewStyle().Foreground(lipgloss.Color(colDim))
-	body := "  " + dim.Render(head) + "\n" + strings.Join(workflowGraphRows(r, width), "\n")
+	body := "  " + dim.Render(head) + "\n" + strings.Join(workflowGraphRows(r, width, expanded), "\n")
 	// A running graph is still changing: like a streaming reply it stays in
 	// the live view, never frozen into scrollback, or its later redraws land
 	// on a copy nobody sees (2026-10-04: a finished run's header still read
@@ -719,7 +786,11 @@ func (m Model) renderWorkflowPanel() string {
 			head += " — " + r.Error
 		}
 		b.WriteString(title.Render(head) + "\n")
-		b.WriteString(box(strings.Join(workflowGraphRows(*r, boxWidth(m.width)), "\n")+errLine) + "\n")
+		shown := *r
+		if last, ok := m.workflowLast[r.ID]; ok && last.ID == r.ID {
+			shown.Tasks = last.Tasks // the lines live in the window's copy
+		}
+		b.WriteString(box(strings.Join(workflowGraphRows(shown, boxWidth(m.width), m.expandTools), "\n")+errLine) + "\n")
 		if r.State == "done" && len(r.Results) > 0 {
 			b.WriteString(norm.Render("Results:") + "\n")
 			for _, f := range r.Results {
@@ -802,7 +873,7 @@ func (m Model) renderWorkflowPanel() string {
 
 // upsertWorkflowGraph replaces the run's block in the conversation, or adds it.
 func (m *Model) upsertWorkflowGraph(r WorkflowRun) {
-	msg := workflowGraphMessage(r, boxWidth(m.width))
+	msg := workflowGraphMessage(r, boxWidth(m.width), m.expandTools)
 	for i := len(m.messages) - 1; i >= 0; i-- {
 		if m.messages[i].ToolID == msg.ToolID && m.messages[i].Role == "workflow" {
 			if i < m.printedThrough {
@@ -814,6 +885,22 @@ func (m *Model) upsertWorkflowGraph(r WorkflowRun) {
 		}
 	}
 	m.messages = append(m.messages, msg)
+}
+
+// redrawWorkflowGraphs draws the runs still on screen again (ctrl+o): one
+// already printed into the scrollback is left as it was.
+func (m *Model) redrawWorkflowGraphs() {
+	for i := m.printedThrough; i < len(m.messages); i++ {
+		if m.messages[i].Role != "workflow" {
+			continue
+		}
+		id, ok := strings.CutPrefix(m.messages[i].ToolID, "workflow:")
+		if r, found := m.workflowLast[id]; ok && found {
+			msg := workflowGraphMessage(r, boxWidth(m.width), m.expandTools)
+			msg.Timestamp = m.messages[i].Timestamp
+			m.messages[i] = msg
+		}
+	}
 }
 
 func (m Model) workflowTick() tea.Cmd {

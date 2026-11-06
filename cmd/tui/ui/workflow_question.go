@@ -59,9 +59,12 @@ func (m *Model) nextQuestion() {
 	m.pendingQuestion = &q
 }
 
-// noteTask puts a line under a task in its run's graph: the tool it called,
-// or the question it asks.
-func (m *Model) noteTask(runID, task, text string) {
+// noteTask puts a line under a task in its run's graph: the question it asks.
+func (m *Model) noteTask(runID, task, text string) { m.noteTaskLine(runID, task, "", text) }
+
+// noteTaskLine puts a line under a task in its run's graph: a call of its
+// turn (key: the call, whose later lines replace it), or a question.
+func (m *Model) noteTaskLine(runID, task, key, text string) {
 	last, ok := m.workflowLast[runID]
 	if !ok {
 		return
@@ -69,7 +72,7 @@ func (m *Model) noteTask(runID, task, text string) {
 
 	for i := range last.Tasks {
 		if last.Tasks[i].Name == task {
-			last.Tasks[i].Note = text
+			last.Tasks[i].addLine(key, text)
 		}
 	}
 	m.workflowLast[runID] = last
