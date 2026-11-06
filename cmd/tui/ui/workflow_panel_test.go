@@ -182,7 +182,7 @@ func TestSlashWRunsAWorkflowWithItsTask(t *testing.T) {
 
 	cmds := loadSlashCommands("coder")
 	listed := strings.Join(cmds, ",")
-	if !strings.Contains(listed, ",/w,") || !strings.Contains(listed, "/w team-solve") || strings.Contains(listed, "/workflow") {
+	if !strings.Contains(","+listed+",", ",/w,") || cmds[0] != "/w team-solve" || strings.Contains(listed, "/workflow") {
 		t.Fatalf("the dropdown must list /w and /w team-solve, and no /workflow: %v", cmds)
 	}
 	if got := filterCommands(cmds, "/w"); !strings.Contains(strings.Join(got, ","), "/w team-solve") {
