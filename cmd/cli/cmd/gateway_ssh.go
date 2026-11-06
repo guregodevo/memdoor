@@ -354,7 +354,7 @@ func sshRenewSessionFor(ctx context.Context, d *sshDoor) error {
 }
 
 // sshSignIn signs in through the door with the box's generated login, and
-// when it has none or its gateway refuses it, with the box's machine key:
+// when it has none or its gateway refuses it, with the box's host key:
 // whoever may ssh in as that user may read either.
 func sshSignIn(target, sshPort string) error {
 	loginErr := func() error {
@@ -374,15 +374,15 @@ func sshSignIn(target, sshPort string) error {
 	if loginErr == nil {
 		return nil
 	}
-	key := readMachineKey(func() (string, error) {
-		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+machineKeyFile)
-		return machineKeyIn(out), err
+	key := readHostKey(func() (string, error) {
+		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+hostKeyFile)
+		return hostKeyIn(out), err
 	})
 	if key == "" {
 		return loginErr
 	}
-	if err := loginWithMachineKey(key); err != nil {
-		return fmt.Errorf("%v; the machine key on %s was refused too: %w", loginErr, target, err)
+	if err := loginWithHostKey(key); err != nil {
+		return fmt.Errorf("%v; the host key on %s was refused too: %w", loginErr, target, err)
 	}
 	return nil
 }
@@ -445,9 +445,9 @@ func envOr(name, def string) string {
 	return def
 }
 
-// machineKeyIn finds the key in what a login shell printed around it: the
+// hostKeyIn finds the key in what a login shell printed around it: the
 // 64 hex characters the gateway writes, on a line of their own.
-func machineKeyIn(out string) string {
+func hostKeyIn(out string) string {
 	for _, line := range strings.Split(out, "\n") {
 		line = strings.TrimSpace(line)
 		if _, err := hex.DecodeString(line); err == nil && len(line) == 64 {

@@ -11,9 +11,9 @@ import (
 )
 
 // A lapsed session whose generated login the gateway refuses is renewed
-// from the gateway's machine key, with no password; the key is sent to the
+// from the gateway's host key, with no password; the key is sent to the
 // gateway on this machine only.
-func TestALapsedSessionRenewsFromTheMachineKey(t *testing.T) {
+func TestALapsedSessionRenewsFromTheHostKey(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
@@ -23,12 +23,12 @@ func TestALapsedSessionRenewsFromTheMachineKey(t *testing.T) {
 		switch r.URL.Path {
 		case "/api/auth/login":
 			http.Error(w, `{"error": "invalid email or password"}`, http.StatusUnauthorized)
-		case "/api/auth/machine-login":
+		case "/api/auth/host-login":
 			var req struct{ Key, Email string }
 			_ = json.NewDecoder(r.Body).Decode(&req)
 			keySeen, emailSeen = req.Key, req.Email
 			if req.Key != "the-key" {
-				http.Error(w, `{"error": "that is not this gateway's machine key"}`, http.StatusUnauthorized)
+				http.Error(w, `{"error": "that is not this gateway's host key"}`, http.StatusUnauthorized)
 				return
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"token": "fresh", "user": map[string]string{"email": "first@test.local"}})
@@ -51,7 +51,7 @@ func TestALapsedSessionRenewsFromTheMachineKey(t *testing.T) {
 		t.Fatalf("without a key: want the login's refusal, got %v (key sent %q)", err, keySeen)
 	}
 
-	if err := os.WriteFile(homePath(machineKeyFile), []byte("the-key\n"), 0o600); err != nil {
+	if err := os.WriteFile(homePath(hostKeyFile), []byte("the-key\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := renewLocalSession(); err != nil {
@@ -78,12 +78,12 @@ func TestALapsedSessionRenewsFromTheMachineKey(t *testing.T) {
 }
 
 // What a login shell prints around the key over ssh is not the key.
-func TestMachineKeyInShellOutput(t *testing.T) {
+func TestHostKeyInShellOutput(t *testing.T) {
 	key := strings.Repeat("ab", 32)
-	if got := machineKeyIn("Welcome to the box\n" + key + "\n\nSession ended\n"); got != key {
+	if got := hostKeyIn("Welcome to the box\n" + key + "\n\nSession ended\n"); got != key {
 		t.Fatalf("got %q", got)
 	}
-	if got := machineKeyIn("cat: ~/.memdoor/machine-key: No such file\n"); got != "" {
+	if got := hostKeyIn("cat: ~/.memdoor/host-key: No such file\n"); got != "" {
 		t.Fatalf("no key: got %q", got)
 	}
 }

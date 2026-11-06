@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"memdoor/gateway/logs"
 	"memdoor/pkg/auth"
 	"memdoor/pkg/authorization"
 	"memdoor/pkg/domain"
@@ -53,7 +54,7 @@ func (f *sessionFake) OpenSessionFor(_ context.Context, userID string) (*auth.Us
 	return u, "tok-" + userID, nil
 }
 
-func machineLoginServer(t *testing.T) (*Server, *sessionFake) {
+func hostLoginServer(t *testing.T) (*Server, *sessionFake) {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
 	db, err := sql.Open("sqlite3", ":memory:")
@@ -76,42 +77,42 @@ func machineLoginServer(t *testing.T) (*Server, *sessionFake) {
 		"human:first": admin("human:first", "ws"), "human:peer": admin("human:peer", "ws"), "human:other": admin("human:other", "ws2"),
 	}})
 	fake := &sessionFake{}
-	ensureMachineKey()
-	return &Server{repoFactory: dbFactory{db: db}, authAdapter: NewAuthGatewayAdapter(fake), authzService: authz}, fake
+	ensureHostKey()
+	return &Server{log: logs.New("test"), repoFactory: dbFactory{db: db}, authAdapter: NewAuthGatewayAdapter(fake), authzService: authz}, fake
 }
 
-func machineLogin(s *Server, from, key, email string) *httptest.ResponseRecorder {
+func hostLogin(s *Server, from, key, email string) *httptest.ResponseRecorder {
 	body, _ := json.Marshal(map[string]string{"key": key, "email": email})
-	r := httptest.NewRequest(http.MethodPost, "/api/auth/machine-login", strings.NewReader(string(body)))
+	r := httptest.NewRequest(http.MethodPost, "/api/auth/host-login", strings.NewReader(string(body)))
 	r.RemoteAddr = from
 	w := httptest.NewRecorder()
-	s.handleMachineLogin(w, r)
+	s.handleHostLogin(w, r)
 	return w
 }
 
 // The key the gateway wrote signs in its first account, from its own machine
 // only; a wrong key or a request over the network is refused.
-func TestMachineKeySignsInTheFirstAccountFromTheMachineOnly(t *testing.T) {
-	s, fake := machineLoginServer(t)
-	key := readMachineKey()
+func TestHostKeySignsInTheFirstAccountFromTheMachineOnly(t *testing.T) {
+	s, fake := hostLoginServer(t)
+	key := readHostKey()
 	if len(key) != 64 {
 		t.Fatalf("the key was not written: %q", key)
 	}
-	if st, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".memdoor", machineKeyFile)); err != nil || st.Mode().Perm() != 0o600 {
+	if st, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".memdoor", hostKeyFile)); err != nil || st.Mode().Perm() != 0o600 {
 		t.Fatalf("the key file must be the owner's only: %v %v", st, err)
 	}
 
-	if w := machineLogin(s, "10.0.0.7:4000", key, ""); w.Code != http.StatusForbidden {
+	if w := hostLogin(s, "10.0.0.7:4000", key, ""); w.Code != http.StatusForbidden {
 		t.Fatalf("over the network: want 403, got %d %s", w.Code, w.Body)
 	}
-	if w := machineLogin(s, "127.0.0.1:4000", strings.Repeat("0", 64), ""); w.Code != http.StatusUnauthorized {
+	if w := hostLogin(s, "127.0.0.1:4000", strings.Repeat("0", 64), ""); w.Code != http.StatusUnauthorized {
 		t.Fatalf("wrong key: want 401, got %d %s", w.Code, w.Body)
 	}
 	if fake.opened != "" {
 		t.Fatalf("a session was opened on a refused request: %q", fake.opened)
 	}
 
-	w := machineLogin(s, "127.0.0.1:4000", key, "")
+	w := hostLogin(s, "127.0.0.1:4000", key, "")
 	if w.Code != http.StatusOK || fake.opened != "human:first" {
 		t.Fatalf("the right key from the machine: want the first account, got %d %s (opened %q)", w.Code, w.Body, fake.opened)
 	}
@@ -122,21 +123,21 @@ func TestMachineKeySignsInTheFirstAccountFromTheMachineOnly(t *testing.T) {
 	// The account the CLI was signed in as is kept when it is the gateway's
 	// operator too (an admin of the first account's workspace); an admin of
 	// another workspace, a sign-up of its own, is not: the first account is.
-	if w := machineLogin(s, "127.0.0.1:4000", key, "peer@test"); w.Code != http.StatusOK || fake.opened != "human:peer" {
+	if w := hostLogin(s, "127.0.0.1:4000", key, "peer@test"); w.Code != http.StatusOK || fake.opened != "human:peer" {
 		t.Fatalf("naming a fellow operator: want that account, got %d (opened %q)", w.Code, fake.opened)
 	}
-	if w := machineLogin(s, "127.0.0.1:4000", key, "other@test"); w.Code != http.StatusOK || fake.opened != "human:first" {
+	if w := hostLogin(s, "127.0.0.1:4000", key, "other@test"); w.Code != http.StatusOK || fake.opened != "human:first" {
 		t.Fatalf("naming a stranger: want the first account, got %d (opened %q)", w.Code, fake.opened)
 	}
 }
 
 // A second boot keeps the key: the CLI's copy stays good.
-func TestMachineKeyIsKeptAcrossBoots(t *testing.T) {
+func TestHostKeyIsKeptAcrossBoots(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	ensureMachineKey()
-	first := readMachineKey()
-	ensureMachineKey()
-	if first == "" || readMachineKey() != first {
-		t.Fatalf("the key changed: %q -> %q", first, readMachineKey())
+	ensureHostKey()
+	first := readHostKey()
+	ensureHostKey()
+	if first == "" || readHostKey() != first {
+		t.Fatalf("the key changed: %q -> %q", first, readHostKey())
 	}
 }

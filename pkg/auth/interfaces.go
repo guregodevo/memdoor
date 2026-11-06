@@ -21,7 +21,7 @@ type Service interface {
 	LoginVerifiedEmail(ctx context.Context, email, name string, workspaceFor WorkspaceFor) (user *User, token string, created bool, err error)
 	// OpenSessionFor signs in a user the caller has vouched for without a
 	// password: the gateway's own machine, by the key only it can read
-	// (gateway/machine_login.go).
+	// (gateway/host_login.go).
 	OpenSessionFor(ctx context.Context, userID string) (*User, string, error)
 	VerifyToken(ctx context.Context, token string) (*User, error)
 	GetUserByID(ctx context.Context, userID string) (*User, error)

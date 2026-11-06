@@ -511,7 +511,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	if server.authAdapter != nil {
 		http.Handle("/api/auth/register", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleRegister))))
 		http.Handle("/api/auth/login", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleLogin))))
-		http.Handle("/api/auth/machine-login", addCORS(hostedOr(http.HandlerFunc(server.handleMachineLogin))))
+		http.Handle("/api/auth/host-login", addCORS(hostedOr(http.HandlerFunc(server.handleHostLogin))))
 		http.Handle("/api/auth/whoami", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleWhoami))))
 		http.Handle("/api/auth/logout", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleLogout))))
 		http.Handle("/api/auth/verify-email", addCORS(hostedOr(http.HandlerFunc(server.authAdapter.HandleVerifyEmail))))               // Email verification
@@ -712,7 +712,7 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// skill tool — cheap (hash compares), and makes disk the source of truth.
 	SeedEmbeddedSkills()
 	SeedEmbeddedWorkflows()
-	ensureMachineKey()
+	ensureHostKey()
 
 	// Deploy watchdog: progress announcements, auto-registration, and the
 	// idle auto-stop that makes the /model picker's "auto-stops" true.

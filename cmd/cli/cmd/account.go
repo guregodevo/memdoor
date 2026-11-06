@@ -442,7 +442,7 @@ func adoptLocalEngine(accountEmail string) error {
 // renewLocalSession signs in to the engine again with the user this Mac
 // generated at first sign-in (~/.memdoor/local-login), and when there is
 // none or the gateway refuses it, with the key the gateway on this machine
-// wrote (~/.memdoor/machine-key): nobody is left with a password they never
+// wrote (~/.memdoor/host-key): nobody is left with a password they never
 // had (2026-11-06).
 func renewLocalSession() error {
 	err := renewFromGeneratedLogin()
@@ -452,25 +452,25 @@ func renewLocalSession() error {
 	if _, local := localGatewayPort(); !local {
 		return err
 	}
-	key := readMachineKey(func() (string, error) {
-		b, rerr := os.ReadFile(homePath(machineKeyFile))
+	key := readHostKey(func() (string, error) {
+		b, rerr := os.ReadFile(homePath(hostKeyFile))
 		return string(b), rerr
 	})
 	if key == "" {
 		return err
 	}
-	if kerr := loginWithMachineKey(key); kerr != nil {
-		return fmt.Errorf("%v; this gateway's machine key (~/.memdoor/%s) was refused too: %w", err, machineKeyFile, kerr)
+	if kerr := loginWithHostKey(key); kerr != nil {
+		return fmt.Errorf("%v; this gateway's host key (~/.memdoor/%s) was refused too: %w", err, hostKeyFile, kerr)
 	}
 	return nil
 }
 
-// machineKeyFile is the key the gateway writes at boot (gateway/machine_login.go).
-const machineKeyFile = "machine-key"
+// hostKeyFile is the key the gateway writes at boot (gateway/host_login.go).
+const hostKeyFile = "host-key"
 
-// readMachineKey is the key read, from this machine's disk or a box's over
+// readHostKey is the key read, from this machine's disk or a box's over
 // ssh; "" when there is none.
-func readMachineKey(read func() (string, error)) string {
+func readHostKey(read func() (string, error)) string {
 	s, err := read()
 	if err != nil {
 		return ""
@@ -478,10 +478,10 @@ func readMachineKey(read func() (string, error)) string {
 	return strings.TrimSpace(s)
 }
 
-// loginWithMachineKey trades the gateway's machine key for a session: for the
+// loginWithHostKey trades the gateway's host key for a session: for the
 // account this machine was signed in as when it is the gateway's operator,
 // else for the gateway's first account.
-func loginWithMachineKey(key string) error {
+func loginWithHostKey(key string) error {
 	email := ""
 	if creds, err := loadCredentials(); err == nil {
 		email = creds.Email
@@ -492,7 +492,7 @@ func loginWithMachineKey(key string) error {
 			Email string `json:"email"`
 		} `json:"user"`
 	}
-	if err := NewClient().PostJSON("/api/auth/machine-login", map[string]string{"key": key, "email": email}, &result); err != nil {
+	if err := NewClient().PostJSON("/api/auth/host-login", map[string]string{"key": key, "email": email}, &result); err != nil {
 		return err
 	}
 	exp := time.Now().Add(auth.SessionTTL)
