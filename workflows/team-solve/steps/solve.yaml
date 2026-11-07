@@ -26,8 +26,11 @@ prompt: |
   has done nothing (an agent on an open-ended task read for fifteen minutes
   and wrote nothing, 2026-11-05). Touch nothing outside
   the Scope and change nothing the task did not ask for. Run the Check
-  (the command, or a sample) before you finish and fix what it shows. Do not
-  change task.md, the prompt or test data. The steps after you check the
+  (the command, or a sample; and the reproduction
+  .memdoor/runs/team-solve-{{.partition}}/repro when it is there: run from
+  the project's root, it exits 0 once the behaviour the Prompt describes is
+  fixed) before you finish and fix what it shows. Do not
+  change task.md, the prompt, test data or repro. The steps after you check the
   work and the manager owns any repair round. Do not spawn agents or use
   chat context.
 target:

@@ -69,13 +69,19 @@ shell, the same run: `memdoor workflow run team-solve --model <id> "<task>"`.
 First the single call, then the team if it is needed.
 
 ```
-problem ─┬─ direct ─────────────────────────────┬─ test-0 ─┬─ passed ─────────────────────────────────────────┬─ test ─ review ─ repair ─ recheck ─ judge ─ keep ─ verify
-         └─ outline ─ plan ─ settle ─ baseline ─┘          └─ failed ─ context ─ ideate-a ‖ ideate-b ─ solve ─┘
+problem ─┬─ direct ─────────────────────────────────────────┬─ test-0 ─┬─ passed ─────────────────────────────────────────┬─ test ─ review ─ repair ─ recheck ─ judge ─ keep ─ verify
+         └─ outline ─ plan ─ settle ─ baseline ─ reproduce ─┘          └─ failed ─ context ─ ideate-a ‖ ideate-b ─ solve ─┘
 ```
 
 - `direct` is one agent turn on your prompt, in the tree. Beside it, `plan`
   (one model call) settles the Check and the Scope, and `baseline` runs the
   Check on the tree as it was.
+- `reproduce`, when the prompt describes behaviour that is wrong: one turn
+  writes a reproduction from the prompt's words, one executable in whatever
+  the project runs, proven on the clean copy of the tree, where it must
+  fail. From then on the Check is the project's command and the
+  reproduction, and the work is right only when both pass. A Check that
+  already passed before any change proves no fix.
 - `test-0` runs the Check on the direct attempt. When it passes, the rest
   only verifies it: a `review`, and a `judge` when a command cannot decide.
 - When it fails, two ideators propose side by side (one model call each) and

@@ -10,6 +10,20 @@ command: |
   bash "$w/changes.sh" "$r"
   bash "$w/check.sh" "$r" "$r/final-check.log"
   result=$?
+  # For the judge: the reproduction and what it printed, when one is part of
+  # the Check (judge.yaml reads the file either way; empty otherwise).
+  : > "$r/judge-repro.md"
+  if [ -x "$r/repro" ] && grep -q '^repro ' "$r/check-parts.txt" 2>/dev/null; then
+    rs=$(awk '$1 == "repro" {print $2}' "$r/check-parts.txt")
+    rest=$(awk '$1 != "repro" {print "the Check'\''s " $1 " exits " $2}' "$r/check-parts.txt" | head -1)
+    {
+      printf '# The reproduction\n\nA separate turn wrote it from the Prompt, outside the tree, and it fails on the tree as the run found it. On this change: %s; the reproduction %s.\n\n```\n' "${rest:-the Check has no other part}" "$([ "$rs" = 0 ] && echo 'passes (exit 0)' || echo 'FAILS (exit non-zero)')"
+      cat "$r/repro"
+      printf '\n```\n\nWhat it printed on this change:\n\n```\n'
+      sed -n '/^reproduction: /,$p' "$r/final-check.log" | head -80
+      printf '```\n'
+    } > "$r/judge-repro.md"
+  fi
   bash "$w/scope.sh" "$r" >> "$r/final-check.log" || true
   [ "$result" = 3 ] && result=none
   printf '%s\n' "$result" > "$r/final-status.txt"

@@ -17,8 +17,8 @@ plan)
   for s in Deliverable Check Scope "Done when"; do
     [ -n "$(section "$t" "$s")" ] || no "task.md: the $s section is not filled in"
   done
-  { section "$t" Check | grep -q '`[^`]*`' || section "$t" Check | grep -qwE 'samples|judge'; } \
-    || no 'task.md: Check names no command in backticks, nor samples, nor judge'
+  { section "$t" Check | grep -q '`[^`]*`' || section "$t" Check | grep -qwE 'samples|judge|reproduce'; } \
+    || no 'task.md: Check names no command in backticks, nor samples, nor judge, nor reproduce'
   section "$t" Scope | grep -q '`[^`]*`' || no 'task.md: Scope names no file or directory in backticks'
   first=$(grep -m1 '[^[:space:]]' "$r/prompt.md")
   grep -qF -- "$first" "$t" || no 'task.md: the Prompt section was changed; put it back as prompt.md has it'
@@ -27,6 +27,22 @@ plan)
 direct|solve)
   bash "$w/changes.sh" "$r" > /dev/null
   [ -s "$r/changes.diff" ] || no 'nothing in the project changed yet: do the task as the Deliverable says' ;;
+reproduce)
+  # The reproduction is proven by the tree as the run found it: run there
+  # (the clean copy baseline.yaml left), it must fail. One that passes
+  # reproduces nothing. Only its exit code is read: the language and the
+  # tooling are the project's, never named here.
+  R=$(cd "$r" && pwd); t="$R/baseline-tree"
+  [ -x "$R/repro" ] || no "$r/repro is missing or not executable: one executable (chmod +x) that exits non-zero while the behaviour the Prompt describes is present, and 0 once the project behaves as the Prompt expects"
+  for p in "$(pwd)" "$(pwd -P)"; do
+    [ -x "$R/repro" ] && grep -qF -- "$p" "$R/repro" && { no "repro names this tree by its absolute path ($p); use paths relative to the project root: it is run from the root of a clean copy too"; break; }
+  done
+  if [ "$miss" = 0 ]; then
+    [ -d "$t" ] || t=$(pwd)   # no clean copy (not in git): the tree as it is
+    ( cd "$t" && "$R/repro" ) > "$R/repro-baseline.log" 2>&1; s=$?
+    printf '%s\n' "$s" > "$R/repro-baseline-status.txt"
+    [ "$s" != 0 ] || no "repro exits 0 on the tree as the run found it ($t): it reproduces nothing. It must fail while the behaviour the Prompt describes is present ($r/repro-baseline.log)"
+  fi ;;
 review)
   verdict "$r/review.md" || no 'review.md: its first line must be `verdict: PASS` or `verdict: FAIL`' ;;
 repair)

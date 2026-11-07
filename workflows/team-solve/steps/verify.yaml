@@ -7,6 +7,7 @@ requires:
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  [ -d "$r/baseline-tree" ] && git worktree remove --force "$r/baseline-tree" 2>/dev/null
   bash "$w/changes.sh" "$r"
   bash "$w/check.sh" "$r" "$r/final-check.log"
   result=$?
