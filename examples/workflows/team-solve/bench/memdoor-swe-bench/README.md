@@ -114,8 +114,8 @@ Run 2 with the search had the team at 85.2%.
   | never seen | 324 | 253 | 255 | 13 | 11 | 0.84 |
 
   Against its own direct attempt, where run-to-run noise does not enter
-  (the separate single call and the direct attempt disagree on 47
-  instances): 2 gained and 0 lost on the seen, 5 gained and 0 lost on the
+  (on 47 instances one of the two single calls, the separate one and the
+  direct attempt, solved it and the other did not): 2 gained and 0 lost on the seen, 5 gained and 0 lost on the
   never seen (p = 0.06).
 - Not a significant gap between the arms: 27 against 15 is p = 0.09. The gap
   between team-solve and its own direct attempt (7 against 0, p = 0.016) is.
