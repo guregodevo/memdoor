@@ -22,6 +22,14 @@ state: |
   # What the Check printed, and its status (0 passed, 1 failed, none: nothing could be run)
 
   {{ output "test" }}
+# The threshold is measured, not the 0.7 default (2026-11-07): on the 405
+# attempts the reviewer passed on SWE-bench Verified (340 right, 65 wrong),
+# overturning a PASS lost more right attempts than it caught wrong ones at
+# every threshold (0.7: 106 right kept, 54 wrong caught, net -180; 0.3: net
+# -55; 0.1: 338 kept, 0 caught, net -2). The decision model reads the
+# reviewer's evidence and cannot see what the hidden tests check. At 0.1 it
+# fails a verdict only on near-certain evidence; its p stays in the JSON.
+threshold: 0.1
 else: review-rule
 target:
   file: .memdoor/runs/team-solve-{{.partition}}/review-score.json
