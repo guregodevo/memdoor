@@ -428,7 +428,12 @@ in the coder's palette and the `investigate` routing family beside `cron`.
 
 ## Bounds
 
-Per task: `timeout` and `max_retries` (mario's retry queue, 2 s apart). Per
+Per task: `timeout` and `max_retries` (mario's retry queue, 2 s apart). A
+task stopped at its timeout with its target there is done: the target is the
+proof, the clock is not. `optional: true` on a task: failed past its retries,
+it is passed over — what requires it still runs, a prompt that reads its
+output gets nothing, the run reports it as failed and goes on; without it a
+failed task holds everything after it. Per
 run: a clock (`--timeout`, default 2 h, at most 24 h) — past it nothing more
 starts and the running turn is told — and one run of a workflow per project
 at a time. A workflow left to itself is a loop; the bound is a counter and a

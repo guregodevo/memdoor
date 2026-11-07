@@ -24,5 +24,7 @@ prompt: |
   Answer with the proposal alone, in markdown, five lines at least.
 target:
   file: .memdoor/runs/team-solve-{{.partition}}/proposal-{{.item}}.md
+# Optional: the solver reads the proposals that exist.
+optional: true
 timeout: 30m
 max_retries: 1

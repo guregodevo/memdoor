@@ -30,8 +30,9 @@ requires:               # optional: the tasks this one waits for, by name
 target:                 # optional: what PROVES it done
   file: RELEASE_NOTES.md            # a file that must exist under the project, OR
   command: go test ./pkg/workflow/  # a command that must exit 0 there
-timeout: 10m            # optional, per task
+timeout: 10m            # optional, per task; stopped at it with its target there, the task is done
 max_retries: 1          # optional: tries again on failure, this many times
+optional: true          # optional: failed past its retries, the task is passed over and the tasks after it run
 args:                   # optional: values the prompt can use as {{.version}}
   version: v1.2.0
 ```

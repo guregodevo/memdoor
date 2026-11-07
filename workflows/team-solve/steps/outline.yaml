@@ -5,6 +5,8 @@ type: command
 # call (plan.yaml): an agent planner took 1m41s to 4 minutes on the bench's
 # real tasks while the direct attempt beside it took 21 seconds to 2 minutes,
 # and the attempt's check waited on it (2026-11-05, #93).
+# Optional: without it the planner fails and settle fills the task safely.
+optional: true
 requires:
   - table_pattern: problem
 command: |
@@ -25,5 +27,6 @@ command: |
   printf 'outline: %s bytes in %s\n' "$(wc -c < "$out" | tr -d ' ')" "$out"
 target:
   file: .memdoor/runs/team-solve-{{.partition}}/outline.md
-timeout: 2m
+# 10m, not 2: six runs on one machine starved a 2-minute listing (2026-11-06).
+timeout: 10m
 max_retries: 0

@@ -13,7 +13,7 @@ import (
 // keep.yaml's command, run in a git tree whose run folder says what the
 // direct attempt, the Check and the judge did. The tree holds the work as the
 // last step left it; direct.patch is the attempt as saved before the team.
-func runKeep(t *testing.T, direct, final, verdict string, repaired bool) (keep, file string) {
+func runKeep(t *testing.T, direct, final, verdict string, repaired bool, tree string) (keep, file string) {
 	t.Helper()
 	wf, err := filepath.Abs("team-solve")
 	if err != nil {
@@ -72,7 +72,7 @@ func runKeep(t *testing.T, direct, final, verdict string, repaired bool) (keep, 
 	if out, err := save.CombinedOutput(); err != nil {
 		t.Fatalf("snapshot save: %v\n%s", err, out)
 	}
-	write("a.txt", "repair\n")
+	write("a.txt", tree+"\n")
 	write(filepath.Join(r, "direct-status.txt"), direct+"\n")
 	write(filepath.Join(r, "final-status.txt"), final+"\n")
 	write(filepath.Join(r, "verdict.md"), verdict)
@@ -104,19 +104,23 @@ func TestTeamSolveKeepHoldsTheRepairToTheSameProof(t *testing.T) {
 	for _, c := range []struct {
 		name, direct, final, verdict string
 		repaired                     bool
+		tree                         string // a.txt as the last step left it
 		keep, file                   string
 	}{
-		{"a repair the Check passes and the judge does not fail", "0", "0", "verdict: PASS\n", true, "kept: the repair", "repair"},
-		{"a repair the Check passes and the judge gave no verdict on", "0", "0", "I think it is fine.\n", true, "kept: the repair", "repair"},
-		{"a repair with no Check to run and the judge's PASS", "0", "none", "verdict: PASS\n", true, "kept: the repair", "repair"},
-		{"a repair the judge fails", "0", "0", "verdict: FAIL\n", true, "put back: the direct attempt, which passed test-0", "direct"},
-		{"a repair that breaks the Check", "0", "1", "verdict: PASS\n", true, "put back: the direct attempt, which passed test-0", "direct"},
-		{"a repair with no Check and no verdict", "0", "none", "", true, "put back: the direct attempt, which passed test-0", "direct"},
-		{"the team's work the Check passes", "1", "0", "", false, "kept: the team's work", "repair"},
-		{"the team's work the Check fails", "1", "1", "verdict: PASS\n", false, "put back: the direct attempt (the team's work did not prove better", "direct"},
-		{"a direct attempt nothing touched", "0", "", "", false, "kept: the direct attempt, untouched", "repair"},
+		{"a repair the Check passes and the judge does not fail", "0", "0", "verdict: PASS\n", true, "repair", "kept: the repair", "repair"},
+		{"a repair the Check passes and the judge gave no verdict on", "0", "0", "I think it is fine.\n", true, "repair", "kept: the repair", "repair"},
+		{"a repair with no Check to run and the judge's PASS", "0", "none", "verdict: PASS\n", true, "repair", "kept: the repair", "repair"},
+		{"a repair the judge fails", "0", "0", "verdict: FAIL\n", true, "repair", "put back: the direct attempt, which passed test-0", "direct"},
+		{"a repair that breaks the Check", "0", "1", "verdict: PASS\n", true, "repair", "put back: the direct attempt, which passed test-0", "direct"},
+		{"a repair with no Check and no verdict", "0", "none", "", true, "repair", "put back: the direct attempt, which passed test-0", "direct"},
+		{"the team's work the Check passes", "1", "0", "", false, "repair", "kept: the team's work", "repair"},
+		{"the team's work the Check fails", "1", "1", "verdict: PASS\n", false, "repair", "put back: the direct attempt (the team's work did not prove better", "direct"},
+		{"a direct attempt nothing touched", "0", "", "", false, "direct", "kept: the direct attempt, untouched", "direct"},
+		// A repair step that failed (its clock) wrote no repair.md and changed the tree: the tree says so.
+		{"a failed repair that changed the tree", "0", "", "", false, "repair", "put back: the direct attempt, which passed test-0", "direct"},
+		{"a failed repair that changed the tree and passed the Check", "0", "0", "verdict: PASS\n", false, "repair", "kept: the repair", "repair"},
 	} {
-		keep, file := runKeep(t, c.direct, c.final, c.verdict, c.repaired)
+		keep, file := runKeep(t, c.direct, c.final, c.verdict, c.repaired, c.tree)
 		if !strings.HasPrefix(keep, c.keep) || file != c.file {
 			t.Errorf("%s: keep.txt %q and a.txt %q, want %q... and %q", c.name, keep, file, c.keep, c.file)
 		}

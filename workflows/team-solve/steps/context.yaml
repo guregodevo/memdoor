@@ -30,5 +30,6 @@ command: |
   printf 'context: %s bytes in %s\n' "$(wc -c < "$out" | tr -d ' ')" "$out"
 target:
   file: .memdoor/runs/team-solve-{{.partition}}/context.md
-timeout: 2m
+# 10m, not 2: six runs on one machine starved a 2-minute listing (2026-11-06).
+timeout: 10m
 max_retries: 0

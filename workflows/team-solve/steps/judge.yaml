@@ -25,5 +25,8 @@ prompt: |
   Answer with the verdict on the first line, exactly `verdict: PASS` or `verdict: FAIL`, then at most ten lines saying why, each tied to a line of the task.
 target:
   file: .memdoor/runs/team-solve-{{.partition}}/verdict.md
+# Optional: a verdict that never comes is none (verdict.sh); keep and verify
+# decide on the Check.
+optional: true
 timeout: 20m
 max_retries: 1

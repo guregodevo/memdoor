@@ -28,5 +28,9 @@ prompt: |
   The decomposition, and two or three candidate approaches with their tradeoffs, for the solver if the first attempt fails.
 target:
   file: .memdoor/runs/team-solve-{{.partition}}/plan.md
+# Optional: a plan that never comes is filled safely by settle (the Check the
+# prompt names, else the judge; the Scope from the prompt's paths). Three
+# runs of 500 ended on a planner that ran out of time twice (2026-11-06).
+optional: true
 timeout: 20m
 max_retries: 1

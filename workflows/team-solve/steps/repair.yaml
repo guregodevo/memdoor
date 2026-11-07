@@ -23,5 +23,7 @@ prompt: |
   alone decides the run. Do not spawn agents or rely on chat history.
 target:
   command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh repair .memdoor/runs/team-solve-{{.partition}}
+# Optional: recheck, the judge and keep take the tree as the repair left it.
+optional: true
 timeout: 90m
 max_retries: 1

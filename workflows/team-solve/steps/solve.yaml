@@ -32,5 +32,8 @@ prompt: |
   chat context.
 target:
   command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh solve .memdoor/runs/team-solve-{{.partition}}
+# Optional: a solver that fails leaves the tree to test, review and repair,
+# and keep puts the direct attempt back when nothing proved better.
+optional: true
 timeout: 90m
 max_retries: 1

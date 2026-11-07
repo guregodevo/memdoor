@@ -67,12 +67,14 @@ type TaskResult struct {
 	Took     time.Duration
 	Attempt  int // 1 on the first try
 	External bool
+	Optional bool // failed, it was passed over: the run went on without it
 }
 
-// Failed answers whether any task failed.
+// Failed answers whether any task the run could not do without failed. An
+// optional task that failed was passed over; the run is not failed for it.
 func (r Result) Failed() bool {
 	for _, t := range r.Tasks {
-		if t.Status == StatusFailed {
+		if t.Status == StatusFailed && !t.Optional {
 			return true
 		}
 	}
@@ -115,6 +117,9 @@ func (r Result) Summary() string {
 	for _, n := range names {
 		t := r.Tasks[n]
 		fmt.Fprintf(&b, "%-8s %s", t.Status, n)
+		if t.Status == StatusFailed && t.Optional {
+			b.WriteString(" (optional: passed over)")
+		}
 		if t.Took > 0 {
 			fmt.Fprintf(&b, "  (%s)", t.Took.Round(time.Millisecond))
 		}
@@ -317,7 +322,7 @@ func (e *Execution) Done() bool {
 func (e *Execution) Status() Result {
 	res := Result{Workflow: e.wf.Name, Partition: e.partition, Tasks: map[string]TaskResult{}}
 	for _, t := range e.wf.Tasks {
-		tr := TaskResult{Status: StatusWaiting, External: t.External}
+		tr := TaskResult{Status: StatusWaiting, External: t.External, Optional: t.Optional}
 		if exe, ok := e.repo.Fetch(mario.InstanceIdOf(t.Full, e.partition)); ok {
 			tr.Started, tr.Ended, tr.Error = exe.StartDate, exe.EndDate, exe.Error
 			if !exe.StartDate.IsZero() {
