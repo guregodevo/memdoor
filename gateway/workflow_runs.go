@@ -311,7 +311,16 @@ func (s *Server) workflowTypes(runner *workflowRunner) []tasks.Base {
 	// A decision task's judge is the gateway's decider once decisions are
 	// wired (workflow_decision.go); nil is mario's valid host, and every
 	// decision task then answers by its `else` command.
-	return []tasks.Base{workflow.Agent(agentRunner), tasks.Command(), llmTask, tasks.Decision(s.taskDecider)}
+	types := []tasks.Base{workflow.Agent(agentRunner), tasks.Command(), llmTask, tasks.Decision(s.taskDecider)}
+	// Every type can run isolated (`isolate:`, `fanout:`) in a worktree of
+	// the project, and every dynamic decision (a decision task, a fan-out's
+	// `until`) is the decision model's when one is wired.
+	isolator := workflow.NewIsolator()
+	for i := range types {
+		types[i].Isolator = isolator
+		types[i].Decider = s.taskDecider
+	}
+	return types
 }
 
 // workflowCompleter is one model call through the provider (factory.go):
