@@ -110,6 +110,11 @@ Run 2 with the search had the team at 85.2%.
   |---|---|---|---|---|---|---|
   | seen while building team-solve | 176 | 135 | 145 | 14 | 4 | 0.03 |
   | never seen | 324 | 253 | 255 | 13 | 11 | 0.84 |
+
+  Against its own direct attempt, where run-to-run noise does not enter
+  (the separate single call and the direct attempt disagree on 53
+  instances): 4 gained and 0 lost on the seen, 11 gained and 0 lost on the
+  never seen (p = 0.001).
 - Not a significant gap between the arms: 27 against 15 is p = 0.09. The gap
   between team-solve and its own direct attempt (15 against 0) is.
 - One run per instance and arm, not a mean of several.
