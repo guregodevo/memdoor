@@ -299,4 +299,6 @@ var globalSettingKeys = map[string]bool{
 	settingTurnStop:                  true,
 	settingResultAcceptance:          true,
 	settingResultAcceptanceThreshold: true,
+	settingTaskDecision:              true,
+	settingTaskDecisionThreshold:     true,
 }

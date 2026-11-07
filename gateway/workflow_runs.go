@@ -293,9 +293,9 @@ func (r *workflowRun) taskOfSession(session string) string {
 // ---- the task types this gateway offers ------------------------------------
 
 // workflowTypes is what a DAG on this gateway may be made of: an agent turn
-// (Memdoor's own type, run through the queue), mario's command, and
-// mario's llm on this gateway's model. The YAML names the type; the
-// factory behind it builds the task.
+// (Memdoor's own type, run through the queue), mario's command, mario's llm
+// on this gateway's model, and mario's decision on this gateway's decision
+// model. The YAML names the type; the factory behind it builds the task.
 func (s *Server) workflowTypes(runner *workflowRunner) []tasks.Base {
 	llmTask := tasks.LLM(workflowCompleter{s: s})
 	var agentRunner workflow.Runner
@@ -308,7 +308,10 @@ func (s *Server) workflowTypes(runner *workflowRunner) []tasks.Base {
 			return complete(ctx, b, def, name)
 		}
 	}
-	return []tasks.Base{workflow.Agent(agentRunner), tasks.Command(), llmTask}
+	// A decision task's judge is the gateway's decider once decisions are
+	// wired (workflow_decision.go); nil is mario's valid host, and every
+	// decision task then answers by its `else` command.
+	return []tasks.Base{workflow.Agent(agentRunner), tasks.Command(), llmTask, tasks.Decision(s.taskDecider)}
 }
 
 // workflowCompleter is one model call through the provider (factory.go):

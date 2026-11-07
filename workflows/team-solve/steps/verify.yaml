@@ -14,10 +14,12 @@ command: |
   bash "$w/scope.sh" "$r" >> "$r/final-check.log" || true
   tail -40 "$r/final-check.log"
   [ "$result" = 1 ] && exit 1
-  # The judge's verdict when it gave one; a judge that answered nothing
-  # leaves the check and the review to decide (verdict.sh).
-  judged=$(bash "$w/verdict.sh" "$r/verdict.md")
-  reviewed=$(bash "$w/verdict.sh" "$r/review.md")
+  # The judge's and the review's answers are their scores' pass (#160): the
+  # decision model's, or without one today's rule on the verdict line. A
+  # judge that did not run leaves the check and the review to decide.
+  score() { if [ -s "$1" ]; then if grep -q '"pass":true' "$1"; then echo PASS; else echo FAIL; fi; else echo none; fi; }
+  judged=$(score "$r/judge-score.json")
+  reviewed=$(score "$r/review-score.json")
   # The verdicts are on the work keep kept: a review or judge of the work it
   # put aside does not count (keep.txt).
   if grep -q '^put back' "$r/keep.txt" 2>/dev/null; then judged=none; [ "$(cat "$r/direct-status.txt")" = 0 ] && reviewed=none; fi

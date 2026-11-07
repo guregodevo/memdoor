@@ -90,13 +90,14 @@ tasks after it can read it.
 
 `type:` says which; the factory registered for it builds the task — mario's
 `tasks.Base` does everything the engine needs from a definition and a type
-is one function. This gateway offers three, mixed freely in a DAG:
+is one function. This gateway offers four, mixed freely in a DAG:
 
 | type | does | the proof |
 |---|---|---|
 | `agent` | a turn of a Memdoor agent (`prompt`, `agent`) — Memdoor's own type | its target, or its answer |
 | `command` | a shell line in the project (`command: git log --oneline -8`) — mario's | its target, or its stdout |
 | `llm` | one model call, no tools (`prompt`, `model`) on this gateway's client — mario's; a `file` target is where the answer is written | its target, or the answer |
+| `decision` | the decision model scores a `condition` on a `state` (a template over outputs and files, like a prompt) at a `threshold`; `else` names the task of the DAG whose answer stands in when no decision model answers — mario's, judged by this gateway's decider (#160) | its target, or `{"p", "threshold", "pass", "by"}` |
 
 Every output lives at `.memdoor/runs/<workflow>/<group>/<task>/<partition>`
 (mario's `Outputs`), and a prompt reads one with `{{ output "log" }}` — the
@@ -104,6 +105,20 @@ kept output of the required task `log`, inlined (found live: an `llm`
 summary of a `command`'s git log answered "the commits weren't included in
 your message"). A prompt reads a file of the project with `{{ file "path" }}`, as it is when the task runs (pr-review's one-call review reads the diff its `diff` command wrote, 2026-10-28). A person's approval is written there too. A browser step is a `command` whose line is
 `memdoor chrome run`.
+
+A `decision` task is how a DAG judges what a command cannot settle without
+a model's word deciding it (#160, 2026-11-07). The decision model scores
+evidence, it does not reason: the task's `state` is what the `llm` steps
+wrote and what the commands printed, never a raw diff. Its output is the
+probability, the threshold it was held to, `pass`, and `by`: `decision`
+when the model answered, else the name of the `else` task. The `else` is a
+task of the DAG, a `command` that prints `PASS` or `FAIL` (team-solve's
+`review-rule`, `judge-rule`: the verdict line read the deterministic way),
+so a gateway with no decision model, one switched off (`decision_task`),
+late or in error runs the same DAG to the same answers. The tasks after it
+branch on `pass` with `when:` and read `p` through `{{ output "x" }}`;
+the threshold is the file's, else the workspace's
+(`decision_task_threshold`), else 0.7.
 
 
 A task's `model:` is read the way /model reads its line (2026-10-25): the id, then
@@ -519,7 +534,7 @@ a second run stacks above it, `git status` is clean.
 Everything the run needed went **upstream** (branch `workflow-engine`),
 never copied: a `context` on a run, `Events` a host watches (started, done,
 skipped, failed), a slog-shaped `Logger` interface, errors instead of
-`os.Exit`, pointer instances, `agent` and `target` on a task definition,
+`os.Exit`, pointer instances, `agent` and `target` on a task definition, `type: decision` with the host's `Decider` (#160),
 requirement defaults (`project_id`/`dataset_id` fall back to the task's),
 walks without a template directory, and Luigi's rule in the scheduler: a
 task whose target already exists is complete, announced as skipped, and its

@@ -156,6 +156,7 @@ func (s *Server) installDecisions(db *sql.DB, messageService *message.Service) {
 	tools.SetDecisionService(svc)
 	s.agent.SetToolRouter(&toolRouter{svc: svc, read: read})
 	s.agent.SetTurnVerdict(&turnVerdict{svc: svc, read: read})
+	s.taskDecider = newTaskDecider(svc, read)
 	s.agent.SetEffortJudge(&effortJudge{svc: svc})
 	// The result review's neighbours, each behind the methods it needs; a nil
 	// neighbour means the review judges but cannot hand back.
