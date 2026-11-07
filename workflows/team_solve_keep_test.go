@@ -13,7 +13,7 @@ import (
 // keep.yaml's command, run in a git tree whose run folder says what the
 // direct attempt, the Check and the judge did. The tree holds the work as the
 // last step left it; direct.patch is the attempt as saved before the team.
-func runKeep(t *testing.T, direct, final, verdict string, repaired bool, tree string) (keep, file string) {
+func runKeep(t *testing.T, direct, final, verdict string, repaired bool, tree string, repro bool) (keep, file string) {
 	t.Helper()
 	wf, err := filepath.Abs("team-solve")
 	if err != nil {
@@ -79,6 +79,15 @@ func runKeep(t *testing.T, direct, final, verdict string, repaired bool, tree st
 	if repaired {
 		write(filepath.Join(r, "repair.md"), "# Repair\n\nchanged a.txt\n")
 	}
+	if repro {
+		// A reproduction that failed on the tree as found and passes now (check.sh).
+		write(filepath.Join(r, "check-kind.txt"), "command+repro\n")
+		write(filepath.Join(r, "check-parts.txt"), "command 0\nrepro 0\n")
+		write(filepath.Join(r, "repro-baseline-status.txt"), "1\n")
+		if err := os.WriteFile(filepath.Join(r, "repro"), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
 	cmd := exec.Command("bash", "-c", strings.ReplaceAll(step.Command, "{{.partition}}", "1"))
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
@@ -100,27 +109,33 @@ func runKeep(t *testing.T, direct, final, verdict string, repaired bool, tree st
 // the judge's PASS. A repair after the review's FAIL is held to it like the
 // team's work, not discarded (#152: on SWE-bench Verified 4 of the 13 repairs
 // keep discarded resolved the issue, and no direct attempt they replaced did).
+// The direct attempt passed the same Check, so a repair replaces it only when
+// the Check has a reproduction that tells them apart: with the project's tests
+// alone the review failed a correct attempt and the repair that replaced it
+// was wrong (astropy-13236, 2026-11-07).
 func TestTeamSolveKeepHoldsTheRepairToTheSameProof(t *testing.T) {
 	for _, c := range []struct {
 		name, direct, final, verdict string
 		repaired                     bool
 		tree                         string // a.txt as the last step left it
+		repro                        bool   // the Check has a reproduction that passes now
 		keep, file                   string
 	}{
-		{"a repair the Check passes and the judge does not fail", "0", "0", "verdict: PASS\n", true, "repair", "kept: the repair", "repair"},
-		{"a repair the Check passes and the judge gave no verdict on", "0", "0", "I think it is fine.\n", true, "repair", "kept: the repair", "repair"},
-		{"a repair with no Check to run and the judge's PASS", "0", "none", "verdict: PASS\n", true, "repair", "kept: the repair", "repair"},
-		{"a repair the judge fails", "0", "0", "verdict: FAIL\n", true, "repair", "put back: the direct attempt, which passed test-0", "direct"},
-		{"a repair that breaks the Check", "0", "1", "verdict: PASS\n", true, "repair", "put back: the direct attempt, which passed test-0", "direct"},
-		{"a repair with no Check and no verdict", "0", "none", "", true, "repair", "put back: the direct attempt, which passed test-0", "direct"},
-		{"the team's work the Check passes", "1", "0", "", false, "repair", "kept: the team's work", "repair"},
-		{"the team's work the Check fails", "1", "1", "verdict: PASS\n", false, "repair", "put back: the direct attempt (the team's work did not prove better", "direct"},
-		{"a direct attempt nothing touched", "0", "", "", false, "direct", "kept: the direct attempt, untouched", "direct"},
+		{"a repair the Check and its reproduction pass, the judge does not fail", "0", "0", "verdict: PASS\n", true, "repair", true, "kept: the repair", "repair"},
+		{"a repair the Check and its reproduction pass, no verdict", "0", "0", "I think it is fine.\n", true, "repair", true, "kept: the repair", "repair"},
+		{"a repair the project's tests pass, no reproduction", "0", "0", "verdict: PASS\n", true, "repair", false, "put back: the direct attempt, which passed test-0", "direct"},
+		{"a repair with no Check to run and the judge's PASS", "0", "none", "verdict: PASS\n", true, "repair", false, "put back: the direct attempt, which passed test-0", "direct"},
+		{"a repair the judge fails", "0", "0", "verdict: FAIL\n", true, "repair", true, "put back: the direct attempt, which passed test-0", "direct"},
+		{"a repair that breaks the Check", "0", "1", "verdict: PASS\n", true, "repair", true, "put back: the direct attempt, which passed test-0", "direct"},
+		{"a repair with no Check and no verdict", "0", "none", "", true, "repair", false, "put back: the direct attempt, which passed test-0", "direct"},
+		{"the team's work the Check passes", "1", "0", "", false, "repair", false, "kept: the team's work", "repair"},
+		{"the team's work the Check fails", "1", "1", "verdict: PASS\n", false, "repair", false, "put back: the direct attempt (the team's work did not prove better", "direct"},
+		{"a direct attempt nothing touched", "0", "", "", false, "direct", false, "kept: the direct attempt, untouched", "direct"},
 		// A repair step that failed (its clock) wrote no repair.md and changed the tree: the tree says so.
-		{"a failed repair that changed the tree", "0", "", "", false, "repair", "put back: the direct attempt, which passed test-0", "direct"},
-		{"a failed repair that changed the tree and passed the Check", "0", "0", "verdict: PASS\n", false, "repair", "kept: the repair", "repair"},
+		{"a failed repair that changed the tree", "0", "", "", false, "repair", false, "put back: the direct attempt, which passed test-0", "direct"},
+		{"a failed repair that changed the tree and passed the Check and its reproduction", "0", "0", "verdict: PASS\n", false, "repair", true, "kept: the repair", "repair"},
 	} {
-		keep, file := runKeep(t, c.direct, c.final, c.verdict, c.repaired, c.tree)
+		keep, file := runKeep(t, c.direct, c.final, c.verdict, c.repaired, c.tree, c.repro)
 		if !strings.HasPrefix(keep, c.keep) || file != c.file {
 			t.Errorf("%s: keep.txt %q and a.txt %q, want %q... and %q", c.name, keep, file, c.keep, c.file)
 		}
