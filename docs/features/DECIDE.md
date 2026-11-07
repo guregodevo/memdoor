@@ -79,6 +79,8 @@ names the same command.
 | `decision_result_acceptance_threshold` | `0.7` | P(unfinished) that hands a result back |
 | `decision_message_gate` | `on` / `shadow` / `off` | offer a message nobody @mentioned to the channel's agents; `shadow` asks and logs `would_reply` without waking anyone |
 | `decision_gate_threshold` | `0.8` | P(reply) an agent needs to take a gated turn |
+| `decision_task` | `on` (default) / `off` | judge a workflow's `type: decision` tasks on the decision model; off, each answers by the task its `else` names (docs/features/WORKFLOWS.md) |
+| `decision_task_threshold` | `0.7` | the probability a decision task passes at when its file names none |
 
 All are read per call or per turn. Environment: `OPENROUTER_API_KEY` (or
 `OPEN_ROUTER_API_KEY`); `MEMDOOR_SYSTEMONE_URL`, `_API_KEY`, `_MODEL` override

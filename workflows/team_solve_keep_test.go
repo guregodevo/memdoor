@@ -76,6 +76,32 @@ func runKeep(t *testing.T, direct, final, verdict string, repaired bool, tree st
 	write(filepath.Join(r, "direct-status.txt"), direct+"\n")
 	write(filepath.Join(r, "final-status.txt"), final+"\n")
 	write(filepath.Join(r, "verdict.md"), verdict)
+	// What the DAG does between judge and keep (#160): judge-rule reads the
+	// verdict when there is one, and judge-score, with no decision model on
+	// this host, passes its answer through.
+	if strings.TrimSpace(verdict) != "" {
+		var rule struct {
+			Command string `yaml:"command"`
+		}
+		raw, err := os.ReadFile(filepath.Join(wf, "steps", "judge-rule.yaml"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := yaml.Unmarshal(raw, &rule); err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("sh", "-c", strings.ReplaceAll(rule.Command, "{{.partition}}", "1"))
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("judge-rule: %v\n%s", err, out)
+		}
+		score := `{"p":0,"threshold":0.7,"pass":false,"by":"judge-rule"}`
+		if strings.TrimSpace(string(out)) == "PASS" {
+			score = `{"p":1,"threshold":0.7,"pass":true,"by":"judge-rule"}`
+		}
+		write(filepath.Join(r, "judge-score.json"), score+"\n")
+	}
 	if repaired {
 		write(filepath.Join(r, "repair.md"), "# Repair\n\nchanged a.txt\n")
 	}

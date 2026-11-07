@@ -14,6 +14,7 @@ func TestDecisionSettingsAreWritable(t *testing.T) {
 		settingDecisionGate, settingDecisionThreshold,
 		settingToolRouting, settingToolFamilies,
 		settingTurnVerdict, settingResultAcceptance, settingResultAcceptanceThreshold,
+		settingTaskDecision, settingTaskDecisionThreshold,
 		settingEditFormat,
 	} {
 		if !globalSettingKeys[k] {

@@ -85,9 +85,11 @@ func (echoModel) Complete(_ context.Context, model, prompt string) (string, erro
 }
 
 // types is what a test gateway offers: the agent turn on a fake runner,
-// mario's command, mario's llm on an echo model.
+// mario's command, mario's llm on an echo model, mario's decision with no
+// decider (the host without a decision model: every decision task answers
+// by its else command).
 func types(r *fakeRunner) []tasks.Base {
-	return []tasks.Base{Agent(r), tasks.Command(), tasks.LLM(echoModel{})}
+	return []tasks.Base{Agent(r), tasks.Command(), tasks.LLM(echoModel{}), tasks.Decision(nil)}
 }
 
 func load(t *testing.T, dir string, r *fakeRunner) Workflow {
@@ -218,6 +220,40 @@ func TestADAGMixesTypesByTheYAMLsType(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "NOTES.md")); err != nil {
 		t.Fatal("the agent task's target was made")
+	}
+}
+
+// A decision task on a gateway with no decision model is deterministic: the
+// task its else names answers, and the output says who did (#160).
+func TestADecisionTaskWithoutADeciderAnswersByItsElse(t *testing.T) {
+	root := t.TempDir()
+	dir := writeWorkflow(t, root, "gate", map[string]string{
+		"review": "type: command\ncommand: |\n  printf 'verdict: PASS\\n' | tee review.md\n",
+		"rule":   "type: command\ncommand: |\n  if grep -q '^verdict: PASS' review.md; then echo PASS; else echo FAIL; fi\nrequires:\n  - table_pattern: review\n",
+		"score": "type: decision\ncondition: The change does what the task asks.\nstate: |\n  {{ output \"review\" }}\n" +
+			"else: rule\nthreshold: 0.8\nrequires:\n  - table_pattern: review\n  - table_pattern: rule\n",
+		"ship": "type: command\ncommand: cat .memdoor/runs/gate/steps/score/{{.partition}}\nwhen: grep -q '\"pass\":true' .memdoor/runs/gate/steps/score/{{.partition}}\nrequires:\n  - table_pattern: score\n",
+	})
+	r := &fakeRunner{}
+	wf := load(t, dir, r)
+	rec := &recorder{}
+	res, err := Run(context.Background(), wf, types(r), Options{Workdir: root, Partition: "2026-10-02", Events: rec, Retry: 20 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Done() != 4 || res.Failed() {
+		t.Fatalf("\n%s", res.Summary())
+	}
+	b, _ := os.ReadFile(OutputPath(root, "2026-10-02", "gate.steps.score"))
+	sc, err := tasks.ParseScore(string(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !sc.Pass || sc.P != 1 || sc.By != "rule" || sc.Threshold != 0.8 {
+		t.Fatalf("score = %+v", sc)
+	}
+	if got := rec.joined(); got != "started review | done review | started rule | done rule | started score | done score | started ship | done ship" {
+		t.Fatalf("events in order = %q", got)
 	}
 }
 

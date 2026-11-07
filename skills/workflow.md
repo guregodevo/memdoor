@@ -55,9 +55,17 @@ in one workflow.
   task produced. **A prompt reads an upstream output with
   `{{ output "log" }}`** — the kept output of the required task `log`,
   inlined. Without it the model sees only your sentence.
+- **`decision`** — the decision model scores a `condition` on a `state` (a
+  template over outputs and files, like a prompt) and answers
+  `{"p", "threshold", "pass", "by"}`; `else` names a `command` task of the
+  DAG that prints PASS or FAIL and stands in when no decision model answers,
+  so the workflow runs with or without one. For a verdict a command cannot
+  settle and a model's bare word should not: score what an `llm` step wrote
+  with what the commands printed, then branch on `pass` with `when:`.
 
 Prefer `command` when a shell line does it, `llm` when one answer does it,
-`agent` only when the step needs hands.
+`decision` when the DAG needs a scored yes or no, `agent` only when the
+step needs hands.
 
 ```yaml
 # .memdoor/workflows/digest/steps/log.yaml
