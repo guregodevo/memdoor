@@ -687,3 +687,26 @@ func TestACommandStepInlinesAnOutputPastTheArgumentCap(t *testing.T) {
 		t.Fatalf("answer.md holds %d bytes (%v), want the 300000 of the output", len(b), err)
 	}
 }
+
+// An optional task that fails past its retries is passed over: what requires
+// it runs, and the run is not failed for it (memdoor#151: a planning step
+// that ran out of time ended 23 runs of 500).
+func TestRunPassesOverAnOptionalTaskThatFails(t *testing.T) {
+	root := t.TempDir()
+	dir := writeWorkflow(t, root, "w", map[string]string{
+		"flaky": "type: agent\nprompt: do x\nmax_retries: 1\noptional: true\n",
+		"after": "type: agent\nprompt: do y\nrequires:\n  - table_pattern: flaky\n",
+	})
+	r := &fakeRunner{failures: map[string]int{"flaky": 2}}
+	wf := load(t, dir, r)
+	res, err := Run(context.Background(), wf, types(r), Options{Workdir: root, Retry: 10 * time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Tasks["flaky"].Status != StatusFailed || !res.Tasks["flaky"].Optional || res.Failed() || res.Tasks["after"].Status != StatusDone {
+		t.Fatalf("\n%s", res.Summary())
+	}
+	if !strings.Contains(res.Summary(), "flaky (optional: passed over)") {
+		t.Fatalf("the summary says it was passed over:\n%s", res.Summary())
+	}
+}

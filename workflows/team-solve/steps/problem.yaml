@@ -31,5 +31,6 @@ command: |
     { git symbolic-ref -q --short HEAD || git rev-parse -q --verify HEAD; } > "$r/head.txt" 2>/dev/null || true
   fi
   printf 'task: %s\n' "$r/task.md"
-timeout: 1m
+# 5m, not 1: six runs on one machine starved it once in 500 (2026-11-06).
+timeout: 5m
 max_retries: 0

@@ -39,7 +39,7 @@ The planner, the ideators, the reviewer and the judge are model calls with no to
 
 `verdict.sh` reads a review's or a judge's verdict (PASS, FAIL, or none when the call narrated instead of answering).
 
-A turn that ends with its target failing is told what is missing and goes on; when it never passes, the step fails and the run stops there instead of handing an empty file to the next role.
+A turn that ends with its target failing is told what is missing and goes on. A step stopped at its clock with its target there is done: `direct`'s target is a changed tree, so an attempt cut at 30 minutes still goes to `test-0`. A step that never meets its target fails, and the run goes on without it: the model calls (`plan`, `ideate`, `review`, `judge`) and the agent turns (`direct`, `solve`, `repair`) are `optional`, so `settle` fills a missing plan safely, a missing verdict is none, and `keep` compares the tree to the direct attempt and puts it back when nothing proved better. The commands that are the harness (`test-0`, `test`, `recheck`, `keep`, `verify`) are not optional. On SWE-bench Verified, 23 runs of 500 had ended on a step's clock, 13 of them on a tree nothing had checked (#151).
 
 **Without a prompt** a `task.md` in the folder is the prompt, and an empty folder gets the sample problem: `task.md` and five `tests/N.in` / `tests/N.out`, checked by `check-samples.sh`.
 

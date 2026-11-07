@@ -592,7 +592,7 @@ func (r *workflowRunner) Run(ctx context.Context, t workflow.TaskRun) (string, e
 			// The run's clock or a stop: the turn keeps the same ctx and
 			// ends on its own; this task is over.
 			return nil, ctx.Err()
-		case <-time.After(jobWaitTimeout()):
+		case <-time.After(turnWait(ctx)):
 			return nil, fmt.Errorf("the turn did not answer in time")
 		}
 	}
@@ -648,10 +648,13 @@ func (e workflowEvents) TaskDone(wf, task string)    { e.run.emit(e.s, task, "do
 func (e workflowEvents) TaskSkipped(wf, task string) { e.run.emit(e.s, task, "skipped", "", false) }
 func (e workflowEvents) TaskFailed(wf, task string, err error, willRetry bool) {
 	state := "failed"
+	text := workflow.ErrorText(err.Error())
 	if willRetry {
 		state = "retrying"
+	} else if t, ok := e.run.WF.Task(task); ok && t.Optional {
+		text += " (optional: passed over, the run goes on)"
 	}
-	e.run.emit(e.s, task, state, workflow.ErrorText(err.Error()), willRetry)
+	e.run.emit(e.s, task, state, text, willRetry)
 }
 
 // emit sends one transition to the log and the window, with the run's whole
@@ -1927,4 +1930,19 @@ func sameProject(a, b string) bool {
 		return filepath.Clean(a) == filepath.Clean(b)
 	}
 	return ra == rb
+}
+
+// turnWait is how long a task waits on its turn's answer: the gateway's
+// backstop, or the task's own clock when it declared a longer one. The
+// backstop is for a turn with no clock of its own; it cut 90-minute solve
+// and repair steps at 31 minutes, "the turn did not answer in time", on
+// SWE-bench Verified (memdoor#151).
+func turnWait(ctx context.Context) time.Duration {
+	wait := jobWaitTimeout()
+	if dl, ok := ctx.Deadline(); ok {
+		if until := time.Until(dl) + time.Minute; until > wait {
+			wait = until
+		}
+	}
+	return wait
 }

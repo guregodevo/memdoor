@@ -52,6 +52,7 @@ type Task struct {
 	Target       string // "file …", "command: …", or "output" (what the task answers, kept as the proof)
 	Retries      int
 	Timeout      time.Duration
+	Optional     bool // failed past its retries, it is passed over: what requires it still runs
 	// About is what the step does, for a person watching it run: the first
 	// sentence of the comment its file opens with ("The planner: one call,
 	// no tools, on the outline"). "" when the file opens with none.
@@ -196,7 +197,7 @@ func isHeaderKey(line string) bool {
 
 // taskOf reads a definition for a person.
 func taskOf(full string, d *templates.YamlTaskDefinition) Task {
-	return Task{Full: full, Type: d.Type, Agent: d.Agent, Model: d.Model, Budget: d.Budget, OutputSchema: outputSchemaJSON(d.OutputSchema), Prompt: d.Prompt, Retries: int(d.MaxRetries), Target: tasks.DescribeTarget(d)}
+	return Task{Full: full, Type: d.Type, Agent: d.Agent, Model: d.Model, Budget: d.Budget, OutputSchema: outputSchemaJSON(d.OutputSchema), Prompt: d.Prompt, Retries: int(d.MaxRetries), Optional: d.Optional, Target: tasks.DescribeTarget(d)}
 }
 
 // targetOf reads a task's proof as a sentence: its own target, the target of

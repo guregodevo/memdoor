@@ -53,3 +53,30 @@ func TestEveryTeamSolveStepSaysWhatItDoesInOneLine(t *testing.T) {
 		}
 	}
 }
+
+// The built-in team-solve loads against the types' schemas: every key its
+// steps use (optional, target, when, each) is one the schemas allow, and
+// the steps the harness cannot do without are not optional.
+func TestTheBuiltInTeamSolveLoadsAndMarksItsOptionalSteps(t *testing.T) {
+	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "team-solve"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dir); err != nil {
+		t.Skip("no built-in team-solve beside this package")
+	}
+	wf := load(t, dir, &fakeRunner{})
+	optional := map[string]bool{"direct": true, "outline": true, "plan": true, "ideate-a": true, "ideate-b": true, "solve": true, "review": true, "repair": true, "judge": true}
+	for _, name := range []string{"problem", "settle", "baseline", "test-0", "context", "test", "recheck", "keep", "verify", "direct", "plan", "solve", "repair", "judge"} {
+		task, ok := wf.Task(name)
+		if !ok {
+			t.Fatalf("no step %s", name)
+		}
+		if task.Optional != optional[name] {
+			t.Errorf("%s: optional %v, want %v", name, task.Optional, optional[name])
+		}
+	}
+	if task, _ := wf.Task("direct"); !strings.Contains(task.Target, "done.sh direct") {
+		t.Errorf("direct's target is done.sh direct, got %q", task.Target)
+	}
+}

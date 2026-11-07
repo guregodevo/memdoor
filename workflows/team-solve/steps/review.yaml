@@ -35,5 +35,8 @@ prompt: |
   Answer with the verdict on the first line, exactly `verdict: PASS` or `verdict: FAIL`, then the findings, one per line. On FAIL, end with the repair instructions for the worker who fixes it: what to change, in which file, and why.
 target:
   file: .memdoor/runs/team-solve-{{.partition}}/review.md
+# Optional: a review that never comes is none; repair runs on a failing
+# Check, and the judge has the last word.
+optional: true
 timeout: 20m
 max_retries: 1

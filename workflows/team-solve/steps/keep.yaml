@@ -17,6 +17,12 @@ command: |
   judged=$(bash "$w/verdict.sh" "$r/verdict.md")
   touched=no
   { [ "$direct" != 0 ] || [ -s "$r/repair.md" ]; } && touched=yes
+  # A repair that failed its step (its clock, no repair.md) may still have
+  # changed the tree: the tree is compared to the attempt, not the files.
+  if [ "$touched" = no ] && [ -s "$r/direct.patch" ]; then
+    bash "$w/snapshot.sh" save "$r" now > /dev/null
+    cmp -s "$r/now.patch" "$r/direct.patch" || touched=yes
+  fi
   if [ "$touched" = no ]; then
     echo "kept: the direct attempt, untouched" | tee "$r/keep.txt"; exit 0
   fi
