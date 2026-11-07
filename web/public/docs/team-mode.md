@@ -69,11 +69,15 @@ shell, the same run: `memdoor workflow run team-solve --model <id> "<task>"`.
 First the single call, then the team if it is needed.
 
 ```
-problem ─┬─ direct ─────────────────────────────────────────┬─ test-0 ─┬─ passed ─────────────────────────────────────────┬─ test ─ review ─ repair ─ recheck ─ judge ─ keep ─ verify
-         └─ outline ─ plan ─ settle ─ baseline ─ reproduce ─┘          └─ failed ─ context ─ ideate-a ‖ ideate-b ─ solve ─┘
+problem ─┬─ direct-a ─ save-a ─ direct-b ─ save-b ─ direct-c ─ save-c ─ pick ─┬─ test-0 ─┬─ passed ─────────────────────────────────────────┬─ test ─ review ─ repair ─ recheck ─ judge ─ keep ─ verify
+         └─ outline ─ plan ─ settle ─ baseline ─ reproduce ───────────────────┘          └─ failed ─ context ─ ideate-a ‖ ideate-b ─ solve ─┘
 ```
 
-- `direct` is one agent turn on your prompt, in the tree. Beside it, `plan`
+- `direct-a`, `direct-b` and `direct-c` are three agent turns on your prompt,
+  one after another on the tree as it was, each saved as a patch. Each also
+  writes a check that fails on the tree as it was and passes with its change.
+  `pick` runs every attempt's check on every other attempt's change and keeps
+  the change the most checks pass; a tie goes to the smaller change. Beside them, `plan`
   (one model call) settles the Check and the Scope, and `baseline` runs the
   Check on the tree as it was.
 - `reproduce`, when the prompt describes behaviour that is wrong: one turn
@@ -82,7 +86,7 @@ problem ─┬─ direct ──────────────────�
   fail. From then on the Check is the project's command and the
   reproduction, and the work is right only when both pass. A Check that
   already passed before any change proves no fix.
-- `test-0` runs the Check on the direct attempt. When it passes, the rest
+- `test-0` runs the Check on the pick. When it passes, the rest
   only verifies it: a `review`, and a `judge` when a command cannot decide.
 - When it fails, two ideators propose side by side (one model call each) and
   `solve` corrects the attempt from their proposals.
@@ -90,7 +94,7 @@ problem ─┬─ direct ──────────────────�
   Check or a judge's FAIL.
 
 The planner, the ideators, the reviewer and the judge are model calls with no
-tools. Only `direct`, `solve` and `repair` change the tree. Every role starts
+tools. Only the three attempts, `solve` and `repair` change the tree. Every role starts
 from nothing and reads only the files on disk, in
 `.memdoor/runs/team-solve-<run>/`: `task.md`, `plan.md`, `proposal-a.md`,
 `proposal-b.md`, `review.md`, `verdict.md`, `keep.txt`.

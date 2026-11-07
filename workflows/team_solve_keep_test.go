@@ -88,7 +88,7 @@ func runKeep(t *testing.T, direct, final, verdict string, repaired bool, tree st
 			t.Fatal(err)
 		}
 	}
-	cmd := exec.Command("bash", "-c", strings.ReplaceAll(step.Command, "{{.partition}}", "1"))
+	cmd := exec.Command("sh", "-c", strings.ReplaceAll(step.Command, "{{.partition}}", "1"))
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("keep: %v\n%s", err, out)

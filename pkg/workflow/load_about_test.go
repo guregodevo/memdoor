@@ -66,8 +66,8 @@ func TestTheBuiltInTeamSolveLoadsAndMarksItsOptionalSteps(t *testing.T) {
 		t.Skip("no built-in team-solve beside this package")
 	}
 	wf := load(t, dir, &fakeRunner{})
-	optional := map[string]bool{"direct": true, "outline": true, "plan": true, "ideate-a": true, "ideate-b": true, "solve": true, "review": true, "repair": true, "judge": true, "reproduce": true}
-	for _, name := range []string{"problem", "settle", "baseline", "test-0", "context", "test", "recheck", "keep", "verify", "direct", "plan", "solve", "repair", "judge", "reproduce"} {
+	optional := map[string]bool{"direct-a": true, "direct-b": true, "direct-c": true, "outline": true, "plan": true, "ideate-a": true, "ideate-b": true, "solve": true, "review": true, "repair": true, "judge": true, "reproduce": true}
+	for _, name := range []string{"problem", "settle", "baseline", "test-0", "context", "test", "recheck", "keep", "verify", "pick", "save-a", "direct-a", "direct-b", "direct-c", "plan", "solve", "repair", "judge", "reproduce"} {
 		task, ok := wf.Task(name)
 		if !ok {
 			t.Fatalf("no step %s", name)
@@ -76,7 +76,7 @@ func TestTheBuiltInTeamSolveLoadsAndMarksItsOptionalSteps(t *testing.T) {
 			t.Errorf("%s: optional %v, want %v", name, task.Optional, optional[name])
 		}
 	}
-	if task, _ := wf.Task("direct"); !strings.Contains(task.Target, "done.sh direct") {
-		t.Errorf("direct's target is done.sh direct, got %q", task.Target)
+	if task, _ := wf.Task("direct-b"); !strings.Contains(task.Target, "done.sh direct") {
+		t.Errorf("an attempt's target is done.sh direct, got %q", task.Target)
 	}
 }
