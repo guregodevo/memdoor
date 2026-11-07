@@ -98,10 +98,18 @@ Run 2 with the search had the team at 85.2%.
 - Not a leaderboard entry. SWE-bench Verified has accepted submissions only
   from academic teams and research labs since 2025-11-18. The two entries in
   guregodevo/swe-bench are in the leaderboard's layout so the check below works.
-- Not a clean held-out set for team-solve: it was tuned on ten Verified
-  instances (astropy__astropy-13033 and the nine Django instances labelled
-  "1-4 hours" from versions 3.2 and 4.1). Without them: single 77.8%, team
-  80.2% of 490; on the ten both arms resolve 7.
+- Not a clean held-out set for team-solve. Before this run, pilot runs on
+  172 Verified instances, and the ten named in team-solve's README
+  (astropy__astropy-13033 and the nine Django instances labelled "1-4 hours"
+  from versions 3.2 and 4.1), shaped it: the `keep` step, how a Check that
+  already fails counts, a crash on non-ASCII prompts. Those 176 instances
+  ([seen-ids.txt](https://github.com/guregodevo/swe-bench/blob/main/kit/seen-ids.txt)),
+  mostly the first in the dataset's order, are where the gain is:
+
+  | | instances | single | team | only team | only single | p |
+  |---|---|---|---|---|---|---|
+  | seen while building team-solve | 176 | 135 | 145 | 14 | 4 | 0.03 |
+  | never seen | 324 | 253 | 255 | 13 | 11 | 0.84 |
 - Not a significant gap between the arms: 27 against 15 is p = 0.09. The gap
   between team-solve and its own direct attempt (15 against 0) is.
 - One run per instance and arm, not a mean of several.
