@@ -8,13 +8,19 @@ type: command
 # (2026-11-05) the team path undid a correct direct attempt; the maintainer:
 # "no failure in case of single call pass".
 requires:
-  - table_pattern: judge
+  - table_pattern: judge-score
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
   direct=$(cat "$r/direct-status.txt" 2>/dev/null)
   final=$(cat "$r/final-status.txt" 2>/dev/null)
-  judged=$(bash "$w/verdict.sh" "$r/verdict.md")
+  # The judge's answer is judge-score's pass (#160): the decision model's
+  # score, or without one the judge's PASS, or no verdict with a passing
+  # final Check. Skipped with the judge, it is none: the Check alone decides.
+  judged=none
+  if [ -s "$r/judge-score.json" ]; then
+    if grep -q '"pass":true' "$r/judge-score.json"; then judged=PASS; else judged=FAIL; fi
+  fi
   touched=no
   { [ "$direct" != 0 ] || [ -s "$r/repair.md" ]; } && touched=yes
   # A repair that failed its step (its clock, no repair.md) may still have

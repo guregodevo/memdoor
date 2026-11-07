@@ -1,10 +1,11 @@
 type: agent
 agent: coder
 # A fresh agent turn fixes what the review failed; skipped when the review passed.
-# Skipped when the review passed.
-when: "v=\"$(bash $([ -d .memdoor/workflows/team-solve ] && echo .memdoor/workflows/team-solve || echo $HOME/.memdoor/workflows/team-solve)/verdict.sh .memdoor/runs/team-solve-{{.partition}}/review.md)\"; [ \"$v\" = FAIL ] || { [ \"$v\" = none ] && [ \"$(cat .memdoor/runs/team-solve-{{.partition}}/test-status.txt)\" != 0 ]; }"
+# Skipped when the review's score passed (review-score: the decision model's
+# answer, or without one today's rule on the verdict line).
+when: "grep -q '\"pass\":false' .memdoor/runs/team-solve-{{.partition}}/review-score.json"
 requires:
-  - table_pattern: review
+  - table_pattern: review-score
 prompt: |
   You are the single repair worker in a fresh context. The run's files are in .memdoor/runs/team-solve-{{.partition}}/: task.md (the task: the prompt
   and what plan settled), plan.md, notes.md (the ledger every role writes

@@ -1,0 +1,18 @@
+type: command
+# The judge's verdict read without a model: PASS, or none with a passing final Check.
+# The branch a decision model does not take, as a task of the DAG (#160):
+# judge-score passes this through when no decision model answers. Runs
+# when the judge ran: its verdict is there. PASS when the judge wrote
+# `verdict: PASS`, or narrated without a verdict while the final Check
+# passed; FAIL otherwise. The rule keep and verify read before there were
+# scores, unchanged.
+when: "[ -s .memdoor/runs/team-solve-{{.partition}}/verdict.md ]"
+requires:
+  - table_pattern: judge
+command: |
+  r=.memdoor/runs/team-solve-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  v=$(bash "$w/verdict.sh" "$r/verdict.md")
+  if [ "$v" = PASS ] || { [ "$v" = none ] && [ "$(cat "$r/final-status.txt")" = 0 ]; }; then echo PASS; else echo FAIL; fi
+timeout: 1m
+max_retries: 0
