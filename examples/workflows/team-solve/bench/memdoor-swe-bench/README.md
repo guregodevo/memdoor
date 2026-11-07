@@ -23,22 +23,24 @@ one of twelve calls sampled across the run.
 |---|---|---|---|---|
 | single call | **388** / 500 | 77.6% | 0.012 | 91 |
 | team-solve | **400** / 500 | 80.0% | 0.022 | 258 |
-| team-solve's direct attempt | 385 / 500 | 77.0% | | |
+| team-solve's direct attempt | 393 / 500 | 78.6% | | |
 
 Paired on the 500: both arms 373, team only 27, single only 15, neither 85
-(exact McNemar p = 0.09). Against its own direct attempt the team gained 15
-and lost none; it changed the direct attempt's patch on 63 instances.
+(exact McNemar p = 0.09). Against its own direct attempt the team gained 7
+and lost none (p = 0.016). On 17 instances the direct attempt ran past its
+30-minute timeout and the run stopped there, unchecked (memdoor#151); its
+edits are the run's result, and they count as the direct attempt's.
 
 | repository | instances | single | direct | team |
 |---|---|---|---|---|
-| django | 231 | 183 | 188 | 195 |
-| sympy | 75 | 58 | 56 | 60 |
+| django | 231 | 183 | 191 | 195 |
+| sympy | 75 | 58 | 59 | 60 |
 | sphinx | 44 | 33 | 30 | 30 |
-| matplotlib | 34 | 26 | 25 | 27 |
+| matplotlib | 34 | 26 | 26 | 27 |
 | scikit-learn | 32 | 31 | 30 | 31 |
 | astropy | 22 | 15 | 16 | 16 |
 | xarray | 22 | 17 | 16 | 16 |
-| pytest | 19 | 18 | 15 | 16 |
+| pytest | 19 | 18 | 16 | 16 |
 | pylint | 10 | 3 | 4 | 4 |
 | requests | 8 | 3 | 4 | 4 |
 | seaborn | 2 | 0 | 0 | 0 |
@@ -98,12 +100,25 @@ Run 2 with the search had the team at 85.2%.
 - Not a leaderboard entry. SWE-bench Verified has accepted submissions only
   from academic teams and research labs since 2025-11-18. The two entries in
   guregodevo/swe-bench are in the leaderboard's layout so the check below works.
-- Not a clean held-out set for team-solve: it was tuned on ten Verified
-  instances (astropy__astropy-13033 and the nine Django instances labelled
-  "1-4 hours" from versions 3.2 and 4.1). Without them: single 77.8%, team
-  80.2% of 490; on the ten both arms resolve 7.
+- Not a clean held-out set for team-solve. Before this run, pilot runs on
+  172 Verified instances, and the ten named in team-solve's README
+  (astropy__astropy-13033 and the nine Django instances labelled "1-4 hours"
+  from versions 3.2 and 4.1), shaped it: the `keep` step, how a Check that
+  already fails counts, a crash on non-ASCII prompts. Those 176 instances
+  ([seen-ids.txt](https://github.com/guregodevo/swe-bench/blob/main/kit/seen-ids.txt)),
+  mostly the first in the dataset's order, are where the gain is:
+
+  | | instances | single | team | only team | only single | p |
+  |---|---|---|---|---|---|---|
+  | seen while building team-solve | 176 | 135 | 145 | 14 | 4 | 0.03 |
+  | never seen | 324 | 253 | 255 | 13 | 11 | 0.84 |
+
+  Against its own direct attempt, where run-to-run noise does not enter
+  (the separate single call and the direct attempt disagree on 47
+  instances): 2 gained and 0 lost on the seen, 5 gained and 0 lost on the
+  never seen (p = 0.06).
 - Not a significant gap between the arms: 27 against 15 is p = 0.09. The gap
-  between team-solve and its own direct attempt (15 against 0) is.
+  between team-solve and its own direct attempt (7 against 0, p = 0.016) is.
 - One run per instance and arm, not a mean of several.
 
 ## Check it
