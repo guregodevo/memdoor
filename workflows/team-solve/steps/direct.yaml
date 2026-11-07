@@ -6,8 +6,8 @@ agent: coder
 # tree, so they run at once). Each writes a check that fails on the tree as
 # found and passes with its change, the currency the pick trades in. Three
 # at once, then one more at a time while the checks leave the pick a tie
-# (cross.sh, the fan-out's `between`; or the decision model reading the
-# matrix), five at most: one attempt of three was right on 85% of SWE-bench
+# (cross.sh, the fan-out's `between`; while it says tie, the decision model
+# reads the matrix and may stop sooner, never run more), five at most: one attempt of three was right on 85% of SWE-bench
 # Verified against 78% for one (#159), and the pick was a coin toss exactly
 # where the checks tied (11 of 12 right where they did not).
 optional: true
