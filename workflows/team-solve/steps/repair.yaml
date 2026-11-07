@@ -16,10 +16,12 @@ prompt: |
   Otherwise read task.md, plan.md, changes.diff and test-output.log, then
   correct the work using the manager's instructions, as the task needs. Undo a change outside the Scope only when the review names it as one the
   task does not need; a change the fix needs stays, wherever it is.
-  Run the Check to verify the correction. Write
+  Run the Check, and the reproduction .memdoor/runs/team-solve-{{.partition}}/repro
+  when it is there (from the project's root; it exits 0 once the behaviour the
+  Prompt describes is fixed), to verify the correction. Write
   .memdoor/runs/team-solve-{{.partition}}/repair.md: what you changed
   and what the Check printed, and append a short repair note to notes.md. Do not start another repair round and do not change
-  task.md, the prompt, test inputs or expected outputs. The final check
+  task.md, the prompt, test inputs, expected outputs or repro. The final check
   alone decides the run. Do not spawn agents or rely on chat history.
 target:
   command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh repair .memdoor/runs/team-solve-{{.partition}}

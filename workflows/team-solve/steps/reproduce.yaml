@@ -1,0 +1,44 @@
+type: agent
+agent: coder
+# The reproduction: one executable that fails until the prompt's defect is fixed.
+# When the Check names reproduce (plan.yaml: the Prompt describes behaviour
+# that is wrong), one fresh turn writes <run>/repro from the Prompt's words:
+# run from the project's root it exits non-zero while the defect is there
+# and 0 once the project behaves as the Prompt expects. Its target (done.sh
+# reproduce) runs it on the tree as the run found it (the clean copy
+# baseline.yaml left): a reproduction that passes there reproduces nothing.
+# check.sh then runs it beside the Check's command. The project's tests were
+# written before the bug and pass around it: on SWE-bench Verified 87 of the
+# 107 wrong attempts had passed their Check, and the team satisfies the Check
+# it is given (2026-11-06, #150). It lives in the run's folder, never in the
+# tree, so it is no part of the change. Nothing here names a language or a
+# tool: the harness reads one exit code.
+when: "sed -n '/^## Check/,/^## /p' .memdoor/runs/team-solve-{{.partition}}/task.md | grep -v '^## ' | sed 's/`[^`]*`//g' | grep -qw reproduce"
+optional: true
+requires:
+  - table_pattern: settle
+  - table_pattern: baseline
+prompt: |
+  You write the reproduction, in a fresh context, and nothing else. The task is
+  .memdoor/runs/team-solve-{{.partition}}/task.md; its Prompt describes behaviour
+  that is wrong. Write .memdoor/runs/team-solve-{{.partition}}/repro: one
+  executable (chmod +x), a shell line or a program in whatever this project
+  runs, called from one. Run from the project's root, it must exit non-zero
+  while the behaviour the Prompt describes is present, and 0 once the project
+  behaves as the Prompt expects: the smallest input that shows the defect, in
+  the Prompt's own terms, nothing the Prompt does not say. Use the project's
+  own interpreter, build or test runner, as the project in front of you is run;
+  paths relative to the project root, never this tree's absolute path.
+  Another turn is changing this tree at the same time. Test the reproduction
+  in the clean copy of the tree at .memdoor/runs/team-solve-{{.partition}}/baseline-tree
+  when it is there (cd into it and run the reproduction from there): it must
+  fail there, and your target checks that. Change no file of the project and
+  write nothing into it: the reproduction and anything it needs live in
+  .memdoor/runs/team-solve-{{.partition}}/. Do not change task.md or the prompt.
+  Keep no rule with the notes tool. Append a line to notes.md there under a
+  "## Reproduction" heading: what repro runs and what it checks. Do not spawn
+  agents or rely on chat history.
+target:
+  command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh reproduce .memdoor/runs/team-solve-{{.partition}}
+timeout: 20m
+max_retries: 1

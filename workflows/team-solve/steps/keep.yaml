@@ -26,6 +26,19 @@ command: |
   if [ "$touched" = no ]; then
     echo "kept: the direct attempt, untouched" | tee "$r/keep.txt"; exit 0
   fi
+  # The judge's ruling on the reproduction (judge.yaml): one it found wrong
+  # is discarded, the Check is the command alone, and the final status is
+  # the command's part of it (check-parts.txt). The guard against a
+  # reproduction that misreads the prompt: the manager's invented
+  # counterexample failed a correct program (abc399_e, NOTES.md).
+  if grep -qx 'reproduction: wrong' "$r/verdict.md" 2>/dev/null && [ -x "$r/repro" ]; then
+    mv "$r/repro" "$r/repro.rejected"
+    rest=$(awk '$1 != "repro" {print $2}' "$r/check-parts.txt" 2>/dev/null | head -1)
+    final=${rest:-none}; [ "$final" = 3 ] && final=none
+    printf '%s\n' "$final" > "$r/final-status.txt"
+    printf '\n## Reproduction\n\nthe judge ruled the reproduction wrong: discarded (repro.rejected); the Check is the command alone, status %s\n' "$final" >> "$r/notes.md"
+    echo "the judge ruled the reproduction wrong: discarded; the Check is the command alone (status $final)"
+  fi
   proven=no
   if [ "$final" = 0 ] && [ "$judged" != FAIL ]; then proven=yes; fi
   if [ "$final" = none ] && [ "$judged" = PASS ]; then proven=yes; fi

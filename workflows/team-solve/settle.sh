@@ -33,7 +33,7 @@ for name in Deliverable Check Scope "Done when"; do section "$plan" "$name" > "$
 if [ ! -s "$v/Deliverable" ]; then echo "changes to this tree" > "$v/Deliverable"; filled+=(Deliverable); fi
 
 first=$(awk '{ for (i = 1; i <= NF; i++) { print $i; exit } }' "$v/Check" | tr -d '`*' | tr 'A-Z' 'a-z')
-if ! ticked "$v/Check" && [ "$first" != samples ] && [ "$first" != judge ]; then
+if ! ticked "$v/Check" && [ "$first" != samples ] && [ "$first" != judge ] && [ "$first" != reproduce ]; then
   cmd=$(awk '{
     i = index($0, "Check:"); if (!i) next
     s = substr($0, i + 6); sub(/^[ \t]+/, "", s); sub(/^`/, "", s)
