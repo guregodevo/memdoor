@@ -1,0 +1,51 @@
+type: command
+# Picks the attempt the other attempts' checks pass most, and puts its change in the tree.
+# The pick, from the three attempts' own checks: each attempt's check runs on
+# the tree as found (where it must fail, or it proves nothing) and on each
+# other attempt's change; an attempt scores one point per other check it
+# passes. The highest score goes into the tree; a tie goes to the smaller
+# change. Offline on SWE-bench Verified (2026-11-07, #159): where the three
+# attempts' checks told them apart, the pick was right 11 times of 12; where
+# every attempt passed every check, the tie-break was a coin toss. An attempt
+# never scores on its own check. With no check at all, attempt a stands, as
+# the single call did.
+requires:
+  - table_pattern: save-c
+command: |
+  r=.memdoor/runs/team-solve-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  atts=""; for x in a b c; do [ -s "$r/$x.patch" ] && atts="$atts $x"; done
+  [ -n "$atts" ] || { echo "picked: nothing (no attempt changed the tree)" | tee "$r/pick.txt"; exit 0; }
+  : > "$r/pick-matrix.txt"
+  for m in $atts; do eval "score_$m=0"; done
+  checks=0
+  for k in $atts; do
+    [ -x "$r/attempt-$k" ] || continue
+    bash "$w/snapshot.sh" reset "$r" > /dev/null
+    if ( "$r/attempt-$k" ) > "$r/attempt-$k-base.log" 2>&1; then
+      printf 'check %s: passes on the tree as found: proves nothing\n' "$k" >> "$r/pick-matrix.txt"; continue
+    fi
+    checks=$((checks + 1))
+    for m in $atts; do
+      [ "$m" = "$k" ] && continue
+      bash "$w/snapshot.sh" restore "$r" "$m" > /dev/null || { printf 'check %s on %s: the patch did not apply\n' "$k" "$m" >> "$r/pick-matrix.txt"; continue; }
+      if ( "$r/attempt-$k" ) > "$r/attempt-$k-on-$m.log" 2>&1; then
+        eval "n=\$score_$m"; eval "score_$m=$((n + 1))"; printf 'check %s on %s: passes\n' "$k" "$m" >> "$r/pick-matrix.txt"
+      else
+        printf 'check %s on %s: FAILS\n' "$k" "$m" >> "$r/pick-matrix.txt"
+      fi
+    done
+  done
+  best=""; bestscore=-1; bestsize=0
+  for m in $atts; do
+    size=$(wc -c < "$r/$m.patch" | tr -d ' '); eval "sc=\$score_$m"
+    if [ "$sc" -gt "$bestscore" ] || { [ "$sc" -eq "$bestscore" ] && [ "$size" -lt "$bestsize" ]; }; then
+      best=$m; bestscore=$sc; bestsize=$size
+    fi
+  done
+  bash "$w/snapshot.sh" restore "$r" "$best" > /dev/null
+  summary=""; for m in $atts; do eval "sc=\$score_$m"; summary="$summary$m $sc, "; done
+  echo "picked: attempt $best ($checks checks that fail on the tree as found; points: ${summary%, }; a tie goes to the smaller change)" | tee "$r/pick.txt"
+  cat "$r/pick-matrix.txt"
+timeout: 45m
+max_retries: 0
