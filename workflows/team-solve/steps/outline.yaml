@@ -5,14 +5,18 @@ type: command
 # call (plan.yaml): an agent planner took 1m41s to 4 minutes on the bench's
 # real tasks while the direct attempt beside it took 21 seconds to 2 minutes,
 # and the attempt's check waited on it (2026-11-05, #93).
+# The survey's code paths go in too: the planner's Scope then covers the
+# siblings the issue's behaviour goes through, not only the file it names.
 # Optional: without it the planner fails and settle fills the task safely.
 optional: true
 requires:
   - table_pattern: problem
+  - table_pattern: survey
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}; out="$r/outline.md"
   {
     printf '# The prompt\n\n'; cat "$r/prompt.md"
+    if [ -s "$r/survey.md" ]; then printf '\n\n# The code paths the task goes through (survey.md: put each source file of them in the Scope)\n\n'; cat "$r/survey.md"; fi
     printf '\n\n# The files of the project\n\n```\n'
     { git ls-files 2>/dev/null || find . -type f -not -path './.git/*' | sed 's#^\./##'; } | grep -v '^\.memdoor/' | head -600
     printf '```\n'
