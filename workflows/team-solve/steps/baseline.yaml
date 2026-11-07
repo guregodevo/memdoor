@@ -15,7 +15,8 @@ command: |
   t="$r/baseline-tree"
   git worktree add -q --detach "$t" "$(cat "$r/base.txt")" 2>/dev/null || { echo "baseline: no clean copy, none taken"; exit 0; }
   ( cd "$t" && bash "$w/check.sh" "$r" "$r/baseline-check.log" ); status=$?
-  git worktree remove --force "$t" 2>/dev/null
+  # The clean copy stays for the reproduction (reproduce.yaml proves repro on
+  # it); test-0 removes it.
   printf '%s\n' "$status" > "$r/baseline-status.txt"
   tail -5 "$r/baseline-check.log"
   printf 'baseline: the Check on the tree as found: %s\n' "$([ $status = 0 ] && echo passes || { [ $status = 3 ] && echo 'nothing to run' || echo 'FAILS before any change: the judge decides'; })"

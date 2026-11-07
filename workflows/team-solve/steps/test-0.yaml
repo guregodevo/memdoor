@@ -7,9 +7,12 @@ type: command
 requires:
   - table_pattern: direct
   - table_pattern: baseline
+  - table_pattern: reproduce
 command: |
   r=.memdoor/runs/team-solve-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  # The clean copy (baseline.yaml) has served the reproduction; it goes.
+  [ -d "$r/baseline-tree" ] && git worktree remove --force "$r/baseline-tree" 2>/dev/null
   bash "$w/changes.sh" "$r"
   bash "$w/check.sh" "$r" "$r/direct-check.log"
   check=$?
