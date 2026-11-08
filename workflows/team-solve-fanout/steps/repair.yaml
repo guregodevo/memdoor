@@ -2,18 +2,27 @@ type: agent
 agent: coder
 # A fresh agent turn fixes what the review failed; skipped when the review passed.
 # Skipped when the review's score passed (review-score: the decision model's
-# answer, or without one today's rule on the verdict line).
-when: "grep -q '\"pass\":false' .memdoor/runs/team-solve-fanout-{{.partition}}/review-score.json"
+# answer, or without one today's rule on the verdict line) and readonly-justify
+# found no old test the change broke that the Prompt does not ask to change.
+when: "grep -q '\"pass\":false' .memdoor/runs/team-solve-fanout-{{.partition}}/review-score.json || [ \"$(bash $([ -d .memdoor/workflows/team-solve ] && echo .memdoor/workflows/team-solve || echo $HOME/.memdoor/workflows/team-solve)/verdict.sh .memdoor/runs/team-solve-fanout-{{.partition}}/readonly-verdict.md)\" = FAIL ]"
 requires:
   - table_pattern: review-score
+  - table_pattern: readonly-justify
 prompt: |
   You are the single repair worker in a fresh context. The run's files are in .memdoor/runs/team-solve-fanout-{{.partition}}/: task.md (the task: the prompt
   and what plan settled), plan.md, notes.md (the ledger every role writes
   to). They are never part of the work and never committed. Keep
   no rule with the notes tool: it writes the project's AGENTS.md.
   Do not commit, check out, reset or stash: the tree's HEAD stays where it is.
-  Read review.md, test-status.txt and notes.md there. If review.md says
-  `verdict: PASS`, change nothing and report that repair was unnecessary.
+  Read review.md, readonly-verdict.md when it is there, test-status.txt and
+  notes.md there. If review.md says `verdict: PASS` and readonly-verdict.md is
+  not there or says `verdict: PASS`, change nothing and report that repair was
+  unnecessary. When readonly-verdict.md says `verdict: FAIL`, the change broke
+  old tests the Prompt does not ask to change, and hid it by editing them: put
+  those test files back as they were on the tree as the run found it (git show
+  <the commit in base.txt>:<file>), keep any test the
+  verdict calls required as the change wrote it, and change the code so the
+  restored tests pass and the fix stays.
   Otherwise read task.md, plan.md, changes.diff and test-output.log, then
   correct the work using the manager's instructions, as the task needs. Undo a change outside the Scope only when the review names it as one the
   task does not need; a change the fix needs stays, wherever it is.
