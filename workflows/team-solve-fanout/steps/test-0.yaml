@@ -1,11 +1,11 @@
 type: command
 # Runs the Check and the Scope on the direct attempt: a pass skips the team.
 # The direct attempt against what plan settled: the Check and the Scope, on
-# the tree as pick left it. direct-status.txt is 0 when something changed,
+# the tree as choose left it. direct-status.txt is 0 when something changed,
 # within the Scope, and the Check passed or there is none to run (review and
 # judge decide then); else 1, and the ideators and the solver take over.
 requires:
-  - table_pattern: direct
+  - table_pattern: choose
   - table_pattern: baseline
   - table_pattern: reproduce
 command: |
