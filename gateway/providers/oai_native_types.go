@@ -392,7 +392,7 @@ func convertOAIToAnthropicWithTools(choice chatChoice, usage chatUsage, model st
 	// RULE 3, THE LIFT (model_adapter.go): no call, but the reply IS a patch
 	// this harness can apply — the model meant to call the tool. Measured on
 	// meta-llama/llama-4-maverick, which wrote a correct Codex patch as prose.
-	if len(choice.Message.ToolCalls) == 0 && len(tools) > 0 {
+	if choice.FinishReason != "stream_canceled" && len(choice.Message.ToolCalls) == 0 && len(tools) > 0 {
 		if name, args, ok := adapter.LiftFromText(choice.Message.Content, shapes); ok {
 			toolUseJSON := fmt.Sprintf(`{"type":"tool_use","id":"toolu_lifted_0","name":%q,"input":%s}`, name, args)
 			var block llm.ContentBlockUnion
@@ -405,6 +405,8 @@ func convertOAIToAnthropicWithTools(choice chatChoice, usage chatUsage, model st
 
 	stopReason := llm.StopReasonEndTurn
 	switch choice.FinishReason {
+	case "stream_canceled":
+		stopReason = llm.StopReasonInterrupted
 	case "tool_calls":
 		stopReason = llm.StopReasonToolUse
 	case "length":

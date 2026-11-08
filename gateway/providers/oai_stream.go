@@ -165,6 +165,9 @@ func (a *streamAccumulator) consume(r io.Reader, cb llm.StreamCallback, guard ll
 	if err := scanner.Err(); err != nil && err != io.EOF {
 		return fmt.Errorf("stream scanner: %w", err)
 	}
+	if a.finishReason == "" {
+		return io.ErrUnexpectedEOF
+	}
 	return nil
 }
 
