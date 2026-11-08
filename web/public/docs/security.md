@@ -14,7 +14,7 @@ mixed:
 | Mode | Set by | Where prompts go | Nothing else is contacted? |
 |---|---|---|---|
 | **Your company's AI gateway** | `AI_GATEWAY_BASE_URL` + `AI_GATEWAY_TOKEN` (or any `*_AI_GATEWAY_TOKEN`: a personal or service-account token) + `MEMDOOR_MODEL` = the provider slug | `POST <base>/v1/responses` on that gateway (the OpenAI Responses shape; `AI_GATEWAY_API=chat` for chat/completions) | **Yes.** Nothing but the gateway. Comes before any vendor key. |
-| **Your company's vendor key** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY`, `BASETEN_API_KEY`, `GROQ_API_KEY` or `DEEPSEEK_API_KEY` (+ `*_BASE_URL` for a proxy in front) | That vendor, or the proxy in front of it | **Yes.** No OpenRouter, no memdoor.ai (it never sees a model request), no catalogue, no web search. `MEMDOOR_VENDOR_HEADERS` adds attribution headers to every request. |
+| **Your company's vendor key** | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY`, `BASETEN_API_KEY`, `GROQ_API_KEY`, `DEEPSEEK_API_KEY` or `EUROUTER_API_KEY` (+ `*_BASE_URL` for a proxy in front) | That vendor, or the proxy in front of it | **Yes.** No OpenRouter, no memdoor.ai (it never sees a model request), no catalogue, no web search. `MEMDOOR_VENDOR_HEADERS` adds attribution headers to every request. |
 | Your own OpenRouter key | `OPENROUTER_API_KEY` | OpenRouter, with `data_collection: deny` and hosts that train on inputs excluded; a `:free` model is the exception, pinned or the one an account with no credit answers on (`allow`, warned at the pin or the connect) | OpenRouter also serves the model catalogue and web search. |
 | A provider you connected | `memdoor connect`, kept in `~/.memdoor/providers.json` | That provider | Used when no key above is set, or when you pin one of its models. A host that lists apps (Vercel AI Gateway, LLM Gateway, EUrouter, Requesty) gets the same app headers as OpenRouter, Google its `x-goog-api-client`; the rest see only the User-Agent (`pkg/attribution`). |
 | Your ChatGPT plan | `memdoor connect chatgpt` (Sign in with ChatGPT, in the browser; the tokens kept encrypted in `~/.memdoor/chatgpt-login.json`) | OpenAI's Responses API, with your plan's bearer token, `store: false` | Used like a connected provider. No API key, no client secret; `memdoor connect --remove chatgpt` signs out. |
@@ -35,6 +35,7 @@ No memdoor.ai call carries a prompt. The hosts table lists each call.
 | `inference.baseten.co` | Baseten's inference API (OpenAI-compatible) | Company-key mode with `BASETEN_API_KEY`; `BASETEN_BASE_URL` replaces it |
 | `api.groq.com` | Groq's inference API (OpenAI-compatible) | Company-key mode with `GROQ_API_KEY`; `GROQ_BASE_URL` replaces it |
 | `api.deepseek.com` | DeepSeek's API (OpenAI-compatible) | Company-key mode with `DEEPSEEK_API_KEY`; `DEEPSEEK_BASE_URL` replaces it |
+| `api.eurouter.ai` | EUrouter's API (OpenAI-compatible, models served in the EU): its model list and chat | Company-key mode with `EUROUTER_API_KEY`, or once connected with `memdoor connect eurouter`; `EUROUTER_BASE_URL` replaces it |
 | `accounts.google.com`, `oauth2.googleapis.com`, `www.googleapis.com` | Sign in with Google on the web sign-in page: the consent page (the browser goes there), the token endpoint, the signing keys (JWKS) | Only on a gateway with `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` set, and only while someone clicks that button. Off on memdoor.ai (`MEMDOOR_HOSTED=off`). Never from the CLI or a model call |
 | `github.com`, `api.github.com` | Sign in with GitHub on the web sign-in page: the authorize page, the token endpoint, the signed-in user's name and verified e-mail | Only on a gateway with `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` set, and only while someone clicks that button. Off on memdoor.ai (`MEMDOOR_HOSTED=off`). `github.com` is also the address of the source and the install one-liners in `--help` text. `memdoor connect local` reads janis's latest release from `github.com/guregodevo/janis/releases`: the `.sha256` of this machine's build, then the installer when you pick janis or the janis there is older. Only when no model server answers on this machine |
 | `openrouter.ai` | Chat on your own OpenRouter key (each request names the app — `X-Title: Memdoor`, `HTTP-Referer: https://memdoor.ai` — for OpenRouter's apps page; never the person. Every request to every provider carries `User-Agent: Memdoor/<version> (+https://memdoor.ai)`; which other hosts read an app header is `pkg/attribution`, researched in docs/features/PROVIDERS.md); its model catalogue (`/model`, `/api/models`); web search; the decisions endpoint on a decision key; Sign in with OpenRouter (`memdoor connect openrouter-login`, `/connect`): the browser opens `openrouter.ai/auth`, and one POST to `/api/v1/auth/keys` exchanges the code for the person's own key; `/api/v1/key` (on that key, when the engine is chosen) says whether the account has credit, a free one answering on a `:free` model | Only with `OPENROUTER_API_KEY` (or `OPEN_ROUTER_API_KEY`) set and no company key, or when the person signs in with OpenRouter. Never in company-key mode (`byok_catalog.go` refuses without a key) |
@@ -112,14 +113,19 @@ lives. `/remote off` deletes the entry.
 ## No "yolo" mode
 
 Default: always-auto. `MEMDOOR_APPROVE=changes` (or the workspace setting
-`approve`) makes every command, file write, MCP tool call and workflow
+`approve`) makes every command, file write, MCP tool call, and workflow
 start or resume wait for the person's yes in the terminal; no answer in five
-minutes is a no. Reads never ask. A workflow approval covers that one call and
-has no "always" grant. List, status and stop do not ask.
+minutes is a no. A workflow approval covers the delegated execution of that
+invocation: its steps may run commands, change files, and make model calls.
+Workflow execution asks again for each invocation and has no session-wide
+"always" grant. List, status, and Stop do not ask. With approval mode off
+(the default), starting and resuming a workflow ask nothing.
 
-An agent approving a workflow gate needs a fresh Yes on every call, with
-approval mode off as well. Approving from the window, `/w approve` or
-`memdoor workflow approve` does not ask.
+An agent asking to approve a human workflow gate always needs a fresh,
+explicit Yes, even with approval mode off. The prompt names the run and gate,
+defaults to No, and cannot be satisfied by a previous workflow approval.
+Approving the gate may start dependent steps. A person using the CLI or the
+terminal's approval control directly is already giving that authorization.
 
 Implementation: `gateway/approval.go` and `gateway/workflow_approval.go`.
 Rules that refuse a call outright
