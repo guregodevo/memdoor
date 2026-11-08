@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"memdoor/pkg/attribution"
 	"net/http"
 	"os"
 )
@@ -27,6 +28,9 @@ func chat(model string, turns []map[string]any, tools []toolSpec) (reply []map[s
 	req, _ := http.NewRequest("POST", openrouterURL, bytes.NewReader(b))
 	req.Header.Set("Authorization", "Bearer "+os.Getenv("OPEN_ROUTER_API_KEY"))
 	req.Header.Set("Content-Type", "application/json")
+	// The app's name on the request: these calls count on OpenRouter's app
+	// page like any other (memdoor#173).
+	attribution.SetFor(req.Header, req.URL.Host)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, u, err
