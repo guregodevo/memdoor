@@ -2,12 +2,8 @@ type: agent
 agent: coder
 # Single-call attempts at once, each in its own worktree; mario cross-checks and picks one.
 # Attempt 1 is the plain call, the prompt as written, as team-solve's direct
-# attempt is; the others read the survey. On a tie the plain attempt wins
-# (prefer: 1), so the fan-out only overrides team-solve's own call when the
-# checks favour another attempt. With every attempt reading the survey, the
-# fan-out lost 3 of 30 instances team-solve had resolved; on django-11815
-# the plain attempt was right and the smaller change picked was not
-# (SWE-bench Verified, DeepSeek V4.1 Flash, 2026-11-08).
+# attempt is; the others read the survey. The fan-out applies nothing
+# (pick: false): choose.yaml, the next step, picks and applies.
 # Each attempt is one agent turn on the prompt as written, on the tree as
 # found, in its own worktree (a fan-out's attempts never share a tree, so they
 # run at once). Each writes a check that fails on the tree as found and passes
@@ -16,7 +12,7 @@ agent: coder
 # tree as found proves nothing; an attempt never scores on its own. It settles
 # when one attempt leads, no check tells them apart, or every attempt passes
 # every check; while they tie, one more, five at most (the decision model may
-# stop sooner, never run more). The winner's change goes into the tree. One
+# stop sooner, never run more). One
 # attempt of three was right on 85% of SWE-bench Verified against 78% for one
 # (#159); the pick was right 11 of 12 where the checks told them apart.
 optional: true
@@ -31,8 +27,7 @@ fanout:
     - .memdoor/runs/team-solve-fanout-{{.partition}}/paths/*
     - .memdoor/runs/team-solve-fanout-{{.partition}}/attempt-*
   own: .memdoor/runs/team-solve-fanout-{{.partition}}/attempt-{{.n}}
-  pick: true
-  prefer: 1
+  pick: false
   until: "One attempt passes more of the checks than every other attempt does, on checks that fail on the tree as the run found it, so the pick between them is not a tie."
 prompt: |
   {{ file (printf ".memdoor/runs/team-solve-fanout-%s/prompt.md" .partition) }}

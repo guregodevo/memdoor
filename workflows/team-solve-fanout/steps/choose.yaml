@@ -1,0 +1,16 @@
+type: pick
+# Picks the attempt the checks favour; on a tie, the plain attempt; applies it to the tree.
+# mario's pick task (guregodevo/mario#9): the attempt with the most points
+# on the checks wins; on a tie, prefer: 1, the plain call, the prompt as
+# written. The fan-out overrides team-solve's own call only when its checks
+# favour another attempt. With every attempt reading the survey and the
+# smaller change winning ties, the fan-out lost 3 of 30 instances team-solve
+# had resolved; on django-11815 attempts 1 and 3 were right and the smaller
+# change, attempt 2, was picked (SWE-bench Verified, DeepSeek V4.1 Flash,
+# 2026-11-08). A tie-breaker task can go in by: [...] ahead of prefer.
+from: direct
+prefer: 1
+requires:
+  - table_pattern: direct
+timeout: 5m
+max_retries: 0

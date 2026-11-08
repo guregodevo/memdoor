@@ -87,9 +87,9 @@ func (echoModel) Complete(_ context.Context, model, prompt string) (string, erro
 // types is what a test gateway offers: the agent turn on a fake runner,
 // mario's command, mario's llm on an echo model, mario's decision with no
 // decider (the host without a decision model: every decision task answers
-// by its else command).
+// by its else command), and mario's pick.
 func types(r *fakeRunner) []tasks.Base {
-	return []tasks.Base{Agent(r), tasks.Command(), tasks.LLM(echoModel{}), tasks.Decision(nil)}
+	return []tasks.Base{Agent(r), tasks.Command(), tasks.LLM(echoModel{}), tasks.Decision(nil), tasks.Pick()}
 }
 
 func load(t *testing.T, dir string, r *fakeRunner) Workflow {
