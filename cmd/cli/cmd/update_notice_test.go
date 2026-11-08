@@ -67,6 +67,7 @@ func TestTheHeadlessCheckIsMarked(t *testing.T) {
 	// Not on a runner here: CI's own run of this test sets GITHUB_ACTIONS.
 	t.Setenv("MEMDOOR_CI", "")
 	t.Setenv("GITHUB_ACTIONS", "")
+	t.Setenv("MEMDOOR_OWNER", "")
 	if v, err := fetchRemoteVersionFrom("cli", time.Second); err != nil || v != "v1.800.0" {
 		t.Fatalf("%q %v", v, err)
 	}
@@ -93,6 +94,7 @@ func TestTheHeadlessCheckSaysCIOnARunner(t *testing.T) {
 	versionEndpoint = srv.URL + "/dl/VERSION"
 	t.Setenv("MEMDOOR_CI", "")
 	t.Setenv("GITHUB_ACTIONS", "")
+	t.Setenv("MEMDOOR_OWNER", "")
 	for _, env := range []string{"MEMDOOR_CI", "GITHUB_ACTIONS"} {
 		t.Setenv(env, "1")
 		if _, err := fetchRemoteVersionFrom("cli", time.Second); err != nil {
@@ -105,5 +107,32 @@ func TestTheHeadlessCheckSaysCIOnARunner(t *testing.T) {
 	}
 	if len(queries) != 3 || queries[0] != "from=cli&ci=1" || queries[1] != "from=cli&ci=1" || queries[2] != "from=cli" {
 		t.Fatalf("ci marked under either variable, not without: %q", queries)
+	}
+}
+
+// The maintainer's own machines say so on every check, the window's and the
+// headless one: me=1 under MEMDOOR_OWNER, and the metrics count neither as a
+// person. Unset, nothing is added.
+func TestTheOwnersMachinesMarkTheirCheck(t *testing.T) {
+	var queries []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.RawQuery)
+		_, _ = w.Write([]byte("v1.800.0\n"))
+	}))
+	defer srv.Close()
+	saved := versionEndpoint
+	t.Cleanup(func() { versionEndpoint = saved })
+	versionEndpoint = srv.URL + "/dl/VERSION"
+	t.Setenv("MEMDOOR_CI", "")
+	t.Setenv("GITHUB_ACTIONS", "")
+	t.Setenv("MEMDOOR_OWNER", "1")
+	if _, err := fetchRemoteVersion(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fetchRemoteVersionFrom("cli", time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if len(queries) != 2 || queries[0] != "me=1" || queries[1] != "from=cli&me=1" {
+		t.Fatalf("the owner's machines marked, window and headless: %q", queries)
 	}
 }
