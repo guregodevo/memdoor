@@ -1,0 +1,36 @@
+type: command
+# Gathers the prompt and the project's shape into one file for the planner.
+# What the planner reads, in one file: the prompt, the project's files, its
+# README and instructions, the build and test files. The planner is one llm
+# call (plan.yaml): an agent planner took 1m41s to 4 minutes on the bench's
+# real tasks while the direct attempt beside it took 21 seconds to 2 minutes,
+# and the attempt's check waited on it (2026-11-05, #93).
+# The survey's code paths go in too: the planner's Scope then covers the
+# siblings the issue's behaviour goes through, not only the file it names.
+# Optional: without it the planner fails and settle fills the task safely.
+optional: true
+requires:
+  - table_pattern: problem
+  - table_pattern: survey
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}; out="$r/outline.md"
+  {
+    printf '# The prompt\n\n'; cat "$r/prompt.md"
+    if [ -s "$r/survey.md" ]; then printf '\n\n# The code paths the task goes through (survey.md: put each source file of them in the Scope)\n\n'; cat "$r/survey.md"; fi
+    printf '\n\n# The files of the project\n\n```\n'
+    { git ls-files 2>/dev/null || find . -type f -not -path './.git/*' | sed 's#^\./##'; } | grep -v '^\.memdoor/' | head -600
+    printf '```\n'
+    if git rev-parse --verify -q HEAD >/dev/null 2>&1; then
+      printf '\n\n# The last commit\n\n```\n'; git log -1 --stat --format='%h %s%n%n%b' | head -60; printf '```\n\n```diff\n'; git show --format= HEAD | head -c 15000; printf '\n```\n'
+    fi
+    for f in README.md AGENTS.md CLAUDE.md CONTRIBUTING.md Makefile go.mod package.json pyproject.toml Cargo.toml; do
+      [ -f "$f" ] || continue
+      printf '\n\n# %s (the start)\n\n```\n' "$f"; head -c 6000 "$f"; printf '\n```\n'
+    done
+  } > "$out"
+  printf 'outline: %s bytes in %s\n' "$(wc -c < "$out" | tr -d ' ')" "$out"
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/outline.md
+# 10m, not 2: six runs on one machine starved a 2-minute listing (2026-11-06).
+timeout: 10m
+max_retries: 0

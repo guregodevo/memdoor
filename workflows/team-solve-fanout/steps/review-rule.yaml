@@ -1,0 +1,16 @@
+type: command
+# The review's verdict read without a model: PASS, or no verdict with a passing Check.
+# The branch a decision model does not take, as a task of the DAG (#160):
+# review-score passes this through when no decision model answers. PASS
+# when the reviewer wrote `verdict: PASS`, or narrated without a verdict
+# while the Check passed; FAIL otherwise. The rule repair ran on before
+# there were scores, unchanged.
+requires:
+  - table_pattern: review
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  v=$(bash "$w/verdict.sh" "$r/review.md")
+  if [ "$v" = PASS ] || { [ "$v" = none ] && [ "$(cat "$r/test-status.txt")" = 0 ]; }; then echo PASS; else echo FAIL; fi
+timeout: 1m
+max_retries: 0

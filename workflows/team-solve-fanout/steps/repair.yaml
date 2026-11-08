@@ -1,0 +1,33 @@
+type: agent
+agent: coder
+# A fresh agent turn fixes what the review failed; skipped when the review passed.
+# Skipped when the review's score passed (review-score: the decision model's
+# answer, or without one today's rule on the verdict line).
+when: "grep -q '\"pass\":false' .memdoor/runs/team-solve-fanout-{{.partition}}/review-score.json"
+requires:
+  - table_pattern: review-score
+prompt: |
+  You are the single repair worker in a fresh context. The run's files are in .memdoor/runs/team-solve-fanout-{{.partition}}/: task.md (the task: the prompt
+  and what plan settled), plan.md, notes.md (the ledger every role writes
+  to). They are never part of the work and never committed. Keep
+  no rule with the notes tool: it writes the project's AGENTS.md.
+  Do not commit, check out, reset or stash: the tree's HEAD stays where it is.
+  Read review.md, test-status.txt and notes.md there. If review.md says
+  `verdict: PASS`, change nothing and report that repair was unnecessary.
+  Otherwise read task.md, plan.md, changes.diff and test-output.log, then
+  correct the work using the manager's instructions, as the task needs. Undo a change outside the Scope only when the review names it as one the
+  task does not need; a change the fix needs stays, wherever it is.
+  Run the Check, and the reproduction .memdoor/runs/team-solve-fanout-{{.partition}}/repro
+  when it is there (from the project's root; it exits 0 once the behaviour the
+  Prompt describes is fixed; and each path check in
+  .memdoor/runs/team-solve-fanout-{{.partition}}/paths/), to verify the correction. Write
+  .memdoor/runs/team-solve-fanout-{{.partition}}/repair.md: what you changed
+  and what the Check printed, and append a short repair note to notes.md. Do not start another repair round and do not change
+  task.md, the prompt, test inputs, expected outputs or repro. The final check
+  alone decides the run. Do not spawn agents or rely on chat history.
+target:
+  command: bash .memdoor/runs/team-solve-fanout-{{.partition}}/done.sh repair .memdoor/runs/team-solve-fanout-{{.partition}}
+# Optional: recheck, the judge and keep take the tree as the repair left it.
+optional: true
+timeout: 90m
+max_retries: 1

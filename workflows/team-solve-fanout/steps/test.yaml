@@ -1,0 +1,21 @@
+type: command
+# Runs the Check and the Scope on the work and records the result for the reviewer.
+# What the run changed (changes.diff) and the task's check as task.md names
+# it: the command, the samples, or nothing (the judge decides). Records the
+# result for the reviewer, and the files changed against the Scope
+# (scope.sh): one outside it is a failing status. Never fails the run itself.
+requires:
+  - table_pattern: solve
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/test-output.log"
+  result=$?
+  bash "$w/scope.sh" "$r" >> "$r/test-output.log" || true
+  [ "$result" = 3 ] && result=none
+  printf '%s\n' "$result" > "$r/test-status.txt"
+  tail -40 "$r/test-output.log"
+  printf 'Initial check status: %s\n' "$result"
+timeout: 30m
+max_retries: 0

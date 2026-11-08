@@ -80,3 +80,25 @@ func TestTheBuiltInTeamSolveLoadsAndMarksItsOptionalSteps(t *testing.T) {
 		t.Errorf("an attempt's target is done.sh direct, got %q", task.Target)
 	}
 }
+
+// team-solve-fanout loads, and its steps are team-solve's after the attempts.
+func TestTheBuiltInTeamSolveFanoutLoads(t *testing.T) {
+	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "team-solve-fanout"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dir); err != nil {
+		t.Skip("no built-in team-solve-fanout beside this package")
+	}
+	wf := load(t, dir, &fakeRunner{})
+	for _, name := range []string{"problem", "survey", "paths", "direct", "test-0", "review", "keep", "verify"} {
+		if _, ok := wf.Task(name); !ok {
+			t.Fatalf("no step %s", name)
+		}
+	}
+	for _, gone := range []string{"direct-a", "save-a", "pick"} {
+		if _, ok := wf.Task(gone); ok {
+			t.Fatalf("step %s belongs to team-solve, not here", gone)
+		}
+	}
+}
