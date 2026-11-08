@@ -126,7 +126,8 @@ func TestTeamSolvePickTakesTheAttemptTheOthersChecksPass(t *testing.T) {
 
 // cross.sh's exit status is the fan-out's `between`: 1 while the top of the
 // matrix is a tie on checks that discriminate (another attempt can break it),
-// 0 once one attempt leads or no check tells any apart.
+// 0 once one attempt leads, no check tells any apart, or every attempt passes
+// every other's check (a unanimous tie no attempt can break).
 func TestCrossSettlesOnlyWhenThePickIsNotATie(t *testing.T) {
 	wf, _ := filepath.Abs("team-solve")
 	for _, c := range []struct {
@@ -134,9 +135,10 @@ func TestCrossSettlesOnlyWhenThePickIsNotATie(t *testing.T) {
 		checks  map[string]string
 		settled bool
 	}{
-		{"each passes the other's check: a tie", map[string]string{"1": "grep -q fix a.txt", "2": "grep -q fix a.txt"}, false},
+		{"each passes the other's check: they agree, settled", map[string]string{"1": "grep -q fix a.txt", "2": "grep -q fix a.txt"}, true},
 		{"one leads", map[string]string{"1": "grep -q 'fix two' a.txt", "2": "grep -q nothing a.txt"}, true},
 		{"no check discriminates", map[string]string{"1": "test -f a.txt"}, true},
+		{"no attempt passes another's check: a tie another attempt can break", map[string]string{"1": "grep -q nothing a.txt", "2": "grep -q nothing2 a.txt"}, false},
 	} {
 		dir := t.TempDir()
 		sh := func(line string) error {
