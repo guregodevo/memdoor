@@ -10,7 +10,7 @@ import (
 
 func TestInterruptedAnswerIsRetainedWithoutLifecycleSuccess(t *testing.T) {
 	sp, _ := boundaryStore(t)
-	ar := &AgentRuntime{persistence: sp, events: infra.NewEventEmitter()}
+	ar := &AgentRuntime{persistence: sp, events: infra.NewEventEmitter(false)}
 	session := &Session{ID: "interrupted", Metadata: map[string]interface{}{}}
 	response := &AgentResponse{}
 	completions := 0
