@@ -2,8 +2,12 @@ type: llm
 # One call on the task and the old tests the change broke: does the Prompt ask for each to change?
 # Skipped when readonly found none. A fix often must change an old test (the
 # behaviour the issue asks to change is pinned by one): those are PASS. A
-# broken test whose behaviour the Prompt does not ask to change is FAIL, and
-# repair runs on it. The run's other verdicts are unchanged.
+# broken test of any other case is FAIL, and repair runs on it. Strict on
+# purpose: on astropy-13033 (2026-11-08) the call read "the message is
+# misleading" as "change the message" and passed three tests of cases the
+# issue never named; the reference fix kept their old assertions. A repair on a
+# test that was required costs one turn: keep puts the attempt back unless
+# the repair proves better.
 system: "You answer in this one message. You have no tools: you cannot open a file, list a directory or run a command, and nothing you write will be run. Everything you need is in the message. Do not say what you will look at: answer. Start your answer with the line verdict: PASS or verdict: FAIL."
 when: test -s .memdoor/runs/team-solve-fanout-{{.partition}}/readonly.txt
 requires:
@@ -15,9 +19,11 @@ prompt: |
 
   {{ file (printf ".memdoor/runs/team-solve-fanout-%s/readonly.md" .partition) }}
 
-  Each test listed above passed on the tree as the run found it. The change edited the test file, and with the file as it was, the test fails. For each test, decide from the task's Prompt: does the Prompt ask to change the behaviour this test checks? A test that pins the very behaviour the Prompt asks to change is one the fix must change. A test of a message, a warning, a sibling case or a default the Prompt does not mention is one the change broke.
+  Each test listed above passed on the tree as the run found it. The change edited the test file, and with the file as it was, the test fails. For each test, decide whether the Prompt asks to change the exact case this test checks: the same input, the same situation, the behaviour the Prompt says is wrong there.
 
-  Answer `verdict: PASS` when every listed test checks behaviour the Prompt asks to change. Otherwise `verdict: FAIL`. Then one line per test: its name, required or broken, and why. On FAIL, end with the repair instructions: which code to change so each broken test passes as it was, and that those test files go back to how they were.
+  A test is required only when the Prompt describes that case, or its example is that case, and asks for a different result there. A test of another case is broken: another input, a case where the Prompt's condition does not hold, a message or a warning for a situation the Prompt does not describe, a sibling, a default. The fix changes the case the Prompt describes and leaves the others as they were. When unsure, the test is broken.
+
+  Answer `verdict: PASS` only when every listed test is required. Otherwise `verdict: FAIL`. Then one line per test: its name, required or broken, and the case it checks. On FAIL, end with the repair instructions: which code to change so each broken test passes as it was, while the case the Prompt describes still behaves as the Prompt asks, and that those test files go back to how they were, apart from the required tests.
 target:
   file: .memdoor/runs/team-solve-fanout-{{.partition}}/readonly-verdict.md
 # Optional: without a verdict, the run goes on as it would without readonly.
