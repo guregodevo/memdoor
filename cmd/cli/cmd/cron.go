@@ -113,20 +113,7 @@ var cronAddCmd = &cobra.Command{
 		if message == "" {
 			return fmt.Errorf("give --message for an agent turn, or --workflow for a workflow run")
 		}
-		body := map[string]interface{}{
-			"id":       cronAddID,
-			"schedule": cronAddSchedule,
-			"message":  message,
-			"enabled":  cronAddEnabled,
-		}
-		if workdir != "" {
-			body["workdir"] = workdir
-		}
-		if cronAddAgent != "" {
-			body["agent_id"] = cronAddAgent
-		}
-
-		if err := c.PostExpectOK("/api/cron", body); err != nil {
+		if err := addCronJob(c, cronAddID, cronAddSchedule, message, workdir, cronAddAgent, cronAddEnabled); err != nil {
 			return err
 		}
 
@@ -140,6 +127,25 @@ var cronAddCmd = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+// addCronJob posts one schedule to the gateway: what cron add does, and what
+// setup does when the nightly line is accepted. workdir is the project the
+// message runs in; empty, the gateway's own.
+func addCronJob(c *Client, id, schedule, message, workdir, agent string, enabled bool) error {
+	body := map[string]interface{}{
+		"id":       id,
+		"schedule": schedule,
+		"message":  message,
+		"enabled":  enabled,
+	}
+	if workdir != "" {
+		body["workdir"] = workdir
+	}
+	if agent != "" {
+		body["agent_id"] = agent
+	}
+	return c.PostExpectOK("/api/cron", body)
 }
 
 var cronRemoveCmd = &cobra.Command{
