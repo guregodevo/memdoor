@@ -112,9 +112,17 @@ lives. `/remote off` deletes the entry.
 ## No "yolo" mode
 
 Default: always-auto. `MEMDOOR_APPROVE=changes` (or the workspace setting
-`approve`) makes every command, file write and MCP tool call wait for the
-person's yes in the terminal; no answer in five minutes is a no. Reads never
-ask. Implementation: `gateway/approval.go`. Rules that refuse a call outright
+`approve`) makes every command, file write, MCP tool call and workflow
+start or resume wait for the person's yes in the terminal; no answer in five
+minutes is a no. Reads never ask. A workflow approval covers that one call and
+has no "always" grant. List, status and stop do not ask.
+
+An agent approving a workflow gate needs a fresh Yes on every call, with
+approval mode off as well. Approving from the window, `/w approve` or
+`memdoor workflow approve` does not ask.
+
+Implementation: `gateway/approval.go` and `gateway/workflow_approval.go`.
+Rules that refuse a call outright
 (`memdoor guards`: never `.env`, never `git push`):
 [Boundaries](/docs/boundaries).
 
