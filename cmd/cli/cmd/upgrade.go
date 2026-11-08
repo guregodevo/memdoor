@@ -150,6 +150,12 @@ func fetchRemoteVersionFrom(from string, timeout time.Duration) (string, error) 
 	u := versionEndpoint
 	if from != "" {
 		u += "?from=" + from
+		// On a CI runner the check is nobody's (#182): marked ci=1, as
+		// install.sh marks its download under MEMDOOR_CI; GITHUB_ACTIONS is
+		// set on every GitHub runner, self-hosted included.
+		if os.Getenv("MEMDOOR_CI") != "" || os.Getenv("GITHUB_ACTIONS") != "" {
+			u += "&ci=1"
+		}
 	}
 	resp, err := client.Get(u)
 	if err != nil {
