@@ -74,3 +74,33 @@ func TestTheHeadlessCheckIsMarked(t *testing.T) {
 		t.Fatalf("headless marked, window not: %q", queries)
 	}
 }
+
+// On a CI runner the headless check says so: ?from=cli&ci=1 under MEMDOOR_CI
+// (install.sh's variable) or GITHUB_ACTIONS (every GitHub runner's), and the
+// metrics leave it out of HEADLESS too. Neither set, ?from=cli alone.
+func TestTheHeadlessCheckSaysCIOnARunner(t *testing.T) {
+	var queries []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.RawQuery)
+		_, _ = w.Write([]byte("v1.800.0\n"))
+	}))
+	defer srv.Close()
+	saved := versionEndpoint
+	t.Cleanup(func() { versionEndpoint = saved })
+	versionEndpoint = srv.URL + "/dl/VERSION"
+	t.Setenv("MEMDOOR_CI", "")
+	t.Setenv("GITHUB_ACTIONS", "")
+	for _, env := range []string{"MEMDOOR_CI", "GITHUB_ACTIONS"} {
+		t.Setenv(env, "1")
+		if _, err := fetchRemoteVersionFrom("cli", time.Second); err != nil {
+			t.Fatal(err)
+		}
+		t.Setenv(env, "")
+	}
+	if _, err := fetchRemoteVersionFrom("cli", time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if len(queries) != 3 || queries[0] != "from=cli&ci=1" || queries[1] != "from=cli&ci=1" || queries[2] != "from=cli" {
+		t.Fatalf("ci marked under either variable, not without: %q", queries)
+	}
+}
