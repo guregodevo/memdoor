@@ -171,6 +171,7 @@ Built in:
 - **`fix-tests`**: finds the test command, fixes the code until the tests pass, leaves the fix in the working tree.
 - **`release-notes`**: commits since the last tag as Added / Changed / Fixed.
 - **`team-solve`**: the task a prompt defines (`memdoor workflow run team-solve "<the task>"`), done by a team of fresh contexts, GVS5H's method on any task and any model: changes across a repository checked by its own tests, a program by its samples, a document by a fresh judge. Its prompts differ from the published steps', so the 9.8 above is theirs, not the built-in's.
+- **`team-backlog`**: the repository's open issues, unattended: the next issue nobody is on, team-solve on it in a branch, a pull request when the Check passed, a comment on the issue when it did not; one issue a run, on a cron (`memdoor cron add --workflow team-backlog "0 2 * * *"`).
 
 `local-model: Qwen3-8B-4bit` in place of the key: the model runs inside the
 runner ([janis](https://github.com/guregodevo/janis), one file, cached), one

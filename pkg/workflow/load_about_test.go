@@ -102,3 +102,29 @@ func TestTheBuiltInTeamSolveFanoutLoads(t *testing.T) {
 		}
 	}
 }
+
+// team-backlog loads: one issue a run, next to done, each step a command
+// with a clock; the three that answer (pr, comment, done) wait on solve.
+func TestTheBuiltInTeamBacklogLoads(t *testing.T) {
+	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "team-backlog"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dir); err != nil {
+		t.Skip("no built-in team-backlog beside this package")
+	}
+	wf := load(t, dir, &fakeRunner{})
+	for _, name := range []string{"next", "branch", "solve", "pr", "comment", "done"} {
+		task, ok := wf.Task(name)
+		if !ok {
+			t.Fatalf("no step %s", name)
+		}
+		if task.Optional {
+			t.Errorf("%s: optional; team-backlog's steps gate on when:, none is optional", name)
+		}
+		about := aboutOf(dir, "team-backlog", "team-backlog.steps."+name)
+		if n := len([]rune(about)); n == 0 || n > 90 {
+			t.Errorf("%s: about line of %d runes: %q", name, n, about)
+		}
+	}
+}
