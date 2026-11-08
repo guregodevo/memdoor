@@ -1,0 +1,16 @@
+type: command
+# Runs the Check again with the change's edits to tests that were there before put back as they were.
+# A change can pass the Check because it rewrote the test that pinned the old
+# behaviour: 75 of 82 wrong attempts on SWE-bench Verified edited a test file
+# that existed, and against the original files a third of them broke a test
+# that passes on the tree as found (2026-11-08). readonly.sh lists those
+# tests in readonly.txt, with the evidence in readonly.md; readonly-justify
+# decides what they mean. Never fails the run itself.
+requires:
+  - table_pattern: test
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  bash "$w/readonly.sh" "$r"
+timeout: 30m
+max_retries: 0
