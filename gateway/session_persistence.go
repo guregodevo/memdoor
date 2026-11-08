@@ -28,6 +28,8 @@ type SessionPersistence struct {
 	cfg *config.Config // Configuration for resolving per-agent paths
 	mu  sync.RWMutex
 	log *logs.EventLogger
+	// indexes is each recently saved transcript's index, under mu.
+	indexes map[string]*transcriptIndex
 }
 
 // MessageRecord wraps a MessageParam with a timestamp for storage
@@ -102,8 +104,9 @@ func NewSessionPersistence(cfg *config.Config, verbose bool) (*SessionPersistenc
 		slog.Int("max_tool_result_bytes", cfg.Session.MaxToolResultBytes))
 
 	return &SessionPersistence{
-		cfg: cfg,
-		log: log,
+		cfg:     cfg,
+		log:     log,
+		indexes: make(map[string]*transcriptIndex),
 	}, nil
 }
 
@@ -226,7 +229,7 @@ func (sp *SessionPersistence) SaveMessage(sessionID string, msg llm.MessageParam
 	}
 
 	timestamp := time.Now().Unix()
-	bytesWritten, err := sp.writeRecord(storePath, msg, timestamp)
+	bytesWritten, err := sp.writeBatch(storePath, sessionID, []MessageRecord{{Message: msg, Timestamp: timestamp}}, false)
 	if err != nil {
 		return err
 	}
@@ -271,19 +274,15 @@ func (sp *SessionPersistence) SaveMessages(sessionID string, messages []llm.Mess
 	}
 
 	timestamp := time.Now().Unix()
-	totalBytes := 0
+	recs := make([]MessageRecord, len(messages))
+	for i, msg := range messages {
+		recs[i] = MessageRecord{Message: sp.truncateLargeToolResults(msg), Timestamp: timestamp}
+	}
 
-	err = appendSessionBatch(storePath, func(file io.Writer) error {
-		for _, msg := range messages {
-			msg = sp.truncateLargeToolResults(msg)
-			n, err := marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp})
-			if err != nil {
-				return err
-			}
-			totalBytes += n
-		}
-		return nil
-	})
+	// Sessions are SHARED across every agent in a channel, so an active
+	// channel's JSONL grows without bound and each load pays for it. Trim it
+	// here — in the session layer, not the agent adapter — when it gets large.
+	totalBytes, err := sp.writeBatch(storePath, sessionID, recs, true)
 	if err != nil {
 		return err
 	}
@@ -292,14 +291,6 @@ func (sp *SessionPersistence) SaveMessages(sessionID string, messages []llm.Mess
 		slog.String("session", sessionID),
 		slog.Int("count", len(messages)),
 		slog.Int("bytes", totalBytes))
-
-	// Sessions are SHARED across every agent in a channel, so an active
-	// channel's JSONL grows without bound and each load pays for it. Trim it
-	// here — in the session layer, not the agent adapter — when it gets large.
-	if err := sp.compactSessionFile(storePath, sessionID); err != nil {
-		sp.log.Warn("session file compaction failed (file still usable)",
-			slog.String("session", sessionID), slog.String("error", err.Error()))
-	}
 
 	return nil
 }
@@ -325,20 +316,14 @@ func (sp *SessionPersistence) SaveReshapedConversation(sessionID string, unsaved
 		return fmt.Errorf("failed to resolve session store path: %w", err)
 	}
 	timestamp := time.Now().Unix()
-	err = appendSessionBatch(storePath, func(file io.Writer) error {
-		for _, msg := range unsaved {
-			if _, err := marshalAndWriteRecord(file, MessageRecord{Message: sp.truncateLargeToolResults(msg), Timestamp: timestamp}); err != nil {
-				return err
-			}
-		}
-		for i, msg := range sent {
-			if _, err := marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp, Boundary: i == 0, Carried: true}); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	recs := make([]MessageRecord, 0, len(unsaved)+len(sent))
+	for _, msg := range unsaved {
+		recs = append(recs, MessageRecord{Message: sp.truncateLargeToolResults(msg), Timestamp: timestamp})
+	}
+	for i, msg := range sent {
+		recs = append(recs, MessageRecord{Message: msg, Timestamp: timestamp, Boundary: i == 0, Carried: true})
+	}
+	if _, err := sp.writeBatch(storePath, sessionID, recs, false); err != nil {
 		return err
 	}
 	sp.log.Debug("Saved the conversation as sent", slog.String("session", sessionID), slog.Int("count", len(sent)))
@@ -360,15 +345,29 @@ const (
 //     does not open on a tool result whose call was cut, which a provider
 //     refuses. That was a plain "last 200 records" (2026-09-29).
 func trimPoint(records []MessageRecord) int {
-	cut := len(records) - sessionKeepMessages
+	marks := make([]recordMark, len(records))
+	for i, rec := range records {
+		marks[i] = markOf(rec)
+	}
+	return trimMarks(marks)
+}
+
+// trimMarks is trimPoint on what it reads of each record.
+func trimMarks(marks []recordMark) int {
+	cut := len(marks) - sessionKeepMessages
 	if cut <= 0 {
 		return 0
 	}
-	if b := lastBoundary(records); b >= 0 && cut > b {
-		return b
+	for b := len(marks) - 1; b >= 0; b-- {
+		if marks[b].boundary {
+			if cut > b {
+				return b
+			}
+			break
+		}
 	}
-	for ; cut < len(records); cut++ {
-		if records[cut].Boundary || startsATurn(records[cut]) {
+	for ; cut < len(marks); cut++ {
+		if marks[cut].boundary || marks[cut].turn {
 			return cut
 		}
 	}
@@ -512,6 +511,7 @@ func (sp *SessionPersistence) DeleteSession(sessionID string) error {
 		return fmt.Errorf("failed to resolve session store path: %w", err)
 	}
 
+	sp.forgetIndex(storePath)
 	if err := os.Remove(storePath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete session file: %w", err)
 	}
@@ -656,16 +656,25 @@ func (sp *SessionPersistence) getTruncationTail() string {
 	return config.DefaultTruncationMessageTail
 }
 
-// marshalAndWriteRecord writes one record as a single JSONL line to w and
-// returns the marshaled byte count (excluding the newline). The shared core of
-// every session-file writer — batch append (SaveMessages), single append
-// (writeRecord), and the compaction rewrite — so they can't drift on format.
-func marshalAndWriteRecord(w io.Writer, rec MessageRecord) (int, error) {
+// recordLine is one record as a JSONL line, newline included. Every
+// session-file writer — the indexed save, its index, the append and the
+// compaction rewrite — goes through it, so they can't drift on format.
+func recordLine(rec MessageRecord) ([]byte, error) {
 	data, err := json.Marshal(rec)
 	if err != nil {
-		return 0, fmt.Errorf("failed to marshal message: %w", err)
+		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
-	line := append(data, '\n')
+	return append(data, '\n'), nil
+}
+
+// marshalAndWriteRecord writes one record as a single JSONL line to w and
+// returns the marshaled byte count (excluding the newline).
+func marshalAndWriteRecord(w io.Writer, rec MessageRecord) (int, error) {
+	line, err := recordLine(rec)
+	if err != nil {
+		return 0, err
+	}
+	data := line[:len(line)-1]
 	n, err := w.Write(line)
 	if err != nil {
 		return 0, fmt.Errorf("failed to write message: %w", err)
@@ -674,18 +683,6 @@ func marshalAndWriteRecord(w io.Writer, rec MessageRecord) (int, error) {
 		return 0, io.ErrShortWrite
 	}
 	return len(data), nil
-}
-
-// writeRecord writes a single message record to the specified file
-// Returns the number of bytes written
-func (sp *SessionPersistence) writeRecord(filePath string, msg llm.MessageParam, timestamp int64) (int, error) {
-	var n int
-	err := appendSessionBatch(filePath, func(file io.Writer) error {
-		var err error
-		n, err = marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp})
-		return err
-	})
-	return n, err
 }
 
 // readAllRecords reads and parses all message records from a JSONL file
@@ -897,6 +894,7 @@ func (sp *SessionPersistence) RewindSession(sessionID string, turns int) (int, e
 	if kept != "" {
 		kept += "\n"
 	}
+	sp.forgetIndex(storePath)
 	tmp := storePath + ".rewind.tmp"
 	if err := os.WriteFile(tmp, []byte(kept), 0o644); err != nil {
 		return 0, err
