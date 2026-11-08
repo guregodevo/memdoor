@@ -441,6 +441,22 @@ is graceful: nothing more starts, the running task is told and ends on its
 own, and the run reads `stopped` with every task's state kept. The tool is
 in the coder's palette and the `investigate` routing family beside `cron`.
 
+### Approval from an agent
+
+| Action | Approval off (default) | `MEMDOOR_APPROVE=changes` |
+|---|---|---|
+| `list`, `status`, `stop` | no prompt | no prompt |
+| `run`, `resume` | no prompt | prompt on every call |
+| `approve` (a gate) | prompt on every call | prompt on every call |
+
+The prompt offers Yes and No. There is no "always this session" grant for
+the `workflow` tool, and a grant for bash or another tool does not cover it.
+A prompt nobody answers in five minutes is a No. A scheduled or headless
+run that reaches a gate approved by an agent stays waiting at the gate.
+
+Approving from the window (`a`), `/w approve` or `memdoor workflow approve`
+does not prompt. Those are the person acting directly.
+
 ## Bounds
 
 Per task: `timeout` and `max_retries` (mario's retry queue, 2 s apart). A

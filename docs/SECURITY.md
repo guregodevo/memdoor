@@ -117,7 +117,8 @@ start or resume wait for the person's yes in the terminal; no answer in five
 minutes is a no. A workflow approval covers the delegated execution of that
 invocation: its steps may run commands, change files, and make model calls.
 Workflow execution asks again for each invocation and has no session-wide
-"always" grant. List, status, and Stop do not ask.
+"always" grant. List, status, and Stop do not ask. With approval mode off
+(the default), starting and resuming a workflow ask nothing.
 
 An agent asking to approve a human workflow gate always needs a fresh,
 explicit Yes, even with approval mode off. The prompt names the run and gate,
