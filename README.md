@@ -37,6 +37,7 @@ curl -fsSL https://memdoor.ai/install.sh | bash
 export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
 # or no key: memdoor connect local    # janis and an open-weight model on this machine — https://memdoor.ai/docs/open-weight
 cd your-project && memdoor             # the first run sets the machine up
+memdoor workflow try                   # two minutes: the team on a sample problem, ending in a verdict
 ```
 
 The install or the first run did not finish: [open an Install issue](https://github.com/guregodevo/memdoor/issues/new?template=install.md).

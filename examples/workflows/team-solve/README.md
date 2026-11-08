@@ -2,18 +2,24 @@
 
 <a href="https://news.ycombinator.com/item?id=50320995"><img alt="Hacker News" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fhacker-news.firebaseio.com%2Fv0%2Fitem%2F50320995.json&query=%24.score&label=Hacker%20News&suffix=%20points&logo=ycombinator&logoColor=white&color=ff6600"></a>
 
-Five small models on one programming problem: a planner, two ideators, a
-solver, a manager and a repair worker, each from a fresh context, talking
-only through files on disk; a script that runs the samples decides success.
-The method of [GVS5H](https://github.com/slee-persis/GVS5H) (Lee, 2026) as a
-[Memdoor](../../../README.md) workflow: eight YAML files, no code, no model
-named.
+A team of small open models on one task, each role a fresh context, the work checked before the run passes. This folder holds the published steps of the [GVS5H](https://github.com/slee-persis/GVS5H) method (Lee, 2026) as a [Memdoor](../../../README.md) workflow: YAML files, no code, no model named. The built-in that grew out of it, `team-solve`, runs on any repository.
+
+| benchmark | model | single call | team-solve | per instance |
+|---|---|---|---|---|
+| SWE-bench Verified, all 500 | DeepSeek V4.1 Flash | 388, 77.6% | **400, 80.0%** | $0.022, median 258 s |
+| LiveCodeBench Hard, the authors' first ten, five passes | Qwen3.8-27B | 8.0 (Fable 5, one call) | **9.8** | $0.39, median 40 min |
+
+The SWE-bench run, with every patch, log and trajectory and the kit that ran it: [guregodevo/swe-bench](https://github.com/guregodevo/swe-bench); the summary: [bench/memdoor-swe-bench](bench/memdoor-swe-bench/README.md). The LiveCodeBench runs: [bench/results/parity-5pass](bench/results/parity-5pass/).
 
     curl -fsSL https://memdoor.ai/install.sh | bash
+    memdoor workflow try                                        # the team on a sample problem, two minutes to a verdict
+    cd your-project && memdoor workflow run team-solve "fix the failing test in pkg/auth; go test ./... must pass"
 
-then [Run it](#run-it). Memdoor: [memdoor.ai](https://memdoor.ai).
+[<img src="../../../docs/img/memdoor-window.png" alt="A team run: the single call first, the Check, the team when it fails, the verdict" width="720">](https://memdoor.ai/docs/team-mode)
 
-## The result
+A run as it plays, one minute: [memdoor.ai/docs/team-mode](https://memdoor.ai/docs/team-mode). How the published steps work, and what the runs found: below.
+
+## The LiveCodeBench result
 
 The authors' harness on the same model, Qwen3.8-27B, with their prompts,
 loop and 128K reply cap. The first ten problems of their LiveCodeBench Hard

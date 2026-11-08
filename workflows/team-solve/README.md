@@ -10,6 +10,8 @@ memdoor workflow run team-solve --model qwen/qwen3.8-27b "…"
 
 In the window: `/w team-solve <the task>`, or Shift+Tab to team mode and type the task.
 
+On SWE-bench Verified, all 500 instances on DeepSeek V4.1 Flash, team-solve resolved 400 against 388 for one call of the same model, at $0.022 an instance ([the run and the kit](https://github.com/guregodevo/swe-bench), [the summary](../../examples/workflows/team-solve/bench/memdoor-swe-bench/README.md)). `memdoor workflow try` runs it on a sample problem, two minutes to a verdict; a run as it plays: [memdoor.ai/docs/team-mode](https://memdoor.ai/docs/team-mode).
+
 The output is whatever the task asks for: changes to the tree (a refactor, a fix, a feature across many files), a new program, a document. The run's own files never mix with the project's: they are in `.memdoor/runs/team-solve-<run>/`, out of git.
 
 **The task.** The prompt goes into the workflow's task template (`task.template.md`) as `task.md` in the run's folder. `plan` settles the rest of it: the Deliverable, the Check (one command that exits 0 when the work is right, such as `go test ./...`; or the samples; or the judge; and the word `reproduce` when the prompt describes behaviour that is wrong), the Scope (the files and directories the work may touch, in backticks) and Done when. Every later role works from that file.
