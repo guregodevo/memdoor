@@ -28,6 +28,8 @@ type SessionPersistence struct {
 	cfg *config.Config // Configuration for resolving per-agent paths
 	mu  sync.RWMutex
 	log *logs.EventLogger
+	// compactedAt is a file's size after its last compaction check, under mu.
+	compactedAt map[string]int64
 }
 
 // MessageRecord wraps a MessageParam with a timestamp for storage
@@ -102,8 +104,9 @@ func NewSessionPersistence(cfg *config.Config, verbose bool) (*SessionPersistenc
 		slog.Int("max_tool_result_bytes", cfg.Session.MaxToolResultBytes))
 
 	return &SessionPersistence{
-		cfg: cfg,
-		log: log,
+		cfg:         cfg,
+		log:         log,
+		compactedAt: make(map[string]int64),
 	}, nil
 }
 
@@ -379,11 +382,24 @@ func trimPoint(records []MessageRecord) int {
 // atomically (temp file + rename). Best-effort: the caller logs and continues
 // on error (the session stays usable, just large). MUST be called with sp.mu
 // held — it reuses the lock-free readAllRecords.
+//
+// A file is checked again only once it has doubled since its last check.
+// The newest 200 records can hold more than the trigger on their own (large
+// tool results), and without that every save parsed the whole file and
+// rewrote it: 90 ms a save at 7 MB.
 func (sp *SessionPersistence) compactSessionFile(storePath, sessionID string) error {
 	fi, err := os.Stat(storePath)
-	if err != nil || fi.Size() < sessionCompactTriggerBytes {
-		return nil // small (or vanished) — nothing to do
+	if err != nil {
+		return nil
 	}
+	last := sp.compactedAt[storePath]
+	if fi.Size() < last {
+		last = 0 // cleared or rewound since: measure from scratch
+	}
+	if fi.Size() < max(sessionCompactTriggerBytes, 2*last) {
+		return nil // small (or vanished), or not grown enough since the last check
+	}
+	sp.compactedAt[storePath] = fi.Size()
 	records, err := sp.readAllRecords(storePath, sessionID)
 	if err != nil {
 		return err
@@ -413,7 +429,13 @@ func (sp *SessionPersistence) compactSessionFile(storePath, sessionID string) er
 	sp.log.Info("compacted session file",
 		slog.String("session", sessionID),
 		slog.Int("kept", len(keep)), slog.Int("dropped", cut))
-	return os.Rename(tmp, storePath)
+	if err := os.Rename(tmp, storePath); err != nil {
+		return err
+	}
+	if after, err := os.Stat(storePath); err == nil {
+		sp.compactedAt[storePath] = after.Size()
+	}
+	return nil
 }
 
 // LoadMessages reads the history from a session's JSONL file

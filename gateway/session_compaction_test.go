@@ -97,3 +97,49 @@ func TestCompactSessionFileNoOpWhenSmall(t *testing.T) {
 		t.Error("small file was modified; compaction should be a no-op under the trigger")
 	}
 }
+
+// A file whose kept tail is still over the trigger is not re-read and
+// rewritten on every save: it is checked again once it has doubled.
+func TestCompactSessionFileWaitsForTheFileToDouble(t *testing.T) {
+	sp, err := NewSessionPersistence(nil, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "fat.jsonl")
+	write := func(n int) {
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		for i := 0; i < n; i++ {
+			data, _ := json.Marshal(MessageRecord{Message: llm.NewUserMessage(llm.NewTextBlock(strings.Repeat("x", 20_000)))})
+			f.Write(append(data, '\n'))
+		}
+	}
+	write(sessionKeepMessages + 10)
+	if err := sp.compactSessionFile(path, "fat"); err != nil {
+		t.Fatal(err)
+	}
+	compacted, _ := os.Stat(path)
+	if compacted.Size() < sessionCompactTriggerBytes {
+		t.Fatalf("setup: the kept tail must stay over the trigger, got %d bytes", compacted.Size())
+	}
+
+	write(10)
+	if err := sp.compactSessionFile(path, "fat"); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := os.Stat(path); !os.SameFile(compacted, again) {
+		t.Fatal("a save past the trigger rewrote the file before it doubled")
+	}
+
+	write(sessionKeepMessages)
+	if err := sp.compactSessionFile(path, "fat"); err != nil {
+		t.Fatal(err)
+	}
+	records, _ := sp.readAllRecords(path, "fat")
+	if len(records) != sessionKeepMessages {
+		t.Fatalf("a doubled file was not compacted: %d records", len(records))
+	}
+}

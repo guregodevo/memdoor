@@ -126,6 +126,60 @@ func TestSessionBatchFailureLeavesOriginalAndNoTemporaryFiles(t *testing.T) {
 	}
 }
 
+func TestSessionBatchAppendsInPlace(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "session.json")
+	if err := os.WriteFile(path, []byte("original\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := os.Stat(path)
+	if err := appendSessionBatch(path, func(w io.Writer) error {
+		_, err := w.Write([]byte("next\n"))
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := os.Stat(path)
+	content, _ := os.ReadFile(path)
+	if !os.SameFile(before, after) || string(content) != "original\nnext\n" {
+		t.Fatalf("save rewrote the transcript: same file=%v content=%q", os.SameFile(before, after), content)
+	}
+}
+
+func TestSessionBatchFailureOnNewTranscriptLeavesNoFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "session.json")
+	want := errors.New("disk full")
+	err := appendSessionBatch(path, func(w io.Writer) error {
+		w.Write([]byte("partial"))
+		return want
+	})
+	files, _ := os.ReadDir(dir)
+	if !errors.Is(err, want) || len(files) != 0 {
+		t.Fatalf("failed first batch left a transcript: files=%v err=%v", files, err)
+	}
+}
+
+func TestSessionBatchAfterTornRecordStaysReadable(t *testing.T) {
+	sp, _, key := checkpointStore(t)
+	if err := sp.SaveMessages(key, []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("first"))}); err != nil {
+		t.Fatal(err)
+	}
+	path, _ := sp.resolveSessionStorePath(key)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.Write([]byte(`{"message":{"role":"assis`))
+	f.Close()
+	if err := sp.SaveMessages(key, []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("after the crash"))}); err != nil {
+		t.Fatal(err)
+	}
+	history, err := sp.LoadMessages(key)
+	if err != nil || len(history) != 2 {
+		t.Fatalf("the batch after a torn record was lost: history=%v err=%v", history, err)
+	}
+}
+
 type shortRecordWriter struct{}
 
 func (shortRecordWriter) Write(p []byte) (int, error) { return len(p) - 1, nil }
