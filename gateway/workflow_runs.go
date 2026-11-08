@@ -1083,8 +1083,11 @@ func (s *Server) stopWorkflow(id string) (*workflowRun, error) {
 	switch run.state {
 	case "running":
 		run.state = "stopping"
+		cancel := run.cancel
 		run.mu.Unlock()
-		run.cancel()
+		if cancel != nil {
+			cancel()
+		}
 	case "waiting":
 		run.state, run.ended = "stopped", time.Now()
 		run.mu.Unlock()
@@ -1152,6 +1155,10 @@ const changesRequestedMark = "The reviewer asked for changes before approving"
 // requestChanges reruns task and the agent steps after it, in order, with
 // the reviewer's comment, while the run waits at its gate.
 func (s *Server) requestChanges(id, task, comment string) (*workflowRun, error) {
+	return s.requestChangesWithRunner(id, task, comment, nil)
+}
+
+func (s *Server) requestChangesWithRunner(id, task, comment string, step func(context.Context, workflow.TaskRun) (string, error)) (*workflowRun, error) {
 	w := s.workflows()
 	w.mu.Lock()
 	run, ok := w.runs[id]
@@ -1177,18 +1184,35 @@ func (s *Server) requestChanges(id, task, comment string) (*workflowRun, error) 
 		return run, fmt.Errorf("%s is not an agent step this run ran: name the step whose work should change", task)
 	}
 	chain := changeChain(run.WF, task)
+	ctx, cancel := context.WithCancel(context.WithValue(context.WithValue(context.Background(), sharedctx.SessionIDKey, "workflow:"+run.ID), sharedctx.AttendedKey, run.attended()))
+	if run.Model != "" {
+		ctx = context.WithValue(ctx, runModelKey{}, run.Model)
+	}
 	run.mu.Lock()
+	if run.state != "waiting" {
+		state := run.state
+		run.mu.Unlock()
+		cancel()
+		return run, fmt.Errorf("%s is %s: changes are requested while waiting for approval", id, state)
+	}
+	run.cancel = cancel
 	run.state = "running"
+	run.ended = time.Time{}
 	run.mu.Unlock()
 	run.note(s, fmt.Sprintf("↺ changes requested on %s: %s — rerunning %s", task, oneLine(comment, 120), strings.Join(chain, " → ")))
 	go func() {
+		defer cancel()
 		runner := &workflowRunner{s: s, run: run}
-		for i, name := range chain {
+		if step == nil {
+			step = runner.Run
+		}
+		failedTask := ""
+		err := runWorkflowReview(ctx, chain, func(ctx context.Context, i int, name string) error {
 			run.mu.Lock()
 			tr, ok := run.asked[name]
 			run.mu.Unlock()
 			if !ok {
-				continue // not an agent step this run ran (a command, an external)
+				return nil // not an agent step this run ran (a command, an external)
 			}
 			if i == 0 {
 				tr.Prompt += "\n\n" + changesRequestedMark + ":\n" + comment + "\nMake that change, keep the step's target true, and say what you changed."
@@ -1196,20 +1220,33 @@ func (s *Server) requestChanges(id, task, comment string) (*workflowRun, error) 
 				tr.Prompt += "\n\n" + changesRequestedMark + " on " + task + " (\"" + oneLine(comment, 300) + "\"), and it was redone. Redo your part so it matches."
 			}
 			run.emit(s, name, "running", "", false)
-			if _, err := runner.Run(context.Background(), tr); err != nil {
-				run.emit(s, name, "failed", workflow.ErrorText(err.Error()), false)
-				run.mu.Lock()
-				run.state = "waiting"
-				run.mu.Unlock()
-				run.note(s, fmt.Sprintf("✗ %s failed after the change request: %s — still waiting for review", name, oneLine(workflow.ErrorText(err.Error()), 160)))
-				return
+			if _, err := step(ctx, tr); err != nil {
+				failedTask = name
+				if ctx.Err() == nil {
+					run.emit(s, name, "failed", workflow.ErrorText(err.Error()), false)
+				}
+				return err
+			}
+			if ctx.Err() != nil {
+				return ctx.Err()
 			}
 			run.emit(s, name, "done", "", false)
-		}
+			return nil
+		})
 		run.mu.Lock()
+		if ctx.Err() != nil || run.state == "stopping" || run.state == "stopped" {
+			run.state, run.ended = "stopped", time.Now()
+			run.mu.Unlock()
+			run.note(s, "■ "+run.Workflow+" stopped during requested changes")
+			return
+		}
 		run.state = "waiting"
 		blocked := run.last.Blocked()
 		run.mu.Unlock()
+		if err != nil {
+			run.note(s, fmt.Sprintf("✗ %s failed after the change request: %s — still waiting for review", failedTask, oneLine(workflow.ErrorText(err.Error()), 160)))
+			return
+		}
 		gate := "the gate"
 		if len(blocked) > 0 {
 			gate = blocked[0]
