@@ -5,18 +5,20 @@ import (
 	"sync"
 	"time"
 
+	"memdoor/pkg/llm"
 	"memdoor/tools"
 )
 
 // Session represents a conversation session
 type Session struct {
-	ID        string                 `json:"id"`
-	Type      string                 `json:"type"` // "main", "group", "channel"
-	CreatedAt time.Time              `json:"created_at"`
-	UpdatedAt time.Time              `json:"updated_at"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	Messages  []SessionMessage       `json:"messages"`
-	mu        sync.RWMutex
+	ID           string                 `json:"id"`
+	Type         string                 `json:"type"` // "main", "group", "channel"
+	CreatedAt    time.Time              `json:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at"`
+	Metadata     map[string]interface{} `json:"metadata"`
+	Messages     []SessionMessage       `json:"messages"`
+	mu           sync.RWMutex
+	pendingSaves map[string][]llm.MessageParam
 }
 
 // SessionMessage represents a message in a session

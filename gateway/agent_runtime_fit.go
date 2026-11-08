@@ -189,7 +189,9 @@ func (ar *AgentRuntime) fitConversation(ctx context.Context, conversation []llm.
 	last = req.check(fitted)
 
 	if len(applied) > 0 {
-		ar.saveAsSent(ctx, conversation, fitted)
+		if err := ar.saveAsSent(ctx, conversation, fitted); err != nil {
+			return conversation, last, err
+		}
 		after := ar.compactor.CountConversationTokens(fitted)
 		names := make([]string, len(applied))
 		for i, s := range applied {
@@ -232,31 +234,18 @@ func (ar *AgentRuntime) emitCompaction(req fitRequest, event string, before, aft
 // transcript — the person's request among them, which a compaction used to
 // lose — then after, as a block the next turn loads from. The cursor then
 // counts after: what the turn adds from here is saved at its end.
-func (ar *AgentRuntime) saveAsSent(ctx context.Context, before, after []llm.MessageParam) {
+func (ar *AgentRuntime) saveAsSent(ctx context.Context, before, after []llm.MessageParam) error {
 	session, _ := ctx.Value(ctxSession).(*Session)
 	if session == nil {
-		return
+		return nil
 	}
-	if ar.persistence != nil {
-		key := transcriptKeyOf(session)
-		if unsaved := before[sessionCursor(session, len(before)):]; len(unsaved) > 0 {
-			if err := ar.persistence.SaveMessages(key, unsaved); err != nil {
-				logs.New("Agent").WithSession(session.ID).WithError(err).Error("Failed to save messages before a reshape")
-			}
-		}
-		if err := ar.persistence.SaveConversation(key, after); err != nil {
-			logs.New("Agent").WithSession(session.ID).WithError(err).Error("Failed to save the reshaped conversation")
-		}
+	key := transcriptKeyOf(session)
+	if err := saveConversationReshape(ar.persistence, session, key, before, after); err != nil {
+		logs.New("Agent").WithSession(session.ID).WithError(err).Error("Failed to save the reshaped conversation")
+		runID, _ := ctx.Value(ctxRunID).(string)
+		return ar.conversationSaveFailed(session, err, runID)
 	}
-	session.SetMetadata("conversation_length", len(after))
-}
-
-// sessionCursor is how many of a conversation's n messages are in the
-// transcript already, never outside 0..n.
-func sessionCursor(session *Session, n int) int {
-	raw, _ := session.GetMetadataValue("conversation_length")
-	cursor, _ := raw.(int)
-	return max(0, min(cursor, n))
+	return nil
 }
 
 // transcriptKeyOf is the key a session's turns are saved under: its agent's
