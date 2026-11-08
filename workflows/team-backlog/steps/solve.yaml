@@ -1,0 +1,21 @@
+type: command
+# team-solve on the issue, in the worktree, followed to its end: done, failed or stopped.
+# Its exit status (0, 2, 1) decides between pr and comment.
+# A nested run on this gateway: the issue's title and body are the prompt, team-solve settles the Check and
+# the Scope from the project as it does for any task, and keep's net holds (nothing the Check did not pass).
+args:
+  model: ""  # the model every step of team-solve runs on; empty: the gateway's own choice
+when: test -s .memdoor/runs/team-backlog-{{.partition}}/number.txt
+requires:
+  - table_pattern: branch
+command: |
+  set -u
+  r=.memdoor/runs/team-backlog-{{.partition}}; wt=$(cat "$r/worktree.txt")
+  model='{{.model}}'; set -- ; [ -n "$model" ] && set -- --model "$model"
+  memdoor workflow run team-solve --dir "$wt" --timeout 3h --wait "$@" - < "$r/issue.md" > "$r/solve-out.txt" 2> "$r/solve-progress.txt"; s=$?
+  printf '%s\n' "$s" > "$r/solve-status.txt"
+  run=$(ls -d "$wt"/.memdoor/runs/team-solve-* 2>/dev/null | tail -1); printf '%s\n' "$run" > "$r/solve-run.txt"
+  tail -5 "$r/solve-progress.txt"
+  echo "team-solve on issue #$(cat "$r/number.txt"): exit $s ($([ "$s" = 0 ] && echo done || { [ "$s" = 2 ] && echo failed || echo stopped; }))"
+timeout: 4h
+max_retries: 0
