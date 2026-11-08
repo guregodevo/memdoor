@@ -14,6 +14,7 @@ optional: true
 requires:
   - table_pattern: problem
   - table_pattern: survey
+  - table_pattern: paths
 fanout:
   min: 3
   max: 5

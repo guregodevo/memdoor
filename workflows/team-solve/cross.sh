@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # cross.sh <run dir>: every attempt's check run on every other attempt's
-# change, in a scratch worktree at the run's base (the project's tree is never
+# change, and every path check (paths.yaml) on every attempt's change, in a scratch worktree at the run's base (the project's tree is never
 # touched while other steps work in it). An attempt scores one point per other
 # attempt's check it passes; a check that passes on the tree as found proves
 # nothing and is not counted. Writes <run dir>/pick-points.txt ("n points
@@ -44,6 +44,26 @@ if [ -n "$base" ] && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         eval "n=\$score_$m"; eval "score_$m=$((n + 1))"; printf 'check %s on %s: passes\n' "$k" "$m" >> "$R/pick-matrix.txt"
       else
         printf 'check %s on %s: FAILS\n' "$k" "$m" >> "$R/pick-matrix.txt"
+      fi
+    done
+  done
+  # The path checks (paths.yaml): written before any attempt from the survey,
+  # they belong to none, so every attempt scores on every one.
+  for c in "$R"/paths/*; do
+    [ -f "$c" ] && [ -x "$c" ] || continue
+    name="path:$(basename "$c")"
+    clean
+    if ( cd "$t" && "$c" ) > /dev/null 2>&1; then
+      printf 'check %s: passes on the tree as found: proves nothing\n' "$name" >> "$R/pick-matrix.txt"; continue
+    fi
+    checks=$((checks + 1))
+    for m in $atts; do
+      clean
+      git -C "$t" apply --binary "$R/attempts/$m.patch" 2>/dev/null || { printf 'check %s on %s: the patch did not apply\n' "$name" "$m" >> "$R/pick-matrix.txt"; continue; }
+      if ( cd "$t" && "$c" ) > /dev/null 2>&1; then
+        eval "n=\$score_$m"; eval "score_$m=$((n + 1))"; printf 'check %s on %s: passes\n' "$name" "$m" >> "$R/pick-matrix.txt"
+      else
+        printf 'check %s on %s: FAILS\n' "$name" "$m" >> "$R/pick-matrix.txt"
       fi
     done
   done

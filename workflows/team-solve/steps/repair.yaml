@@ -19,7 +19,8 @@ prompt: |
   task does not need; a change the fix needs stays, wherever it is.
   Run the Check, and the reproduction .memdoor/runs/team-solve-{{.partition}}/repro
   when it is there (from the project's root; it exits 0 once the behaviour the
-  Prompt describes is fixed), to verify the correction. Write
+  Prompt describes is fixed; and each path check in
+  .memdoor/runs/team-solve-{{.partition}}/paths/), to verify the correction. Write
   .memdoor/runs/team-solve-{{.partition}}/repair.md: what you changed
   and what the Check printed, and append a short repair note to notes.md. Do not start another repair round and do not change
   task.md, the prompt, test inputs, expected outputs or repro. The final check
