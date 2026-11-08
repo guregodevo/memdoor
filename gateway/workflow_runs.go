@@ -452,7 +452,7 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 		return text, resp.StopReason, nil
 	}
 	text, stop, err := ask(ctx)
-	if err != nil {
+	if err != nil && ctx.Err() == nil {
 		return "", err
 	}
 	// The client keeps what streamed before the clock ran out (a window
