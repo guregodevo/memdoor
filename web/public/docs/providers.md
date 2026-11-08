@@ -127,6 +127,20 @@ larger one.
 - **Fast model**: `zai-org/GLM-5.3-Flash`. Also DeepSeek V4, Kimi K3 and
 Nemotron. Ids carry case. Type them as listed.
 
+## EUrouter
+
+- **Key**: `EUROUTER_API_KEY` · base `https://api.eurouter.ai/api/v1`.
+  `memdoor connect eurouter` takes the key. EUrouter routes each request to a
+  host in the EU and the answer names the host (`aki/…`, `berget/…`).
+- **Its API states**: `context_length`, `top_provider.max_completion_tokens`,
+  `supported_parameters`, the endpoints each model serves, and a price in
+  dollars or euros. Only chat models that call tools are listed (98 of 159 on
+  2026-11-08). A price in euros is shown in euros (`€0.09 / €0.28`).
+- **Fast model**: `deepseek-v4.1-flash-1017` (1M / 393k, $0.20 / $0.60).
+  `mistral-small-3.2-24b` and `gpt-oss-120b` are priced in euros.
+- With `EUROUTER_API_KEY` and `MEMDOOR_MODEL` set and no other vendor key,
+  EUrouter is the only host contacted.
+
 ## Anthropic
 
 - **Key**: `ANTHROPIC_API_KEY` · base `https://api.anthropic.com`

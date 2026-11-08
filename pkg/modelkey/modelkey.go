@@ -25,6 +25,7 @@ const (
 	ProviderDeepSeek   Provider = "deepseek"
 	ProviderBaseten    Provider = "baseten"
 	ProviderTypeSafe   Provider = "typesafe"
+	ProviderEURouter   Provider = "eurouter"
 )
 
 // keyShapes are the model providers' key formats, most specific first. A
@@ -73,11 +74,12 @@ func ProvidersOf(value string) []Provider {
 }
 
 // providerNames are the providers' own variable names for the keys that
-// have no shape of their own (Baseten's, TypeSafe's): under that name, a
+// have no shape of their own (Baseten's, TypeSafe's, EUrouter's): under that name, a
 // value is that provider's key. A shaped key needs no name.
 var providerNames = map[string]Provider{
 	"BASETEN_API_KEY":           ProviderBaseten,
 	"TYPESAFE_API_KEY":          ProviderTypeSafe,
+	"EUROUTER_API_KEY":          ProviderEURouter,
 	"MEMDOOR_SYSTEMONE_API_KEY": ProviderTypeSafe,
 }
 

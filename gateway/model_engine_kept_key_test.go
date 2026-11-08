@@ -17,7 +17,7 @@ func keptKeyGateway(t *testing.T, free, known bool, catalog []providers.Model, c
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
 	for _, v := range []string{"OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY",
-		"XAI_API_KEY", "GROK_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "AI_GATEWAY_BASE_URL", "AI_GATEWAY_TOKEN",
+		"XAI_API_KEY", "GROK_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "AI_GATEWAY_BASE_URL", "AI_GATEWAY_TOKEN",
 		"MEMDOOR_MODEL", "MEMDOOR_VENDOR"} {
 		t.Setenv(v, "")
 	}

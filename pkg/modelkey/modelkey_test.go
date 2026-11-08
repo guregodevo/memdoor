@@ -117,6 +117,7 @@ func TestTheNameBreaksATieAndFindsAShapelessKey(t *testing.T) {
 		"OPENAI_KEY=" + strings.Replace(hex, "0a", "1b", 1),
 		"MY_KEY=" + strings.Replace(hex, "0a", "2c", 1),
 		"BASETEN_API_KEY=" + baseten,
+		"EUROUTER_API_KEY=eur_" + strings.Repeat("e", 20) + "." + strings.Repeat("F", 20),
 		"TYPESAFE_API_KEY=your-key-here",
 		"SOME_OTHER_KEY=" + strings.Replace(baseten, "Q", "R", 1),
 	}, "")
@@ -135,6 +136,9 @@ func TestTheNameBreaksATieAndFindsAShapelessKey(t *testing.T) {
 	}
 	if k := got["BASETEN_API_KEY"]; !k.Named || len(k.Providers) != 1 || k.Providers[0] != ProviderBaseten {
 		t.Errorf("BASETEN_API_KEY: %+v", k)
+	}
+	if k := got["EUROUTER_API_KEY"]; !k.Named || len(k.Providers) != 1 || k.Providers[0] != ProviderEURouter {
+		t.Errorf("EUROUTER_API_KEY: %+v", k)
 	}
 	for _, name := range []string{"TYPESAFE_API_KEY", "SOME_OTHER_KEY"} {
 		if k, ok := got[name]; ok {

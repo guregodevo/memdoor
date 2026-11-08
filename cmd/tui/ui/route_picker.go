@@ -6,6 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	"memdoor/pkg/price"
 )
 
 // The model picker — Memdoor's core surface (the maintainer, 2026-09-26: "this will
@@ -31,8 +33,9 @@ type CatalogModel struct {
 	Name     string
 	Context  int
 	Band     string
-	InPerM   float64 // list price per million input tokens, USD
-	OutPerM  float64 // per million output tokens
+	InPerM   float64        // list price per million input tokens
+	OutPerM  float64        // per million output tokens
+	Currency price.Currency // what the prices are in; blank is dollars
 }
 
 // ProviderSummary is one provider as a bare /model-search lists them.
@@ -371,14 +374,14 @@ func (m Model) renderRoutePicker() string {
 		if p.fromProviders {
 			heading = fmt.Sprintf("%s's models", p.query)
 		}
-		b.WriteString(title.Render(heading+" — provider · id · context · $ per million in / out — enter pins (OpenRouter: its hosts)") + "\n")
+		b.WriteString(title.Render(heading+" — provider · id · context · price per million in / out — enter pins (OpenRouter: its hosts)") + "\n")
 		n = len(p.models)
 		for _, c := range p.models {
 			prov := c.Provider
 			if prov == "" {
 				prov = "openrouter"
 			}
-			rows = append(rows, fmt.Sprintf("%-10s %-40s %5dk  %s  %s", prov, c.ID, c.Context/1000, priceCell(c.InPerM, c.OutPerM), c.Name))
+			rows = append(rows, fmt.Sprintf("%-10s %-40s %5dk  %s  %s", prov, c.ID, c.Context/1000, priceCell(c.InPerM, c.OutPerM, c.Currency), c.Name))
 		}
 	} else {
 		how := hostSorts[p.sortIdx].label
@@ -392,7 +395,7 @@ func (m Model) renderRoutePicker() string {
 			if q == "" || q == "unknown" {
 				q = "—"
 			}
-			row := fmt.Sprintf("%2d. %-22s %-6s %5dk  %3d%%  %s  %s", i+1, h.Slug, q, h.Context/1000, h.Uptime, priceCell(h.InPerM, h.OutPerM), h.Name)
+			row := fmt.Sprintf("%2d. %-22s %-6s %5dk  %3d%%  %s  %s", i+1, h.Slug, q, h.Context/1000, h.Uptime, priceCell(h.InPerM, h.OutPerM, ""), h.Name)
 			if h.Excluded {
 				row += "  (never used: policy)"
 			} else if !h.Tools {
@@ -446,11 +449,6 @@ func (m Model) renderRoutePicker() string {
 
 // priceCell is "$0.04 / $0.50" padded to a column: the real list price per
 // million tokens, in and out.
-func priceCell(in, out float64) string {
-	return fmt.Sprintf("%7s / %-7s", "$"+trimZero(in), "$"+trimZero(out))
-}
-
-func trimZero(v float64) string {
-	s := fmt.Sprintf("%.2f", v)
-	return s
+func priceCell(in, out float64, c price.Currency) string {
+	return fmt.Sprintf("%7s / %-7s", c.Format(in), c.Format(out))
 }
