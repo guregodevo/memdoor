@@ -64,6 +64,9 @@ func TestTheHeadlessCheckIsMarked(t *testing.T) {
 	saved := versionEndpoint
 	t.Cleanup(func() { versionEndpoint = saved })
 	versionEndpoint = srv.URL + "/dl/VERSION"
+	// Not on a runner here: CI's own run of this test sets GITHUB_ACTIONS.
+	t.Setenv("MEMDOOR_CI", "")
+	t.Setenv("GITHUB_ACTIONS", "")
 	if v, err := fetchRemoteVersionFrom("cli", time.Second); err != nil || v != "v1.800.0" {
 		t.Fatalf("%q %v", v, err)
 	}
