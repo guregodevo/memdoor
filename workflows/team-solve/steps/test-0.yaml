@@ -5,7 +5,7 @@ type: command
 # within the Scope, and the Check passed or there is none to run (review and
 # judge decide then); else 1, and the ideators and the solver take over.
 requires:
-  - table_pattern: pick
+  - table_pattern: direct
   - table_pattern: baseline
   - table_pattern: reproduce
 command: |

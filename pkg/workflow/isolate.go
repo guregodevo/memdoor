@@ -124,6 +124,16 @@ func (gitIsolator) Isolate(ctx context.Context, dir, name string) (tasks.Isolati
 	return iso, nil
 }
 
+// Apply puts a change (an isolation's Changes) into dir: a fan-out's pick.
+func (gitIsolator) Apply(ctx context.Context, dir, patch string) error {
+	cmd := exec.CommandContext(ctx, "git", "-C", dir, "apply", "--binary", "--whitespace=nowarn", "-")
+	cmd.Stdin = strings.NewReader(patch)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("git apply: %v: %s", err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
 func (i *gitIsolation) Dir() string { return i.dir }
 
 // Changes is the task's change in its copy, new files included, paths

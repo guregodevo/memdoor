@@ -32,23 +32,6 @@ direct)
 solve)
   bash "$w/changes.sh" "$r" > /dev/null
   [ -s "$r/changes.diff" ] || no 'nothing in the project changed yet: do the task as the Deliverable says' ;;
-paths)
-  # Each path check must fail on the tree as the run found it (the attempts
-  # have not touched it: they run in worktrees of their own); one that passes
-  # proves nothing about its path and is set aside, not counted.
-  R=$(cd "$r" && pwd)
-  [ -s "$R/paths.md" ] || no "$r/paths.md is missing: one line per check (its name, the code path, what it asserts), or why there is none"
-  if [ -d "$R/paths" ]; then
-    for c in "$R"/paths/*; do
-      [ -f "$c" ] || continue
-      if [ ! -x "$c" ]; then no "$c is not executable (chmod +x)"; continue; fi
-      mkdir -p "$R/paths-logs"
-      if "$c" > "$R/paths-logs/$(basename "$c").baseline.log" 2>&1; then
-        mkdir -p "$R/paths-rejected"; mv "$c" "$R/paths-rejected/" 2>/dev/null
-        printf '\n%s passed on the tree as the run found it: set aside, it proves nothing (paths-rejected/)\n' "$(basename "$c")" >> "$R/paths.md"
-      fi
-    done
-  fi ;;
 reproduce)
   # The reproduction is proven by the tree as the run found it: run there
   # (the clean copy baseline.yaml left), it must fail. One that passes

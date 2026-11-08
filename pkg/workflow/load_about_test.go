@@ -66,8 +66,8 @@ func TestTheBuiltInTeamSolveLoadsAndMarksItsOptionalSteps(t *testing.T) {
 		t.Skip("no built-in team-solve beside this package")
 	}
 	wf := load(t, dir, &fakeRunner{})
-	optional := map[string]bool{"direct": true, "survey": true, "outline": true, "plan": true, "ideate-a": true, "ideate-b": true, "solve": true, "review": true, "repair": true, "judge": true, "reproduce": true}
-	for _, name := range []string{"problem", "settle", "baseline", "test-0", "context", "test", "recheck", "keep", "verify", "pick", "direct", "survey", "plan", "solve", "repair", "judge", "reproduce"} {
+	optional := map[string]bool{"direct": true, "survey": true, "paths": true, "outline": true, "plan": true, "ideate-a": true, "ideate-b": true, "solve": true, "review": true, "repair": true, "judge": true, "reproduce": true}
+	for _, name := range []string{"problem", "settle", "baseline", "test-0", "context", "test", "recheck", "keep", "verify", "direct", "survey", "paths", "plan", "solve", "repair", "judge", "reproduce"} {
 		task, ok := wf.Task(name)
 		if !ok {
 			t.Fatalf("no step %s", name)

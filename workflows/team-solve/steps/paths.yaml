@@ -7,8 +7,9 @@ agent: coder
 # test-0 passes a fix that missed a sibling. These are written once, before
 # any attempt, by a turn that does not fix: one per code path in survey.md
 # where the task's expected behaviour applies, each failing on the tree as
-# found (done.sh paths keeps only those). cross.sh scores every attempt on
-# them; check.sh runs them beside the Check. The project's tree is untouched
+# found (a check that passes there proves nothing: the fan-out ignores it).
+# The fan-out scores every attempt on them; check.sh runs them beside the
+# Check. The project's tree is untouched
 # while this runs: the attempts wait for it, each in its own worktree.
 optional: true
 requires:
@@ -38,6 +39,6 @@ prompt: |
   expectation, write paths.md saying so and no check. Keep no rule with the
   notes tool. Do not spawn agents or rely on chat history.
 target:
-  command: bash .memdoor/runs/team-solve-{{.partition}}/done.sh paths .memdoor/runs/team-solve-{{.partition}}
+  file: .memdoor/runs/team-solve-{{.partition}}/paths.md
 timeout: 20m
 max_retries: 0

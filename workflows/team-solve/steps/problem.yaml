@@ -5,8 +5,8 @@ type: command
 # the folder is the prompt; an empty folder gets the sample problem. The
 # prompt goes into the workflow's task template, which plan fills in. The
 # tree's state is recorded now, so the run's changes can be told apart.
-# done.sh, each agent step's target, and cross.sh, the attempts' cross-check,
-# are copied into the run's folder: no step can edit what judges it.
+# done.sh, each agent step's target, is copied into the run's folder: no step
+# can edit what judges it.
 command: |
   set -e
   r=.memdoor/runs/team-solve-{{.partition}}
@@ -21,7 +21,6 @@ command: |
   fi
   bash "$w/task.sh" "$w/task.template.md" "$r/prompt.md" "$r/task.md"
   cp "$w/done.sh" "$r/done.sh"
-  cp "$w/cross.sh" "$r/cross.sh"
   touch "$r/start"
   if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     b=$(git stash create 2>/dev/null || true)
