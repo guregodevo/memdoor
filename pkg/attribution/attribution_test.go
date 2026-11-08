@@ -84,3 +84,32 @@ func TestTheHostsWithAHeaderOfTheirOwn(t *testing.T) {
 		t.Errorf("Host: %q %q", Host("https://API.EUrouter.ai:443/api/v1?x=1"), Host("openrouter.ai"))
 	}
 }
+
+// The maintainer's own machines (MEMDOOR_OWNER) send under a second app, so the
+// app page of memdoor.ai holds other people's tokens only; everyone else's
+// pair is the canonical one whatever else is set.
+func TestTheOwnersMachinesSendUnderASecondApp(t *testing.T) {
+	t.Setenv("MEMDOOR_OPENROUTER_ATTRIBUTION", "")
+	t.Setenv("MEMDOOR_OWNER", "1")
+	h := http.Header{}
+	Set(h)
+	if h.Get("HTTP-Referer") != OwnerAppURL || h.Get("X-Title") != OwnerAppName {
+		t.Fatalf("the owner's pair: %v", h)
+	}
+	if h.Get("X-OpenRouter-Categories") != AppCategories {
+		t.Fatalf("the owner's app keeps the category: %v", h)
+	}
+	got := Headers("https://openrouter.ai/api/v1")
+	if got["HTTP-Referer"] != OwnerAppURL || got["X-Title"] != OwnerAppName {
+		t.Fatalf("Headers: %v", got)
+	}
+	if eu := Headers("https://api.eurouter.ai/api/v1"); eu["X-EUrouter-Title"] != OwnerAppName {
+		t.Fatalf("EUrouter: %v", eu)
+	}
+	t.Setenv("MEMDOOR_OWNER", "")
+	h = http.Header{}
+	Set(h)
+	if h.Get("HTTP-Referer") != AppURL || h.Get("X-Title") != AppName {
+		t.Fatalf("without the variable the canonical pair: %v", h)
+	}
+}

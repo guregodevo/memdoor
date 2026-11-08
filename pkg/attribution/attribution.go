@@ -46,6 +46,12 @@ const (
 	AppURL = "https://memdoor.ai"
 	// AppSource is LLM Gateway's X-Source, a bare domain.
 	AppSource = "memdoor.ai"
+	// OwnerAppURL and OwnerAppName are the second app the maintainer's own
+	// machines send under (MEMDOOR_OWNER set): the benchmark VMs, the box, the
+	// laptop. The providers list it as a row of its own, so the memdoor.ai app
+	// page holds other people's tokens and nothing else, with no subtraction.
+	OwnerAppURL  = "https://owner.memdoor.ai"
+	OwnerAppName = "Memdoor (owner)"
 	// AppCategories is OpenRouter's X-OpenRouter-Categories: up to two per
 	// request, from its list; cli-agent is a coding one.
 	AppCategories = "cli-agent"
@@ -76,6 +82,15 @@ func SetVersion(v string) {
 // asks.
 func GoogleClient() string { return "memdoor-oai/" + version }
 
+// identity is the pair this machine names itself with: the app's, or under
+// MEMDOOR_OWNER the owner's own.
+func identity() (url, name string) {
+	if strings.TrimSpace(os.Getenv("MEMDOOR_OWNER")) != "" {
+		return OwnerAppURL, OwnerAppName
+	}
+	return AppURL, AppName
+}
+
 // Off reports whether this machine has opted out.
 func Off() bool {
 	v := strings.TrimSpace(os.Getenv("MEMDOOR_OPENROUTER_ATTRIBUTION"))
@@ -87,8 +102,9 @@ func Set(h http.Header) {
 	if Off() {
 		return
 	}
-	h.Set(HeaderReferer, AppURL)
-	h.Set(HeaderTitle, AppName)
+	url, name := identity()
+	h.Set(HeaderReferer, url)
+	h.Set(HeaderTitle, name)
 	h.Set(HeaderCategories, AppCategories)
 }
 
@@ -102,7 +118,7 @@ func Headers(endpoint string) map[string]string {
 	out := map[string]string{}
 	for _, p := range pairHosts {
 		if isHost(host, p) {
-			out[HeaderReferer], out[HeaderTitle] = AppURL, AppName
+			out[HeaderReferer], out[HeaderTitle] = identity()
 			break
 		}
 	}
@@ -114,7 +130,8 @@ func Headers(endpoint string) map[string]string {
 	case isHost(host, "llmgateway.io"):
 		out[HeaderLLMGateway] = AppSource
 	case isHost(host, "eurouter.ai"):
-		out[HeaderEUrouterTitle] = AppName
+		_, name := identity()
+		out[HeaderEUrouterTitle] = name
 	}
 	return out
 }
