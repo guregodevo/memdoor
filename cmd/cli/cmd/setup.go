@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -93,7 +94,7 @@ command does all of this on its first run; setup is the same from a script.
 				persistWorkspaceSlug(configPath, wsSlug)
 				offerLocalModel(wsSlug)
 				printPostSetupNextSteps(wsSlug)
-				return nil
+				return offerSampleRun(bufio.NewReader(os.Stdin), os.Stdout)
 			}
 			fmt.Println("\n  Gateway not reachable — skipping admin registration.")
 			fmt.Println("  Start it with 'memdoor gateway &', then re-run 'memdoor setup'.")
@@ -356,6 +357,32 @@ func gatewayReachable() bool {
 func printPostSetupNextSteps(workspaceSlug string) {
 	fmt.Println("\n✓ Setup complete.")
 	fmt.Print(nextStepsText(workspaceSlug))
+}
+
+// offerSampleRun is setup's last question on a terminal with a model key at
+// hand: run the team on the sample problem now, so the first run ends in a
+// verdict (the review, the Check, whether the team beat its own single call)
+// and not in a blank prompt. Declining, or no key yet, prints the command
+// for later. Nothing is counted; the run is a workflow run like any other (#171).
+func offerSampleRun(in *bufio.Reader, out io.Writer) error {
+	if providerKeyInShell() == "" && len(foundKeys()) == 0 {
+		fmt.Fprintln(out, "  Then: memdoor workflow try               the team on a sample problem, two minutes to a verdict")
+		return nil
+	}
+	fmt.Fprint(out, "\nRun the team on a sample problem now? About two minutes on a key; it ends in a verdict. [Y/n] ")
+	line, _ := in.ReadString('\n')
+	switch strings.ToLower(strings.TrimSpace(line)) {
+	case "", "y", "yes":
+		dir, err := sampleDir()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "The sample problem, in %s\n", dir)
+		workflowWaitFlag = true
+		return runWorkflowIn(dir, "team-solve", nil)
+	}
+	fmt.Fprintln(out, "  Later: memdoor workflow try")
+	return nil
 }
 
 // nextStepsText is the last thing setup says.
