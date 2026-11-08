@@ -1,0 +1,37 @@
+type: agent
+agent: coder
+# Lists every code path the task goes through, siblings included, before any attempt.
+# The survey: one read-only turn on the prompt, before the attempts and the
+# planner. Attempts fix the example and miss the second path: on SWE-bench
+# Verified (2026-11-06) the reference fix needed a file outside the planner's
+# Scope in 32 of 100 unresolved instances against 51 of 400 resolved, and in
+# 23 of those 32 no step ever touched it (seaborn-3187: the issue names
+# `scatterplot`, the fix is in seaborn/utils.py, the attempts changed only
+# _core/scales.py). Asked only this, on that tree, the same model named the
+# file in 5 of 5 cases, 6 to 11 files of 104 to 851. The attempts and the
+# planner read survey.md (outline.yaml carries it to the plan).
+# Optional: without it the attempts and the plan work from the prompt alone.
+optional: true
+requires:
+  - table_pattern: problem
+prompt: |
+  The task is in .memdoor/runs/team-solve-fanout-{{.partition}}/prompt.md. Do not do it.
+
+  Find every code path in this project that the task's behaviour goes through:
+  each public API the task names or shows (a function, a class, a command, an
+  option), followed to the code where the behaviour happens, and every other
+  place that does the same thing the same way (a sibling: a second function
+  that formats the same output, a parallel class or backend, an older and a
+  newer interface, the other callers of the function you would change).
+  Read and search only: do not run the project's code or its tests, and
+  change no file except the one below.
+
+  Write .memdoor/runs/team-solve-fanout-{{.partition}}/survey.md: one line per code
+  path, `path/to/file:function` and one sentence on what it does for the task,
+  the paths the task names first, then the siblings under a heading of their
+  own. When the task is a new program or document rather than a change to
+  how this project behaves, write the one line `no existing code path`.
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/survey.md
+timeout: 15m
+max_retries: 0

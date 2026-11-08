@@ -1,0 +1,53 @@
+type: agent
+agent: coder
+# One check per surveyed code path, each failing until that path behaves as the task asks.
+# The attempts' own checks are written from the issue's one example, so a
+# wrong attempt passes its own and its siblings' (24 of 28 on SWE-bench
+# Verified passed their reproduction, 2026-11-07); the pick then ties, and
+# test-0 passes a fix that missed a sibling. These are written once, before
+# any attempt, by a turn that does not fix: one per code path in survey.md
+# where the task's expected behaviour applies, each failing on the tree as
+# found (a check that passes there proves nothing: the fan-out ignores it).
+# The fan-out scores every attempt on them; check.sh runs them beside the
+# Check. The project's tree is untouched
+# while this runs: the attempts wait for it, each in its own worktree.
+optional: true
+requires:
+  - table_pattern: survey
+prompt: |
+  You write path checks, in a fresh context, and nothing else: do not fix the task.
+  The task is .memdoor/runs/team-solve-fanout-{{.partition}}/prompt.md. The code paths it
+  goes through are listed in .memdoor/runs/team-solve-fanout-{{.partition}}/survey.md.
+
+  When survey.md says there is no existing code path (the task is a new
+  program or document), write paths.md saying so and no check: there is no
+  path to keep apart from the example, and the attempts' own checks cover it.
+
+  For each code path there where the behaviour the task expects clearly applies
+  (the paths the task names, and each sibling that produces the same output the
+  task is about), write one executable (chmod +x) in
+  .memdoor/runs/team-solve-fanout-{{.partition}}/paths/, named after the path
+  (`format_total`, `scatterplot-legend`). Run from the project's root, it exits
+  non-zero while that path shows the behaviour the task describes, and 0 once
+  it behaves as the task expects: the smallest input through that path, in the
+  task's own terms, nothing the task does not say. Use the project's own
+  interpreter or test runner. It is run from the root of other copies of the
+  project, so it works on the directory it is started in: no `cd` to a path
+  of its own (not from where the check itself lives), no absolute path of this
+  tree. Use only commands this machine has (`command -v` before you rely on
+  one): a check that fails for a reason of its own (a missing tool, a wrong
+  path) fails every correct change. Skip a path where it is not clear what the
+  task expects of it: a wrong check is worse than none.
+
+  The project's tree is as the run found it: run each check there now, from
+  the project's root; it must fail, and for the task's reason (read what it
+  prints), not its own. Change no file of the project; everything you write lives in
+  .memdoor/runs/team-solve-fanout-{{.partition}}/. Then write
+  .memdoor/runs/team-solve-fanout-{{.partition}}/paths.md: one line per check, its
+  name, the code path it covers and what it asserts. When no path has a clear
+  expectation, write paths.md saying so and no check. Keep no rule with the
+  notes tool. Do not spawn agents or rely on chat history.
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/paths.md
+timeout: 20m
+max_retries: 0

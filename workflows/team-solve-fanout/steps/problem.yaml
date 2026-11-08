@@ -1,0 +1,36 @@
+type: command
+# Keeps the prompt as the run's task and records the tree's state before any work.
+# The task is the prompt: `memdoor workflow run team-solve-fanout "<what to do>"`
+# keeps it as .memdoor/runs/team-solve-fanout-{{.partition}}/prompt.md. Without one, a task.md in
+# the folder is the prompt; an empty folder gets the sample problem. The
+# prompt goes into the workflow's task template, which plan fills in. The
+# tree's state is recorded now, so the run's changes can be told apart.
+# done.sh, each agent step's target, is copied into the run's folder.
+command: |
+  set -e
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  mkdir -p "$r"
+  if [ ! -s "$r/prompt.md" ]; then
+    if [ ! -f task.md ] && [ -z "$(ls -A | grep -vxE '\.memdoor|\.git' || true)" ]; then
+      cp -R "$w/sample"/. . && printf 'empty folder: the sample problem was copied in (task.md, tests/)\n'
+    fi
+    [ -f task.md ] || { echo 'no prompt: memdoor workflow run team-solve "<what to do>", or a task.md in this folder'; exit 1; }
+    cp task.md "$r/prompt.md"
+  fi
+  bash "$w/task.sh" "$w/task.template.md" "$r/prompt.md" "$r/task.md"
+  cp "$w/done.sh" "$r/done.sh"
+  touch "$r/start"
+  if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+    b=$(git stash create 2>/dev/null || true)
+    [ -n "$b" ] || b=$(git rev-parse -q --verify HEAD 2>/dev/null || true)
+    [ -z "$b" ] || printf '%s\n' "$b" > "$r/base.txt"
+    git ls-files --others --exclude-standard > "$r/untracked-before.txt"
+    # Where HEAD is, so a role that moves it is put back (scope.sh): the
+    # branch, or the commit when detached.
+    { git symbolic-ref -q --short HEAD || git rev-parse -q --verify HEAD; } > "$r/head.txt" 2>/dev/null || true
+  fi
+  printf 'task: %s\n' "$r/task.md"
+# 5m, not 1: six runs on one machine starved it once in 500 (2026-11-06).
+timeout: 5m
+max_retries: 0

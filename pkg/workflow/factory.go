@@ -46,6 +46,11 @@ func Agent(runner Runner) tasks.Base {
 		}
 		t := taskOf(name, d)
 		t.Name = lastSegment(name)
+		// An attempt of a fan-out is a turn of its own: its own session, its
+		// own receipt (direct-1, direct-2 …), never the sibling's beside it.
+		if n := d.Args["n"]; n != "" {
+			t.Name += "-" + n
+		}
 		return runner.Run(ctx, TaskRun{Workflow: segment(name, 0), Partition: b.Partition, Task: t, Prompt: prompt, Workdir: b.Dir})
 	}}
 }

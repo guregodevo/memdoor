@@ -1,0 +1,37 @@
+type: decision
+# Scores the review: how likely the change does what the Prompt asks, from its findings.
+# The reviewer's word, `verdict: PASS` or `FAIL`, carries no confidence; the
+# decision model scores the evidence the reviewer laid out (#160): the
+# task, the findings, what the Check printed. `pass` in its JSON is what
+# repair and verify read. Without a decision model the answer is
+# review-rule's, today's rule, a task of the DAG.
+requires:
+  - table_pattern: review
+  - table_pattern: review-rule
+  - table_pattern: test
+condition: "Judging from the reviewer's findings and what the Check printed, the change does what the task's Prompt asks, completely and nothing else, and needs no repair."
+state: |
+  # The task
+
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/task.md" .partition) }}
+
+  # The reviewer's findings
+
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/review.md" .partition) }}
+
+  # What the Check printed, and its status (0 passed, 1 failed, none: nothing could be run)
+
+  {{ output "test" }}
+# The threshold is measured, not the 0.7 default (2026-11-07): on the 405
+# attempts the reviewer passed on SWE-bench Verified (340 right, 65 wrong),
+# overturning a PASS lost more right attempts than it caught wrong ones at
+# every threshold (0.7: 106 right kept, 54 wrong caught, net -180; 0.3: net
+# -55; 0.1: 338 kept, 0 caught, net -2). The decision model reads the
+# reviewer's evidence and cannot see what the hidden tests check. At 0.1 it
+# fails a verdict only on near-certain evidence; its p stays in the JSON.
+threshold: 0.1
+else: review-rule
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/review-score.json
+timeout: 5m
+max_retries: 0

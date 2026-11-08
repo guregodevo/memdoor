@@ -24,6 +24,11 @@ plan)
   grep -qF -- "$first" "$t" || no 'task.md: the Prompt section was changed; put it back as prompt.md has it'
   grep -q '[^[:space:]]' "$r/plan.md" 2>/dev/null || no 'plan.md is missing or empty'
   [ -f "$r/notes.md" ] || no 'notes.md is missing' ;;
+attempt)
+  # A fan-out attempt (team-solve-fanout) runs in a worktree whose HEAD is
+  # the tree as the run found it: what is uncommitted is its change. The
+  # attempts run at once and would share changes.diff.
+  [ -n "$(git status --porcelain -- . ':(exclude).memdoor' 2>/dev/null)" ] || no 'nothing in the project changed yet: do the task as the Deliverable says' ;;
 direct|solve)
   bash "$w/changes.sh" "$r" > /dev/null
   [ -s "$r/changes.diff" ] || no 'nothing in the project changed yet: do the task as the Deliverable says' ;;

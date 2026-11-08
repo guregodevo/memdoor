@@ -1,0 +1,32 @@
+type: command
+# The last Check and Scope on the final tree: a failure, or the judge's FAIL, fails the run.
+# The check and the Scope (scope.sh) again on the final tree, then the judge's verdict when it ran.
+# A failing check or a FAIL verdict fails the run.
+requires:
+  - table_pattern: keep
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  [ -d "$r/baseline-tree" ] && git worktree remove --force "$r/baseline-tree" 2>/dev/null
+  bash "$w/changes.sh" "$r"
+  bash "$w/check.sh" "$r" "$r/final-check.log"
+  result=$?
+  bash "$w/scope.sh" "$r" >> "$r/final-check.log" || true
+  tail -40 "$r/final-check.log"
+  [ "$result" = 1 ] && exit 1
+  # The judge's and the review's answers are their scores' pass (#160): the
+  # decision model's, or without one today's rule on the verdict line. A
+  # judge that did not run leaves the check and the review to decide.
+  score() { if [ -s "$1" ]; then if grep -q '"pass":true' "$1"; then echo PASS; else echo FAIL; fi; else echo none; fi; }
+  judged=$(score "$r/judge-score.json")
+  reviewed=$(score "$r/review-score.json")
+  # The verdicts are on the work keep kept: a review or judge of the work it
+  # put aside does not count (keep.txt).
+  if grep -q '^put back' "$r/keep.txt" 2>/dev/null; then judged=none; [ "$(cat "$r/direct-status.txt")" = 0 ] && reviewed=none; fi
+  if grep -qE "^kept: (the team's work|the repair)" "$r/keep.txt" 2>/dev/null && [ -s "$r/repair.md" ]; then reviewed=none; fi
+  printf 'judge: %s, review: %s\n' "$judged" "$reviewed"
+  [ "$judged" = FAIL ] && exit 1
+  [ "$judged" = PASS ] && exit 0
+  [ "$result" = 0 ] && [ "$reviewed" != FAIL ]
+timeout: 30m
+max_retries: 0

@@ -1,0 +1,88 @@
+type: command
+# Keeps the team's work only where it beats the direct attempt, else puts the attempt back.
+# THE NET: team-solve never ends worse than its own single call. One proof
+# rule for the work that replaces the direct attempt, the team's solve after
+# a failed test-0 or the repair after a review's FAIL: the Check passes and
+# the judge did not FAIL it, or with no Check to run the judge says PASS.
+# Otherwise the direct attempt is put back (snapshot.sh). On ctrl-t
+# (2026-11-05) the team path undid a correct direct attempt; the maintainer:
+# "no failure in case of single call pass".
+requires:
+  - table_pattern: judge-score
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  direct=$(cat "$r/direct-status.txt" 2>/dev/null)
+  final=$(cat "$r/final-status.txt" 2>/dev/null)
+  # The judge's answer is judge-score's pass (#160): the decision model's
+  # score, or without one the judge's PASS, or no verdict with a passing
+  # final Check. Skipped with the judge, it is none: the Check alone decides.
+  judged=none
+  if [ -s "$r/judge-score.json" ]; then
+    if grep -q '"pass":true' "$r/judge-score.json"; then judged=PASS; else judged=FAIL; fi
+  fi
+  touched=no
+  { [ "$direct" != 0 ] || [ -s "$r/repair.md" ]; } && touched=yes
+  # A repair that failed its step (its clock, no repair.md) may still have
+  # changed the tree: the tree is compared to the attempt, not the files.
+  if [ "$touched" = no ] && [ -s "$r/direct.patch" ]; then
+    bash "$w/snapshot.sh" save "$r" now > /dev/null
+    cmp -s "$r/now.patch" "$r/direct.patch" || touched=yes
+  fi
+  if [ "$touched" = no ]; then
+    echo "kept: the direct attempt, untouched" | tee "$r/keep.txt"; exit 0
+  fi
+  # The judge's ruling on the reproduction (judge.yaml): one it found wrong
+  # is discarded, the Check is the command alone, and the final status is
+  # the command's part of it (check-parts.txt). The guard against a
+  # reproduction that misreads the prompt: the manager's invented
+  # counterexample failed a correct program (abc399_e, NOTES.md).
+  if grep -qx 'reproduction: wrong' "$r/verdict.md" 2>/dev/null && [ -x "$r/repro" ]; then
+    mv "$r/repro" "$r/repro.rejected"
+    rest=$(awk '$1 != "repro" {print $2}' "$r/check-parts.txt" 2>/dev/null | head -1)
+    final=${rest:-none}; [ "$final" = 3 ] && final=none
+    printf '%s\n' "$final" > "$r/final-status.txt"
+    printf '\n## Reproduction\n\nthe judge ruled the reproduction wrong: discarded (repro.rejected); the Check is the command alone, status %s\n' "$final" >> "$r/notes.md"
+    echo "the judge ruled the reproduction wrong: discarded; the Check is the command alone (status $final)"
+  fi
+  proven=no
+  if [ "$final" = 0 ] && [ "$judged" != FAIL ]; then proven=yes; fi
+  if [ "$final" = none ] && [ "$judged" = PASS ]; then proven=yes; fi
+  # A direct attempt that passed test-0 is replaced by the repair after the
+  # review on the same proof as the team's work; otherwise it stays and the
+  # repair is kept aside in repair.patch. Until 2026-11-07 the repair was
+  # never applied: on astropy-13033 (2026-11-05) a review had failed a correct
+  # attempt on requirements the planner made up, and the judge, reading the
+  # same plan, passed the repair (#114 has since held Done when to the
+  # prompt). On SWE-bench Verified that cost 4 of 500: the review was right
+  # 13 times, 4 of the repairs resolved the issue, and no direct attempt it
+  # would have replaced did (#152). The direct attempt passed the same Check,
+  # so only a check that can tell them apart proves the repair better: a
+  # reproduction that failed on the tree as found and passes now. With the
+  # project's tests alone both pass and it is the review's word against the
+  # attempt: the review failed a correct attempt, the repair passed the tests
+  # and the judge, and it was wrong (astropy-13236, 2026-11-07).
+  repro_ok=no
+  grep -q 'repro' "$r/check-kind.txt" 2>/dev/null && [ -x "$r/repro" ] \
+    && [ "$(awk '$1 == "repro" {print $2}' "$r/check-parts.txt" 2>/dev/null)" = 0 ] && repro_ok=yes
+  if [ "$direct" = 0 ]; then
+    bash "$w/snapshot.sh" save "$r" repair > /dev/null
+    if [ "$proven" = yes ] && [ "$repro_ok" = yes ]; then
+      echo "kept: the repair (check $final with the reproduction, judge $judged; the direct attempt passed test-0, the review failed it)" | tee "$r/keep.txt"
+    else
+      bash "$w/snapshot.sh" restore "$r" direct
+      why="check ${final:-?}, judge $judged"; [ "$proven" = yes ] && why="$why, and no reproduction to tell them apart"
+      echo "put back: the direct attempt, which passed test-0 (the repair after the review did not prove better: $why; it is in $r/repair.patch, not applied)" | tee "$r/keep.txt"
+      bash "$w/changes.sh" "$r" > /dev/null
+    fi
+    exit 0
+  fi
+  if [ "$proven" = yes ]; then
+    echo "kept: the team's work (check $final, judge $judged; the direct attempt's check was ${direct:-?})" | tee "$r/keep.txt"
+  else
+    bash "$w/snapshot.sh" restore "$r" direct
+    echo "put back: the direct attempt (the team's work did not prove better: check ${final:-?}, judge $judged)" | tee "$r/keep.txt"
+    bash "$w/changes.sh" "$r" > /dev/null
+  fi
+timeout: 5m
+max_retries: 0
