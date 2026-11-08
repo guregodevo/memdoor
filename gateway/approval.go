@@ -26,8 +26,9 @@ import (
 //
 // On by the workspace setting `approve` or the environment variable
 // MEMDOOR_APPROVE (a company's preset wins over the setting): "changes" asks
-// before bash, every file write and every MCP tool; "off" (the default)
-// asks nothing. Read per call, so switching it needs no restart.
+// before bash, every file write, every MCP tool, and workflow execution.
+// An agent approving a human workflow gate always requires a fresh yes,
+// including in "off" mode. Read per call, so switching needs no restart.
 const (
 	settingApprove  = "approve"
 	approveChanges  = "changes"
@@ -126,18 +127,46 @@ func approvalSummary(tool string, input json.RawMessage) string {
 // the WebSocket hands back; no answer in five minutes is a no, so a turn
 // with no one watching does not run the change unasked.
 func (ar *AgentRuntime) askApproval(ctx context.Context, toolUse *llm.ToolUseBlock, runID string, session *Session, log *logs.EventLogger) error {
-	if ar.approvalMode() != approveChanges || !needsApproval(toolUse.Name) || ar.approvals.granted(session.ID, toolUse.Name) {
+	summary := ""
+	remember := true
+	required := ar.approvalMode() == approveChanges && needsApproval(toolUse.Name)
+	if toolUse.Name == workflowToolName {
+		policy, err := workflowApprovalFor(toolUse.Input)
+		if err != nil {
+			return err
+		}
+		summary = policy.summary
+		required = policy.gate || (ar.approvalMode() == approveChanges && summary != "")
+		// A grant to run one workflow must not approve other workflows, later
+		// resumes, or the human gates inside the delegated work.
+		remember = false
+	}
+	if !required {
 		return nil
 	}
-	summary := approvalSummary(toolUse.Name, toolUse.Input)
+	if remember && ar.approvals.granted(session.ID, toolUse.Name) {
+		return nil
+	}
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("%s was not run: %w", toolUse.Name, err)
+	}
+	if summary == "" {
+		summary = approvalSummary(toolUse.Name, toolUse.Input)
+	}
+	options := []string{approveYes, approveAlways, approveNo}
+	defaultAnswer := approveYes
+	if !remember {
+		options = []string{approveYes, approveNo}
+		defaultAnswer = approveNo
+	}
 	qid := generateID("q")
 	ch, cancel := ar.questions.register(qid)
 	defer cancel()
 	ar.events.EmitEvent(runID, "question", session.ID, map[string]interface{}{
 		"question_id": qid,
 		"question":    summary + " — allow?",
-		"options":     []string{approveYes, approveAlways, approveNo},
-		"default":     approveYes,
+		"options":     options,
+		"default":     defaultAnswer,
 		"approval":    toolUse.Name,
 	})
 	log.Info("Approval asked", slog.String("tool", toolUse.Name), slog.String("what", truncateForLog(summary, 120)))
@@ -150,8 +179,14 @@ func (ar *AgentRuntime) askApproval(ctx context.Context, toolUse *llm.ToolUseBlo
 		log.Warn("Approval not answered", slog.String("tool", toolUse.Name))
 		return fmt.Errorf("%s was not run: nobody allowed it within %s (approval mode is on). Stop and tell the person what you wanted to do", toolUse.Name, approvalTimeout)
 	}
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("%s was not run: %w", toolUse.Name, err)
+	}
 	switch answer {
 	case approveAlways:
+		if !remember {
+			return fmt.Errorf("%s was not run: this workflow action needs an explicit Yes for this request", toolUse.Name)
+		}
 		ar.approvals.grant(session.ID, toolUse.Name)
 		fallthrough
 	case approveYes:

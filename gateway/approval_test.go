@@ -107,3 +107,37 @@ func TestApprovalSummaryNamesTheChange(t *testing.T) {
 		}
 	}
 }
+
+// Exercise the production tool dispatcher as well as the approval gate:
+// denying delegation must leave every workflow operation untouched.
+func TestWorkflowApprovalRefusalPreventsDispatch(t *testing.T) {
+	for _, action := range []string{"run", "start", "resume", "continue", "approve"} {
+		t.Run(action, func(t *testing.T) {
+			ar, err := NewAgentRuntime("", false)
+			if err != nil {
+				t.Fatalf("create runtime: %v", err)
+			}
+			_, ops, ctx := workflowToolForTest(t)
+			ar.workflows = ops
+			t.Setenv("MEMDOOR_APPROVE", "changes")
+			asked := 0
+			ar.events.OnEvent(func(ev infra.AgentEvent) {
+				if ev.Stream == "question" {
+					asked++
+					ar.questions.answer(ev.Data["question_id"].(string), approveNo)
+				}
+			})
+			input, _ := json.Marshal(map[string]string{
+				"action": action, "name": "release", "run_id": "r1", "task": "approve",
+			})
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			defer cancel()
+			info, result := ar.executeTool(ctx, &llm.ToolUseBlock{ID: "workflow-call", Name: "workflow", Input: input},
+				"run", &Session{ID: "ws:chan", Metadata: map[string]interface{}{}})
+			if asked != 1 || !strings.Contains(info.Error, "said no") || len(ops.calls) != 0 ||
+				result.OfToolResult == nil || !result.OfToolResult.IsError {
+				t.Fatalf("refused delegation reached execution: asked=%d calls=%v error=%q", asked, ops.calls, info.Error)
+			}
+		})
+	}
+}
