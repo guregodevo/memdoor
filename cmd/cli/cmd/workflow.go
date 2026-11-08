@@ -123,6 +123,9 @@ func waitForWorkflowRun(id string, stopAtGate bool) error {
 			fmt.Println(r)
 		}
 		reportToGitHub(st, code)
+		if code == workflowExitDone || code == workflowExitFailed {
+			reportRunEnd(st)
+		}
 		switch code {
 		case workflowExitDone:
 			return nil
