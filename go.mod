@@ -14,7 +14,7 @@ require (
 	github.com/coder/acp-go-sdk v0.13.5
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/guregodevo/mario v0.1.1-0.20261108092158-7730a0b80457
+	github.com/guregodevo/mario v0.1.1-0.20261108094052-17fa80932eb4
 	github.com/invopop/jsonschema v0.13.0
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/muesli/termenv v0.16.0

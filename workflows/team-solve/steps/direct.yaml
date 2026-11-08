@@ -20,7 +20,6 @@ requires:
 fanout:
   min: 3
   max: 5
-  save: .memdoor/runs/team-solve-{{.partition}}/attempts/{{.n}}.patch
   checks:
     - .memdoor/runs/team-solve-{{.partition}}/paths/*
     - .memdoor/runs/team-solve-{{.partition}}/attempt-*
