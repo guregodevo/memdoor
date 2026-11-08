@@ -26,7 +26,9 @@ type StopReason string
 
 const (
 	StopReasonEndTurn StopReason = "end_turn"
-	StopReasonToolUse StopReason = "tool_use"
+	// StopReasonInterrupted retains partial text without claiming completion.
+	StopReasonInterrupted StopReason = "interrupted"
+	StopReasonToolUse     StopReason = "tool_use"
 	// StopReasonMaxTokens means the model was CUT OFF, not that it finished.
 	// Whatever it was doing is unfinished and any tool call it was about to
 	// emit does not exist — so the turn must RECOVER rather than end.

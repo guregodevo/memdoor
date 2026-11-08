@@ -323,6 +323,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	ctx = withMidTurn(ctx)
 	if err != nil {
 		log.WithError(err).Error("Inference failed")
+		ar.keepInterruptedAnswer(runID, session, conversation, message, response, err)
 		response.Error = err.Error()
 		// Emit error event
 		ar.events.EmitEvent(runID, infra.EventStreamError, session.ID, map[string]interface{}{
@@ -1060,6 +1061,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 		message, conversation, err = ar.runInference(ctx, conversation, extraSystemPrompt)
 		if err != nil {
 			log.WithError(err).Error("Followup inference failed")
+			ar.keepInterruptedAnswer(runID, session, conversation, message, response, err)
 			response.Error = err.Error()
 			// Session already saved with tool results above, safe to return
 			return response, err
@@ -1185,6 +1187,23 @@ func firstNonEmptyString(a, b string) string {
 		return a
 	}
 	return b
+}
+
+// keepInterruptedAnswer retains streamed text without emitting success.
+func (ar *AgentRuntime) keepInterruptedAnswer(runID string, session *Session, conversation []llm.MessageParam, message *llm.Message, response *AgentResponse, err error) {
+	if message == nil || message.StopReason != llm.StopReasonInterrupted {
+		return
+	}
+	for _, block := range message.Content {
+		if block.Type == "text" {
+			response.Text += block.Text
+		}
+	}
+	ar.updateSession(session, append(conversation, message.ToParam()))
+	ar.events.EmitEvent(runID, infra.EventStreamLifecycle, session.ID, map[string]interface{}{
+		"event": "complete", "success": false, "interrupted": true, "error": err.Error(),
+	})
+	ar.events.ClearRun(runID)
 }
 
 // wrapUpTurn ends a turn that must stop mid-work the way a person needs it

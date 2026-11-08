@@ -462,7 +462,7 @@ func (ar *AgentRuntime) runInference(ctx context.Context, conversation []llm.Mes
 		log.Error("LLM API call failed",
 			slog.String("error", err.Error()),
 			slog.String("hint", "check network connectivity to the managed LLM tier; re-run 'memdoor setup' if credentials look corrupted"))
-		return nil, conversation, err
+		return message, conversation, err
 	}
 	if message != nil && message.Usage.InputTokens > 0 {
 		ctxmgmt.CalibrateTokens(int(message.Usage.InputTokens), totalTokens)

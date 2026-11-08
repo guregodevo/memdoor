@@ -334,11 +334,9 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		// Salvage path: when the ctx fires (or the connection drops)
 		// mid-stream, we still have everything the accumulator has
 		// already written. If that's pure text — no pending tool_calls
-		// the caller would have to dispatch — finalize it as a normal
-		// (truncated) response instead of returning an error. The user
-		// sees what the model actually said up to the cut-off; the
-		// alternative is the "AI service is experiencing high load"
-		// template covering up real text the model already produced.
+		// the caller would have to dispatch — keep the partial message
+		// alongside an error. The caller can retain the text without
+		// reporting the interrupted response as successful completion.
 		//
 		// Tool_calls are explicitly excluded because they're not
 		// resumable — half-written JSON arguments can't be executed,
@@ -350,9 +348,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		if acc.content.Len() == 0 || len(acc.toolCalls) > 0 {
 			return nil, fmt.Errorf("stream consume: %w", consumeErr)
 		}
-		if acc.finishReason == "" {
-			acc.finishReason = "stream_canceled"
-		}
+		acc.finishReason = "stream_canceled"
 		if log := llmLog(); log != nil {
 			log.Warn(fmt.Sprintf("LLM stream truncated by ctx caller=agent model=%s kept_chars=%d err=%s",
 				reqBody.Model, acc.content.Len(), truncate(consumeErr.Error(), 200)))
@@ -424,7 +420,11 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		GenID:        oaiResp.ID,
 	})
 
-	return convertOAIToAnthropicWithTools(choice, oaiResp.Usage, served, tools), nil
+	message := convertOAIToAnthropicWithTools(choice, oaiResp.Usage, served, tools)
+	if consumeErr != nil {
+		return message, fmt.Errorf("response interrupted; the text shown is incomplete: %w", consumeErr)
+	}
+	return message, nil
 }
 
 // messageHead / systemPromptLen / lastUserMessageLen are tiny helpers
