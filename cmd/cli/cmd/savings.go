@@ -105,7 +105,7 @@ func cheapestModelPrice(seen map[string]int) (string, float64) {
 			continue
 		}
 		for _, m := range models {
-			if m.ID != id || m.InPerM <= 0 {
+			if m.ID != id || m.InPerM <= 0 || !m.Currency.IsUSD() {
 				continue
 			}
 			if price == 0 || m.InPerM < price {

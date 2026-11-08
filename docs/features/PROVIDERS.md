@@ -256,6 +256,35 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   providers, 94% known**, every window on seven of them from the provider
   itself.
 
+- **EUrouter** (2026-11-08, #54): a built-in provider and `/connect` kind
+  (`EUROUTER_API_KEY`, base `https://api.eurouter.ai/api/v1`). Its
+  `/api/v1/models` is OpenRouter's shape plus `supported_api_endpoints` and a
+  currency per price. It lists 159 models: speech, embeddings, rerank and
+  chat. The reader keeps the 98 chat models that call tools. 55 of the 159
+  are priced in euros. A price is kept in its own currency (`Model.Currency`,
+  blank for dollars, `pkg/price`) and shown with its sign, so
+  `mistral-small-3.2-24b` reads `€0.09 / €0.28` next to OpenRouter's
+  `$0.07 / $0.20`. `memdoor savings` compares dollar prices only. EUrouter is
+  last in the vendor order: `EUROUTER_API_KEY` + `MEMDOOR_MODEL` alone run a
+  gateway where EUrouter is the only host contacted. Its key (`eur_…`) has
+  no shape `pkg/modelkey` checks, so it is found under its name. The request
+  sends the bare id; the answer names the EU host that served it
+  (`melious/`, `tensorix/`, `aki/`, `berget/`). Every request, the model
+  list too, names the app the way EUrouter's rankings read it
+  (`HTTP-Referer` + `X-EUrouter-Title`) and carries the `MEMDOOR_ATTRIBUTION`
+  fields, connected or as the company's key (the chat request:
+  `TestATurnOnEURouterCarriesTheAttribution`). EUrouter cannot be asked
+  which app a call was counted under: its `/api/v1/generation?id=` found
+  none of ours.
+
+  The fast-model task (an off-by-one in `sum.go`, a failing test, "fix the
+  bug (not the test)") on two of its models, pinned in the window:
+
+  | Provider · model | Steps | Time | Result |
+  |---|---|---|---|
+  | EUrouter · `deepseek-v4.1-flash-1017` ($) | Bash ×2, Read ×2, Edit, Bash | 11 s | ok, +1 −1 |
+  | EUrouter · `mistral-small-3.2-24b` (€) | notes, locate, Read, Edit, Bash | 11 s | ok, +1 −1 (indented with spaces) |
+
 - **Attribution as a field** (`gateway/providers/attribution.go`): user, team,
   project, session as headers on every vendor and gateway request —
   `MEMDOOR_ATTRIBUTION="user=…;team=…"` from the company's preset,

@@ -281,7 +281,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 
 **Providers and models it runs them on**
 
-- `connect` — Adds a provider to this gateway. The kind is one of: openrouter-login, gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, local, custom.
+- `connect` — Adds a provider to this gateway. The kind is one of: openrouter-login, gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, eurouter, typesafe, local, custom.
 - `meter` — Every model request: the model that answered, its tokens and cost (the ledger /usage sums)
 - `model` — Which models answer, and which you can pick.
   - `check` — Probe a model for what a coder turn needs (no argument: the ladder)

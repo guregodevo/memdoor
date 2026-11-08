@@ -49,6 +49,7 @@ var ConnectKinds = []ConnectKind{
 	{"baseten", "Baseten", "chat", "https://inference.baseten.co/v1", "an API key from app.baseten.co", false, "BASETEN_API_KEY", false},
 	{"groq", "Groq", "chat", "https://api.groq.com/openai/v1", "an API key from console.groq.com", false, "GROQ_API_KEY", false},
 	{"deepseek", "DeepSeek", "chat", "https://api.deepseek.com/v1", "an API key from platform.deepseek.com", false, "DEEPSEEK_API_KEY", false},
+	{"eurouter", "EUrouter (models served in the EU)", "chat", "https://api.eurouter.ai/api/v1", "an API key from eurouter.ai", false, "EUROUTER_API_KEY", false},
 	{"typesafe", "TypeSafe (Jev, decisions)", "decisions", "https://api.typesafe.ai", "a key from typesafe.ai: the decision model, with any chat provider", false, "TYPESAFE_API_KEY", false},
 	// A local runtime (2026-10-25, the maintainer: "janis should work like a llama.cpp or
 	// ollama, independent from memdoor"): an OpenAI-compatible server on this

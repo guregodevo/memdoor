@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"memdoor/pkg/price"
 	"memdoor/pkg/shared"
 	"memdoor/pkg/shell"
 	"os"
@@ -56,13 +57,15 @@ const (
 // Model is one entry of a provider's list; prices are the provider's own
 // when it states them (OpenRouter does), zero when it does not.
 type Model struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Context  int     `json:"context,omitempty"`
-	Tools    bool    `json:"tools,omitempty"`
-	InPerM   float64 `json:"in_per_m,omitempty"`
-	OutPerM  float64 `json:"out_per_m,omitempty"`
-	Provider string  `json:"provider,omitempty"`
+	ID      string  `json:"id"`
+	Name    string  `json:"name"`
+	Context int     `json:"context,omitempty"`
+	Tools   bool    `json:"tools,omitempty"`
+	InPerM  float64 `json:"in_per_m,omitempty"`
+	OutPerM float64 `json:"out_per_m,omitempty"`
+	// Currency is what InPerM and OutPerM are in; blank is dollars.
+	Currency price.Currency `json:"currency,omitempty"`
+	Provider string         `json:"provider,omitempty"`
 	// MaxOutput is the reply cap the reference states (reference.go); 0 =
 	// unknown.
 	MaxOutput int `json:"max_output,omitempty"`
@@ -345,6 +348,7 @@ func builtInProviders() []Provider {
 		Provider{ID: "baseten", Name: "Baseten", API: APIChat, Base: envOr("BASETEN_BASE_URL", basetenDefaultBase), Key: os.Getenv("BASETEN_API_KEY"), KeySource: "env BASETEN_API_KEY", Context: basetenDefaultContext, BuiltIn: true},
 		Provider{ID: "groq", Name: "Groq", API: APIChat, Base: envOr("GROQ_BASE_URL", groqDefaultBase), Key: os.Getenv("GROQ_API_KEY"), KeySource: "env GROQ_API_KEY", Context: groqDefaultContext, BuiltIn: true},
 		Provider{ID: "deepseek", Name: "DeepSeek", API: APIChat, Base: envOr("DEEPSEEK_BASE_URL", deepseekDefaultBase), Key: os.Getenv("DEEPSEEK_API_KEY"), KeySource: "env DEEPSEEK_API_KEY", Context: deepseekDefaultContext, BuiltIn: true},
+		Provider{ID: VendorEURouter, Name: "EUrouter", API: APIChat, Base: envOr("EUROUTER_BASE_URL", euRouterDefaultBase), Key: os.Getenv("EUROUTER_API_KEY"), KeySource: "env EUROUTER_API_KEY", Context: euRouterDefaultContext, BuiltIn: true},
 		Provider{ID: OpenRouterID, Name: "OpenRouter", API: APIOpenRouter, Base: OpenRouterBase, Key: byokEnvKey(), KeySource: "env " + ByokKeyVar(), Context: byokCtxLen, BuiltIn: true},
 		Provider{ID: TypeSafeID, Name: "TypeSafe (Jev, decisions)", API: APIDecisions, Base: envOr("MEMDOOR_SYSTEMONE_URL", typesafeDefault), Key: typesafeKey(), KeySource: "env " + typesafeKeyVar(), BuiltIn: true},
 	)
@@ -675,6 +679,8 @@ func providerOfEngine(re *RemoteEngine) string {
 		return "groq"
 	case re.Vendor == VendorDeepSeek:
 		return "deepseek"
+	case re.Vendor == VendorEURouter:
+		return VendorEURouter
 	}
 	return ""
 }

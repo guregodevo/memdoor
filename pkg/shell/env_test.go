@@ -33,7 +33,7 @@ func TestCommandHidesModelKeys(t *testing.T) {
 }
 
 func TestIsModelKey(t *testing.T) {
-	for _, k := range []string{"OPEN_ROUTER_API_KEY", "ANTHROPIC_API_KEY", "MEMDOOR_SYSTEMONE_API_KEY", "CORP_AI_GATEWAY_TOKEN", "AI_GATEWAY_TOKEN"} {
+	for _, k := range []string{"OPEN_ROUTER_API_KEY", "ANTHROPIC_API_KEY", "MEMDOOR_SYSTEMONE_API_KEY", "CORP_AI_GATEWAY_TOKEN", "AI_GATEWAY_TOKEN", "EUROUTER_API_KEY"} {
 		if !IsModelKey(k) {
 			t.Errorf("%s is a model key", k)
 		}

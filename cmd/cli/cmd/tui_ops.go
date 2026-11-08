@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"memdoor/cmd/tui/ui"
+	"memdoor/pkg/price"
 	"memdoor/pkg/savings"
 	"memdoor/pkg/shared"
 )
@@ -559,13 +560,14 @@ func tuiRoute(workspace, channelID, agent string) func(arg string) (string, erro
 
 // catalogModel mirrors billingsvc.catalogModel: what the seat may see.
 type catalogModel struct {
-	ID       string  `json:"id"`
-	Provider string  `json:"provider"`
-	Name     string  `json:"name"`
-	Context  int     `json:"context"`
-	Band     string  `json:"band"`
-	InPerM   float64 `json:"in_per_m"`
-	OutPerM  float64 `json:"out_per_m"`
+	ID       string         `json:"id"`
+	Provider string         `json:"provider"`
+	Name     string         `json:"name"`
+	Context  int            `json:"context"`
+	Band     string         `json:"band"`
+	InPerM   float64        `json:"in_per_m"`
+	OutPerM  float64        `json:"out_per_m"`
+	Currency price.Currency `json:"currency"`
 }
 
 // searchModelCatalog asks the gateway for the catalogue (it reads the
@@ -589,13 +591,13 @@ func renderModelCatalog(query string, models []catalogModel) string {
 		return fmt.Sprintf("No model matches **%s**.", query)
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "Models matching **%s** (%d) — provider · id · context · $ per million tokens in / out:\n", query, len(models))
+	fmt.Fprintf(&b, "Models matching **%s** (%d) — provider · id · context · price per million tokens in / out:\n", query, len(models))
 	for _, m := range models {
 		prov := m.Provider
 		if prov == "" {
 			prov = "openrouter"
 		}
-		fmt.Fprintf(&b, "  %-10s %-40s %5dk  $%.2f / $%.2f  %s\n", prov, m.ID, m.Context/1000, m.InPerM, m.OutPerM, m.Name)
+		fmt.Fprintf(&b, "  %-10s %-40s %5dk  %s / %s  %s\n", prov, m.ID, m.Context/1000, m.Currency.Format(m.InPerM), m.Currency.Format(m.OutPerM), m.Name)
 	}
 	b.WriteString("/model <id> pins one for this conversation; /model <provider>:<id> when two providers list it.")
 	return b.String()
@@ -659,7 +661,7 @@ func tuiModelCatalog(q string) ([]ui.CatalogModel, error) {
 	}
 	out := make([]ui.CatalogModel, 0, len(models))
 	for _, m := range models {
-		out = append(out, ui.CatalogModel{ID: m.ID, Provider: m.Provider, Name: m.Name, Context: m.Context, Band: m.Band, InPerM: m.InPerM, OutPerM: m.OutPerM})
+		out = append(out, ui.CatalogModel{ID: m.ID, Provider: m.Provider, Name: m.Name, Context: m.Context, Band: m.Band, InPerM: m.InPerM, OutPerM: m.OutPerM, Currency: m.Currency})
 	}
 	return out, nil
 }

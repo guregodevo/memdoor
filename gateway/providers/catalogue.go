@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"memdoor/pkg/price"
 )
 
 // EACH PROVIDER HAS A METADATA API (the maintainer, 2026-10-02: "check if each
@@ -25,6 +27,7 @@ import (
 //	OpenAI      GET /v1/models            id, owned_by, created — nothing else
 //	DeepSeek    GET /v1/models            context_window, max_output_tokens, effort, input_modalities
 //	Baseten     GET /v1/models            context_length, max_completion_tokens, pricing, modalities, supported_features
+//	EUrouter    GET /api/v1/models        context_length, top_provider.max_completion_tokens, pricing + currency, supported_parameters, supported_api_endpoints (2026-11-08)
 //
 // A ModelReader is one of those, behind the registry: ModelsOf and GetModel
 // call it, fill what it leaves empty from the catalogue and the reference
@@ -58,6 +61,8 @@ func readerFor(p Provider) ModelReader {
 		return deepseekReader{}
 	case "baseten":
 		return basetenReader{}
+	case VendorEURouter:
+		return euRouterReader{}
 	case ChatGPTID:
 		return chatgptReader{}
 	}
@@ -532,5 +537,60 @@ func (basetenReader) ListModels(ctx context.Context, p Provider) ([]Model, error
 }
 
 func (r basetenReader) GetModel(ctx context.Context, p Provider, id string) (Model, error) {
+	return fromList(ctx, r, p, id)
+}
+
+// ---- EUrouter ----------------------------------------------------------
+
+// euRouterReader reads EUrouter's list: OpenRouter's shape, with each model's
+// endpoints and the currency of its price (dollars or euros, per model). It
+// serves speech, embeddings and rerank models too; only a chat model that
+// calls tools can run a turn.
+type euRouterReader struct{}
+
+// euRouterChat is the endpoint a turn calls.
+const euRouterChat = "chat.completions"
+
+func (euRouterReader) ListModels(ctx context.Context, p Provider) ([]Model, error) {
+	var raw struct {
+		Data []struct {
+			ID            string `json:"id"`
+			Name          string `json:"name"`
+			ContextLength int    `json:"context_length"`
+			Architecture  struct {
+				InputModalities []string `json:"input_modalities"`
+			} `json:"architecture"`
+			TopProvider struct {
+				MaxCompletionTokens int `json:"max_completion_tokens"`
+			} `json:"top_provider"`
+			Parameters []string `json:"supported_parameters"`
+			Endpoints  []string `json:"supported_api_endpoints"`
+			Pricing    struct {
+				Prompt     string `json:"prompt"`
+				Completion string `json:"completion"`
+				Currency   string `json:"currency"`
+			} `json:"pricing"`
+		} `json:"data"`
+	}
+	if err := getJSON(ctx, modelsURL(p.Base), bearer(p), &raw); err != nil {
+		return nil, err
+	}
+	out := make([]Model, 0, len(raw.Data))
+	for _, d := range raw.Data {
+		if d.ID == "" || !contains(d.Endpoints, euRouterChat) || !contains(d.Parameters, "tools") {
+			continue
+		}
+		name := d.Name
+		if name == "" {
+			name = d.ID
+		}
+		out = append(out, Model{ID: d.ID, Name: name, Context: d.ContextLength, MaxOutput: d.TopProvider.MaxCompletionTokens, Tools: true,
+			Inputs: d.Architecture.InputModalities, Effort: contains(d.Parameters, "reasoning_effort"), Thinking: contains(d.Parameters, "reasoning_effort"),
+			InPerM: perMillion(d.Pricing.Prompt), OutPerM: perMillion(d.Pricing.Completion), Currency: price.Parse(d.Pricing.Currency).Kept()})
+	}
+	return sortModels(out), nil
+}
+
+func (r euRouterReader) GetModel(ctx context.Context, p Provider, id string) (Model, error) {
 	return fromList(ctx, r, p, id)
 }

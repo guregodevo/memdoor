@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	"memdoor/pkg/price"
 )
 
 // The picker: search opens the models, enter opens a model's hosts,
@@ -136,5 +138,16 @@ func TestProviderPickerThenAProvidersModels(t *testing.T) {
 	}
 	if r, ok := cmd().(routeResultMsg); !ok || r.summary != "pinned deepseek:deepseek-flash" {
 		t.Fatalf("pinned under its provider: %+v", cmd())
+	}
+}
+
+// A price is drawn in the currency its provider states: a euro figure with
+// a dollar sign reads as a different price.
+func TestThePriceCellKeepsTheCurrency(t *testing.T) {
+	if got := priceCell(0.2, 0.6, ""); got != "  $0.20 / $0.60  " {
+		t.Fatalf("dollars as before: %q", got)
+	}
+	if got := priceCell(0.09, 0.28, price.EUR); got != "  €0.09 / €0.28  " {
+		t.Fatalf("euros: %q", got)
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"memdoor/cmd/tui/ui"
 	"memdoor/gateway/providers"
 	"memdoor/pkg/modelkey"
+	"memdoor/pkg/price"
 )
 
 // memdoor providers / memdoor connect — the provider registry from the
@@ -99,15 +100,16 @@ a credential, where that credential came from, and which one is answering.
 					ID     string `json:"id"`
 					Error  string `json:"error"`
 					Models []struct {
-						ID       string   `json:"id"`
-						Name     string   `json:"name"`
-						Context  int      `json:"context"`
-						Source   string   `json:"context_source"`
-						MaxOut   int      `json:"max_output"`
-						Inputs   []string `json:"inputs"`
-						Thinking bool     `json:"thinking"`
-						InPerM   float64  `json:"in_per_m"`
-						OutPerM  float64  `json:"out_per_m"`
+						ID       string         `json:"id"`
+						Name     string         `json:"name"`
+						Context  int            `json:"context"`
+						Source   string         `json:"context_source"`
+						MaxOut   int            `json:"max_output"`
+						Inputs   []string       `json:"inputs"`
+						Thinking bool           `json:"thinking"`
+						InPerM   float64        `json:"in_per_m"`
+						OutPerM  float64        `json:"out_per_m"`
+						Currency price.Currency `json:"currency"`
 					} `json:"models"`
 				} `json:"providers"`
 			}
@@ -121,7 +123,7 @@ a credential, where that credential came from, and which one is answering.
 				if p.Error != "" {
 					return fmt.Errorf("%s: %s", id, p.Error)
 				}
-				fmt.Printf("%s — %d models (id · context · max out · $ per million in / out):\n", id, len(p.Models))
+				fmt.Printf("%s — %d models (id · context · max out · price per million in / out):\n", id, len(p.Models))
 				for _, m := range p.Models {
 					out := "    ?"
 					if m.MaxOut > 0 {
@@ -138,7 +140,7 @@ a credential, where that credential came from, and which one is answering.
 					if m.Thinking {
 						extra += " · thinking"
 					}
-					fmt.Printf("  %-44s %5dk%s %s  $%.2f / $%.2f  %s%s\n", m.ID, m.Context/1000, mark, out, m.InPerM, m.OutPerM, m.Name, extra)
+					fmt.Printf("  %-44s %5dk%s %s  %s / %s  %s%s\n", m.ID, m.Context/1000, mark, out, m.Currency.Format(m.InPerM), m.Currency.Format(m.OutPerM), m.Name, extra)
 				}
 				fmt.Println("  (~ after a context = a guess: set it in ~/.memdoor/providers.json or MEMDOOR_MODEL_CONTEXT)")
 				return nil
