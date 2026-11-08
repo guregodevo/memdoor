@@ -94,7 +94,12 @@ command does all of this on its first run; setup is the same from a script.
 				persistWorkspaceSlug(configPath, wsSlug)
 				offerLocalModel(wsSlug)
 				printPostSetupNextSteps(wsSlug)
-				return offerSampleRun(bufio.NewReader(os.Stdin), os.Stdout)
+				in := bufio.NewReader(os.Stdin)
+				if err := offerSampleRun(in, os.Stdout); err != nil {
+					return err
+				}
+				cwd, _ := os.Getwd()
+				return offerNightly(in, os.Stdout, githubRepoAt(cwd))
 			}
 			fmt.Println("\n  Gateway not reachable — skipping admin registration.")
 			fmt.Println("  Start it with 'memdoor gateway &', then re-run 'memdoor setup'.")
