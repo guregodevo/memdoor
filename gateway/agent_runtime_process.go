@@ -242,6 +242,13 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	response := &AgentResponse{
 		ToolsExecuted: make([]ToolExecutionInfo, 0),
 	}
+	// Retry a retained conversation before another model call can add work.
+	if _, pending := session.pendingConversation(transcriptKeyOf(session)); pending {
+		if err := ar.updateSession(session, conversation, runID); err != nil {
+			response.Error = err.Error()
+			return response, err
+		}
+	}
 
 	// Hang-backstop timeout, NOT a pacer — same contract as the outer
 	// agent-execution timeout in pkg/message/service.go (ff04d7f). A shorter
@@ -1051,7 +1058,10 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 		// Save conversation with tool results BEFORE making API call
 		// This ensures tool_result blocks are persisted even if the API call fails
 		// Prevents orphaned tool_use blocks when rate limits or other errors occur
-		ar.updateSession(session, conversation)
+		if err := ar.updateSession(session, conversation, runID); err != nil {
+			response.Error = err.Error()
+			return response, err
+		}
 
 		// Get followup response. Adopt the returned conversation: runInference may
 		// have compacted it in place, and the loop must continue from the compacted
@@ -1070,7 +1080,10 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	}
 
 	// Update session with conversation
-	ar.updateSession(session, conversation)
+	if err := ar.updateSession(session, conversation, runID); err != nil {
+		response.Error = err.Error()
+		return response, err
+	}
 
 	// Complete execution flow tracking
 	ar.flowTracker.Complete(runID)

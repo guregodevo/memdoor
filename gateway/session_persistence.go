@@ -270,22 +270,22 @@ func (sp *SessionPersistence) SaveMessages(sessionID string, messages []llm.Mess
 		return fmt.Errorf("failed to resolve session store path: %w", err)
 	}
 
-	file, err := os.OpenFile(storePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		return fmt.Errorf("failed to open session file: %w", err)
-	}
-	defer file.Close()
-
 	timestamp := time.Now().Unix()
 	totalBytes := 0
 
-	for _, msg := range messages {
-		msg = sp.truncateLargeToolResults(msg)
-		n, err := marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp})
-		if err != nil {
-			return err
+	err = appendSessionBatch(storePath, func(file io.Writer) error {
+		for _, msg := range messages {
+			msg = sp.truncateLargeToolResults(msg)
+			n, err := marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp})
+			if err != nil {
+				return err
+			}
+			totalBytes += n
 		}
-		totalBytes += n
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	sp.log.Debug("Saved message batch atomically",
@@ -308,7 +308,13 @@ func (sp *SessionPersistence) SaveMessages(sessionID string, messages []llm.Mess
 // MessageRecord): the next turn loads from it. Nothing is cut here — it is
 // what the model was sent.
 func (sp *SessionPersistence) SaveConversation(sessionID string, sent []llm.MessageParam) error {
-	if len(sent) == 0 {
+	return sp.SaveReshapedConversation(sessionID, nil, sent)
+}
+
+// SaveReshapedConversation commits the unsaved history and its new boundary
+// together; a failed reshape cannot leave half a boundary in the transcript.
+func (sp *SessionPersistence) SaveReshapedConversation(sessionID string, unsaved, sent []llm.MessageParam) error {
+	if len(sent) == 0 && len(unsaved) == 0 {
 		return nil
 	}
 	sp.mu.Lock()
@@ -318,17 +324,22 @@ func (sp *SessionPersistence) SaveConversation(sessionID string, sent []llm.Mess
 	if err != nil {
 		return fmt.Errorf("failed to resolve session store path: %w", err)
 	}
-	file, err := os.OpenFile(storePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		return fmt.Errorf("failed to open session file: %w", err)
-	}
-	defer file.Close()
-
 	timestamp := time.Now().Unix()
-	for i, msg := range sent {
-		if _, err := marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp, Boundary: i == 0, Carried: true}); err != nil {
-			return err
+	err = appendSessionBatch(storePath, func(file io.Writer) error {
+		for _, msg := range unsaved {
+			if _, err := marshalAndWriteRecord(file, MessageRecord{Message: sp.truncateLargeToolResults(msg), Timestamp: timestamp}); err != nil {
+				return err
+			}
 		}
+		for i, msg := range sent {
+			if _, err := marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp, Boundary: i == 0, Carried: true}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	sp.log.Debug("Saved the conversation as sent", slog.String("session", sessionID), slog.Int("count", len(sent)))
 	return nil
@@ -654,8 +665,13 @@ func marshalAndWriteRecord(w io.Writer, rec MessageRecord) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to marshal message: %w", err)
 	}
-	if _, err := w.Write(append(data, '\n')); err != nil {
+	line := append(data, '\n')
+	n, err := w.Write(line)
+	if err != nil {
 		return 0, fmt.Errorf("failed to write message: %w", err)
+	}
+	if n != len(line) {
+		return 0, io.ErrShortWrite
 	}
 	return len(data), nil
 }
@@ -663,13 +679,13 @@ func marshalAndWriteRecord(w io.Writer, rec MessageRecord) (int, error) {
 // writeRecord writes a single message record to the specified file
 // Returns the number of bytes written
 func (sp *SessionPersistence) writeRecord(filePath string, msg llm.MessageParam, timestamp int64) (int, error) {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		return 0, fmt.Errorf("failed to open session file: %w", err)
-	}
-	defer file.Close()
-
-	return marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp})
+	var n int
+	err := appendSessionBatch(filePath, func(file io.Writer) error {
+		var err error
+		n, err = marshalAndWriteRecord(file, MessageRecord{Message: msg, Timestamp: timestamp})
+		return err
+	})
+	return n, err
 }
 
 // readAllRecords reads and parses all message records from a JSONL file

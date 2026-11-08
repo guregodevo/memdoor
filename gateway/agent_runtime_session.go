@@ -105,6 +105,10 @@ func (ar *AgentRuntime) buildConversation(ctx context.Context, session *Session)
 		session.SetMetadata("transcript_agent", agentName)
 	}
 	log.Info(fmt.Sprintf("SESSION_KEY key=%q transcript_key=%q", session.ID, tKey))
+	if pending, ok := session.pendingConversation(tKey); ok {
+		log.Warn("Using unsaved conversation retained for recovery")
+		return pending
+	}
 
 	// Focused subagent task session (e.g. a task_flow coder running step by step):
 	// apply OpenClaw's session pattern — load the FULL own transcript, with NO
@@ -493,29 +497,31 @@ func (ar *AgentRuntime) extractWorkspaceAndChannel(sessionID string) (string, st
 
 // updateSession stores the conversation back in the session
 // Pattern: State management (like OpenClaw's session persistence)
-func (ar *AgentRuntime) updateSession(session *Session, conversation []llm.MessageParam) {
+func (ar *AgentRuntime) updateSession(session *Session, conversation []llm.MessageParam, runIDs ...string) error {
 	log := logs.New("Agent").WithSession(session.ID)
 
 	// What the transcript does not hold yet. The cursor is clamped: a stale
 	// one must never panic the gateway with an out-of-range slice.
-	initialLength := sessionCursor(session, len(conversation))
-	newMessages := conversation[initialLength:]
-	if len(newMessages) > 0 {
-		// One batch: two turns saving message by message could interleave
-		// and leave a tool call without its result.
-		if err := ar.persistence.SaveMessages(transcriptKeyOf(session), newMessages); err != nil {
-			log.WithError(err).Error("Failed to save message batch")
-		}
+	if err := saveConversationTail(ar.persistence, session, transcriptKeyOf(session), conversation); err != nil {
+		log.WithError(err).Error("Failed to save message batch")
+		return ar.conversationSaveFailed(session, err, runIDs...)
 	}
+	log.Debug("Saved conversation checkpoint", slog.Int("count", len(conversation)))
+	return nil
+}
 
-	// Update session metadata
-	// Pattern: Metadata storage (OpenClaw approach)
-	// Length must count what the TRANSCRIPT holds (grounding filtered out), or
-	// the next turn's save slices past its own first new message.
-	session.SetMetadata("conversation_length", initialLength+len(newMessages))
-	session.SetMetadata("last_updated", time.Now())
-
-	log.Debug("Saved new messages to disk atomically", slog.Int("count", len(newMessages)))
+func (ar *AgentRuntime) conversationSaveFailed(session *Session, cause error, runIDs ...string) error {
+	err := fmt.Errorf("conversation could not be saved; unsaved messages are kept only in memory. Keep this gateway running, fix the storage problem, and send another message to retry: %w", cause)
+	if ar.events != nil {
+		runID := ""
+		if len(runIDs) > 0 {
+			runID = runIDs[0]
+		}
+		ar.events.EmitEvent(runID, infra.EventStreamError, session.ID, map[string]interface{}{
+			"error": err.Error(), "recoverable": true, "saved": false,
+		})
+	}
+	return err
 }
 
 // emitContextUpdate calculates and emits context usage information
