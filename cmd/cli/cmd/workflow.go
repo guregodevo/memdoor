@@ -5,6 +5,7 @@ import (
 	"io"
 	"memdoor/pkg/workflow"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -242,13 +243,22 @@ var workflowRunCmd = &cobra.Command{
 	Short: "Start .memdoor/workflows/<name>/ in this project — a fresh run; the prompt, when given, is the task",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		dir, err := workflowDir(projectDirFlag)
+		if err != nil {
+			return err
+		}
+		return runWorkflowIn(dir, args[0], args[1:])
+	},
+}
+
+// runWorkflowIn is `workflow run` in dir: the flags as set, the prompt from
+// the arguments or stdin. `workflow try` runs it in a fresh folder.
+func runWorkflowIn(dir, name string, promptArgs []string) error {
+	{
+		args := append([]string{name}, promptArgs...)
 		// Headless: a run from a shell or CI needs no window and no gateway
 		// started by hand — the same first-run check as memdoor tui (2026-10-11).
 		if err := firstRunReady(); err != nil {
-			return err
-		}
-		dir, err := workflowDir(projectDirFlag)
-		if err != nil {
 			return err
 		}
 		var out workflowRunStatus
@@ -283,7 +293,49 @@ var workflowRunCmd = &cobra.Command{
 		// waited on — the job's own timeout bounds it — unless
 		// --stop-at-gate ends it there (3).
 		return waitForWorkflowRun(out.ID, workflowStopAtGateFlag)
+	}
+}
+
+// workflowTryCmd is the first run that ends in a verdict: team-solve on its
+// sample problem (five samples and a program to write, copied into an empty
+// folder by the workflow itself), followed to the end, so the first thing a
+// person sees is the team's review, the Check and whether the team beat its
+// own single call. Setup offers it; the install script names it (#171).
+var workflowTryCmd = &cobra.Command{
+	Use:   "try",
+	Short: "The team on a sample problem, in a fresh folder, followed to its verdict: about two minutes on a key",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		dir, err := sampleDir()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "The sample problem, in %s\n", dir)
+		workflowWaitFlag = true
+		return runWorkflowIn(dir, "team-solve", nil)
 	},
+}
+
+// sampleDir is a fresh, empty folder under ~/.memdoor/sample for one try,
+// a git repository when git is here so the run's net (keep) can put the
+// first attempt back. Each try gets its own folder: the workflow copies the
+// sample problem into an empty one and would otherwise read the last try's
+// files as the project.
+func sampleDir() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(home, ".memdoor", "sample", time.Now().Format("2006-01-02T150405"))
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	if _, err := exec.LookPath("git"); err == nil {
+		g := exec.Command("git", "init", "-q")
+		g.Dir = dir
+		_ = g.Run()
+	}
+	return dir, nil
 }
 
 var workflowStatusCmd = &cobra.Command{
@@ -449,7 +501,7 @@ func init() {
 	workflowRunCmd.Flags().StringVar(&workflowModelFlag, "model", "", "the model every agent and llm step runs on: an id memdoor model search shows, provider:id when two providers list it; a step with a model: of its own keeps it")
 	workflowRunCmd.Flags().StringVar(&workflowPartitionFlag, "partition", "", "resume an earlier run by its partition (status shows it), or \"today\" for a DAG run once a day; a run is fresh by default")
 	workflowHistoryCmd.Flags().IntVar(&workflowHistoryLimit, "limit", 0, "history: how many runs back to show (default 20)")
-	workflowCmd.AddCommand(workflowRunCmd, workflowStatusCmd, workflowStopCmd, workflowApproveCmd, workflowChangesCmd, workflowDiffCmd, workflowResumeCmd, workflowHistoryCmd)
+	workflowCmd.AddCommand(workflowRunCmd, workflowTryCmd, workflowStatusCmd, workflowStopCmd, workflowApproveCmd, workflowChangesCmd, workflowDiffCmd, workflowResumeCmd, workflowHistoryCmd)
 	rootCmd.AddCommand(workflowCmd)
 }
 
