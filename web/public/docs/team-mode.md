@@ -64,6 +64,8 @@ shell, the same run: `memdoor workflow run team-solve --model <id> "<task>"`.
 
 ![Team mode: Shift+Tab, a task, the team's steps, the verdict](/team-mode-2026-11-06.cast)
 
+The steps, the benchmark runs and their data: [examples/workflows/team-solve](https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve) on GitHub.
+
 ## What runs
 
 First the single call, then the team if it is needed.
