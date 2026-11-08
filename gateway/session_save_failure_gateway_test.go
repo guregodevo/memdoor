@@ -12,7 +12,7 @@ import (
 
 func TestConversationSaveFailureIsVisibleAndRebuildUsesPendingHistory(t *testing.T) {
 	sp, session, key := checkpointStore(t)
-	ar := &AgentRuntime{persistence: sp, events: infra.NewEventEmitter()}
+	ar := &AgentRuntime{persistence: sp, events: infra.NewEventEmitter(false)}
 	conversation := []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("first"))}
 	if err := ar.updateSession(session, conversation); err != nil {
 		t.Fatal(err)
