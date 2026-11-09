@@ -256,6 +256,18 @@ var workflowRunCmd = &cobra.Command{
 	},
 }
 
+// workflowRequireModel is set for the sample run: every step of it is a
+// model's, so with none configured the gateway refuses the start with the one
+// line that says what to set (#215), not ten failing steps.
+var workflowRequireModel bool
+
+// runSampleIn is the sample problem in dir, followed to its verdict.
+func runSampleIn(dir string) error {
+	workflowWaitFlag, workflowRequireModel = true, true
+	defer func() { workflowRequireModel = false }()
+	return runWorkflowIn(dir, "team-solve", nil)
+}
+
 // runWorkflowIn is `workflow run` in dir: the flags as set, the prompt from
 // the arguments or stdin. `workflow try` runs it in a fresh folder.
 func runWorkflowIn(dir, name string, promptArgs []string) error {
@@ -268,6 +280,9 @@ func runWorkflowIn(dir, name string, promptArgs []string) error {
 		}
 		var out workflowRunStatus
 		body := map[string]interface{}{"dir": dir, "name": args[0]}
+		if workflowRequireModel {
+			body["require_model"] = true
+		}
 		if workflowTimeoutFlag != "" {
 			body["timeout"] = workflowTimeoutFlag
 		}
@@ -316,8 +331,7 @@ var workflowTryCmd = &cobra.Command{
 			return err
 		}
 		fmt.Fprintf(os.Stderr, "The sample problem, in %s\n", dir)
-		workflowWaitFlag = true
-		return runWorkflowIn(dir, "team-solve", nil)
+		return runSampleIn(dir)
 	},
 }
 
