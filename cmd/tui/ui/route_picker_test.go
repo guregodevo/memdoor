@@ -151,3 +151,48 @@ func TestThePriceCellKeepsTheCurrency(t *testing.T) {
 		t.Fatalf("euros: %q", got)
 	}
 }
+
+// /model <id> for an id OpenRouter does not serve and another provider
+// lists pins it there (aimlapi:alibaba/qwen-plus, live 2026-11-09: "no model"
+// while /model-search listed it); /model-search <id> lists it instead.
+func TestAModelListedElsewhereIsPinnedOnItsProvider(t *testing.T) {
+	var routed []string
+	searched := ""
+	m := NewPage(PageConfig{Agent: "coder", Ops: Ops{
+		ModelHosts: func(id string) ([]ModelHost, error) {
+			return nil, &ListedElsewhere{Provider: "aimlapi", ID: id}
+		},
+		ModelCatalog: func(q string) ([]CatalogModel, error) {
+			searched = q
+			return []CatalogModel{{ID: q, Provider: "aimlapi", Name: "Qwen Plus"}}, nil
+		},
+		Route: func(arg string) (string, error) { routed = append(routed, arg); return "pinned " + arg, nil },
+	}})
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = next.(Model)
+	run := func(msg tea.Msg) tea.Cmd { n, c := m.Update(msg); m = n.(Model); return c }
+
+	cmd := m.openModelHosts("alibaba/qwen-plus")
+	pin := run(cmd())
+	if pin == nil || m.routePicker != nil {
+		t.Fatalf("an id listed elsewhere closes the picker and pins: %+v", m.routePicker)
+	}
+	if r, ok := pin().(routeResultMsg); !ok || r.summary != "pinned aimlapi:alibaba/qwen-plus" {
+		t.Fatalf("pinned under its provider: %+v", r)
+	}
+
+	routed = nil
+	m.input.SetValue("/model-search alibaba/qwen-plus")
+	cmd = run(tea.KeyMsg{Type: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("/model-search <id> asks for the hosts")
+	}
+	search := run(cmd())
+	if search == nil {
+		t.Fatal("an id listed elsewhere opens the search")
+	}
+	run(search())
+	if len(routed) != 0 || searched != "alibaba/qwen-plus" || m.routePicker == nil || m.routePicker.mode != pickerModels {
+		t.Fatalf("/model-search lists it and pins nothing: routed=%v searched=%q %+v", routed, searched, m.routePicker)
+	}
+}

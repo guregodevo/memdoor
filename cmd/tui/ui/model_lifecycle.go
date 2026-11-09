@@ -95,7 +95,11 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 		}
 		query := strings.Join(fields[1:], " ")
 		if strings.Contains(query, "/") && !strings.Contains(query, " ") {
-			return m.openModelHosts(query) // an exact id: its hosts
+			cmd := m.openModelHosts(query) // an exact id: its hosts
+			if m.routePicker != nil {
+				m.routePicker.fromSearch = true
+			}
+			return cmd
 		}
 		return m.openModelSearch(query)
 
