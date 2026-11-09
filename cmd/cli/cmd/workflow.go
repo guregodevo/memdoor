@@ -265,7 +265,8 @@ var workflowRequireModel bool
 // at a real task, and where to say how it went. Nothing is sent from this
 // machine; the issue is the only way anyone learns a run helped (#221).
 const sampleNextLine = `
-On your own task:  memdoor workflow run team-solve "<the task>"
+Next: cd <your-project> && memdoor    then Shift+Tab to Team Mode
+From a shell:  memdoor workflow run team-solve "<the task>"
 How did it go? Tell us, pass or fail: https://github.com/guregodevo/memdoor/issues/221
 `
 
@@ -365,6 +366,12 @@ func sampleDir() (string, error) {
 		g := exec.Command("git", "init", "-q")
 		g.Dir = dir
 		_ = g.Run()
+		// One empty commit, so the run has a base to take its clean copy from and
+		// keep can put the first attempt back; without it the reproduction step
+		// had nothing to prove itself on and the sample run could hang (2026-11-09).
+		c := exec.Command("git", "-c", "user.name=memdoor", "-c", "user.email=memdoor@localhost", "commit", "-q", "--allow-empty", "-m", "sample")
+		c.Dir = dir
+		_ = c.Run()
 	}
 	return dir, nil
 }
