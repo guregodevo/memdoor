@@ -33,7 +33,7 @@ The paper's rows: [GVS5H](https://github.com/slee-persis/GVS5H)
 | 1 | GVS5H manager | Qwen3.8-Flash-Next | 93.0% | 5.76 | 0.062 | paper |
 | 2 | GVS5H manager | Qwen3.8-27B | 92.4% | 47.82 | 0.52 | paper |
 | 3 | GVS5H manager | DeepSeek V4.1 Flash | 92.0% | 15.43 | 0.17 | paper |
-| 4 | Memdoor team-solve-fanout | DeepSeek V4.1 Flash (1017) | 91% | ≤ 5.50 | ≤ 0.060 | Memdoor, 1 pass |
+| 4 | Memdoor team-solve-fanout | DeepSeek V4.1 Flash (1017) | 92% | ≤ 5.50 | ≤ 0.060 | Memdoor, 1 pass |
 | 5 | single call | Fable 5 | 90.4% | 61.11 | 0.68 | paper |
 | 6 | single call | DeepSeek V4.1 Flash | 88.4% | 3.46 | 0.039 | paper |
 | 7 | GVS5H manager | GPT-5.6-Terra | 88.0% | 11.71 | 0.13 | paper |
@@ -45,6 +45,11 @@ The paper's rows: [GVS5H](https://github.com/slee-persis/GVS5H)
 | 13 | Memdoor team-llm-lcb, thinking off | Qwen3.8-27B | 47% | 3.27 for 13 and 14 | | Memdoor, 1 pass |
 | 14 | Memdoor single-lcb, thinking off | Qwen3.8-27B | 35% | | | Memdoor, 1 pass |
 
+- Grading: the paper's rule for every row. Its reported numbers judge four
+  problems that accept more than one answer (abc396_e, arc190_a, arc195_c,
+  abc385_f) with special checkers (`paper/tab-regrade.tex`). Row 4 by the stock
+  grader: 91; abc396_e passes 43 of 43 with the paper's checker. Rows 13 and 14
+  are as graded.
 - Cost: the paper's is list rate times tokens, no cache discount. Memdoor's is
   what OpenRouter billed. Row 4 includes three `team-solve` runs stopped early.
 - Row 4 is one pass against means of five. The paper's 95% intervals are ±1.2
@@ -64,7 +69,7 @@ e98b3c5, `openrouter:deepseek/deepseek-v4.1-flash-1017` on every step.
 
 | arm | solved on all tests | AtCoder (73) | LeetCode (27) | median s / problem |
 |---|---|---|---|---|
-| team-solve-fanout | **91 / 100** | 65 | 26 | 1424 |
+| team-solve-fanout | **91 / 100** (92 under the paper's rules) | 65 | 26 | 1424 |
 
 - Not solved: 7 fail a hidden test (abc392_f, abc396_e, abc397_d, abc398_g,
   abc399_e, arc190_a, arc192_b); 3692 exceeds the grader's time limit;
