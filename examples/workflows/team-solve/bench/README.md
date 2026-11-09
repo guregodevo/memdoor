@@ -21,6 +21,28 @@ Memdoor workflows on the same model and host:
 
 Model line on every role: `openrouter:qwen/qwen3.8-27b throughput thinking off`.
 
+## team-solve-fanout, DeepSeek V4.1 Flash, 2026-11-09
+
+The same 100 problems, graded the same way. One pass of
+[team-solve-fanout](../../../../workflows/team-solve-fanout/README.md) at main
+e98b3c5, `openrouter:deepseek/deepseek-v4.1-flash-1017` on every step.
+
+| arm | solved on all tests | AtCoder (73) | LeetCode (27) | median s / problem |
+|---|---|---|---|---|
+| team-solve-fanout | **91 / 100** | 65 | 26 | 1424 |
+| GVS5H team scaffold (the paper) | 92.0% | | | |
+| GVS5H single call (the paper) | 88.4% | | | |
+
+- Not solved: 7 fail a hidden test (abc392_f, abc396_e, abc397_d, abc398_g,
+  abc399_e, arc190_a, arc192_b); 3692 exceeds the grader's time limit;
+  arc196_c has no `solution.py`.
+- 8 problems in flight on one Mac. $5.50 on OpenRouter for 6,594 calls, three
+  `team-solve` runs stopped early included.
+- The paper's model build predates the 1017 build.
+
+`results/team-solve-fanout-lcb.tsv`: every problem with id, tests passed, all
+tests passed, seconds.
+
 ## Result, 2026-10-25
 
 | arm | solved on all tests | AtCoder (73) | LeetCode (27) | median s / problem |
