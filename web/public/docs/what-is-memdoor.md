@@ -31,6 +31,15 @@ relevant, is the turn progressing, does this claim hold) answered with a
 calibrated probability in under half a second. The harness acts on the
 answers; the chat model reads a fraction of the text.
 
+## Team Mode
+
+Shift+Tab flips the window from `auto` to `team`. In team, a turn is the
+[team-solve](/docs/team-solve) workflow on this project and the model the
+footer names: a single call first, then a team of fresh contexts when the
+check fails, and the single call is kept when the team does no better.
+[Team mode](/docs/team-mode) says how it works; [the result](/docs/team-solve)
+has the runs.
+
 ## The three places it saves you money
 
 - **Judged reads.** Search, file and log reads pass through the decision
