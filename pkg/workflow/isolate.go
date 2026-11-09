@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/guregodevo/mario/tasks"
 )
@@ -25,6 +26,13 @@ import (
 func NewIsolator() tasks.Isolator { return gitIsolator{} }
 
 type gitIsolator struct{}
+
+// worktrees serialises adding and removing worktrees: a fan-out's attempts
+// start and end at once in one repository, and git's worktree list is shared.
+// An attempt's prune ran while another attempt's add was half done, and git
+// lost that worktree ("failed to read .git/worktrees/...direct-3/commondir",
+// astropy-13398, SWE-bench Verified, 2026-11-09).
+var worktrees sync.Mutex
 
 type gitIsolation struct {
 	dir      string // where the task runs (a subdirectory of root when the project is one)
@@ -66,7 +74,10 @@ func (gitIsolator) Isolate(ctx context.Context, dir, name string) (tasks.Isolati
 	if gitErr == nil && strings.TrimSpace(top) != "" {
 		top = strings.TrimSpace(top)
 		prefix, _ := git(ctx, dir, "rev-parse", "--show-prefix")
-		if _, err := git(ctx, top, "worktree", "add", "--detach", root, "HEAD"); err != nil {
+		worktrees.Lock()
+		_, err := git(ctx, top, "worktree", "add", "--detach", root, "HEAD")
+		worktrees.Unlock()
+		if err != nil {
 			return fail(fmt.Errorf("git worktree: %w", err))
 		}
 		iso.worktree = top
@@ -145,11 +156,15 @@ func (i *gitIsolation) Changes(ctx context.Context) (string, error) {
 	return git(ctx, i.dir, append([]string{"diff", "--binary", "--relative", i.base, "--"}, excluded...)...)
 }
 
-// Close removes the copy, and the worktree from its repository's list.
+// Close removes the copy, and the worktree from its repository's list. A
+// remove takes its own entry out; prune runs only when it did not.
 func (i *gitIsolation) Close() error {
 	if i.worktree != "" {
-		_, _ = git(context.Background(), i.worktree, "worktree", "remove", "--force", i.root)
-		_, _ = git(context.Background(), i.worktree, "worktree", "prune")
+		worktrees.Lock()
+		if _, err := git(context.Background(), i.worktree, "worktree", "remove", "--force", i.root); err != nil {
+			_, _ = git(context.Background(), i.worktree, "worktree", "prune")
+		}
+		worktrees.Unlock()
 	}
 	return os.RemoveAll(filepath.Dir(i.root))
 }
