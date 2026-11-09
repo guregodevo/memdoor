@@ -1,6 +1,6 @@
 # What is Memdoor
 
-The workflow harness that makes a small model beat a frontier one, on your machine.
+The CLI coding agent that lifts cheap models to perform like a frontier model, on your machine.
 Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account.
 
 Headless first: a run starts from a shell script, CI, a schedule, a
