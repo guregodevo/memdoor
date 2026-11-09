@@ -7,7 +7,7 @@ memdoor workflow run team-solve-fanout "Fix the -0.00 in the ledger report; pyth
 ```
 
 - `survey`: one read-only agent turn lists every code path the task goes through, siblings included, in `survey.md`. The attempts read it. `outline` passes it to the planner, whose Scope covers those files.
-- `paths`: one agent turn writes a check per surveyed code path, in `paths/` of the run folder, each failing on the tree as found. None for a new program. `check.sh` runs them beside the Check.
+- `paths`: one agent turn writes a check per surveyed code path, in `paths/` of the run folder, each failing on the tree as found. None for a new program. The fan-out scores the attempts on them; the Check does not run them.
 - `direct`: a fan-out (mario `fanout:`). Three attempts at once, each in its own git worktree. Attempt 1 is the plain call, the prompt as written; the others read the survey. The fan-out applies nothing itself. Mario runs every check (path checks and the attempts' own) in every attempt's worktree. A check that passes on the tree as found is ignored; an attempt never scores on its own check. Settled when one attempt leads, no check discriminates, or every attempt passes every check; otherwise one more, five at most. The decision model may settle sooner, never run more.
 - `choose`: mario's `type: pick`. The attempt the checks favour goes into the tree; on a tie, attempt 1 (`prefer: 1`).
 

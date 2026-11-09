@@ -31,23 +31,17 @@ func exitOf(err error, t *testing.T) int {
 	return 0
 }
 
-// check.sh runs the path checks beside the Check: a change that fixed the
-// example and left a sibling fails, where the project's own command passes.
-func TestTeamSolveCheckFailsAChangeThatLeavesAPathBroken(t *testing.T) {
+// The path checks are the fan-out's evidence, not the Check's: a change the
+// project's own command passes passes the Check, whatever a path check says.
+// A wrong path check vetoed a right fix (matplotlib-23476, 2026-11-09).
+func TestTeamSolveCheckLeavesThePathChecksToTheFanout(t *testing.T) {
 	wf, _ := filepath.Abs("team-solve")
-	for _, c := range []struct {
-		name, tree string
-		code       int
-		says       string
-	}{
-		{"a sibling left as it was", "amount: ok\ntotal: bug\n", 1, "path check total: FAILS"},
-		{"every path fixed", "amount: ok\ntotal: ok\n", 0, "path check total: passes"},
-	} {
+	for _, tree := range []string{"amount: ok\ntotal: bug\n", "amount: ok\ntotal: ok\n"} {
 		dir := t.TempDir()
 		r := filepath.Join(dir, ".memdoor", "runs", "team-solve-1")
 		writeAll(t, map[string]string{
 			filepath.Join(r, "task.md"): "# Task\n\n## Check\n\n`true`\n\n## Scope\n\n`.`\n",
-			filepath.Join(dir, "a.txt"): c.tree,
+			filepath.Join(dir, "a.txt"): tree,
 		}, 0o644)
 		writeAll(t, map[string]string{filepath.Join(r, "paths", "total"): "#!/bin/sh\ngrep -q 'total: ok' a.txt\n"}, 0o755)
 		cmd := exec.Command("bash", filepath.Join(wf, "check.sh"), r, filepath.Join(r, "test-output.log"))
@@ -55,8 +49,8 @@ func TestTeamSolveCheckFailsAChangeThatLeavesAPathBroken(t *testing.T) {
 		code := exitOf(cmd.Run(), t)
 		log, _ := os.ReadFile(filepath.Join(r, "test-output.log"))
 		kind, _ := os.ReadFile(filepath.Join(r, "check-kind.txt"))
-		if code != c.code || !strings.Contains(string(log), c.says) || strings.TrimSpace(string(kind)) != "command+paths" {
-			t.Errorf("%s: exit %d (want %d), kind %q, log:\n%s", c.name, code, c.code, kind, log)
+		if code != 0 || strings.Contains(string(log), "path check") || strings.TrimSpace(string(kind)) != "command" {
+			t.Errorf("tree %q: exit %d, kind %q, log:\n%s", tree, code, kind, log)
 		}
 	}
 }
