@@ -376,7 +376,21 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   order, after Vercel. Every request to `api.aimlapi.com`, and no other host,
   carries `X-AIMLAPI-Source: agent/memdoor`, the header AI/ML API reads
   (`TestATurnOnAIMLAPICarriesItsSource`); `MEMDOOR_OPENROUTER_ATTRIBUTION=0`
-  leaves it off. Not run on a live key here: the list was read without one.
+  leaves it off.
+
+  A first start with only `AIMLAPI_API_KEY` set ran `model check` on the
+  cheapest models (#206) and picked `inclusionai/ling-3.0-tiny`. The
+  fast-model task, in the window, every request to `api.aimlapi.com`
+  (`memdoor meter`: 16 requests, 96% of prompt tokens cached):
+
+  | Provider · model | Steps | Time | Result |
+  |---|---|---|---|
+  | AI/ML API · `inclusionai/ling-3.0-tiny` (picked) | Edit (refused: not valid Go), Edit, Bash | 23 s | ok, +1 −1 |
+  | AI/ML API · `z-ai/glm-5.3-flash` (pinned) | Read, Edit, Bash | 17 s | ok, +1 −1 |
+
+  The answer names the model by its alias (`glm-5.3-flash`), so the status
+  line shows that name after the first turn; the alias resolves to the same
+  model.
 
 
 - **Attribution as a field** (`gateway/providers/attribution.go`): user, team,
