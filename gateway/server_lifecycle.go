@@ -544,14 +544,11 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// web/dist via memdoor/web). The binary is self-contained: no
 	// web/dist/ on disk is required at runtime. The build pipeline
 	// (`make web-build`) regenerates web/dist/ from web/src/ via
-	// `vite build` before `go build` captures it.
-	distFS, distErr := iofs.Sub(webembed.Assets, "dist")
-	if distErr != nil {
-		return fmt.Errorf("embedded web/dist not found: %w", distErr)
-	}
-	indexHTML, indexErr := iofs.ReadFile(distFS, "index.html")
-	if indexErr != nil {
-		return fmt.Errorf("embedded web/dist/index.html missing — was `vite build` run before `go build`? (%w)", indexErr)
+	// `vite build` before `go build` captures it. A binary built
+	// without it still starts: the web routes answer a page that says so.
+	distFS, indexHTML, hasWebUI := webBundle(webembed.Assets)
+	if !hasWebUI {
+		getChatLogger().Warn("Web UI not built: web/dist/index.html was missing at go build, serving a placeholder page (make web-build, then rebuild)")
 	}
 	pages := &indexRenderer{index: indexHTML, dist: distFS}
 	serveIndex := func(w http.ResponseWriter, r *http.Request) {
