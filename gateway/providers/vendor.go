@@ -4,7 +4,10 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
+
+	"memdoor/pkg/modelkey"
 )
 
 // A COMPANY'S OWN KEY (the maintainer, 2026-10-02: "I want to use memdoor but it's not
@@ -34,6 +37,7 @@ import (
 //	DEEPSEEK_API_KEY=…            [DEEPSEEK_BASE_URL=https://api.deepseek.com/v1]
 //	EUROUTER_API_KEY=…            [EUROUTER_BASE_URL=https://api.eurouter.ai/api/v1]   EU-served models
 //	LLMGATEWAY_API_KEY=…          [LLMGATEWAY_BASE_URL=https://api.llmgateway.io/v1]   one key, many vendors
+//	AI_GATEWAY_API_KEY=… (or VERCEL_API_KEY) [VERCEL_BASE_URL=https://ai-gateway.vercel.sh/v1]   Vercel AI Gateway
 //	MEMDOOR_MODEL=<model id>      required for OpenAI and Google (their ids
 //	                              change; name the one your key may use);
 //	                              Anthropic defaults to claude-sonnet-5
@@ -63,6 +67,7 @@ const (
 	VendorDeepSeek   = "deepseek"
 	VendorEURouter   = "eurouter"
 	VendorLLMGateway = "llmgateway"
+	VendorVercel     = "vercel"
 	// VendorGateway is a company's own AI gateway speaking the OpenAI
 	// Responses API (responses.go); VendorGatewayChat the same gateway on
 	// the chat/completions shape (AI_GATEWAY_API=chat).
@@ -96,6 +101,12 @@ const (
 	// many vendors; its list states every window.
 	llmGatewayDefaultBase    = "https://api.llmgateway.io/v1"
 	llmGatewayDefaultContext = 128_000
+	// Vercel AI Gateway (#56): an OpenAI-compatible router. Its key is
+	// AI_GATEWAY_API_KEY in Vercel's docs; that name is not the company
+	// gateway's (AI_GATEWAY_BASE_URL + *_AI_GATEWAY_TOKEN), and neither
+	// reads the other's.
+	vercelDefaultBase    = "https://ai-gateway.vercel.sh/v1"
+	vercelDefaultContext = 128_000
 )
 
 // VendorEngine is the engine for a gateway holding a company's vendor key,
@@ -113,6 +124,8 @@ func VendorEngine() (re RemoteEngine, ok bool, reason string) {
 	if base := strings.TrimSpace(os.Getenv("AI_GATEWAY_BASE_URL")); base != "" {
 		token := gatewayToken()
 		switch {
+		case token == "" && vercelKey() != "":
+			return RemoteEngine{}, false, "AI_GATEWAY_BASE_URL is set but no AI_GATEWAY_TOKEN (or *_AI_GATEWAY_TOKEN): " + vercelKeyVar() + " is Vercel AI Gateway's key, not your company gateway's token; unset AI_GATEWAY_BASE_URL to run on Vercel"
 		case token == "":
 			return RemoteEngine{}, false, "AI_GATEWAY_BASE_URL is set but no AI_GATEWAY_TOKEN (or *_AI_GATEWAY_TOKEN): the gateway needs your personal or service-account token"
 		case model == "":
@@ -153,6 +166,7 @@ func VendorEngine() (re RemoteEngine, ok bool, reason string) {
 		{VendorDeepSeek, "DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", deepseekDefaultBase, deepseekDefaultContext},
 		{VendorEURouter, "EUROUTER_API_KEY", "EUROUTER_BASE_URL", euRouterDefaultBase, euRouterDefaultContext},
 		{VendorLLMGateway, "LLMGATEWAY_API_KEY", "LLMGATEWAY_BASE_URL", llmGatewayDefaultBase, llmGatewayDefaultContext},
+		{VendorVercel, vercelKeyVar(), "VERCEL_BASE_URL", vercelDefaultBase, vercelDefaultContext},
 	} {
 		key := strings.TrimSpace(os.Getenv(v.keyVar))
 		if key == "" {
@@ -262,6 +276,18 @@ func xaiKeyVar() string {
 		return "GROK_API_KEY"
 	}
 	return "XAI_API_KEY"
+}
+
+// vercelKey is AI_GATEWAY_API_KEY (Vercel's name), or VERCEL_API_KEY when
+// it holds an AI Gateway key (vck_…): that name also holds Vercel deploy
+// tokens, which run no model.
+func vercelKey() string { return strings.TrimSpace(os.Getenv(vercelKeyVar())) }
+
+func vercelKeyVar() string {
+	if strings.TrimSpace(os.Getenv("AI_GATEWAY_API_KEY")) == "" && slices.Contains(modelkey.ProvidersOf(os.Getenv("VERCEL_API_KEY")), modelkey.ProviderVercel) {
+		return "VERCEL_API_KEY"
+	}
+	return "AI_GATEWAY_API_KEY"
 }
 
 func envOr(name, def string) string {

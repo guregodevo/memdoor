@@ -155,6 +155,27 @@ Nemotron. Ids carry case. Type them as listed.
 - With `LLMGATEWAY_API_KEY` and `MEMDOOR_MODEL` set and no other vendor key,
   LLM Gateway is the only host contacted.
 
+## Vercel AI Gateway
+
+- **Key**: `AI_GATEWAY_API_KEY` (Vercel's name), or `VERCEL_API_KEY` holding a
+  `vck_…` key · base
+  `https://ai-gateway.vercel.sh/v1`; `VERCEL_BASE_URL` replaces it.
+  `memdoor connect vercel` takes the key.
+- **Its API states**: `type`, `context_window`, `max_tokens`, prices,
+  `supported_parameters`, reasoning options and `deprecated_at`. Only
+  language models that call tools and are not past their deprecation are
+  listed (302 of 498 on 2026-11-09). Ids are `vendor/model`
+  (`alibaba/qwen-3-14b`).
+- **Fast model**: `deepseek/deepseek-v4-flash` (1M / 384k, $0.13 / $0.26).
+  `openai/gpt-oss-20b` for a cheaper one.
+- The account needs a card on file before it serves a request. Until then
+  `memdoor connect vercel` connects the key and says the account needs a card.
+  The free tier refuses some models (`anthropic/claude-haiku-5.5`).
+- Vercel's ids are OpenRouter's. `/model-search vercel` lists Vercel's
+  models; `/model vercel:<id>` pins one.
+- `AI_GATEWAY_API_KEY` is not your company gateway's token. With
+  `AI_GATEWAY_BASE_URL` set, the company gateway answers.
+
 ## Anthropic
 
 - **Key**: `ANTHROPIC_API_KEY` · base `https://api.anthropic.com`

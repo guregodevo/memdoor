@@ -17,6 +17,7 @@ var modelKeys = map[string]bool{
 	"BASETEN_API_KEY": true, "GROQ_API_KEY": true, "DEEPSEEK_API_KEY": true,
 	"XAI_API_KEY": true, "GROK_API_KEY": true, "TYPESAFE_API_KEY": true,
 	"EUROUTER_API_KEY": true, "LLMGATEWAY_API_KEY": true,
+	"AI_GATEWAY_API_KEY":        true,
 	"MEMDOOR_SYSTEMONE_API_KEY": true, "AI_GATEWAY_TOKEN": true,
 }
 
