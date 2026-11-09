@@ -383,8 +383,7 @@ func offerSampleRun(in *bufio.Reader, out io.Writer) error {
 			return err
 		}
 		fmt.Fprintf(os.Stderr, "The sample problem, in %s\n", dir)
-		workflowWaitFlag = true
-		return runWorkflowIn(dir, "team-solve", nil)
+		return runSampleIn(dir)
 	}
 	fmt.Fprintln(out, "  Later: memdoor workflow try")
 	return nil

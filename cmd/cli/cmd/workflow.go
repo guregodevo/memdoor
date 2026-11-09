@@ -199,6 +199,11 @@ In the TUI, /workflow draws the graph as it runs. Every run is kept in the
 project's run table (.memdoor/runs.db), so history answers for runs that
 ended before this gateway started.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The first command a stranger types after install may be this one: the gateway
+		// and the machine are set up as `run` sets them up, not "gateway unreachable" (#217).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		dir, err := workflowDir(projectDirFlag)
 		if err != nil {
 			return err
@@ -251,6 +256,18 @@ var workflowRunCmd = &cobra.Command{
 	},
 }
 
+// workflowRequireModel is set for the sample run: every step of it is a
+// model's, so with none configured the gateway refuses the start with the one
+// line that says what to set (#215), not ten failing steps.
+var workflowRequireModel bool
+
+// runSampleIn is the sample problem in dir, followed to its verdict.
+func runSampleIn(dir string) error {
+	workflowWaitFlag, workflowRequireModel = true, true
+	defer func() { workflowRequireModel = false }()
+	return runWorkflowIn(dir, "team-solve", nil)
+}
+
 // runWorkflowIn is `workflow run` in dir: the flags as set, the prompt from
 // the arguments or stdin. `workflow try` runs it in a fresh folder.
 func runWorkflowIn(dir, name string, promptArgs []string) error {
@@ -263,6 +280,9 @@ func runWorkflowIn(dir, name string, promptArgs []string) error {
 		}
 		var out workflowRunStatus
 		body := map[string]interface{}{"dir": dir, "name": args[0]}
+		if workflowRequireModel {
+			body["require_model"] = true
+		}
 		if workflowTimeoutFlag != "" {
 			body["timeout"] = workflowTimeoutFlag
 		}
@@ -311,8 +331,7 @@ var workflowTryCmd = &cobra.Command{
 			return err
 		}
 		fmt.Fprintf(os.Stderr, "The sample problem, in %s\n", dir)
-		workflowWaitFlag = true
-		return runWorkflowIn(dir, "team-solve", nil)
+		return runSampleIn(dir)
 	},
 }
 
@@ -343,6 +362,11 @@ var workflowStatusCmd = &cobra.Command{
 	Short: "Every task's state in a run",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The first command a stranger types after install may be this one: the gateway
+		// and the machine are set up as `run` sets them up, not "gateway unreachable" (#217).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		var out workflowRunStatus
 		if err := workflowPost("status", map[string]interface{}{"run_id": args[0]}, &out); err != nil {
 			return err
@@ -377,6 +401,11 @@ var workflowStopCmd = &cobra.Command{
 	Short: "Cancel a run: nothing more starts, the running task is told",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The first command a stranger types after install may be this one: the gateway
+		// and the machine are set up as `run` sets them up, not "gateway unreachable" (#217).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		var out workflowRunStatus
 		if err := workflowPost("stop", map[string]interface{}{"run_id": args[0]}, &out); err != nil {
 			return err
@@ -414,6 +443,11 @@ var workflowApproveCmd = &cobra.Command{
 	Short: "Complete an external task: your yes, written where the DAG looks for it",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The first command a stranger types after install may be this one: the gateway
+		// and the machine are set up as `run` sets them up, not "gateway unreachable" (#217).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		var out workflowRunStatus
 		if err := workflowPost("approve", map[string]interface{}{"run_id": args[0], "task": args[1]}, &out); err != nil {
 			return err
@@ -429,6 +463,11 @@ var workflowChangesCmd = &cobra.Command{
 	Short: "Request changes at a gate: the task reruns with your comment, then the steps after it, and the run comes back to the gate",
 	Args:  cobra.MinimumNArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The first command a stranger types after install may be this one: the gateway
+		// and the machine are set up as `run` sets them up, not "gateway unreachable" (#217).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		var out workflowRunStatus
 		comment := strings.Join(args[2:], " ")
 		if err := workflowPost("changes", map[string]interface{}{"run_id": args[0], "task": args[1], "comment": comment}, &out); err != nil {
@@ -444,6 +483,11 @@ var workflowDiffCmd = &cobra.Command{
 	Short: "The full diff a run made since it started, committed or not: what you approve at its gate",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The first command a stranger types after install may be this one: the gateway
+		// and the machine are set up as `run` sets them up, not "gateway unreachable" (#217).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		var out struct {
 			Diff string `json:"diff"`
 		}
@@ -601,6 +645,11 @@ var workflowHistoryCmd = &cobra.Command{
 	Short: "What a workflow did before: every run, newest first (survives a restart)",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The first command a stranger types after install may be this one: the gateway
+		// and the machine are set up as `run` sets them up, not "gateway unreachable" (#217).
+		if err := firstRunReady(); err != nil {
+			return err
+		}
 		dir, err := workflowDir(projectDirFlag)
 		if err != nil {
 			return err

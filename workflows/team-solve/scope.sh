@@ -68,10 +68,13 @@ beside() {
 }
 while read -r add del f; do
   [ -n "${f:-}" ] || continue
+  # No git base to count against (a folder that is not a repository, or one with no
+  # commit yet): the file is named without counts, not with "+? -?" (#216).
+  counts=" +$add -$del"; [ "$add" = '?' ] && counts=''
   if inside "$f" || beside "$f"; then
-    printf 'changed: %s +%s -%s\n' "$f" "$add" "$del" >> "$out"
+    printf 'changed: %s%s\n' "$f" "$counts" >> "$out"
   else
-    printf 'OUTSIDE THE SCOPE: %s +%s -%s (undo it: git checkout the file, or delete it when the run made it)\n' "$f" "$add" "$del" >> "$out"; fail=1
+    printf 'OUTSIDE THE SCOPE: %s%s (undo it: git checkout the file, or delete it when the run made it)\n' "$f" "$counts" >> "$out"; fail=1
   fi
 done < <(changed)
 cat "$out"

@@ -19,7 +19,7 @@ state: |
 
   {{ file (printf ".memdoor/runs/team-solve-%s/verdict.md" .partition) }}
 
-  # What the final Check printed, and its status (0 passed, 1 failed, none: nothing could be run)
+  # What the final Check printed, and its status (a status code: 0 means the Check passed, 1 that it failed, none that nothing could be run)
 
   {{ output "recheck" }}
 # The threshold is measured, not the 0.7 default (2026-11-07): on the 405

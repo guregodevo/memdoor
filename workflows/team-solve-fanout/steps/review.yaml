@@ -24,7 +24,7 @@ prompt: |
   {{ file (printf ".memdoor/runs/team-solve-fanout-%s/test-output.log" .partition) }}
   ```
 
-  Check status: {{ file (printf ".memdoor/runs/team-solve-fanout-%s/test-status.txt" .partition) }} (0 passed, 1 failed, none: nothing could be run).
+  Check status: {{ file (printf ".memdoor/runs/team-solve-fanout-%s/test-status.txt" .partition) }} (a status code: 0 means the Check passed, 1 that it failed, none that nothing could be run).
 
   You are the reviewer. Judge the change above against the task's Done when, from this evidence alone. The verdict is on the work, not on what it says of itself: a review or an audit the task asked for passes when its findings are true and grounded.
 
