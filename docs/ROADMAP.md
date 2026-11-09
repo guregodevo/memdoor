@@ -1,6 +1,6 @@
 # Roadmap: the quarter
 
-Memdoor is the CLI coding agent. Team Mode: cheap models, frontier results,
+Memdoor is the CLI coding agent with Team Mode: cheap models, frontier results,
 on your machine. The runs are published. The terminal, a shell, CI,
 cron, an editor and a phone are doors onto it.
 

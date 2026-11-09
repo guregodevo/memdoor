@@ -79,7 +79,7 @@ var noWorkspaceTopLevels = map[string]bool{
 
 var rootCmd = &cobra.Command{
 	Use:   "memdoor",
-	Short: "Memdoor — the CLI coding agent. Team Mode: cheap models, frontier results",
+	Short: "Memdoor — the CLI coding agent with Team Mode: cheap models, frontier results",
 	// WHAT A STRANGER READS FIRST (onboarding walk, 2026-09-27; realigned
 	// 2026-10-23 to the daemon). Every line below is something they will
 	// actually type.
