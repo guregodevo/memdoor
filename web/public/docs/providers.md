@@ -27,6 +27,14 @@ to `/connect`. Each provider below did the same coding turn on its fast model
 (a planted bug, a failing test, "fix the code, not the test") in 8 to 45
 seconds.
 
+A vendor key in the environment (`GROQ_API_KEY`, `OPENAI_API_KEY`, …) runs
+the gateway on that vendor alone, before an OpenRouter key. `MEMDOOR_MODEL`
+names the model. Without it, the gateway takes the cheapest model, by the
+vendor's list price, that passed `memdoor model check`. A first start checks
+up to three of the cheapest and keeps the reports
+(`~/.memdoor/model-checks.json`). A vendor whose list states no price needs
+`MEMDOOR_MODEL`. Anthropic defaults to `claude-sonnet-5`.
+
 `memdoor connect` with no kind scans the shell environment and the project's
 `.env`, `.env.local` and `.envrc` for keys by shape (`sk-or-…`, `sk-ant-…`,
 `AIza…`/`AQ.…`, `gsk_…`, `xai-…`, `llmgtwy_…`, a bare `sk-…`, or the provider's variable
@@ -138,8 +146,8 @@ Nemotron. Ids carry case. Type them as listed.
   2026-11-08). A price in euros is shown in euros (`€0.09 / €0.28`).
 - **Fast model**: `deepseek-v4.1-flash-1017` (1M / 393k, $0.20 / $0.60).
   `mistral-small-3.2-24b` and `gpt-oss-120b` are priced in euros.
-- With `EUROUTER_API_KEY` and `MEMDOOR_MODEL` set and no other vendor key,
-  EUrouter is the only host contacted.
+- With `EUROUTER_API_KEY` set and no other vendor key, EUrouter is the only
+  host contacted.
 
 ## LLM Gateway
 
@@ -152,8 +160,8 @@ Nemotron. Ids carry case. Type them as listed.
   2026-11-09).
 - **Fast model**: `glm-5.3-flash` (1M / 128k, $0.09 / $0.25).
 - A new account answers 402 until it has credit: add some at llmgateway.io.
-- With `LLMGATEWAY_API_KEY` and `MEMDOOR_MODEL` set and no other vendor key,
-  LLM Gateway is the only host contacted.
+- With `LLMGATEWAY_API_KEY` set and no other vendor key, LLM Gateway is the
+  only host contacted.
 
 ## Vercel AI Gateway
 

@@ -155,7 +155,11 @@ func viewRoute(re *providers.RemoteEngine, s *Session, agent string) routeView {
 	if len(rungs) > 0 && tier >= len(rungs) {
 		tier = len(rungs) - 1
 	}
-	v := routeView{Agent: agent, Tier: tier, Rung: tier + 1, Rungs: rungs, Pinned: sessionPinned(s), Reason: routeReason(tier, sessionPinned(s), sessionReason(s)), Effort: sessionString(s, sessionEffortKey),
+	reason := sessionReason(s)
+	if reason == "" && tier == 0 && !sessionPinned(s) && re != nil {
+		reason = re.Picked // a model picked for a vendor key (#206)
+	}
+	v := routeView{Agent: agent, Tier: tier, Rung: tier + 1, Rungs: rungs, Pinned: sessionPinned(s), Reason: routeReason(tier, sessionPinned(s), reason), Effort: sessionString(s, sessionEffortKey),
 		EffortUsed: sessionString(s, sessionEffortUsed), EffortFrom: sessionString(s, sessionEffortFrom)}
 	v.Mode = sessionMode(s)
 	if tier < len(rungs) {
