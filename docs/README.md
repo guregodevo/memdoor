@@ -29,6 +29,9 @@ Baseten or OpenRouter ([features/PROVIDERS.md](features/PROVIDERS.md), 2026-10-0
 
 **Want to CONTRIBUTE to Memdoor? Start here:**
 
+- **[CONTRIBUTING.md](../CONTRIBUTING.md)** — What is welcome, the CLA, building and testing
+- **[Pull request template](../.github/PULL_REQUEST_TEMPLATE.md)** — What every pull request carries: description, issue, type of change, test results, validation, checklist
+
 ### Developer Resources
 
 - **[Architecture](reference/ARCHITECTURE.md)** — System design and DDD patterns

@@ -496,6 +496,9 @@ has no model until one is connected. There is no local model.
   ```
   Then read the screenshot to confirm the page renders correctly. Never trust curl alone for UI changes.
 - Only commit after verifying all changes work correctly
+- **PR body**: fill in `.github/PULL_REQUEST_TEMPLATE.md` (description, related issue, type of change,
+  test results with the real output of `make build` / `make test` / `make check` / `make scan`,
+  validation by hand, checklist). A PR with no test results is sent back.
 - **Squash commits**: Combine multiple related commits into a single logical commit before pushing
   - Use `git rebase -i` to squash work-in-progress commits
   - Each final commit should represent one complete feature or fix
