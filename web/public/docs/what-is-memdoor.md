@@ -1,6 +1,6 @@
 # What is Memdoor
 
-The workflow harness that makes a small model beat a frontier one, on your machine.
+The CLI coding agent with Team Mode: cheap models, frontier results, on your machine.
 Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account.
 
 Headless first: a run starts from a shell script, CI, a schedule, a
@@ -30,6 +30,15 @@ Decision model, in front of the chat model: typed questions (is this hit
 relevant, is the turn progressing, does this claim hold) answered with a
 calibrated probability in under half a second. The harness acts on the
 answers; the chat model reads a fraction of the text.
+
+## Team Mode
+
+Shift+Tab flips the window from `auto` to `team`. In team, a turn is the
+[team-solve](/docs/team-solve) workflow on this project and the model the
+footer names: a single call first, then a team of fresh contexts when the
+check fails, and the single call is kept when the team does no better.
+[Team mode](/docs/team-mode) says how it works; [the result](/docs/team-solve)
+has the runs.
 
 ## The three places it saves you money
 

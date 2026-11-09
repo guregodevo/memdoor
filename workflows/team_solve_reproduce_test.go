@@ -127,3 +127,37 @@ func TestTeamSolveDoneReproduceProvesItOnTheTreeAsFound(t *testing.T) {
 		}
 	}
 }
+
+// With no clean copy of the tree (not in git, or a repository with no commit yet)
+// the reproduction is not run on the live tree, where the first attempt is already
+// at work: the step ends done, no baseline status is written, and the Check does
+// not use the reproduction. A reproduction that passes there used to fail the step
+// and loop the agent for the whole clock (the sample run, 2026-11-09).
+func TestTeamSolveDoneReproduceWithNoCleanCopyDoesNotLoop(t *testing.T) {
+	wf, err := filepath.Abs("team-solve")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	r := filepath.Join(dir, ".memdoor", "runs", "team-solve-1")
+	if err := os.MkdirAll(r, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// The live tree already has the attempt's fix: the reproduction passes on it.
+	if err := os.WriteFile(filepath.Join(dir, "fixed.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(r, "repro"), []byte("#!/bin/sh\ntest -f fixed.txt\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", filepath.Join(wf, "done.sh"), "reproduce", ".memdoor/runs/team-solve-1")
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "HOME="+dir)
+	out, err := cmd.CombinedOutput()
+	if err != nil || !strings.Contains(string(out), "not proven") {
+		t.Fatalf("no clean copy: err %v, output %q", err, out)
+	}
+	if _, err := os.Stat(filepath.Join(r, "repro-baseline-status.txt")); err == nil {
+		t.Error("no clean copy: a baseline status was written for a reproduction that was never proven")
+	}
+}

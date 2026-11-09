@@ -927,6 +927,20 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, 
 	return run, nil
 }
 
+// requireModel is nil when some model can answer a step's turn: the same
+// resolution a step makes. A run that asks for it (`workflow try`, whose
+// every step is a model's) is refused at the start with the one line that says
+// what to set, not run into ten failing steps (#215). Other workflows are not
+// asked: fix-tests on a project with nothing to fix runs no model, and a key is
+// not its business.
+func (s *Server) requireModel() error {
+	if s.clientFactory == nil {
+		return nil
+	}
+	_, err := s.clientFactory.GetClientFor(context.Background(), "coder")
+	return err
+}
+
 // triggerWorkflow runs the DAG once: every task whose target is missing and
 // reachable runs; the run ends done, failed, or WAITING when it reached an
 // external target nobody has made yet — then approving (or any other way
@@ -1317,18 +1331,19 @@ func workflowEntries(dir string) []map[string]string {
 // ---- HTTP ------------------------------------------------------------------
 
 type workflowRequest struct {
-	Dir       string `json:"dir"`
-	Name      string `json:"name"`
-	Workspace string `json:"workspace"`
-	Channel   string `json:"channel"`
-	RunID     string `json:"run_id"`
-	Task      string `json:"task"`
-	Timeout   string `json:"timeout"`
-	Partition string `json:"partition"` // "" = fresh; an earlier run's partition resumes it; "today" = once a day
-	Model     string `json:"model"`     // run: the model every step runs on, unless the step names its own
-	Prompt    string `json:"prompt"`    // run: the task, kept as .memdoor/runs/<workflow>-<partition>/prompt.md for the steps
-	Comment   string `json:"comment"`   // changes: what the reviewer wants changed
-	Limit     int    `json:"limit"`     // history: how many runs back (0 = the default)
+	Dir          string `json:"dir"`
+	Name         string `json:"name"`
+	Workspace    string `json:"workspace"`
+	Channel      string `json:"channel"`
+	RunID        string `json:"run_id"`
+	Task         string `json:"task"`
+	Timeout      string `json:"timeout"`
+	Partition    string `json:"partition"`     // "" = fresh; an earlier run's partition resumes it; "today" = once a day
+	Model        string `json:"model"`         // run: the model every step runs on, unless the step names its own
+	Prompt       string `json:"prompt"`        // run: the task, kept as .memdoor/runs/<workflow>-<partition>/prompt.md for the steps
+	RequireModel bool   `json:"require_model"` // run: refuse at the start when no model is configured (workflow try)
+	Comment      string `json:"comment"`       // changes: what the reviewer wants changed
+	Limit        int    `json:"limit"`         // history: how many runs back (0 = the default)
 }
 
 // handleWorkflow is the gateway's own workspace's alone (gatewayMember): a
@@ -1369,6 +1384,12 @@ func (s *Server) handleWorkflow(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			timeout = d
+		}
+		if req.RequireModel {
+			if err := s.requireModel(); err != nil {
+				fail(http.StatusBadRequest, err)
+				return
+			}
 		}
 		run, err := s.startWorkflow(req.Dir, req.Name, session, strings.TrimSpace(req.Workspace), string(authorization.GetActorID(r.Context())), req.Partition, req.Model, req.Prompt, timeout)
 		if err != nil {

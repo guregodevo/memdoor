@@ -43,7 +43,12 @@ reproduce)
     [ -x "$R/repro" ] && grep -qF -- "$p" "$R/repro" && { no "repro names this tree by its absolute path ($p); use paths relative to the project root: it is run from the root of a clean copy too"; break; }
   done
   if [ "$miss" = 0 ]; then
-    [ -d "$t" ] || t=$(pwd)   # no clean copy (not in git): the tree as it is
+    # No clean copy (not in git, or a repository with no commit yet): the tree as it
+    # is has the first attempt in it, which runs at the same time, so a reproduction
+    # that passes there proves nothing and failing the step for it loops the agent
+    # for the whole clock (the sample run hung on it, 2026-11-09). The reproduction
+    # stays unproven: no status file, and check.sh does not run it as a check.
+    [ -d "$t" ] || { echo "reproduce: done (no clean copy of the tree, so the reproduction is not proven on it)"; exit 0; }
     ( cd "$t" && "$R/repro" ) > "$R/repro-baseline.log" 2>&1; s=$?
     printf '%s\n' "$s" > "$R/repro-baseline-status.txt"
     [ "$s" != 0 ] || no "repro exits 0 on the tree as the run found it ($t): it reproduces nothing. It must fail while the behaviour the Prompt describes is present ($r/repro-baseline.log)"

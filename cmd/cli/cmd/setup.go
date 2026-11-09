@@ -303,7 +303,7 @@ func ensureGatewayRunning() {
 		_ = logF.Close()
 		if err := serviceStart(); err == nil {
 			fmt.Fprintln(os.Stderr, "  → starting the gateway service on :"+port)
-			waitForGateway(15 * time.Second)
+			waitForGateway(gatewayStartWait)
 		}
 		return
 	}
@@ -324,16 +324,25 @@ func ensureGatewayRunning() {
 		_ = cmd.Process.Release()
 	}
 	fmt.Fprintln(os.Stderr, "  → starting gateway on :"+port+" (background)")
-	// Give it a moment to bind the port and run migrations before
-	// the rest of setup hits /api/setup/status.
-	for i := 0; i < 30; i++ {
-		if gatewayReachable() {
-			fmt.Fprintln(os.Stderr, "  ✓ gateway ready")
-			return
-		}
-		time.Sleep(500 * time.Millisecond)
+	// Give it time to bind the port and run migrations before the rest of
+	// setup hits /api/setup/status.
+	if waitForGateway(gatewayStartWait) {
+		fmt.Fprintln(os.Stderr, "  ✓ gateway ready")
+		return
 	}
-	fmt.Fprintln(os.Stderr, "  ⚠ gateway didn't come up in 15s — see ~/.memdoor/gateway.log")
+	fmt.Fprintln(os.Stderr, gatewayGiveUpLine())
+}
+
+// gatewayStartWait is how long a command that started the gateway waits for it
+// to answer. A start a few times in a hundred took past fifteen seconds on a
+// fresh home (a sample run gave up at 15 s with the gateway still starting, three
+// times on 2026-11-09, never reproduced alone); a short delay is better than a
+// hard failure.
+const gatewayStartWait = 40 * time.Second
+
+// gatewayGiveUpLine is what is said when the gateway did not answer in time.
+func gatewayGiveUpLine() string {
+	return fmt.Sprintf("  ⚠ gateway didn't come up in %ds — see ~/.memdoor/gateway.log (it may still be starting: try again in a moment)", int(gatewayStartWait/time.Second))
 }
 
 // gatewayReachable probes /api/setup/status to see if the gateway is up.
@@ -383,8 +392,7 @@ func offerSampleRun(in *bufio.Reader, out io.Writer) error {
 			return err
 		}
 		fmt.Fprintf(os.Stderr, "The sample problem, in %s\n", dir)
-		workflowWaitFlag = true
-		return runWorkflowIn(dir, "team-solve", nil)
+		return runSampleIn(dir)
 	}
 	fmt.Fprintln(out, "  Later: memdoor workflow try")
 	return nil

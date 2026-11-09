@@ -1,7 +1,7 @@
 # Roadmap: the quarter
 
-Memdoor is the workflow harness that makes a small model beat a frontier
-one, on your machine. The runs are published. The terminal, a shell, CI,
+Memdoor is the CLI coding agent with Team Mode: cheap models, frontier results,
+on your machine. The runs are published. The terminal, a shell, CI,
 cron, an editor and a phone are doors onto it.
 
 Features are issues. The label `now` is what is being built; `next` is what
