@@ -200,7 +200,7 @@ The slash commands of `memdoor` (the window). `/` lists them with what each does
 | `/exit or /quit` | Close this window (ctrl+c does too); the gateway and the conversation stay |
 | `/help` | Show this help message |
 
-Keys: `Esc` interrupts a running turn; `Shift+Tab` switches the mode, auto (one turn) or team (the turn runs as team-solve); `ctrl+o` expands tool frames and a workflow's every step; `ctrl+f` is `/files`, `ctrl+g` is `/graph`; `End` jumps to the latest message; `a` alone approves the gate this window's run waits at.
+Keys: `Esc` interrupts a running turn; `Shift+Tab` switches the mode, auto (one turn) or team (the turn runs as team-solve); `ctrl+t` cycles the thinking effort, auto, low, medium, high; `ctrl+o` expands tool frames and a workflow's every step; `ctrl+f` is `/files`, `ctrl+g` is `/graph`; `End` jumps to the latest message; `a` alone approves the gate this window's run waits at.
 
 Custom commands are `.agents/commands/<name>.md` (`.claude/commands/` still works); skills are `.agents/skills/` in the project and `~/.memdoor/skills/` for every project, run as `/skill:<name> [args]`; an MCP server's prompt runs as `/<server>:<prompt> [args]`.
 

@@ -30,7 +30,7 @@ const (
 	sessionModelKey       = "route_model"       // a model pinned by id, off the ladder
 	sessionSortKey        = "route_sort"        // host preference for it: price | throughput | latency | default
 	sessionOrderKey       = "route_order"       // the person's own host order, comma-separated
-	sessionEffortKey      = "route_effort"      // reasoning effort the person chose (Shift+Tab); "" = auto
+	sessionEffortKey      = "route_effort"      // reasoning effort the person chose (ctrl+t); "" = auto
 	sessionMaxTokensKey   = "route_max_tokens"  // a task's own reply ceiling (`max_tokens N` on its model line); "" = the model's
 	sessionTemperatureKey = "route_temperature" // a task's own sampling temperature (`temperature T` on its model line); "" = the agent's
 	sessionTeamKey        = "route_team"        // the mode (Shift+Tab): "on" = team, a turn runs as team-solve; "" = auto, one turn

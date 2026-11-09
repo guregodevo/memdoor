@@ -193,7 +193,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return a, a.updatePage(t.page, t.msg)
 	case tea.KeyMsg:
-		if t.Type == tea.KeyCtrlT && a.pages[a.cur].pendingQuestion == nil {
+		// With one page there is nothing to switch to, and ctrl+t is the
+		// page's own: it cycles the reasoning effort (#87).
+		if t.Type == tea.KeyCtrlT && len(pageAgents()) > 1 && a.pages[a.cur].pendingQuestion == nil {
 			return a.switchPage((a.cur + 1) % len(pageAgents()))
 		}
 	}

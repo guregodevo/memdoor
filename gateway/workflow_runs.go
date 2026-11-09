@@ -1834,11 +1834,14 @@ func (r *workflowRun) reviewSince() time.Time {
 // through the window that started the run, so a run resumed after a restart
 // or started from the shell answered on the ladder's first rung while the
 // footer said "pinned by you" (dogfood 2026-10-04: karpathy on GLM, pin
-// DeepSeek).
+// DeepSeek). A line with no id (`model: thinking low`) keeps the model that
+// answers here and sets only what it names.
 func pinTaskModel(sess *Session, model, actor string) error {
 	if model != "" {
 		tm := parseTaskModel(model)
-		if err := pinModel(sess, tm.ID, tm.Sort, tm.Order); err != nil {
+		if tm.ID == "" {
+			applyPersistentPin(actor, sess)
+		} else if err := pinModel(sess, tm.ID, tm.Sort, tm.Order); err != nil {
 			return err
 		}
 		if tm.Effort != "" {
@@ -1864,7 +1867,7 @@ func pinTaskModel(sess *Session, model, actor string) error {
 // provider's). A bench on 2026-10-25 needed all three: the same model answered at
 // 885 tokens a second on the throughput host and at 44 on the cheapest, it
 // thought past the host's 32K output cap on a planning prompt and wrote
-// nothing, and an llm task has no window to type /model or Shift+Tab in.
+// nothing, and an llm task has no window to type /model or ctrl+t in.
 // cutoffMark is the first line of a reply cut at the reply cap, on a task
 // whose model line says mark_cutoff.
 const cutoffMark = "[cut off at the reply limit]"

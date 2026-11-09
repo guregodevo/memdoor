@@ -60,6 +60,7 @@ func slashHelpText() string {
 Keys:
 - Esc - Interrupt a running turn
 - Shift+Tab - The mode: auto (one turn) or team (the turn runs as team-solve)
+- ctrl+t - The thinking effort: auto (the decision model picks per turn, else high), low, medium, high
 - ctrl+o - Expand tool frames and a workflow's every step
 - End - Jump to the latest message
 
