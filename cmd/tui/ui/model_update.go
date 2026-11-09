@@ -31,9 +31,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// meets: running before this message, idle after it, and not stopped to
 	// ask a question (that has its own "?" in the title).
 	if !wasBusy && nm.working() {
+		nm.lastOutcome = windowStatus{} // the last run's failure is over
 		if c := cmuxTurnStarted(); c != nil {
 			cmd = tea.Batch(cmd, c)
 		}
+	}
+	// A question blocks the turn on the person: tell them if they are away.
+	if m.pendingQuestion == nil && nm.pendingQuestion != nil && nm.blurred {
+		cmd = tea.Batch(cmd, ring(nm.windowStatus().endNote(titleDirName())))
 	}
 	if wasBusy && !nm.working() && nm.pendingQuestion == nil {
 		if ring := (&nm).turnEnded(); ring != nil {
@@ -56,6 +61,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if status := (&nm).programStatusCmd(); status != nil {
 		cmd = tea.Batch(cmd, status)
+	}
+	if sidebar := (&nm).cmuxStatusCmd(); sidebar != nil {
+		cmd = tea.Batch(cmd, sidebar)
 	}
 	nm, flush := nm.flushSettled()
 	if flush == nil {

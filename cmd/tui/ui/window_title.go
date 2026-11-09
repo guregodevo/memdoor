@@ -108,18 +108,25 @@ func (m *Model) titleCmd() tea.Cmd {
 }
 
 // turnEnded records a finished turn and, when the window is out of focus, rings.
-// Called once per busy→idle transition (model_update.go).
+// Called once per busy→idle transition (model_update.go). A run that failed
+// keeps its failure as the outcome; the ring says what the end is: finished,
+// waiting at a gate, or failed.
 func (m *Model) turnEnded() tea.Cmd {
 	m.doneUnseen = true
-	m.lastOutcome = "done"
-	status := cmuxTurnEnded()
-	if !m.blurred {
-		return status
+	if m.lastOutcome.state == "" {
+		m.lastOutcome = windowStatus{state: statusDone}
 	}
-	text := "Memdoor: turn finished in " + titleDirName()
+	if !m.blurred {
+		return nil
+	}
+	return ring(m.windowStatus().endNote(titleDirName()))
+}
+
+// ring tells a person who is not looking: cmux's own notification, which the
+// next turn can clear (cmux.go), else a BEL and an OSC 9.
+func ring(text string) tea.Cmd {
 	if bin, _ := cmuxCLI(); bin != "" {
-		// cmux's own notification, which the next turn can clear (cmux.go).
-		return tea.Batch(status, cmuxRun("notify", "--title", text))
+		return cmuxRun("notify", "--title", text)
 	}
 	return ringTerminal(text)
 }
