@@ -38,8 +38,9 @@ import (
 //	EUROUTER_API_KEY=…            [EUROUTER_BASE_URL=https://api.eurouter.ai/api/v1]   EU-served models
 //	LLMGATEWAY_API_KEY=…          [LLMGATEWAY_BASE_URL=https://api.llmgateway.io/v1]   one key, many vendors
 //	AI_GATEWAY_API_KEY=… (or VERCEL_API_KEY) [VERCEL_BASE_URL=https://ai-gateway.vercel.sh/v1]   Vercel AI Gateway
-//	MEMDOOR_MODEL=<model id>      required for OpenAI and Google (their ids
-//	                              change; name the one your key may use);
+//	MEMDOOR_MODEL=<model id>      optional: with none, the gateway picks the
+//	                              cheapest model that passed model check on
+//	                              that vendor (vendor_default_model.go, #206);
 //	                              Anthropic defaults to claude-sonnet-5
 //	MEMDOOR_MODEL_CONTEXT=<tokens> the window (default 200000 / 128000)
 //	MEMDOOR_VENDOR_HEADERS=…      extra headers on every vendor request, for a
@@ -113,10 +114,81 @@ const (
 // and whether there is one. Reason says why there is none when a key was
 // found but could not be used (a missing model), so the gateway can log it.
 func VendorEngine() (re RemoteEngine, ok bool, reason string) {
-	if v := strings.TrimSpace(os.Getenv("MEMDOOR_VENDOR")); v == "0" || strings.EqualFold(v, "off") {
+	return vendorEngineOn(strings.TrimSpace(os.Getenv("MEMDOOR_MODEL")))
+}
+
+// VendorEngineOn is VendorEngine on a model the gateway picked for a vendor
+// key when MEMDOOR_MODEL names none (#206). MEMDOOR_MODEL, when set, wins.
+func VendorEngineOn(model string) (re RemoteEngine, ok bool, reason string) {
+	if m := strings.TrimSpace(os.Getenv("MEMDOOR_MODEL")); m != "" {
+		model = m
+	}
+	return vendorEngineOn(model)
+}
+
+// VendorKeyWithoutModel is the provider whose vendor key serves this gateway
+// with no model named, "" when there is nothing to pick for: vendor mode
+// off, MEMDOOR_MODEL set, a company gateway (its slug cannot be listed), or
+// an Anthropic key (it has a default).
+func VendorKeyWithoutModel() string {
+	if vendorOff() || strings.TrimSpace(os.Getenv("MEMDOOR_MODEL")) != "" ||
+		strings.TrimSpace(os.Getenv("AI_GATEWAY_BASE_URL")) != "" || strings.TrimSpace(os.Getenv("ANTHROPIC_API_KEY")) != "" {
+		return ""
+	}
+	v, ok := firstVendorKey()
+	if !ok {
+		return ""
+	}
+	return providerOfEngine(&RemoteEngine{Vendor: v.vendor})
+}
+
+func vendorOff() bool {
+	v := strings.TrimSpace(os.Getenv("MEMDOOR_VENDOR"))
+	return v == "0" || strings.EqualFold(v, "off")
+}
+
+// vendorKey is one vendor read from the environment, in the order they are
+// tried.
+type vendorKey struct {
+	vendor, keyVar, baseVar, base string
+	ctx                           int
+}
+
+// vendorKeys is read per call: Vercel's key variable depends on the
+// environment (vercelKeyVar).
+func vendorKeys() []vendorKey {
+	return []vendorKey{
+		{VendorOpenAI, "OPENAI_API_KEY", "OPENAI_BASE_URL", openaiDefaultBase, openaiDefaultContext},
+		{VendorGoogle, "GEMINI_API_KEY", "GEMINI_BASE_URL", googleDefaultBase, googleDefaultContext},
+		{VendorXAI, "XAI_API_KEY", "XAI_BASE_URL", xaiDefaultBase, xaiDefaultContext},
+		{VendorBaseten, "BASETEN_API_KEY", "BASETEN_BASE_URL", basetenDefaultBase, basetenDefaultContext},
+		{VendorGroq, "GROQ_API_KEY", "GROQ_BASE_URL", groqDefaultBase, groqDefaultContext},
+		{VendorDeepSeek, "DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", deepseekDefaultBase, deepseekDefaultContext},
+		{VendorEURouter, "EUROUTER_API_KEY", "EUROUTER_BASE_URL", euRouterDefaultBase, euRouterDefaultContext},
+		{VendorLLMGateway, "LLMGATEWAY_API_KEY", "LLMGATEWAY_BASE_URL", llmGatewayDefaultBase, llmGatewayDefaultContext},
+		{VendorVercel, vercelKeyVar(), "VERCEL_BASE_URL", vercelDefaultBase, vercelDefaultContext},
+	}
+}
+
+// firstVendorKey is the first vendor after Anthropic whose key is set.
+func firstVendorKey() (vendorKey, bool) {
+	if strings.TrimSpace(os.Getenv("XAI_API_KEY")) == "" {
+		if g := strings.TrimSpace(os.Getenv("GROK_API_KEY")); g != "" {
+			os.Setenv("XAI_API_KEY", g) // the alias, for the lookup below
+		}
+	}
+	for _, v := range vendorKeys() {
+		if strings.TrimSpace(os.Getenv(v.keyVar)) != "" {
+			return v, true
+		}
+	}
+	return vendorKey{}, false
+}
+
+func vendorEngineOn(model string) (re RemoteEngine, ok bool, reason string) {
+	if vendorOff() {
 		return RemoteEngine{}, false, ""
 	}
-	model := strings.TrimSpace(os.Getenv("MEMDOOR_MODEL"))
 	ctxLen := envInt("MEMDOOR_MODEL_CONTEXT")
 	// The company's own gateway first: its base URL and token are the whole
 	// integration (the maintainer, 2026-10-02: `AI_GATEWAY_BASE_URL` and a
@@ -149,38 +221,17 @@ func VendorEngine() (re RemoteEngine, ok bool, reason string) {
 		}
 		return vendorEngine(VendorAnthropic, envOr("ANTHROPIC_BASE_URL", anthropicDefaultBase), key, model, ctxLen), true, ""
 	}
-	if strings.TrimSpace(os.Getenv("XAI_API_KEY")) == "" {
-		if g := strings.TrimSpace(os.Getenv("GROK_API_KEY")); g != "" {
-			os.Setenv("XAI_API_KEY", g) // the alias, for the loop below
-		}
+	v, found := firstVendorKey()
+	if !found {
+		return RemoteEngine{}, false, ""
 	}
-	for _, v := range []struct {
-		vendor, keyVar, baseVar, base string
-		ctx                           int
-	}{
-		{VendorOpenAI, "OPENAI_API_KEY", "OPENAI_BASE_URL", openaiDefaultBase, openaiDefaultContext},
-		{VendorGoogle, "GEMINI_API_KEY", "GEMINI_BASE_URL", googleDefaultBase, googleDefaultContext},
-		{VendorXAI, "XAI_API_KEY", "XAI_BASE_URL", xaiDefaultBase, xaiDefaultContext},
-		{VendorBaseten, "BASETEN_API_KEY", "BASETEN_BASE_URL", basetenDefaultBase, basetenDefaultContext},
-		{VendorGroq, "GROQ_API_KEY", "GROQ_BASE_URL", groqDefaultBase, groqDefaultContext},
-		{VendorDeepSeek, "DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", deepseekDefaultBase, deepseekDefaultContext},
-		{VendorEURouter, "EUROUTER_API_KEY", "EUROUTER_BASE_URL", euRouterDefaultBase, euRouterDefaultContext},
-		{VendorLLMGateway, "LLMGATEWAY_API_KEY", "LLMGATEWAY_BASE_URL", llmGatewayDefaultBase, llmGatewayDefaultContext},
-		{VendorVercel, vercelKeyVar(), "VERCEL_BASE_URL", vercelDefaultBase, vercelDefaultContext},
-	} {
-		key := strings.TrimSpace(os.Getenv(v.keyVar))
-		if key == "" {
-			continue
-		}
-		if model == "" {
-			return RemoteEngine{}, false, v.keyVar + " is set but MEMDOOR_MODEL is not: name the model your key may use"
-		}
-		if ctxLen == 0 {
-			ctxLen = v.ctx
-		}
-		return vendorEngine(v.vendor, envOr(v.baseVar, v.base), key, model, ctxLen), true, ""
+	if model == "" {
+		return RemoteEngine{}, false, v.keyVar + " is set but no model was named or picked: name one with MEMDOOR_MODEL"
 	}
-	return RemoteEngine{}, false, ""
+	if ctxLen == 0 {
+		ctxLen = v.ctx
+	}
+	return vendorEngine(v.vendor, envOr(v.baseVar, v.base), strings.TrimSpace(os.Getenv(v.keyVar)), model, ctxLen), true, ""
 }
 
 func vendorEngine(vendor, base, key, model string, ctxLen int) RemoteEngine {

@@ -50,8 +50,10 @@ grep -r "duplicate_code" .    # Search before coding
 # MEMDOOR_MODEL=<provider slug> → POST <base>/v1/responses (OpenAI Responses shape,
 # providers/responses.go; AI_GATEWAY_API=chat for chat/completions). THEN a vendor key:
 # ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY
-# (+ *_BASE_URL for a company AI gateway, MEMDOOR_MODEL, MEMDOOR_VENDOR_HEADERS for cost
-# tags): that vendor and NOTHING else — no OpenRouter, no broker, no catalogue, no web
+# (+ *_BASE_URL for a company AI gateway, MEMDOOR_VENDOR_HEADERS for cost tags;
+# MEMDOOR_MODEL optional since 2026-11-09, #206: with none, the cheapest model that passed
+# `memdoor model check` on that vendor, a first start checks up to three, gateway/
+# vendor_default_model.go): that vendor and NOTHING else — no OpenRouter, no broker, no catalogue, no web
 # search, decisions off. providers/vendor.go + anthropic.go; docs/SECURITY.md lists every
 # host the binary names and gateway/egress_test.go fails the build on a new one.
 # BYOK (2026-09-27) — OPENROUTER_API_KEY (the old OPEN_ROUTER_API_KEY still read, and wins) in the gateway's env IS the product:

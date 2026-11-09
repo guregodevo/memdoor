@@ -31,14 +31,27 @@ func (s *Server) selectModelEngine() {
 	// the vendor the company approved, on the key it gave the developer, and
 	// nothing reaches OpenRouter or memdoor.ai's broker. The one mode a
 	// monitored laptop allows (the maintainer, 2026-10-02).
-	if re, ok, reason := providers.VendorEngine(); ok {
+	re, ok, reason := providers.VendorEngine()
+	if !ok {
+		// No MEMDOOR_MODEL: the model is picked on that vendor (#206), and
+		// the vendor key wins over an OpenRouter key in the same shell.
+		if id := providers.VendorKeyWithoutModel(); id != "" {
+			if model, why := s.pickVendorModel(context.Background(), id); model != "" {
+				re, ok, reason = providers.VendorEngineOn(model)
+				re.Picked = pickedReason
+			} else {
+				reason = why
+			}
+		}
+	}
+	if ok {
 		cur := providers.ActiveRemoteEngine()
-		if cur == nil || cur.Vendor != re.Vendor || cur.APIKey != re.APIKey || cur.Endpoint != re.Endpoint || cur.Model != re.Model || cur.CtxLen != re.CtxLen {
+		if cur == nil || cur.Vendor != re.Vendor || cur.APIKey != re.APIKey || cur.Endpoint != re.Endpoint || cur.Model != re.Model || cur.CtxLen != re.CtxLen || cur.Picked != re.Picked {
 			if err := providers.SetRemoteEngine(re); err != nil {
 				logs.New("Brain").Warn("your company's " + re.Vendor + " key could not be used: " + err.Error())
 			} else {
 				logs.New("Brain").Info("your company's "+re.Vendor+" key serves this gateway; nothing else is contacted",
-					slog.String("endpoint", re.Endpoint), slog.String("model", re.Model))
+					slog.String("endpoint", re.Endpoint), slog.String("model", re.Model), slog.String("picked", re.Picked))
 			}
 		}
 		return

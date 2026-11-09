@@ -429,6 +429,27 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   `/connect <id>`. `/model` lists the other connected providers and what is
   not connected. `TestProviderPickerThenAProvidersModels`.
 
+- **A vendor key without `MEMDOOR_MODEL`** (2026-11-09, #206). `MEMDOOR_MODEL`
+  named the model and, with a vendor key, switched the gateway to that
+  vendor alone. A vendor key with no `MEMDOOR_MODEL` logged a warning and
+  the gateway fell back to OpenRouter. Now the gateway picks the model:
+  the cheapest, by the vendor's list price, with a passing
+  `memdoor model check` report (`gateway/vendor_default_model.go`). With
+  no passing report it checks the cheapest models it has no report for,
+  at most three, and keeps the reports. The next start reads them and
+  spends nothing. The vendor key then wins over an OpenRouter key in the
+  same environment. A model with no price is not ranked, so a vendor whose
+  list prices none needs `MEMDOOR_MODEL`. If no checked model passes, the
+  gateway falls back as before. `MEMDOOR_MODEL` still names the model when
+  set. The company gateway still requires it, and Anthropic keeps its
+  default. `/model` in the window shows the model with
+  `← picked: the cheapest that passed model check`.
+
+  Live, a gateway with only `GROQ_API_KEY` and an OpenRouter key, an empty
+  `HOME`: Groq's two cheapest, `meta-llama/llama-prompt-guard-2-22m` and
+  `-86m`, refused tool calls (HTTP 400, under 200 ms each);
+  `openai/gpt-oss-20b` passed in 1.6 s and serves the gateway.
+
 ## How a provider knows it is Memdoor (2026-10-24)
 
 Nothing phones home. Some providers read an app header and some do not.
