@@ -895,6 +895,12 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, 
 	if err != nil {
 		return nil, err
 	}
+	// A workflow with agent or llm steps and no model to answer them is
+	// refused here with the one line that says what to set, not run into ten
+	// failing steps (#215: `memdoor workflow try` with no key).
+	if err := s.needsAModel(spec); err != nil {
+		return nil, err
+	}
 	// Where the state lives is settled before the run exists: a Pro run
 	// whose store does not answer is refused here, in words, not recorded.
 	if _, err := s.runRepository(dir); err != nil {
@@ -925,6 +931,29 @@ func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, 
 	s.triggerWorkflow(run)
 	run.note(s, fmt.Sprintf("▶ %s · %d tasks · %s", spec.Name, len(spec.Tasks), run.ID))
 	return run, nil
+}
+
+// needsAModel is nil when the workflow has no agent or llm step, or when some
+// model can answer one: the same resolution a step's turn would make. A model
+// pinned by a step or by --model that no provider lists is the step's to report.
+func (s *Server) needsAModel(spec workflow.Workflow) error {
+	if s.clientFactory == nil {
+		return nil
+	}
+	uses := false
+	for _, t := range spec.Tasks {
+		if !t.External && (t.Type == "agent" || t.Type == "llm") {
+			uses = true
+			break
+		}
+	}
+	if !uses {
+		return nil
+	}
+	if _, err := s.clientFactory.GetClientFor(context.Background(), "coder"); err != nil {
+		return err
+	}
+	return nil
 }
 
 // triggerWorkflow runs the DAG once: every task whose target is missing and
