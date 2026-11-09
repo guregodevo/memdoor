@@ -4,9 +4,8 @@
 # change adds no failing test), 1 it failed, 3 nothing to run or nothing it
 # says counts (the judge decides). Writes the kind it ran to
 # <run dir>/check-kind.txt (command, samples, judge; with "+repro", or
-# "repro" alone, when the reproduction ran too; "+paths" with the path
-# checks) and each part's status to <run dir>/check-parts.txt ("command 0",
-# "repro 1", "paths 2": the number of path checks that failed).
+# "repro" alone, when the reproduction ran too) and each part's status to
+# <run dir>/check-parts.txt ("command 0", "repro 1").
 set -u
 r="$1"; log="$2"; w="$(cd "$(dirname "$0")" && pwd)"
 R="$(cd "$r" && pwd)"
@@ -79,25 +78,11 @@ if [ -n "$repro" ]; then
 elif printf '%s\n' "$section" | sed 's/`[^`]*`//g' | grep -qw reproduce; then
   printf '\nno reproduction: none was written that fails on the tree as the run found it; the Check is %s\n' "$kind" >> "$log"
 fi
-# The path checks (paths.yaml): one per code path the survey listed, each
-# failing on the tree as found. A change that fixed the example and left a
-# sibling as it was fails here, where the project's tests and its own
-# reproduction pass it.
-pc=0; pf=0
-for c in "$R"/paths/*; do
-  [ -f "$c" ] && [ -x "$c" ] || continue
-  pc=$((pc + 1))
-  if "$c" >> "$log.paths" 2>&1; then
-    printf 'path check %s: passes\n' "$(basename "$c")" >> "$log"
-  else
-    printf 'path check %s: FAILS: that code path still shows the behaviour the Prompt describes\n' "$(basename "$c")" >> "$log"
-    pf=$((pf + 1))
-  fi
-done
-if [ "$pc" -gt 0 ]; then
-  part paths "$pf"
-  if [ "$kind" = judge ]; then kind=paths; else kind="$kind+paths"; fi
-  if [ "$pf" -gt 0 ]; then status=1; elif [ "$status" = 3 ]; then status=0; fi
-fi
+# The path checks (paths.yaml) are not part of the Check: the fan-out scores
+# its attempts on them, and that is all they decide. As a veto here they
+# helped no run and turned one right fix into a wrong repair: a check of a
+# path the issue does not touch failed the right pick, review failed it, and
+# keep took the repair (matplotlib-23476, 44 runs, SWE-bench Verified,
+# 2026-11-09).
 echo "$kind" > "$R/check-kind.txt"
 exit "$status"
