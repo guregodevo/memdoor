@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -126,5 +127,53 @@ func TestARepositoryWithNoCommitIsCopied(t *testing.T) {
 	ch, err := iso.Changes(context.Background())
 	if err != nil || !strings.Contains(ch, "solution.py") || strings.Contains(ch, "task.md") {
 		t.Fatalf("change = %q, %v", ch, err)
+	}
+}
+
+// A fan-out's attempts start and end at once in one repository: every one
+// gets its worktree and its change, whatever the others are doing, and the
+// repository's worktree list is empty after. Attempts that ended pruned the
+// list while another was being added (astropy-13398, 2026-11-09).
+func TestAttemptsStartingAndEndingAtOnceKeepTheirWorktrees(t *testing.T) {
+	dir := t.TempDir()
+	write(t, filepath.Join(dir, "a.txt"), "a\n")
+	gitT(t, dir, "init", "-q")
+	gitT(t, dir, "add", "-A")
+	gitT(t, dir, "commit", "-qm", "base")
+	iso := NewIsolator()
+	const n = 32
+	errs := make(chan error, n)
+	for k := 0; k < n; k++ {
+		go func(k int) {
+			for round := 0; round < 6; round++ {
+				is, err := iso.Isolate(context.Background(), dir, "try-"+strings.Repeat("x", k)+"-"+string(rune('a'+round)))
+				if err != nil {
+					errs <- err
+					return
+				}
+				if err := os.WriteFile(filepath.Join(is.Dir(), "a.txt"), []byte("changed\n"), 0o644); err != nil {
+					errs <- err
+					return
+				}
+				if c, err := is.Changes(context.Background()); err != nil || !strings.Contains(c, "+changed") {
+					errs <- fmt.Errorf("changes %q: %v", c, err)
+					return
+				}
+				if err := is.Close(); err != nil {
+					errs <- err
+					return
+				}
+			}
+			errs <- nil
+		}(k)
+	}
+	for k := 0; k < n; k++ {
+		if err := <-errs; err != nil {
+			t.Fatal(err)
+		}
+	}
+	out, _ := exec.Command("git", "-C", dir, "worktree", "list", "--porcelain").Output()
+	if c := strings.Count(string(out), "worktree "); c != 1 {
+		t.Fatalf("%d worktrees left:\n%s", c, out)
 	}
 }

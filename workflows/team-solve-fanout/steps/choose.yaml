@@ -12,5 +12,8 @@ from: direct
 prefer: 1
 requires:
   - table_pattern: direct
+# Optional, like the fan-out it reads: without attempts there is nothing to
+# choose, and test-0 sends the run to the team.
+optional: true
 timeout: 5m
 max_retries: 0
