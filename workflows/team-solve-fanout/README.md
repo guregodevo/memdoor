@@ -22,7 +22,7 @@ Measured on 2026-11-09, main e98b3c5 ([the analysis](https://github.com/guregode
 | benchmark | model | result |
 |---|---|---|
 | LiveCodeBench, GVS5H's 100 hardest, one pass | deepseek-v4.1-flash-1017 | 98 / 100 |
-| SWE-bench Verified, first 91 of 500 | deepseek-v4.1-flash | 74 (81.3%); team-solve's published run: 400 / 500 (80.0%) |
-| SWE-bench Verified, first 116 of 500 | deepseek-v4.1-flash-1017 | 92 (79.3%) |
+| SWE-bench Verified, 91 of 500 | deepseek-v4.1-flash | 74 (81.3%); team-solve's published run: 400 / 500 (80.0%) |
+| SWE-bench Verified, 116 of 500 | deepseek-v4.1-flash-1017 | 92 (79.3%) |
 
-On SWE-bench the losses against team-solve's published run were lost at the pick, on instances the model resolves some of the time.
+The SWE-bench instances are the first of four shards of 125, in id order. The 0910 run lost 5 of team-solve's published passes, each at the pick. Four of the five failed in another run the same week.
