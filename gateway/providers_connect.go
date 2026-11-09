@@ -303,7 +303,7 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 		if callErr != nil && hasNoCredit(callErr) {
 			// A new account (Sign in with OpenRouter, 2026-10-31) has a good
 			// key and nothing to spend yet: connected, and told so.
-			answer, callErr = "(the key answered; the account has no credit yet: add some at openrouter.ai/settings/credits, or /model a :free model)", nil
+			answer, callErr = noCreditAnswer(p), nil
 		}
 		if callErr != nil {
 			lastErr = callErr.Error()
@@ -384,6 +384,20 @@ func probeCall(ctx context.Context, p providers.Provider, model string) (string,
 // model in it, not us. The URL and the key are proven by such an answer.
 // hasNoCredit says the provider took the key and refused for want of credit
 // (HTTP 402): the key is good, the account is empty.
+// noCreditAnswer says where to add credit: OpenRouter's page, with its free
+// models, or the host of any other provider (LLM Gateway answers a new
+// account's call with 402 too, 2026-11-09).
+func noCreditAnswer(p providers.Provider) string {
+	var host string
+	if u, err := url.Parse(p.Base); err == nil {
+		host = u.Hostname()
+	}
+	if p.API == providers.APIOpenRouter || strings.HasSuffix(host, "openrouter.ai") {
+		return "(the key answered; the account has no credit yet: add some at openrouter.ai/settings/credits, or /model a :free model)"
+	}
+	return "(the key answered; the account has no credit yet: add some at " + strings.TrimPrefix(host, "api.") + ")"
+}
+
 func hasNoCredit(err error) bool {
 	e := strings.ToLower(err.Error())
 	return strings.Contains(e, "out of credit") || strings.Contains(e, "insufficient credits") || strings.Contains(e, "http 402")

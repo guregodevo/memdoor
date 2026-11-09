@@ -251,6 +251,24 @@ func TestConnectAKeyWithNoCreditYet(t *testing.T) {
 	}
 }
 
+// The no-credit note names the provider the key is for: OpenRouter's page
+// for OpenRouter, the host for any other (an LLM Gateway account was told to
+// add credit at openrouter.ai, 2026-11-09).
+func TestTheNoCreditNoteNamesTheProvider(t *testing.T) {
+	for base, want := range map[string]string{
+		"https://openrouter.ai/api/v1": "openrouter.ai/settings/credits",
+		"https://api.llmgateway.io/v1": "add some at llmgateway.io)",
+		"https://inference.example/v1": "add some at inference.example)",
+	} {
+		if got := noCreditAnswer(providers.Provider{API: providers.APIChat, Base: base}); !strings.Contains(got, want) {
+			t.Errorf("%s: %q, want %q", base, got, want)
+		}
+	}
+	if got := noCreditAnswer(providers.Provider{API: providers.APIChat, Base: "https://api.llmgateway.io/v1"}); strings.Contains(got, "openrouter") {
+		t.Errorf("LLM Gateway is not sent to OpenRouter: %q", got)
+	}
+}
+
 // The menu behind `connect local` lists every default address whose model list
 // answers, in order, and names a runtime by its default port.
 func TestAnsweringRuntimesListsEachThatAnswers(t *testing.T) {

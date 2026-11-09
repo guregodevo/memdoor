@@ -28,6 +28,7 @@ import (
 //	DeepSeek    GET /v1/models            context_window, max_output_tokens, effort, input_modalities
 //	Baseten     GET /v1/models            context_length, max_completion_tokens, pricing, modalities, supported_features
 //	EUrouter    GET /api/v1/models        context_length, top_provider.max_completion_tokens, pricing + currency, supported_parameters, supported_api_endpoints (2026-11-08)
+//	LLM Gateway GET /v1/models            context_length, max_output, pricing, architecture.output_modalities, supported_parameters, deactivated_at (2026-11-09)
 //
 // A ModelReader is one of those, behind the registry: ModelsOf and GetModel
 // call it, fill what it leaves empty from the catalogue and the reference
@@ -63,6 +64,8 @@ func readerFor(p Provider) ModelReader {
 		return basetenReader{}
 	case VendorEURouter:
 		return euRouterReader{}
+	case VendorLLMGateway:
+		return llmGatewayReader{}
 	case ChatGPTID:
 		return chatgptReader{}
 	}
@@ -592,5 +595,61 @@ func (euRouterReader) ListModels(ctx context.Context, p Provider) ([]Model, erro
 }
 
 func (r euRouterReader) GetModel(ctx context.Context, p Provider, id string) (Model, error) {
+	return fromList(ctx, r, p, id)
+}
+
+// ---- LLM Gateway -------------------------------------------------------
+
+// llmGatewayReader reads LLM Gateway's list: OpenRouter's shape, with a
+// model's output modalities, its reply cap as max_output, and the date it is
+// switched off. It lists image, video, speech, embedding and rerank models
+// too, and its "auto" and "custom" routes with no window; only a model that
+// answers in text, calls tools, states a window and is not switched off can
+// run a turn. Prices are dollars per token.
+type llmGatewayReader struct{}
+
+func (llmGatewayReader) ListModels(ctx context.Context, p Provider) ([]Model, error) {
+	var raw struct {
+		Data []struct {
+			ID            string `json:"id"`
+			Name          string `json:"name"`
+			ContextLength int    `json:"context_length"`
+			MaxOutput     int    `json:"max_output"`
+			Architecture  struct {
+				InputModalities  []string `json:"input_modalities"`
+				OutputModalities []string `json:"output_modalities"`
+			} `json:"architecture"`
+			Parameters    []string   `json:"supported_parameters"`
+			DeactivatedAt *time.Time `json:"deactivated_at"`
+			Pricing       struct {
+				Prompt     string `json:"prompt"`
+				Completion string `json:"completion"`
+			} `json:"pricing"`
+		} `json:"data"`
+	}
+	if err := getJSON(ctx, modelsURL(p.Base), bearer(p), &raw); err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	out := make([]Model, 0, len(raw.Data))
+	for _, d := range raw.Data {
+		if d.ID == "" || d.ContextLength <= 0 || !contains(d.Parameters, "tools") ||
+			len(d.Architecture.OutputModalities) != 1 || d.Architecture.OutputModalities[0] != "text" ||
+			(d.DeactivatedAt != nil && d.DeactivatedAt.Before(now)) {
+			continue
+		}
+		name := d.Name
+		if name == "" {
+			name = d.ID
+		}
+		reasons := contains(d.Parameters, "reasoning")
+		out = append(out, Model{ID: d.ID, Name: name, Context: d.ContextLength, MaxOutput: d.MaxOutput, Tools: true,
+			Inputs: d.Architecture.InputModalities, Effort: reasons, Thinking: reasons,
+			InPerM: perMillion(d.Pricing.Prompt), OutPerM: perMillion(d.Pricing.Completion)})
+	}
+	return sortModels(out), nil
+}
+
+func (r llmGatewayReader) GetModel(ctx context.Context, p Provider, id string) (Model, error) {
 	return fromList(ctx, r, p, id)
 }

@@ -33,6 +33,7 @@ import (
 //	GROQ_API_KEY=…                [GROQ_BASE_URL=https://api.groq.com/openai/v1]
 //	DEEPSEEK_API_KEY=…            [DEEPSEEK_BASE_URL=https://api.deepseek.com/v1]
 //	EUROUTER_API_KEY=…            [EUROUTER_BASE_URL=https://api.eurouter.ai/api/v1]   EU-served models
+//	LLMGATEWAY_API_KEY=…          [LLMGATEWAY_BASE_URL=https://api.llmgateway.io/v1]   one key, many vendors
 //	MEMDOOR_MODEL=<model id>      required for OpenAI and Google (their ids
 //	                              change; name the one your key may use);
 //	                              Anthropic defaults to claude-sonnet-5
@@ -61,6 +62,7 @@ const (
 	VendorGroq       = "groq"
 	VendorDeepSeek   = "deepseek"
 	VendorEURouter   = "eurouter"
+	VendorLLMGateway = "llmgateway"
 	// VendorGateway is a company's own AI gateway speaking the OpenAI
 	// Responses API (responses.go); VendorGatewayChat the same gateway on
 	// the chat/completions shape (AI_GATEWAY_API=chat).
@@ -90,6 +92,10 @@ const (
 	// are served in the EU; its list states every window.
 	euRouterDefaultBase    = "https://api.eurouter.ai/api/v1"
 	euRouterDefaultContext = 128_000
+	// LLM Gateway (2026-11-09, #53): an OpenAI-compatible router, one key for
+	// many vendors; its list states every window.
+	llmGatewayDefaultBase    = "https://api.llmgateway.io/v1"
+	llmGatewayDefaultContext = 128_000
 )
 
 // VendorEngine is the engine for a gateway holding a company's vendor key,
@@ -146,6 +152,7 @@ func VendorEngine() (re RemoteEngine, ok bool, reason string) {
 		{VendorGroq, "GROQ_API_KEY", "GROQ_BASE_URL", groqDefaultBase, groqDefaultContext},
 		{VendorDeepSeek, "DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", deepseekDefaultBase, deepseekDefaultContext},
 		{VendorEURouter, "EUROUTER_API_KEY", "EUROUTER_BASE_URL", euRouterDefaultBase, euRouterDefaultContext},
+		{VendorLLMGateway, "LLMGATEWAY_API_KEY", "LLMGATEWAY_BASE_URL", llmGatewayDefaultBase, llmGatewayDefaultContext},
 	} {
 		key := strings.TrimSpace(os.Getenv(v.keyVar))
 		if key == "" {
