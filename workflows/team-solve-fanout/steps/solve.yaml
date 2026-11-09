@@ -29,8 +29,7 @@ prompt: |
   (the command, or a sample; and the reproduction
   .memdoor/runs/team-solve-fanout-{{.partition}}/repro when it is there: run from
   the project's root, it exits 0 once the behaviour the Prompt describes is
-  fixed; and each path check in .memdoor/runs/team-solve-fanout-{{.partition}}/paths/,
-  one per code path the task goes through) before you finish and fix what it shows. Do not
+  fixed) before you finish and fix what it shows. Do not
   change task.md, the prompt, test data or repro. The steps after you check the
   work and the manager owns any repair round. Do not spawn agents or use
   chat context.
