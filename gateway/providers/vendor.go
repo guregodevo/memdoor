@@ -38,6 +38,7 @@ import (
 //	EUROUTER_API_KEY=…            [EUROUTER_BASE_URL=https://api.eurouter.ai/api/v1]   EU-served models
 //	LLMGATEWAY_API_KEY=…          [LLMGATEWAY_BASE_URL=https://api.llmgateway.io/v1]   one key, many vendors
 //	AI_GATEWAY_API_KEY=… (or VERCEL_API_KEY) [VERCEL_BASE_URL=https://ai-gateway.vercel.sh/v1]   Vercel AI Gateway
+//	AIMLAPI_API_KEY=…             [AIMLAPI_BASE_URL=https://api.aimlapi.com/v1]   AI/ML API, one key, many vendors
 //	MEMDOOR_MODEL=<model id>      optional: with none, the gateway picks the
 //	                              cheapest model that passed model check on
 //	                              that vendor (vendor_default_model.go, #206);
@@ -69,6 +70,7 @@ const (
 	VendorEURouter   = "eurouter"
 	VendorLLMGateway = "llmgateway"
 	VendorVercel     = "vercel"
+	VendorAIMLAPI    = "aimlapi"
 	// VendorGateway is a company's own AI gateway speaking the OpenAI
 	// Responses API (responses.go); VendorGatewayChat the same gateway on
 	// the chat/completions shape (AI_GATEWAY_API=chat).
@@ -108,6 +110,10 @@ const (
 	// reads the other's.
 	vercelDefaultBase    = "https://ai-gateway.vercel.sh/v1"
 	vercelDefaultContext = 128_000
+	// AI/ML API (#223): an OpenAI-compatible router, one key for many
+	// vendors; its list states every window and price.
+	aimlapiDefaultBase    = "https://api.aimlapi.com/v1"
+	aimlapiDefaultContext = 128_000
 )
 
 // VendorEngine is the engine for a gateway holding a company's vendor key,
@@ -167,6 +173,7 @@ func vendorKeys() []vendorKey {
 		{VendorEURouter, "EUROUTER_API_KEY", "EUROUTER_BASE_URL", euRouterDefaultBase, euRouterDefaultContext},
 		{VendorLLMGateway, "LLMGATEWAY_API_KEY", "LLMGATEWAY_BASE_URL", llmGatewayDefaultBase, llmGatewayDefaultContext},
 		{VendorVercel, vercelKeyVar(), "VERCEL_BASE_URL", vercelDefaultBase, vercelDefaultContext},
+		{VendorAIMLAPI, "AIMLAPI_API_KEY", "AIMLAPI_BASE_URL", aimlapiDefaultBase, aimlapiDefaultContext},
 	}
 }
 
