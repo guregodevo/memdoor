@@ -79,21 +79,21 @@ func TestProgramStatusGoesThroughTmux(t *testing.T) {
 
 func TestProgramStatusIsClearedWhenTheWindowCloses(t *testing.T) {
 	t.Setenv("TMUX", "")
-	defer func() { programStatusWritten = 0 }()
+	defer func() { programStatusWrites.written = 0 }()
 
 	var out strings.Builder
-	programStatusWritten = 0
+	programStatusWrites.written = 0
 	programStatusClear(&out)
 	if out.Len() != 0 {
 		t.Errorf("a window that sent no state clears nothing, got %q", out.String())
 	}
 
-	programStatusWritten = 3
+	programStatusWrites.written = 3
 	programStatusClear(&out)
 	if want := "\x1b]7501;state=clear\x1b\\"; out.String() != want {
 		t.Errorf("closing clears the state, got %q, want %q", out.String(), want)
 	}
-	if writeProgramStatus(programStatusSeq("working"))(); programStatusWritten != math.MaxUint64 {
+	if writeProgramStatus(programStatusSeq("working"))(); programStatusWrites.written != math.MaxUint64 {
 		t.Error("a status queued before the close must not land after the clear")
 	}
 }
