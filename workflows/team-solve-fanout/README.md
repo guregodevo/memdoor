@@ -21,7 +21,7 @@ Measured on 2026-11-09, main e98b3c5 ([the analysis](https://github.com/guregode
 
 | benchmark | model | result |
 |---|---|---|
-| LiveCodeBench, GVS5H's 100 hardest, one pass | deepseek-v4.1-flash-1017 | 98 / 100 |
+| LiveCodeBench, GVS5H's 100 hardest, one pass | deepseek-v4.1-flash-1017 | 91 / 100 |
 | SWE-bench Verified, 91 of 500 | deepseek-v4.1-flash | 74 (81.3%); team-solve's published run: 400 / 500 (80.0%) |
 | SWE-bench Verified, 116 of 500 | deepseek-v4.1-flash-1017 | 92 (79.3%) |
 
