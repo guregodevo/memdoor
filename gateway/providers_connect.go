@@ -305,6 +305,11 @@ func connectProvider(ctx context.Context, req connectRequest) connectResult {
 			// key and nothing to spend yet: connected, and told so.
 			answer, callErr = noCreditAnswer(p), nil
 		}
+		if callErr != nil && needsBilling(callErr) {
+			// Vercel AI Gateway (2026-11-09) takes the key and serves nothing
+			// until the account has a card on file: a good key, said so.
+			answer, callErr = "(the key answered; the account serves no request until it has a card on file)", nil
+		}
 		if callErr != nil {
 			lastErr = callErr.Error()
 			continue
@@ -401,6 +406,13 @@ func noCreditAnswer(p providers.Provider) string {
 func hasNoCredit(err error) bool {
 	e := strings.ToLower(err.Error())
 	return strings.Contains(e, "out of credit") || strings.Contains(e, "insufficient credits") || strings.Contains(e, "http 402")
+}
+
+// needsBilling says the provider took the key and refused until the account
+// has a payment method: Vercel's 403 customer_verification_required.
+func needsBilling(err error) bool {
+	e := strings.ToLower(err.Error())
+	return strings.Contains(e, "customer_verification_required") || strings.Contains(e, "requires a valid credit card")
 }
 
 func refusesTheModelNotTheKey(err error) bool {

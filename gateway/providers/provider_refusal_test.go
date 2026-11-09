@@ -52,3 +52,14 @@ func TestARefusalNamesTheHostThatRefused(t *testing.T) {
 		t.Fatalf("EUrouter's 401: %s", got)
 	}
 }
+
+// Vercel's card refusal (403 customer_verification_required, live
+// 2026-11-09) reads as Vercel's, not OpenRouter's.
+func TestVercelsCardRefusalNamesVercel(t *testing.T) {
+	card := []byte(`{"error":{"message":"AI Gateway requires a valid credit card on file to service requests. Please visit https://vercel.com/d?to=x to add a card.","type":"customer_verification_required"}}`)
+	got := providerRefusal(vercelDefaultBase, 403, card).Error()
+	want := "ai-gateway.vercel.sh refused the key (HTTP 403): AI Gateway requires a valid credit card on file to service requests. Check the key"
+	if got != want {
+		t.Fatalf("got  %q\nwant %q", got, want)
+	}
+}

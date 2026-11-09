@@ -269,6 +269,35 @@ func TestTheNoCreditNoteNamesTheProvider(t *testing.T) {
 	}
 }
 
+// Vercel AI Gateway takes a good key and serves nothing until the account
+// has a card on file (403 customer_verification_required, live 2026-11-09):
+// the key connects and the answer says why no model replied. A refused key
+// (401) is still not connected.
+func TestConnectAKeyOnAnAccountWithNoCardYet(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/models" {
+			_, _ = io.WriteString(w, `{"object":"list","data":[{"id":"alibaba/qwen-3-14b","type":"language","supported_parameters":["tools"]}]}`)
+			return
+		}
+		if r.Header.Get("Authorization") != "Bearer vck_good" {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = io.WriteString(w, `{"error":{"message":"Invalid API key","type":"authentication_error"}}`)
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = io.WriteString(w, `{"error":{"message":"AI Gateway requires a valid credit card on file to service requests.","type":"customer_verification_required"}}`)
+	}))
+	defer srv.Close()
+	res := connectProvider(context.Background(), connectRequest{ID: "vercel", Name: "Vercel AI Gateway", API: providers.APIChat, Base: srv.URL + "/v1", Key: "vck_good", Probe: true})
+	if !res.OK || !strings.Contains(res.Answer, "card on file") {
+		t.Fatalf("want connected with the card note, got %+v", res)
+	}
+	if res := connectProvider(context.Background(), connectRequest{ID: "vercel", API: providers.APIChat, Base: srv.URL + "/v1", Key: "vck_wrong", Probe: true}); res.OK {
+		t.Fatalf("a refused key is not connected: %+v", res)
+	}
+}
+
 // The menu behind `connect local` lists every default address whose model list
 // answers, in order, and names a runtime by its default port.
 func TestAnsweringRuntimesListsEachThatAnswers(t *testing.T) {

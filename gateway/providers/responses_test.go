@@ -232,3 +232,32 @@ func TestAForcedCallIsRequiredOnTheResponsesRequest(t *testing.T) {
 		})
 	}
 }
+
+// A tool declared with properties alone goes out typed "object": OpenAI's
+// Responses API refuses a function whose parameters have type "" (live
+// 2026-11-09, model check on gpt-5.4-mini, gpt-5-mini and gpt-6-luna).
+func TestAnUntypedToolSchemaGoesOutAsAnObject(t *testing.T) {
+	var body map[string]any
+	c, done := responsesTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		responsesSSE(w, `{"type":"response.completed","response":{"id":"r1","model":"m","status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":1,"output_tokens":1}}}`)
+	})
+	defer done()
+	tool := llm.ToolParam{Name: "read_file", InputSchema: llm.ToolInputSchemaParam{Properties: map[string]any{"path": map[string]any{"type": "string"}}}}
+	params := llm.MessageNewParams{Model: "m", Tools: []llm.ToolUnionParam{{OfTool: &tool}}, Messages: []llm.MessageParam{llm.NewUserMessage(llm.NewTextBlock("hi"))}}
+	if _, err := c.Messages().New(context.Background(), params); err != nil {
+		t.Fatal(err)
+	}
+	tools, _ := body["tools"].([]any)
+	if len(tools) != 1 {
+		t.Fatalf("one tool: %v", body["tools"])
+	}
+	parameters, _ := tools[0].(map[string]any)["parameters"].(map[string]any)
+	if parameters["type"] != "object" {
+		t.Fatalf("parameters typed object: %v", parameters)
+	}
+	if tool.InputSchema.Type != "" {
+		t.Fatalf("the caller's tool is left as it was: %+v", tool.InputSchema)
+	}
+}
