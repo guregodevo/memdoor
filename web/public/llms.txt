@@ -1,10 +1,11 @@
 # Memdoor
 
-> One small model can't. A team beats a frontier model. Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account. Open source, on your gateway, on your key.
+> The CLI coding agent with Team Mode: cheap models, frontier results. Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account. Open source, on your gateway, on your key.
 
 ## Why Memdoor
 
 - Token optimization: judged reads, tool selection and progress checks reduce unnecessary model input and stalled turns. Savings depend on the task; measurements are below.
+- Team Mode: Shift+Tab flips the window from `auto` to `team`. A turn becomes the team-solve workflow on your project and model, and it never ends worse than its own single call. https://memdoor.ai/docs/team-mode
 - Single binary: deploy the CLI on macOS, Linux or Windows without Docker or Python. Connect over SSH to another machine with `memdoor --gateway ssh://you@box`.
 - CLI, headless first: `memdoor run` takes a prompt, writes to stdout and returns a check-aware exit code for shell scripts, CI and cron. Resume the same conversation from a terminal, IDE or phone.
 - Durable workflows, the deterministic harness: a graph of steps, each checked by its output, a gate where you want one, and a failed run resumed without repeating completed steps.

@@ -73,9 +73,9 @@ rewritten on 2026-11-01 (864 to 650 words); the maintainer called three lighter 
   summary. A format sentence (one YAML task file per step under
   .memdoor/workflows) is fine where a doc explains the format.
 - The one sentence, everywhere (README hero, site title and description, OG,
-  JSON-LD, HOME_META, the landing hero, what-is, llms.txt): "The workflow harness that makes a small model beat a frontier one, on your machine."
-  Under it, the second line with the benchmark. The GitHub description stays
-  "A headless coding agent with multi-agent harness".
+  JSON-LD, HOME_META, the landing hero, what-is, llms.txt): "The CLI coding agent with Team Mode: cheap models, frontier results, on your machine." The workflow is the harness under it; the proof is the published runs, so a number never goes in the sentence.
+  Under it, the second line with the benchmark. The GitHub description and
+  `memdoor --help` carry the same sentence, without "on your machine".
 
 ### Structure
 

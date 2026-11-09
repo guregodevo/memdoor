@@ -165,8 +165,8 @@ grep -r "duplicate_code" .    # Search before coding
 
 ## Documentation
 - Read `docs/` directory for project documentation and architecture details
-- **`docs/ROADMAP.md`** — READ FIRST: what Memdoor is now (2026-11-02: the
-  workflow harness that makes small models reliable, with the runs published)
+- **`docs/ROADMAP.md`** — READ FIRST: what Memdoor is now (2026-11-09: the CLI
+  coding agent, Team Mode: cheap models, frontier results, with the runs published)
   and the queue. The epoch note of 2026-09-27: a **coding agent for solo devs that cuts their
   model bill, on THEIR OWN key** (BYOK — `gateway/providers/byok.go`; any
   provider's key works). The decision model (Jev) is what does the cutting:

@@ -338,12 +338,15 @@ export function CoderLandingPage() {
                 "solves what it can't": the proof is a score, 9.8 to 8.0 of 10. */}
             <div className="mb-3 text-xs uppercase tracking-widest text-neutral-400">Shift+Tab: auto mode → team mode</div>
             <h1 className="mb-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl xl:text-6xl">
-              One small model can't. A team{' '}
-              <span className="text-emerald-400">beats a frontier model</span>.
+              Team Mode: cheap models,{' '}
+              <span className="text-emerald-400">frontier results</span>.
             </h1>
+            <p className="mx-auto mb-3 max-w-xl text-xl font-medium text-neutral-100 lg:mx-0">
+              The CLI coding agent in one Go binary. Press Shift+Tab and Go Team Mode.
+            </p>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
               Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama,
-              llama.cpp, or any key. One binary, no account.
+              llama.cpp, or any key. No account.
             </p>
             <div className="flex flex-col items-center gap-3 lg:items-start">
               <InstallLine dark />

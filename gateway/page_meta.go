@@ -24,7 +24,7 @@ type pageMeta struct {
 }
 
 var homeMeta = pageMeta{
-	Title:       "Memdoor — the workflow harness that makes a small model beat a frontier one, on your machine",
+	Title:       "Memdoor — the CLI coding agent with Team Mode: cheap models, frontier results",
 	Description: "Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account.",
 	Path:        "/",
 }
