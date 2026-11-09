@@ -37,6 +37,7 @@ var modelsDevURL = "https://models.dev/api.json"
 var modelsDevProvider = map[string]string{
 	"anthropic": "anthropic", "openai": "openai", "gemini": "google", "groq": "groq",
 	"xai": "xai", "baseten": "baseten", "openrouter": "openrouter", "deepseek": "deepseek",
+	"vercel": "vercel",
 }
 
 // Limits is what the reference knows about a model.

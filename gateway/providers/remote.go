@@ -40,6 +40,9 @@ type RemoteEngine struct {
 	// (vendor.go): "anthropic", "openai" or "google". Nothing but that
 	// endpoint is contacted — no OpenRouter, no catalogue.
 	Vendor string `json:"vendor,omitempty"`
+	// Picked says why Model was chosen when no MEMDOOR_MODEL named it
+	// (#206): `memdoor model` and the footer show it as the rung's reason.
+	Picked string `json:"picked,omitempty"`
 	// Keyless: a runtime on this machine or the box, connected with no key
 	// (Provider.Keyless); its client waits longer for a first token.
 	Keyless bool `json:"keyless,omitempty"`

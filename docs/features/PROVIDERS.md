@@ -314,6 +314,53 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   | LLM Gateway · `glm-5.3-flash` | Edit, Bash ×3 (`go` was not on the test gateway's PATH) | 11 s | ok, +1 −1 |
   | LLM Gateway · `deepseek-v4.1-flash` | Read ×2, Edit, Bash ×2 | 8 s | ok, +1 −1 |
 
+- **Vercel AI Gateway** (2026-11-09, #56): a built-in provider and
+  `/connect` kind (`vercel`, base `https://ai-gateway.vercel.sh/v1`). The key
+  is `AI_GATEWAY_API_KEY`, Vercel's name, or `VERCEL_API_KEY` when it holds
+  a `vck_…` key (that name also holds Vercel deploy tokens, which run no
+  model and stay in the agent's commands). `VERCEL_BASE_URL` replaces the
+  base. Vercel's key name starts like the
+  company gateway's variables (`AI_GATEWAY_BASE_URL`, `*_AI_GATEWAY_TOKEN`)
+  and neither reads the other's. With `AI_GATEWAY_BASE_URL` set the company
+  gateway answers, on its token only. Without a token the reason names
+  Vercel's key as the wrong one
+  (`TestTheCompanyGatewayAndVercelReadNeitherOthersVariables`). Vercel is
+  last in the vendor order. The key (`vck_…`) has a shape `pkg/modelkey`
+  checks.
+
+  `/v1/models` answers without a key and lists 498 models: language, image,
+  video, embedding, speech, transcription, rerank, realtime. The reader keeps
+  the language models with `tools` in `supported_parameters` and drops one
+  past its `deprecated_at` (302 on 2026-11-09). Prices are dollars per token.
+  `reasoning_options` of type `effort` marks Effort. The list being public,
+  the connect probe is the chat call: a wrong key is a 401. A key on an
+  account with no card is a 403 `customer_verification_required`. The probe
+  connects it and says the account needs a card, as for an OpenRouter
+  account with no credit. The app headers are `pkg/attribution`'s pair (`HTTP-Referer` +
+  `X-Title`).
+
+  A free-tier account serves some models and refuses others with a 403
+  ("Free tier users do not have access to this model",
+  `anthropic/claude-haiku-5.5`). Vercel's ids are OpenRouter's
+  (`deepseek/deepseek-v4-flash`). The flat `/model-search <text>` keeps one
+  row per id, the first in answer order, so a model both list shows as
+  OpenRouter's. `/model-search vercel` lists Vercel's 302, and
+  `/model vercel:<id>` pins one.
+
+  The fast-model task (an off-by-one in `sum.go`, a failing test, "fix the
+  bug in sum.go (not the test)"), pinned in the window. Every request went to
+  `ai-gateway.vercel.sh` (`memdoor meter`):
+
+  | Provider · model | Steps | Time | Result |
+  |---|---|---|---|
+  | Vercel · `deepseek/deepseek-v4-flash` | glob, notes, Read ×2, Edit, Bash | 23 s | ok, +1 −1 |
+  | Vercel · `openai/gpt-oss-20b` | Bash ×3, Read, Edit, notes | 21 s | ok, +5 −1 (a comment added) |
+
+  `model check` on four: `deepseek/deepseek-v4-flash`,
+  `alibaba/qwen3-coder-next` and `openai/gpt-oss-20b` passed every check;
+  `anthropic/claude-haiku-5.5` was refused on the free tier.
+
+
 - **Attribution as a field** (`gateway/providers/attribution.go`): user, team,
   project, session as headers on every vendor and gateway request —
   `MEMDOOR_ATTRIBUTION="user=…;team=…"` from the company's preset,
@@ -381,6 +428,27 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   `provider:id`, esc goes back a level; a provider not connected says
   `/connect <id>`. `/model` lists the other connected providers and what is
   not connected. `TestProviderPickerThenAProvidersModels`.
+
+- **A vendor key without `MEMDOOR_MODEL`** (2026-11-09, #206). `MEMDOOR_MODEL`
+  named the model and, with a vendor key, switched the gateway to that
+  vendor alone. A vendor key with no `MEMDOOR_MODEL` logged a warning and
+  the gateway fell back to OpenRouter. Now the gateway picks the model:
+  the cheapest, by the vendor's list price, with a passing
+  `memdoor model check` report (`gateway/vendor_default_model.go`). With
+  no passing report it checks the cheapest models it has no report for,
+  at most three, and keeps the reports. The next start reads them and
+  spends nothing. The vendor key then wins over an OpenRouter key in the
+  same environment. A model with no price is not ranked, so a vendor whose
+  list prices none needs `MEMDOOR_MODEL`. If no checked model passes, the
+  gateway falls back as before. `MEMDOOR_MODEL` still names the model when
+  set. The company gateway still requires it, and Anthropic keeps its
+  default. `/model` in the window shows the model with
+  `← picked: the cheapest that passed model check`.
+
+  Live, a gateway with only `GROQ_API_KEY` and an OpenRouter key, an empty
+  `HOME`: Groq's two cheapest, `meta-llama/llama-prompt-guard-2-22m` and
+  `-86m`, refused tool calls (HTTP 400, under 200 ms each);
+  `openai/gpt-oss-20b` passed in 1.6 s and serves the gateway.
 
 ## How a provider knows it is Memdoor (2026-10-24)
 

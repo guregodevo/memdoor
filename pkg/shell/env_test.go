@@ -33,7 +33,7 @@ func TestCommandHidesModelKeys(t *testing.T) {
 }
 
 func TestIsModelKey(t *testing.T) {
-	for _, k := range []string{"OPEN_ROUTER_API_KEY", "ANTHROPIC_API_KEY", "MEMDOOR_SYSTEMONE_API_KEY", "CORP_AI_GATEWAY_TOKEN", "AI_GATEWAY_TOKEN", "EUROUTER_API_KEY"} {
+	for _, k := range []string{"OPEN_ROUTER_API_KEY", "ANTHROPIC_API_KEY", "MEMDOOR_SYSTEMONE_API_KEY", "CORP_AI_GATEWAY_TOKEN", "AI_GATEWAY_TOKEN", "EUROUTER_API_KEY", "AI_GATEWAY_API_KEY"} {
 		if !IsModelKey(k) {
 			t.Errorf("%s is a model key", k)
 		}
@@ -42,5 +42,28 @@ func TestIsModelKey(t *testing.T) {
 		if IsModelKey(k) {
 			t.Errorf("%s is not a model key", k)
 		}
+	}
+}
+
+// VERCEL_API_KEY often holds a Vercel deploy token, which a command may need:
+// it is dropped only when it holds an AI Gateway key (vck_…).
+func TestVercelAPIKeyIsDroppedOnlyWhenItIsAModelKey(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("printenv is POSIX")
+	}
+	t.Setenv("VERCEL_API_KEY", "deploy-token-kept")
+	out, err := Command(context.Background(), "printenv").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), "VERCEL_API_KEY=deploy-token-kept") {
+		t.Fatal("a deploy token under VERCEL_API_KEY is kept")
+	}
+	t.Setenv("VERCEL_API_KEY", "vck_"+strings.Repeat("Ab", 28))
+	if out, err = Command(context.Background(), "printenv").Output(); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(out), "VERCEL_API_KEY") {
+		t.Fatal("an AI Gateway key under VERCEL_API_KEY is dropped")
 	}
 }

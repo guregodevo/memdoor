@@ -17,6 +17,7 @@ var (
 	fakeGemini     = "AIza" + strings.Repeat("x", 35)
 	fakeGroq       = "gsk_" + strings.Repeat("Ab", 26)
 	fakeXAI        = "xai-" + strings.Repeat("Ab", 40)
+	fakeVercel     = "vck_" + strings.Repeat("Ab", 28)
 	fakeDeepSeek   = "sk-" + strings.Repeat("0f", 16)
 	fakeOldOpenAI  = "sk-" + strings.Repeat("Ab", 24)
 	fakeLLMGateway = "llmgtwy_" + strings.Repeat("Lg", 20)
@@ -31,6 +32,7 @@ func TestProvidersOf(t *testing.T) {
 		fakeGroq:             {ProviderGroq},
 		fakeXAI:              {ProviderXAI},
 		fakeLLMGateway:       {ProviderLLMGateway},
+		fakeVercel:           {ProviderVercel},
 		fakeDeepSeek:         {ProviderDeepSeek, ProviderOpenAI},
 		fakeOldOpenAI:        {ProviderOpenAI, ProviderDeepSeek},
 		" " + fakeGroq + " ": {ProviderGroq},
