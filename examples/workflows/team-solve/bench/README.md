@@ -21,6 +21,41 @@ Memdoor workflows on the same model and host:
 
 Model line on every role: `openrouter:qwen/qwen3.8-27b throughput thinking off`.
 
+## Ranking on the 100
+
+Every measured harness on these 100 problems, by share solved on all tests.
+The paper's rows: [GVS5H](https://github.com/slee-persis/GVS5H)
+`paper/tab-4new-5pass.tex` (mean of five passes, reasoning on, 128K cap) and
+`paper/fig-cost-tables.tex`.
+
+| # | harness | model | solved | $ / pass of 100 | $ / solved | source |
+|---|---|---|---|---|---|---|
+| 1 | GVS5H manager | Qwen3.8-Flash-Next | 93.0% | 5.76 | 0.062 | paper |
+| 2 | GVS5H manager | Qwen3.8-27B | 92.4% | 47.82 | 0.52 | paper |
+| 3 | GVS5H manager | DeepSeek V4.1 Flash | 92.0% | 15.43 | 0.17 | paper |
+| 4 | Memdoor team-solve-fanout | DeepSeek V4.1 Flash (1017) | 91% | ≤ 5.50 | ≤ 0.060 | Memdoor, 1 pass |
+| 5 | single call | Fable 5 | 90.4% | 61.11 | 0.68 | paper |
+| 6 | single call | DeepSeek V4.1 Flash | 88.4% | 3.46 | 0.039 | paper |
+| 7 | GVS5H manager | GPT-5.6-Terra | 88.0% | 11.71 | 0.13 | paper |
+| 8 | single call | Qwen3.8-Flash-Next | 84.2% | 2.73 | 0.032 | paper |
+| 9 | GVS5H manager | GPT-5.6-Luna | 81.2% | 1.50 | 0.018 | paper |
+| 10 | single call | GPT-5.6-Terra | 80.8% | 3.41 | 0.042 | paper |
+| 11 | single call | GPT-5.6-Luna | 70.4% | 0.41 | 0.006 | paper |
+| 12 | single call | Qwen3.8-27B | 66.8% | 18.95 | 0.28 | paper |
+| 13 | Memdoor team-llm-lcb, thinking off | Qwen3.8-27B | 47% | 3.27 for 13 and 14 | | Memdoor, 1 pass |
+| 14 | Memdoor single-lcb, thinking off | Qwen3.8-27B | 35% | | | Memdoor, 1 pass |
+
+- Cost: the paper's is list rate times tokens, no cache discount. Memdoor's is
+  what OpenRouter billed. Row 4 includes three `team-solve` runs stopped early.
+- Row 4 is one pass against means of five. The paper's 95% intervals are ±1.2
+  to ±2.6 points; its rows 1 to 3 do not differ from Fable 5 significantly
+  (p = 0.56 to 0.88).
+- Rows 13 and 14 ran with thinking off (the reason is under "What this is
+  not"); the paper ran Qwen3.8-27B with thinking on.
+- Not ranked: the parity runs on the first ten problems (Memdoor's rebuild of
+  the GVS5H method on Qwen3.8-27B, 9.8 of 10 over five passes, $35.79 for 50
+  runs), a different sample.
+
 ## team-solve-fanout, DeepSeek V4.1 Flash, 2026-11-09
 
 The same 100 problems, graded the same way. One pass of
@@ -30,8 +65,6 @@ e98b3c5, `openrouter:deepseek/deepseek-v4.1-flash-1017` on every step.
 | arm | solved on all tests | AtCoder (73) | LeetCode (27) | median s / problem |
 |---|---|---|---|---|
 | team-solve-fanout | **91 / 100** | 65 | 26 | 1424 |
-| GVS5H team scaffold (the paper) | 92.0% | | | |
-| GVS5H single call (the paper) | 88.4% | | | |
 
 - Not solved: 7 fail a hidden test (abc392_f, abc396_e, abc397_d, abc398_g,
   abc399_e, arc190_a, arc192_b); 3692 exceeds the grader's time limit;
