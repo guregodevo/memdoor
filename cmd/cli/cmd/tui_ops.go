@@ -695,6 +695,13 @@ func tuiModelProviders() ([]ui.ProviderSummary, error) {
 func tuiModelHosts(id string) ([]ui.ModelHost, error) {
 	hosts, err := modelProviders(id)
 	if err != nil {
+		// Hosts are OpenRouter's: an id only another provider lists (or no
+		// OpenRouter key at all) is pinned on that provider instead.
+		if models, cerr := searchModelCatalog(id); cerr == nil {
+			if e := listedElsewhere(id, models); e != nil {
+				return nil, e
+			}
+		}
 		// SAY IT IN THE PERSON'S TERMS (battle test, 2026-09-27). A mistyped
 		// id came back as `API error (502): {"error": "the host listing
 		// answered HTTP 404"}`, which is our plumbing, not their problem.
@@ -708,6 +715,18 @@ func tuiModelHosts(id string) ([]ui.ModelHost, error) {
 		out = append(out, ui.ModelHost{Slug: h.Slug, Name: h.Name, Quant: h.Quant, Context: h.Context, Uptime: h.Uptime, Band: h.Band, InPerM: h.InPerM, OutPerM: h.OutPerM, Tools: h.Tools, Excluded: h.Excluded})
 	}
 	return out, nil
+}
+
+// listedElsewhere is the first connected provider other than OpenRouter
+// that lists exactly id, in the catalogue's order (the active provider
+// first), with the provider's own spelling of the id.
+func listedElsewhere(id string, models []catalogModel) *ui.ListedElsewhere {
+	for _, m := range models {
+		if m.Provider != "" && m.Provider != "openrouter" && strings.EqualFold(m.ID, id) {
+			return &ui.ListedElsewhere{Provider: m.Provider, ID: m.ID}
+		}
+	}
+	return nil
 }
 
 // tuiPinModel pins a model with the picker's preference and answers with

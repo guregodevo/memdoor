@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -88,6 +89,7 @@ type routePicker struct {
 	reordered     bool
 	loading       string // what is being fetched, shown while it is
 	fromProviders bool   // the models list was opened from the providers picker: esc goes back
+	fromSearch    bool   // the hosts were opened by /model-search <id>: an id listed elsewhere is searched, not pinned
 }
 
 // providersMsg delivers the providers for a bare /model-search.
@@ -121,6 +123,15 @@ type hostsMsg struct {
 	err   error
 }
 
+// ListedElsewhere is ModelHosts' answer for an id OpenRouter does not serve
+// and another connected provider lists: /model pins it there, as enter on
+// that provider's row in the picker does.
+type ListedElsewhere struct{ Provider, ID string }
+
+func (e *ListedElsewhere) Error() string {
+	return e.ID + " is listed by " + e.Provider + ", not OpenRouter"
+}
+
 // openModelSearch fetches the catalogue and opens the picker on it.
 func (m *Model) openModelSearch(query string) tea.Cmd {
 	if m.modelCatalog == nil {
@@ -142,6 +153,7 @@ func (m *Model) openModelHosts(id string) tea.Cmd {
 		m.routePicker = &routePicker{}
 	}
 	m.routePicker.mode, m.routePicker.modelID, m.routePicker.index, m.routePicker.loading = pickerHosts, id, 0, "Reading hosts for "+id+" …"
+	m.routePicker.fromSearch = false
 	op := m.modelHosts
 	return func() tea.Msg { hosts, err := op(id); return hostsMsg{id: id, hosts: hosts, err: err} }
 }
@@ -191,6 +203,13 @@ func (m *Model) updateRoutePicker(msg tea.Msg) (handled bool, cmd tea.Cmd) {
 			return true, nil
 		}
 		p.loading = ""
+		var elsewhere *ListedElsewhere
+		if errors.As(t.err, &elsewhere) {
+			if p.fromSearch {
+				return true, m.openModelSearch(t.id)
+			}
+			return true, m.pinOnProvider(elsewhere.Provider, elsewhere.ID)
+		}
 		if t.err != nil {
 			m.routePicker = nil
 			m.note(t.err.Error())
@@ -277,16 +296,7 @@ func (m *Model) routePickerKey(k tea.KeyMsg) tea.Cmd {
 		if p.mode == pickerModels {
 			c := p.models[p.index]
 			if c.Provider != "" && c.Provider != "openrouter" {
-				// Another provider's model: hosts are OpenRouter's notion;
-				// enter pins it under its provider (provider:id).
-				m.routePicker = nil
-				if m.route == nil {
-					return nil
-				}
-				id := c.Provider + ":" + c.ID
-				m.note(fmt.Sprintf("Pinning **%s** …", id))
-				op := m.route
-				return func() tea.Msg { s, e := op(id); return routeResultMsg{summary: s, err: e} }
+				return m.pinOnProvider(c.Provider, c.ID)
 			}
 			return m.openModelHosts(c.ID)
 		}
@@ -304,6 +314,19 @@ func (m *Model) routePickerKey(k tea.KeyMsg) tea.Cmd {
 		}
 	}
 	return nil
+}
+
+// pinOnProvider pins another provider's model under provider:id: hosts are
+// OpenRouter's notion.
+func (m *Model) pinOnProvider(provider, id string) tea.Cmd {
+	m.routePicker = nil
+	if m.route == nil {
+		return nil
+	}
+	pin := provider + ":" + id
+	m.note(fmt.Sprintf("Pinning **%s** …", pin))
+	op := m.route
+	return func() tea.Msg { s, e := op(pin); return routeResultMsg{summary: s, err: e} }
 }
 
 // pinFromPicker pins the model with the picker's preference: the sort
