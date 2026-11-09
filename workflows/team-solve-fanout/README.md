@@ -15,4 +15,14 @@ memdoor workflow run team-solve-fanout "Fix the -0.00 in the ledger report; pyth
 
 The other steps after `direct` are team-solve's. Run folder: `.memdoor/runs/team-solve-fanout-<partition>`. Scripts: team-solve's.
 
-Measured on SWE-bench Verified (DeepSeek V4.1 Flash): on the 23 unresolved instances where no step touched the file the fix needed, the survey named every needed file in 17. With the survey, 3 of 9 of them resolved, against 1 of 9 without. The fan-out and the path checks have no SWE-bench measurement yet.
+Measured on SWE-bench Verified (DeepSeek V4.1 Flash): on the 23 unresolved instances where no step touched the file the fix needed, the survey named every needed file in 17. With the survey, 3 of 9 of them resolved, against 1 of 9 without.
+
+Measured on 2026-11-09, main e98b3c5 ([the analysis](https://github.com/guregodevo/swe-bench/blob/main/analysis/fanout-2026-11-09.md)):
+
+| benchmark | model | result |
+|---|---|---|
+| LiveCodeBench, GVS5H's 100 hardest, one pass | deepseek-v4.1-flash-1017 | 98 / 100 |
+| SWE-bench Verified, 91 of 500 | deepseek-v4.1-flash | 74 (81.3%); team-solve's published run: 400 / 500 (80.0%) |
+| SWE-bench Verified, 116 of 500 | deepseek-v4.1-flash-1017 | 92 (79.3%) |
+
+The SWE-bench instances are the first of four shards of 125, in id order. The 0910 run lost 5 of team-solve's published passes, each at the pick. Four of the five failed in another run the same week.
