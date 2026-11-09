@@ -36,6 +36,40 @@ Sources:
   memory, not a search. The agent is told to search again or rephrase.
 - **No OpenRouter key** (`OPENROUTER_API_KEY`): the tool says so.
 
+## Keenable, without an OpenRouter key
+
+An opt-in engine (#168). Set one of these on the gateway:
+
+```
+KEENABLE_API_KEY=<your key>      # the key alone selects Keenable
+MEMDOOR_WEB_SEARCH=keenable      # keyless
+```
+
+`MEMDOOR_WEB_SEARCH=openrouter` keeps OpenRouter even with a Keenable key.
+
+`web_search` then sends the query to Keenable's search API
+(`api.keenable.ai`). No model is in between. The result is the same Sources
+list (title, URL, excerpt) after a one-line head:
+
+```
+Search results for "golang context cancellation" (Keenable).
+
+Sources:
+[1] Best practices on go context cancelation functions — https://stackoverflow.com/questions/70042646/…
+    The article states the following regarding context cancelation functions …
+```
+
+- **No key needed.** Keyless requests go to `/v1/search/public` with
+  `X-Keenable-Title: Memdoor`, limited to 10 a second and 1000 an hour per IP.
+  `KEENABLE_API_KEY` sends them to `/v1/search` and lifts the limit.
+- **Neither set, nothing changes.** OpenRouter stays the engine and
+  `api.keenable.ai` is never contacted.
+- **Not in company-key mode.** With a company key `web_search` answers that it
+  has no key, with or without either variable.
+
+Code: `tools/web_search_keenable.go`,
+`gateway/providers/web_search_keenable.go`.
+
 ## Who has it
 
 - **The coder**: `web_search` and `web_fetch` are in its palette. With a

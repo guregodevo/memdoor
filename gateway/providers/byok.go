@@ -100,6 +100,9 @@ const (
 // key, answered by the cheapest rung of the coder's ladder (the search
 // itself is OpenRouter's server tool, the model only answers from it).
 func WebSearch() tools.WebSearchBackend {
+	if keenableSelected() {
+		return keenableWebSearch()
+	}
 	return tools.WebSearchBackend{Endpoint: byokEndpoint, Key: ByokKey(), Model: byokLadders["coder"][0], Headers: AppHeaders(byokEndpoint)}
 }
 
