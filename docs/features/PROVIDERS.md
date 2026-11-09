@@ -285,6 +285,35 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   | EUrouter · `deepseek-v4.1-flash-1017` ($) | Bash ×2, Read ×2, Edit, Bash | 11 s | ok, +1 −1 |
   | EUrouter · `mistral-small-3.2-24b` (€) | notes, locate, Read, Edit, Bash | 11 s | ok, +1 −1 (indented with spaces) |
 
+- **LLM Gateway** (2026-11-09, #53): a built-in provider and `/connect` kind
+  (`LLMGATEWAY_API_KEY`, base `https://api.llmgateway.io/v1`). One key reaches
+  many vendors over chat/completions. Its `/v1/models` is OpenRouter's shape
+  plus `architecture.output_modalities`, `max_output` and `deactivated_at`.
+  It lists 291 models: chat, image, video, speech, embeddings, rerank, and
+  the `auto` and `custom` routes with no window. The reader keeps the 177
+  that answer in text only, call tools, state a window and are not switched
+  off. Prices are dollars per token, some in exponent form (`0.2e-6`). The
+  key has a shape (`llmgtwy_…`), so `memdoor connect` finds it under any
+  name. LLM Gateway is last in the vendor order: `LLMGATEWAY_API_KEY` +
+  `MEMDOOR_MODEL` alone run a gateway where it is the only host contacted.
+  Every request carries `X-Source: memdoor.ai`, the header its apps page
+  reads (`TestATurnOnLLMGatewayCarriesXSource`). The request sends the bare
+  id; the answer names the host that served it (`greenference/`,
+  `fireworks/`).
+
+  A new account answers 402 (`billing_error`) until it has credit. The probe
+  and the turn said to add credit at openrouter.ai: every chat/completions
+  refusal was worded as OpenRouter's. A 402 or a refused key now names the
+  host that refused it (`providerRefusal`, `noCreditAnswer`); OpenRouter's
+  wording is unchanged.
+
+  The fast-model task, pinned in the window:
+
+  | Provider · model | Steps | Time | Result |
+  |---|---|---|---|
+  | LLM Gateway · `glm-5.3-flash` | Edit, Bash ×3 (`go` was not on the test gateway's PATH) | 11 s | ok, +1 −1 |
+  | LLM Gateway · `deepseek-v4.1-flash` | Read ×2, Edit, Bash ×2 | 8 s | ok, +1 −1 |
+
 - **Attribution as a field** (`gateway/providers/attribution.go`): user, team,
   project, session as headers on every vendor and gateway request —
   `MEMDOOR_ATTRIBUTION="user=…;team=…"` from the company's preset,

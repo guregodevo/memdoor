@@ -29,7 +29,7 @@ seconds.
 
 `memdoor connect` with no kind scans the shell environment and the project's
 `.env`, `.env.local` and `.envrc` for keys by shape (`sk-or-…`, `sk-ant-…`,
-`AIza…`/`AQ.…`, `gsk_…`, `xai-…`, a bare `sk-…`, or the provider's variable
+`AIza…`/`AQ.…`, `gsk_…`, `xai-…`, `llmgtwy_…`, a bare `sk-…`, or the provider's variable
 name for a key with no shape, like `BASETEN_API_KEY`). Order: keys that would
 change something, numbered, Enter connects the first; keys the gateway already
 reads, named and not offered; the sign-ins under "Sign in, no key:"
@@ -140,6 +140,20 @@ Nemotron. Ids carry case. Type them as listed.
   `mistral-small-3.2-24b` and `gpt-oss-120b` are priced in euros.
 - With `EUROUTER_API_KEY` and `MEMDOOR_MODEL` set and no other vendor key,
   EUrouter is the only host contacted.
+
+## LLM Gateway
+
+- **Key**: `LLMGATEWAY_API_KEY` · base `https://api.llmgateway.io/v1`.
+  `memdoor connect llmgateway` takes the key. One key reaches many vendors;
+  the answer names the host that served it (`fireworks/…`).
+- **Its API states**: `context_length`, `max_output`, prices, input and
+  output modalities, `supported_parameters`, the date a model is switched
+  off. Only text models that call tools are listed (177 of 291 on
+  2026-11-09).
+- **Fast model**: `glm-5.3-flash` (1M / 128k, $0.09 / $0.25).
+- A new account answers 402 until it has credit: add some at llmgateway.io.
+- With `LLMGATEWAY_API_KEY` and `MEMDOOR_MODEL` set and no other vendor key,
+  LLM Gateway is the only host contacted.
 
 ## Anthropic
 

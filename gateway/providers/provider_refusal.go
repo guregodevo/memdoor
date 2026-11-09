@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"memdoor/pkg/attribution"
 )
 
 // A PROVIDER'S REFUSAL IN ONE LINE (2026-09-28, TUI session). An account out
@@ -15,10 +17,19 @@ import (
 // — printed into the conversation. The person needs what happened and what to
 // do, once.
 
-// providerRefusal turns a non-200 answer into the error the turn reports.
-func providerRefusal(status int, body []byte) error {
+// providerRefusal turns a non-200 answer from baseURL into the error the turn
+// reports. A 402 or a refused key names the host that refused it: every
+// chat/completions provider answers through here, and an LLM Gateway account
+// with no credit was told to add some at OpenRouter (2026-11-09).
+func providerRefusal(baseURL string, status int, body []byte) error {
 	msg := refusalMessage(body)
+	host := strings.TrimPrefix(attribution.Host(baseURL), "api.")
+	openRouter := host == "" || host == "openrouter.ai" || strings.HasSuffix(host, ".openrouter.ai")
 	switch {
+	case status == http.StatusPaymentRequired && !openRouter:
+		return fmt.Errorf("%s refused the request: the account is out of credit for it (%s). Add credit at %s", host, shortReason(msg), host)
+	case (status == http.StatusUnauthorized || status == http.StatusForbidden) && !openRouter:
+		return fmt.Errorf("%s refused the key (HTTP %d): %s. Check the key", host, status, shortReason(msg))
 	case status == http.StatusPaymentRequired:
 		return fmt.Errorf("OpenRouter refused the request: the account is out of credit for it (%s). "+
 			"Add credit at openrouter.ai/settings/credits, or raise the key's limit", shortReason(msg))

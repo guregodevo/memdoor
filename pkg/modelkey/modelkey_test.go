@@ -19,6 +19,7 @@ var (
 	fakeXAI        = "xai-" + strings.Repeat("Ab", 40)
 	fakeDeepSeek   = "sk-" + strings.Repeat("0f", 16)
 	fakeOldOpenAI  = "sk-" + strings.Repeat("Ab", 24)
+	fakeLLMGateway = "llmgtwy_" + strings.Repeat("Lg", 20)
 )
 
 func TestProvidersOf(t *testing.T) {
@@ -29,6 +30,7 @@ func TestProvidersOf(t *testing.T) {
 		fakeGemini:           {ProviderGemini},
 		fakeGroq:             {ProviderGroq},
 		fakeXAI:              {ProviderXAI},
+		fakeLLMGateway:       {ProviderLLMGateway},
 		fakeDeepSeek:         {ProviderDeepSeek, ProviderOpenAI},
 		fakeOldOpenAI:        {ProviderOpenAI, ProviderDeepSeek},
 		" " + fakeGroq + " ": {ProviderGroq},
