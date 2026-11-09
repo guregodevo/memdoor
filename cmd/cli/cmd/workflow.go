@@ -261,11 +261,23 @@ var workflowRunCmd = &cobra.Command{
 // line that says what to set (#215), not ten failing steps.
 var workflowRequireModel bool
 
+// sampleNextLine is the last thing the sample run says: how to point team-solve
+// at a real task, and where to say how it went. Nothing is sent from this
+// machine; the issue is the only way anyone learns a run helped (#221).
+const sampleNextLine = `
+On your own task:  memdoor workflow run team-solve "<the task>"
+How did it go? Tell us, pass or fail: https://github.com/guregodevo/memdoor/issues/221
+`
+
 // runSampleIn is the sample problem in dir, followed to its verdict.
 func runSampleIn(dir string) error {
 	workflowWaitFlag, workflowRequireModel = true, true
 	defer func() { workflowRequireModel = false }()
-	return runWorkflowIn(dir, "team-solve", nil)
+	err := runWorkflowIn(dir, "team-solve", nil)
+	if err == nil {
+		fmt.Fprint(os.Stderr, sampleNextLine)
+	}
+	return err
 }
 
 // runWorkflowIn is `workflow run` in dir: the flags as set, the prompt from

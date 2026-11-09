@@ -41,3 +41,16 @@ func TestSampleDirIsFreshAndUnderTheHome(t *testing.T) {
 		}
 	}
 }
+
+// The sample run ends by saying how to run team-solve on a real task and where
+// to say how it went; it names no telemetry and sends nothing (#221).
+func TestTheSampleRunEndsByAskingHowItWent(t *testing.T) {
+	for _, want := range []string{`memdoor workflow run team-solve "<the task>"`, "github.com/guregodevo/memdoor/issues/221", "pass or fail"} {
+		if !strings.Contains(sampleNextLine, want) {
+			t.Errorf("the closing lines lack %q:\n%s", want, sampleNextLine)
+		}
+	}
+	if strings.Contains(strings.ToLower(sampleNextLine), "telemetry") || strings.Count(sampleNextLine, "\n") > 4 {
+		t.Errorf("a short closing, no telemetry words:\n%s", sampleNextLine)
+	}
+}
