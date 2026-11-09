@@ -184,6 +184,18 @@ Nemotron. Ids carry case. Type them as listed.
 - `AI_GATEWAY_API_KEY` is not your company gateway's token. With
   `AI_GATEWAY_BASE_URL` set, the company gateway answers.
 
+## AI/ML API
+
+- **Key**: `AIMLAPI_API_KEY`, from aimlapi.com/app/keys · base
+  `https://api.aimlapi.com/v1`; `AIMLAPI_BASE_URL` replaces it.
+  `memdoor connect aimlapi` takes the key.
+- **Its API states**: `contextLength`, `outputMax`, prices, modalities and
+  capabilities. Only chat models that call tools are listed (345 of 963 on
+  2026-11-09).
+- **Fast model**: `z-ai/glm-5.3-flash` (1M / 131k, $0.15 / $0.50), listed
+  first, so `memdoor connect aimlapi` probes it.
+- Requests carry `X-AIMLAPI-Source: agent/memdoor`, to that host only.
+
 ## Anthropic
 
 - **Key**: `ANTHROPIC_API_KEY` · base `https://api.anthropic.com`

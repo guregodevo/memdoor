@@ -49,6 +49,38 @@ func TestAttributionIsOneCanonicalPair(t *testing.T) {
 	}
 }
 
+// X-AIMLAPI-Source goes to AI/ML API's API host and to nothing that merely
+// resembles it: not a subdomain, a parent, a lookalike or a path.
+func TestAIMLAPISourceOnlyOnItsExactHost(t *testing.T) {
+	t.Setenv("MEMDOOR_OPENROUTER_ATTRIBUTION", "")
+	for endpoint, want := range map[string]bool{
+		"https://api.aimlapi.com/v1":                  true,
+		"https://api.aimlapi.com/v1/chat/completions": true,
+		"https://API.AIMLAPI.com/v1":                  true,
+		"https://api.aimlapi.com:443/v1":              true,
+		"api.aimlapi.com":                             true,
+		"https://aimlapi.com/v1":                      false,
+		"https://eu.api.aimlapi.com/v1":               false,
+		"https://api.aimlapi.com.example.org/v1":      false,
+		"https://notapi.aimlapi.com/v1":               false,
+		"https://example.org/api.aimlapi.com/v1":      false,
+		"https://example.org/v1?host=api.aimlapi.com": false,
+		"https://api.aimlapi.com@example.org/v1":      false,
+		"https://openrouter.ai/api/v1":                false,
+		"http://localhost:8080/v1/chat/completions":   false,
+	} {
+		h := http.Header{}
+		SetFor(h, endpoint)
+		if got := h.Get(HeaderAIMLAPISource) == "agent/memdoor"; got != want {
+			t.Errorf("%s: source=%v, want %v: %v", endpoint, got, want, h)
+		}
+	}
+	t.Setenv("MEMDOOR_OPENROUTER_ATTRIBUTION", "0")
+	if got := Headers("https://api.aimlapi.com/v1"); len(got) != 0 {
+		t.Errorf("opting out leaves it off: %v", got)
+	}
+}
+
 func TestTheHostsWithAHeaderOfTheirOwn(t *testing.T) {
 	t.Setenv("MEMDOOR_OPENROUTER_ATTRIBUTION", "")
 	SetVersion("1.2.3")

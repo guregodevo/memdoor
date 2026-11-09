@@ -27,7 +27,7 @@ memdoor providers                 # each provider, connected or not; ● the one
 memdoor providers --models groq   # one provider's own list: window · max out · $ per million
 memdoor providers --audit         # where every window came from, and which are guesses
 memdoor providers --refresh       # read every list again (a vendor shipped a model)
-memdoor connect [kind]            # add one: openrouter-login, gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, typesafe, local, custom
+memdoor connect [kind]            # add one: openrouter-login, gateway, chatgpt, openrouter, anthropic, openai, gemini, xai, baseten, groq, deepseek, eurouter, llmgateway, vercel, aimlapi, typesafe, local, custom
                                   # no kind: a list — keys found on this machine first (Enter connects the first),
                                   # then "Sign in, no key:" (OpenRouter, ChatGPT), then the keyed kinds
 memdoor connect groq --probe      # test the key, keep nothing
