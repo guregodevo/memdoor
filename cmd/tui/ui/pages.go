@@ -255,9 +255,10 @@ func (a App) switchPage(n int) (tea.Model, tea.Cmd) {
 	a.cur = idx
 	a.unseen[idx] = false
 	a.pages[idx].background = false
-	// The tab still shows the previous page's OSC 7501 state; clearing
-	// lastStatus makes this page send its own.
+	// The tab and cmux's sidebar still show the previous page's state;
+	// clearing what was sent makes this page send its own.
 	a.pages[idx].lastStatus = ""
+	a.pages[idx].lastCmux = ""
 	// The terminal's scrollback is one stream: a rule says whose lines
 	// follow.
 	cmds = append(cmds, tea.Println(pageRule(agent, a.width)))
