@@ -50,8 +50,10 @@ grep -r "duplicate_code" .    # Search before coding
 # MEMDOOR_MODEL=<provider slug> → POST <base>/v1/responses (OpenAI Responses shape,
 # providers/responses.go; AI_GATEWAY_API=chat for chat/completions). THEN a vendor key:
 # ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY
-# (+ *_BASE_URL for a company AI gateway, MEMDOOR_MODEL, MEMDOOR_VENDOR_HEADERS for cost
-# tags): that vendor and NOTHING else — no OpenRouter, no broker, no catalogue, no web
+# (+ *_BASE_URL for a company AI gateway, MEMDOOR_VENDOR_HEADERS for cost tags;
+# MEMDOOR_MODEL optional since 2026-11-09, #206: with none, the cheapest model that passed
+# `memdoor model check` on that vendor, a first start checks up to three, gateway/
+# vendor_default_model.go): that vendor and NOTHING else — no OpenRouter, no broker, no catalogue, no web
 # search, decisions off. providers/vendor.go + anthropic.go; docs/SECURITY.md lists every
 # host the binary names and gateway/egress_test.go fails the build on a new one.
 # BYOK (2026-09-27) — OPENROUTER_API_KEY (the old OPEN_ROUTER_API_KEY still read, and wins) in the gateway's env IS the product:
@@ -257,8 +259,9 @@ The three rules that catch the most real bugs: **type-safety (10), fail-fast con
   (Yes · always this session · No); unanswered 5 min = No. The company-policy "no yolo".
 - Always-auto otherwise: no permission modes; the ONLY interruption is the `ask_user_question`
   picker. Esc interrupts a running turn; typing mid-run queues; End jumps to latest;
-  ctrl+o expands tool frames; Shift+Tab cycles the reasoning effort (auto = the
-  decision model picks per turn, else high — gateway/turn_effort.go).
+  ctrl+o expands tool frames; Shift+Tab flips the mode (auto or team); ctrl+t cycles the
+  reasoning effort (auto = the decision model picks per turn, else high —
+  gateway/turn_effort.go).
 - Skills are DISK-FIRST: the gateway seeds the embedded library to `~/.memdoor/skills`
   at boot (user edits there win forever, no rebuild needed) and the coder also loads
   `<project>/.agents/skills/`. Repo `./skills/*.md` edits still need a rebuild only to
@@ -496,6 +499,9 @@ has no model until one is connected. There is no local model.
   ```
   Then read the screenshot to confirm the page renders correctly. Never trust curl alone for UI changes.
 - Only commit after verifying all changes work correctly
+- **PR body**: fill in `.github/PULL_REQUEST_TEMPLATE.md` (description, related issue, type of change,
+  test results with the real output of `make build` / `make test` / `make check` / `make scan`,
+  validation by hand, checklist). A PR with no test results is sent back.
 - **Squash commits**: Combine multiple related commits into a single logical commit before pushing
   - Use `git rebase -i` to squash work-in-progress commits
   - Each final commit should represent one complete feature or fix

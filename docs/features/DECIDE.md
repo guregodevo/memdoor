@@ -98,7 +98,7 @@ with a path is used as the endpoint.
 ## Consumers
 
 **Reasoning effort** (`gateway/turn_effort.go`) — once per turn, when the
-person has not chosen one with Shift+Tab: how open-ended is the request (not
+person has not chosen one with ctrl+t: how open-ended is the request (not
 how much work), low / medium / high, ties to the lower, 4 s. No answer, or no
 decision model: high. Sent as OpenRouter's `reasoning.effort` to a model that
 lists the parameter; GLM 5.3 Flash left without it thinks at its maximum —

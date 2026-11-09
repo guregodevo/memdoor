@@ -16,6 +16,11 @@ is what memdoor.ai ships.
 
 - Open an issue first for anything beyond a fix, so the design is agreed
   before the code.
+- Fill in the [pull request template](.github/PULL_REQUEST_TEMPLATE.md):
+  the description, the related issue, the type of change, the test results
+  (the output of `make build`, `make test`, `make check`, `make scan` and
+  the tests for the change), how you validated it by hand, and the
+  checklist. A pull request with no test results is sent back.
 - CI must pass: build, vet, formatting, the test suite and the secret scan
   (`make check`, `make scan`).
 - The rules are in `AGENTS.md` and `.agents/skills/`: search before coding,

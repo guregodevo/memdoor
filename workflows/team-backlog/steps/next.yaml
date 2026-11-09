@@ -14,10 +14,12 @@ command: |
   [ -f "$w/pick-issue.sh" ] || { echo "no $w/pick-issue.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
   : > "$r/number.txt"
   command -v gh >/dev/null || { echo "gh is not installed: team-backlog reads and answers issues with it"; exit 1; }
+  gh auth status >/dev/null 2>&1 || { echo "gh is not signed in: run gh auth login (or set GH_TOKEN); team-backlog cannot read this repository's issues without it"; exit 1; }
   open=$(gh pr list --state open --limit 100 --json headRefName --jq '[.[] | select(.headRefName | startswith("memdoor/issue-"))] | length' 2>/dev/null || echo 0)
   if [ "$open" -ge "{{.max_open_prs}}" ]; then echo "cap: $open pull requests of team-backlog open, the most is {{.max_open_prs}}; nothing started" | tee "$r/summary.txt"; exit 0; fi
   gh issue list --state open --limit 200 --json number,title,assignees,labels \
-    --jq '.[] | "\(.number)\t\(.assignees | length)\t\(.labels | map(.name) | join(","))\t\(.title)"' > "$r/issues.tsv"
+    --jq '.[] | "\(.number)\t\(.assignees | length)\t\(.labels | map(.name) | join(","))\t\(.title)"' > "$r/issues.tsv" \
+    || { echo "gh issue list failed: no issue was read, so none was tried"; exit 1; }
   touch .memdoor/backlog/tried.txt
   { cat .memdoor/backlog/tried.txt; git branch --list 'memdoor/issue-*' --format='%(refname:short)' | sed 's#^memdoor/issue-##'; } | sort -u > "$r/tried.txt"
   n=$(bash "$w/pick-issue.sh" "$r/issues.tsv" "$r/tried.txt" '{{.label}}')

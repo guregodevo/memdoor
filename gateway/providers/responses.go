@@ -186,7 +186,13 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		if t.OfTool.Description != nil {
 			desc = *t.OfTool.Description
 		}
-		req.Tools = append(req.Tools, responsesTool{Type: "function", Name: t.OfTool.Name, Description: desc, Parameters: t.OfTool.InputSchema})
+		// A schema declared with properties alone (model check's) has no
+		// type; OpenAI refuses it ("Invalid schema for function 'read_file'").
+		schema := t.OfTool.InputSchema
+		if schema.Type == "" {
+			schema.Type = "object"
+		}
+		req.Tools = append(req.Tools, responsesTool{Type: "function", Name: t.OfTool.Name, Description: desc, Parameters: schema})
 		toolNames = append(toolNames, t.OfTool.Name)
 	}
 	if len(req.Tools) > 0 && llm.ForcedToolCallFromContext(ctx) {

@@ -193,7 +193,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return a, a.updatePage(t.page, t.msg)
 	case tea.KeyMsg:
-		if t.Type == tea.KeyCtrlT && a.pages[a.cur].pendingQuestion == nil {
+		// With one page there is nothing to switch to, and ctrl+t is the
+		// page's own: it cycles the reasoning effort (#87).
+		if t.Type == tea.KeyCtrlT && len(pageAgents()) > 1 && a.pages[a.cur].pendingQuestion == nil {
 			return a.switchPage((a.cur + 1) % len(pageAgents()))
 		}
 	}
@@ -253,9 +255,10 @@ func (a App) switchPage(n int) (tea.Model, tea.Cmd) {
 	a.cur = idx
 	a.unseen[idx] = false
 	a.pages[idx].background = false
-	// The tab still shows the previous page's OSC 7501 state; clearing
-	// lastStatus makes this page send its own.
+	// The tab and cmux's sidebar still show the previous page's state;
+	// clearing what was sent makes this page send its own.
 	a.pages[idx].lastStatus = ""
+	a.pages[idx].lastCmux = ""
 	// The terminal's scrollback is one stream: a rule says whose lines
 	// follow.
 	cmds = append(cmds, tea.Println(pageRule(agent, a.width)))

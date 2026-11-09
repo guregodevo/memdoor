@@ -53,20 +53,24 @@ func setMode(s *Session, mode string) error {
 }
 
 // teamModelLine is the run's --model: the conversation's pinned model with its
-// host preference, so the team answers on the model the footer shows; ""
-// (no pin) leaves each step to the person's kept pin or the ladder.
+// host preference and the effort chosen with Ctrl+T, so the team answers on
+// the model and effort the footer shows. No pin leaves each step to the
+// person's kept pin or the ladder; no effort chosen leaves each step on auto.
 func teamModelLine(s *Session) string {
-	m := sessionModel(s)
-	if m == "" {
-		return ""
+	var parts []string
+	if m := sessionModel(s); m != "" {
+		parts = append(parts, m)
+		if sort := sessionString(s, sessionSortKey); sort != "" {
+			parts = append(parts, sort)
+		}
+		if order := sessionString(s, sessionOrderKey); order != "" {
+			parts = append(parts, "order", order)
+		}
 	}
-	if sort := sessionString(s, sessionSortKey); sort != "" {
-		m += " " + sort
+	if e := sessionString(s, sessionEffortKey); e != "" {
+		parts = append(parts, "thinking", e)
 	}
-	if order := sessionString(s, sessionOrderKey); order != "" {
-		m += " order " + order
-	}
-	return m
+	return strings.Join(parts, " ")
 }
 
 // teamTurn starts team-solve for this turn when the conversation is in team

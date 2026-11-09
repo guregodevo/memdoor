@@ -12,7 +12,7 @@ import (
 // key the developer creates — Anthropic, Google, OpenAI — or the company AI
 // gateway in front of one; the default provider must be off).
 func TestVendorEngineFromTheEnvironment(t *testing.T) {
-	for _, v := range []string{"ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "GROK_API_KEY", "MEMDOOR_MODEL", "MEMDOOR_VENDOR", "MEMDOOR_MODEL_CONTEXT", "ANTHROPIC_BASE_URL", "OPENAI_BASE_URL", "GEMINI_BASE_URL"} {
+	for _, v := range []string{"ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "LLMGATEWAY_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY", "GROK_API_KEY", "MEMDOOR_MODEL", "MEMDOOR_VENDOR", "MEMDOOR_MODEL_CONTEXT", "ANTHROPIC_BASE_URL", "OPENAI_BASE_URL", "GEMINI_BASE_URL"} {
 		t.Setenv(v, "")
 	}
 	if _, ok, reason := VendorEngine(); ok || reason != "" {
@@ -97,7 +97,7 @@ func TestVendorModeIsTheActiveEngine(t *testing.T) {
 // model, the Responses API unless told chat — and it comes before any vendor
 // key in the same environment.
 func TestTheCompanysOwnGatewayComesFirst(t *testing.T) {
-	for _, v := range []string{"ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "GROK_API_KEY", "MEMDOOR_MODEL", "MEMDOOR_VENDOR", "MEMDOOR_MODEL_CONTEXT", "AI_GATEWAY_BASE_URL", "AI_GATEWAY_TOKEN", "AI_GATEWAY_API", "ACME_AI_GATEWAY_TOKEN"} {
+	for _, v := range []string{"ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "LLMGATEWAY_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY", "GROK_API_KEY", "MEMDOOR_MODEL", "MEMDOOR_VENDOR", "MEMDOOR_MODEL_CONTEXT", "AI_GATEWAY_BASE_URL", "AI_GATEWAY_TOKEN", "AI_GATEWAY_API", "ACME_AI_GATEWAY_TOKEN"} {
 		t.Setenv(v, "")
 	}
 	t.Setenv("AI_GATEWAY_BASE_URL", "https://ai-gateway.corp.example/ai")

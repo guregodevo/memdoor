@@ -71,7 +71,8 @@ Your own commands: any `.md` file in `<project>/.agents/commands/` is a slash co
 | `End` | Jump back to the latest message |
 | `1`–`9`, arrows | Answer the question picker |
 | `Ctrl+C` | Quit |
-| `Shift+Tab` | Cycle the reasoning effort (auto, low, medium, high) |
+| `Shift+Tab` | Switch the mode: auto (one turn) or team (the turn runs as team-solve) |
+| `Ctrl+T` | Cycle the reasoning effort (auto, low, medium, high) |
 | `@` | Mention a file or folder in the prompt — completes as you type, and the file is read before anything else |
 | `Ctrl+V` | Paste an image from the clipboard: it is saved and inserted as an `@` mention |
 | `Alt+Enter` (or `Ctrl+J`) | Insert a newline in the prompt |

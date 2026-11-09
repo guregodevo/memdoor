@@ -108,8 +108,8 @@ applied): [memdoor.ai/workflows](https://memdoor.ai/workflows).
 | `/mcp` | MCP servers from a URL, a command or a `.mcp.json` snippet |
 | `/help` | The rest |
 
-`Esc` interrupts. `ctrl+o` expands tool frames. `Shift+Tab` sets reasoning
-effort. `@path` mentions a file. `MEMDOOR_APPROVE=changes` asks before every
+`Esc` interrupts. `ctrl+o` expands tool frames. `Shift+Tab` switches the mode,
+auto or team. `ctrl+t` sets the reasoning effort. `@path` mentions a file. `MEMDOOR_APPROVE=changes` asks before every
 command and write.
 
 ## In your editor

@@ -95,7 +95,7 @@ decision model one question when `decision_tool_routing` is on: which tool
 family the request needs. That family plus the agent's always-allowed core is
 what the model is offered (`withTurnToolsAllow`, `submittedTools`); the full
 palette stays enforced at execution, and the router fails open. Reasoning
-effort is `gateway/turn_effort.go turnEffort`: the person's Shift+Tab choice,
+effort is `gateway/turn_effort.go turnEffort`: the person's ctrl+t choice,
 else the decision model's low/medium/high for the request, else high.
 
 **Compaction.** Each inference starts with `preflight.Check` on the prompt, the

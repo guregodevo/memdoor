@@ -31,9 +31,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// meets: running before this message, idle after it, and not stopped to
 	// ask a question (that has its own "?" in the title).
 	if !wasBusy && nm.working() {
+		nm.lastOutcome = windowStatus{} // the last run's failure is over
 		if c := cmuxTurnStarted(); c != nil {
 			cmd = tea.Batch(cmd, c)
 		}
+	}
+	// A question blocks the turn on the person: tell them if they are away.
+	if m.pendingQuestion == nil && nm.pendingQuestion != nil && nm.blurred {
+		cmd = tea.Batch(cmd, ring(nm.windowStatus().endNote(titleDirName())))
 	}
 	if wasBusy && !nm.working() && nm.pendingQuestion == nil {
 		if ring := (&nm).turnEnded(); ring != nil {
@@ -56,6 +61,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if status := (&nm).programStatusCmd(); status != nil {
 		cmd = tea.Batch(cmd, status)
+	}
+	if sidebar := (&nm).cmuxStatusCmd(); sidebar != nil {
+		cmd = tea.Batch(cmd, sidebar)
 	}
 	nm, flush := nm.flushSettled()
 	if flush == nil {
@@ -226,7 +234,22 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		op := m.modeOp
 		return m, func() tea.Msg {
 			if _, err := op(next); err != nil {
-				return noteResultMsg{err: fmt.Errorf("mode not changed: %w", err)}
+				return settingRefusedMsg{err: fmt.Errorf("mode not changed: %w", err)}
+			}
+			return statusTickMsg{}
+		}
+	}
+
+	// CTRL+T CYCLES THE REASONING EFFORT: auto, low, medium, high, auto (#87).
+	// Auto lets the decision model pick per request, else high
+	// (gateway/turn_effort.go); a chosen level holds for the conversation.
+	if k, ok := msg.(tea.KeyMsg); ok && k.Type == tea.KeyCtrlT && m.pendingQuestion == nil && m.effortOp != nil {
+		next := nextEffort(m.status.Effort)
+		m.status.Effort = next
+		op := m.effortOp
+		return m, func() tea.Msg {
+			if _, err := op(next); err != nil {
+				return settingRefusedMsg{err: fmt.Errorf("effort not changed: %w", err)}
 			}
 			return statusTickMsg{}
 		}
@@ -744,6 +767,16 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.SetContent(m.renderMessages())
 		m.gotoBottom()
 		return m, nil
+
+	case settingRefusedMsg:
+		// The footer showed the new value before the gateway answered; a
+		// refusal reads the footer back from the gateway, so it and the next
+		// press start from what the gateway holds, whatever order a burst of
+		// presses is answered in.
+		m.note(msg.err.Error())
+		m.viewport.SetContent(m.renderMessages())
+		m.gotoBottom()
+		return m, func() tea.Msg { return statusTickMsg{} }
 
 	case noteResultMsg:
 		if msg.err != nil {

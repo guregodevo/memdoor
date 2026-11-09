@@ -47,7 +47,7 @@ type Model struct {
 	modelProviders     func() ([]ProviderSummary, error)              // a bare /model-search: providers and counts
 	modelHosts         func(id string) ([]ModelHost, error)           // a model's hosts, to prefer or reorder
 	pinModel           func(id, sortBy, order string) (string, error) // pin a model with the picker's preference
-	effortOp           func(level string) (string, error)             // set the reasoning effort (its key: #87)
+	effortOp           func(level string) (string, error)             // ctrl+t: set the reasoning effort
 	modeOp             func(mode string) (string, error)              // Shift+Tab: flip the mode, auto | team
 	routePicker        *routePicker                                   // the model / hosts picker, when open
 	mcp                MCPOps                                         // /mcp — the person's MCP servers (mcp_panel.go)
@@ -141,11 +141,13 @@ type Model struct {
 	// for the end-of-turn signal (window_title.go).
 	blurred    bool
 	doneUnseen bool
-	// lastStatus is the OSC 7501 state already sent, so an unchanged state is
-	// not sent again; lastOutcome ("done" or "error") is what the tab shows
-	// once nothing runs (program_status.go).
+	// lastStatus is the OSC 7501 state already sent and lastCmux the cmux
+	// sidebar entry, so an unchanged state is not sent again; lastOutcome
+	// (done, or the failed step) is what the tab shows once nothing runs
+	// (window_status.go).
 	lastStatus  string
-	lastOutcome string
+	lastCmux    string
+	lastOutcome windowStatus
 	// spinFrame and spinning drive the running mark in the title (window_title.go).
 	spinFrame int
 	spinning  bool

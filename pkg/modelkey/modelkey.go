@@ -26,6 +26,8 @@ const (
 	ProviderBaseten    Provider = "baseten"
 	ProviderTypeSafe   Provider = "typesafe"
 	ProviderEURouter   Provider = "eurouter"
+	ProviderLLMGateway Provider = "llmgateway"
+	ProviderVercel     Provider = "vercel"
 )
 
 // keyShapes are the model providers' key formats, most specific first. A
@@ -47,6 +49,8 @@ var keyShapes = []struct {
 	{regexp.MustCompile(`^AQ\.[0-9A-Za-z_\-]{30,}$`), []Provider{ProviderGemini}},
 	{regexp.MustCompile(`^gsk_[A-Za-z0-9]{32,}$`), []Provider{ProviderGroq}},
 	{regexp.MustCompile(`^xai-[A-Za-z0-9]{32,}$`), []Provider{ProviderXAI}},
+	{regexp.MustCompile(`^llmgtwy_[A-Za-z0-9]{32,}$`), []Provider{ProviderLLMGateway}},
+	{regexp.MustCompile(`^vck_[A-Za-z0-9]{40,}$`), []Provider{ProviderVercel}},
 	// DeepSeek's keys are sk- and 32 hex digits; an older OpenAI key is sk-
 	// and 48 letters and digits. The probe decides between them.
 	{regexp.MustCompile(`^sk-[0-9a-f]{32}$`), []Provider{ProviderDeepSeek, ProviderOpenAI}},

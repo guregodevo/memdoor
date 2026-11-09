@@ -6,7 +6,7 @@ footer names, with your prompt as its task. The run reports back into the
 conversation when it ends.
 
 ```
-  ⎇ main  ·  openrouter · deepseek/deepseek-v4.1-flash  ·  pinned by you  ·  team (shift+tab)  ·  effort auto
+  ⎇ main  ·  openrouter · deepseek/deepseek-v4.1-flash  ·  pinned by you  ·  team (shift+tab)  ·  effort auto (ctrl+t)
 ```
 
 ```
@@ -59,7 +59,8 @@ At the end, the verdict, what was kept, the Scope and the diff:
 ```
 
 Shift+Tab again is `auto`: one turn, as before. The thinking effort is a
-separate setting. Without leaving auto: `/w team-solve <task>`. From the
+separate setting, cycled with ctrl+t; the team thinks at the effort chosen
+there, and on auto each step's is picked as a turn's is. Without leaving auto: `/w team-solve <task>`. From the
 shell, the same run: `memdoor workflow run team-solve --model <id> "<task>"`.
 
 ![Team mode: Shift+Tab, a task, the team's steps, the verdict](/team-mode-2026-11-06.cast)

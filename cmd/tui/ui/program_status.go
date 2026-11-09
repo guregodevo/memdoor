@@ -2,10 +2,8 @@ package ui
 
 import (
 	"io"
-	"math"
 	"os"
 	"strings"
-	"sync"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -26,35 +24,23 @@ import (
 
 const programStatusApp = "memdoor"
 
-// programState is the state for this window now, "" before anything ran.
-// A question, a workflow gate and a failed workflow step outrank a running
-// turn: each needs the person to act.
+// programState is the window's status in OSC 7501's words (window_status.go),
+// "" before anything ran.
 func (m Model) programState() string {
-	if m.pendingQuestion != nil {
-		return "blocked:kind=question"
+	s := m.windowStatus()
+	if s.kind != "" {
+		return s.state + ":kind=" + s.kind
 	}
-	if run, ok := m.workflowLast[m.workflowRunning]; ok && m.workflowRunning != "" {
-		switch {
-		case runHasFailedTask(run):
-			return "error"
-		case run.State == "waiting":
-			return "blocked"
-		}
-		return "working"
-	}
-	if m.busy() {
-		return "working"
-	}
-	return m.lastOutcome
+	return s.state
 }
 
 // workflowRunEnded records how a run finished, for the state that follows it.
 func (m *Model) workflowRunEnded(run WorkflowRun) {
 	if run.State == "failed" || runHasFailedTask(run) {
-		m.lastOutcome = "error"
+		m.lastOutcome = windowStatus{state: statusError, detail: failedStep(run)}
 		return
 	}
-	m.lastOutcome = "done"
+	m.lastOutcome = windowStatus{state: statusDone}
 }
 
 func runHasFailedTask(run WorkflowRun) bool {
@@ -88,31 +74,11 @@ func programStatusSeq(state string) string {
 	return tmuxPassthrough("\x1b]7501;" + body + "\x07")
 }
 
-// Bubble Tea runs each command on its own goroutine, so an earlier "working"
-// can reach the terminal after a later "done". Each command gets a number when
-// it is made (programStatusMade); a write older than programStatusWritten is
-// dropped.
-var (
-	programStatusMu      sync.Mutex
-	programStatusMade    uint64
-	programStatusWritten uint64
-)
+// programStatusWrites keeps the escapes in order (latest_writes.go).
+var programStatusWrites latestWrites
 
 func writeProgramStatus(seq string) tea.Cmd {
-	programStatusMu.Lock()
-	programStatusMade++
-	n := programStatusMade
-	programStatusMu.Unlock()
-	return func() tea.Msg {
-		programStatusMu.Lock()
-		defer programStatusMu.Unlock()
-		if n < programStatusWritten {
-			return nil
-		}
-		programStatusWritten = n
-		_, _ = os.Stdout.WriteString(seq)
-		return nil
-	}
+	return programStatusWrites.cmd(func() { _, _ = os.Stdout.WriteString(seq) })
 }
 
 // ProgramStatusClear sends state=clear when the window closes, so the terminal
@@ -123,11 +89,9 @@ func ProgramStatusClear() { programStatusClear(os.Stdout) }
 // programStatusClear writes the clear only when a state was sent, and drops
 // every status write still queued: none of them may land after it.
 func programStatusClear(w io.Writer) {
-	programStatusMu.Lock()
-	defer programStatusMu.Unlock()
-	sent := programStatusWritten > 0 && programStatusWritten < math.MaxUint64
-	programStatusWritten = math.MaxUint64
-	if sent {
-		_, _ = io.WriteString(w, tmuxPassthrough("\x1b]7501;state=clear\x1b\\"))
-	}
+	programStatusWrites.close(func(sent bool) {
+		if sent {
+			_, _ = io.WriteString(w, tmuxPassthrough("\x1b]7501;state=clear\x1b\\"))
+		}
+	})
 }

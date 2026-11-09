@@ -391,7 +391,7 @@ func readRoute(workspace, channelID, agent string) (routeView, error) {
 // tuiRoute is /model for one page: no argument shows the ladder with this
 // conversation's rung marked; a number pins that rung; "auto" lets go.
 // tuiEffort sets the conversation's reasoning effort (auto hands it back to
-// the decision model, else high — gateway/turn_effort.go); its key is #87.
+// the decision model, else high — gateway/turn_effort.go); its key is ctrl+t.
 func tuiEffort(workspace, channelID, agent string) func(level string) (string, error) {
 	return func(level string) (string, error) {
 		if level == "" {

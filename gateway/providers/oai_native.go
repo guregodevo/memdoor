@@ -261,7 +261,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 					slog.Int("max_tokens", reqBody.MaxTokens), slog.String("model", modelLabel))
 				continue
 			}
-			return nil, providerRefusal(resp.StatusCode, body)
+			return nil, providerRefusal(m.client.baseURL, resp.StatusCode, body)
 		}
 
 		// Stream the response body via SSE. The accumulator reconstructs

@@ -349,6 +349,8 @@ func builtInProviders() []Provider {
 		Provider{ID: "groq", Name: "Groq", API: APIChat, Base: envOr("GROQ_BASE_URL", groqDefaultBase), Key: os.Getenv("GROQ_API_KEY"), KeySource: "env GROQ_API_KEY", Context: groqDefaultContext, BuiltIn: true},
 		Provider{ID: "deepseek", Name: "DeepSeek", API: APIChat, Base: envOr("DEEPSEEK_BASE_URL", deepseekDefaultBase), Key: os.Getenv("DEEPSEEK_API_KEY"), KeySource: "env DEEPSEEK_API_KEY", Context: deepseekDefaultContext, BuiltIn: true},
 		Provider{ID: VendorEURouter, Name: "EUrouter", API: APIChat, Base: envOr("EUROUTER_BASE_URL", euRouterDefaultBase), Key: os.Getenv("EUROUTER_API_KEY"), KeySource: "env EUROUTER_API_KEY", Context: euRouterDefaultContext, BuiltIn: true},
+		Provider{ID: VendorLLMGateway, Name: "LLM Gateway", API: APIChat, Base: envOr("LLMGATEWAY_BASE_URL", llmGatewayDefaultBase), Key: os.Getenv("LLMGATEWAY_API_KEY"), KeySource: "env LLMGATEWAY_API_KEY", Context: llmGatewayDefaultContext, BuiltIn: true},
+		Provider{ID: VendorVercel, Name: "Vercel AI Gateway", API: APIChat, Base: envOr("VERCEL_BASE_URL", vercelDefaultBase), Key: vercelKey(), KeySource: "env " + vercelKeyVar(), Context: vercelDefaultContext, BuiltIn: true},
 		Provider{ID: OpenRouterID, Name: "OpenRouter", API: APIOpenRouter, Base: OpenRouterBase, Key: byokEnvKey(), KeySource: "env " + ByokKeyVar(), Context: byokCtxLen, BuiltIn: true},
 		Provider{ID: TypeSafeID, Name: "TypeSafe (Jev, decisions)", API: APIDecisions, Base: envOr("MEMDOOR_SYSTEMONE_URL", typesafeDefault), Key: typesafeKey(), KeySource: "env " + typesafeKeyVar(), BuiltIn: true},
 	)
@@ -681,6 +683,10 @@ func providerOfEngine(re *RemoteEngine) string {
 		return "deepseek"
 	case re.Vendor == VendorEURouter:
 		return VendorEURouter
+	case re.Vendor == VendorLLMGateway:
+		return VendorLLMGateway
+	case re.Vendor == VendorVercel:
+		return VendorVercel
 	}
 	return ""
 }
