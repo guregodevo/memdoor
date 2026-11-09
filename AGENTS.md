@@ -259,8 +259,9 @@ The three rules that catch the most real bugs: **type-safety (10), fail-fast con
   (Yes · always this session · No); unanswered 5 min = No. The company-policy "no yolo".
 - Always-auto otherwise: no permission modes; the ONLY interruption is the `ask_user_question`
   picker. Esc interrupts a running turn; typing mid-run queues; End jumps to latest;
-  ctrl+o expands tool frames; Shift+Tab cycles the reasoning effort (auto = the
-  decision model picks per turn, else high — gateway/turn_effort.go).
+  ctrl+o expands tool frames; Shift+Tab flips the mode (auto or team); ctrl+t cycles the
+  reasoning effort (auto = the decision model picks per turn, else high —
+  gateway/turn_effort.go).
 - Skills are DISK-FIRST: the gateway seeds the embedded library to `~/.memdoor/skills`
   at boot (user edits there win forever, no rebuild needed) and the coder also loads
   `<project>/.agents/skills/`. Repo `./skills/*.md` edits still need a rebuild only to

@@ -211,7 +211,7 @@ What it decides, each consumer reading its setting per call through
   without a decision model they degrade to plain grep and read and say so;
   `memdoor savings` counts them (`pkg/savings`).
 - The reasoning effort (`turnEffort`, `gateway/turn_effort.go`): the person's
-  Shift+Tab choice wins; on auto, one choice question (low, medium, high)
+  ctrl+t choice wins; on auto, one choice question (low, medium, high)
   with a four-second timeout, else `high`. The effort is sent as
   `reasoning.effort` on the chat/completions wire only, and only to a model
   whose catalogue entry lists reasoning (`reasoningFor`,

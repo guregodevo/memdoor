@@ -92,3 +92,30 @@ func TestATeamModeTurnRunsTeamSolve(t *testing.T) {
 		t.Fatal("a workflow step's turn never starts a team")
 	}
 }
+
+// THE TEAM THINKS AT THE WINDOW'S EFFORT (#87): the effort chosen with Ctrl+T
+// goes on the run's model line, with or without a pinned model, and an agent
+// step reads it. Mutation check: drop the effort from teamModelLine, or the
+// no-id branch of pinTaskModel, and this fails.
+func TestTheTeamThinksAtTheWindowsEffort(t *testing.T) {
+	s := &Session{ID: "ws:chan", Metadata: map[string]interface{}{}}
+	if got := teamModelLine(s); got != "" {
+		t.Fatalf("nothing chosen, nothing on the line: %q", got)
+	}
+	_ = setEffort(s, "low")
+	if got := teamModelLine(s); got != "thinking low" {
+		t.Fatalf("an effort and no pin: %q", got)
+	}
+	_ = pinModel(s, "openrouter:deepseek/deepseek-v4.1-flash", "price", "")
+	if got := teamModelLine(s); got != "openrouter:deepseek/deepseek-v4.1-flash price thinking low" {
+		t.Fatalf("a pin and an effort: %q", got)
+	}
+
+	step := &Session{ID: "workflow:team-solve:p:fix", Metadata: map[string]interface{}{}}
+	if err := pinTaskModel(step, "thinking low", "nobody"); err != nil {
+		t.Fatalf("a line with no id is the model that answers here: %v", err)
+	}
+	if e := sessionString(step, sessionEffortKey); e != "low" || sessionModel(step) != "" {
+		t.Fatalf("the step thinks at %q on %q, want low on no pin", e, sessionModel(step))
+	}
+}

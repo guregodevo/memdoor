@@ -10,7 +10,7 @@ import (
 // defaults, and GLM 5.3 Flash defaults to its maximum (omp's catalogue,
 // classes/glm.kdl): 16-46K tokens of thinking before a plan or a first tool
 // call were measured on it (2026-09-29/30). Every turn now carries an effort
-// (turn_effort.go: the person's Shift+Tab, else the decision model, else
+// (turn_effort.go: the person's ctrl+t, else the decision model, else
 // high), sent as OpenRouter's reasoning.effort.
 //
 // Only to a model whose catalogue entry lists "reasoning": requests also say

@@ -43,7 +43,7 @@ type Ops struct {
 	ModelHosts     func(id string) ([]ModelHost, error)           // a model's hosts
 	ModelProviders func() ([]ProviderSummary, error)              // a bare /model-search: the providers and their counts
 	PinModel       func(id, sortBy, order string) (string, error) // pin from the picker
-	Effort         func(level string) (string, error)             // the reasoning effort, auto | low | medium | high (its key: #87)
+	Effort         func(level string) (string, error)             // ctrl+t: the reasoning effort, auto | low | medium | high
 	Mode           func(mode string) (string, error)              // Shift+Tab: the mode, auto | team
 	Status         func() Status                                  // the footer
 	Update         func() (string, error)                         // /update — install the published build
@@ -303,9 +303,9 @@ func (s Status) line() string {
 		mode, colour = "team", colRead
 	}
 	parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color(colour)).Render(mode+" (shift+tab)"))
-	// THE EFFORT: auto lets the decision model (or high) decide per request;
-	// a chosen one holds until changed.
-	effort, colour := "effort "+effortLabel(s), colDim
+	// THE EFFORT, cycled with Ctrl+T: auto lets the decision model (or high)
+	// decide per request; a chosen one holds until changed.
+	effort, colour := "effort "+effortLabel(s)+" (ctrl+t)", colDim
 	if s.Effort != "" {
 		colour = colRead
 	}
@@ -347,6 +347,9 @@ func (m Model) scopeLabel() string {
 // /dir re-roots a session with os.Chdir, so the process directory is always
 // the truth about where the next turn will run.
 func (m Model) dirLabel() string { return dirBase() }
+
+// settingRefusedMsg is a Shift+Tab or Ctrl+T change the gateway did not take.
+type settingRefusedMsg struct{ err error }
 
 // noteResultMsg carries the outcome of the async ops (/model, /usage)
 // that just report a message.

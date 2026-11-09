@@ -129,7 +129,7 @@ and llm tasks alike. The id may be left out: `model: thinking off` is the model 
 tokens a second on OpenRouter's throughput host (Cerebras) and at 44 on the cheapest
 (Darkbloom); with thinking on it ran past that host's 32K output cap on a planning
 prompt and wrote nothing, with thinking off it planned in 3 s; and an llm task has no
-window to type /model or Shift+Tab in.
+window to type /model or ctrl+t in.
 ## The target is the turn's definition of done
 
 An agent task's `target` is handed to its turn as the declared done

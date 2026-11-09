@@ -11,7 +11,7 @@ import (
 )
 
 // A turn's reasoning effort (providers/reasoning.go sends it). The person's
-// Shift+Tab choice wins; left on auto, the decision model picks it for the
+// ctrl+t choice wins; left on auto, the decision model picks it for the
 // request, once per turn, the way omp's auto-thinking does
 // (auto-thinking/classifier.ts): how open-ended the problem is, not how much
 // work, ties to the lower level. Without a decision model, or when it does

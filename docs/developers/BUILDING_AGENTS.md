@@ -163,7 +163,7 @@ come from (a company gateway, a vendor key, OpenRouter, `memdoor connect`),
 
 `/model` in the window pins a model or a rung for the conversation and keeps
 the pin for your later conversations (`gateway/persistent_pin.go`;
-`/model auto` removes it). Shift+Tab cycles the reasoning effort; `auto`
+`/model auto` removes it). ctrl+t cycles the reasoning effort; `auto`
 lets the decision model pick per turn (`gateway/turn_effort.go`). The same
 pin over HTTP is `POST /api/route`.
 

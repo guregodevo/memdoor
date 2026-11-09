@@ -226,7 +226,22 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		op := m.modeOp
 		return m, func() tea.Msg {
 			if _, err := op(next); err != nil {
-				return noteResultMsg{err: fmt.Errorf("mode not changed: %w", err)}
+				return settingRefusedMsg{err: fmt.Errorf("mode not changed: %w", err)}
+			}
+			return statusTickMsg{}
+		}
+	}
+
+	// CTRL+T CYCLES THE REASONING EFFORT: auto, low, medium, high, auto (#87).
+	// Auto lets the decision model pick per request, else high
+	// (gateway/turn_effort.go); a chosen level holds for the conversation.
+	if k, ok := msg.(tea.KeyMsg); ok && k.Type == tea.KeyCtrlT && m.pendingQuestion == nil && m.effortOp != nil {
+		next := nextEffort(m.status.Effort)
+		m.status.Effort = next
+		op := m.effortOp
+		return m, func() tea.Msg {
+			if _, err := op(next); err != nil {
+				return settingRefusedMsg{err: fmt.Errorf("effort not changed: %w", err)}
 			}
 			return statusTickMsg{}
 		}
@@ -744,6 +759,16 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.viewport.SetContent(m.renderMessages())
 		m.gotoBottom()
 		return m, nil
+
+	case settingRefusedMsg:
+		// The footer showed the new value before the gateway answered; a
+		// refusal reads the footer back from the gateway, so it and the next
+		// press start from what the gateway holds, whatever order a burst of
+		// presses is answered in.
+		m.note(msg.err.Error())
+		m.viewport.SetContent(m.renderMessages())
+		m.gotoBottom()
+		return m, func() tea.Msg { return statusTickMsg{} }
 
 	case noteResultMsg:
 		if msg.err != nil {
