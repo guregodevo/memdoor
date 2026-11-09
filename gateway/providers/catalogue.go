@@ -30,6 +30,7 @@ import (
 //	Vercel      GET /v1/models            type, context_window, max_tokens, pricing input/output, supported_parameters, reasoning_options, deprecated_at (2026-11-09)
 //	EUrouter    GET /api/v1/models        context_length, top_provider.max_completion_tokens, pricing + currency, supported_parameters, supported_api_endpoints (2026-11-08)
 //	LLM Gateway GET /v1/models            context_length, max_output, pricing, architecture.output_modalities, supported_parameters, deactivated_at (2026-11-09)
+//	AI/ML API   GET /v1/models?include=all info.contextLength, info.outputMax, pricing units, modalities, capabilities, type (2026-11-07)
 //
 // A ModelReader is one of those, behind the registry: ModelsOf and GetModel
 // call it, fill what it leaves empty from the catalogue and the reference
@@ -69,6 +70,8 @@ func readerFor(p Provider) ModelReader {
 		return llmGatewayReader{}
 	case VendorVercel:
 		return vercelReader{}
+	case VendorAIMLAPI:
+		return aimlapiReader{}
 	case ChatGPTID:
 		return chatgptReader{}
 	}
@@ -714,5 +717,96 @@ func (vercelReader) ListModels(ctx context.Context, p Provider) ([]Model, error)
 }
 
 func (r vercelReader) GetModel(ctx context.Context, p Provider, id string) (Model, error) {
+	return fromList(ctx, r, p, id)
+}
+
+// ---- AI/ML API ---------------------------------------------------------
+
+// aimlapiFastModel leads the list, so `memdoor connect aimlapi` probes it and
+// not whichever id sorts first: the ladder's first rung, $0.15 / $0.50 per
+// million on the catalogue of 2026-11-07, with tools.
+const aimlapiFastModel = "z-ai/glm-5.3-flash"
+
+type aimlapiReader struct{}
+
+func (aimlapiReader) ListModels(ctx context.Context, p Provider) ([]Model, error) {
+	var raw struct {
+		Data []struct {
+			ID   string `json:"id"`
+			Type string `json:"type"`
+			Info struct {
+				Name          string `json:"name"`
+				ContextLength int    `json:"contextLength"`
+				OutputMax     int    `json:"outputMax"`
+			} `json:"info"`
+			Modalities struct {
+				Input []string `json:"input"`
+			} `json:"modalities"`
+			Capabilities []string `json:"capabilities"`
+			Pricing      struct {
+				Units []struct {
+					Name    string  `json:"name"`
+					Content string  `json:"content"`
+					Origin  string  `json:"origin"`
+					Phase   string  `json:"phase"`
+					Price   float64 `json:"price"`
+					Per     float64 `json:"per"`
+				} `json:"units"`
+			} `json:"pricing"`
+		} `json:"data"`
+	}
+	// include=all adds capabilities and prices. Video, image, audio and
+	// embedding models share the list; only type tells them from chat.
+	if err := getJSON(ctx, modelsURL(p.Base)+"?include=all", bearer(p), &raw); err != nil {
+		return nil, err
+	}
+	out := make([]Model, 0, len(raw.Data))
+	for _, d := range raw.Data {
+		if d.ID == "" || d.Type != "openai/chat-completions" {
+			continue
+		}
+		tools, reasoning := false, false
+		for _, c := range d.Capabilities {
+			switch c {
+			case "tools":
+				tools = true
+			case "reasoning":
+				reasoning = true
+			}
+		}
+		if !tools {
+			continue // a model that cannot call a tool cannot run a turn
+		}
+		name := d.Info.Name
+		if name == "" {
+			name = d.ID
+		}
+		m := Model{ID: d.ID, Name: name, Context: d.Info.ContextLength, MaxOutput: d.Info.OutputMax, Tools: true,
+			Inputs: d.Modalities.Input, Thinking: reasoning}
+		for _, u := range d.Pricing.Units {
+			if u.Name != "token" || u.Content != "text" || u.Phase != "inference" || u.Per <= 0 {
+				continue
+			}
+			switch u.Origin {
+			case "provided":
+				m.InPerM = u.Price * 1_000_000 / u.Per
+			case "generated":
+				m.OutPerM = u.Price * 1_000_000 / u.Per
+			}
+		}
+		out = append(out, m)
+	}
+	sortModels(out)
+	for i, m := range out {
+		if m.ID == aimlapiFastModel {
+			copy(out[1:i+1], out[:i])
+			out[0] = m
+			break
+		}
+	}
+	return out, nil
+}
+
+func (r aimlapiReader) GetModel(ctx context.Context, p Provider, id string) (Model, error) {
 	return fromList(ctx, r, p, id)
 }

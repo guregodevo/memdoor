@@ -52,6 +52,7 @@ var ConnectKinds = []ConnectKind{
 	{"eurouter", "EUrouter (models served in the EU)", "chat", "https://api.eurouter.ai/api/v1", "an API key from eurouter.ai", false, "EUROUTER_API_KEY", false},
 	{"llmgateway", "LLM Gateway (one key, many vendors)", "chat", "https://api.llmgateway.io/v1", "an API key from llmgateway.io", false, "LLMGATEWAY_API_KEY", false},
 	{"vercel", "Vercel AI Gateway", "chat", "https://ai-gateway.vercel.sh/v1", "an AI Gateway API key from vercel.com (AI Gateway → API Keys)", false, "AI_GATEWAY_API_KEY", false},
+	{"aimlapi", "AI/ML API (one key, many vendors)", "chat", "https://api.aimlapi.com/v1", "an API key from aimlapi.com/app/keys", false, "AIMLAPI_API_KEY", false},
 	{"typesafe", "TypeSafe (Jev, decisions)", "decisions", "https://api.typesafe.ai", "a key from typesafe.ai: the decision model, with any chat provider", false, "TYPESAFE_API_KEY", false},
 	// A local runtime (2026-10-25, the maintainer: "janis should work like a llama.cpp or
 	// ollama, independent from memdoor"): an OpenAI-compatible server on this

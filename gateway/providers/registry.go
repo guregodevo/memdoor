@@ -351,6 +351,7 @@ func builtInProviders() []Provider {
 		Provider{ID: VendorEURouter, Name: "EUrouter", API: APIChat, Base: envOr("EUROUTER_BASE_URL", euRouterDefaultBase), Key: os.Getenv("EUROUTER_API_KEY"), KeySource: "env EUROUTER_API_KEY", Context: euRouterDefaultContext, BuiltIn: true},
 		Provider{ID: VendorLLMGateway, Name: "LLM Gateway", API: APIChat, Base: envOr("LLMGATEWAY_BASE_URL", llmGatewayDefaultBase), Key: os.Getenv("LLMGATEWAY_API_KEY"), KeySource: "env LLMGATEWAY_API_KEY", Context: llmGatewayDefaultContext, BuiltIn: true},
 		Provider{ID: VendorVercel, Name: "Vercel AI Gateway", API: APIChat, Base: envOr("VERCEL_BASE_URL", vercelDefaultBase), Key: vercelKey(), KeySource: "env " + vercelKeyVar(), Context: vercelDefaultContext, BuiltIn: true},
+		Provider{ID: VendorAIMLAPI, Name: "AI/ML API", API: APIChat, Base: envOr("AIMLAPI_BASE_URL", aimlapiDefaultBase), Key: os.Getenv("AIMLAPI_API_KEY"), KeySource: "env AIMLAPI_API_KEY", Context: aimlapiDefaultContext, BuiltIn: true},
 		Provider{ID: OpenRouterID, Name: "OpenRouter", API: APIOpenRouter, Base: OpenRouterBase, Key: byokEnvKey(), KeySource: "env " + ByokKeyVar(), Context: byokCtxLen, BuiltIn: true},
 		Provider{ID: TypeSafeID, Name: "TypeSafe (Jev, decisions)", API: APIDecisions, Base: envOr("MEMDOOR_SYSTEMONE_URL", typesafeDefault), Key: typesafeKey(), KeySource: "env " + typesafeKeyVar(), BuiltIn: true},
 	)
@@ -687,6 +688,8 @@ func providerOfEngine(re *RemoteEngine) string {
 		return VendorLLMGateway
 	case re.Vendor == VendorVercel:
 		return VendorVercel
+	case re.Vendor == VendorAIMLAPI:
+		return VendorAIMLAPI
 	}
 	return ""
 }

@@ -21,7 +21,7 @@ func TestVendorKeyWithoutModel(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			clearProviderEnv(t)
-			for _, v := range []string{"MEMDOOR_VENDOR", "LLMGATEWAY_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY"} {
+			for _, v := range []string{"MEMDOOR_VENDOR", "LLMGATEWAY_API_KEY", "AIMLAPI_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY"} {
 				t.Setenv(v, "")
 			}
 			for k, v := range tc.env {

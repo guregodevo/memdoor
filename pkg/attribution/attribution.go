@@ -18,6 +18,7 @@
 //     "company-product/version", "-oai" on the OpenAI-compatible endpoint
 //     (ai.google.dev/gemini-api/docs/partner-integration); it is segmentation
 //     on their side, not a public page.
+//   - AI/ML API reads X-AIMLAPI-Source, on api.aimlapi.com only (#223).
 //
 // Anthropic, OpenAI, xAI, DeepSeek, Baseten, Groq and the rest document no
 // app header (researched 2026-10-24, docs/features/PROVIDERS.md); they see the
@@ -46,6 +47,8 @@ const (
 	AppURL = "https://memdoor.ai"
 	// AppSource is LLM Gateway's X-Source, a bare domain.
 	AppSource = "memdoor.ai"
+	// AIMLAPISource is AI/ML API's X-AIMLAPI-Source.
+	AIMLAPISource = "agent/memdoor"
 	// AppCategories is OpenRouter's X-OpenRouter-Categories: up to two per
 	// request, from its list; cli-agent is a coding one.
 	AppCategories = "cli-agent"
@@ -56,6 +59,7 @@ const (
 	HeaderLLMGateway    = "X-Source"
 	HeaderEUrouterTitle = "X-EUrouter-Title"
 	HeaderCategories    = "X-OpenRouter-Categories"
+	HeaderAIMLAPISource = "X-AIMLAPI-Source"
 )
 
 // pairHosts read HTTP-Referer + X-Title.
@@ -115,6 +119,8 @@ func Headers(endpoint string) map[string]string {
 		out[HeaderLLMGateway] = AppSource
 	case isHost(host, "eurouter.ai"):
 		out[HeaderEUrouterTitle] = AppName
+	case host == "api.aimlapi.com": // this host exactly, no subdomain
+		out[HeaderAIMLAPISource] = AIMLAPISource
 	}
 	return out
 }
