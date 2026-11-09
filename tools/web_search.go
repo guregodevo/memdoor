@@ -28,8 +28,10 @@ const (
 
 // WebSearchBackend is where a search goes: the chat-completions endpoint,
 // the key, and the model that answers from the results. An empty key means
-// there is none.
+// there is none. Engine "" is OpenRouter; WebSearchKeenable is Keenable's
+// API at Endpoint, where an empty key is the keyless public endpoint.
 type WebSearchBackend struct {
+	Engine               string
 	Endpoint, Key, Model string
 	Headers              map[string]string // the app's identity for OpenRouter's apps page; nil elsewhere
 }
@@ -69,6 +71,9 @@ func WebSearch(input json.RawMessage) (string, error) {
 	}
 	max = min(max, webSearchMaxResults)
 	be := webSearchBackend()
+	if be.Engine == WebSearchKeenable {
+		return keenableSearch(be, query, max)
+	}
 	if be.Key == "" {
 		return "", fmt.Errorf("web search runs on an OpenRouter key and this gateway has none (OPEN_ROUTER_API_KEY)")
 	}

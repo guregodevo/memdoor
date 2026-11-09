@@ -360,6 +360,38 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   `alibaba/qwen3-coder-next` and `openai/gpt-oss-20b` passed every check;
   `anthropic/claude-haiku-5.5` was refused on the free tier.
 
+- **AI/ML API** (2026-11-09, #223, from AI/ML API's own fork): a built-in
+  provider and `/connect` kind (`aimlapi`, `AIMLAPI_API_KEY`, base
+  `https://api.aimlapi.com/v1`; `AIMLAPI_BASE_URL` replaces it). One key
+  reaches many vendors over chat/completions. `/v1/models?include=all` states
+  `type`, `info.contextLength`, `info.outputMax`, `modalities`,
+  `capabilities` and price units. It lists 963 models (2026-11-09): chat,
+  video, image, responses, Anthropic messages, speech. The reader keeps the
+  345 of type `openai/chat-completions` with `tools` in `capabilities`. A
+  price is the `token` unit of `text` at the `inference` phase, `provided`
+  for input and `generated` for output, per `per` tokens. `reasoning` marks
+  Thinking. `z-ai/glm-5.3-flash` ($0.15 / $0.50, 1M / 131k) leads the list so
+  `memdoor connect aimlapi` probes it. The key has no shape `pkg/modelkey`
+  checks, so it is found under its name. AI/ML API is last in the vendor
+  order, after Vercel. Every request to `api.aimlapi.com`, and no other host,
+  carries `X-AIMLAPI-Source: agent/memdoor`, the header AI/ML API reads
+  (`TestATurnOnAIMLAPICarriesItsSource`); `MEMDOOR_OPENROUTER_ATTRIBUTION=0`
+  leaves it off.
+
+  A first start with only `AIMLAPI_API_KEY` set ran `model check` on the
+  cheapest models (#206) and picked `inclusionai/ling-3.0-tiny`. The
+  fast-model task, in the window, every request to `api.aimlapi.com`
+  (`memdoor meter`: 16 requests, 96% of prompt tokens cached):
+
+  | Provider · model | Steps | Time | Result |
+  |---|---|---|---|
+  | AI/ML API · `inclusionai/ling-3.0-tiny` (picked) | Edit (refused: not valid Go), Edit, Bash | 23 s | ok, +1 −1 |
+  | AI/ML API · `z-ai/glm-5.3-flash` (pinned) | Read, Edit, Bash | 17 s | ok, +1 −1 |
+
+  The answer names the model by its alias (`glm-5.3-flash`), so the status
+  line shows that name after the first turn; the alias resolves to the same
+  model.
+
 
 - **Attribution as a field** (`gateway/providers/attribution.go`): user, team,
   project, session as headers on every vendor and gateway request —

@@ -133,7 +133,7 @@ func TestTheTurnReportsItsEffortToTheRoute(t *testing.T) {
 // engine's, or the one that lists a pinned id (the footer shows it).
 func TestRouteViewNamesTheProvider(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	for _, v := range []string{"AI_GATEWAY_BASE_URL", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "LLMGATEWAY_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY", "GROK_API_KEY", "MEMDOOR_BYOK"} {
+	for _, v := range []string{"AI_GATEWAY_BASE_URL", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "LLMGATEWAY_API_KEY", "AIMLAPI_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY", "GROK_API_KEY", "MEMDOOR_BYOK"} {
 		t.Setenv(v, "")
 	}
 	t.Setenv("OPEN_ROUTER_API_KEY", "sk-or-test")

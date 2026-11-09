@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Setup's last question, declined: the command for later, and nothing run.
@@ -71,5 +72,17 @@ func TestSampleDirHasACommit(t *testing.T) {
 	c.Dir = dir
 	if err := c.Run(); err != nil {
 		t.Fatalf("the sample folder has no commit: %v", err)
+	}
+}
+
+// A gateway that is slow to start is waited for, and the line said when it still
+// does not answer names the wait it used and that it may still be starting.
+func TestTheGatewayWaitIsLongerThanFifteenSecondsAndSaysWhatItWaitedFor(t *testing.T) {
+	if gatewayStartWait < 30*time.Second {
+		t.Errorf("gatewayStartWait = %v; a fresh start was seen taking over 20 s", gatewayStartWait)
+	}
+	line := gatewayGiveUpLine()
+	if !strings.Contains(line, "40s") || !strings.Contains(line, "may still be starting") {
+		t.Errorf("the give-up line: %q", line)
 	}
 }
