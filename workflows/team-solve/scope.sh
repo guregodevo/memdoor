@@ -5,7 +5,10 @@
 # tree. Exit 1 when a changed file is outside it: a free model's run kept a
 # "lesson" in AGENTS.md and a review edited the code it reviewed (2026-11-05).
 set -u
-r="$1"; out="$r/scope.txt"; : > "$out"
+# --in-scope: print the changed files inside the Scope and stop, writing
+# nothing (check.sh: a change that touches none of it did nothing).
+only=; [ "$1" = --in-scope ] && { only=1; shift; }
+r="$1"; out="$r/scope.txt"; [ -n "$only" ] || : > "$out"
 scope=$(sed -n '/^## Scope$/,/^## /p' "$r/task.md" | sed '1d;/^## /d;/^<!--.*-->$/d' \
   | grep -o '`[^`]*`' | tr -d '`' | sed 's#^\./##; s#/*$##; s#^$#.#')
 
@@ -31,6 +34,12 @@ inside() {
   done <<< "$scope"
   return 1
 }
+
+if [ -n "$only" ]; then
+  [ -n "$scope" ] || exit 0
+  changed | while read -r _ _ f; do inside "$f" && printf '%s\n' "$f"; done
+  exit 0
+fi
 
 fail=0
 # HEAD WHERE THE RUN STARTED (problem.yaml's head.txt). A direct attempt

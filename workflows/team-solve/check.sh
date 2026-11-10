@@ -48,6 +48,17 @@ if [ -n "$cmd" ]; then
       printf '\nthe tests this change makes fail (they pass on the tree as the run found it, baseline-check.log):\n%s\n' "$added" >> "$log"
       status=1
     fi
+  # The same failure as on the tree as the run found it, and no file of the
+  # Scope changed: the change did nothing the Check can see. An attempt that
+  # wrote only scratch files (scratch/poly.py, the Scope solution.py) passed
+  # on the judge's word and the team never ran (LiveCodeBench arc196_c,
+  # 2026-11-10); with the team it is solved. No SWE-bench Verified run on
+  # disk matches (19 fail the same way, each changed files in its Scope).
+  elif [ "$(cat "$r/baseline-status.txt" 2>/dev/null)" = 1 ] &&
+     [ "$(sed '1d; s/[0-9][0-9]*/#/g' "$log")" = "$(sed '1d; s/[0-9][0-9]*/#/g' "$r/baseline-check.log")" ] &&
+     [ -z "$(bash "$w/scope.sh" --in-scope "$r")" ]; then
+    printf '\nthe Check fails as it did on the tree as the run found it (baseline-check.log), and no file of the Scope changed: the change did nothing it can see\n' >> "$log"
+    status=1
   # A broken Check whose log lists no tests: nothing it says counts, the judge decides.
   elif [ "$(cat "$r/baseline-status.txt" 2>/dev/null)" = 1 ]; then
     printf '\nthe Check also fails on the tree as the run found it (baseline-check.log): nothing it says counts, the judge decides\n' >> "$log"
