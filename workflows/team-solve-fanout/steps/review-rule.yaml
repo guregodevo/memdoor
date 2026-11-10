@@ -11,6 +11,6 @@ command: |
   r=.memdoor/runs/team-solve-fanout-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
   v=$(bash "$w/verdict.sh" "$r/review.md")
-  if [ "$v" = PASS ] || { [ "$v" = none ] && [ "$(cat "$r/test-status.txt")" = 0 ]; }; then echo PASS; else echo FAIL; fi
+  if [ "$v" = PASS ] || { [ "$v" = none ] && [ "$(cat "$r/test-status.txt")" = 0 ]; }; then echo PASS; else echo FAIL; fi | tee "$r/review-rule.txt"
 timeout: 1m
 max_retries: 0

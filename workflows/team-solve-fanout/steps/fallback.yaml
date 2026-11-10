@@ -1,0 +1,18 @@
+type: pick
+# When the review failed, applies the fan-out's next attempt: choose's winner left out, the same rules.
+# The attempts are the fan-out's saved output: no model call. Optional: with
+# no other attempt, or one that does not apply, fallback-done puts back what
+# keep kept.
+from: direct
+skip: [choose]
+prefer: 1
+when: grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt
+optional: true
+requires:
+  - table_pattern: fallback-reset
+  - table_pattern: choose
+  - table_pattern: direct
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/fallback.json
+timeout: 5m
+max_retries: 0
