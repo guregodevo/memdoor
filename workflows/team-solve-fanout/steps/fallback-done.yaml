@@ -1,0 +1,17 @@
+type: command
+# Records the fallback in keep.txt; when it applied nothing, puts back what keep kept.
+when: grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt
+requires:
+  - table_pattern: fallback
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  if [ -s "$r/fallback.json" ]; then
+    n=$(grep -oE '"winner":[0-9]+' "$r/fallback.json" | grep -oE '[0-9]+')
+    printf 'fallback: the review failed; attempt %s of the fan-out, the next by its checks, replaces it\n' "$n" | tee -a "$r/keep.txt"
+  else
+    bash "$w/snapshot.sh" restore "$r" kept
+    printf 'fallback: the review failed and no other attempt applies; what keep kept stays\n' | tee -a "$r/keep.txt"
+  fi
+timeout: 5m
+max_retries: 0

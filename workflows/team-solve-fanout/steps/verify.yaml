@@ -3,7 +3,7 @@ type: command
 # The check and the Scope (scope.sh) again on the final tree, then the judge's verdict when it ran.
 # A failing check or a FAIL verdict fails the run.
 requires:
-  - table_pattern: keep
+  - table_pattern: fallback-done
 command: |
   r=.memdoor/runs/team-solve-fanout-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
@@ -24,6 +24,9 @@ command: |
   # put aside does not count (keep.txt).
   if grep -q '^put back' "$r/keep.txt" 2>/dev/null; then judged=none; [ "$(cat "$r/direct-status.txt")" = 0 ] && reviewed=none; fi
   if grep -qE "^kept: (the team's work|the repair)" "$r/keep.txt" 2>/dev/null && [ -s "$r/repair.md" ]; then reviewed=none; fi
+  # The fallback replaced the work the review and the judge saw: their
+  # verdicts are not on the final tree.
+  if [ -s "$r/fallback.json" ]; then judged=none; reviewed=none; fi
   printf 'judge: %s, review: %s\n' "$judged" "$reviewed"
   [ "$judged" = FAIL ] && exit 1
   [ "$judged" = PASS ] && exit 0

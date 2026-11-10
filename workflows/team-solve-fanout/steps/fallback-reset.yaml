@@ -1,0 +1,17 @@
+type: command
+# When the review failed, sets the tree back to where the run found it, for the fallback pick.
+# What keep left is saved first (kept.patch): fallback-done puts it back when
+# the fallback applies nothing. Measured on 2026-11-09 and 10 (issue #234):
+# where the review failed, the next attempt of the fan-out was right on 11 of
+# 11 LiveCodeBench runs and 9 of 11 SWE-bench Verified runs, against 10 and 8
+# for what the run kept; no run lost.
+when: grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt
+requires:
+  - table_pattern: keep
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  bash "$w/snapshot.sh" save "$r" kept
+  bash "$w/snapshot.sh" reset "$r"
+timeout: 5m
+max_retries: 0
