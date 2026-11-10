@@ -1,0 +1,45 @@
+type: agent
+agent: coder
+# Time probes: the program on its slowest inputs, under a limit; the fan-out scores the attempts on them.
+# The attempts' checks run the samples, which every attempt answers in time.
+# On GVS5H's LiveCodeBench 3692 (2026-11-09), two of three attempts timed
+# out on a hidden test (7.8 s, the grader allows 6) and the pick took one of
+# them. A probe is one more check of the fan-out, like a path check: an
+# attempt scores a point for each probe it passes; one that every attempt
+# fails moves nothing; the Check does not run them (check.sh). Written once,
+# before any attempt, by a turn that does not solve. A task that is not a
+# program with stated input sizes gets probes.md saying so and no probe.
+optional: true
+requires:
+  - table_pattern: problem
+prompt: |
+  You write time probes, in a fresh context, and nothing else: do not solve the task, do not
+  write the program it asks for. The task is .memdoor/runs/team-solve-fanout-{{.partition}}/prompt.md.
+
+  When the task is not a program that reads an input with stated sizes or limits (a fix in a
+  repository, a document, a program with no input), write
+  .memdoor/runs/team-solve-fanout-{{.partition}}/probes.md saying so and no probe.
+
+  Otherwise:
+  1. Write up to four input files in .memdoor/runs/team-solve-fanout-{{.partition}}/probe-inputs/,
+     each valid for the task, at the largest sizes its limits allow, each a different worst case
+     for a slow program: one value or character repeated, a short pattern repeated, sorted,
+     reversed; inner lengths at 1, about the square root of their maximum, half and the maximum.
+     Random inputs are rarely the slow ones. A small script that writes them is fine; keep it
+     outside probes/.
+  2. For each input, write one executable (chmod +x) in
+     .memdoor/runs/team-solve-fanout-{{.partition}}/probes/: run from the root of a copy of the
+     project, it runs the program the task asks for on that input, the way the task says the
+     program is run, under a time limit, and exits 0 only when the program answers within it.
+     The limit: a third of the time limit the task states, or 2 seconds when it states none
+     (a generated worst case is rarely as slow as the grader's). Impose it with
+     `perl -e 'alarm shift; exec @ARGV' SECONDS <command>` (macOS has no `timeout`). Refer to
+     the input by its absolute path. Use only commands this machine has.
+  3. Run each probe here, where the program does not exist yet: it must fail.
+  4. Write .memdoor/runs/team-solve-fanout-{{.partition}}/probes.md: one line per probe, its input
+     and its limit.
+  Change no file of the project. Keep no rule with the notes tool. Do not spawn agents.
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/probes.md
+timeout: 10m
+max_retries: 0

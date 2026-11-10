@@ -20,12 +20,14 @@ requires:
   - table_pattern: problem
   - table_pattern: survey
   - table_pattern: paths
+  - table_pattern: probes
 fanout:
   min: 3
   max: 5
   checks:
     - .memdoor/runs/team-solve-fanout-{{.partition}}/paths/*
     - .memdoor/runs/team-solve-fanout-{{.partition}}/attempt-*
+    - .memdoor/runs/team-solve-fanout-{{.partition}}/probes/*
   own: .memdoor/runs/team-solve-fanout-{{.partition}}/attempt-{{.n}}
   pick: false
   until: "One attempt passes more of the checks than every other attempt does, on checks that fail on the tree as the run found it, so the pick between them is not a tie."
