@@ -7,8 +7,13 @@ type: pick
 # smaller change winning ties, the fan-out lost 3 of 30 instances team-solve
 # had resolved; on django-11815 attempts 1 and 3 were right and the smaller
 # change, attempt 2, was picked (SWE-bench Verified, DeepSeek V4.1 Flash,
-# 2026-11-08). A tie-breaker task can go in by: [...] ahead of prefer.
+# 2026-11-08). Consensus settles a tie first: the leader whose change the
+# other leaders share most. On the 12 runs where right and wrong attempts
+# tied (SWE-bench Verified and LiveCodeBench, 2026-11-11) it took a right one
+# where prefer took a wrong one three times, and a wrong one where prefer was
+# right once.
 from: direct
+tie: consensus
 prefer: 1
 requires:
   - table_pattern: direct
