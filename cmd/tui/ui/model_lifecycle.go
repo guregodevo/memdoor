@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -121,6 +122,12 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 		// OpenRouter's notion.
 		if len(fields) == 2 && strings.Contains(arg, "/") && !hasProviderPrefix(arg) && m.modelHosts != nil {
 			return m.openModelHosts(arg)
+		}
+		// A name, not an id: the search /model-search opens, enter pins
+		// (the maintainer, 2026-11-11: "/model deepseek … open model-search
+		// like"). It was "/model takes a rung number, a model id or auto".
+		if modelSearchArg(fields[1:]) {
+			return m.openModelSearch(arg)
 		}
 		op := m.route
 		return func() tea.Msg { s, e := op(arg); return routeResultMsg{summary: s, err: e} }
@@ -244,6 +251,23 @@ func (m *Model) note(content string) {
 	if m.viewport.Height > 0 {
 		m.refreshFollow()
 	}
+}
+
+// modelSearchArg reports whether /model's argument is a name to search for:
+// not empty, not auto, not a rung number, not a model id (vendor/name) and
+// not provider:model, which the route takes as they are.
+func modelSearchArg(args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
+	first := args[0]
+	if strings.EqualFold(first, "auto") || strings.Contains(first, "/") || hasProviderPrefix(first) {
+		return false
+	}
+	if _, err := strconv.Atoi(first); err == nil {
+		return false
+	}
+	return true
 }
 
 // hasProviderPrefix: a ":" before the first "/" — "groq:qwen/qwen3.8-27b"

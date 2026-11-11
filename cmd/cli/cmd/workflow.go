@@ -345,7 +345,11 @@ var workflowTryCmd = &cobra.Command{
 		if err := firstRunReady(); err != nil {
 			return err
 		}
-		if err := modelGate(NewClient()); err != nil {
+		// At a terminal, a key found here or a sign-in first, as memdoor
+		// run offers it; the gate speaks only if that left no model.
+		c := NewClient()
+		offerFoundKey(c)
+		if err := modelGate(c); err != nil {
 			return err
 		}
 		dir, err := sampleDir()
