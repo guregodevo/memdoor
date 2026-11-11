@@ -131,12 +131,21 @@ var doctorCmd = &cobra.Command{
 			Version string `json:"version"`
 		}
 		if err := c.GetJSON("/api/status", &st); err != nil {
-			if port, local := localGatewayPort(); local && portAnswers(port) {
+			port, local := localGatewayPort()
+			switch {
+			case local && portAnswers(port):
 				fmt.Printf("  X Port %s is taken by something that is not a Memdoor gateway\n", port)
-			} else {
+				allGood = false
+			case local && serviceState() == "":
+				// No service: the gateway ends with the terminal that started
+				// it, and the next memdoor starts it again. Not running is the
+				// state between windows, not a fault (2026-11-11: an X right
+				// after a window closed).
+				fmt.Println("  -- Not running now: the next `memdoor` starts it")
+			default:
 				fmt.Println("  X Gateway not reachable: the bare `memdoor` starts it, or `memdoor gateway`")
+				allGood = false
 			}
-			allGood = false
 		} else {
 			fmt.Printf("  OK Gateway is running (%s)\n", st.Version)
 		}
