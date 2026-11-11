@@ -282,21 +282,31 @@ func (s *headlessSink) finish(conversation string, err error) int {
 
 const (
 	receiptChecked    = "✓ checked:"
-	receiptUnverified = "⚠ unverified:"
-	receiptNoChange   = "⚠ nothing changed"
-	receiptFailing    = "⚠ failing after the change:"
+	receiptUnverified = "Recap: unverified:"
+	receiptNoChange   = "Recap: nothing changed"
+	receiptFailing    = "Recap: failing after the change:"
 )
 
 // receiptHeads are the first words of a turn's receipt line
 // (gateway/turn_done.go): checked, unverified, failing, or nothing changed.
 var receiptHeads = []string{receiptChecked, receiptUnverified, receiptFailing, receiptNoChange}
 
-// receiptIn is the last receipt line in the text, "" when none yet.
+// receiptWarnBefore is the head a turn that was not done ended on before
+// "Recap:" (2026-11-11): a gateway not yet updated still sends it.
+const receiptWarnBefore = "⚠ "
+
+// receiptIn is the last receipt line in the text, "" when none yet. An
+// older gateway's "⚠ unverified:" reads as "Recap: unverified:".
 func receiptIn(text string) string {
-	i := -1
+	i, recap := -1, false
 	for _, h := range receiptHeads {
 		if j := strings.LastIndex(text, h); j > i {
-			i = j
+			i, recap = j, false
+		}
+		if old, ok := strings.CutPrefix(h, "Recap: "); ok {
+			if j := strings.LastIndex(text, receiptWarnBefore+old); j > i {
+				i, recap = j, true
+			}
 		}
 	}
 	if i < 0 {
@@ -306,7 +316,11 @@ func receiptIn(text string) string {
 	if k := strings.IndexByte(line, '\n'); k >= 0 {
 		line = line[:k]
 	}
-	return strings.TrimSpace(line)
+	line = strings.TrimSpace(line)
+	if recap {
+		line = "Recap: " + strings.TrimPrefix(line, receiptWarnBefore)
+	}
+	return line
 }
 
 // runExitCode: an error is 1, an unanswered question 3, and the receipt's
@@ -314,8 +328,9 @@ func receiptIn(text string) string {
 // on the way there — a receipt lists the turn's history, and a turn that
 // failed twice and then passed is a pass (live 2026-10-11: `go build` FAIL,
 // `go test` FAIL, then `go mod init && go test` PASS read as exit 2).
-// "⚠ unverified" and "⚠ failing after the change" are 2. "⚠ nothing
-// changed" ran things without changing anything: its LAST run decides.
+// "Recap: unverified" and "Recap: failing after the change" are 2.
+// "Recap: nothing changed" ran things without changing anything: its LAST
+// run decides.
 func runExitCode(err error, asked bool, receipt string) int {
 	switch {
 	case errors.Is(err, context.Canceled):

@@ -1135,10 +1135,10 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 				}
 				mark := "✓ " + label + present
 				if !exists {
-					mark = "⚠ " + label + absent
+					mark = receiptRecap + label + absent
 				}
 				if line != "" {
-					rest := strings.TrimLeft(strings.TrimLeft(line, "✓⚠"), " ")
+					rest := strings.TrimPrefix(strings.TrimLeft(strings.TrimLeft(line, "✓⚠"), " "), receiptRecap)
 					// A command can write the target (a heredoc, a script):
 					// the receipts cannot count that as a change, the target
 					// check proves it, so "nothing changed" would contradict it.

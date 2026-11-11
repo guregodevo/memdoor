@@ -111,7 +111,7 @@ func TestReceiptsReadTheToolRecords(t *testing.T) {
 		t.Fatalf("a failed bash build is a failing check: %+v", r)
 	}
 	r = receiptsOf([]ToolExecutionInfo{{Name: "write_file", Input: `{"path":"a.py","content":"x"}`, Output: "ok"}})
-	if r.checkedAfterChange || len(r.checks) != 0 || r.line() != "⚠ unverified: 1 file changed · no build, test or run after it" {
+	if r.checkedAfterChange || len(r.checks) != 0 || r.line() != "Recap: unverified: 1 file changed · no build, test or run after it" {
 		t.Fatalf("unverified: %q %+v", r.line(), r)
 	}
 
@@ -120,7 +120,7 @@ func TestReceiptsReadTheToolRecords(t *testing.T) {
 		patched("sum.go", "PASS — `go build ./...` compiled clean."),
 		verified("go test ./...", false),
 	})
-	if !r.failingAfterChange || r.checkedAfterChange || !strings.HasPrefix(r.line(), "⚠ failing after the change: ") {
+	if !r.failingAfterChange || r.checkedAfterChange || !strings.HasPrefix(r.line(), "Recap: failing after the change: ") {
 		t.Fatalf("failing: %q %+v", r.line(), r)
 	}
 	if why := r.reasons(); len(why) != 1 || !strings.Contains(why[0], "FAILED") {
@@ -138,7 +138,7 @@ func TestReceiptsReadTheToolRecords(t *testing.T) {
 		{Name: "bash", Input: `{"command":"mkdir -p wordfreq"}`, Output: ""},
 		{Name: "bash", Input: `{"command":"go mod init x"}`, Output: "Command FAILED (exit status 1): `go mod init x`"},
 	})
-	if line := r.line(); !strings.HasPrefix(line, "⚠ nothing changed · ran: ") || !strings.Contains(line, "`go mod init x` FAIL") {
+	if line := r.line(); !strings.HasPrefix(line, "Recap: nothing changed · ran: ") || !strings.Contains(line, "`go mod init x` FAIL") {
 		t.Fatalf("no change, no tick: %q", line)
 	}
 	// A read-only turn has no receipt line: nothing changed, nothing checked.
@@ -287,7 +287,7 @@ func TestExitZeroOutputThatFailedIsAFailingCheck(t *testing.T) {
 	if r.checks[0].pass != true || r.checks[1].pass != false || !r.failingAfterChange || r.checkedAfterChange {
 		t.Fatalf("a clean run passes, the piped FAIL fails and decides: %+v", r)
 	}
-	if !strings.HasPrefix(r.line(), "⚠ failing after the change: ") {
+	if !strings.HasPrefix(r.line(), "Recap: failing after the change: ") {
 		t.Fatalf("line: %q", r.line())
 	}
 	calls := f.calls
@@ -369,7 +369,34 @@ func TestAWorkflowRunIsTheTurnsCheck(t *testing.T) {
 	}
 	failed := ToolExecutionInfo{Name: workflowToolName, Input: `{"action":"status"}`, Output: "check-20261010-175547 · failed · 0/3 done\n  failed  build"}
 	r = receiptsOf([]ToolExecutionInfo{steps, failed})
-	if !r.failingAfterChange || !strings.HasPrefix(r.line(), "⚠ failing after the change: ") {
+	if !r.failingAfterChange || !strings.HasPrefix(r.line(), "Recap: failing after the change: ") {
 		t.Fatalf("a failed run fails the turn: %+v\n%s", r, r.line())
+	}
+}
+
+// A turn that is not done ends on a recap, not a warning sign; the readers
+// take the recap and the old "⚠ " line alike, and a model's own "Recap:"
+// sentence is not a receipt.
+func TestATurnNotDoneEndsOnARecap(t *testing.T) {
+	for _, line := range []string{
+		"Recap: unverified: 1 file changed · no build, test or run after it",
+		"Recap: failing after the change: 1 file changed · `go test` FAIL",
+		"Recap: nothing changed · ran: `ls` PASS",
+		"Recap: target `make check` fails",
+		"⚠ unverified: 1 file changed · no build, test or run after it",
+		"✓ checked: 1 file changed · `go test` PASS",
+	} {
+		if !isReceiptLine(line) {
+			t.Errorf("not read as a receipt: %q", line)
+		}
+		if got := receiptOf("Done.\n\n" + line + "\n"); got != line {
+			t.Errorf("receiptOf = %q, want %q", got, line)
+		}
+	}
+	if isReceiptLine("Recap: the parser now accepts tabs.") {
+		t.Error("a model's own Recap: sentence read as a receipt")
+	}
+	if got := cronAnswerBody("Recap: the parser now accepts tabs.\n\nRecap: nothing changed · ran: `ls` PASS"); got != "Recap: the parser now accepts tabs." {
+		t.Errorf("cron body = %q", got)
 	}
 }
