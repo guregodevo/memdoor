@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The exit code is the receipt's verdict: checked is 0, unverified or a
@@ -127,5 +128,50 @@ func TestPromptFromArgsAndStdin(t *testing.T) {
 	}
 	if _, err := promptFromArgsAndStdin(nil, devnull); err == nil {
 		t.Fatal("no args and no pipe is no prompt")
+	}
+}
+
+// A pipe that stays open and never sends (ssh, CI, an agent harness) must not
+// hold `run "…"`: the arguments are the prompt, and the input is optional.
+func TestPromptFromArgsDoesNotWaitOnAnIdlePipe(t *testing.T) {
+	r, w, _ := os.Pipe()
+	defer w.Close()
+	start := time.Now()
+	got, err := promptFromArgsAndStdin([]string{"hi"}, r)
+	if err != nil || got != "hi" {
+		t.Fatalf("idle pipe: %q %v", got, err)
+	}
+	if d := time.Since(start); d > stdinStartWait+time.Second {
+		t.Fatalf("waited %s on an idle pipe", d)
+	}
+}
+
+// A producer that starts late but within the wait is still the input, and one
+// that keeps writing after its first byte is read to the end.
+func TestPromptFromArgsReadsALateProducerToTheEnd(t *testing.T) {
+	r, w, _ := os.Pipe()
+	go func() {
+		time.Sleep(stdinStartWait / 4)
+		w.WriteString("first ")
+		time.Sleep(stdinStartWait)
+		w.WriteString("second")
+		w.Close()
+	}()
+	got, err := promptFromArgsAndStdin([]string{"review"}, r)
+	if err != nil || got != "review\n\nInput:\nfirst second" {
+		t.Fatalf("late producer: %q %v", got, err)
+	}
+}
+
+// With no arguments stdin alone is the prompt: it is waited for, however long.
+func TestPromptFromStdinAloneWaitsForTheFirstByte(t *testing.T) {
+	r, w, _ := os.Pipe()
+	go func() {
+		time.Sleep(stdinStartWait + stdinStartWait/2)
+		w.WriteString("do the thing")
+		w.Close()
+	}()
+	if got, err := promptFromArgsAndStdin(nil, r); err != nil || got != "do the thing" {
+		t.Fatalf("stdin alone: %q %v", got, err)
 	}
 }
