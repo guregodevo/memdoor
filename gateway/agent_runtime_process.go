@@ -10,6 +10,7 @@ import (
 
 	"memdoor/gateway/infra"
 	"memdoor/gateway/logs"
+	"memdoor/gateway/providers"
 	"memdoor/pkg/llm"
 	"memdoor/pkg/savings"
 	sharedctx "memdoor/pkg/shared/context"
@@ -282,7 +283,18 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	if t := sessionTier(session); t > 0 {
 		ctx = context.WithValue(ctx, sharedctx.TierKey, t)
 	}
+	// A pin on a provider with no key answers on the ladder, and the turn
+	// says so under the answer (providers.UnreachablePin). The pin stays on
+	// the session: it answers again once the key is back.
+	pinNote := ""
 	if m := sessionModel(session); m != "" {
+		if why := providers.UnreachablePin(m); why != "" {
+			p, _ := providers.SplitPin(m)
+			pinNote = "(note: the pinned model " + m + " did not answer — " + why + ". This turn answered on the ladder: memdoor connect " + p + " brings the pin back, /model auto drops it.)"
+			logs.New("Agent").Warn("pinned model unreachable, answering on the ladder", slog.String("pin", m), slog.String("why", why), slog.String("session", session.ID))
+		}
+	}
+	if m := sessionModel(session); m != "" && pinNote == "" {
 		ctx = context.WithValue(ctx, sharedctx.ModelKey, m) // a model pinned by id
 		ctx = context.WithValue(ctx, sharedctx.SortKey, sessionString(session, sessionSortKey))
 		ctx = context.WithValue(ctx, sharedctx.OrderKey, sessionString(session, sessionOrderKey))
@@ -1105,6 +1117,9 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	// guard: if a codebase agent's reply claims a change but no file-mutating tool
 	// succeeded this turn, append an honest note so a false "done" can't pass
 	// silently. No inference, no retry, no gating — the text stays, flagged.
+	if pinNote != "" {
+		response.Text = strings.TrimRight(response.Text, "\n") + "\n\n" + pinNote
+	}
 	if ar.agentWorksOnCodebase(ctx) && strings.TrimSpace(response.Text) != "" {
 		switch {
 		case len(response.ToolsExecuted) == 0:
