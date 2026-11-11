@@ -124,7 +124,7 @@ doors onto it:
 
 ```bash
 memdoor run "fix the failing test"        # one turn, no window; exit 0 checked, 2 unverified, 3 it needed you
-git diff | memdoor run "review this diff" # what is piped in is the input
+git diff | memdoor run --stdin "review this diff" # --stdin: what is piped in is the input
 memdoor workflow run release --wait       # a workflow from a shell or CI; the exit code is the run's outcome
 memdoor cron add --id nightly --schedule "0 6 * * *" --agent coder --message "…"
 memdoor resume --last                     # the same run, in a window; into a pipe, as text

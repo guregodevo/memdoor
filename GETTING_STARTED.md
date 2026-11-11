@@ -143,7 +143,7 @@ memdoor completion fish > ~/.config/fish/completions/memdoor.fish
 ## Power user
 
 ```bash
-go test ./... 2>&1 | memdoor run "explain these failures"   # what is piped in is the input
+go test ./... 2>&1 | memdoor run --stdin "explain these failures"   # --stdin: what is piped in is the input
 memdoor logs query --regex "route|rate" --since 5m          # structured logs
 memdoor logs errors --since 5m
 memdoor upgrade                                             # newer build via install.sh
