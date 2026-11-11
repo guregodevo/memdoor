@@ -69,13 +69,26 @@ func current() choice {
 
 // Command is the shell running line, with ctx as its lifetime and Env as
 // its environment (no model key).
-func Command(ctx context.Context, line string) *exec.Cmd {
-	c := current()
+func Command(ctx context.Context, line string) *exec.Cmd { return current().command(ctx, line) }
+
+func (c choice) command(ctx context.Context, line string) *exec.Cmd {
+	if c.name == PowerShell {
+		line = powerShellUTF8 + line
+	}
 	args := append(append([]string{}, c.args...), line)
 	cmd := exec.CommandContext(ctx, c.prog, args...)
 	cmd.Env = Env()
 	return cmd
 }
+
+// powerShellUTF8 runs before each PowerShell command. Windows PowerShell 5.1,
+// the one Windows ships, writes > and Out-File as UTF-16 with a BOM, so a file
+// the coder wrote through the shell broke the tools that read it (#282). Under
+// 5.1 the default for every cmdlet's -Encoding becomes UTF-8, and so does the
+// encoding of what a command prints. PowerShell 7 already writes UTF-8 and is
+// left alone.
+const powerShellUTF8 = "if ($PSVersionTable.PSVersion.Major -lt 6) { $PSDefaultParameterValues['*:Encoding'] = 'utf8'; " +
+	"try { $OutputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {} }; "
 
 // Name is the shell in use: bash, powershell, cmd or sh, or the base name of
 // the shell MEMDOOR_SHELL names (zsh, fish…).
@@ -99,7 +112,8 @@ func (c choice) hint() string {
 	}
 	switch c.name {
 	case PowerShell:
-		return "The bash tool runs commands with PowerShell on this machine (no bash on PATH): write PowerShell, not POSIX sh; a native command's exit code is $LASTEXITCODE."
+		return "The bash tool runs commands with PowerShell on this machine (no bash on PATH): write PowerShell, not POSIX sh; a native command's exit code is $LASTEXITCODE. " +
+			"Write a file's content with apply_patch, not with > or Out-File: Windows PowerShell writes those with a byte-order mark."
 	case Cmd:
 		return "The bash tool runs commands with cmd.exe on this machine (no bash or PowerShell on PATH): write cmd syntax, not POSIX sh."
 	case Sh:
