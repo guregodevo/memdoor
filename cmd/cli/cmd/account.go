@@ -332,11 +332,20 @@ func localSessionReady() (ready, signInAgain bool, note string) {
 
 // ensureLocalEngine makes this Mac able to run the account: directories,
 // a running engine, the engine's own first user and a workspace named like
-// the account. Nothing is asked; every step is idempotent. What is printed
-// by the steps goes to stderr so --json stays clean.
+// the account. Nothing is asked; every step is idempotent. What the steps
+// print is not shown: a first run read eight lines of plumbing ("Created
+// directory structure", "Workspace ready at …", "set up and signed in")
+// before its one question (2026-11-11). A step that fails says so in the
+// reason returned; the gateway's start is said on stderr by
+// ensureGatewayRunning, as before. memdoor setup, typed, prints its steps.
 func ensureLocalEngine(email, workspace string) (bool, string) {
 	stdout := os.Stdout
-	os.Stdout = os.Stderr
+	if devnull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0); err == nil {
+		os.Stdout = devnull
+		defer devnull.Close()
+	} else {
+		os.Stdout = os.Stderr
+	}
 	defer func() { os.Stdout = stdout }()
 
 	configPath, err := setupLocalDirs(shared.MemdoorHome("workspace"))
