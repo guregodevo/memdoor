@@ -53,6 +53,7 @@ jobs:
         env:
           OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
           PYTHONUNBUFFERED: "1"
+          PYTHONUTF8: "1"
         run: python .github/windows-check/driver.py exe\memdoor.exe $env:RUNNER_TEMP\wc
 
   go-tests:
