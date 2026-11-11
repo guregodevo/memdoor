@@ -73,7 +73,7 @@ var builtinToolRouting = map[string]agentToolRouting{
 		// workflow is always there too (2026-10-02): a research sentence was
 		// routed to a toolbox without it and the coder ran `memdoor workflow`
 		// through bash — a shell run draws nothing in the window.
-		AlwaysAllow: []string{"bash", "read_file", "apply_patch", "locate", "skill", "notes", "recall", "workflow"},
+		AlwaysAllow: []string{"bash", "read_file", "apply_patch", "locate", "skill", "notes", "recall", "workflow", "see"},
 		Families: map[string]toolFamily{
 			"change": {
 				Description: "Write, fix or change code, configuration or documentation in the project, then build, test or run it.",

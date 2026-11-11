@@ -297,7 +297,7 @@ ALWAYS finish by verifying: build/run your change with the bash tool, read the R
 // "we should have it in coder tool palette"): one file per project folder,
 // read back judged against the turn's task once it grows, and the place the
 // pre-compaction flush writes what it keeps.
-var coderToolPalette = `["bash","read_file","apply_patch","grep","jgrep","jread","glob","todo_write","todo_read","locate","skill","ask_user_question","notes","recall","web_search","web_fetch","mcp","cron","workflow","sessions_spawn"]`
+var coderToolPalette = `["bash","read_file","apply_patch","grep","jgrep","jread","glob","todo_write","todo_read","locate","skill","ask_user_question","notes","recall","see","web_search","web_fetch","mcp","cron","workflow","sessions_spawn"]`
 
 const (
 	coderDescription = "Coding agent — plans then reads, writes and runs code on this machine via bash and file tools. Plan mode is read-only; accept-edits applies changes."

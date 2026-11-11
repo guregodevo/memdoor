@@ -23,6 +23,31 @@ type chatMessage struct {
 	Content    string         `json:"content,omitempty"`
 	ToolCalls  []chatToolCall `json:"tool_calls,omitempty"`
 	ToolCallID string         `json:"tool_call_id,omitempty"`
+	// Images turns the content into parts: the text, then each picture as
+	// an image_url data URL. Requests only.
+	Images []chatImage `json:"-"`
+}
+
+type chatImage struct{ MediaType, Data string }
+
+// MarshalJSON writes the content as parts when the message carries pictures.
+func (m chatMessage) MarshalJSON() ([]byte, error) {
+	type plain chatMessage
+	if len(m.Images) == 0 {
+		return json.Marshal(plain(m))
+	}
+	parts := []map[string]any{}
+	if m.Content != "" {
+		parts = append(parts, map[string]any{"type": "text", "text": m.Content})
+	}
+	for _, im := range m.Images {
+		parts = append(parts, map[string]any{"type": "image_url",
+			"image_url": map[string]string{"url": "data:" + im.MediaType + ";base64," + im.Data}})
+	}
+	return json.Marshal(struct {
+		plain
+		Content []map[string]any `json:"content"`
+	}{plain(m), parts})
 }
 
 type chatToolCall struct {
@@ -190,8 +215,13 @@ func convertAnthropicToOAI(params llm.MessageNewParams) []chatMessage {
 		role := string(msg.Role)
 		content := ""
 		var toolCalls []chatToolCall
+		var images []chatImage
 
 		for _, block := range msg.Content {
+			if block.OfImage != nil {
+				images = append(images, chatImage{MediaType: block.OfImage.MediaType, Data: block.OfImage.Data})
+				continue
+			}
 			blockJSON, _ := json.Marshal(block)
 			var bd struct {
 				Type      string                 `json:"type"`
@@ -231,8 +261,8 @@ func convertAnthropicToOAI(params llm.MessageNewParams) []chatMessage {
 			}
 		}
 
-		if content != "" || len(toolCalls) > 0 {
-			m := chatMessage{Role: role}
+		if content != "" || len(toolCalls) > 0 || len(images) > 0 {
+			m := chatMessage{Role: role, Images: images}
 			if content != "" {
 				m.Content = content
 			}

@@ -218,6 +218,7 @@ func NewAgentRuntimeWithFactory(clientFactory *providers.ClientFactory, apiKey s
 		tools.VerifyDefinition,
 		tools.NotesDefinition,
 		tools.RecallDefinition,
+		tools.SeeDefinition, // look at a pasted picture with the turn's model (agent_runtime_see.go)
 		// Web tools (OpenClaw parity)
 		tools.WebFetchDefinition,
 		tools.WebSearchDefinition,

@@ -36,7 +36,7 @@ when a release changes them:
 
 | Agent | Tools | Role |
 |---|---|---|
-| `coder` | `coderToolPalette`: `bash`, `read_file`, `apply_patch`, `grep`, `jgrep`, `jread`, `glob`, `todo_write`, `todo_read`, `locate`, `skill`, `ask_user_question`, `notes`, `recall`, `web_search`, `web_fetch`, `mcp`, `cron`, `workflow`, `sessions_spawn` | the coding agent; works on the directory the window was launched from |
+| `coder` | `coderToolPalette`: `bash`, `read_file`, `apply_patch`, `grep`, `jgrep`, `jread`, `glob`, `todo_write`, `todo_read`, `locate`, `skill`, `ask_user_question`, `notes`, `recall`, `see`, `web_search`, `web_fetch`, `mcp`, `cron`, `workflow`, `sessions_spawn` | the coding agent; works on the directory the window was launched from |
 | `planner` | `read_file`, `grep`, `glob`, `todo_write`, `ask_user_question`, `task_flow` | reads, never edits; writes the spec the coder follows |
 | `runner` | `bash`, `read_file` | runs a command and reports what it printed |
 | `verifier` | `verify`, `read_file` | build, test, run; PASS or FAIL from the toolchain |
@@ -92,7 +92,7 @@ and the files beside them) and registered on the runtime in
 
 | Kind | Tools |
 |---|---|
-| read | `read_file`, `jread`, `grep`, `jgrep`, `glob`, `locate`, `list_files` |
+| read | `read_file`, `jread`, `grep`, `jgrep`, `glob`, `locate`, `list_files`, `see` |
 | write | `apply_patch`, `write_file`, `edit_file`, `search_replace` |
 | run | `bash`, `verify`, `chrome_devtools` |
 | plan and ask | `todo_write`, `todo_read`, `task_flow`, `ask_user_question`, `notes`, `recall` |
