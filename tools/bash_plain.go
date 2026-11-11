@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"memdoor/pkg/shell"
@@ -48,8 +49,7 @@ func plainEnv() []string {
 // measured 2026-09-25, the coder ran `find / -name "*.log"` and `find ~
 // -maxdepth 4 …` looking for logs; neither returned, the turn never ended, and
 // the finds outlived it by over an hour.
-func runPlainBash(command, dir string) (string, error) {
-	timeout := BashTimeout()
+func runPlainBash(command, dir string, timeout time.Duration) (string, error) {
 	cmd := shell.Command(context.Background(), command)
 	cmd.Dir = dir
 	cmd.Env = plainEnv()
@@ -77,16 +77,79 @@ func runPlainBash(command, dir string) (string, error) {
 		_ = killProcessGroup(cmd)
 		<-done
 		return stripTerminalEscapes([]byte(buf.String())),
-			fmt.Errorf("timed out after %s and was killed; narrow it (a path, -maxdepth, head) or run it in the background", timeout)
+			fmt.Errorf("timed out after %s and was killed; narrow it (a path, -maxdepth, head)%s or run it in the background", timeout, BashLongerHint())
 	}
 }
 
-// BashTimeoutLimit is how long a command may run: long enough for a
-// race-enabled test build, short of a hung turn. A var so a test can lower it.
-var BashTimeoutLimit = 300 * time.Second
+// BashTimeoutLimit is how long a command may run when the call names no
+// timeout: long enough for a race-enabled test build, short of a hung turn.
+// BashTimeoutMax is the most a call may ask for; it is the limit unless the
+// config file raises it (tools.bash.max_timeout_seconds, SetBashTimeouts), and
+// only then does the bash tool offer a timeout. Vars so a test can lower them.
+var (
+	BashTimeoutLimit = 300 * time.Second
+	BashTimeoutMax   = BashTimeoutLimit
+)
 
-// BashTimeout is the limit a command runs under.
+// BashTimeout is the limit a command runs under when the call names none.
 func BashTimeout() time.Duration { return BashTimeoutLimit }
+
+// bashLongerOffered says whether a call may ask for more than the limit.
+func bashLongerOffered() bool { return BashTimeoutMax > BashTimeoutLimit }
+
+// BashTimeoutFor is the limit for one call: the seconds it asked for, at most
+// BashTimeoutMax; the limit when it asked for none or none is offered.
+func BashTimeoutFor(seconds int) time.Duration {
+	if seconds <= 0 || !bashLongerOffered() {
+		return BashTimeoutLimit
+	}
+	return min(time.Duration(seconds)*time.Second, BashTimeoutMax)
+}
+
+// ParseBashTimeout is the limit a bash call asked for in its timeout field.
+func ParseBashTimeout(input json.RawMessage) time.Duration {
+	var in struct {
+		Timeout int `json:"timeout"`
+	}
+	_ = json.Unmarshal(input, &in)
+	return BashTimeoutFor(in.Timeout)
+}
+
+// BashLongerHint is the clause a timeout message adds when a call may ask for
+// longer, else "".
+func BashLongerHint() string {
+	if !bashLongerOffered() {
+		return ""
+	}
+	return fmt.Sprintf(", pass timeout (seconds, at most %d) when it must run longer,", int(BashTimeoutMax.Seconds()))
+}
+
+// SetBashTimeouts sets the default and the maximum from the config file; 0
+// keeps the built-in value. With a maximum above the default the bash tool
+// offers a timeout field and says both figures in its description. Called
+// before the agent runtime copies the tool list.
+func SetBashTimeouts(limit, most time.Duration) {
+	if limit > 0 {
+		BashTimeoutLimit = limit
+	}
+	BashTimeoutMax = max(most, BashTimeoutLimit)
+	BashDefinition.Description = bashDescription
+	BashDefinition.InputSchema = BashInputSchema
+	if bashLongerOffered() {
+		BashDefinition.Description += fmt.Sprintf(" A command is killed after %d seconds; for one that must run longer "+
+			"(a full test suite, a release build), pass timeout in seconds, at most %d.",
+			int(BashTimeoutLimit.Seconds()), int(BashTimeoutMax.Seconds()))
+		BashDefinition.InputSchema = bashTimedInputSchema
+	}
+}
+
+// bashTimedInput is the bash input when a longer timeout is offered.
+type bashTimedInput struct {
+	BashInput
+	Timeout int `json:"timeout,omitempty" jsonschema_description:"Seconds the command may run before it is killed, for a command that runs longer than the default. The default and the maximum are in the tool description."`
+}
+
+var bashTimedInputSchema = GenerateSchema[bashTimedInput]()
 
 // stripTerminalEscapes removes ANSI escape sequences, leaving the text.
 //

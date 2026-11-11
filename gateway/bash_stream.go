@@ -53,13 +53,13 @@ func (bashStreamer) Stream(ctx context.Context, input json.RawMessage, emit func
 		Cwd string `json:"cwd"` // harness-injected workdir; see tools.BashInput
 	}
 	_ = json.Unmarshal(input, &in)
-	out, truncated, runErr := runStreamingCommand(ctx, command, in.Cwd, emit)
+	out, truncated, runErr := runStreamingCommand(ctx, command, in.Cwd, tools.ParseBashTimeout(input), emit)
 	if runErr != nil {
 		return tools.BashFailedResult(command, out, input, runErr), nil
 	}
 	if truncated {
 		return out + "\n[stopped: the command was still running at the time or output limit, and it was killed with everything it started, background jobs too. " +
-			"To run something longer, start it alone in a command that returns at once — nohup <cmd> > <log> 2>&1 & — and read the log in later commands]", nil
+			"To run something longer" + tools.BashLongerHint() + " start it alone in a command that returns at once — nohup <cmd> > <log> 2>&1 & — and read the log in later commands]", nil
 	}
 	return out, nil
 }
@@ -67,14 +67,15 @@ func (bashStreamer) Stream(ctx context.Context, input json.RawMessage, emit func
 // Bounds on a streamed bash call so a non-terminating command (tail -f) can't
 // hang the turn. Vars, not consts, so tests can shrink them.
 //
-// The time bound is the one-shot bash tool's (tools.BashTimeout,
-// tools.BashTimeout, 300 s) when bashStreamMaxDuration is 0. It
+// The time bound is the call's own (tools.ParseBashTimeout: its timeout when
+// the config offers one, else tools.BashTimeout, 300 s); bashStreamMaxDuration,
+// when set, lowers it for a test. It
 // was 30 s of its own: that cut every longer build, test or wait the coder ran
 // from the TUI, and killed with it the job the command had started in the
 // background (live 2026-09-30: an 80-run sweep started with `nohup … &` and a
 // `sleep` in one command died at 30 s).
 var (
-	bashStreamMaxDuration time.Duration // 0: tools.BashTimeout()
+	bashStreamMaxDuration time.Duration // 0: the call's own bound
 	bashStreamMaxBytes    = 256 * 1024
 	bashStreamFlushEvery  = 100 * time.Millisecond
 )
@@ -87,10 +88,9 @@ var (
 //
 // This is what lets the TUI render a live tail: emit feeds the streaming pane
 // while the command runs; the returned string is the final tool result.
-func runStreamingCommand(ctx context.Context, command, cwd string, emit func(chunk string)) (output string, truncated bool, runErr error) {
-	limit := bashStreamMaxDuration
-	if limit == 0 {
-		limit = tools.BashTimeout()
+func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Duration, emit func(chunk string)) (output string, truncated bool, runErr error) {
+	if bashStreamMaxDuration != 0 {
+		limit = min(limit, bashStreamMaxDuration)
 	}
 	cctx, cancel := context.WithTimeout(ctx, limit)
 	defer cancel()

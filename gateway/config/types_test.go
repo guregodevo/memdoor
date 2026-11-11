@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -278,5 +279,15 @@ func TestIsToolAllowed(t *testing.T) {
 				t.Errorf("expected %v, got %v", tt.expected, result)
 			}
 		})
+	}
+}
+
+func TestTheBashToolsTimeoutsAreReadFromTheConfigFile(t *testing.T) {
+	var cfg Config
+	if err := json.Unmarshal([]byte(`{"tools":{"bash":{"timeout_seconds":600,"max_timeout_seconds":7200}}}`), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	if b := cfg.Tools.Bash; b == nil || b.TimeoutSeconds != 600 || b.MaxTimeoutSeconds != 7200 {
+		t.Fatalf("got %+v", cfg.Tools.Bash)
 	}
 }

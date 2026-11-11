@@ -43,6 +43,7 @@ import (
 	"memdoor/pkg/repository"
 	"memdoor/pkg/shared"
 	_ "memdoor/pkg/sqlitedriver"
+	"memdoor/tools"
 
 	"github.com/gorilla/websocket"
 	mario "github.com/guregodevo/mario/workflow"
@@ -277,6 +278,11 @@ func NewServer(port int, apiKey string, verbose bool) (*Server, error) {
 		configLog.Info("Config loaded",
 			slog.String("path", configPath),
 			slog.String("config_path", configPath))
+	}
+
+	if cfg.Tools != nil && cfg.Tools.Bash != nil {
+		b := cfg.Tools.Bash
+		tools.SetBashTimeouts(time.Duration(b.TimeoutSeconds)*time.Second, time.Duration(b.MaxTimeoutSeconds)*time.Second)
 	}
 
 	// Auto-create database if it doesn't exist (enables web-based onboarding)
