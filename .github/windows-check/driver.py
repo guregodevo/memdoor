@@ -110,7 +110,12 @@ stopped = tui.wait_for("Interrupted", 30)
 tui.dump("after esc")
 check("tui: Esc interrupts the running turn", stopped and "esc to interrupt" not in tui.text())
 
-tui.send("\x03"); time.sleep(2); tui.send("\x03"); time.sleep(3)
+tui.send("\x03")
+for _ in range(10):
+    if not tui.p.isalive(): break
+    time.sleep(0.5)
+if tui.p.isalive():
+    tui.send("\x03"); time.sleep(3)
 check("tui: ctrl+c quits the window", not tui.p.isalive())
 gw.terminate()
 
