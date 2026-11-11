@@ -470,15 +470,16 @@ memdoor doctor [flags]
 **Flags**:
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--workspace` | string | auto-detected | Workspace directory to check |
+| `--workspace-dir` | string | `~/.memdoor/workspace` | Workspace directory to check |
 
 **What it checks**:
-- Configuration file validity
-- Workspace directory structure
-- Bootstrap files presence
-- Git repository status
-- File permissions
-- Environment variables
+- The binary's version, commit and build date
+- The config file exists and loads
+- The workspace directory, AGENTS.md, SOUL.md and the memory directory
+- The database (none yet is not a failure: the gateway creates it)
+- The gateway answers, and whether it runs as a service
+
+On a machine where nothing is set up yet it prints the two commands that set it up instead.
 
 **Example**:
 ```bash
@@ -488,26 +489,34 @@ memdoor doctor --workspace-dir ~/my-workspace
 
 **Output**:
 ```
-🔍 Memdoor Doctor - Workspace Health Check
+Memdoor Doctor - Workspace Health Check
 
- Workspace: /Users/user/.memdoor/workspace
+Binary
+  Version: v1.814.0
+  Commit:  718c2ae
+  Built:   2026-11-09T22:06:40Z
 
-✓ Configuration
-  • Config file exists: /Users/user/.memdoor/config.json
-  • Config is valid JSON5
-  • Default agent configured
+  Workspace: /Users/user/.memdoor/workspace
 
-✓ Workspace Structure
-  • Workspace directory exists
-  • AGENTS.md present
-  • SOUL.md present
-  • Memory directory exists
+Configuration
+  OK Config file exists: /Users/user/.memdoor/config.json
+  OK Config is valid
+  OK 1 agent(s) configured
 
-✓ Git Repository
-  • Git initialized
-  • .gitignore configured
+Workspace Structure
+  OK Workspace directory exists
+  OK AGENTS.md present
+  OK SOUL.md present
+  OK Memory directory exists
 
- All checks passed!
+Database
+  OK Database exists (4 KB)
+
+Gateway
+  OK Gateway is running (v1.814.0)
+  -- No service: the gateway ends with your login session (memdoor gateway install keeps it up on a box that stays on)
+
+All checks passed!
 ```
 
 ---
