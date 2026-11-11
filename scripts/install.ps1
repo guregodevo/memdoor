@@ -13,6 +13,24 @@
 $ErrorActionPreference = 'Stop'
 
 $Base      = 'https://memdoor.ai/dl'
+# A GitHub release instead of memdoor.ai: MEMDOOR_INSTALL_SOURCE=github, the
+# latest of MEMDOOR_GITHUB_REPOSITORY (default guregodevo/memdoor) or the tag
+# in MEMDOOR_GITHUB_RELEASE. Every release carries the binaries and SHA256SUMS.
+switch ("$env:MEMDOOR_INSTALL_SOURCE") {
+    { $_ -in '', 'memdoor.ai' } { break }
+    'github' {
+        $repo = if ($env:MEMDOOR_GITHUB_REPOSITORY) { $env:MEMDOOR_GITHUB_REPOSITORY } else { 'guregodevo/memdoor' }
+        if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') { Write-Host "ERROR: MEMDOOR_GITHUB_REPOSITORY=$repo is not owner/repository." -ForegroundColor Red; exit 1 }
+        if ($env:MEMDOOR_GITHUB_RELEASE) {
+            if ($env:MEMDOOR_GITHUB_RELEASE -notmatch '^[A-Za-z0-9_.+-]+$') { Write-Host "ERROR: MEMDOOR_GITHUB_RELEASE=$($env:MEMDOOR_GITHUB_RELEASE) is not a release tag." -ForegroundColor Red; exit 1 }
+            $Base = "https://github.com/$repo/releases/download/$($env:MEMDOOR_GITHUB_RELEASE)"
+        } else {
+            $Base = "https://github.com/$repo/releases/latest/download"
+        }
+        break
+    }
+    default { Write-Host "ERROR: MEMDOOR_INSTALL_SOURCE=$($env:MEMDOOR_INSTALL_SOURCE): set it to github, or unset it for memdoor.ai." -ForegroundColor Red; exit 1 }
+}
 $Asset     = 'memdoor-windows-amd64.exe'
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Memdoor\bin'
 $Target    = Join-Path $InstallDir 'memdoor.exe'
@@ -33,7 +51,7 @@ function Get-VerifiedDownload {
     Write-Host "Downloading $Asset ..."
     try {
         # Our own test runs mark their download so adoption counts people only.
-        $ciMark = if ($env:MEMDOOR_CI) { "?ci=1" } else { "" }
+        $ciMark = if ($env:MEMDOOR_CI -and $Base -eq 'https://memdoor.ai/dl') { "?ci=1" } else { "" }
         Invoke-WebRequest -Uri "$Base/$Asset$ciMark" -OutFile $tmp -UseBasicParsing
     } catch {
         Fail "could not download $Base/$Asset — $($_.Exception.Message)"

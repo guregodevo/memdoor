@@ -294,15 +294,17 @@ func ListFilesWithContext(input json.RawMessage, ctx interface{}) (string, error
 
 // bash tool
 var BashDefinition = ToolDefinition{
-	Name: "bash",
-	Description: "Run ONE shell command and return its output. You are ALREADY in the project " +
-		"directory — never cd to it. Issue a single command, READ its output, then decide the next " +
-		"one: a batch of commands emitted together cannot be steered by what the earlier ones " +
-		"returned, which is how a turn spends itself without learning anything.",
+	Name:                "bash",
+	Description:         bashDescription,
 	InputSchema:         BashInputSchema,
 	Function:            Bash,            // Legacy function (no sandbox enforcement)
 	FunctionWithContext: BashWithContext, // Sandbox-aware function
 }
+
+const bashDescription = "Run ONE shell command and return its output. You are ALREADY in the project " +
+	"directory — never cd to it. Issue a single command, READ its output, then decide the next " +
+	"one: a batch of commands emitted together cannot be steered by what the earlier ones " +
+	"returned, which is how a turn spends itself without learning anything."
 
 type BashInput struct {
 	Command string `json:"command" jsonschema_description:"A SINGLE bash command to run in the working directory (e.g. \"go build ./...\", \"go test ./...\", \"ls\"). Chain with && only when the steps are inseparable. Do not cd to the project root — you are already there."`
@@ -421,7 +423,7 @@ func Bash(input json.RawMessage) (string, error) {
 	log.Debug("Executing bash command", slog.String("command", bashInput.Command))
 	// runPlainBash, not exec directly: tool output is read by a model, so it
 	// must be text and not terminal escapes. See bash_plain.go.
-	output, err := runPlainBash(bashInput.Command, bashInput.Cwd)
+	output, err := runPlainBash(bashInput.Command, bashInput.Cwd, ParseBashTimeout(input))
 	if err != nil {
 		return bashFailedOutput(bashInput.Command, output, injectedTurnTask(input), err), nil
 	}
@@ -463,7 +465,7 @@ func BashWithContext(input json.RawMessage, ctx interface{}) (string, error) {
 	log.Debug("Executing bash command", slog.String("command", bashInput.Command))
 	// runPlainBash, not exec directly: tool output is read by a model, so it
 	// must be text and not terminal escapes. See bash_plain.go.
-	output, err := runPlainBash(bashInput.Command, bashInput.Cwd)
+	output, err := runPlainBash(bashInput.Command, bashInput.Cwd, ParseBashTimeout(input))
 	if err != nil {
 		return bashFailedOutput(bashInput.Command, output, injectedTurnTask(input), err), nil
 	}

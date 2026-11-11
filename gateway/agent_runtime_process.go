@@ -474,7 +474,8 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 		}
 		var toolResults []llm.ContentBlockParamUnion
 		var hasToolUse bool
-		var stuck bool // the same tool call has failed maxRepeatedFail times
+		var stuck bool          // the same tool call has failed maxRepeatedFail times
+		var stuckOnFailure bool // a failure tripped it, not a repeat that worked
 		var responseText string
 		callsThisMessage := 0
 		// The same call several times in ONE reply is a decoding artifact —
@@ -668,6 +669,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 					}
 					if repeatedFail[fk] >= maxRepeatedFail || consecutiveFail >= maxConsecutiveFail {
 						stuck = true
+						stuckOnFailure = true
 					}
 					log.Warn(fmt.Sprintf("Tool call failed: %s — %s", toolUse.Name, truncateForLog(toolInfo.Error, 200)),
 						slog.String("tool", toolUse.Name),
@@ -748,11 +750,11 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 			case RecoveryResume:
 				log.Warn("Reply truncated again — resuming mid-thought",
 					slog.Int("attempt", step.Attempt))
-				conversation = append(conversation, llm.NewUserMessage(
-					llm.ContentBlockParamUnion{OfText: &llm.TextBlockParam{Text: step.Prompt}}))
+				conversation = resumeAfterCut(conversation, toolResults, step.Prompt)
 				message, conversation, err = ar.runInference(ctx, conversation, extraSystemPrompt)
 			default: // RecoveryExhausted
 				log.Warn("Truncation recovery exhausted")
+				conversation = closeCutReply(conversation)
 				if response.Text != "" {
 					response.Text += "\n\n"
 				}
@@ -1000,7 +1002,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 			log.Warn("Loop-breaker: repeated calls or consecutive failures — nudging once",
 				slog.Int("tools_executed", len(response.ToolsExecuted)),
 				slog.Int("consecutive_fail", consecutiveFail))
-			toolResults = append(toolResults, llm.NewTextBlock(loopNudge(response.ToolsExecuted)))
+			toolResults = append(toolResults, llm.NewTextBlock(loopNudge(response.ToolsExecuted, stuckOnFailure)))
 		} else if stuck {
 			log.Warn("Loop-breaker: repeated calls or consecutive failures — ending turn",
 				slog.Int("tools_executed", len(response.ToolsExecuted)),
@@ -1014,8 +1016,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 			// transcript reads and the person saw a line about a change
 			// (2026-09-18 19:17, "i cant see the end"). The last failure is
 			// the reason; put it in the window.
-			response.Text += "Stopped: the same tool kept failing the same way" + lastToolFailure(response.ToolsExecuted) +
-				". Say what to do differently, or name the exact file and lines."
+			response.Text += loopStop(response.ToolsExecuted, stuckOnFailure)
 			break
 		}
 
@@ -1278,9 +1279,23 @@ func (ar *AgentRuntime) wrapUpTurn(ctx context.Context, conversation []llm.Messa
 // loopNudge is the first word to a turn repeating a failing call: the
 // failure, and that repeating it is over. It rides in the model's next input
 // beside the tool results.
-func loopNudge(executed []ToolExecutionInfo) string {
+// A repeat that worked is not a failure, and is not called one.
+func loopNudge(executed []ToolExecutionInfo, failed bool) string {
+	if !failed {
+		return "⚠ The same request keeps repeating with no new result. Do not repeat it. " +
+			"Do the next real step, or tell the person what is blocking you and end your turn."
+	}
 	return "⚠ The same tool call keeps failing the same way" + lastToolFailure(executed) +
 		". Do not repeat it. Change your approach, or tell the person what is blocking you and end your turn."
+}
+
+// loopStop is the window's last line when the loop-breaker ends a turn.
+func loopStop(executed []ToolExecutionInfo, failed bool) string {
+	if !failed {
+		return "Stopped: the same request kept repeating with no new result. Say what to do differently, or name the exact file and lines."
+	}
+	return "Stopped: the same tool kept failing the same way" + lastToolFailure(executed) +
+		". Say what to do differently, or name the exact file and lines."
 }
 
 // exploreNudge is the first word to a turn that reads and reads: make the

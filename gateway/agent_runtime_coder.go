@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	sharedctx "memdoor/pkg/shared/context"
+	"memdoor/pkg/shell"
 )
 
 // agent_runtime_coder: codebase-agent detection and coder-workdir confinement of tool inputs.
@@ -162,6 +163,9 @@ func coderPathEscape(toolName string, input json.RawMessage, wd string) string {
 	root := filepath.Clean(wd)
 	for _, key := range []string{"path", "file_path"} {
 		p, ok := in[key].(string)
+		if ok {
+			p = shell.NativePath(p)
+		}
 		if !ok || !filepath.IsAbs(p) {
 			continue
 		}
@@ -259,6 +263,9 @@ func confineToCoderWorkdir(toolName string, input json.RawMessage, wd string) js
 			if !ok {
 				continue
 			}
+			if np := shell.NativePath(p); np != p {
+				p, in[key], changed = np, np, true
+			}
 			// A path the model mangled is not a path. When a small model emits
 			// a malformed tool call, its arguments can arrive as a fragment of
 			// the tool SCHEMA — and filepath.Join will happily turn that into a
@@ -324,6 +331,9 @@ func confineToCoderWorkdir(toolName string, input json.RawMessage, wd string) js
 				in[key] = filepath.Join(home, d[2:])
 				changed = true
 			}
+		case shell.NativePath(d) != d:
+			in[key] = shell.NativePath(d)
+			changed = true
 		case !filepath.IsAbs(d):
 			in[key] = filepath.Join(wd, d)
 			changed = true

@@ -253,7 +253,11 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 		Sort      string      `json:"sort"`   // with it: price | throughput | latency | default
 		Order     string      `json:"order"`  // with it: the person's host order, comma-separated
 		Effort    *string     `json:"effort"` // alone: the reasoning effort, low | medium | high | auto
-		Mode      *string     `json:"mode"`   // alone: the mode, auto | team (team_mode.go)
+		// Keep false: this conversation only. An editor session picking its
+		// model (cmd/cli/cmd/acp_models.go) neither sets nor clears the kept
+		// pin every new conversation starts with.
+		Keep *bool   `json:"keep"`
+		Mode *string `json:"mode"` // alone: the mode, auto | team (team_mode.go)
 	}
 	switch r.Method {
 	case http.MethodGet:
@@ -324,7 +328,7 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf(`{"error": %q}`, perr.Error()), http.StatusBadRequest)
 		return
 	}
-	if (in.Effort == nil && in.Mode == nil) || in.Model != "" || in.Tier != nil {
+	if (in.Keep == nil || *in.Keep) && ((in.Effort == nil && in.Mode == nil) || in.Model != "" || in.Tier != nil) {
 		// THE PIN STAYS (persistent_pin.go): kept for every new
 		// conversation until auto.
 		var keep *persistentPin

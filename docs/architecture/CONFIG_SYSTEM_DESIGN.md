@@ -198,6 +198,16 @@ TUI's websocket, the CLI, the remote page, cron, peers.
 `gateway/a2a_integration.go` turns it into the authorization policy for
 `sessions_send`; absent, `authorization.DefaultA2APolicy()` applies.
 
+**`tools.bash`** (`BashToolConfig`): `timeout_seconds`, how long a command
+runs when the call names no timeout (default 300), and `max_timeout_seconds`,
+the most a call may ask for. Only with a maximum above the default does the
+bash tool offer a `timeout` field and say both figures in its description.
+Read once at start (`gateway/server.go`, `tools.SetBashTimeouts`).
+
+```json
+{ "tools": { "bash": { "max_timeout_seconds": 1800 } } }
+```
+
 **`agent`** is the single-agent form kept for old files; only its `id` is
 read, to wire `sessions_send` (`gateway/server.go`).
 
@@ -218,6 +228,7 @@ environment, and none of them overrides a value in the file.
 | `MEMDOOR_GATEWAY` | the address the CLI and TUI dial: a URL, `host:port`, a bare host, or `ssh://[user@]box[:port]`; `--gateway` wins | `cmd/cli/cmd/root.go` |
 | `MEMDOOR_WORKSPACE` | the workspace slug, second in the resolution chain | `cmd/cli/cmd/workspace_discovery.go` |
 | `MEMDOOR_APPROVE` | approval mode (`changes` asks before bash, writes and MCP tools); wins over the `approve` setting | `gateway/approval.go` |
+| `MEMDOOR_SHELL` | the shell the agent's commands run in, as a path or a name on PATH (`MEMDOOR_SHELL=$SHELL`): a login shell, zsh also interactive so `~/.zshrc` is read; unset, bash as before; ignored on Windows | `pkg/shell/shell.go` |
 | `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `AI_GATEWAY_BASE_URL` with `*_AI_GATEWAY_TOKEN`, `MEMDOOR_MODEL`, `MEMDOOR_VENDOR_HEADERS`, `MEMDOOR_MODEL_CONTEXT` | the built-in providers and the engine chosen at start | `gateway/providers/registry.go`, `vendor.go`; `docs/features/PROVIDERS.md` |
 | `MEMDOOR_SYSTEMONE_API_KEY` (or `TYPESAFE_API_KEY`), `MEMDOOR_SYSTEMONE_URL`, `MEMDOOR_SYSTEMONE_MODEL` | an explicit decision model; else the person's OpenRouter key judges | `gateway/decisions.go`; `docs/features/DECIDE.md` |
 | `MEMDOOR_NO_BROWSER` | never open a browser from `memdoor connect` and `memdoor mcp` | `cmd/cli/cmd/providers.go`, `mcp.go` |

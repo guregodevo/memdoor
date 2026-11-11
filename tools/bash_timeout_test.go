@@ -1,3 +1,5 @@
+//go:build !windows
+
 package tools
 
 import (
@@ -16,7 +18,7 @@ func TestRunPlainBashTimeoutKillsGroup(t *testing.T) {
 	BashTimeoutLimit = time.Second
 	defer func() { BashTimeoutLimit = oldLimit }()
 	start := time.Now()
-	out, err := runPlainBash("sleep 30 & echo child=$!; wait; echo never", t.TempDir())
+	out, err := runPlainBash("sleep 30 & echo child=$!; wait; echo never", t.TempDir(), BashTimeout())
 	if err == nil || !strings.Contains(err.Error(), "timed out") {
 		t.Fatalf("want a timeout error, got %v", err)
 	}
@@ -41,7 +43,7 @@ func TestRunPlainBashTimeoutKillsGroup(t *testing.T) {
 }
 
 func TestRunPlainBashFastCommand(t *testing.T) {
-	out, err := runPlainBash("printf ok", t.TempDir())
+	out, err := runPlainBash("printf ok", t.TempDir(), BashTimeout())
 	if err != nil || out != "ok" {
 		t.Fatalf("got %q, %v", out, err)
 	}

@@ -56,7 +56,7 @@ func Verify(input json.RawMessage) (string, error) {
 	}
 	// Same reason as the bash tool: this output is read by a model, so it must
 	// be text and not terminal escapes. See bash_plain.go.
-	output, err := runPlainBash(in.Command, dir)
+	output, err := runPlainBash(in.Command, dir, BashTimeout())
 	trimmed := strings.TrimSpace(output)
 	if trimmed == "" {
 		trimmed = "(no output)"

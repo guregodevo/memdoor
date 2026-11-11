@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"memdoor/tools"
 	"strings"
 	"sync"
 	"testing"
@@ -12,7 +13,7 @@ import (
 func TestRunStreamingCommand_Finite(t *testing.T) {
 	var mu sync.Mutex
 	var chunks []string
-	out, truncated, _ := runStreamingCommand(context.Background(), "printf 'a\\nb\\nc\\n'", "", func(c string) { mu.Lock(); chunks = append(chunks, c); mu.Unlock() })
+	out, truncated, _ := runStreamingCommand(context.Background(), "printf 'a\\nb\\nc\\n'", "", tools.BashTimeout(), func(c string) { mu.Lock(); chunks = append(chunks, c); mu.Unlock() })
 
 	if truncated {
 		t.Error("a finite command must not be truncated")
@@ -34,7 +35,7 @@ func TestRunStreamingCommand_Incremental(t *testing.T) {
 
 	var mu sync.Mutex
 	calls := 0
-	out, _, _ := runStreamingCommand(context.Background(), "for i in 1 2 3; do echo line$i; sleep 0.1; done", "", func(string) { mu.Lock(); calls++; mu.Unlock() })
+	out, _, _ := runStreamingCommand(context.Background(), "for i in 1 2 3; do echo line$i; sleep 0.1; done", "", tools.BashTimeout(), func(string) { mu.Lock(); calls++; mu.Unlock() })
 
 	if !strings.Contains(out, "line1") || !strings.Contains(out, "line3") {
 		t.Errorf("missing lines: %q", out)
@@ -56,7 +57,7 @@ func TestRunStreamingCommand_CapsInfinite(t *testing.T) {
 	defer func() { bashStreamMaxDuration, bashStreamMaxBytes = oldD, oldB }()
 
 	start := time.Now()
-	out, truncated, _ := runStreamingCommand(context.Background(), "while true; do echo spam; sleep 0.02; done", "", func(string) {})
+	out, truncated, _ := runStreamingCommand(context.Background(), "while true; do echo spam; sleep 0.02; done", "", tools.BashTimeout(), func(string) {})
 
 	if !truncated {
 		t.Error("an infinite command must be reported truncated")
@@ -75,7 +76,7 @@ func TestRunStreamingCommand_CapsBytes(t *testing.T) {
 	bashStreamMaxBytes = 200
 	defer func() { bashStreamMaxBytes = oldB }()
 
-	out, truncated, _ := runStreamingCommand(context.Background(), "for i in $(seq 1 100000); do echo aaaaaaaaaaaaaaaaaaaa; done", "", func(string) {})
+	out, truncated, _ := runStreamingCommand(context.Background(), "for i in $(seq 1 100000); do echo aaaaaaaaaaaaaaaaaaaa; done", "", tools.BashTimeout(), func(string) {})
 
 	if !truncated {
 		t.Error("output over the byte cap must be truncated")
@@ -88,7 +89,7 @@ func TestRunStreamingCommand_CapsBytes(t *testing.T) {
 // A non-zero exit surfaces as runErr so executeTool can format the coder's
 // "Command FAILED — fix it" message; a cap does not.
 func TestRunStreamingCommand_ExitError(t *testing.T) {
-	out, truncated, err := runStreamingCommand(context.Background(), "echo oops; exit 3", "", func(string) {})
+	out, truncated, err := runStreamingCommand(context.Background(), "echo oops; exit 3", "", tools.BashTimeout(), func(string) {})
 	if err == nil {
 		t.Error("a non-zero exit must return an error")
 	}
@@ -153,14 +154,14 @@ func TestTheStreamerReadsAMissingPathAsAnAnswer(t *testing.T) {
 // -c … &` both came back "Command FAILED (exec: WaitDelay expired before I/O
 // complete)" with the exit code 0 and "bg" printed).
 func TestRunStreamingCommand_BackgroundLaunchIsNotAFailure(t *testing.T) {
-	out, truncated, err := runStreamingCommand(context.Background(), "(sleep 7 > /dev/null 2>&1; sleep 0) & echo bg", "", nil)
+	out, truncated, err := runStreamingCommand(context.Background(), "(sleep 7 > /dev/null 2>&1; sleep 0) & echo bg", "", tools.BashTimeout(), nil)
 	if err != nil {
 		t.Fatalf("an exit-0 launch must not fail: %v", err)
 	}
 	if truncated || !strings.Contains(out, "bg") {
 		t.Fatalf("out=%q truncated=%v, want bg and not truncated", out, truncated)
 	}
-	if _, _, err := runStreamingCommand(context.Background(), "(sleep 7 > /dev/null 2>&1; sleep 0) & exit 3", "", nil); err == nil {
+	if _, _, err := runStreamingCommand(context.Background(), "(sleep 7 > /dev/null 2>&1; sleep 0) & exit 3", "", tools.BashTimeout(), nil); err == nil {
 		t.Fatal("a non-zero exit must still fail")
 	}
 }

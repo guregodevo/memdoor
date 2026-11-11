@@ -21,6 +21,7 @@ type fakeRunner struct {
 	interrupted int
 	block       bool
 	answers     []string
+	models      []string
 }
 
 func (f *fakeRunner) NewConversation(ctx context.Context, cwd string) (string, error) {
@@ -47,6 +48,13 @@ func (f *fakeRunner) Run(ctx context.Context, conversation, cwd, text string, si
 	f.answers = append(f.answers, a)
 	f.mu.Unlock()
 	sink.Text("Done.")
+	return nil
+}
+
+func (f *fakeRunner) SetModel(ctx context.Context, conversation, model string) error {
+	f.mu.Lock()
+	f.models = append(f.models, conversation+"="+model)
+	f.mu.Unlock()
 	return nil
 }
 

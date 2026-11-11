@@ -2,8 +2,9 @@ type: agent
 agent: coder
 # Single-call attempts at once, each in its own worktree; mario cross-checks and picks one.
 # Attempt 1 is the plain call, the prompt as written, as team-solve's direct
-# attempt is; the others read the survey. The fan-out applies nothing
-# (pick: false): choose.yaml, the next step, picks and applies.
+# attempt is; the others read the survey and the cases (cases.yaml). The
+# fan-out applies nothing (pick: false): choose.yaml, the next step, picks and
+# applies.
 # Each attempt is one agent turn on the prompt as written, on the tree as
 # found, in its own worktree (a fan-out's attempts never share a tree, so they
 # run at once). Each writes a check that fails on the tree as found and passes
@@ -19,6 +20,7 @@ optional: true
 requires:
   - table_pattern: problem
   - table_pattern: survey
+  - table_pattern: cases
   - table_pattern: paths
 fanout:
   min: 3
@@ -32,7 +34,7 @@ fanout:
 prompt: |
   {{ file (printf ".memdoor/runs/team-solve-fanout-%s/prompt.md" .partition) }}
 
-  {{ if ne (printf "%v" .n) "1" }}The code paths this task goes through are listed in .memdoor/runs/team-solve-fanout-{{.partition}}/survey.md when it is there, siblings included: change each one the task's behaviour goes through, not only the one its example uses.{{ end }}
+  {{ if ne (printf "%v" .n) "1" }}The code paths this task goes through are listed in .memdoor/runs/team-solve-fanout-{{.partition}}/survey.md when it is there, siblings included: change each one the task's behaviour goes through, not only the one its example uses. The cases the task leaves unstated, and what settles each, are listed in .memdoor/runs/team-solve-fanout-{{.partition}}/cases.md when it is there: make the change behave as it says in each case it settles; a case it calls unclear it does not settle.{{ end }}
 
   Do not commit, check out, reset or stash: the tree's HEAD stays where it is. Write what the task asks for as soon as you have a first version, then improve it: a turn that ends without it has done nothing. Keep no rule with the notes tool (it writes the project's AGENTS.md), and leave .memdoor/ alone.
   Also write .memdoor/runs/team-solve-fanout-{{.partition}}/attempt-{{.n}}: one executable (chmod +x) that, run from the project's root, exits non-zero on the tree as you found it and 0 with your change, the smallest check that shows your change does what the prompt asks, in whatever this project runs. It is not part of the change: nothing else goes into .memdoor/.
