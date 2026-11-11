@@ -612,8 +612,13 @@ const CommandFailedPrefix = "Command FAILED ("
 func shellSegments(command string) (segs []string, writes bool) {
 	var cur strings.Builder
 	var quote rune
+	escaped := false
 	for _, r := range command {
 		switch {
+		case escaped:
+			escaped = false
+		case r == '\\' && quote != '\'':
+			escaped = true
 		case quote == '\'':
 			if r == '\'' {
 				quote = 0

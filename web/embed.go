@@ -6,10 +6,12 @@
 // cmd/cli/cmd/web.go) hands this FS to net/http.FileServer with an
 // SPA-style fallback to index.html.
 //
-// Build invariant: web/dist/ must exist and be the current
-// `vite build` output at compile time, otherwise `//go:embed` errors
-// out the Go build. The Makefile's `web-build` step enforces this on
-// fresh clones (web/dist/ is .gitignore'd).
+// web/dist/ is .gitignore'd except web/dist/.keep, which is tracked so a
+// fresh clone or `git worktree add` compiles with `go build ./...`
+// before any `vite build` (the gateway then serves a page that says the
+// web UI was not built, gateway/web_bundle.go). The Makefile's
+// `web-build` step fills it and touches .keep again after vite empties
+// the folder.
 //
 // The `all:` prefix on the embed directive keeps files whose names
 // start with `.` or `_` (Vite occasionally emits dotfiles in

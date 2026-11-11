@@ -250,7 +250,8 @@ The three rules that catch the most real bugs: **type-safety (10), fail-fast con
 ## Coder / TUI Semantics (Claude-CLI style)
 - **The coder works on the directory the TUI was LAUNCHED from** (pwd): `cd <project> &&
   memdoor tui -w <ws>`. The TUI sends its launch dir with every turn; the gateway roots
-  the coder's WRITES there (write_file, edit_file, apply_patch, bash cd, locate index, verify dir);
+  the coder's WRITES there (write_file, edit_file, apply_patch, bash cd, locate index, verify dir),
+  and in the git worktrees of its repository (2026-11-11, `tools.InProject`: a worktree is the project in another folder);
   reads go anywhere (2026-10-05, "like omp": oh-my-pi confines no read, and bash could read it anyway).
   A guard's first trip (loop-breaker, 30 reads with no change) is a nudge in the model's next input;
   the second ends the turn.
