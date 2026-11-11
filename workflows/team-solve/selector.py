@@ -30,6 +30,11 @@ import tempfile
 TEST_PATH = re.compile(r"(^|/)(tests?|testing|__tests__|specs?)/|(^|/)test_[^/]*$|_tests?\.[^/.]+$|\.test\.[^/]+$")
 
 
+def sh(args, **kw):
+    """subprocess.run with its output captured as UTF-8 text, in what Python 3.6 has (its locale can be ASCII)."""
+    return subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8", errors="replace", **kw)
+
+
 def code_change(patch):
     """The patch's non-test lines, whitespace and comments aside, in order."""
     out, keep = [], False
@@ -45,23 +50,23 @@ def code_change(patch):
 
 
 def attempts(run, fanout):
-    data = json.load(open(fanout))
+    data = json.load(open(fanout, encoding="utf-8", errors="replace"))
     os.makedirs(os.path.join(run, "attempts"), exist_ok=True)
     points = data.get("points") or {}
     ok = [a for a in data.get("attempts", []) if a.get("ok")]
     for a in ok:
-        with open(os.path.join(run, "attempts", "%d.patch" % a["n"]), "w") as f:
+        with open(os.path.join(run, "attempts", "%d.patch" % a["n"]), "w", encoding="utf-8") as f:
             f.write(a.get("patch") or "")
     if not ok:
         leaders = []
     else:
         top = max(points.get(str(a["n"]), 0) for a in ok)
         leaders = sorted(a["n"] for a in ok if points.get(str(a["n"]), 0) == top)
-    with open(os.path.join(run, "leaders.txt"), "w") as f:
+    with open(os.path.join(run, "leaders.txt"), "w", encoding="utf-8") as f:
         f.write(" ".join(map(str, leaders)) + "\n")
     changes = {code_change(a.get("patch") or "") for a in ok if a["n"] in leaders}
     tie = "single" if len(leaders) < 2 else ("same" if len(changes) < 2 else "differ")
-    with open(os.path.join(run, "tie.txt"), "w") as f:
+    with open(os.path.join(run, "tie.txt"), "w", encoding="utf-8") as f:
         f.write(tie + "\n")
     print("attempts: %d ran, leaders %s, %s" % (len(ok), leaders or "none", tie))
 
@@ -75,7 +80,7 @@ def normalise(text, root):
 
 def evidence_of(code, here, label):
     try:
-        p = subprocess.run([code], cwd=here, capture_output=True, text=True, timeout=300)
+        p = sh([code], cwd=here, timeout=300)
         return "%s: exit %d\n%s" % (label, p.returncode, normalise((p.stdout + p.stderr)[-3000:], here))
     except subprocess.TimeoutExpired:
         return "%s: timed out after 300 s" % label
@@ -83,36 +88,36 @@ def evidence_of(code, here, label):
 
 def run(run_dir):
     run_dir = os.path.abspath(run_dir)
-    leaders = open(os.path.join(run_dir, "leaders.txt")).read().split()
+    leaders = open(os.path.join(run_dir, "leaders.txt"), encoding="utf-8", errors="replace").read().split()
     probes = [(os.path.join(run_dir, name), label) for name, label in (("probe", "the probe"), ("repro", "the reproduction"))
               if os.access(os.path.join(run_dir, name), os.X_OK)]
     if len(leaders) < 2:
         print("selector: one leader, nothing to settle")
         return
-    base = open(os.path.join(run_dir, "base.txt")).read().strip()
-    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
-    prefix = subprocess.run(["git", "rev-parse", "--show-prefix"], capture_output=True, text=True).stdout.strip()
+    base = open(os.path.join(run_dir, "base.txt"), encoding="utf-8", errors="replace").read().strip()
+    top = sh(["git", "rev-parse", "--show-toplevel"]).stdout.strip()
+    prefix = sh(["git", "rev-parse", "--show-prefix"]).stdout.strip()
     out = []
     for n in leaders:
-        patch = open(os.path.join(run_dir, "attempts", n + ".patch")).read()
+        patch = open(os.path.join(run_dir, "attempts", n + ".patch"), encoding="utf-8", errors="replace").read()
         seen = []
         parent = tempfile.mkdtemp(prefix="memdoor-selector-")
         tree = os.path.join(parent, "tree")
         try:
-            subprocess.run(["git", "-C", top, "worktree", "add", "-q", "--detach", tree, base], check=True, capture_output=True)
+            sh(["git", "-C", top, "worktree", "add", "-q", "--detach", tree, base], check=True)
             here = os.path.join(tree, prefix)
-            applied = subprocess.run(["git", "-C", here, "apply", "--whitespace=nowarn", "-"], input=patch, capture_output=True, text=True) if patch.strip() else None
+            applied = sh(["git", "-C", here, "apply", "--whitespace=nowarn", "-"], input=patch) if patch.strip() else None
             if applied is not None and applied.returncode != 0:
                 seen.append("the change does not apply to the tree as the run found it")
             else:
                 for code, label in probes:
                     seen.append(evidence_of(code, here, label))
         finally:
-            subprocess.run(["git", "-C", top, "worktree", "remove", "--force", tree], capture_output=True)
+            sh(["git", "-C", top, "worktree", "remove", "--force", tree])
             shutil.rmtree(parent, ignore_errors=True)
         change = "\n".join(l for l in patch.splitlines() if not l.startswith("index "))[:6000]
         out.append("## Attempt %s\n\n### Its change\n\n```diff\n%s\n```\n\n### What it did\n\n```\n%s\n```\n" % (n, change, "\n\n".join(seen) or "no probe and no reproduction ran"))
-    with open(os.path.join(run_dir, "selector-evidence.md"), "w") as f:
+    with open(os.path.join(run_dir, "selector-evidence.md"), "w", encoding="utf-8") as f:
         f.write("# The tied attempts\n\n" + "\n".join(out))
     print("selector: evidence for attempts %s (%s)" % (", ".join(leaders), ", ".join(l for _, l in probes) or "no probe, no reproduction"))
 
