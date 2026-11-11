@@ -230,7 +230,9 @@ verify_signature() {
             echo "ERROR: MEMDOOR_REQUIRE_SIGNATURE=1 and minisign is not installed." >&2
             exit 1
         fi
-        echo "  (signature not checked: minisign is not installed)"
+        echo "  (signature not checked: minisign is not installed. To check it: install minisign"
+        echo "   (brew install minisign, apt install minisign) and run this again."
+        echo "   MEMDOOR_REQUIRE_SIGNATURE=1 refuses an install it cannot check.)"
         return 0
     fi
     _sigdir=$(mktemp -d /tmp/memdoor-sig.XXXXXX)
@@ -430,6 +432,12 @@ elif [ "${WAS_RUNNING:-0}" = "1" ]; then
     echo
 fi
 echo "Next:"
+# This terminal's PATH is the one thing a piped script cannot change: the line
+# that does it comes first, on an upgrade too (Cloud Shell, 2026-11-11: the
+# upgrade's `memdoor resume --last` answered "command not found").
+if [ "$ON_PATH" = "0" ]; then
+    echo "  export PATH=\"$DEST_DIR:\$PATH\"   # this terminal; new terminals have it already"
+fi
 if [ "${WAS_RUNNING:-0}" = "1" ]; then
     echo "  memdoor gateway &                      # restart it (this upgrade stopped it and could not restart it)"
 fi
@@ -442,11 +450,6 @@ else
     # Two lines, both runnable in THIS shell: the first run of the TUI sets the
     # machine up itself (no setup step, no admin email), and a key exported
     # here reaches the gateway it starts. No key at hand: /connect inside.
-    # This terminal's PATH is the one thing a piped script cannot change: the
-    # line that does it comes first, then the rest works as typed.
-    if [ "$ON_PATH" = "0" ]; then
-        echo "  export PATH=\"$DEST_DIR:\$PATH\"   # this terminal; new terminals have it already"
-    fi
     echo "  export OPENROUTER_API_KEY=sk-or-...    # optional: any provider's key (ANTHROPIC_API_KEY, OPENAI_API_KEY, …)"
     echo "  cd <your-project> && memdoor           # no key? it finds one on this machine, or signs you in with OpenRouter (free)"
     echo "  memdoor workflow try                   # two minutes: the team on a sample problem, ending in a verdict"

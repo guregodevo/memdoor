@@ -98,6 +98,7 @@ var doctorCmd = &cobra.Command{
 				path := filepath.Join(doctorWorkspace, file)
 				if _, err := os.Stat(path); os.IsNotExist(err) {
 					fmt.Printf("  X %s missing\n", file)
+					allGood = false
 				} else {
 					fmt.Printf("  OK %s present\n", file)
 				}
@@ -105,19 +106,10 @@ var doctorCmd = &cobra.Command{
 			memDir := filepath.Join(doctorWorkspace, "memory")
 			if _, err := os.Stat(memDir); os.IsNotExist(err) {
 				fmt.Println("  X Memory directory missing")
+				allGood = false
 			} else {
 				fmt.Println("  OK Memory directory exists")
 			}
-		}
-		fmt.Println()
-
-		// Check git
-		fmt.Println("Git Repository")
-		gitDir := filepath.Join(doctorWorkspace, ".git")
-		if _, err := os.Stat(gitDir); os.IsNotExist(err) {
-			fmt.Println("  X Git not initialized")
-		} else {
-			fmt.Println("  OK Git initialized")
 		}
 		fmt.Println()
 
@@ -125,7 +117,7 @@ var doctorCmd = &cobra.Command{
 		fmt.Println("Database")
 		dbPath := filepath.Join(baseDir, "data", "memdoor.db")
 		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-			fmt.Println("  X Database not found (will be created on first start)")
+			fmt.Println("  -- No database yet: the gateway creates it on its first start")
 		} else {
 			info, _ := os.Stat(dbPath)
 			fmt.Printf("  OK Database exists (%d KB)\n", info.Size()/1024)
@@ -142,8 +134,9 @@ var doctorCmd = &cobra.Command{
 			if port, local := localGatewayPort(); local && portAnswers(port) {
 				fmt.Printf("  X Port %s is taken by something that is not a Memdoor gateway\n", port)
 			} else {
-				fmt.Println("  X Gateway not reachable")
+				fmt.Println("  X Gateway not reachable: the bare `memdoor` starts it, or `memdoor gateway`")
 			}
+			allGood = false
 		} else {
 			fmt.Printf("  OK Gateway is running (%s)\n", st.Version)
 		}
@@ -158,7 +151,7 @@ var doctorCmd = &cobra.Command{
 		if allGood {
 			fmt.Println("All checks passed!")
 		} else {
-			fmt.Println("Some checks failed. Run 'memdoor setup' to fix.")
+			fmt.Println("Some checks failed: the lines marked X say what. A missing file or directory: memdoor setup.")
 		}
 		return nil
 	},

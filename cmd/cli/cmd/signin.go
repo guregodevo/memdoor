@@ -460,7 +460,8 @@ func readCode(kind, id, prompt string, out io.Writer, in *bufio.Reader) error {
 			fmt.Fprintln(out, "  ✗ "+perr.Error())
 		}
 		if err != nil {
-			return fmt.Errorf("nothing was pasted")
+			fmt.Fprintln(out)
+			return fmt.Errorf("the input ended before a code was pasted: run it in a terminal, open the link, then paste the code")
 		}
 	}
 }
