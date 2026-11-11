@@ -501,10 +501,8 @@ func applyHashlinePatch(text, cwd string) (string, error) {
 		if cwd != "" && !filepath.IsAbs(target) {
 			target = filepath.Join(cwd, target)
 		}
-		if cwd != "" {
-			if rel, err := filepath.Rel(cwd, target); err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-				return "", fmt.Errorf("apply_patch [%s]: outside the project folder — nothing was written", sec.path)
-			}
+		if outsideProject(cwd, target) {
+			return "", fmt.Errorf("apply_patch [%s]: outside the project folder — nothing was written", sec.path)
 		}
 		raw, err := os.ReadFile(target)
 		if err != nil {

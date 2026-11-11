@@ -364,6 +364,20 @@ func ApplyPatch(input json.RawMessage) (_ string, err error) {
 		if hunks[i].kind == "add" && strings.HasSuffix(t, ".go") {
 			pendingGoDirs[filepath.Dir(t)] = true
 		}
+		// Writes stay in the project, as write_file's and a line-anchored
+		// patch's do: every file named, a move's destination included, is
+		// checked before anything is written.
+		for _, p := range []string{t, hunks[i].movePath} {
+			if p == "" {
+				continue
+			}
+			if !filepath.IsAbs(p) && params.Cwd != "" {
+				p = filepath.Join(params.Cwd, p)
+			}
+			if outsideProject(params.Cwd, p) {
+				return "", fmt.Errorf("apply_patch %s: %s is outside the project folder (%s) — nothing was written. Use a path relative to it", hunks[i].path, p, params.Cwd)
+			}
+		}
 	}
 	// Every file the patch touches is this patch's alone until it is
 	// written or refused (file_lock.go).
@@ -546,6 +560,16 @@ func ApplyPatch(input json.RawMessage) (_ string, err error) {
 		}
 	}
 	return msg, nil
+}
+
+// outsideProject says whether target lies outside cwd, the project folder a
+// patch is applied in. With no cwd (the CLI, tests) nothing is outside.
+func outsideProject(cwd, target string) bool {
+	if cwd == "" {
+		return false
+	}
+	rel, err := filepath.Rel(filepath.Clean(cwd), filepath.Clean(target))
+	return err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 // changedRegions is after's changed lines ±3, numbered, "…" between regions.
