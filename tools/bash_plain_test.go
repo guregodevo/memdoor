@@ -72,7 +72,7 @@ func TestOrdinaryOutputIsUnchanged(t *testing.T) {
 
 func mustRunBash(t *testing.T, cmd string) string {
 	t.Helper()
-	out, err := runPlainBash(cmd, "")
+	out, err := runPlainBash(cmd, "", BashTimeout())
 	if err != nil {
 		t.Fatalf("bash %q: %v", cmd, err)
 	}

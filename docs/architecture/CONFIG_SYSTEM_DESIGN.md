@@ -198,6 +198,16 @@ TUI's websocket, the CLI, the remote page, cron, peers.
 `gateway/a2a_integration.go` turns it into the authorization policy for
 `sessions_send`; absent, `authorization.DefaultA2APolicy()` applies.
 
+**`tools.bash`** (`BashToolConfig`): `timeout_seconds`, how long a command
+runs when the call names no timeout (default 300), and `max_timeout_seconds`,
+the most a call may ask for. Only with a maximum above the default does the
+bash tool offer a `timeout` field and say both figures in its description.
+Read once at start (`gateway/server.go`, `tools.SetBashTimeouts`).
+
+```json
+{ "tools": { "bash": { "max_timeout_seconds": 1800 } } }
+```
+
 **`agent`** is the single-agent form kept for old files; only its `id` is
 read, to wire `sessions_send` (`gateway/server.go`).
 

@@ -494,7 +494,16 @@ type SlackChannelConfig struct {
 // ToolsConfig contains tool-related configuration
 // Pattern: OpenClaw src/config/types.tools.ts
 type ToolsConfig struct {
-	AgentToAgent *A2AConfig `yaml:"agentToAgent,omitempty" json:"agentToAgent,omitempty"` // Week 27: A2A messaging
+	AgentToAgent *A2AConfig      `yaml:"agentToAgent,omitempty" json:"agentToAgent,omitempty"` // Week 27: A2A messaging
+	Bash         *BashToolConfig `yaml:"bash,omitempty" json:"bash,omitempty"`
+}
+
+// BashToolConfig bounds the agent's bash tool: how long a command runs when
+// the call names no timeout, and the most a call may ask for. 0 keeps the
+// built-in value (300 s, and no longer timeout offered).
+type BashToolConfig struct {
+	TimeoutSeconds    int `yaml:"timeout_seconds,omitempty" json:"timeout_seconds,omitempty"`
+	MaxTimeoutSeconds int `yaml:"max_timeout_seconds,omitempty" json:"max_timeout_seconds,omitempty"`
 }
 
 // A2AConfig configures Agent-to-Agent messaging
