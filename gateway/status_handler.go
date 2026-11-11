@@ -16,6 +16,13 @@ import (
 // makes them true. The pid lets the CLI tell the gateway it started itself
 // (~/.memdoor/gateway.pid) from one a person runs by hand, before it ever
 // restarts one (tui_firstrun.go).
+// RestartInPlace says this gateway restarts on its own binary with its own
+// environment when signalled (cmd/cli/cmd/gateway_restart_unix.go). The
+// installer reads it from /api/status: a gateway that has it is not stopped
+// and started again from the installer's shell, which dropped every key that
+// lived only in the gateway's environment (2026-11-11).
+var RestartInPlace bool
+
 func handleStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -23,5 +30,5 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok", "version": telemetry.GatewayVersion, "pid": os.Getpid(), "hosted": !hostedOff()})
+	_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok", "version": telemetry.GatewayVersion, "pid": os.Getpid(), "hosted": !hostedOff(), "restart_in_place": RestartInPlace})
 }

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -55,12 +56,26 @@ var gatewayCmd = &cobra.Command{
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		// Handle shutdown signals
+		// Handle shutdown signals. restartSignal (SIGUSR2) is a shutdown
+		// followed by an exec of the binary at this path: the installer
+		// swapped it, and the gateway comes back on it with the environment
+		// it was started with (gateway_restart_unix.go).
+		exe, _ := os.Executable()
+		var restart atomic.Bool
 		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		signals := []os.Signal{syscall.SIGINT, syscall.SIGTERM}
+		if canRestartInPlace && exe != "" {
+			signals = append(signals, restartSignal)
+			gateway.RestartInPlace = true
+		}
+		signal.Notify(sigCh, signals...)
 		go func() {
-			<-sigCh
-			fmt.Println("\nShutting down...")
+			if s := <-sigCh; canRestartInPlace && s == restartSignal {
+				restart.Store(true)
+				fmt.Println("\nRestarting on " + exe + " ...")
+			} else {
+				fmt.Println("\nShutting down...")
+			}
 			cancel()
 		}()
 
@@ -91,6 +106,9 @@ var gatewayCmd = &cobra.Command{
 		// This process asks peers for @<peer>:<agent> (peers.go, experimental).
 		gateway.SetPeerCaller(peerAsk)
 		err := gateway.Start(ctx, gatewayHost, gatewayPort, "", verbose)
+		if restart.Load() {
+			return execSelf(exe)
+		}
 		// Mid-flight EADDRINUSE: rare (probe above is the common case)
 		// but possible if a stale gateway started between the probe
 		// and our bind. Surface the same friendly message so the

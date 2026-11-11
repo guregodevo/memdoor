@@ -155,9 +155,19 @@ elif command -v launchctl >/dev/null 2>&1 && launchctl print "gui/$(id -u)/ai.me
     SERVICE="launchd"
 fi
 WAS_RUNNING=0
+# A gateway that says restart_in_place in /api/status is not stopped: after
+# the swap it is sent SIGUSR2, shuts down and comes back on the new binary
+# with the environment it was started with. Stopped and started from this
+# shell instead, it lost every key that lived only in its own environment
+# (a /update from a window opened in another shell, 2026-11-11).
+RESTART_PID=""
+GW_STATUS=$(curl -sf --max-time 3 "http://127.0.0.1:$GW_PORT/api/status" 2>/dev/null || true)
 if [ -n "$SERVICE" ]; then
     echo "==> Gateway runs as a service ($SERVICE); it is restarted on the new binary after the download."
-elif curl -sf --max-time 3 "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then
+elif printf '%s' "$GW_STATUS" | grep -q '"restart_in_place":true'; then
+    RESTART_PID=$(printf '%s' "$GW_STATUS" | sed -n 's/.*"pid":\([0-9][0-9]*\).*/\1/p')
+    echo "==> Gateway running on :$GW_PORT — it restarts on the new binary after the download, with its own keys."
+elif [ -n "$GW_STATUS" ]; then
     echo "==> Gateway running on :$GW_PORT — stopping it so the new binary can take over..."
     pids=$(gw_pids)
     [ -n "$pids" ] && kill -TERM $pids 2>/dev/null || true
@@ -414,6 +424,39 @@ if [ -n "$SERVICE" ]; then
         echo "✓ Gateway service restarted on the new binary ($SERVICE)."
     else
         echo "⚠ The gateway service has not answered on :$GW_PORT yet — memdoor gateway status, and ~/.memdoor/gateway.log."
+    fi
+    echo
+elif [ -n "$RESTART_PID" ]; then
+    NEW_VERSION=$("$DEST" --version 2>/dev/null | awk 'NR==1{print $2}')
+    kill -USR2 "$RESTART_PID" 2>/dev/null || true
+    i=0
+    while [ $i -lt 30 ]; do
+        sleep 1; i=$((i+1))
+        if curl -sf --max-time 2 "http://127.0.0.1:$GW_PORT/api/status" 2>/dev/null | grep -q "\"version\":\"$NEW_VERSION\""; then
+            break
+        fi
+    done
+    if curl -sf --max-time 2 "http://127.0.0.1:$GW_PORT/api/status" 2>/dev/null | grep -q "\"version\":\"$NEW_VERSION\""; then
+        echo "✓ Gateway restarted on :$GW_PORT with the new binary, its keys kept."
+    else
+        # It did not come back on the new binary: stop it, and start it
+        # from here as before (its keys from this shell only).
+        kill -TERM "$RESTART_PID" 2>/dev/null || true
+        sleep 3
+        kill -9 "$RESTART_PID" 2>/dev/null || true
+        mkdir -p "$HOME/.memdoor"
+        nohup "$DEST" gateway --port "$GW_PORT" >> "$HOME/.memdoor/gateway.log" 2>&1 &
+        i=0
+        while [ $i -lt 20 ]; do
+            if curl -sf "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then break; fi
+            sleep 1; i=$((i+1))
+        done
+        if curl -sf "http://127.0.0.1:$GW_PORT/api/status" >/dev/null 2>&1; then
+            echo "✓ Gateway started again on :$GW_PORT with the new binary (it did not restart in place: keys from this shell only)."
+        else
+            WAS_RUNNING=1
+            echo "⚠ The gateway did not come back on :$GW_PORT — see ~/.memdoor/gateway.log."
+        fi
     fi
     echo
 elif [ "${WAS_RUNNING:-0}" = "1" ]; then

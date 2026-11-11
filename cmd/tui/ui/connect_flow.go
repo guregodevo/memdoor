@@ -33,32 +33,39 @@ const (
 )
 
 var ConnectKinds = []ConnectKind{
+	// The order a newcomer reads it in (2026-11-11, the maintainer: "yes
+	// reorder"): no key needed first (two sign-ins, a runtime on this
+	// machine), then a vendor's key, then the gateways that resell many
+	// vendors, then a company's own endpoint, the decision model last.
 	// Sign in with OpenRouter (2026-10-31, the maintainer: "they dont know the key"):
 	// first, so Enter on an empty machine signs in instead of asking for a
 	// key a newcomer does not have (gateway/providers_openrouter_login.go).
 	{KindOpenRouterLogin, "Sign in with OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "no key? sign in or sign up free in the browser", false, "", false},
-	{"gateway", "Company AI gateway", "", "https://ai-gateway.example.com/ai", "the base before /v1; a personal or service-account token", true, "", false},
 	// Sign in with ChatGPT (2026-10-10): a Plus or Pro plan's allowance, no
 	// key; the browser step runs on the gateway (gateway/providers_chatgpt.go).
 	{KindChatGPT, "ChatGPT plan (Plus/Pro)", "chatgpt", "https://api.openai.com/v1", "sign in with ChatGPT in the browser: your plan's allowance, no API key", false, "", false},
+	// A local runtime (2026-10-25, the maintainer: "janis should work like a llama.cpp or
+	// ollama, independent from memdoor"): an OpenAI-compatible server on this
+	// machine or the box, no token; nothing leaves the machine it runs on.
+	{"local", "Local runtime (janis, Ollama, llama.cpp, LM Studio)", "chat", "", "no key: blank finds one on the gateway's machine, or give its address", true, "", true},
 	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPENROUTER_API_KEY", false},
 	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY", false},
 	{"openai", "OpenAI", "responses", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY", false},
 	{"gemini", "Google Gemini", "chat", "https://generativelanguage.googleapis.com/v1beta/openai", "an API key from Google AI Studio", false, "GEMINI_API_KEY", false},
-	{"xai", "xAI Grok", "chat", "https://api.x.ai/v1", "an API key from console.x.ai", false, "XAI_API_KEY", false},
-	{"baseten", "Baseten", "chat", "https://inference.baseten.co/v1", "an API key from app.baseten.co", false, "BASETEN_API_KEY", false},
-	{"groq", "Groq", "chat", "https://api.groq.com/openai/v1", "an API key from console.groq.com", false, "GROQ_API_KEY", false},
 	{"deepseek", "DeepSeek", "chat", "https://api.deepseek.com/v1", "an API key from platform.deepseek.com", false, "DEEPSEEK_API_KEY", false},
-	{"eurouter", "EUrouter (models served in the EU)", "chat", "https://api.eurouter.ai/api/v1", "an API key from eurouter.ai", false, "EUROUTER_API_KEY", false},
+	{"xai", "xAI Grok", "chat", "https://api.x.ai/v1", "an API key from console.x.ai", false, "XAI_API_KEY", false},
+	{"groq", "Groq", "chat", "https://api.groq.com/openai/v1", "an API key from console.groq.com", false, "GROQ_API_KEY", false},
+	{"baseten", "Baseten", "chat", "https://inference.baseten.co/v1", "an API key from app.baseten.co", false, "BASETEN_API_KEY", false},
 	{"llmgateway", "LLM Gateway (one key, many vendors)", "chat", "https://api.llmgateway.io/v1", "an API key from llmgateway.io", false, "LLMGATEWAY_API_KEY", false},
-	{"vercel", "Vercel AI Gateway", "chat", "https://ai-gateway.vercel.sh/v1", "an AI Gateway API key from vercel.com (AI Gateway → API Keys)", false, "AI_GATEWAY_API_KEY", false},
 	{"aimlapi", "AI/ML API (one key, many vendors)", "chat", "https://api.aimlapi.com/v1", "an API key from aimlapi.com/app/keys", false, "AIMLAPI_API_KEY", false},
-	{"typesafe", "TypeSafe (Jev, decisions)", "decisions", "https://api.typesafe.ai", "a key from typesafe.ai: the decision model, with any chat provider", false, "TYPESAFE_API_KEY", false},
-	// A local runtime (2026-10-25, the maintainer: "janis should work like a llama.cpp or
-	// ollama, independent from memdoor"): an OpenAI-compatible server on this
-	// machine or the box, no token; nothing leaves the machine it runs on.
-	{"local", "Local runtime (janis, Ollama, llama.cpp, LM Studio)", "chat", "", "blank finds one on the gateway's machine (janis :8090, Ollama :11434, llama.cpp :8080, LM Studio :1234); or its address; no key", true, "", true},
+	{"vercel", "Vercel AI Gateway", "chat", "https://ai-gateway.vercel.sh/v1", "an AI Gateway API key from vercel.com (AI Gateway → API Keys)", false, "AI_GATEWAY_API_KEY", false},
+	{"eurouter", "EUrouter (models served in the EU)", "chat", "https://api.eurouter.ai/api/v1", "an API key from eurouter.ai", false, "EUROUTER_API_KEY", false},
+	{"gateway", "Company AI gateway", "", "https://ai-gateway.example.com/ai", "the base before /v1; a personal or service-account token", true, "", false},
 	{"custom", "Any OpenAI-compatible endpoint", "", "https://host/v1", "a base URL and its key", true, "", false},
+	// The decision model is not a chat provider: last, and said to be
+	// optional, so a newcomer choosing a model does not take it for one
+	// (2026-11-11). /connect typesafe still names it.
+	{"typesafe", "Decision model, optional (TypeSafe Jev)", "decisions", "https://api.typesafe.ai", "a key from typesafe.ai: judges reads and turns, with any chat provider", false, "TYPESAFE_API_KEY", false},
 }
 
 // ConnectRequest and ConnectResult mirror the gateway's
