@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -49,8 +50,10 @@ var headlessRunCmd = &cobra.Command{
 
 The prompt comes from the arguments, or from stdin when there are none; with
 both, what is piped in is the input the prompt is about (a log, a diff, a
-list of files). The answer streams to stdout as text, everything else goes
-to stderr, so the command composes:
+list of files). With a prompt in the arguments, a piped stdin that sends
+nothing in the first second is left alone, so a shell, ssh or CI that keeps
+stdin open does not hold the command. The answer streams to stdout as text,
+everything else goes to stderr, so the command composes:
 
   git diff | memdoor run "review this diff; one line per finding"
   memdoor run --json "…" | jq -r 'select(.event=="done") | .receipt'
@@ -360,8 +363,11 @@ func promptFromArgsAndStdin(args []string, stdin *os.File) (string, error) {
 	text := strings.TrimSpace(strings.Join(args, " "))
 	piped := ""
 	if stdinIsPipeOrFile(stdin) {
-		b, _ := io.ReadAll(io.LimitReader(stdin, 1<<20))
-		piped = strings.TrimSpace(string(b))
+		wait := time.Duration(0)
+		if text != "" {
+			wait = stdinStartWait
+		}
+		piped = strings.TrimSpace(readStdinInput(stdin, wait))
 	}
 	switch {
 	case text == "" && piped == "":
@@ -372,6 +378,56 @@ func promptFromArgsAndStdin(args []string, stdin *os.File) (string, error) {
 		return text, nil
 	}
 	return text + "\n\nInput:\n" + piped, nil
+}
+
+// stdinStartWait is how long `run "…"` waits for a piped stdin to send its
+// first byte. The prompt is already in the arguments, so the input is optional:
+// ssh, CI and agent harnesses hand every command a pipe that stays open and
+// never sends (a fresh Cloud Shell: `memdoor run "hi" | tail` hung until
+// killed, 2026-11-11). Once bytes arrive the rest is read to the end.
+const stdinStartWait = time.Second
+
+// readStdinInput reads what a pipe or file on stdin holds, up to 1 MB. With a
+// wait it gives up when no byte has arrived by then and returns ""; with none it
+// waits for the first byte as long as it takes, because stdin alone is the prompt.
+func readStdinInput(f *os.File, wait time.Duration) string {
+	chunks := make(chan []byte)
+	go func() {
+		defer close(chunks)
+		buf := make([]byte, 32<<10)
+		for {
+			n, err := f.Read(buf)
+			if n > 0 {
+				chunks <- append([]byte(nil), buf[:n]...)
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+	var got []byte
+	var first <-chan time.Time
+	if wait > 0 {
+		timer := time.NewTimer(wait)
+		defer timer.Stop()
+		first = timer.C
+	}
+	for len(got) < 1<<20 {
+		select {
+		case b, ok := <-chunks:
+			if !ok {
+				return string(got)
+			}
+			got = append(got, b...)
+			first = nil
+		case <-first:
+			return ""
+		}
+	}
+	if len(got) > 1<<20 {
+		got = got[:1<<20]
+	}
+	return string(got)
 }
 
 func stdinIsPipeOrFile(f *os.File) bool {
