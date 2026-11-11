@@ -7,11 +7,14 @@ type: pick
 # smaller change winning ties, the fan-out lost 3 of 30 instances team-solve
 # had resolved; on django-11815 attempts 1 and 3 were right and the smaller
 # change, attempt 2, was picked (SWE-bench Verified, DeepSeek V4.1 Flash,
-# 2026-11-08). A tie-breaker task can go in by: [...] ahead of prefer.
+# 2026-11-08). On a tie, probe-run decides first: the largest group of
+# leaders that print alike on a probe (selector.py).
 from: direct
+by: [probe-run]
 prefer: 1
 requires:
   - table_pattern: direct
+  - table_pattern: probe-run
 # Optional, like the fan-out it reads: without attempts there is nothing to
 # choose, and test-0 sends the run to the team.
 optional: true

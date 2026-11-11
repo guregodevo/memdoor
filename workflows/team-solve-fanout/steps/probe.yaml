@@ -1,0 +1,25 @@
+type: agent
+agent: coder
+# Writes a probe that runs the behaviour where the tied attempts differ and prints what it sees.
+# Only when the leaders tie on the checks and change the code differently
+# (tie.txt). The probe prints observations, never a verdict: probe-run runs
+# it on each leader in a clean copy and groups the leaders that print alike;
+# choose takes the largest group.
+when: grep -qx differ .memdoor/runs/team-solve-fanout-{{.partition}}/tie.txt
+requires:
+  - table_pattern: attempts
+prompt: |
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/prompt.md" .partition) }}
+
+  Several changes were written for the task above and pass the same checks. A probe will be run once on each, in a clean copy of the tree, and what each prints is compared. Write .memdoor/runs/team-solve-fanout-{{.partition}}/probe: one executable (chmod +x), run from the project's root, that prints observations and never a verdict.
+
+  When the task asks for a program that reads an input and prints an answer: do not read the changes and do not solve the task. Write about twenty inputs in the format the task gives, in .memdoor/runs/team-solve-fanout-{{.partition}}/probe-inputs/: the samples, the smallest and edge cases the constraints allow, and small varied ones. The probe runs the program the task asks for on each input, the way the task says it is run, with a 10 second limit for each (`perl -e 'alarm shift; exec @ARGV' 10 …`), and prints the input's name and what the program printed, or that it failed or timed out. It refers to the inputs by their absolute path: it runs in a copy of the tree without .memdoor/. Write the probe first, before anything else; run it once here, where the program does not exist yet, to see it work.
+
+  Otherwise (a change to an existing project): read the changes, each a patch in .memdoor/runs/team-solve-fanout-{{.partition}}/attempts/ (leaders.txt lists the ones that tie), and find where they behave differently. The probe exercises the behaviour the task describes in the cases where they differ (the task's example, its sibling cases, its edge cases) and prints what it observes, one line each: return values, messages, warnings, exceptions and their text.
+
+  Either way: do not change the project's files, do not apply the patches here, do not commit. The probe is deterministic (no time, no randomness, no memory addresses), finishes in under a minute, uses only what the project already has, and writes nothing outside a temporary directory.
+target:
+  command: test -x .memdoor/runs/team-solve-fanout-{{.partition}}/probe
+optional: true
+timeout: 15m
+max_retries: 0

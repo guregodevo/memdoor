@@ -1,0 +1,20 @@
+type: command
+# Runs the probe on each tied attempt in a clean copy; names the attempt in the largest group that printed alike.
+# selector.py run: each leader applied to a worktree of the tree as the run
+# found it (base.txt), the probe run there, the leaders grouped by what they
+# printed. It answers `attempt <n>` for the largest group, or `none` when the
+# largest groups tie or there is no probe; choose then falls back to prefer.
+# selector-evidence.md keeps each leader's change and output. The tree itself
+# must still be as found: a probe turn that changed it is undone.
+when: grep -qx differ .memdoor/runs/team-solve-fanout-{{.partition}}/tie.txt
+requires:
+  - table_pattern: probe
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  [ -s "$r/leaders.txt" ] || { echo none; exit 0; }
+  bash "$w/snapshot.sh" reset "$r" > /dev/null
+  python3 "$w/selector.py" run "$r"
+optional: true
+timeout: 30m
+max_retries: 0
