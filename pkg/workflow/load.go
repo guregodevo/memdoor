@@ -428,7 +428,7 @@ func OutputsDir(workdir string) string {
 	return filepath.Join(ProjectRoot(workdir), shared.MemdoorDirName, "runs")
 }
 
-const ignoreFile = "# written by memdoor: run outputs, the run table, the rules memdoor keeps and this machine's workspace are never committed; workflows/ is the project's — commit it\nruns/\nruns.db\nruns.db-*\nAGENTS.md\nworkspace\nworktrees/\npaste-*.png\n"
+const ignoreFile = "# written by memdoor: run outputs, the run table, the rules memdoor keeps and this machine's workspace are never committed; workflows/ is the project's — commit it\nruns/\nruns.db\nruns.db-*\nAGENTS.md\nworkspace\nworktrees/\npaste-*.png\npaste-*.jpg\npaste-*.gif\npaste-*.webp\n"
 
 // ignoredPaths is what Memdoor keeps under .memdoor and never commits: the
 // run outputs and the run table (sqlite, with its -wal and -shm), the kept
@@ -436,7 +436,7 @@ const ignoreFile = "# written by memdoor: run outputs, the run table, the rules 
 // worktrees. What is left — workflows/ — is the project's, so a person can
 // commit .memdoor and every clone gets its workflows (the maintainer, 2026-10-04: "so
 // that a user can have it in its git repo").
-var ignoredPaths = []string{"runs/", "runs.db", "runs.db-*", "AGENTS.md", "workspace", "worktrees/", "paste-*.png"}
+var ignoredPaths = []string{"runs/", "runs.db", "runs.db-*", "AGENTS.md", "workspace", "worktrees/", "paste-*.png", "paste-*.jpg", "paste-*.gif", "paste-*.webp"}
 
 // pasteOnlyIgnore is what an image paste used to write: everything ignored,
 // workflows/ included, so a project's workflows silently stopped being
