@@ -25,12 +25,18 @@ const (
 	PowerShell = "powershell"
 	Cmd        = "cmd"
 	Sh         = "sh"
+	Zsh        = "zsh"
 )
+
+// ShellEnv names the person's own shell for the agent's commands: a path or
+// a name on PATH (MEMDOOR_SHELL=$SHELL). Unset, the choice below is made.
+const ShellEnv = "MEMDOOR_SHELL"
 
 type choice struct {
 	name string
 	prog string
 	args []string
+	own  bool // the person's shell from MEMDOOR_SHELL, run as a login shell
 }
 
 // host is what resolve asks of the machine: its OS, its PATH, its files and
@@ -71,12 +77,27 @@ func Command(ctx context.Context, line string) *exec.Cmd {
 	return cmd
 }
 
-// Name is the family of the shell in use: bash, powershell, cmd or sh.
+// Name is the shell in use: bash, powershell, cmd or sh, or the base name of
+// the shell MEMDOOR_SHELL names (zsh, fish…).
 func Name() string { return current().name }
 
+// Detached says whether a command must run in a session of its own, with no
+// controlling terminal: an interactive zsh started under a gateway that holds
+// a window's terminal takes that terminal, gets SIGTTOU and stays stopped.
+func Detached() bool { return current().own }
+
 // Hint is what the model is told when its bash tool is not bash; "" when it is.
-func Hint() string {
-	switch current().name {
+func Hint() string { return current().hint() }
+
+func (c choice) hint() string {
+	if c.own && c.name != Bash {
+		h := "The bash tool runs commands in the person's own shell, " + c.name + " (" + c.prog + "), with their config loaded: write commands " + c.name + " accepts."
+		if c.name == Zsh {
+			h += " zsh is not bash: an unquoted glob that matches nothing is an error, and an unquoted $var is not split into words."
+		}
+		return h
+	}
+	switch c.name {
 	case PowerShell:
 		return "The bash tool runs commands with PowerShell on this machine (no bash on PATH): write PowerShell, not POSIX sh; a native command's exit code is $LASTEXITCODE."
 	case Cmd:
@@ -88,18 +109,50 @@ func Hint() string {
 }
 
 func resolve(h host) choice {
+	if c, ok := h.ownShell(); ok {
+		return c
+	}
 	if p, ok := h.bash(); ok {
-		return choice{Bash, p, []string{"-c"}}
+		return choice{name: Bash, prog: p, args: []string{"-c"}}
 	}
 	if h.goos == "windows" {
 		for _, ps := range []string{"pwsh", "powershell"} {
 			if p, err := h.look(ps); err == nil {
-				return choice{PowerShell, p, []string{"-NoProfile", "-NonInteractive", "-Command"}}
+				return choice{name: PowerShell, prog: p, args: []string{"-NoProfile", "-NonInteractive", "-Command"}}
 			}
 		}
-		return choice{Cmd, "cmd", []string{"/c"}}
+		return choice{name: Cmd, prog: "cmd", args: []string{"/c"}}
 	}
-	return choice{Sh, "sh", []string{"-c"}}
+	return choice{name: Sh, prog: "sh", args: []string{"-c"}}
+}
+
+// ownShell is the shell MEMDOOR_SHELL names, off Windows, when it can be
+// found. It runs as a login shell, so a command sees the PATH and the rest
+// of the person's profile. zsh also runs interactive: only an interactive
+// zsh reads ~/.zshrc, and without a terminal it prints nothing extra. Any
+// other shell runs as a login shell only: an interactive bash with no
+// terminal writes "no job control in this shell" into the output.
+func (h host) ownShell() (choice, bool) {
+	p := strings.TrimSpace(h.getenv(ShellEnv))
+	if h.goos == "windows" || p == "" {
+		return choice{}, false
+	}
+	if !filepath.IsAbs(p) {
+		found, err := h.look(p)
+		if err != nil {
+			return choice{}, false
+		}
+		p = found
+	}
+	if !h.exists(p) {
+		return choice{}, false
+	}
+	name := filepath.Base(p)
+	args := []string{"-l", "-c"}
+	if name == Zsh {
+		args = []string{"-l", "-i", "-c"}
+	}
+	return choice{name: name, prog: p, args: args, own: true}, true
 }
 
 // bash is the bash this machine runs: the one on PATH, by its bare name off
