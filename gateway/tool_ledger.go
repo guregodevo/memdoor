@@ -171,6 +171,14 @@ func nearSameInput(a, b string) bool {
 		}
 		sa, aStr := va.(string)
 		sb, bStr := vb.(string)
+		if aStr && bStr && pathKeys[k] {
+			// Two files of one deep project share most of their path's
+			// words: a path is the same ask only when it is the same path.
+			if strings.TrimSpace(sa) != strings.TrimSpace(sb) {
+				return false
+			}
+			continue
+		}
 		if aStr && bStr {
 			wa, wb := toolWordSet(sa), toolWordSet(sb)
 			if len(wa) < nearSameMinWords || len(wb) < nearSameMinWords {
@@ -191,6 +199,12 @@ func nearSameInput(a, b string) bool {
 		}
 	}
 	return true
+}
+
+// pathKeys are the input keys whose value names a file or folder.
+var pathKeys = map[string]bool{
+	"path": true, "file_path": true, "file": true, "filename": true, "filepath": true,
+	"dir": true, "directory": true, "cwd": true, "workdir": true,
 }
 
 const (
