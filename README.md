@@ -211,6 +211,20 @@ the pin or at connect. Vendor key or company gateway: nothing else is
 contacted. [`docs/SECURITY.md`](docs/SECURITY.md) lists the hosts the binary
 can name; a test fails the build on a new one.
 
+## Install from a GitHub release
+
+Every release on GitHub carries the binaries and `SHA256SUMS`. To install from
+there instead of memdoor.ai, or from a fork that publishes its own:
+
+```bash
+curl -fsSL https://github.com/guregodevo/memdoor/raw/main/scripts/install.sh \
+  | MEMDOOR_INSTALL_SOURCE=github bash
+# a fork, a fixed release: MEMDOOR_GITHUB_REPOSITORY=owner/repo MEMDOOR_GITHUB_RELEASE=v1.2.3
+```
+
+Keep `MEMDOOR_INSTALL_SOURCE=github` in the environment and `memdoor upgrade`
+reads the same source.
+
 ## Build from source
 
 Go 1.25:

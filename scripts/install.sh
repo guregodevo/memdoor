@@ -40,11 +40,37 @@ case "${OS}-${ARCH}" in
         ;;
 esac
 
-URL="https://memdoor.ai/dl/memdoor-${OS}-${ARCH}"
+# Where the build comes from: memdoor.ai, or a GitHub release with
+# MEMDOOR_INSTALL_SOURCE=github (every release carries the binaries and
+# SHA256SUMS): the latest of MEMDOOR_GITHUB_REPOSITORY (default
+# guregodevo/memdoor), or the tag in MEMDOOR_GITHUB_RELEASE.
+DL_BASE="https://memdoor.ai/dl"
+case "${MEMDOOR_INSTALL_SOURCE:-}" in
+    ""|memdoor.ai) ;;
+    github)
+        GH_REPO="${MEMDOOR_GITHUB_REPOSITORY:-guregodevo/memdoor}"
+        case "$GH_REPO" in
+            */*/*|*[!A-Za-z0-9_./-]*|/*|*/) echo "MEMDOOR_GITHUB_REPOSITORY=$GH_REPO is not owner/repository." >&2; exit 1 ;;
+            */*) ;;
+            *) echo "MEMDOOR_GITHUB_REPOSITORY=$GH_REPO is not owner/repository." >&2; exit 1 ;;
+        esac
+        if [ -n "${MEMDOOR_GITHUB_RELEASE:-}" ]; then
+            case "$MEMDOOR_GITHUB_RELEASE" in
+                *[!A-Za-z0-9_.+-]*) echo "MEMDOOR_GITHUB_RELEASE=$MEMDOOR_GITHUB_RELEASE is not a release tag." >&2; exit 1 ;;
+            esac
+            DL_BASE="https://github.com/$GH_REPO/releases/download/$MEMDOOR_GITHUB_RELEASE"
+        else
+            DL_BASE="https://github.com/$GH_REPO/releases/latest/download"
+        fi
+        ;;
+    *) echo "MEMDOOR_INSTALL_SOURCE=$MEMDOOR_INSTALL_SOURCE: set it to github, or unset it for memdoor.ai." >&2; exit 1 ;;
+esac
+
+URL="$DL_BASE/memdoor-${OS}-${ARCH}"
 # Our own test runs mark their download, so adoption counts people only
 # (make metrics drops ?ci=1): every publish installs on three CI runners,
 # and on 2026-10-07 those were every download the logs held.
-[ -n "${MEMDOOR_CI:-}" ] && URL="$URL?ci=1"
+[ -n "${MEMDOOR_CI:-}" ] && [ "$DL_BASE" = "https://memdoor.ai/dl" ] && URL="$URL?ci=1"
 
 # Two install modes:
 #   1. system-wide (default): /usr/local/bin/memdoor, requires sudo.
@@ -218,7 +244,7 @@ fi
 # match, we refuse to install. No silent skip.
 #
 # macOS ships `shasum` (Perl) in /usr/bin; Linux ships `sha256sum` (coreutils).
-SUMS_URL="https://memdoor.ai/dl/SHA256SUMS"
+SUMS_URL="$DL_BASE/SHA256SUMS"
 sha256_of() {
     # $1 = file path; prints the lowercase hex digest only.
     if command -v sha256sum >/dev/null 2>&1; then
