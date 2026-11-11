@@ -21,9 +21,9 @@ prompt: |
 
   {{ file (printf ".memdoor/runs/team-solve-fanout-%s/selector-evidence.md" .partition) }}
 
-  For each attempt, compare what it did with what the task says should happen, case by case: the task's example, its sibling cases, its edge cases, the exact messages and values it names. An attempt that crashes, that the reproduction still fails, or that changes behaviour the task does not ask about, loses to one that does not. Behaviour decides, not the size or the style of the change, and not how many attempts agree: several attempts can share one mistake.
+  For each attempt, compare what it did with what the task says should happen, case by case: the task's example and the cases that follow from what it asks, with the exact messages and values it names. Only that counts. Behaviour the task does not ask about earns nothing: an attempt that also handles cases the task never mentions is not better for it, and one that changes them is worse. An attempt that raises an error the task does not expect (an exception, a syntax error, a crash) on a case another attempt handles as the task asks, loses. So does one the reproduction still fails. Behaviour decides, not the size or the style of the change, and not how many attempts agree: several attempts can share one mistake.
 
-  Answer on the first line with exactly `attempt N`, N one of the attempts above, then two to five lines on why. When the evidence does not tell them apart, answer with the single word `none` and nothing else.
+  Answer on the first line with exactly `attempt N`, N one of the attempts above, then two to five lines on why. Answer with the single word `none` and nothing else only when every attempt printed the same thing on every case.
 optional: true
 timeout: 10m
 max_retries: 0
