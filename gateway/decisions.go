@@ -125,7 +125,7 @@ func systemOneFromEnv() (p decision.Provider, codingKey bool) {
 	if key == "" && base == "" {
 		return nil, false
 	}
-	c, err := systemone.New(systemone.Config{BaseURL: base, APIKey: key, Model: model})
+	c, err := systemone.New(systemone.Config{BaseURL: base, APIKey: key, Model: model, Logger: dlog()})
 	if err != nil {
 		dlog().Warn("System One provider not registered", slog.String("error", err.Error()))
 		return nil, false

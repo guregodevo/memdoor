@@ -74,6 +74,14 @@ func Jgrep(input json.RawMessage) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if !res.Ranked && res.Candidates > 0 {
+		// No judge, no cut: every match, as grep shows it, rather than the
+		// first few hunks in walk order.
+		g, _ := json.Marshal(GrepInput{Pattern: in.Pattern, Path: in.Path, Glob: in.Glob, I: in.I, N: true, C: jgrepContext, OutputMode: "content"})
+		if out, gerr := Grep(g); gerr == nil {
+			return fmt.Sprintf("(not ranked: %s — every match, as grep shows it)\n", res.Note) + out, nil
+		}
+	}
 	return res.Render(), nil
 }
 

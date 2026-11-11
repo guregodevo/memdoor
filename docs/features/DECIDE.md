@@ -110,7 +110,12 @@ from.
 standard tools, in the palettes of the agents that get them; each runs its
 usual source, asks one yes/no per item against the agent's task in parallel
 batches, and returns only the kept items with probabilities. With no model
-they return the unjudged output and say `UNJUDGED`. An overloaded answer
+jgrep and jread are not offered. When the judge fails, jread returns what
+read_file returns and jgrep what grep returns, each under a one-line note
+(`not judged: …`, `not ranked: …`). The other tools return the unjudged
+output. An endpoint that refuses the connection, or gives no reply within a
+wait of 20 s or more, stands down for 10 minutes like a refused key. The log
+says `decision model stood down` once. An overloaded answer
 (429/503/529) is retried in place before that: at most 3 asks in the decision
 service (400 ms, then 800 ms apart, within the caller's timeout), one more
 spaced try per batch in the judge — a lasting overload still answers in

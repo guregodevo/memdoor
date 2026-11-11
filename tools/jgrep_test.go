@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -87,6 +88,26 @@ func TestJgrepFallsBackToPlainGrep(t *testing.T) {
 	}
 	if _, err := RunJgrep(context.Background(), &scriptedDecisions{}, JgrepInput{Path: dir, Pattern: "retry"}); err == nil {
 		t.Fatal("missing task accepted")
+	}
+}
+
+// A failing judge gives grep's answer, every match, not the first keep hunks.
+func TestJgrepToolFallsBackToEveryMatch(t *testing.T) {
+	files := map[string]string{}
+	for i := 0; i < 15; i++ {
+		files[fmt.Sprintf("f%02d.go", i)] = fmt.Sprintf("package p\n\nfunc retry%d() {}\n", i)
+	}
+	dir := writeTree(t, files)
+	withDecisions(t, &scriptedDecisions{fail: true})
+	in, _ := json.Marshal(JgrepInput{Path: dir, Task: "t", Pattern: "retry"})
+	out, err := Jgrep(in)
+	if err != nil || !strings.HasPrefix(out, "(not ranked: ") || strings.Contains(out, "UNRANKED") {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	for i := 0; i < 15; i++ {
+		if !strings.Contains(out, fmt.Sprintf("retry%d()", i)) {
+			t.Fatalf("match %d missing:\n%s", i, out)
+		}
 	}
 }
 

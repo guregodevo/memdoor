@@ -199,3 +199,55 @@ func TestDecisionCallsAreAttributedOnOpenRouterOnly(t *testing.T) {
 		})
 	}
 }
+
+// A runtime that refuses the connection, or lets the whole wait pass with no
+// reply, stands down: no judged tool waits on it again (2026-11-11, janis on
+// :8090 with no model loaded). A caller that allowed only a short wait says
+// nothing about the endpoint.
+func TestAnUnreachableEndpointStandsDown(t *testing.T) {
+	prev := unreachableAfter
+	unreachableAfter = 50 * time.Millisecond
+	t.Cleanup(func() { unreachableAfter = prev })
+
+	hang := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-hang:
+		case <-r.Context().Done():
+		}
+	}))
+	defer srv.Close()
+	defer close(hang)
+
+	c, _ := New(Config{BaseURL: srv.URL})
+	short, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	res, _ := c.Evaluate(short, "", req(t))
+	cancel()
+	if res.Reason != decision.ReasonDeadline || !c.Ready() {
+		t.Fatalf("a short caller deadline must not stand it down: %+v ready=%v", res, c.Ready())
+	}
+	full, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	res, _ = c.Evaluate(full, "", req(t))
+	cancel()
+	if res.Reason != decision.ReasonDeadline || c.Ready() {
+		t.Fatalf("no reply in the whole wait must stand it down: %+v ready=%v", res, c.Ready())
+	}
+
+	closed := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
+	url := closed.URL
+	closed.Close()
+	log := &warnings{}
+	c, _ = New(Config{BaseURL: url, Logger: log})
+	for range 2 {
+		if _, err := c.Evaluate(context.Background(), "", req(t)); err == nil || c.Ready() {
+			t.Fatalf("a refused connection must stand it down: err=%v ready=%v", err, c.Ready())
+		}
+	}
+	if log.n != 1 {
+		t.Fatalf("standing down is said once, said %d times", log.n)
+	}
+}
+
+type warnings struct{ n int }
+
+func (w *warnings) Warn(string, ...any) { w.n++ }

@@ -171,7 +171,20 @@ func Jread(input json.RawMessage) (string, error) {
 		return fmt.Sprintf("%s (%d bytes) — the task needs nearly all of it, so here it is whole:\n%s",
 			in.Path, len(raw), string(raw)), nil
 	}
-	return out, err
+	if err != nil || strings.HasPrefix(out, "UNJUDGED") {
+		// No judge, no cut: the read read_file would have made, not the
+		// first few sections of a file the turn came to understand.
+		why := "the decision model did not answer"
+		if err != nil {
+			why = err.Error()
+		} else if i := strings.Index(out, "("); i >= 0 {
+			if j := strings.Index(out, ") — "); j > i {
+				why = out[i+1 : j]
+			}
+		}
+		return fmt.Sprintf("(not judged: %s — read as read_file reads it)\n", why) + readableContent(in.Path, raw, "", false, 0, 0), nil
+	}
+	return out, nil
 }
 
 // errJudgeNoSaving says the judged sections cover so much of the text that
