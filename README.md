@@ -131,7 +131,7 @@ editor's own. Steps: [memdoor.ai/docs/editor](https://memdoor.ai/docs/editor).
 
 ```bash
 memdoor run "make the retry wait configurable and add a test"     # a headless turn, no window
-git diff | memdoor run "review this diff; one line per finding"    # stdin is the input
+git diff | memdoor run --stdin "review this diff; one line per finding"    # --stdin: stdin is the input
 memdoor run --json "fix the failing test" | jq 'select(.event=="done")'
 memdoor workflow run release --wait                                 # progress on stderr, results on stdout
 memdoor remote --last                                               # the link /remote gives, on stdout; the gateway holds the run for your phone

@@ -171,7 +171,7 @@ memdoor workspace which           # what would resolve here
 memdoor workspace list            # every workspace you have
 memdoor run "<prompt>" [--json] [--yes] [--dir <path>]   # a headless turn: answer on stdout, exit code = the receipt
 memdoor resume <id> | head                                # into a pipe: the conversation as text (a window at a terminal)
-git diff | memdoor run "review this"                    # stdin is the input the prompt is about
+git diff | memdoor run --stdin "review this"            # --stdin: stdin is the input the prompt is about
 memdoor workflow run <name> --wait                      # progress on stderr, results on stdout, exit = outcome
 memdoor workflow run <name> --stop-at-gate              # --wait, but a gate ends it with exit 3 (CI: nobody to approve)
 memdoor agent -m "<text>" -c <channel> -a <agent>   # message an agent from a script

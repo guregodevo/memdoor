@@ -112,66 +112,54 @@ func TestPromptFromArgsAndStdin(t *testing.T) {
 	r, w, _ := os.Pipe()
 	w.WriteString("diff --git a b\n")
 	w.Close()
-	got, err := promptFromArgsAndStdin([]string{"review", "this"}, r)
+	got, err := promptFromArgsAndStdin([]string{"review", "this"}, r, true)
 	if err != nil || !strings.HasPrefix(got, "review this\n\nInput:\ndiff --git a b") {
-		t.Fatalf("args + pipe: %q %v", got, err)
+		t.Fatalf("args + --stdin + pipe: %q %v", got, err)
 	}
 	r2, w2, _ := os.Pipe()
 	w2.WriteString("summarize the failing tests")
 	w2.Close()
-	if got, _ := promptFromArgsAndStdin(nil, r2); got != "summarize the failing tests" {
+	if got, _ := promptFromArgsAndStdin(nil, r2, false); got != "summarize the failing tests" {
 		t.Fatalf("pipe alone is the prompt, got %q", got)
 	}
 	devnull, _ := os.Open(os.DevNull) // a character device: not read
-	if got, err := promptFromArgsAndStdin([]string{"hi"}, devnull); err != nil || got != "hi" {
+	if got, err := promptFromArgsAndStdin([]string{"hi"}, devnull, true); err != nil || got != "hi" {
 		t.Fatalf("a device on stdin is left alone: %q %v", got, err)
 	}
-	if _, err := promptFromArgsAndStdin(nil, devnull); err == nil {
+	if _, err := promptFromArgsAndStdin(nil, devnull, false); err == nil {
 		t.Fatal("no args and no pipe is no prompt")
 	}
 }
 
-// A pipe that stays open and never sends (ssh, CI, an agent harness) must not
-// hold `run "…"`: the arguments are the prompt, and the input is optional.
-func TestPromptFromArgsDoesNotWaitOnAnIdlePipe(t *testing.T) {
-	r, w, _ := os.Pipe()
+// Without --stdin a prompt in the arguments is the whole prompt: stdin is not
+// read, so a pipe that stays open and never sends (ssh, CI, an agent harness)
+// cannot hold `run "…"`, and what a pipe holds is not taken by accident.
+func TestPromptFromArgsWithoutStdinFlagNeverReadsStdin(t *testing.T) {
+	idle, w, _ := os.Pipe()
 	defer w.Close()
-	start := time.Now()
-	got, err := promptFromArgsAndStdin([]string{"hi"}, r)
-	if err != nil || got != "hi" {
+	if got, err := promptFromArgsAndStdin([]string{"hi"}, idle, false); err != nil || got != "hi" {
 		t.Fatalf("idle pipe: %q %v", got, err)
 	}
-	if d := time.Since(start); d > stdinStartWait+time.Second {
-		t.Fatalf("waited %s on an idle pipe", d)
+	full, w2, _ := os.Pipe()
+	w2.WriteString("not asked for")
+	w2.Close()
+	if got, _ := promptFromArgsAndStdin([]string{"hi"}, full, false); got != "hi" {
+		t.Fatalf("a pipe with data, no --stdin: %q", got)
 	}
 }
 
-// A producer that starts late but within the wait is still the input, and one
-// that keeps writing after its first byte is read to the end.
-func TestPromptFromArgsReadsALateProducerToTheEnd(t *testing.T) {
+// Under --stdin the input is read to its end, however late it starts.
+func TestPromptFromArgsWithStdinFlagReadsALateProducerToTheEnd(t *testing.T) {
 	r, w, _ := os.Pipe()
 	go func() {
-		time.Sleep(stdinStartWait / 4)
+		time.Sleep(300 * time.Millisecond)
 		w.WriteString("first ")
-		time.Sleep(stdinStartWait)
+		time.Sleep(300 * time.Millisecond)
 		w.WriteString("second")
 		w.Close()
 	}()
-	got, err := promptFromArgsAndStdin([]string{"review"}, r)
+	got, err := promptFromArgsAndStdin([]string{"review"}, r, true)
 	if err != nil || got != "review\n\nInput:\nfirst second" {
 		t.Fatalf("late producer: %q %v", got, err)
-	}
-}
-
-// With no arguments stdin alone is the prompt: it is waited for, however long.
-func TestPromptFromStdinAloneWaitsForTheFirstByte(t *testing.T) {
-	r, w, _ := os.Pipe()
-	go func() {
-		time.Sleep(stdinStartWait + stdinStartWait/2)
-		w.WriteString("do the thing")
-		w.Close()
-	}()
-	if got, err := promptFromArgsAndStdin(nil, r); err != nil || got != "do the thing" {
-		t.Fatalf("stdin alone: %q %v", got, err)
 	}
 }

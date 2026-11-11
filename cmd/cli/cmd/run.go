@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -32,6 +31,7 @@ var (
 	runConversationFlag string
 	runJSONFlag         bool
 	runYesFlag          bool
+	runStdinFlag        bool
 )
 
 // Exit codes: the pipeline's contract.
@@ -48,14 +48,14 @@ var headlessRunCmd = &cobra.Command{
 	Short: "A headless turn: prompt in, answer out, an exit code for the pipeline",
 	Long: `Run one coder turn on this project with no window.
 
-The prompt comes from the arguments, or from stdin when there are none; with
-both, what is piped in is the input the prompt is about (a log, a diff, a
-list of files). With a prompt in the arguments, a piped stdin that sends
-nothing in the first second is left alone, so a shell, ssh or CI that keeps
-stdin open does not hold the command. The answer streams to stdout as text,
-everything else goes to stderr, so the command composes:
+The prompt comes from the arguments, or from stdin when there are none. With
+a prompt in the arguments stdin is read only under --stdin: what is piped in
+is then the input the prompt is about (a log, a diff, a list of files), read
+to its end. Without --stdin it is never read, so a shell, ssh or CI that
+keeps stdin open does not hold the command. The answer streams to stdout as
+text, everything else goes to stderr, so the command composes:
 
-  git diff | memdoor run "review this diff; one line per finding"
+  git diff | memdoor run --stdin "review this diff; one line per finding"
   memdoor run --json "…" | jq -r 'select(.event=="done") | .receipt'
 
 Text out; --json streams NDJSON events instead
@@ -77,7 +77,7 @@ The gateway starts if none is running. Each run is a conversation:
 its id is printed at the end, and memdoor resume <id> opens it in a window.
 --conversation <id> continues one instead of starting a new one.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		text, err := promptFromArgsAndStdin(args, os.Stdin)
+		text, err := promptFromArgsAndStdin(args, os.Stdin, runStdinFlag)
 		if err != nil {
 			return err
 		}
@@ -351,23 +351,24 @@ func init() {
 	headlessRunCmd.Flags().StringVar(&runConversationFlag, "conversation", "", "continue this conversation instead of starting one")
 	headlessRunCmd.Flags().BoolVar(&runJSONFlag, "json", false, "NDJSON events on stdout instead of text")
 	headlessRunCmd.Flags().BoolVar(&runYesFlag, "yes", false, "answer any question with its first option (an approval with Yes)")
+	headlessRunCmd.Flags().BoolVar(&runStdinFlag, "stdin", false, "read stdin to its end as the input the prompt is about (git diff | memdoor run --stdin \"review this\")")
 	rootCmd.AddCommand(headlessRunCmd)
 }
 
 // promptFromArgsAndStdin is the pipe contract: arguments are the prompt;
-// stdin alone is the prompt; both means stdin is the input the prompt is
-// about. Stdin is read only when it is a pipe or a file: a terminal is
-// never read, and neither is a socket a harness keeps open — `run "…"`
-// hung on one, waiting for an EOF that never came (2026-10-11).
-func promptFromArgsAndStdin(args []string, stdin *os.File) (string, error) {
+// stdin alone is the prompt; arguments and --stdin make stdin the input the
+// prompt is about. With arguments and no --stdin stdin is never read: ssh, CI
+// and agent harnesses hand every command a pipe that stays open and never
+// sends, and `memdoor run "hi" | tail` waited on it until killed (a fresh
+// Cloud Shell, 2026-11-11). Stdin is read only when it is a pipe or a file:
+// a terminal is never read, and neither is a socket a harness keeps open
+// (2026-10-11).
+func promptFromArgsAndStdin(args []string, stdin *os.File, withStdin bool) (string, error) {
 	text := strings.TrimSpace(strings.Join(args, " "))
 	piped := ""
-	if stdinIsPipeOrFile(stdin) {
-		wait := time.Duration(0)
-		if text != "" {
-			wait = stdinStartWait
-		}
-		piped = strings.TrimSpace(readStdinInput(stdin, wait))
+	if (text == "" || withStdin) && stdinIsPipeOrFile(stdin) {
+		b, _ := io.ReadAll(io.LimitReader(stdin, 1<<20))
+		piped = strings.TrimSpace(string(b))
 	}
 	switch {
 	case text == "" && piped == "":
@@ -378,56 +379,6 @@ func promptFromArgsAndStdin(args []string, stdin *os.File) (string, error) {
 		return text, nil
 	}
 	return text + "\n\nInput:\n" + piped, nil
-}
-
-// stdinStartWait is how long `run "…"` waits for a piped stdin to send its
-// first byte. The prompt is already in the arguments, so the input is optional:
-// ssh, CI and agent harnesses hand every command a pipe that stays open and
-// never sends (a fresh Cloud Shell: `memdoor run "hi" | tail` hung until
-// killed, 2026-11-11). Once bytes arrive the rest is read to the end.
-const stdinStartWait = time.Second
-
-// readStdinInput reads what a pipe or file on stdin holds, up to 1 MB. With a
-// wait it gives up when no byte has arrived by then and returns ""; with none it
-// waits for the first byte as long as it takes, because stdin alone is the prompt.
-func readStdinInput(f *os.File, wait time.Duration) string {
-	chunks := make(chan []byte)
-	go func() {
-		defer close(chunks)
-		buf := make([]byte, 32<<10)
-		for {
-			n, err := f.Read(buf)
-			if n > 0 {
-				chunks <- append([]byte(nil), buf[:n]...)
-			}
-			if err != nil {
-				return
-			}
-		}
-	}()
-	var got []byte
-	var first <-chan time.Time
-	if wait > 0 {
-		timer := time.NewTimer(wait)
-		defer timer.Stop()
-		first = timer.C
-	}
-	for len(got) < 1<<20 {
-		select {
-		case b, ok := <-chunks:
-			if !ok {
-				return string(got)
-			}
-			got = append(got, b...)
-			first = nil
-		case <-first:
-			return ""
-		}
-	}
-	if len(got) > 1<<20 {
-		got = got[:1<<20]
-	}
-	return string(got)
 }
 
 func stdinIsPipeOrFile(f *os.File) bool {

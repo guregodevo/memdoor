@@ -11,7 +11,9 @@ Every command is headless except `memdoor tui`, the window. `memdoor resume`
 opens the window at a terminal and prints text into a pipe. No flag decides
 it. `memdoor run`, `workflow run`, `cron add`, `guards` and the rest take a
 prompt or arguments, write text or events and return an exit code. Stdin is
-the input when it is a pipe or a file. A terminal is never read.
+the prompt when there are no arguments. With a prompt in the arguments, stdin
+is the input only under `--stdin`, and only when it is a pipe or a file. A
+terminal is never read.
 
 The gateway: a background process on the machine the run belongs to, laptop
 or CI runner. `memdoor run`, `workflow run`, `workflow resume`, `cron add`,
@@ -52,7 +54,7 @@ answer on stdout, everything else on stderr, exit code the turn's receipt.
 
 ```bash
 memdoor run "make the retry wait configurable and add a test"
-git diff | memdoor run "review this diff; one line per finding"
+git diff | memdoor run --stdin "review this diff; one line per finding"
 memdoor run --json "fix the failing test" | jq -r 'select(.event=="done") | .receipt'
 ```
 
@@ -88,7 +90,7 @@ when the first command started, in a scratch Go project whose `Add` returned
 
 | Command | Exit | What it did |
 |---|---|---|
-| `echo calc.go \| memdoor run "which function does the file on stdin export? change nothing"` | 0 | started the gateway, read stdin as the input, answered on stdout |
+| `echo calc.go \| memdoor run --stdin "which function does the file on stdin export? change nothing"` | 0 | started the gateway, read stdin as the input, answered on stdout |
 | `memdoor run --json "run go test ./... and report; change nothing"` | 2 | 15 events; `done` carried `⚠ nothing changed · ran: go test FAIL` |
 | `memdoor workflow run check --wait` (test still broken) | 2 | stderr `failed · 1/2 done`, the failing task named |
 | `memdoor run "fix Add in calc.go so TestAdd passes, then run go test ./..."` | 0 | `✓ checked: 1 file changed · go build PASS · go test PASS` |
