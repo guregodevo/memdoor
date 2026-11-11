@@ -34,6 +34,9 @@ type turnRunner interface {
 	Run(ctx context.Context, conversation, cwd, text string, sink turnSink) error
 	// Interrupt stops the running turn of a conversation.
 	Interrupt(ctx context.Context, conversation string) error
+	// SetModel pins a model ("provider:model") on a conversation, for it
+	// alone; "" hands it back to the gateway's model (acp_models.go).
+	SetModel(ctx context.Context, conversation, model string) error
 }
 
 // turnSink is what a turn reports while it runs, and the one thing it may
@@ -59,6 +62,9 @@ type acpAgent struct {
 	conn     *acp.AgentSideConnection
 	mu       sync.Mutex
 	sessions map[acp.SessionId]*acpSession
+	// models are the model option's choices (MEMDOOR_ACP_MODELS); none, no option.
+	models           []acpModel
+	defaultModelName string
 }
 
 var _ acp.Agent = (*acpAgent)(nil)
@@ -72,7 +78,7 @@ func (a *acpAgent) SetAgentConnection(c *acp.AgentSideConnection) { a.conn = c }
 func (a *acpAgent) Initialize(ctx context.Context, params acp.InitializeRequest) (acp.InitializeResponse, error) {
 	return acp.InitializeResponse{
 		ProtocolVersion:   acp.ProtocolVersionNumber,
-		AgentCapabilities: acp.AgentCapabilities{LoadSession: false},
+		AgentCapabilities: acp.AgentCapabilities{LoadSession: false, PromptCapabilities: acpPromptCapabilities},
 		AgentInfo:         &acp.Implementation{Name: "memdoor", Title: acp.Ptr("Memdoor"), Version: Version},
 	}, nil
 }
@@ -90,7 +96,7 @@ func (a *acpAgent) NewSession(ctx context.Context, params acp.NewSessionRequest)
 	a.mu.Lock()
 	a.sessions[id] = &acpSession{conversation: conv, cwd: params.Cwd}
 	a.mu.Unlock()
-	return acp.NewSessionResponse{SessionId: id}, nil
+	return acp.NewSessionResponse{SessionId: id, ConfigOptions: a.modelOptions("")}, nil
 }
 
 func (a *acpAgent) Prompt(_ context.Context, params acp.PromptRequest) (acp.PromptResponse, error) {
@@ -100,7 +106,7 @@ func (a *acpAgent) Prompt(_ context.Context, params acp.PromptRequest) (acp.Prom
 	if !ok {
 		return acp.PromptResponse{}, fmt.Errorf("no session %s: session/new first", params.SessionId)
 	}
-	text := promptText(params.Prompt)
+	text := promptText(s.cwd, params.Prompt)
 	if strings.TrimSpace(text) == "" {
 		return acp.PromptResponse{StopReason: acp.StopReasonEndTurn}, nil
 	}
@@ -168,9 +174,6 @@ func (a *acpAgent) CloseSession(ctx context.Context, params acp.CloseSessionRequ
 }
 func (a *acpAgent) SetSessionMode(ctx context.Context, params acp.SetSessionModeRequest) (acp.SetSessionModeResponse, error) {
 	return acp.SetSessionModeResponse{}, nil
-}
-func (a *acpAgent) SetSessionConfigOption(ctx context.Context, params acp.SetSessionConfigOptionRequest) (acp.SetSessionConfigOptionResponse, error) {
-	return acp.SetSessionConfigOptionResponse{}, acp.NewMethodNotFound(acp.AgentMethodSessionSetConfigOption)
 }
 func (a *acpAgent) Logout(ctx context.Context, params acp.LogoutRequest) (acp.LogoutResponse, error) {
 	return acp.LogoutResponse{}, acp.NewMethodNotFound(acp.AgentMethodLogout)
@@ -343,20 +346,6 @@ func toolPath(input json.RawMessage) string {
 		}
 	}
 	return ""
-}
-
-// promptText joins the prompt's text blocks; an editor may send several.
-func promptText(blocks []acp.ContentBlock) string {
-	var b strings.Builder
-	for _, c := range blocks {
-		if c.Text != nil {
-			if b.Len() > 0 {
-				b.WriteString("\n")
-			}
-			b.WriteString(c.Text.Text)
-		}
-	}
-	return b.String()
 }
 
 func firstLineOf(s string, n int) string {

@@ -28,6 +28,22 @@ and `acp_agent.go`, nothing in the gateway, the tools or the TUI changed.
   goes back as the option's exact text; the editor's cancel answers No.
 - The editor's cancel sends the websocket `cancel` the window's Esc sends,
   and the prompt ends as `cancelled`.
+- An attachment is what the window makes of one. `initialize` declares the
+  `image` and `embeddedContext` prompt capabilities, so the editor offers its
+  file picker and image paste. A file link becomes an `@mention`, an embedded
+  excerpt is quoted under its file, and a picture (png, jpeg, gif, webp) is
+  saved as `.memdoor/paste-<time>-<n>.<ext>` in the folder, git-ignored, and
+  mentioned for the coder to look at with `see` (`acp_prompt.go`).
+- The model is the gateway's unless `MEMDOOR_ACP_MODELS` lists choices:
+  `provider:model|Name` entries separated by `;`, with
+  `MEMDOOR_ACP_DEFAULT_NAME` naming the default. A session then offers a
+  `model` option. A pick pins that model on the session's conversation alone
+  (`POST /api/route` with `keep: false`), and `default` hands it back
+  (`acp_models.go`).
+
+  ```json
+  "env": { "MEMDOOR_ACP_MODELS": "anthropic:claude-haiku-5-5|Haiku;openrouter:z-ai/glm-5.3|GLM 5.3" }
+  ```
 - The first run sets the machine up as `memdoor tui` does; stdout carries
   only the protocol, everything else goes to stderr.
 

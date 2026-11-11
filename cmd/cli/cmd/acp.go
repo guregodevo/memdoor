@@ -50,6 +50,7 @@ machine up like memdoor tui does.`,
 		}
 		runner := &gatewayRunner{c: c, workspace: ownWorkspace(c, workspaceSlug), feeds: map[string]*client.Client{}}
 		agent := newACPAgent(runner)
+		agent.models, agent.defaultModelName = acpModelsFromEnv()
 		conn := acp.NewAgentSideConnection(agent, os.Stdout, os.Stdin)
 		agent.SetAgentConnection(conn)
 		fmt.Fprintf(os.Stderr, "memdoor acp: serving %s on the gateway at %s\n", workspaceSlug, gatewayAddr)
