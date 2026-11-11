@@ -2,6 +2,9 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/tools"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -39,15 +42,41 @@ func TestBashCannotCdOutOfTheWorkdir(t *testing.T) {
 	if strings.Contains(got, "go run stats.go") {
 		t.Errorf("the escaping command must not be executed at all, got: %s", got)
 	}
-	if !strings.Contains(got, "refused") || !strings.Contains(got, "exit 1") {
-		t.Errorf("the refusal must fail the call and say why, got: %s", got)
+	if !strings.Contains(got, "refused") {
+		t.Errorf("the refusal must say why, got: %s", got)
 	}
 	if !strings.Contains(got, "/Users/you/.memdoor/workdir/tetris") {
 		t.Errorf("the refusal must name the offending path so the model can correct it: %s", got)
 	}
 	// It must tell the model what to do instead, or it will simply try again.
-	if !strings.Contains(got, "ALREADY in the right directory") {
+	if !strings.Contains(got, "drop the cd") {
 		t.Errorf("the refusal must redirect, not just deny: %s", got)
+	}
+}
+
+// Live 2026-11-11: a coder sent to a sibling git worktree was told "You are
+// ALREADY in the right directory" (it was not: the work was in the other
+// checkout), and the refusal came back with the note for a read whose exit
+// status is an answer ("grep found no match…"). The refusal is the whole
+// result: printed, exit 0, and it says what to do when the folder is the right
+// one.
+func TestBashCdRefusalIsTheWholeResult(t *testing.T) {
+	got, _ := bashCmd(t, "cd /Users/you/memdoor-wt-x && go build ./... 2>&1 | tail; echo DONE")
+	if strings.Contains(got, "ALREADY in the right directory") {
+		t.Errorf("the refusal must not claim the workdir is where the work is: %s", got)
+	}
+	if !strings.Contains(got, "start memdoor in that folder") {
+		t.Errorf("the refusal must say how to work in the other folder: %s", got)
+	}
+	out, err := exec.Command("bash", "-c", got).Output()
+	if err != nil {
+		t.Fatalf("the refusal must exit 0 so it is neither a failed command nor a read's status: %v", err)
+	}
+	if strings.Contains(string(out), "DONE") || !strings.HasPrefix(string(out), "refused: ") {
+		t.Errorf("only the refusal may run: %q", out)
+	}
+	if !tools.IsBashRead(got) {
+		t.Errorf("the printed refusal must count as a read, not a check: %s", got)
 	}
 }
 
@@ -95,5 +124,37 @@ func TestAbsolutePathReadsAreStillAllowed(t *testing.T) {
 	}
 	if cwd != wd {
 		t.Errorf("it must still run in the workdir: cwd %q", cwd)
+	}
+}
+
+// A git worktree of the project is the project in another folder: people make
+// one per change, and the coder works, builds and runs there with them.
+func TestTheCoderWorksInAWorktreeOfItsProject(t *testing.T) {
+	tmp := t.TempDir()
+	repo, tree := filepath.Join(tmp, "repo"), filepath.Join(tmp, "repo-wt")
+	for _, args := range [][]string{
+		{"init", "-q", repo},
+		{"-C", repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "base"},
+		{"-C", repo, "worktree", "add", "-q", "-b", "change", tree},
+	} {
+		if out, err := exec.Command("git", args...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	cmd := "cd " + tree + " && go build ./... && go test ./..."
+	in, _ := json.Marshal(map[string]any{"command": cmd})
+	var got map[string]any
+	_ = json.Unmarshal(confineToCoderWorkdir("bash", in, repo), &got)
+	if got["command"] != cmd {
+		t.Errorf("a cd into a worktree of the project must run: %v", got["command"])
+	}
+	write, _ := json.Marshal(map[string]any{"path": filepath.Join(tree, "x.go"), "content": "x"})
+	if msg := coderPathEscape("write_file", write, repo); msg != "" {
+		t.Errorf("a write into a worktree of the project must go through: %s", msg)
+	}
+	other, _ := json.Marshal(map[string]any{"command": "cd " + tmp + " && ls"})
+	_ = json.Unmarshal(confineToCoderWorkdir("bash", other, repo), &got)
+	if c, _ := got["command"].(string); !strings.Contains(c, "refused") {
+		t.Errorf("the folder holding the worktrees is not the project: %s", c)
 	}
 }

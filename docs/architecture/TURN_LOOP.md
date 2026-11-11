@@ -147,8 +147,8 @@ edit the program its own check runs), the agent's allowlist,
 `destructiveBashReason`, the workspace's `tool_guards` rules (`tool_guards.go
 guardBlocks`), the ask gate (`ask_gate.go`: a question the agent could answer
 by reading or running goes back to it), approval, then for a codebase agent the
-confinement of every path to the turn's workdir (`coderPathEscape`,
-`confineToCoderWorkdir`). Plan mode (`permission_mode: "plan"`, `memdoor agent
+confinement of every path to the turn's workdir and the git worktrees of its
+repository (`coderPathEscape`, `confineToCoderWorkdir`, `tools.InProject`). Plan mode (`permission_mode: "plan"`, `memdoor agent
 --mode plan`) is read-only: `planModeRefuses` (`agent_runtime_coder.go`) turns
 back bash, apply_patch, write_file, edit_file, sessions_spawn, cron, workflow,
 task_flow, chrome, send_email and every MCP tool with the way out, and

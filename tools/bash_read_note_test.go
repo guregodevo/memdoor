@@ -29,6 +29,11 @@ func TestBashReadKind(t *testing.T) {
 		`ls -la spec data; for f in a.md b.md; do echo "== $f"; head -5 $f; done; wc -l a.md`: "file",
 		"for t in a b; do python3 $t; done":                                                   "",
 		"while true; do curl x; done":                                                         "",
+		// '\'' is how a shell puts a quote inside quotes: the backslash keeps the
+		// quote state, so the redirect and the second command are still seen.
+		`echo 'it'\''s' > notes.txt`:      "",
+		`printf %s 'cd'\''s' >&2; exit 1`: "",
+		`grep -n 'it'\''s' a.go`:          "matches",
 	} {
 		if got := bashReadKind(cmd); got != want {
 			t.Errorf("%q: got %q, want %q", cmd, got, want)
