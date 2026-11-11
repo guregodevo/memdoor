@@ -472,6 +472,20 @@ func (deepseekReader) ListModels(ctx context.Context, p Provider) ([]Model, erro
 			MaxOutputTokens int      `json:"max_output_tokens"`
 			Effort          any      `json:"effort"`
 			InputModalities []string `json:"input_modalities"`
+			// A relay serving DeepSeek may list another shape: models.dev's
+			// limit (OpenCode Go), or OpenRouter's fields.
+			Limit struct {
+				Context int `json:"context"`
+				Output  int `json:"output"`
+			} `json:"limit"`
+			ContextLength int `json:"context_length"`
+			TopProvider   struct {
+				ContextLength       int `json:"context_length"`
+				MaxCompletionTokens int `json:"max_completion_tokens"`
+			} `json:"top_provider"`
+			Architecture struct {
+				InputModalities []string `json:"input_modalities"`
+			} `json:"architecture"`
 		} `json:"data"`
 	}
 	if err := getJSON(ctx, modelsURL(p.Base), bearer(p), &raw); err != nil {
@@ -486,8 +500,14 @@ func (deepseekReader) ListModels(ctx context.Context, p Provider) ([]Model, erro
 		if name == "" {
 			name = d.ID
 		}
-		out = append(out, Model{ID: d.ID, Name: name, Context: d.ContextWindow, MaxOutput: d.MaxOutputTokens, Tools: true,
-			Inputs: d.InputModalities, Effort: d.Effort != nil, Thinking: d.Effort != nil})
+		inputs := d.InputModalities
+		if len(inputs) == 0 {
+			inputs = d.Architecture.InputModalities
+		}
+		out = append(out, Model{ID: d.ID, Name: name,
+			Context:   firstPositive(d.ContextWindow, d.Limit.Context, d.ContextLength, d.TopProvider.ContextLength),
+			MaxOutput: firstPositive(d.MaxOutputTokens, d.Limit.Output, d.TopProvider.MaxCompletionTokens),
+			Tools:     true, Inputs: inputs, Effort: d.Effort != nil, Thinking: d.Effort != nil})
 	}
 	return sortModels(out), nil
 }
@@ -809,4 +829,14 @@ func (aimlapiReader) ListModels(ctx context.Context, p Provider) ([]Model, error
 
 func (r aimlapiReader) GetModel(ctx context.Context, p Provider, id string) (Model, error) {
 	return fromList(ctx, r, p, id)
+}
+
+// firstPositive is the first figure a list states, in the order given.
+func firstPositive(n ...int) int {
+	for _, v := range n {
+		if v > 0 {
+			return v
+		}
+	}
+	return 0
 }
