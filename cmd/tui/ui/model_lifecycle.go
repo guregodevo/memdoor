@@ -102,7 +102,7 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 			}
 			return cmd
 		}
-		return m.openModelSearch(query)
+		return m.openModelSearch(query, "")
 
 	case "/model":
 		// Which model answers this conversation — the agent's ladder with the
@@ -127,7 +127,7 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 		// (the maintainer, 2026-11-11: "/model deepseek … open model-search
 		// like"). It was "/model takes a rung number, a model id or auto".
 		if modelSearchArg(fields[1:]) {
-			return m.openModelSearch(arg)
+			return m.openModelSearch(arg, "")
 		}
 		op := m.route
 		return func() tea.Msg { s, e := op(arg); return routeResultMsg{summary: s, err: e} }

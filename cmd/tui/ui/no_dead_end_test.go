@@ -55,7 +55,7 @@ func TestModelWithANameSearches(t *testing.T) {
 	var asked string
 	m := NewModel("http://x", "ws", "chan", "", func(agent, w, text, mode string) error { return nil })
 	m.route = func(string) (string, error) { t.Fatal("a name went to the route"); return "", nil }
-	m.modelCatalog = func(q string) ([]CatalogModel, error) { asked = q; return nil, nil }
+	m.modelCatalog = func(q, provider string) ([]CatalogModel, error) { asked = q; return nil, nil }
 	step := func(msg tea.Msg) { nm, cmd := m.Update(msg); m = nm.(Model); runCmd(cmd) }
 	step(tea.WindowSizeMsg{Width: 100, Height: 40})
 	step(websocketConnectedMsg{})

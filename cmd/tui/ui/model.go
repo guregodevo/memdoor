@@ -33,40 +33,40 @@ type Model struct {
 	fs        FS // what the window reads of the project; nil = this machine (sessiondir.go)
 	// Network-effect ops (injected by cmd/cli, which owns the authed client).
 	// Model ops (injected by cmd/cli).
-	statusOp           func() Status                                  // footer status: where you are, what is thinking, what it costs
-	heldPrompt         string                                         // a prompt Enter refused behind the brain gate, back in the box once it lifts
-	usage              func() (string, error)                         // /usage — what this workspace has used
-	agents             func() (string, error)                         // /agents — the gateway's agents, fetched with the person's token
-	remote             func(arg string) (string, error)               // /remote — this conversation on another device
-	share              func(arg string) (string, error)               // /share, /unshare — a read-only link to this conversation
-	fresh              func(agent string) error                       // /fresh, /clear — wipe the agent's memory of this conversation
-	compact            func(agent, focus string) (string, error)      // /compact [focus] — summarize the conversation now
-	handoff            func(agent string) (string, error)             // /handoff [request] — summarize, then start over from it
-	route              func(arg string) (string, error)               // /model — the ladder, a pin, or auto
-	modelCatalog       func(q string) ([]CatalogModel, error)         // /model-search — the catalogue (route_picker.go)
-	modelProviders     func() ([]ProviderSummary, error)              // a bare /model-search: providers and counts
-	modelHosts         func(id string) ([]ModelHost, error)           // a model's hosts, to prefer or reorder
-	pinModel           func(id, sortBy, order string) (string, error) // pin a model with the picker's preference
-	effortOp           func(level string) (string, error)             // ctrl+t: set the reasoning effort
-	modeOp             func(mode string) (string, error)              // Shift+Tab: flip the mode, auto | team
-	routePicker        *routePicker                                   // the model / hosts picker, when open
-	mcp                MCPOps                                         // /mcp — the person's MCP servers (mcp_panel.go)
-	workflow           WorkflowOps                                    // /workflow — DAG runs on mario (workflow_panel.go)
-	workflowPanel      *workflowPanelState                            // the /workflow panel, when open
-	workflowRunning    string                                         // this window's run while it runs or waits: Esc stops it
-	workflowLast       map[string]WorkflowRun                         // the last state drawn per run; the clock redraws from it
-	mcpPanel           *mcpPanelState                                 // the /mcp panel, when open
-	filesPanel         *filesPanelState                               // the /files panel (ctrl+f), when open
-	turnGraph          *turnGraphState                                // the turn as a DAG (ctrl+g, /graph), when open
-	mcpPrompts         map[string]MCPPrompt                           // the servers' prompts, by /server:prompt
-	mcpSeen            map[string]bool                                // every MCP server name the panel has reported
-	updateOp           func() (string, error)                         // /update — install the published build (update.go)
-	restartAfterUpdate bool                                           // the new binary is in place: re-exec into this conversation
-	updating           bool                                           // /update is installing: the gateway it stops is restarting, not lost
-	status             Status                                         // last status, rendered in the footer
-	title              string                                         // what this conversation is about — the first thing you asked
-	pickerStart        *int                                           // first model-picker option currently drawn
-	newBelow           int                                            // messages that arrived while scrolled up (jump-bar counter)
+	statusOp           func() Status                                    // footer status: where you are, what is thinking, what it costs
+	heldPrompt         string                                           // a prompt Enter refused behind the brain gate, back in the box once it lifts
+	usage              func() (string, error)                           // /usage — what this workspace has used
+	agents             func() (string, error)                           // /agents — the gateway's agents, fetched with the person's token
+	remote             func(arg string) (string, error)                 // /remote — this conversation on another device
+	share              func(arg string) (string, error)                 // /share, /unshare — a read-only link to this conversation
+	fresh              func(agent string) error                         // /fresh, /clear — wipe the agent's memory of this conversation
+	compact            func(agent, focus string) (string, error)        // /compact [focus] — summarize the conversation now
+	handoff            func(agent string) (string, error)               // /handoff [request] — summarize, then start over from it
+	route              func(arg string) (string, error)                 // /model — the ladder, a pin, or auto
+	modelCatalog       func(q, provider string) ([]CatalogModel, error) // /model-search — the catalogue (route_picker.go)
+	modelProviders     func() ([]ProviderSummary, error)                // a bare /model-search: providers and counts
+	modelHosts         func(id string) ([]ModelHost, error)             // a model's hosts, to prefer or reorder
+	pinModel           func(id, sortBy, order string) (string, error)   // pin a model with the picker's preference
+	effortOp           func(level string) (string, error)               // ctrl+t: set the reasoning effort
+	modeOp             func(mode string) (string, error)                // Shift+Tab: flip the mode, auto | team
+	routePicker        *routePicker                                     // the model / hosts picker, when open
+	mcp                MCPOps                                           // /mcp — the person's MCP servers (mcp_panel.go)
+	workflow           WorkflowOps                                      // /workflow — DAG runs on mario (workflow_panel.go)
+	workflowPanel      *workflowPanelState                              // the /workflow panel, when open
+	workflowRunning    string                                           // this window's run while it runs or waits: Esc stops it
+	workflowLast       map[string]WorkflowRun                           // the last state drawn per run; the clock redraws from it
+	mcpPanel           *mcpPanelState                                   // the /mcp panel, when open
+	filesPanel         *filesPanelState                                 // the /files panel (ctrl+f), when open
+	turnGraph          *turnGraphState                                  // the turn as a DAG (ctrl+g, /graph), when open
+	mcpPrompts         map[string]MCPPrompt                             // the servers' prompts, by /server:prompt
+	mcpSeen            map[string]bool                                  // every MCP server name the panel has reported
+	updateOp           func() (string, error)                           // /update — install the published build (update.go)
+	restartAfterUpdate bool                                             // the new binary is in place: re-exec into this conversation
+	updating           bool                                             // /update is installing: the gateway it stops is restarting, not lost
+	status             Status                                           // last status, rendered in the footer
+	title              string                                           // what this conversation is about — the first thing you asked
+	pickerStart        *int                                             // first model-picker option currently drawn
+	newBelow           int                                              // messages that arrived while scrolled up (jump-bar counter)
 	// lastCounted is how many messages had been counted into newBelow, so a
 	// streamed reply arriving in many chunks counts once per MESSAGE.
 	// blocks memoises each message's rendered form so streaming does not

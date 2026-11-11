@@ -16,7 +16,7 @@ func TestModelPickerFlow(t *testing.T) {
 	var pinned []string
 	hostsAsked := ""
 	m := NewPage(PageConfig{Agent: "coder", Ops: Ops{
-		ModelCatalog: func(q string) ([]CatalogModel, error) {
+		ModelCatalog: func(q, provider string) ([]CatalogModel, error) {
 			return []CatalogModel{{ID: "z-ai/glm-5.3", Name: "GLM 5.3", Context: 1310720, Band: "$$"}, {ID: "z-ai/glm-5.3-flash", Name: "GLM 5.3 Flash", Context: 1310720, Band: "$"}}, nil
 		},
 		ModelHosts: func(id string) ([]ModelHost, error) {
@@ -31,7 +31,7 @@ func TestModelPickerFlow(t *testing.T) {
 	next, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = next.(Model)
 	run := func(msg tea.Msg) tea.Cmd { n, c := m.Update(msg); m = n.(Model); return c }
-	cmd := m.openModelSearch("glm")
+	cmd := m.openModelSearch("glm", "")
 	run(cmd())
 	if m.routePicker == nil || m.routePicker.mode != pickerModels || len(m.routePicker.models) != 2 {
 		t.Fatalf("the search opens the models: %+v", m.routePicker)
@@ -91,15 +91,20 @@ func TestModelPickerFlow(t *testing.T) {
 // A bare /model-search is a picker of providers (the maintainer, 2026-10-03: "the
 // user doesn't know the provider name; it should be without inputting
 // text"): enter opens a provider's models, esc there goes back, a provider
-// not connected says how to connect it.
+// not connected says how to connect it. The provider's models come back
+// through provider= with no query: a query is matched against model names,
+// and Anthropic's ids (claude-*) never contain "anthropic".
 func TestProviderPickerThenAProvidersModels(t *testing.T) {
 	searched := ""
 	m := NewPage(PageConfig{Agent: "coder", Ops: Ops{
 		ModelProviders: func() ([]ProviderSummary, error) {
 			return []ProviderSummary{{ID: "anthropic", Name: "Anthropic", Models: 13}, {ID: "deepseek", Name: "DeepSeek", Connected: true, Models: 2}, {ID: "openrouter", Name: "OpenRouter", Connected: true, Active: true, Models: 380}}, nil
 		},
-		ModelCatalog: func(q string) ([]CatalogModel, error) {
-			searched = q
+		ModelCatalog: func(q, provider string) ([]CatalogModel, error) {
+			searched = provider
+			if q != "" || provider != "deepseek" {
+				t.Fatalf("the provider picker asks for the provider's whole list: q=%q provider=%q", q, provider)
+			}
 			return []CatalogModel{{ID: "deepseek-flash", Provider: "deepseek", Name: "DeepSeek Flash", Context: 1048576}}, nil
 		},
 		Route: func(arg string) (string, error) { return "pinned " + arg, nil },
@@ -127,7 +132,7 @@ func TestProviderPickerThenAProvidersModels(t *testing.T) {
 		t.Fatal("enter opens the provider's models")
 	}
 	run(cmd())
-	if searched != "deepseek" || m.routePicker == nil || m.routePicker.mode != pickerModels || !m.routePicker.fromProviders {
+	if searched != "deepseek" || m.routePicker == nil || m.routePicker.mode != pickerModels || !m.routePicker.fromProviders || m.routePicker.provider != "deepseek" {
 		t.Fatalf("the provider's whole list, from the providers picker: %q %+v", searched, m.routePicker)
 	}
 	if v := m.View(); !strings.Contains(v, "deepseek's models") || !strings.Contains(v, "esc back to providers") {
@@ -162,7 +167,7 @@ func TestAModelListedElsewhereIsPinnedOnItsProvider(t *testing.T) {
 		ModelHosts: func(id string) ([]ModelHost, error) {
 			return nil, &ListedElsewhere{Provider: "aimlapi", ID: id}
 		},
-		ModelCatalog: func(q string) ([]CatalogModel, error) {
+		ModelCatalog: func(q, provider string) ([]CatalogModel, error) {
 			searched = q
 			return []CatalogModel{{ID: q, Provider: "aimlapi", Name: "Qwen Plus"}}, nil
 		},

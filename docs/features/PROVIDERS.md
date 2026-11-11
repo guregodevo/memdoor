@@ -456,8 +456,8 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   "the user doesn't know the provider name; it should be without
   inputting text"): the providers with their counts and which is
   answering, cursor on the first connected one; enter opens that
-  provider's whole list (`/api/models?q=<provider id>`), enter again pins
-  `provider:id`, esc goes back a level; a provider not connected says
+  provider's whole list (`/api/models?provider=<provider id>`), enter again
+  pins `provider:id`, esc goes back a level; a provider not connected says
   `/connect <id>`. `/model` lists the other connected providers and what is
   not connected. `TestProviderPickerThenAProvidersModels`.
 

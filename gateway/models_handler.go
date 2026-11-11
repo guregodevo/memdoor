@@ -26,16 +26,44 @@ func (s *Server) handleModels(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("limit") == "0" {
 		limit = 0 // every model: the audit reads whole lists
 	}
-	if out, ok := providerModelsResponse(r.Context(), r.URL.Query().Get("q"), limit); ok {
+	provider := strings.TrimSpace(r.URL.Query().Get("provider"))
+	if out, ok := providerModelsResponse(r.Context(), r.URL.Query().Get("q"), provider, limit); ok {
 		// Providers, each with its list (providers/registry.go): the company
 		// gateway, Anthropic, OpenAI, Gemini, OpenRouter with its prices, and
 		// the ones /connect added. Grouped, and flat for the picker.
+		if status, msg := scopedProviderFailure(out, provider); status != 0 {
+			http.Error(w, fmt.Sprintf(`{"error": %q}`, msg), status)
+			return
+		}
 		_ = json.NewEncoder(w).Encode(out)
 		return
 	}
 	// Nothing connected: there is no catalogue to read — no seat supplies a
 	// key (2026-10-04) — only the step that adds one.
 	http.Error(w, `{"error": "no provider connected: memdoor connect (or export a provider's key)"}`, http.StatusConflict)
+}
+
+// scopedProviderFailure says why the provider asked for by provider= has no
+// list: not connected (404), or its list call failed (502). An empty
+// answer would read as "no model matches" in the window.
+func scopedProviderFailure(out map[string]any, provider string) (int, string) {
+	if provider == "" {
+		return 0, ""
+	}
+	groups, _ := out["providers"].([]map[string]any)
+	for _, g := range groups {
+		if id, _ := g["id"].(string); !strings.EqualFold(id, provider) {
+			continue
+		}
+		if connected, _ := g["connected"].(bool); !connected {
+			break
+		}
+		if e, _ := g["error"].(string); e != "" {
+			return http.StatusBadGateway, provider + ": " + e
+		}
+		return 0, ""
+	}
+	return http.StatusNotFound, provider + " is not connected: memdoor connect " + provider
 }
 
 // handleModelProviders is GET /api/models/providers?id=: a model's hosts,
@@ -62,18 +90,13 @@ func (s *Server) handleModelProviders(w http.ResponseWriter, r *http.Request) {
 // connected: {"providers":[{id,name,api,connected,active,key_source,models}],
 // "models":[every connected provider's matches, with provider]}. False when
 // none is, and the handler then answers 409 with the step that connects one.
-func providerModelsResponse(ctx context.Context, q string, limit int) (map[string]any, bool) {
+func providerModelsResponse(ctx context.Context, q, provider string, limit int) (map[string]any, bool) {
 	active := providers.ActiveProviderID()
 	var groups []map[string]any
 	var flat []providers.Model
 	connected := false
-	byProvider := false
 	order := providers.AnswerOrder()
-	for _, p := range order {
-		if strings.EqualFold(strings.TrimSpace(q), p.ID) && p.Connected() {
-			byProvider = true
-		}
-	}
+	provider = strings.TrimSpace(provider)
 	for _, p := range order {
 		g := map[string]any{"id": p.ID, "name": p.Name, "api": p.API, "connected": p.Connected(), "active": p.ID == active, "key_source": p.KeySource}
 		if p.Connected() {
@@ -82,16 +105,18 @@ func providerModelsResponse(ctx context.Context, q string, limit int) (map[strin
 				g["error"] = err.Error()
 			} else {
 				g["count"] = len(list)
-				switch {
-				case strings.EqualFold(strings.TrimSpace(q), p.ID):
-					// The query names the provider: its whole list, as
-					// /model-search deepseek after /connect deepseek.
-					g["models"] = list
-					flat = append(flat, list...)
-				case byProvider:
+				if provider != "" && !strings.EqualFold(provider, p.ID) {
+					// A specific provider was asked for (a bare /model-search
+					// picks a provider, then its models): only it answers,
+					// the others keep their counts in the groups.
 					g["models"] = []providers.Model{}
-				default:
-					list = providers.SearchModels(list, q, limit)
+				} else {
+					// q matches model ids and names, never a provider's
+					// name. The provider asked for by name with no q is its
+					// whole list.
+					if provider == "" || q != "" {
+						list = providers.SearchModels(list, q, limit)
+					}
 					g["models"] = list
 					flat = append(flat, list...)
 				}
