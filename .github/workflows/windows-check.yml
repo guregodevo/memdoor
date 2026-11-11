@@ -1,0 +1,77 @@
+# One-off Windows check (temporary branch windows-check, deleted afterwards):
+# the window in a real Windows pseudo-terminal, a coder turn on a machine with
+# no Git Bash, and the Go test suite on Windows.
+name: Windows check
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ windows-check ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - run: cd web && npm ci && npm run build
+      - run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o out/memdoor.exe ./cmd/cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exe
+          path: out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist/
+
+  windows:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: exe
+          path: exe
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pywinpty pyte
+      - name: The window, and a machine with no Git Bash
+        shell: pwsh
+        env:
+          OPEN_ROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+          PYTHONUNBUFFERED: "1"
+        run: python .github/windows-check/driver.py exe\memdoor.exe $env:RUNNER_TEMP\wc
+
+  go-tests:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+      - name: go test ./... on Windows (information)
+        continue-on-error: true
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go test ./... -count=1 2>&1 | tee test.log | grep -E '^(ok|FAIL|---)' | grep -v '^--- PASS' | head -200
+          echo; echo "packages ok: $(grep -c '^ok' test.log)  failed: $(grep -c '^FAIL\s' test.log)"
