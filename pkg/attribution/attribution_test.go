@@ -107,7 +107,14 @@ func TestTheHostsWithAHeaderOfTheirOwn(t *testing.T) {
 			t.Errorf("%s gets OpenRouter's category header", e)
 		}
 	}
-	for _, h := range []string{HeaderGoogleClient, HeaderLLMGateway, HeaderEUrouterTitle} {
+	// EUrouter has its own category header and reads no other.
+	if got := Headers("https://api.eurouter.ai/api/v1/chat/completions")[HeaderEUrouterCategories]; got != "cli-agent" {
+		t.Errorf("EUrouter: %s = %q, want cli-agent", HeaderEUrouterCategories, got)
+	}
+	if Headers("https://openrouter.ai/api/v1/chat/completions")[HeaderEUrouterCategories] != "" {
+		t.Errorf("OpenRouter must not get %s", HeaderEUrouterCategories)
+	}
+	for _, h := range []string{HeaderGoogleClient, HeaderLLMGateway, HeaderEUrouterTitle, HeaderEUrouterCategories} {
 		if Headers("https://api.anthropic.com/v1/messages")[h] != "" {
 			t.Errorf("another host's header is not sent to Anthropic: %s", h)
 		}
