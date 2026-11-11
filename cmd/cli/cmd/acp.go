@@ -90,8 +90,8 @@ func (r *gatewayRunner) gatewayAddr() string {
 const acpAgentName = "coder"
 
 func (r *gatewayRunner) NewConversation(ctx context.Context, cwd string) (string, error) {
-	if b := readBrain(r.c); b.State == "none" {
-		return "", errors.New(brainGate("none"))
+	if err := modelGate(r.c); err != nil {
+		return "", err
 	}
 	id, err := r.c.createChannel("acp-" + time.Now().Format("0102-150405"))
 	if err != nil {

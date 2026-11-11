@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -115,6 +116,15 @@ func readBrain(c *Client) brainRead {
 	r.Model, r.AgentModels = st.Model, st.AgentModels
 	r.Gate = brainGate(st.Brain.State)
 	return r
+}
+
+// modelGate is the error a command that needs a model returns when the
+// gateway has none: the words the window and memdoor run say (brainGate).
+func modelGate(c *Client) error {
+	if b := readBrain(c); b.State == "none" {
+		return errors.New(brainGate("none"))
+	}
+	return nil
 }
 
 // brainGate says why a turn cannot run yet, or nothing.

@@ -6,7 +6,8 @@
 # What it does:
 #   1. Download the right memdoor binary for OS+arch, SHA-256 checked, to
 #      ~/.local/bin (no sudo), and put that directory on the shell's PATH.
-#   2. Print the two lines that follow — the key, then `memdoor`.
+#   2. Print what follows: `cd <your-project> && memdoor` (the PATH line
+#      first when this terminal does not have it yet).
 #
 # From "I heard about this" to the coder editing my code:
 #
@@ -447,11 +448,9 @@ if [ "$INSTALL_MODE" = "existing" ] || [ "$HAD_DATA_DIR" = "1" ]; then
     # keys are the same, on the new binary.
     echo "  memdoor resume --last                  # same conversations, same keys, on the new binary"
 else
-    # Two lines, both runnable in THIS shell: the first run of the TUI sets the
-    # machine up itself (no setup step, no admin email), and a key exported
-    # here reaches the gateway it starts. No key at hand: /connect inside.
-    echo "  export OPENROUTER_API_KEY=sk-or-...    # optional: any provider's key (ANTHROPIC_API_KEY, OPENAI_API_KEY, …)"
-    echo "  cd <your-project> && memdoor           # no key? it finds one on this machine, or signs you in with OpenRouter (free)"
-    echo "  memdoor workflow try                   # two minutes: the team on a sample problem, ending in a verdict"
-    echo "  memdoor --gateway ssh://you@box          # or on a box you can ssh to: set up there on first use"
+    # One line (the maintainer, 2026-11-11: "next is: memdoor"): the first run
+    # sets the machine up and finds a key or signs the person in, so a key
+    # line, the sample run and the ssh door were three more things to read
+    # before the one that matters.
+    echo "  cd <your-project> && memdoor"
 fi
