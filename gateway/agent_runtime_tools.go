@@ -63,11 +63,13 @@ const applyPatchIsATool = "apply_patch is a TOOL, not a shell command — bash c
 // after its "Output:" label, so the message is not always at a line start.
 // The shell names itself as it was invoked: "bash", "/bin/bash" or Git for
 // Windows' full path, so a path before the name is allowed.
+// zsh, a person's own shell (MEMDOOR_SHELL), words it
+// "zsh:2: command not found: apply_patch".
 // questionTimeout is how long ask_user_question waits for an answer. It is a
 // variable so tests do not wait five minutes.
 var questionTimeout = 5 * time.Minute
 
-var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)(?:\S*[\\/])?bash(?:\.exe)?: (line \d+: )?apply_patch: command not found`)
+var shellRanApplyPatch = regexp.MustCompile(`(?m)(?:^|\s)(?:\S*[\\/])?(?:bash(?:\.exe)?: (line \d+: )?apply_patch: command not found|zsh(?::\d+)?: command not found: apply_patch)`)
 
 // A TOOL'S OUTPUT NEVER CARRIES A SECRET (live 2026-10-10): asked for a free
 // model, the coder ran `env | grep openrouter` and `cat
