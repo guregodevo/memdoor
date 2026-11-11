@@ -58,7 +58,8 @@ git diff | memdoor run --stdin "review this diff; one line per finding"
 memdoor run --json "fix the failing test" | jq -r 'select(.event=="done") | .receipt'
 ```
 
-Arguments and a pipe together: the pipe is the input the prompt is about.
+Arguments and `--stdin` together: the pipe is the input the prompt is about.
+Arguments alone: stdin is not read.
 `--json` streams NDJSON events (`text`, `tool_start`, `tool_done`,
 `question`, `done`); `done` carries the conversation id, the receipt and the
 exit code.
