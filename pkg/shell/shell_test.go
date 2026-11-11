@@ -3,6 +3,7 @@ package shell
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -20,7 +21,7 @@ func machine(goos string, onPath map[string]string, files []string, env map[stri
 		},
 		exists: func(p string) bool {
 			for _, f := range files {
-				if f == p {
+				if f == filepath.ToSlash(p) {
 					return true
 				}
 			}
@@ -53,7 +54,7 @@ func TestResolvePicksBashWhereItIsAndPowerShellOnAWindowsWithoutIt(t *testing.T)
 	}
 	for _, c := range cases {
 		got := resolve(c.h)
-		if got.name != c.want || got.prog != c.prog {
+		if got.name != c.want || filepath.ToSlash(got.prog) != c.prog {
 			t.Errorf("%s: got %s %s, want %s %s", c.why, got.name, got.prog, c.want, c.prog)
 		}
 		if got.name == PowerShell && !strings.Contains(strings.Join(got.args, " "), "-NonInteractive") {
