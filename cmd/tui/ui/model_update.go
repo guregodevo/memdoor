@@ -503,6 +503,15 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.status.Gate != "" && !looksLikeSlashCommand(text) {
 					m.heldPrompt = text
 					m.input.Reset()
+					// No dead end (the maintainer, 2026-11-11): the window opens
+					// the way to a model instead of naming the command for it.
+					if m.connectOps.Connect != nil {
+						m.note("⏳ No model yet: connect one below. Your message is kept and comes back into the box once a model answers.")
+						cmd := m.connectCommand(nil)
+						m.viewport.SetContent(m.renderMessages())
+						m.viewport.GotoBottom()
+						return m, cmd
+					}
 					m.note("⏳ " + m.status.Gate + "\n  your message is kept and comes back into the box once a model answers")
 					m.viewport.SetContent(m.renderMessages())
 					m.viewport.GotoBottom()
