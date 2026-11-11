@@ -58,8 +58,10 @@ const (
 	HeaderGoogleClient  = "x-goog-api-client"
 	HeaderLLMGateway    = "X-Source"
 	HeaderEUrouterTitle = "X-EUrouter-Title"
-	HeaderCategories    = "X-OpenRouter-Categories"
-	HeaderAIMLAPISource = "X-AIMLAPI-Source"
+	// HeaderEUrouterCategories is EUrouter's own category header; it takes the same cli-agent.
+	HeaderEUrouterCategories = "X-EUrouter-Categories"
+	HeaderCategories         = "X-OpenRouter-Categories"
+	HeaderAIMLAPISource      = "X-AIMLAPI-Source"
 )
 
 // pairHosts read HTTP-Referer + X-Title.
@@ -119,6 +121,7 @@ func Headers(endpoint string) map[string]string {
 		out[HeaderLLMGateway] = AppSource
 	case isHost(host, "eurouter.ai"):
 		out[HeaderEUrouterTitle] = AppName
+		out[HeaderEUrouterCategories] = AppCategories
 	case host == "api.aimlapi.com": // this host exactly, no subdomain
 		out[HeaderAIMLAPISource] = AIMLAPISource
 	}
