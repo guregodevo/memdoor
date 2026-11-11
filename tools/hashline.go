@@ -14,6 +14,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	"memdoor/pkg/llm"
+	"memdoor/pkg/shell"
 )
 
 // Line-anchored edits ("hashline"): docs/features/HASHLINE.md.
@@ -197,7 +198,7 @@ func parseHashline(text string) ([]hlSection, error) {
 		case hlHeaderRe.MatchString(t):
 			flush()
 			m := hlHeaderRe.FindStringSubmatch(t)
-			secs = append(secs, hlSection{path: strings.TrimSpace(m[1]), tag: strings.ToUpper(m[2])})
+			secs = append(secs, hlSection{path: shell.NativePath(strings.TrimSpace(m[1])), tag: strings.ToUpper(m[2])})
 			continue
 		}
 		if len(secs) == 0 {

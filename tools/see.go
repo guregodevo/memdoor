@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"memdoor/pkg/shell"
 )
 
 // see — the coder looks at a picture. The coder's prompt tells it to look at a
@@ -47,7 +49,7 @@ type Picture struct {
 // mention's, and a relative path is the project's (workdir), not the
 // gateway's. A file over SeeMaxBytes is refused without being loaded whole.
 func ReadPicture(path, workdir string) (Picture, error) {
-	path = strings.TrimPrefix(strings.TrimSpace(path), "@")
+	path = shell.NativePath(strings.TrimPrefix(strings.TrimSpace(path), "@"))
 	if path == "" {
 		return Picture{}, fmt.Errorf("see: give the picture's path")
 	}

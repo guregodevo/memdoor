@@ -137,7 +137,8 @@ func (h host) ownShell() (choice, bool) {
 	if h.goos == "windows" || p == "" {
 		return choice{}, false
 	}
-	if !filepath.IsAbs(p) {
+	// A POSIX path: ownShell runs off Windows only, whatever OS reads it.
+	if !strings.HasPrefix(p, "/") {
 		found, err := h.look(p)
 		if err != nil {
 			return choice{}, false

@@ -18,6 +18,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	"golang.org/x/mod/modfile"
+	"memdoor/pkg/shell"
 )
 
 // apply_patch — the single file tool, ported from OpenClaw (src/agents/apply-patch.ts
@@ -1011,7 +1012,7 @@ func cleanHunkPath(p string) string {
 	p = strings.TrimSpace(p)
 	p = strings.TrimRight(p, "* \t")
 	p = strings.Trim(p, "`'\"")
-	return strings.TrimSpace(p)
+	return shell.NativePath(strings.TrimSpace(p))
 }
 
 func parseOneHunk(lines []string) (patchHunk, int, error) {
