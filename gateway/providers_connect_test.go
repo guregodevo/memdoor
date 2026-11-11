@@ -100,7 +100,7 @@ func TestModelsAreGroupedByProviderAndFlatOncePerID(t *testing.T) {
 	}
 	providers.ForgetModels("openai")
 	providers.ForgetModels("proxy")
-	out, ok := providerModelsResponse(context.Background(), "shared", 40)
+	out, ok := providerModelsResponse(context.Background(), "shared", "", 40)
 	if !ok {
 		t.Fatal("two connected providers")
 	}
@@ -117,16 +117,55 @@ func TestModelsAreGroupedByProviderAndFlatOncePerID(t *testing.T) {
 	if counted != 4 {
 		t.Fatalf("the groups keep both providers' lists: %d", counted)
 	}
-	// A query that names a provider is that provider's whole list.
-	out, _ = providerModelsResponse(context.Background(), "proxy", 40)
+	// q matches model ids and names, never a provider's name: "proxy"
+	// finds no model, as the proxy lists shared-a and shared-b.
+	out, _ = providerModelsResponse(context.Background(), "proxy", "", 40)
+	flat = out["models"].([]providers.Model)
+	if len(flat) != 0 {
+		t.Fatalf("a query equal to a provider id searches models, not the provider: %+v", flat)
+	}
+	// provider= with no q is that provider's whole list, past the limit (a
+	// bare /model-search picks a provider, then its models).
+	out, _ = providerModelsResponse(context.Background(), "", "proxy", 1)
 	flat = out["models"].([]providers.Model)
 	if len(flat) != 2 || flat[0].Provider != "proxy" || flat[1].Provider != "proxy" {
 		t.Fatalf("by provider: %+v", flat)
+	}
+	if status, _ := scopedProviderFailure(out, "proxy"); status != 0 {
+		t.Fatalf("a connected provider with a list is no failure: %d", status)
+	}
+	if status, msg := scopedProviderFailure(out, "nobody"); status != http.StatusNotFound || !strings.Contains(msg, "memdoor connect nobody") {
+		t.Fatalf("an unknown provider says how to connect it: %d %q", status, msg)
+	}
+	// Without provider=, an empty q is still held to the limit.
+	out, _ = providerModelsResponse(context.Background(), "", "", 1)
+	for _, g := range out["providers"].([]map[string]any) {
+		if ms, ok := g["models"].([]providers.Model); ok && len(ms) > 1 {
+			t.Fatalf("an empty q keeps the limit: %v", g)
+		}
 	}
 	for _, g := range out["providers"].([]map[string]any) {
 		if g["id"] == "openai" && g["count"] != 2 {
 			t.Fatalf("each group still says how many it lists: %v", g)
 		}
+	}
+}
+
+// A provider whose list call failed answers its error, not an empty list
+// the window would read as "no model matches".
+func TestAScopedProviderFailureIsItsError(t *testing.T) {
+	out := map[string]any{"providers": []map[string]any{
+		{"id": "deepseek", "connected": true, "error": "401 refused"},
+		{"id": "anthropic", "connected": false},
+	}}
+	if status, msg := scopedProviderFailure(out, "deepseek"); status != http.StatusBadGateway || !strings.Contains(msg, "401 refused") {
+		t.Fatalf("the list call's error: %d %q", status, msg)
+	}
+	if status, _ := scopedProviderFailure(out, "anthropic"); status != http.StatusNotFound {
+		t.Fatalf("not connected: %d", status)
+	}
+	if status, _ := scopedProviderFailure(out, ""); status != 0 {
+		t.Fatalf("no provider asked for: %d", status)
 	}
 }
 

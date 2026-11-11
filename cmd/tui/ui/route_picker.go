@@ -79,6 +79,7 @@ const (
 type routePicker struct {
 	mode          int
 	query         string
+	provider      string            // when set, the catalogue is this provider's list (a bare /model-search picks a provider)
 	providers     []ProviderSummary // pickerProviders rows
 	models        []CatalogModel
 	modelID       string
@@ -113,9 +114,10 @@ func (m *Model) openProviderPicker() tea.Cmd {
 
 // catalogMsg and hostsMsg deliver what the ops fetched.
 type catalogMsg struct {
-	query  string
-	models []CatalogModel
-	err    error
+	query    string
+	provider string
+	models   []CatalogModel
+	err      error
 }
 type hostsMsg struct {
 	id    string
@@ -133,14 +135,17 @@ func (e *ListedElsewhere) Error() string {
 }
 
 // openModelSearch fetches the catalogue and opens the picker on it.
-func (m *Model) openModelSearch(query string) tea.Cmd {
+func (m *Model) openModelSearch(query, provider string) tea.Cmd {
 	if m.modelCatalog == nil {
 		m.note("Model search isn't available in this build.")
 		return nil
 	}
-	m.routePicker = &routePicker{mode: pickerModels, query: query, loading: "Searching models for " + query + " …"}
+	m.routePicker = &routePicker{mode: pickerModels, query: query, provider: provider, loading: "Searching models for " + query + " …"}
 	op := m.modelCatalog
-	return func() tea.Msg { list, err := op(query); return catalogMsg{query: query, models: list, err: err} }
+	return func() tea.Msg {
+		list, err := op(query, provider)
+		return catalogMsg{query: query, provider: provider, models: list, err: err}
+	}
 }
 
 // openModelHosts fetches a model's hosts and opens the picker on them.
@@ -175,7 +180,11 @@ func (m *Model) updateRoutePicker(msg tea.Msg) (handled bool, cmd tea.Cmd) {
 		}
 		if len(t.models) == 0 {
 			m.routePicker = nil
-			m.note(fmt.Sprintf("No model matches **%s**.", t.query))
+			if t.query == "" {
+				m.note(fmt.Sprintf("**%s** lists no model.", t.provider))
+			} else {
+				m.note(fmt.Sprintf("No model matches **%s**.", t.query))
+			}
 			return true, nil
 		}
 		p.models, p.index = t.models, 0
@@ -206,7 +215,7 @@ func (m *Model) updateRoutePicker(msg tea.Msg) (handled bool, cmd tea.Cmd) {
 		var elsewhere *ListedElsewhere
 		if errors.As(t.err, &elsewhere) {
 			if p.fromSearch {
-				return true, m.openModelSearch(t.id)
+				return true, m.openModelSearch(t.id, "")
 			}
 			return true, m.pinOnProvider(elsewhere.Provider, elsewhere.ID)
 		}
@@ -246,7 +255,7 @@ func (m *Model) routePickerKey(k tea.KeyMsg) tea.Cmd {
 	}
 	switch k.Type {
 	case tea.KeyEsc:
-		if p.mode == pickerModels && p.query != "" && m.modelProviders != nil && p.fromProviders {
+		if p.mode == pickerModels && m.modelProviders != nil && p.fromProviders {
 			return m.openProviderPicker() // back up a level
 		}
 		m.routePicker = nil
@@ -286,7 +295,7 @@ func (m *Model) routePickerKey(k tea.KeyMsg) tea.Cmd {
 				m.note(fmt.Sprintf("**%s** is not connected — /connect %s adds it (the key's name is prefilled).", r.Name, r.ID))
 				return nil
 			}
-			cmd := m.openModelSearch(r.ID)
+			cmd := m.openModelSearch("", r.ID)
 			if m.routePicker != nil {
 				m.routePicker.fromProviders = true
 				m.routePicker.loading = "Reading " + r.Name + "'s models …"
@@ -395,7 +404,7 @@ func (m Model) renderRoutePicker() string {
 	} else if p.mode == pickerModels {
 		heading := fmt.Sprintf("Models matching %q", p.query)
 		if p.fromProviders {
-			heading = fmt.Sprintf("%s's models", p.query)
+			heading = fmt.Sprintf("%s's models", p.provider)
 		}
 		b.WriteString(title.Render(heading+" — provider · id · context · price per million in / out — enter pins (OpenRouter: its hosts)") + "\n")
 		n = len(p.models)

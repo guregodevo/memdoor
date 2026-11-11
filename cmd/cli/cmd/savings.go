@@ -100,7 +100,7 @@ func cheapestModelPrice(seen map[string]int) (string, float64) {
 	}
 	name, price := "", 0.0
 	for id := range seen {
-		models, err := searchModelCatalog(id)
+		models, err := searchModelCatalog(id, "")
 		if err != nil {
 			continue
 		}

@@ -211,7 +211,7 @@ var modelSearchCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		q := strings.Join(args, " ")
-		models, err := searchModelCatalog(q)
+		models, err := searchModelCatalog(q, "")
 		if err != nil {
 			return err
 		}

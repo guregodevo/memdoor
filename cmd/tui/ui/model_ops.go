@@ -31,25 +31,25 @@ func NewModel(gatewayAddr, workspace, channelID, token string, poster func(agent
 // from the moment it exists (the maintainer, 2026-09-26: "fail fast constructor",
 // "at build time its state is consistent").
 type Ops struct {
-	Usage          func() (string, error)                         // /usage
-	Agents         func() (string, error)                         // /agents: GET /api/agents as the signed-in person, the JSON
-	Remote         func(arg string) (string, error)               // /remote, /remote off
-	Share          func(arg string) (string, error)               // /share, /unshare
-	Fresh          func(agent string) error                       // /fresh, /clear: wipe the agent's memory of this conversation
-	Compact        func(agent, focus string) (string, error)      // /compact [focus]: summarize the conversation now
-	Handoff        func(agent string) (string, error)             // /handoff [request]: summarize, then start over from it
-	Route          func(arg string) (string, error)               // /model (typed forms)
-	ModelCatalog   func(q string) ([]CatalogModel, error)         // /model-search: the catalogue
-	ModelHosts     func(id string) ([]ModelHost, error)           // a model's hosts
-	ModelProviders func() ([]ProviderSummary, error)              // a bare /model-search: the providers and their counts
-	PinModel       func(id, sortBy, order string) (string, error) // pin from the picker
-	Effort         func(level string) (string, error)             // ctrl+t: the reasoning effort, auto | low | medium | high
-	Mode           func(mode string) (string, error)              // Shift+Tab: the mode, auto | team
-	Status         func() Status                                  // the footer
-	Update         func() (string, error)                         // /update — install the published build
-	MCP            MCPOps                                         // /mcp — the person's MCP servers (mcp_panel.go)
-	Workflow       WorkflowOps                                    // /workflow — DAG runs on mario (workflow_panel.go)
-	Connect        ConnectOps                                     // /connect — add a provider (connect_flow.go)
+	Usage          func() (string, error)                           // /usage
+	Agents         func() (string, error)                           // /agents: GET /api/agents as the signed-in person, the JSON
+	Remote         func(arg string) (string, error)                 // /remote, /remote off
+	Share          func(arg string) (string, error)                 // /share, /unshare
+	Fresh          func(agent string) error                         // /fresh, /clear: wipe the agent's memory of this conversation
+	Compact        func(agent, focus string) (string, error)        // /compact [focus]: summarize the conversation now
+	Handoff        func(agent string) (string, error)               // /handoff [request]: summarize, then start over from it
+	Route          func(arg string) (string, error)                 // /model (typed forms)
+	ModelCatalog   func(q, provider string) ([]CatalogModel, error) // /model-search: the catalogue (by model name; provider narrows to one host)
+	ModelHosts     func(id string) ([]ModelHost, error)             // a model's hosts
+	ModelProviders func() ([]ProviderSummary, error)                // a bare /model-search: the providers and their counts
+	PinModel       func(id, sortBy, order string) (string, error)   // pin from the picker
+	Effort         func(level string) (string, error)               // ctrl+t: the reasoning effort, auto | low | medium | high
+	Mode           func(mode string) (string, error)                // Shift+Tab: the mode, auto | team
+	Status         func() Status                                    // the footer
+	Update         func() (string, error)                           // /update — install the published build
+	MCP            MCPOps                                           // /mcp — the person's MCP servers (mcp_panel.go)
+	Workflow       WorkflowOps                                      // /workflow — DAG runs on mario (workflow_panel.go)
+	Connect        ConnectOps                                       // /connect — add a provider (connect_flow.go)
 }
 
 // Resume is a conversation being rejoined: its title and the transcript so

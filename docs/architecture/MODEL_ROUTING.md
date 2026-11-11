@@ -146,7 +146,9 @@ metadata, carries the model pinned by id (`sharedctx.ModelKey`, written by
 `memdoor model` prints each agent's ladder from `/api/llm/burst`
 (`cmd/cli/cmd/model.go`). `memdoor model search <name>` and the window's
 `/model-search` read `/api/models?q=` (`handleModels`,
-`gateway/models_handler.go`): every connected provider's list with the prices
+`gateway/models_handler.go`). `q` matches model ids and names, never a
+provider's name. `provider=<id>` narrows the answer to that provider's whole
+list: the bare `/model-search` picker reads it. Every connected provider's list with the prices
 the provider states; OpenRouter's come from its own catalogue
 (`gateway/byok_catalog.go`, wired into `providers.OpenRouterModels`), a vendor
 that states none shows the reference's list price. With nothing connected the

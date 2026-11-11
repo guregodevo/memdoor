@@ -588,12 +588,18 @@ type catalogModel struct {
 }
 
 // searchModelCatalog asks the gateway for the catalogue (it reads the
-// broker's with its own seat, gateway/models_handler.go).
-func searchModelCatalog(query string) ([]catalogModel, error) {
+// broker's with its own seat, gateway/models_handler.go). When provider is
+// non-empty the gateway answers only that connected provider's list; query
+// always searches by model id/name, never by provider name.
+func searchModelCatalog(query, provider string) ([]catalogModel, error) {
 	var res struct {
 		Models []catalogModel `json:"models"`
 	}
-	if err := NewClient().GetJSON("/api/models?q="+url.QueryEscape(query), &res); err != nil {
+	u := "/api/models?q=" + url.QueryEscape(query)
+	if provider != "" {
+		u += "&provider=" + url.QueryEscape(provider)
+	}
+	if err := NewClient().GetJSON(u, &res); err != nil {
 		return nil, err
 	}
 	return res.Models, nil
@@ -671,8 +677,10 @@ func renderModelProviders(id string, hosts []providerView) string {
 }
 
 // tuiModelCatalog and tuiModelHosts feed the picker (ui/route_picker.go).
-func tuiModelCatalog(q string) ([]ui.CatalogModel, error) {
-	models, err := searchModelCatalog(q)
+// A provider narrows the catalogue to that provider's list (a bare
+// /model-search picks a provider, then its models); q searches model names.
+func tuiModelCatalog(q, provider string) ([]ui.CatalogModel, error) {
+	models, err := searchModelCatalog(q, provider)
 	if err != nil {
 		return nil, err
 	}
@@ -714,7 +722,7 @@ func tuiModelHosts(id string) ([]ui.ModelHost, error) {
 	if err != nil {
 		// Hosts are OpenRouter's: an id only another provider lists (or no
 		// OpenRouter key at all) is pinned on that provider instead.
-		if models, cerr := searchModelCatalog(id); cerr == nil {
+		if models, cerr := searchModelCatalog(id, ""); cerr == nil {
 			if e := listedElsewhere(id, models); e != nil {
 				return nil, e
 			}
@@ -824,7 +832,7 @@ func connectHint(id string, providers []providerRow) string {
 }
 
 func modelInCatalogue(id string) (string, error) {
-	models, err := searchModelCatalog(id)
+	models, err := searchModelCatalog(id, "")
 	if err != nil || len(models) == 0 && strings.TrimSpace(id) == "" {
 		return "", nil // no catalogue to check against
 	}

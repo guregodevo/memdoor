@@ -34,7 +34,7 @@ func TestTheModelListKeepsTheAnsweringProvidersRow(t *testing.T) {
 	if err := providers.SetRemoteEngine(b.Engine("shared-model")); err != nil {
 		t.Fatal(err)
 	}
-	out, ok := providerModelsResponse(context.Background(), "", 50)
+	out, ok := providerModelsResponse(context.Background(), "", "", 50)
 	if !ok {
 		t.Fatal("connected providers answer")
 	}
