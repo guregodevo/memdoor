@@ -339,6 +339,15 @@ var workflowTryCmd = &cobra.Command{
 	Short: "The team on a sample problem, in a fresh folder, followed to its verdict: about two minutes on a key",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// No model: say how to connect one, as the window and memdoor run do,
+		// before a sample folder is made (2026-11-11: a bare "no model is
+		// configured" from the gateway, after "The sample problem, in …").
+		if err := firstRunReady(); err != nil {
+			return err
+		}
+		if err := modelGate(NewClient()); err != nil {
+			return err
+		}
 		dir, err := sampleDir()
 		if err != nil {
 			return err
