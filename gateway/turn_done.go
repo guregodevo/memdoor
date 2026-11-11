@@ -401,6 +401,32 @@ func appendNew(list []string, items ...string) []string {
 	return list
 }
 
+// The receipt line's heads. A turn the receipts show done ends on "✓
+// checked:"; one they do not ends on a recap, not a warning sign (the
+// maintainer, 2026-11-11: "remove the warning flag when the turn is not done.
+// Just put Recap:").
+const (
+	receiptDone       = "✓ checked: "
+	receiptRecap      = "Recap: "
+	receiptNothing    = receiptRecap + "nothing changed · ran: "
+	receiptFailing    = receiptRecap + "failing after the change: "
+	receiptUnverified = receiptRecap + "unverified: "
+	receiptTarget     = receiptRecap + "target " // a declared target missing or failing (doneWhen)
+	receiptWarnBefore = "⚠ "                     // the head before 2026-11-11: history, an older gateway
+)
+
+// isReceiptLine reports whether a line is a turn's receipt line. A model's
+// own "Recap:" sentence is not: only the heads above are.
+func isReceiptLine(l string) bool {
+	l = strings.TrimSpace(l)
+	for _, h := range []string{"✓ ", receiptWarnBefore, receiptNothing, receiptFailing, receiptUnverified, receiptTarget} {
+		if strings.HasPrefix(l, h) {
+			return true
+		}
+	}
+	return false
+}
+
 // line is the receipt the window shows under a codebase turn, or "" for a
 // turn that changed nothing and checked nothing (an answer, a read).
 func (r turnReceipts) line() string {
@@ -413,13 +439,13 @@ func (r turnReceipts) line() string {
 		// Commands ran and nothing changed: a ✓ here read as proof of work
 		// that was never done (live 2026-10-03: mkdir and touch under a
 		// turn whose every patch was refused).
-		b.WriteString("⚠ nothing changed · ran: ")
+		b.WriteString(receiptNothing)
 	case r.failingAfterChange:
-		b.WriteString("⚠ failing after the change: ")
+		b.WriteString(receiptFailing)
 	case !r.checkedAfterChange:
-		b.WriteString("⚠ unverified: ")
+		b.WriteString(receiptUnverified)
 	default:
-		b.WriteString("✓ checked: ")
+		b.WriteString(receiptDone)
 	}
 	var parts []string
 	if n := len(r.changed); n > 0 {

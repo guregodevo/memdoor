@@ -182,8 +182,9 @@ did. From the tool records: the files a mutating tool changed, every `verify`
 result and every build `apply_patch` folded into its own result, and whether
 the last change was checked at all. Every codebase turn that changed or
 checked something ends on one receipt line (`✓ checked: 1 file changed ·
-\`go test ./...\` PASS`, `⚠ unverified: 1 file changed · no build, test or
-run after it`, `⚠ failing after the change: …`). A passing check after the last change is proof and ends the turn
+\`go test ./...\` PASS`, `Recap: unverified: 1 file changed · no build, test or
+run after it`, `Recap: failing after the change: …`; a turn that is not done
+ends on `Recap:`, not a warning sign, since 2026-11-11). A passing check after the last change is proof and ends the turn
 with no question asked (live 2026-10-03: the judge scored a correct,
 vet-and-race-tested rate limiter 0.84 and 0.85 unfinished, twice, and a
 16k-token round was wasted; proof beats judgment). Otherwise one yes/no,
@@ -210,7 +211,7 @@ these on the decision model (`MEMDOOR_INTEGRATION_PAID=1`).
 
 A turn with a **declared done** — a workflow task's target, `done_when` on
 its session — is not judged: the gateway checks the file or runs the
-command, and the receipt line opens with `✓ target X exists` or `⚠ target X
+command, and the receipt line opens with `✓ target X exists` or `Recap: target X
 missing` (WORKFLOWS.md). With `turn_token_budget` set, the turn runs on: the continuation's prompt
 is the model's own last words ("Continue. You ended on: 'Next I will run go
 test'…"), round after round while unfinished, until the budget is spent;

@@ -25,8 +25,8 @@ from the model's summary:
 
 ```
 ✓ checked: 2 files changed · `go test ./...` PASS
-⚠ unverified: 1 file changed · nothing was built, tested or run after it
-⚠ failing after the change: `go build ./...` FAIL
+Recap: unverified: 1 file changed · nothing was built, tested or run after it
+Recap: failing after the change: `go build ./...` FAIL
 ```
 
 A command that exits 0 but prints a failure (a test piped into `tail`)

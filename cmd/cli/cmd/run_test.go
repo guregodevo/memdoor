@@ -163,3 +163,23 @@ func TestPromptFromArgsWithStdinFlagReadsALateProducerToTheEnd(t *testing.T) {
 		t.Fatalf("late producer: %q %v", got, err)
 	}
 }
+
+// The receipt heads a turn ends on today: "Recap:" for a turn that is not
+// done. The exit code reads them as it read the "⚠ " lines before.
+func TestExitCodesReadTheRecapHeads(t *testing.T) {
+	cases := []struct {
+		text string
+		want int
+	}{
+		{"Done.\nRecap: unverified: 1 file changed · no build, test or run after it", 2},
+		{"Done.\nRecap: failing after the change: 1 file changed · `go test` FAIL", 2},
+		{"Done.\nRecap: nothing changed · ran: `go test` FAIL", 2},
+		{"Done.\nRecap: nothing changed · ran: `ls` PASS", 0},
+		{"Recap: the parser now accepts tabs.\n✓ checked: 1 file changed · `go test` PASS", 0},
+	}
+	for _, c := range cases {
+		if got := runExitCode(nil, false, receiptIn(c.text)); got != c.want {
+			t.Errorf("%q: exit %d, want %d (receipt %q)", c.text, got, c.want, receiptIn(c.text))
+		}
+	}
+}

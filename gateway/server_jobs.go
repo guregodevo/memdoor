@@ -485,8 +485,7 @@ func cronAnswerWakes(text, last string) (bool, string) {
 func cronAnswerBody(text string) string {
 	var kept []string
 	for _, line := range strings.Split(strings.TrimSpace(text), "\n") {
-		t := strings.TrimSpace(line)
-		if strings.HasPrefix(t, "⚠ ") || strings.HasPrefix(t, "✓ checked: ") {
+		if isReceiptLine(line) {
 			continue
 		}
 		kept = append(kept, line)
