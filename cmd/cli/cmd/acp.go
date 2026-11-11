@@ -109,6 +109,61 @@ type runEnd struct {
 	err   error
 }
 
+// turnText is what a client that cannot take text back (memdoor run, an
+// editor over ACP) prints of a turn's text frames. A round streams deltas, then
+// its whole text; the end of the turn may send one more whole frame: a tail
+// (append, the receipt line) or the final text when it no longer begins with
+// what streamed, which the window shows INSTEAD of its draft (unstreamed.go).
+// Printed whole, that final repeated the answer already on stdout (a fresh
+// take of the headless cast, 2026-11-11): only what the last round did not
+// already say is printed.
+type turnText struct {
+	streamed int    // bytes streamed as deltas since the last whole frame
+	round    string // the latest round's text, as printed
+	printed  bool
+}
+
+// delta is what to print of a streamed delta: all of it.
+func (t *turnText) delta(d string) string {
+	if d == "" {
+		return ""
+	}
+	t.streamed += len(d)
+	t.round += d
+	t.printed = true
+	return d
+}
+
+// whole is what to print of a whole-text frame. toolsSince: a tool ran since
+// the last text, so the round already starts on its own line.
+func (t *turnText) whole(text string, appendTail, toolsSince bool) string {
+	streamed := t.streamed
+	t.streamed = 0
+	switch {
+	case text == "":
+		return ""
+	case appendTail:
+		t.printed = true
+		return "\n" + text
+	case streamed > 0:
+		// The round's own text after its deltas: already printed.
+		t.round = text
+		return ""
+	case !t.printed:
+		t.round, t.printed = text, true
+		return text
+	}
+	full, last := strings.TrimSpace(text), strings.TrimSpace(t.round)
+	t.round = text
+	if last != "" && strings.HasPrefix(full, last) {
+		return full[len(last):]
+	}
+	if toolsSince {
+		return text
+	}
+	return "\n" + text
+}
+
 func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string, sink turnSink) error {
 	opts := client.DefaultOptions()
 	opts.EnableLogging = false
@@ -121,7 +176,7 @@ func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string,
 		default:
 		}
 	}
-	var streamed int // text streamed as deltas since the last whole-text frame
+	var frames turnText
 	// A round's text after a tool call starts on its own line: two rounds
 	// ran together ("…run the file.Created hello.py", 2026-10-24).
 	var lastText byte
@@ -148,17 +203,10 @@ func (r *gatewayRunner) Run(ctx context.Context, conversation, cwd, text string,
 		case "assistant":
 			switch str("event") {
 			case "text_delta":
-				streamed += len(str("delta"))
-				emit(str("delta"))
+				emit(frames.delta(str("delta")))
 			case "text":
-				// The whole round's text follows its deltas: skip what was
-				// streamed; an appended tail (the receipt line) is new.
-				if append, _ := data["append"].(bool); append {
-					emit("\n" + str("text"))
-				} else if streamed == 0 {
-					emit(str("text"))
-				}
-				streamed = 0
+				tail, _ := data["append"].(bool)
+				emit(frames.whole(str("text"), tail, toolsSince))
 			}
 		case "tool":
 			switch str("event") {
