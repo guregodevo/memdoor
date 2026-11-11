@@ -1,6 +1,12 @@
 package gateway
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"memdoor/pkg/llm"
+)
 
 // RecoveryKind is what to do about a reply the model did not finish.
 type RecoveryKind int
@@ -85,4 +91,74 @@ func (r *truncationRecovery) Next() RecoveryStep {
 		return RecoveryStep{Kind: RecoveryResume, Prompt: resumePrompt, Attempt: r.resumes}
 	}
 	return RecoveryStep{Kind: RecoveryExhausted}
+}
+
+// keepOfCutReply is what a reply cut at the output cap leaves that a provider
+// accepts: its non-empty text and the tool calls whose arguments arrived whole,
+// each with its result. A call cut mid-arguments is dropped with its result:
+// its input is not JSON, and a request carrying it is refused. The reply is
+// nil when nothing is left.
+func keepOfCutReply(reply llm.MessageParam, results []llm.ContentBlockParamUnion) (*llm.MessageParam, []llm.ContentBlockParamUnion) {
+	kept := map[string]bool{}
+	var blocks []llm.ContentBlockParamUnion
+	for _, b := range reply.Content {
+		switch {
+		case b.OfText != nil && strings.TrimSpace(b.OfText.Text) == "":
+		case b.OfToolUse != nil && !json.Valid(b.OfToolUse.Input):
+		case b.OfToolUse != nil:
+			kept[b.OfToolUse.ID] = true
+			blocks = append(blocks, b)
+		default:
+			blocks = append(blocks, b)
+		}
+	}
+	var keptResults, rest []llm.ContentBlockParamUnion
+	for _, r := range results {
+		switch {
+		case r.OfToolResult == nil:
+			rest = append(rest, r)
+		case kept[r.OfToolResult.ToolUseID]:
+			keptResults = append(keptResults, r)
+		}
+	}
+	if len(blocks) == 0 {
+		return nil, rest
+	}
+	reply.Content = blocks
+	return &reply, append(keptResults, rest...)
+}
+
+// resumeAfterCut replaces the cut reply that ends conv with what a provider
+// accepts, then asks the model to go on: the kept calls' results come first in
+// the next user message, as every provider requires, then the prompt.
+func resumeAfterCut(conv []llm.MessageParam, results []llm.ContentBlockParamUnion, prompt string) []llm.MessageParam {
+	if len(conv) == 0 || conv[len(conv)-1].Role != llm.MessageParamRoleAssistant {
+		return append(conv, llm.NewUserMessage(llm.NewTextBlock(prompt)))
+	}
+	reply, next := keepOfCutReply(conv[len(conv)-1], results)
+	conv = conv[:len(conv)-1]
+	if reply != nil {
+		conv = append(conv, *reply)
+	}
+	return append(conv, llm.NewUserMessage(append(next, llm.NewTextBlock(prompt))...))
+}
+
+// closeCutReply ends a turn that gave up on a cut reply with a conversation
+// the next turn can send: the reply's text stays, its tool calls go (the turn
+// ends here, so their results are never sent), and an empty reply is dropped.
+func closeCutReply(conv []llm.MessageParam) []llm.MessageParam {
+	if len(conv) == 0 || conv[len(conv)-1].Role != llm.MessageParamRoleAssistant {
+		return conv
+	}
+	var text []llm.ContentBlockParamUnion
+	for _, b := range conv[len(conv)-1].Content {
+		if b.OfText != nil && strings.TrimSpace(b.OfText.Text) != "" {
+			text = append(text, b)
+		}
+	}
+	conv = conv[:len(conv)-1]
+	if len(text) == 0 {
+		return conv
+	}
+	return append(conv, llm.MessageParam{Role: llm.MessageParamRoleAssistant, Content: text})
 }

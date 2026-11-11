@@ -750,11 +750,11 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 			case RecoveryResume:
 				log.Warn("Reply truncated again — resuming mid-thought",
 					slog.Int("attempt", step.Attempt))
-				conversation = append(conversation, llm.NewUserMessage(
-					llm.ContentBlockParamUnion{OfText: &llm.TextBlockParam{Text: step.Prompt}}))
+				conversation = resumeAfterCut(conversation, toolResults, step.Prompt)
 				message, conversation, err = ar.runInference(ctx, conversation, extraSystemPrompt)
 			default: // RecoveryExhausted
 				log.Warn("Truncation recovery exhausted")
+				conversation = closeCutReply(conversation)
 				if response.Text != "" {
 					response.Text += "\n\n"
 				}
