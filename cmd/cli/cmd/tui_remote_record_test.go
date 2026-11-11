@@ -31,12 +31,13 @@ func TestRecordRemoteCast(t *testing.T) {
 		t.Skip("set REC_ID, REC_OUT and REC_Q to record")
 	}
 	// A phone's size by default (the /remote recording); REC_COLS/REC_ROWS
-	// for a laptop's, REC_UNTIL for what ends the take (the turn's end by
-	// default; "■ " for a workflow run's end) and REC_WAIT for how long.
+	// for a laptop's, REC_UNTIL for what ends the take (a turn's receipt,
+	// "✓ checked", by default; "■ " for a workflow run's end) and REC_WAIT
+	// for how long.
 	cols, rows := envInt("REC_COLS", 50), envInt("REC_ROWS", 34)
 	until := os.Getenv("REC_UNTIL")
 	if until == "" {
-		until = "answered by"
+		until = "✓ checked"
 	}
 	wait := time.Duration(envInt("REC_WAIT", 170)) * time.Second
 	var l remoteLink

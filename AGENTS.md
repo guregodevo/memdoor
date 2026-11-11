@@ -280,7 +280,8 @@ in `scripts/demo/`:
   the script's lines (`type <text>` a key at a time, `key <tmux key>`,
   `sleep <s>`), and the pane sampled 4×/s with `tmux capture-pane -e` by
   `sample-cast.py` into an asciinema v2 file until the marker shows (`■ ` for
-  a workflow run, `⏱ poll` for a cron, `answered by` for a turn).
+  a workflow run, `⏱ poll` for a cron, the receipt `✓ checked` for a turn
+  that ran tools).
 - `trim-cast.py in out 6 2.5` — while only a clock ticks keep one frame per
   6 s, cap gaps at 2.5 s (the gate take: 363 s/3.4 MB → 163 s/516 KB).
 - Put the file in `web/public/`, add a card in `DemoGallery.tsx` (title, the

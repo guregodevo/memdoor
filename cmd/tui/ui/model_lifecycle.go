@@ -132,6 +132,7 @@ func (m *Model) runNetworkCmd(fields []string) tea.Cmd {
 			return nil
 		}
 		m.note("Updating memdoor … (a minute; this window restarts into the same conversation)")
+		m.updating = true
 		op := m.updateOp
 		return func() tea.Msg { s, e := op(); return updateResultMsg{summary: s, err: e} }
 	case "/remote":

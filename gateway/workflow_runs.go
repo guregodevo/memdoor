@@ -1589,7 +1589,7 @@ func receiptOf(text string) string {
 	lines := strings.Split(strings.TrimRight(text, "\n"), "\n")
 	for i := len(lines) - 1; i >= 0 && i >= len(lines)-3; i-- {
 		l := strings.TrimSpace(lines[i])
-		if strings.HasPrefix(l, "✓ ") || strings.HasPrefix(l, "⚠ ") {
+		if isReceiptLine(l) {
 			return l
 		}
 	}

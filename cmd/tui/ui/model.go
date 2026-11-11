@@ -62,6 +62,7 @@ type Model struct {
 	mcpSeen            map[string]bool                                // every MCP server name the panel has reported
 	updateOp           func() (string, error)                         // /update — install the published build (update.go)
 	restartAfterUpdate bool                                           // the new binary is in place: re-exec into this conversation
+	updating           bool                                           // /update is installing: the gateway it stops is restarting, not lost
 	status             Status                                         // last status, rendered in the footer
 	title              string                                         // what this conversation is about — the first thing you asked
 	pickerStart        *int                                           // first model-picker option currently drawn

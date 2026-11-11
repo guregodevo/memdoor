@@ -667,7 +667,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.closeOrphanFrames("connection lost — result not received")
 			m.activeSubagents = nil
 			m.subagentWork = nil
-			m.note("✓ reconnected — events sent while offline were missed (a running turn may have finished; re-ask if unsure)")
+			if m.updating {
+				m.note("✓ the gateway is up on the new build")
+			} else {
+				m.note("✓ reconnected — events sent while offline were missed (a running turn may have finished; re-ask if unsure)")
+			}
 			m.viewport.SetContent(m.renderMessages())
 			m.gotoBottom()
 			if len(m.queued) > 0 {
@@ -681,7 +685,15 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Show the break LOUDLY — a silently dead connection that eats input is
 		// worse than a crash. The client auto-reconnects with backoff; typed
 		// prompts queue while offline and flush on reconnect.
-		if m.connected {
+		if m.connected && m.updating {
+			// The installer stops the gateway to replace its binary and
+			// starts it again on the new one: a restart, not a failure
+			// ("connection lost" mid-/update read as a broken update,
+			// 2026-11-11).
+			m.note("↻ the gateway restarts on the new build …")
+			m.viewport.SetContent(m.renderMessages())
+			m.gotoBottom()
+		} else if m.connected {
 			m.note("⚠ gateway connection lost — reconnecting… (typed prompts will queue)")
 			m.viewport.SetContent(m.renderMessages())
 			m.gotoBottom()
@@ -789,6 +801,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case updateResultMsg:
+		m.updating = false
 		if msg.err != nil {
 			m.note("⚠ Update failed: " + msg.err.Error())
 			m.viewport.SetContent(m.renderMessages())
@@ -931,13 +944,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case runCompleteMsg:
-		// Which model answered, on every turn: a dim line under the answer
-		// and the footer until the next turn (the maintainer, 2026-09-26).
+		// Which model answered: the footer, until the next turn. The dim
+		// "answered by …" line under every answer is gone (the maintainer,
+		// 2026-11-11): the footer already names it.
 		if msg.model != "" {
 			m.answeredBy = msg.model
 			m.status.Model = msg.model
-			m.note("answered by " + msg.model)
-			m.viewport.SetContent(m.renderMessages())
 		}
 		// The run ended. Normally the assistant message already cleared these a
 		// moment earlier (lifecycle-complete arrives just before the message), so
