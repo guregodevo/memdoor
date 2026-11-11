@@ -19,7 +19,10 @@ python3 $S/sample-cast.py $sess $cast 96 30 "$until" $limit > $cast.log 2>&1 &
 sleep 1
 while IFS= read -r line; do
   case "$line" in
-    type\ *) t="${line#type }"; for ((i=0;i<${#t};i++)); do tmux send-keys -t $sess -l "${t:$i:1}"; sleep 0.02; done; sleep 0.6; tmux send-keys -t $sess Enter ;;
+    # A lone ";" is tmux's own command separator: sent as is, it types
+    # nothing (`a; echo exit=$?` typed `a echo exit=0`, 2026-11-11). Escaped,
+    # it is typed.
+    type\ *) t="${line#type }"; for ((i=0;i<${#t};i++)); do c="${t:$i:1}"; [ "$c" = ";" ] && c='\;'; tmux send-keys -t $sess -l "$c"; sleep 0.02; done; sleep 0.6; tmux send-keys -t $sess Enter ;;
     key\ *) tmux send-keys -t $sess "${line#key }" ;;
     sleep\ *) sleep "${line#sleep }" ;;
   esac
