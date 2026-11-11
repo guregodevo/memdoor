@@ -1,0 +1,24 @@
+type: agent
+agent: coder
+# Writes a probe that runs the behaviour where the tied attempts differ and prints what it sees.
+# Only when the leaders tie on the checks and change the code differently
+# (tie.txt). The probe prints observations, never a verdict: probe-run runs
+# it on each leader in a clean copy, and the selector reads what each one
+# printed against what the task asks. Several attempts can share a mistake,
+# so what they print is weighed, not counted.
+when: grep -qx differ .memdoor/runs/team-solve-fanout-{{.partition}}/tie.txt
+requires:
+  - table_pattern: attempts
+prompt: |
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/prompt.md" .partition) }}
+
+  Several changes were written for the task above. They pass the same checks, so the checks cannot tell them apart. Each is a patch in .memdoor/runs/team-solve-fanout-{{.partition}}/attempts/ (leaders.txt lists the ones that tie). Read them and find where they behave differently.
+
+  Write .memdoor/runs/team-solve-fanout-{{.partition}}/probe: one executable (chmod +x) that, run from the project's root, exercises the behaviour the task describes in the cases where these changes differ (the task's example, its sibling cases, its edge cases) and prints what it observes, one line each: return values, messages, warnings, exceptions and their text. Print, do not assert: the probe does not decide which change is right. It is run once on each change, applied to a clean copy of the tree as you found it.
+
+  Do not change the project's files, do not apply the patches here, do not commit. The probe is deterministic (no time, no randomness, no memory addresses), finishes in under a minute, uses only what the project already has, and writes nothing outside a temporary directory. Run it once on the tree as it is, to see it work.
+target:
+  command: test -x .memdoor/runs/team-solve-fanout-{{.partition}}/probe
+optional: true
+timeout: 15m
+max_retries: 0

@@ -1,0 +1,17 @@
+type: command
+# Unpacks the fan-out's attempts: each patch, the leaders on the checks, and whether they differ.
+# The fan-out's output is one JSON (every attempt's patch and points);
+# selector.py writes each attempt's patch to attempts/<n>.patch, the
+# attempts with the most points to leaders.txt, and to tie.txt whether a
+# probe is worth writing: "differ" when leaders change the code differently.
+requires:
+  - table_pattern: direct
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  f=$(ls -d .memdoor/runs/*/steps/direct/{{.partition}} 2>/dev/null | head -1)
+  if [ ! -s "$f" ]; then echo "attempts: no fan-out output"; echo single > "$r/tie.txt"; : > "$r/leaders.txt"; exit 0; fi
+  python3 "$w/selector.py" attempts "$r" "$f"
+optional: true
+timeout: 2m
+max_retries: 0

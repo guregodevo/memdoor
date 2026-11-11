@@ -1,0 +1,29 @@
+type: llm
+# The selector: when the fan-out's leaders tie and change the code differently, it names the attempt that does what the task asks.
+# The checks cannot tell the leaders apart, and attempt 1 by default was the
+# wrong one on 5 of 7 SWE-bench Verified runs where right and wrong attempts
+# tied (2026-11-11). It reads the task and, for each leader, its change and
+# what it did on the probe and the reproduction (selector-evidence.md, from
+# probe-run), and reasons about which behaviour the task asks for; the
+# majority does not decide. choose asks it on a tie (by: [selector]); an
+# answer of none passes the tie on to prefer.
+when: test -s .memdoor/runs/team-solve-fanout-{{.partition}}/selector-evidence.md
+requires:
+  - table_pattern: probe-run
+prompt: |
+  You are the selector. Several attempts at the task below pass the same checks and change the code differently. Decide which one does what the task asks.
+
+  The task:
+
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/prompt.md" .partition) }}
+
+  The attempts, each with its change and what it did when run on the tree as the run found it (the probe exercises the behaviour where the attempts differ; the reproduction fails while the defect is there):
+
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/selector-evidence.md" .partition) }}
+
+  For each attempt, compare what it did with what the task says should happen, case by case: the task's example, its sibling cases, its edge cases, the exact messages and values it names. An attempt that crashes, that the reproduction still fails, or that changes behaviour the task does not ask about, loses to one that does not. Behaviour decides, not the size or the style of the change, and not how many attempts agree: several attempts can share one mistake.
+
+  Answer on the first line with exactly `attempt N`, N one of the attempts above, then two to five lines on why. When the evidence does not tell them apart, answer with the single word `none` and nothing else.
+optional: true
+timeout: 10m
+max_retries: 0

@@ -1,0 +1,20 @@
+type: command
+# Runs the probe and the reproduction on each tied attempt in a clean copy; writes what each did for the selector.
+# selector.py run: each leader applied to a worktree of the tree as the run
+# found it (base.txt), the probe and the reproduction (reproduce.yaml) run
+# there, and what each printed written to selector-evidence.md with the
+# leader's change. It decides nothing: the selector reads the evidence. The
+# tree itself must still be as found: a probe turn that changed it is undone.
+when: grep -qx differ .memdoor/runs/team-solve-fanout-{{.partition}}/tie.txt
+requires:
+  - table_pattern: probe
+  - table_pattern: reproduce
+command: |
+  r=.memdoor/runs/team-solve-fanout-{{.partition}}
+  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
+  [ -s "$r/leaders.txt" ] || { echo "selector: no leaders"; exit 0; }
+  bash "$w/snapshot.sh" reset "$r" > /dev/null
+  python3 "$w/selector.py" run "$r"
+optional: true
+timeout: 30m
+max_retries: 0
