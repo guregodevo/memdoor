@@ -166,6 +166,18 @@ requires:
    word "done" when STATUS was the final section, and the loop never knew it
    had finished). Before the run, feed the parser a reply that ends at each
    section and read back what it wrote.
+10. **A replay or a measurement is a workflow, not a driver script.** One
+    task per stage: load the saved case, check that the input reproduces,
+    then for each item `apply-1`, `check-1`, `compare-1` … (unrolled with
+    `args`), then a report. `/workflow` then shows which item and which
+    stage is running, and a break stops the run at the task that broke.
+    The input check fails its task when the input does not reproduce:
+    nothing after it would mean anything. A measured failure is not a
+    broken task: the task keeps the status in a file and exits 0. Only a
+    bad input fails it (a patch that does not apply, a log no failing test
+    can be read from). (2026-11-11: a check of a pick rule on eight saved
+    SWE-bench runs was first written as two shell drivers; rewritten as
+    command tasks, it ran in the kit's runner with no model call.)
 
 ## A README beside the steps
 
