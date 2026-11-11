@@ -38,8 +38,14 @@ var installScriptURL = "https://memdoor.ai/install.sh"
 // hands itself to on upgrade.
 var installScriptURLWindows = "https://memdoor.ai/install.ps1"
 
-// installerLine is the one-liner the installer runs as on this machine.
+// installerLine is the one-liner the installer runs as on this machine: from
+// a GitHub release when MEMDOOR_INSTALL_SOURCE=github (install_source.go).
 func installerLine() string {
+	if g, ok, err := installSource(); err == nil && ok {
+		if tag, err := githubTagOnce(g, 10*time.Second); err == nil {
+			return g.installerLine(tag, runtime.GOOS == "windows")
+		}
+	}
 	if runtime.GOOS == "windows" {
 		return "irm " + installScriptURLWindows + " | iex"
 	}
@@ -66,20 +72,35 @@ running gateway is stopped, the binary swapped, the gateway started again.
   memdoor upgrade            ask, then upgrade
   memdoor upgrade --check    print the versions; exit 0 when current, 1 when an upgrade exists
   memdoor upgrade --yes      no question (a script)
-  memdoor upgrade --force    run the installer even when the versions match (a build that says "dev")`,
+  memdoor upgrade --force    run the installer even when the versions match (a build that says "dev")
+
+With MEMDOOR_INSTALL_SOURCE=github it reads a GitHub release instead: the
+latest of MEMDOOR_GITHUB_REPOSITORY (default guregodevo/memdoor), or the tag
+in MEMDOOR_GITHUB_RELEASE, installed by that tag's scripts/install.sh.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		checkOnly, _ := cmd.Flags().GetBool("check")
 		force, _ := cmd.Flags().GetBool("force")
 		yes, _ := cmd.Flags().GetBool("yes")
 
+		gh, fromGitHub, err := installSource()
+		if err != nil {
+			return err
+		}
 		remote, err := fetchRemoteVersion()
 		if err != nil {
-			return fmt.Errorf("fetch %s: %w", versionEndpoint, err)
+			return fmt.Errorf("fetch %s: %w", versionSource(), err)
 		}
 		local := Version
 
 		fmt.Printf("Local:  %s\n", local)
-		fmt.Printf("Remote: %s\n", remote)
+		switch {
+		case fromGitHub && gh.tag != "":
+			fmt.Printf("Remote: %s (github.com/%s, %s)\n", remote, gh.repo, githubReleaseEnv)
+		case fromGitHub:
+			fmt.Printf("Remote: %s (the latest release of github.com/%s)\n", remote, gh.repo)
+		default:
+			fmt.Printf("Remote: %s\n", remote)
+		}
 
 		// "dev" or empty is always considered out-of-date for the
 		// purposes of the version check — a locally-built binary
@@ -146,6 +167,11 @@ func fetchRemoteVersion() (string, error) { return fetchRemoteVersionFrom("", 10
 // only the window's daily check as a person that day, so the headless one is
 // marked and left out (#90). Nothing about the person is sent.
 func fetchRemoteVersionFrom(from string, timeout time.Duration) (string, error) {
+	if g, ok, err := installSource(); err != nil {
+		return "", err
+	} else if ok {
+		return githubTagOnce(g, timeout)
+	}
 	client := &http.Client{Timeout: timeout}
 	u := versionEndpoint
 	var q []string
