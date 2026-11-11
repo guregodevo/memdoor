@@ -159,6 +159,7 @@ grep -r "duplicate_code" .    # Search before coding
 - `.agents/skills/roadmap.md` - The roadmap: the quarter in docs/ROADMAP.md; features are issues labelled now or next
 - `.agents/skills/verify-assumptions.md` - Verify runtime changes via CLI and logs (always-on)
 - `.agents/skills/test-tui.md` - Drive the real TUI from tmux: which gateway, which keys, what to assert
+- `.agents/skills/test-windows.md` - Test a change on Windows from a Mac: a temporary branch, main and the fix on GitHub's `windows-latest`
 - `.agents/skills/doc-writing.md` - How docs, READMEs, landing copy and llms.txt are written: an engineer's documentation, no AI slop (always-on for any doc change)
 
 ---
@@ -401,6 +402,9 @@ Clean it between runs (`rm -f ~/memdoor-coder/*.go`) — stale files with
 For a change a person sees or types, follow `.agents/skills/test-tui.md`: it has
 the whole procedure (your own gateway on another port, confirming which binary
 serves it, driving tmux, what to assert, negative paths).
+
+There is no Windows machine here: a Windows change is tested on GitHub's `windows-latest`,
+main against the fix, from a temporary branch. `.agents/skills/test-windows.md` says how.
 
 - **macOS codesign SIGKILL**: NEVER `cp` a rebuilt binary over an existing one — the per-inode
   signature cache poisons it and every start dies instantly with ZERO output. Copy to a new name
