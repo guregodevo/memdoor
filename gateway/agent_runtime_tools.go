@@ -648,6 +648,17 @@ func (ar *AgentRuntime) executeToolUnredacted(ctx context.Context, toolUse *llm.
 		return info, llm.NewToolResultBlock(toolUse.ID, toolResult, false)
 	}
 
+	// see looks with the turn's model, so it runs here, on the turn's context.
+	if toolUse.Name == "see" {
+		out, err := ar.runSee(ctx, toolUse.Input)
+		if err != nil {
+			info.Error = err.Error()
+			return info, llm.NewToolResultBlock(toolUse.ID, err.Error(), true)
+		}
+		info.Output = out
+		return info, llm.NewToolResultBlock(toolUse.ID, out, false)
+	}
+
 	// Special handling for get_secret tool (per-agent scoped secrets)
 	if toolUse.Name == "get_secret" && ar.secretRepo != nil {
 		agentID := sandboxCtx.CurrentAgentID
@@ -916,5 +927,5 @@ func toolNeedsInput(name string) bool {
 		return false
 	}
 	return name == "notes" || name == "todo_write" || name == "bash" ||
-		name == "read_file" || name == "skill" || name == "web_fetch"
+		name == "read_file" || name == "skill" || name == "web_fetch" || name == "see"
 }
