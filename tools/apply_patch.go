@@ -376,7 +376,7 @@ func ApplyPatch(input json.RawMessage) (_ string, err error) {
 				p = filepath.Join(params.Cwd, p)
 			}
 			if outsideProject(params.Cwd, p) {
-				return "", fmt.Errorf("apply_patch %s: %s is outside the project folder (%s) — nothing was written. Use a path relative to it", hunks[i].path, p, params.Cwd)
+				return "", fmt.Errorf("apply_patch %s: %s is outside the project folder (%s) — nothing was written. Use a path relative to it", hunks[i].path, p, ProjectFolders(params.Cwd))
 			}
 		}
 	}
@@ -563,15 +563,10 @@ func ApplyPatch(input json.RawMessage) (_ string, err error) {
 	return msg, nil
 }
 
-// outsideProject says whether target lies outside cwd, the project folder a
-// patch is applied in. With no cwd (the CLI, tests) nothing is outside.
-func outsideProject(cwd, target string) bool {
-	if cwd == "" {
-		return false
-	}
-	rel, err := filepath.Rel(filepath.Clean(cwd), filepath.Clean(target))
-	return err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator))
-}
+// outsideProject says whether target lies outside the project a patch is
+// applied in: cwd and the git worktrees of its repository (InProject). With
+// no cwd (the CLI, tests) nothing is outside.
+func outsideProject(cwd, target string) bool { return !InProject(cwd, target) }
 
 // changedRegions is after's changed lines ±3, numbered, "…" between regions.
 func changedRegions(before, after string) string {

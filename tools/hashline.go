@@ -503,7 +503,7 @@ func applyHashlinePatch(text, cwd string) (string, error) {
 			target = filepath.Join(cwd, target)
 		}
 		if outsideProject(cwd, target) {
-			return "", fmt.Errorf("apply_patch [%s]: outside the project folder — nothing was written", sec.path)
+			return "", fmt.Errorf("apply_patch [%s]: outside the project folder (%s) — nothing was written", sec.path, ProjectFolders(cwd))
 		}
 		raw, err := os.ReadFile(target)
 		if err != nil {

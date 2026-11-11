@@ -114,7 +114,7 @@ web/dist/.stamp: $(WEB_SOURCES)
 		cd web && npm install; \
 	fi
 	@cd web && npm run build
-	@touch web/dist/.stamp
+	@touch web/dist/.stamp web/dist/.keep
 	@echo "✓ web/dist built"
 
 # Format all Go files

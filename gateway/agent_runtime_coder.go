@@ -10,6 +10,7 @@ import (
 
 	sharedctx "memdoor/pkg/shared/context"
 	"memdoor/pkg/shell"
+	"memdoor/tools"
 )
 
 // agent_runtime_coder: codebase-agent detection and coder-workdir confinement of tool inputs.
@@ -108,8 +109,8 @@ func manglePathReason(p string) string {
 // left alone: `cd internal/foo` stays inside the workdir by construction.
 var absCd = regexp.MustCompile(`(?:^|[;&|]\s*)cd\s+('|")?(/[^\s;&|'"]*)`)
 
-// escapesWorkdir returns the first absolute directory a command cd's to that
-// lies outside wd, or "" when the command stays put.
+// escapesWorkdir returns the first absolute directory a command changes to that
+// lies outside the project (wd and its git worktrees), or "" when it stays in.
 //
 // Only `cd` is inspected. A command may still READ an absolute path — that is
 // the deliberate "may target a real project on purpose" behaviour below — but
@@ -119,10 +120,9 @@ func escapesWorkdir(cmd, wd string) string {
 	if wd == "" {
 		return ""
 	}
-	root := filepath.Clean(wd)
 	for _, m := range absCd.FindAllStringSubmatch(cmd, -1) {
 		target := filepath.Clean(m[2])
-		if target == root || strings.HasPrefix(target, root+string(filepath.Separator)) {
+		if tools.InProject(wd, target) {
 			continue
 		}
 		return target
@@ -160,7 +160,6 @@ func coderPathEscape(toolName string, input json.RawMessage, wd string) string {
 	if json.Unmarshal(input, &in) != nil {
 		return ""
 	}
-	root := filepath.Clean(wd)
 	for _, key := range []string{"path", "file_path"} {
 		p, ok := in[key].(string)
 		if ok {
@@ -169,12 +168,11 @@ func coderPathEscape(toolName string, input json.RawMessage, wd string) string {
 		if !ok || !filepath.IsAbs(p) {
 			continue
 		}
-		target := filepath.Clean(p)
-		if target == root || strings.HasPrefix(target, root+string(filepath.Separator)) {
+		if tools.InProject(wd, p) {
 			continue
 		}
-		return "refused: " + p + " is outside your working directory (" + wd +
-			"). You are ALREADY in the right directory — use paths relative to it."
+		return "refused: " + p + " is outside the project this window works in (" + tools.ProjectFolders(wd) +
+			"). Writes stay there: use a path relative to it. To change files elsewhere, ask the user to start memdoor in that folder."
 	}
 	return ""
 }
@@ -220,9 +218,13 @@ func confineToCoderWorkdir(toolName string, input json.RawMessage, wd string) js
 			// gateway/client/ (AGENTS.md, "three times this weekend"), because the
 			// coder runs always-auto with no permission prompt.
 			if esc := escapesWorkdir(cmd, wd); esc != "" {
-				in["command"] = "printf %s " + shellQuote(
-					"refused: this command cd's to "+esc+", outside your working directory ("+wd+
-						"). You are ALREADY in the right directory — drop the cd and use paths relative to it.") + " >&2; exit 1"
+				// The refusal is printed, not run as a failure: a non-zero exit made
+				// it a "Command FAILED" (or, misparsed, a read whose status "is a
+				// result") and three of them would retire bash for the turn.
+				in["command"] = "printf '%s\\n' " + shellQuote(
+					"refused: this command changes directory to "+esc+", outside the project this window works in ("+tools.ProjectFolders(wd)+
+						"). Commands already run there: drop the cd and use paths relative to it. Reading "+esc+
+						" needs no cd. To change files in it, ask the user to start memdoor in that folder.")
 				changed = true
 				break
 			}
