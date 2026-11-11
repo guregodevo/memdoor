@@ -29,7 +29,7 @@ func TestConnectFlowPicksTypesProbesAndSays(t *testing.T) {
 	if cmd := m.connectCommand(nil); cmd != nil || m.connect == nil || m.connect.step != connectStepKind {
 		t.Fatal("/connect opens the kind picker")
 	}
-	if v := m.renderConnect(lipglossPlain(), lipglossPlain()); !strings.Contains(v, "which kind") || !strings.Contains(v, "1. Sign in with OpenRouter") || !strings.Contains(v, "3. ChatGPT") || !strings.Contains(v, "4. OpenRouter") || !strings.Contains(v, "5. Anthropic") {
+	if v := m.renderConnect(lipglossPlain(), lipglossPlain()); !strings.Contains(v, "which kind") || !strings.Contains(v, "1. Sign in with OpenRouter") || !strings.Contains(v, "2. ChatGPT") || !strings.Contains(v, "3. Local runtime") || !strings.Contains(v, "4. OpenRouter") || !strings.Contains(v, "5. Anthropic") {
 		t.Fatalf("picker: %q", v)
 	}
 	if h, _ := m.connectKey(press(tea.KeyRunes, '5')); !h || m.connect.kind.ID != "anthropic" || m.connect.step != connectStepBase || m.input.Value() != "https://api.anthropic.com" {

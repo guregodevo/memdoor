@@ -34,10 +34,8 @@ On this machine:
 
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
-export OPENROUTER_API_KEY=sk-or-...    # or ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, …
-# or no key: memdoor connect local    # janis and an open-weight model on this machine — https://memdoor.ai/docs/open-weight
-cd your-project && memdoor             # the first run sets the machine up
-memdoor workflow try                   # two minutes: the team on a sample problem, ending in a verdict
+cd your-project && memdoor             # sets the machine up, then a key, a sign-in or a local model
+# no key: memdoor connect local       # janis and an open-weight model on this machine — https://memdoor.ai/docs/open-weight
 memdoor cron add --workflow team-backlog "0 2 * * *"   # one open issue a night, a pull request when its Check passed
 ```
 
