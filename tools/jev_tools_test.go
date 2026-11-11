@@ -47,20 +47,23 @@ func TestJreadSectionsAndKeepsRelevant(t *testing.T) {
 	}
 }
 
-// No decision model: the read degrades to the unjudged head of the file, said
-// so, rather than dropping what it could not judge.
-func TestJreadWithoutAModelIsUnjudged(t *testing.T) {
+// No decision model, or one that fails: the read is read_file's, said so,
+// not the first few sections of the file.
+func TestJreadWithoutAModelIsReadFile(t *testing.T) {
 	var b strings.Builder
 	for i := 0; i < 30; i++ {
 		fmt.Fprintf(&b, "func filler%d() {\n\treturn\n}\n\n", i)
 	}
 	path := filepath.Join(t.TempDir(), "big.go")
 	_ = os.WriteFile(path, []byte(b.String()), 0o644)
-	withDecisions(t, nil)
-	in, _ := json.Marshal(JreadInput{Task: "where is filler3", Path: path})
-	out, err := Jread(in)
-	if err != nil || !strings.Contains(out, "UNJUDGED") || !strings.Contains(out, "filler0") {
-		t.Fatalf("no model must return the unjudged head: %v\n%s", err, out)
+	for name, svc := range map[string]decision.Service{"none": nil, "failing": &scriptedDecisions{fail: true}} {
+		withDecisions(t, svc)
+		in, _ := json.Marshal(JreadInput{Task: "where is filler3", Path: path})
+		out, err := Jread(in)
+		if err != nil || !strings.HasPrefix(out, "(not judged: ") || strings.Contains(out, "UNJUDGED") ||
+			!strings.Contains(out, "filler0") || !strings.Contains(out, "filler29") {
+			t.Fatalf("%s: the read must be read_file's: %v\n%s", name, err, out)
+		}
 	}
 }
 

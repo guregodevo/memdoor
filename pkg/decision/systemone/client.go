@@ -34,9 +34,15 @@ const (
 	// RefusalHold is how long a client whose endpoint refused it (no access
 	// to the model, no credits, no such route) stays not-ready: if there is
 	// a Jev model, use it, otherwise don't (the maintainer, 2026-10-03). A refused key
-	// is not asked again on every turn.
+	// is not asked again on every turn. An endpoint that cannot be reached
+	// stays not-ready for the same hold.
 	RefusalHold = 10 * time.Minute
 )
+
+// unreachableAfter is the wait past which a request that got no reply means
+// the endpoint is down, not slow. A caller that allowed less (a workflow
+// task's 2.5 s) says nothing about the endpoint. A var only so tests shorten it.
+var unreachableAfter = 20 * time.Second
 
 // Config is what a Client needs. APIKey may be empty only for a local server
 // (localhost / 127.0.0.1 / ::1), the way OpenClaw's plugin allows a Kev
@@ -51,6 +57,12 @@ type Config struct {
 	APIKey     string
 	Model      string // default model when the reference names none
 	HTTPClient *http.Client
+	Logger     Logger // says when the client stands down; nil says nothing
+}
+
+// Logger is the gateway's logger, duck-typed so this package imports none.
+type Logger interface {
+	Warn(msg string, args ...any)
 }
 
 // Client implements decision.Provider over the System One API.
@@ -61,6 +73,7 @@ type Client struct {
 	httpc  *http.Client
 	local  bool
 	origin string
+	log    Logger
 
 	mu        sync.Mutex
 	refusedAt time.Time
@@ -94,7 +107,7 @@ func New(cfg Config) (*Client, error) {
 	if model == "" {
 		model = DefaultModel
 	}
-	return &Client{base: endpoint, key: cfg.APIKey, model: model, httpc: httpc, local: local, origin: u.Host}, nil
+	return &Client{base: endpoint, key: cfg.APIKey, model: model, httpc: httpc, local: local, origin: u.Host, log: cfg.Logger}, nil
 }
 
 func (c *Client) ID() string { return ProviderID }
@@ -106,10 +119,17 @@ func (c *Client) Ready() bool {
 	return (c.key != "" || c.local) && (c.refusedAt.IsZero() || time.Since(c.refusedAt) > RefusalHold)
 }
 
-func (c *Client) refused() {
+// refused stands the client down for RefusalHold and says so once, so the
+// judged tools leaving the toolbox can be read in the log.
+func (c *Client) refused(why string) {
 	c.mu.Lock()
+	wasUp := c.refusedAt.IsZero() || time.Since(c.refusedAt) > RefusalHold
 	c.refusedAt = time.Now()
 	c.mu.Unlock()
+	if wasUp && c.log != nil {
+		c.log.Warn("decision model stood down: judged reads off until it is asked again",
+			"endpoint", c.base, "reason", why, "hold", RefusalHold.String())
+	}
 }
 
 // Origin is the host the client talks to, for status displays.
@@ -241,11 +261,27 @@ func (c *Client) Evaluate(ctx context.Context, model string, req decision.Reques
 	if c.key != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+c.key)
 	}
+	budget := c.httpc.Timeout
+	if dl, ok := ctx.Deadline(); ok && (budget == 0 || time.Until(dl) < budget) {
+		budget = time.Until(dl)
+	}
 	resp, err := c.httpc.Do(httpReq)
 	if err != nil {
+		// A runtime that refuses the connection, or lets the whole wait pass
+		// with no reply, is no decision model: it stands down like a refused
+		// key, so the judged tools leave the toolbox (tools.WithoutIdleJudges)
+		// instead of every read paying the wait (2026-11-11: janis listening
+		// on :8090 with no model loaded, each jread 30 s then unjudged).
 		var ne net.Error
+		var oe *net.OpError
 		if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout()) {
+			if budget == 0 || budget >= unreachableAfter {
+				c.refused("no reply within " + budget.Round(time.Second).String())
+			}
 			return decision.Unavailable(decision.ReasonDeadline, err.Error()), nil
+		}
+		if errors.As(err, &oe) && oe.Op == "dial" {
+			c.refused(oe.Error())
 		}
 		return decision.Result{}, err
 	}
@@ -261,7 +297,7 @@ func (c *Client) Evaluate(ctx context.Context, model string, req decision.Reques
 		// No credits (402), a key with no access to the model (401/403), no
 		// such route (404), or a broker with no decision key (501): nothing to
 		// retry until someone sets it up, so the client stands down a while.
-		c.refused()
+		c.refused(fmt.Sprintf("HTTP %d", resp.StatusCode))
 		return decision.Unavailable(decision.ReasonNotConfigured, httpDetail(resp.StatusCode, raw)), nil
 	case resp.StatusCode/100 != 2:
 		return decision.Unavailable(decision.ReasonProviderError, httpDetail(resp.StatusCode, raw)), nil
