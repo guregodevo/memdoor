@@ -17,7 +17,10 @@ agent: coder
 # makes case-insensitive and stated that a lower-case `no` stays a value; the
 # two attempts that read it kept it, the one that did not was right, and the
 # pick followed the two (2026-11-12). The deciding cases above were each
-# settled by sibling code.
+# settled by sibling code. With that rule alone, the next list cited another
+# exact match in the package as a sibling and stated the same wrong rule: the
+# task's reason ("QDP itself is not case sensitive") covers the marker, so the
+# task's reason comes first and no code narrows it.
 # The attempts other than the first read cases.md, as they read the survey.
 # The path checks do not: the lists disagree on cases no test covers, and a
 # check built on one would fail a right attempt.
@@ -31,8 +34,8 @@ prompt: |
   Several people will each write a change for this task on their own. Where the task leaves a case unstated, they will decide it differently. Find those cases: inputs or situations on the same behaviour that the task's example does not cover. Another kind or form of the input (a combined, nested or multi-part one, a subclass or variant), an empty or missing value, a value that cannot be handled, another place that produces the same output.
 
   For each case, find what settles it, in this order:
-  1. the task's own words or reason;
-  2. what this project's code already does in the same kind of case elsewhere: a sibling function, a parallel class or backend, the same kind of value handled in another place. Read that code and name the file and function. Never the current behaviour of the code the task changes: that is what the task may change;
+  1. the task's own words, and the reason it gives, applied to every case that reason covers. When the reason covers a case, it settles it: no code narrows it to the task's example;
+  2. only for a case the task's words and reason do not cover: what this project's code already does in the same kind of case elsewhere, a sibling function, a parallel class or backend, the same kind of value handled in another place. Read that code and name the file and function. Never the current behaviour of the code the task changes: that is what the task may change;
   3. otherwise `unclear`. `unclear` is better than a rule nothing here supports.
 
   Read and search only: do not run the project's code or its tests. Keep no rule with the notes tool. Do not spawn agents.
