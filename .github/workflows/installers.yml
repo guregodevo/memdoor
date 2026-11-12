@@ -97,6 +97,18 @@ jobs:
       - name: Install
         shell: pwsh
         run: $env:MEMDOOR_CI = '1'; irm 'https://memdoor.ai/install.ps1?ci=1' | iex
+      # Windows PowerShell 5.1 is what `irm | iex` runs in for most people (the
+      # user agents in the server logs), and its downloads were the slow ones:
+      # the install is run there too, over the first, and how long it took is
+      # printed.
+      - name: Install with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $PSVersionTable.PSVersion.ToString()
+          $env:MEMDOOR_CI = '1'
+          $t = Measure-Command { irm 'https://memdoor.ai/install.ps1?ci=1' | iex }
+          "install took $([int]$t.TotalSeconds) s"
+          & (Join-Path $env:LOCALAPPDATA 'Memdoor\bin\memdoor.exe') --version
       - name: Version, gateway, status
         shell: pwsh
         run: |

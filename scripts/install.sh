@@ -297,7 +297,7 @@ verify_download() {
     _file="$1"
     _name="memdoor-${OS}-${ARCH}"
     echo "==> Verifying integrity against $SUMS_URL"
-    _sums=$(curl -fsSL "$SUMS_URL" 2>/dev/null) || {
+    _sums=$(curl -fsSL --retry 2 --connect-timeout 20 "$SUMS_URL" 2>/dev/null) || {
         echo "ERROR: could not fetch SHA256SUMS from $SUMS_URL." >&2
         echo "       Refusing to install an unverified binary (fail-closed)." >&2
         exit 1
@@ -323,6 +323,28 @@ verify_download() {
     fi
     echo "  ✓ sha256 verified ($_actual)"
 }
+# The binary is 40-50 MB from GitHub's release storage (/dl/ answers with a
+# 302 there), and one curl was the whole download: a connection that dropped
+# halfway ended the install on curl's own error, and people ran the same line
+# again and again before giving up (November 2026). Three
+# tries, the first two going on from the bytes already there, the last from
+# the start (a server that refuses a range must not fail all three).
+fetch_url() {
+    # $1 = destination path.
+    _try=1
+    while [ $_try -lt 3 ]; do
+        curl -fL --connect-timeout 20 --progress-bar -C - "$URL" -o "$1" && return 0
+        _try=$((_try + 1))
+        echo "==> The download stopped; trying again ($_try of 3)..." >&2
+        sleep 2
+    done
+    rm -f "$1"
+    curl -fL --connect-timeout 20 --progress-bar "$URL" -o "$1" && return 0
+    rm -f "$1"
+    echo "ERROR: could not download $URL (3 tries)." >&2
+    echo "       Check the connection, then run the same line again." >&2
+    exit 1
+}
 # The binary is fetched before the manifest, so an install that straddles a
 # deploy's switch (under a second, deploy.sh step 8) can hold one release's
 # binary and the next one's hashes. Both are fetched again once, a few
@@ -330,11 +352,12 @@ verify_download() {
 # deploy and the install is refused.
 download_verified() {
     # $1 = destination path.
-    curl -fL --progress-bar "$URL" -o "$1"
+    fetch_url "$1"
     verify_download "$1" && return 0
     echo "==> A release may have been switching: fetching both again in 5s" >&2
     sleep 5
-    curl -fL --progress-bar "$URL" -o "$1"
+    rm -f "$1"   # a whole file: resumed, it would ask for bytes past its end
+    fetch_url "$1"
     verify_download "$1" && return 0
     echo "       The download may be corrupted or tampered with. Aborting." >&2
     rm -f "$1"
