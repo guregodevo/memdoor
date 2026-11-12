@@ -21,6 +21,13 @@ import (
 // filepath.Clean on Windows rewrites "/user/<id>/x" as "\user\<id>\x", and then
 // every prefix below misses and the agent may reach nothing at all (#283).
 func (ctx SandboxContext) CanAccessPath(p string) bool {
+	// Where a backslash is a separator, ResolvePath's filepath.Join would walk
+	// a path such as /user/<me>/..\..\user\<other> into another user's folder,
+	// which path.Clean leaves alone because it does not see the separator. A
+	// virtual path has only slashes, so one with a backslash is refused there.
+	if os.PathSeparator == '\\' && strings.Contains(p, `\`) {
+		return false
+	}
 	p = path.Clean(p)
 	switch ctx.AgentScope {
 	case ScopeUser:

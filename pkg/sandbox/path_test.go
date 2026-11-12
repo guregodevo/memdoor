@@ -139,6 +139,33 @@ func TestResolvePath_ValidStaysInsideSandbox(t *testing.T) {
 	}
 }
 
+// A virtual path is POSIX-shaped, but filepath.Join in ResolvePath treats a
+// backslash as a separator on Windows. A backslash must not carry an agent out
+// of its own folder into another user's, which is inside the sandbox root too.
+func TestResolvePath_BackslashTraversalStaysInOwnFolder(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	own := filepath.Join(shared.MemdoorHome("sandbox"), "user", testUser.String())
+	other := uuid.New().String()
+
+	ctx := ctxWithScope(ScopeUser)
+	base := "/user/" + testUser.String()
+	for _, p := range []string{
+		base + `/..\..\user\` + other + `\secret.txt`,
+		base + `/sub\..\..\` + other + `\secret.txt`,
+		base + `/..\..\..\..\etc\passwd`,
+	} {
+		real, err := ctx.ResolvePath(p)
+		if err != nil {
+			continue
+		}
+		if !strings.HasPrefix(real, own+string(os.PathSeparator)) {
+			t.Errorf("ResolvePath(%q) = %q, outside the agent's own folder %q", p, real, own)
+		}
+	}
+}
+
 func TestScopeAllows(t *testing.T) {
 	if !ScopeWorkspace.Allows(ScopeUser) {
 		t.Error("workspace should allow user")
