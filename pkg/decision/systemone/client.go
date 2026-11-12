@@ -37,6 +37,12 @@ const (
 	// is not asked again on every turn. An endpoint that cannot be reached
 	// stays not-ready for the same hold.
 	RefusalHold = 10 * time.Minute
+
+	// LocalParallel is how many requests a local runtime serves at once. Its
+	// own compute lock serialises the work, so requests sent together come
+	// back one after another and the later ones run out of their wait
+	// (issue #288).
+	LocalParallel = 1
 )
 
 // unreachableAfter is the wait past which a request that got no reply means
@@ -58,6 +64,7 @@ type Config struct {
 	Model      string // default model when the reference names none
 	HTTPClient *http.Client
 	Logger     Logger // says when the client stands down; nil says nothing
+	Parallel   int    // requests served at once; 0 means LocalParallel locally, DefaultParallel hosted
 }
 
 // Logger is the gateway's logger, duck-typed so this package imports none.
@@ -67,13 +74,14 @@ type Logger interface {
 
 // Client implements decision.Provider over the System One API.
 type Client struct {
-	base   string
-	key    string
-	model  string
-	httpc  *http.Client
-	local  bool
-	origin string
-	log    Logger
+	base     string
+	key      string
+	model    string
+	httpc    *http.Client
+	local    bool
+	origin   string
+	parallel int
+	log      Logger
 
 	mu        sync.Mutex
 	refusedAt time.Time
@@ -107,10 +115,21 @@ func New(cfg Config) (*Client, error) {
 	if model == "" {
 		model = DefaultModel
 	}
-	return &Client{base: endpoint, key: cfg.APIKey, model: model, httpc: httpc, local: local, origin: u.Host, log: cfg.Logger}, nil
+	parallel := cfg.Parallel
+	if parallel <= 0 {
+		parallel = decision.DefaultParallel
+		if local {
+			parallel = LocalParallel
+		}
+	}
+	return &Client{base: endpoint, key: cfg.APIKey, model: model, httpc: httpc, local: local, origin: u.Host, parallel: parallel, log: cfg.Logger}, nil
 }
 
 func (c *Client) ID() string { return ProviderID }
+
+// Parallel is how many requests this endpoint serves at once: a local runtime
+// answers one at a time, a hosted one many (decision.Parallelism).
+func (c *Client) Parallel() int { return c.parallel }
 
 // Ready is network-free: configured, and not refused recently.
 func (c *Client) Ready() bool {

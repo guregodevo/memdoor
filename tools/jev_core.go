@@ -15,11 +15,25 @@ import (
 // unjudged output instead of silently dropping unjudged items.
 
 const (
-	jevBatch          = 24 // questions per decision request
-	jevParallel       = 8
+	jevBatch          = 24  // questions per decision request
+	jevParallel       = 8   // most requests in flight at once, whatever the provider serves
 	jevKeep           = 0.5 // probability at or above which an item is kept
 	judgeBatchRetries = 1   // extra asks on top of the service's own retry
 )
+
+// judgeParallel is how many decision requests the judge has in flight at once:
+// no more than the provider serves. A local runtime answers one at a time, and
+// eight sent together wait on its compute lock, the later ones past their wait,
+// so the read goes unjudged (issue #288, 2026-11-11); hosted Jev takes eight.
+func judgeParallel(svc decision.Service) int {
+	n := jevParallel
+	if p, ok := svc.(decision.ServiceParallelism); ok {
+		if m := p.Parallel(""); m > 0 && m < n {
+			n = m
+		}
+	}
+	return n
+}
 
 // judgeRetryWait spaces the judge's extra ask; a var only so tests shorten it.
 var judgeRetryWait = 2 * time.Second
@@ -44,7 +58,7 @@ func judgeRelevance(ctx context.Context, svc decision.Service, spec relevanceSpe
 		wg       sync.WaitGroup
 		mu       sync.Mutex
 		firstErr error
-		sem      = make(chan struct{}, jevParallel)
+		sem      = make(chan struct{}, judgeParallel(svc))
 	)
 	for lo := 0; lo < len(items); lo += jevBatch {
 		hi := min(lo+jevBatch, len(items))
