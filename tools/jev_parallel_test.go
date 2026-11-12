@@ -158,3 +158,51 @@ func TestJudgeRelevanceOverALocalDecisionEndpoint(t *testing.T) {
 		}
 	}
 }
+
+// Two judged reads at once (two windows, a spawned run, team mode) still send
+// a localhost runtime one request at a time: the limit is the runtime's,
+// shared by every caller of the service, not one per read (issue #288).
+func TestTwoJudgedReadsAtOnceShareALocalRuntime(t *testing.T) {
+	var count inFlight
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		count.enter()
+		defer count.leave()
+		var req struct {
+			Questions map[string]any `json:"questions"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		time.Sleep(2 * time.Millisecond)
+		answers := map[string]any{}
+		for id := range req.Questions {
+			answers[id] = map[string]any{"type": "noul", "noul": 0.9}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"model": "local", "answers": answers})
+	}))
+	defer srv.Close()
+	client, err := systemone.New(systemone.Config{BaseURL: srv.URL})
+	if err != nil {
+		t.Fatalf("systemone.New: %v", err)
+	}
+	svc, err := decision.NewService(func(string) string { return "systemone" }, client)
+	if err != nil {
+		t.Fatalf("decision.NewService: %v", err)
+	}
+	var wg sync.WaitGroup
+	errs := make([]error, 2)
+	for i := range errs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, errs[i] = judgeRelevance(context.Background(), svc, relevanceSpec{Task: "t", Question: "Relevant?", Purpose: "test"}, candidates())
+		}()
+	}
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Fatalf("read %d: every batch must be judged: %v", i, err)
+		}
+	}
+	if peak := count.peak(); peak != 1 {
+		t.Fatalf("two reads at once sent the runtime %d requests together", peak)
+	}
+}
