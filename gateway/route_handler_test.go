@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"memdoor/internal/testenv"
 	"testing"
 
 	"memdoor/gateway/providers"
@@ -132,7 +133,7 @@ func TestTheTurnReportsItsEffortToTheRoute(t *testing.T) {
 // The route view names the provider that serves the model: the active
 // engine's, or the one that lists a pinned id (the footer shows it).
 func TestRouteViewNamesTheProvider(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	for _, v := range []string{"AI_GATEWAY_BASE_URL", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "LLMGATEWAY_API_KEY", "AIMLAPI_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY", "GROK_API_KEY", "MEMDOOR_BYOK"} {
 		t.Setenv(v, "")
 	}

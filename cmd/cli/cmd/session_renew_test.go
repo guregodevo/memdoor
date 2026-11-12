@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,7 +16,7 @@ import (
 // sign-in is tried. `memdoor workflow status` answered "Authentication
 // required" on a lapsed session while `memdoor run` renewed it.
 func TestARefusedSessionRenewsOnceAndRetries(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	logins, calls := 0, 0

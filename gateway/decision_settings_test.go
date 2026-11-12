@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"memdoor/internal/testenv"
 	"testing"
 
 	"memdoor/pkg/decision"
@@ -27,7 +28,7 @@ func TestDecisionSettingsAreWritable(t *testing.T) {
 // decision_model row left in a workspace from before changes nothing — off
 // does not disable, and a provider name does not pick one.
 func TestDecisionModelSettingIsIgnored(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv(envSystemOneKey, "")
 	t.Setenv(envTypeSafeKey, "")
 	// The person's own OpenRouter key is the coding decision key by default

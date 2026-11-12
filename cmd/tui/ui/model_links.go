@@ -60,7 +60,7 @@ func linkifyBareFiles(line string) string {
 		if st, err := os.Stat(full); err != nil || st.IsDir() {
 			return match
 		}
-		return prefix + hyperlink("file://"+full, name)
+		return prefix + hyperlink(fileURL(full), name)
 	})
 }
 
@@ -86,6 +86,17 @@ func hyperlink(url, text string) string {
 	return "\x1b]8;;" + url + "\x1b\\" + text + "\x1b]8;;\x1b\\"
 }
 
+// fileURL is a file's href, in slashes with the empty authority a URL needs:
+// file:///C:/… on Windows, where "file://C:\…" is not a URL at all and a
+// terminal cannot open it.
+func fileURL(path string) string {
+	p := filepath.ToSlash(path)
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	return "file://" + p
+}
+
 // linkHref turns a match into a URL, or "" when it is not worth linking.
 func linkHref(target string) string {
 	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
@@ -96,7 +107,7 @@ func linkHref(target string) string {
 		if err != nil {
 			return ""
 		}
-		return "file://" + filepath.Join(home, target[2:])
+		return fileURL(filepath.Join(home, target[2:]))
 	}
 	// "/x" alone is a slash command or a bare root segment; a path has depth.
 	if strings.Count(target, "/") < 2 || strings.Trim(target, "/") == "" {

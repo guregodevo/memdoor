@@ -384,6 +384,15 @@ func InitGlobalLogger(logsDir string, verbose bool) error {
 	globalMu.Lock()
 	defer globalMu.Unlock()
 
+	// Close the logger this one replaces. A test that initializes a logger per
+	// case (or a process that re-points the store) otherwise leaves the old
+	// events.db open, and Windows will not remove a directory holding an open
+	// file — the test's own cleanup failed there, not the code under test (#283).
+	if globalLogger != nil {
+		_ = globalLogger.Close()
+		globalLogger = nil
+	}
+
 	// Create logs directory if it doesn't exist
 	if err := os.MkdirAll(logsDir, 0755); err != nil {
 		return fmt.Errorf("create logs directory: %w", err)

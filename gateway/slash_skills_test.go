@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,7 +10,7 @@ import (
 
 func TestExpandSlashSkillResolvesAndCarriesArgs(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	dir := filepath.Join(home, ".memdoor", "skills")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
@@ -30,7 +31,7 @@ func TestExpandSlashSkillResolvesAndCarriesArgs(t *testing.T) {
 
 func TestExpandSlashSkillProjectLocalWins(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	proj := t.TempDir()
 	pdir := filepath.Join(proj, ".agents", "skills")
 	if err := os.MkdirAll(pdir, 0o755); err != nil {
@@ -47,7 +48,7 @@ func TestExpandSlashSkillProjectLocalWins(t *testing.T) {
 
 func TestExpandSlashSkillPassthroughs(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	// Set up a real skill so the bare-name case proves the namespace is required.
 	dir := filepath.Join(home, ".memdoor", "skills")
 	_ = os.MkdirAll(dir, 0o755)
@@ -67,7 +68,7 @@ func TestExpandSlashSkillPassthroughs(t *testing.T) {
 
 func TestExpandSlashSkillToleratesMentionPrefix(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	dir := filepath.Join(home, ".memdoor", "skills")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)

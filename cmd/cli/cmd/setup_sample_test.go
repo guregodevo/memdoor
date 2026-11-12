@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"bytes"
+	"memdoor/internal/testenv"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,7 +29,7 @@ func TestDecliningTheSampleRunNamesTheCommandForLater(t *testing.T) {
 // into an empty folder and keep needs a base to put the first attempt back.
 func TestSampleDirIsFreshAndUnderTheHome(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	dir, err := sampleDir()
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +64,7 @@ func TestSampleDirHasACommit(t *testing.T) {
 	if _, err := exec.LookPath("git"); err != nil {
 		t.Skip("no git")
 	}
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	dir, err := sampleDir()
 	if err != nil {
 		t.Fatal(err)

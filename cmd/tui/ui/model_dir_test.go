@@ -10,9 +10,12 @@ import (
 // it with every turn), a bad path changes nothing, and a bare /dir reports
 // where the session is.
 func TestSlashDir(t *testing.T) {
+	// The temporary directory is made first, so its cleanup runs LAST: /dir
+	// moves the process into it, and Windows will not remove a directory that is
+	// still a working directory (#283).
+	target := t.TempDir()
 	orig, _ := os.Getwd()
 	t.Cleanup(func() { _ = os.Chdir(orig) })
-	target := t.TempDir()
 
 	m := Model{}
 	if _, handled := m.handleSlashCommand("/dir " + target); !handled {

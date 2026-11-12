@@ -2,7 +2,7 @@ package gateway
 
 import (
 	"context"
-	"os"
+	"memdoor/internal/testenv"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -12,13 +12,11 @@ import (
 // one of those, through the caller the binary provides.
 func TestAPeerIsANamedGatewayAndOnlyThat(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	if err := SavePeers(map[string]PeerEntry{"box": {Gateway: "http://box:18789", Dir: "/srv/app"}}); err != nil {
 		t.Fatal(err)
 	}
-	if fi, err := os.Stat(filepath.Join(home, ".memdoor", "peers.json")); err != nil || fi.Mode().Perm() != 0o600 {
-		t.Fatalf("the peers file is the person's alone: %v %v", err, fi)
-	}
+	testenv.OwnerOnly(t, filepath.Join(home, ".memdoor", "peers.json")) // the person's alone
 	ps := newPeerSet(nil)
 	if !ps.IsPeer("box") || !ps.IsPeer("Box") || ps.IsPeer("vps") {
 		t.Fatal("box is a peer, vps is not")

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,11 @@ import (
 // fakeCmux records every call it gets, one line each, and returns the reader.
 func fakeCmux(t *testing.T) func() string {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		// cmux is a macOS app, and its stand-in here is a /bin/sh script:
+		// Windows has neither the app nor a shell that runs it.
+		t.Skip("cmux is macOS only")
+	}
 	dir := t.TempDir()
 	log := filepath.Join(dir, "calls")
 	bin := filepath.Join(dir, "cmux")

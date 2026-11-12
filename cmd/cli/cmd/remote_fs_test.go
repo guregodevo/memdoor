@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,7 +14,7 @@ import (
 // when that machine has it, else in its home; never in this laptop's path.
 func TestARemoteTurnWithNoDirHasAGoodDefault(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	proj := filepath.Join(home, "Dev", "app")
 	if err := os.MkdirAll(proj, 0o755); err != nil {
 		t.Fatal(err)

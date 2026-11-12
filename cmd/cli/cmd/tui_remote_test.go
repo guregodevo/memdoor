@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -27,7 +28,7 @@ import (
 // TUI talks to, the same conversation keeps its link, /remote off revokes it,
 // and the file holding keys is owner-only.
 func TestRemoteLink(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	// A relay host of its own — not the gateway the TUI talks to (…:1),
 	// and not memdoor.ai (no network in a unit test). The link must point
 	// at the relay host, never at the gateway.
@@ -83,9 +84,7 @@ func TestRemoteLink(t *testing.T) {
 	if !strings.Contains(again, link) {
 		t.Fatal("the same conversation keeps its link")
 	}
-	if info, err := os.Stat(remoteLinksPath()); err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("the key file must be owner-only, got %v", info.Mode().Perm())
-	}
+	testenv.OwnerOnly(t, remoteLinksPath()) // the key file is owner-only
 
 	if off, _ := remote("off"); !strings.Contains(off, "off") {
 		t.Fatalf("off: %s", off)
@@ -413,7 +412,7 @@ func TestRemoteRelayEndToEnd(t *testing.T) {
 // browser can open: the relay would not admit the terminal. /remote says so
 // instead, and how to fix it.
 func TestRemoteLinkNeedsAccount(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "")
 	out, err := tuiRemote(remoteSession{Gateway: "http://127.0.0.1:1", ChannelID: "chan-noacct"})("")
 	if err == nil || !strings.Contains(err.Error(), "memdoor login") {

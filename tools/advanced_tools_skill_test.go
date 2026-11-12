@@ -2,6 +2,7 @@ package tools
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,7 @@ import (
 // managed tier and resolve with no rebuild — the disk-first contract.
 func TestSkillResolvesProjectLocalDir(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	proj := t.TempDir()
 	skillDir := filepath.Join(proj, ".agents", "skills")
 	if err := os.MkdirAll(skillDir, 0o755); err != nil {
@@ -35,7 +36,7 @@ func TestSkillResolvesProjectLocalDir(t *testing.T) {
 // injected cwd — a plain CLI call reaches user-edited skills.
 func TestSkillResolvesManagedDir(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	dir := filepath.Join(home, ".memdoor", "skills")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)

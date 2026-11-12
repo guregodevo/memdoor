@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"strings"
 	"testing"
@@ -34,7 +35,7 @@ func withTerminalStdin(t *testing.T, text string, f func()) {
 
 func TestRemoteTargetByIDAndLast(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	recordSession(sessionRecord{ChannelID: "aaaa1111-0000-0000-0000-000000000001", ChannelName: "a", Title: "older", Dir: "/p/one", Workspace: "w"})
 	recordSession(sessionRecord{ChannelID: "bbbb2222-0000-0000-0000-000000000002", ChannelName: "b", Title: "newer", Dir: "/p/two", Workspace: "w"})
 	recs := loadSessionIndex()
