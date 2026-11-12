@@ -28,13 +28,20 @@ chosen in this order (`autoDecisionModel`, gateway/decision_model.go):
    (`OPENROUTER_API_KEY`). On by default: nothing
    to configure. The log says `System One decision provider registered
    endpoint=… own_openrouter_key=true`.
+3. **A Gemini key, as the vendor engine** (`GEMINI_API_KEY`, no `GEMINI_BASE_URL`):
+   `gemini-decision-1` on Google's Decisions API
+   (`POST generativelanguage.googleapis.com/v1beta/decisions`,
+   `pkg/decision/gemini`). Only when a Gemini vendor key is the engine and
+   neither 1 nor 2 judges. Priced at $0.10 per 1M input tokens, no output
+   charge. The log says `Gemini decision provider registered`.
 No seat supplies a decision key (the maintainer, 2026-10-04: "Pro seat never offer
-key. It's always with user key"): with neither of the above, decisions are
+key. It's always with user key"): with none of the above, decisions are
 off. The broker no longer serves decisions at all.
 
 **On a company's vendor key** (providers/vendor.go) nothing but the vendor may
 be contacted, so neither the broker nor OpenRouter on the coding key judges;
-only an explicit decision key does. With none of the above, decisions answer
+only an explicit decision key does, and on a Gemini key Google's own
+`gemini-decision-1` (3). With none of the above, decisions answer
 `unavailable: not-configured` and the agent works unjudged.
 
 There is no switch (the maintainer, 2026-09-29: "remove the toggle on and off"): the
