@@ -70,3 +70,53 @@ func TestARefusedSessionRenewsOnceAndRetries(t *testing.T) {
 		t.Fatalf("the renewed session is saved, with no 30-day end: %+v %v", creds, err)
 	}
 }
+
+// No session saved at all (no ~/.memdoor/credentials.json): a gateway on
+// this machine is signed in to from this machine's own login, and the request
+// answered. `memdoor logs` answered "authentication required" with the
+// generated login beside it (2026-11-12). With nothing on disk to sign in
+// with, the refusal stands.
+func TestNoSavedSessionSignsInFromThisMachine(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	saved := gatewayAddr
+	t.Cleanup(func() { gatewayAddr = saved })
+	logins, calls := 0, 0
+	gw := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/auth/login":
+			logins++
+			_ = json.NewEncoder(w).Encode(map[string]any{"token": "fresh", "user": map[string]string{"email": "greg@localhost"}})
+		case "/api/logs/query":
+			calls++
+			if r.Header.Get("Authorization") != "Bearer fresh" {
+				http.Error(w, `{"error":"authentication required"}`, http.StatusUnauthorized)
+				return
+			}
+			_, _ = w.Write([]byte(`{"events": []}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer gw.Close()
+	gatewayAddr = strings.Replace(gw.URL, "127.0.0.1", "localhost", 1)
+
+	var out map[string]any
+	if err := NewClient().GetJSON("/api/logs/query", &out); err == nil || logins != 0 {
+		t.Fatalf("nothing to sign in with: the refusal stands (err=%v, logins=%d)", err, logins)
+	}
+
+	rec, _ := json.Marshal(localLogin{Email: "greg@localhost", Password: "generated"})
+	if err := writeHomeFile(localLoginFile, rec, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	calls = 0
+	if err := NewClient().GetJSON("/api/logs/query", &out); err != nil {
+		t.Fatalf("no session saved: signed in from this machine and answered: %v", err)
+	}
+	if logins != 1 || calls != 2 {
+		t.Fatalf("one sign-in and one retry: logins=%d calls=%d", logins, calls)
+	}
+	if creds, err := loadCredentials(); err != nil || creds.Token != "fresh" {
+		t.Fatalf("the session is saved: %+v %v", creds, err)
+	}
+}

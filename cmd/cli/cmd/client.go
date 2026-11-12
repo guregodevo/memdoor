@@ -43,10 +43,15 @@ func NewClient() *Client {
 }
 
 // Do executes a raw HTTP request with auth headers. A request the gateway
-// refuses for its session is renewed once and sent again (renewOnRefusal).
+// refuses for its session is signed in again once and sent again
+// (renewOnRefusal), with no session saved too: a gateway on this machine is
+// signed in to from this machine's own login, and `memdoor logs` with no
+// ~/.memdoor/credentials.json answered "authentication required" while
+// ~/.memdoor/local-login and the gateway's host key sat beside it
+// (2026-11-12).
 func (c *Client) Do(method, path string, body interface{}) (*http.Response, error) {
 	resp, err := c.do(method, path, body)
-	if err != nil || resp.StatusCode != http.StatusUnauthorized || c.token == "" || strings.HasPrefix(path, "/api/auth/") {
+	if err != nil || resp.StatusCode != http.StatusUnauthorized || strings.HasPrefix(path, "/api/auth/") {
 		return resp, err
 	}
 	if token := renewOnRefusal(c.token); token != "" {
