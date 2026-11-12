@@ -201,3 +201,46 @@ func TestANoteIsDrawnWithoutAnExplicitRefresh(t *testing.T) {
 
 // stripANSI is what the older tests call plainText.
 func stripANSI(s string) string { return plainText(s) }
+
+// A newer build is said once in the conversation, after the turn, never
+// during it; a later build is said again; the turn's end is told once (#290).
+func TestUpdateNoticeIsSaidOnceAfterTheTurn(t *testing.T) {
+	update, ended := "memdoor v1.822.0 is out (this is v1.821.0) — /update installs it", 0
+	m := NewPage(PageConfig{Agent: "coder", Ops: Ops{
+		Status:    func() Status { return Status{Model: "m", Update: "footer", UpdateSay: update} },
+		TurnEnded: func() { ended++ },
+	}})
+	said := func() int {
+		n := 0
+		for _, msg := range m.messages {
+			if msg.Role == "system" && strings.Contains(msg.Content, "is out") {
+				n++
+			}
+		}
+		return n
+	}
+	tick := func() {
+		next, _ := m.Update(statusTickMsg{})
+		m = next.(Model)
+	}
+
+	m.turnRunning, m.turnSinceTick = true, true
+	tick()
+	if said() != 0 || ended != 0 {
+		t.Fatalf("during a turn: said %d, ended %d", said(), ended)
+	}
+	m.turnRunning = false
+	tick()
+	if said() != 1 || ended != 1 {
+		t.Fatalf("after the turn: said %d, ended %d", said(), ended)
+	}
+	tick()
+	if said() != 1 || ended != 1 {
+		t.Fatalf("said once per version and the end told once: said %d, ended %d", said(), ended)
+	}
+	update = "memdoor v1.823.0 is out (this is v1.821.0) — /update installs it"
+	tick()
+	if said() != 2 {
+		t.Fatalf("a later build is said again: %d", said())
+	}
+}

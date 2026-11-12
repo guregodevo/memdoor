@@ -109,10 +109,11 @@ func (w *tuiWiring) baseConfig(agent, chID, chName string, page int) ui.PageConf
 			Connect:        ui.ConnectOps{Connect: tuiConnect, KeySource: providerKeySource, LoginStart: tuiConnectLoginStart, LoginWait: signInWait, LoginPaste: signInPaste, LoginCancel: signInCancel, Found: tuiFoundKeys, ConnectFound: tuiConnectFound},
 			Status: func() ui.Status {
 				st := tuiPageStatus(curDir(), wsID, chID, agent)
-				st.Update = tuiUpdateNotice()
+				st.Update, st.UpdateSay = tuiUpdateNotice()
 				return st
 			},
-			Update: tuiUpdate,
+			Update:    tuiUpdate,
+			TurnEnded: tuiTurnEnded,
 			// /fresh and /clear: the gateway wipes the agent's memory of
 			// this conversation (gateway/session_fresh.go).
 			Fresh: func(agent string) error {

@@ -736,6 +736,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Set thinking state (will display in sticky bar at bottom)
 		m.isThinking = true
 		m.turnRunning = true
+		m.turnSinceTick = true
 		m.thinkingStartTime = time.Now()
 		// Start ticker to refresh thinking indicator
 		return m, m.tickThinking()
@@ -1263,6 +1264,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case statusTickMsg:
+		if m.turnSinceTick && !m.busy() {
+			m.turnSinceTick = false
+			if m.turnEndedOp != nil {
+				m.turnEndedOp()
+			}
+		}
 		if m.statusOp != nil {
 			m.status = m.statusOp()
 			// The footer names the model that answers this session's agent;
@@ -1273,6 +1280,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.answeredBy != "" {
 				m.status.Model = m.answeredBy
 			}
+		}
+		// A newer build is said once in the conversation, never during a
+		// turn: the line above the footer is the one place a person looks
+		// least (#290). A later build is said again.
+		if u := m.status.UpdateSay; u != "" && u != m.updateSaid && !m.busy() {
+			m.updateSaid = u
+			m.note(u)
 		}
 		if m.status.Gate == "" && m.heldPrompt != "" && strings.TrimSpace(m.input.Value()) == "" {
 			m.input.SetValue(m.heldPrompt)

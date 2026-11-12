@@ -16,32 +16,87 @@ import (
 // footer shows, the installer, and the re-exec into the same conversation.
 
 var (
-	updateMu      sync.Mutex
-	updateChecked time.Time
-	updateNotice  string
+	updateMu       sync.Mutex
+	updateChecked  time.Time
+	updateNotice   string
+	updateSay      string
+	updateChecking bool
 )
 
-// tuiUpdateNotice is "memdoor vX is out — /update installs it" when a
-// newer build is published, checked at most once a day; "" otherwise. A
-// "dev" binary is never nagged. Errors are silence: the check is a
-// convenience, not a gate.
-func tuiUpdateNotice() string {
+// How often the window asks for the published version: when it opens and
+// then daily, and after a turn ends once an hour has passed (#290). Releases
+// ship several a day; a check only after a turn means an idle window left
+// open overnight is not a window the next day in memdoor-ops' count.
+const (
+	updateEvery     = 24 * time.Hour
+	updateAfterTurn = time.Hour
+)
+
+// fetchWindowVersion is the window's check; a test replaces it.
+var fetchWindowVersion = fetchRemoteVersion
+
+// tuiUpdateNotice is the footer's "memdoor vX is out (this is vY) —
+// /update installs it" and the conversation's line, with the release's
+// link, when a newer build is published; "" otherwise. It never waits on
+// the network: a check that is due runs in the background and its answer
+// shows on a later status tick. A "dev" binary is never nagged.
+func tuiUpdateNotice() (footer, say string) {
 	updateMu.Lock()
 	defer updateMu.Unlock()
-	if time.Since(updateChecked) < 24*time.Hour {
-		return updateNotice
+	if time.Since(updateChecked) >= updateEvery {
+		startUpdateCheckLocked()
 	}
-	updateChecked = time.Now()
-	updateNotice = ""
-	if Version == "" || Version == "dev" {
-		return ""
+	return updateNotice, updateSay
+}
+
+// updateSayLine is what the conversation says once per version (#290):
+// what to type, and the release page that says what changed.
+func updateSayLine(remote, local string) string {
+	return fmt.Sprintf("memdoor %s is out (this is %s). /update installs it and reopens this conversation. What changed: %s",
+		remote, local, releaseURL(remote))
+}
+
+// releaseURL is the GitHub release of tag, in the repository the builds
+// come from (MEMDOOR_GITHUB_REPOSITORY under a GitHub install source).
+func releaseURL(tag string) string {
+	repo := defaultGitHubRepo
+	if g, ok, err := installSource(); err == nil && ok {
+		repo = g.repo
 	}
-	remote, err := fetchRemoteVersion()
-	if err != nil || remote == "" || !versionNewer(remote, Version) {
-		return ""
+	return githubBase + "/" + repo + "/releases/tag/" + tag
+}
+
+// tuiTurnEnded asks again after a turn, at most once an hour.
+func tuiTurnEnded() {
+	updateMu.Lock()
+	defer updateMu.Unlock()
+	if time.Since(updateChecked) >= updateAfterTurn {
+		startUpdateCheckLocked()
 	}
-	updateNotice = updateLine(remote, Version, "/update")
-	return updateNotice
+}
+
+// startUpdateCheckLocked runs one check in the background. An error keeps
+// the last answer: the check is a convenience, not a gate.
+func startUpdateCheckLocked() {
+	if updateChecking || Version == "" || Version == "dev" {
+		return
+	}
+	updateChecking, updateChecked = true, time.Now()
+	fetch, local := fetchWindowVersion, Version
+	go func() {
+		remote, err := fetch()
+		updateMu.Lock()
+		defer updateMu.Unlock()
+		updateChecking = false
+		switch {
+		case err != nil || remote == "":
+		case versionNewer(remote, local):
+			updateNotice = updateLine(remote, local, "/update")
+			updateSay = updateSayLine(remote, local)
+		default:
+			updateNotice, updateSay = "", ""
+		}
+	}()
 }
 
 // versionNewer reports whether remote is a later release than local. Any
@@ -98,7 +153,7 @@ func tuiUpdate() (string, error) {
 		return "", fmt.Errorf("installer: %v\n%s", err, strings.TrimSpace(tail))
 	}
 	updateMu.Lock()
-	updateNotice, updateChecked = "", time.Now()
+	updateNotice, updateSay, updateChecked = "", "", time.Now()
 	updateMu.Unlock()
 	remote, _ := fetchRemoteVersion()
 	if remote == "" {
