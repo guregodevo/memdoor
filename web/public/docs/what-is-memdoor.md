@@ -1,6 +1,6 @@
 # What is Memdoor
 
-The CLI coding agent with Team Mode: cheap models, frontier results, on your machine.
+The open coding agent with Team Mode: cheap models, frontier results, on your machine.
 Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account.
 
 Headless first: a run starts from a shell script, CI, a schedule, a
