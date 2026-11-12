@@ -72,7 +72,9 @@ jobs:
       - name: Every package not on the known-failing list
         shell: bash
         run: |
-          grep -v '^#' .github/windows-known-failing.txt | sed '/^$/d' > "$RUNNER_TEMP/skip"
+          # An empty list is the goal (#283): grep finds no line and exits 1,
+          # which pipefail would make the step's failure.
+          { grep -v '^#' .github/windows-known-failing.txt || true; } | sed '/^$/d' > "$RUNNER_TEMP/skip"
           go list ./... | grep -v -x -F -f "$RUNNER_TEMP/skip" > "$RUNNER_TEMP/run"
           echo "$(wc -l < "$RUNNER_TEMP/run") packages, $(wc -l < "$RUNNER_TEMP/skip") skipped (#283)"
           go test $(cat "$RUNNER_TEMP/run")
@@ -81,7 +83,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          for p in $(grep -v '^#' .github/windows-known-failing.txt); do
+          for p in $(grep -v '^#' .github/windows-known-failing.txt || true); do
             if go test "$p" >/dev/null 2>&1; then echo "PASSES NOW, take it off the list: $p"; else echo "still failing: $p"; fi
           done
 
