@@ -41,6 +41,24 @@ func TestConfigRules(t *testing.T) {
 	}
 }
 
+// A local runtime serves one request at a time and hosted Jev eight; the
+// judge sends no more than that (issue #288).
+func TestParallelFollowsTheEndpoint(t *testing.T) {
+	local, err := New(Config{BaseURL: "http://127.0.0.1:8090"})
+	if err != nil || local.Parallel() != LocalParallel {
+		t.Fatalf("a local runtime serves one at a time: %v", err)
+	}
+	hosted, err := New(Config{BaseURL: "https://api.typesafe.ai", APIKey: "k"})
+	if err != nil || hosted.Parallel() != decision.DefaultParallel {
+		t.Fatalf("hosted Jev serves the default: %v", err)
+	}
+	pinned, err := New(Config{BaseURL: "http://127.0.0.1:8090", Parallel: 4})
+	if err != nil || pinned.Parallel() != 4 {
+		t.Fatalf("a configured count wins: %v", err)
+	}
+	var _ decision.Parallelism = hosted
+}
+
 func TestRoundTrip(t *testing.T) {
 	var got wireRequest
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
