@@ -18,7 +18,7 @@ jobs:
     runs-on: windows-latest
     env:
       CGO_ENABLED: "0"
-      PKGS: memdoor/pkg/secrets memdoor/gateway/config memdoor/pkg/mcp memdoor/pkg/chatgpt memdoor/pkg/modelkey memdoor/pkg/coding/buildscope
+      PKGS: memdoor/gateway/skills memdoor/gateway/billingsvc memdoor/gateway/memory memdoor/gateway/context memdoor/eval/editbench
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -34,5 +34,7 @@ jobs:
             echo "=================== $p rc=$rc"
             if [ $rc -ne 0 ]; then
               grep -E -A6 -- '--- FAIL|^panic:|_test\.go:[0-9]+:' "$log" | head -140
+              echo "--- tail of $p"
+              tail -40 "$log"
             fi
           done
