@@ -19,3 +19,5 @@ memdoor/pkg/modelkey
 memdoor/pkg/sandbox
 memdoor/pkg/secrets
 memdoor/pkg/workflow
+memdoor/tools
+memdoor/workflows
