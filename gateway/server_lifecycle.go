@@ -136,6 +136,13 @@ func addSecurityHeaders(next http.Handler) http.Handler {
 	})
 }
 
+// How long a stopping gateway waits: for the work it interrupted to return,
+// and in all before it exits whatever is left (#224).
+var (
+	shutdownDrainTimeout = 5 * time.Second
+	shutdownHardLimit    = 20 * time.Second
+)
+
 // Start starts the gateway server
 func Start(ctx context.Context, host string, port int, apiKey string, verbose bool) error {
 	server, err := NewServer(port, apiKey, verbose)
@@ -738,6 +745,16 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 
 		shutdownLog.Info("🛑 Graceful shutdown initiated")
 
+		// A stop that cannot finish is worse than a stop that cuts work: a
+		// turn or a stream that never returns held the process, the port and
+		// the database for good (#224). Whatever is still running at the limit
+		// is ended with the process.
+		hardStop := time.AfterFunc(shutdownHardLimit, func() {
+			fmt.Fprintf(os.Stderr, "shutdown did not finish in %s; exiting\n", shutdownHardLimit)
+			os.Exit(1)
+		})
+		defer hardStop.Stop()
+
 		// Phase 1: Stop accepting new work
 		shutdownLog.Debug("Phase 1: Stopping new work...")
 
@@ -755,13 +772,19 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 			shutdownLog.Debug("✓ Channel adapters stopped")
 		}
 
+		// Running turns and workflow runs are interrupted, not waited for: the
+		// drain below then only covers the ones finishing their last write.
+		if n := server.cancelAllWork(); n > 0 {
+			shutdownLog.Info("Interrupted work in flight", slog.Int("count", n))
+		}
+
 		// Phase 2: Notify clients
 		shutdownLog.Debug("Phase 2: Notifying clients...")
 		server.notifyClientsShutdown()
 
 		// Phase 3: Drain queues with timeout
 		shutdownLog.Debug("Phase 3: Draining queues...")
-		drainTimeout := 30 * time.Second
+		drainTimeout := shutdownDrainTimeout
 		if !server.drainQueuesWithTimeout(drainTimeout) {
 			shutdownLog.Warn("⚠ Queue drain timed out",
 				slog.Duration("timeout", drainTimeout))
@@ -779,8 +802,11 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 		}
 
 		// Stop queue manager
-		server.queueManager.Stop()
-		shutdownLog.Debug("✓ Queue manager stopped")
+		if server.queueManager.StopWithin(shutdownDrainTimeout) {
+			shutdownLog.Debug("✓ Queue manager stopped")
+		} else {
+			shutdownLog.Warn("⚠ Queue manager: a job did not return; leaving it to the process exit")
+		}
 
 		// Close agent runtime (closes session persistence)
 		if server.agent != nil {
@@ -809,6 +835,9 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 		if err := srv.Shutdown(shutdownCtx); err != nil {
 			shutdownLog.Error("⚠ HTTP server shutdown error",
 				slog.String("error", err.Error()))
+			// Shutdown waits for every connection to go idle; a socket or a
+			// stream that never does is closed so the port is freed.
+			_ = srv.Close()
 		} else {
 			shutdownLog.Debug("✓ HTTP server stopped")
 		}

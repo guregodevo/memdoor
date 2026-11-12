@@ -229,6 +229,25 @@ func (qm *QueueManager) Stop() {
 	qm.wg.Wait()
 }
 
+// StopWithin stops the workers and waits up to timeout for the running jobs to
+// return. Stop waits for as long as a job runs: one turn that never ends held
+// a stopping gateway, and its port, for good (#224). It reports whether every
+// worker returned in time.
+func (qm *QueueManager) StopWithin(timeout time.Duration) bool {
+	close(qm.stopChan)
+	done := make(chan struct{})
+	go func() {
+		qm.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return true
+	case <-time.After(timeout):
+		return false
+	}
+}
+
 // EnqueueJob enqueues a job for execution
 func (qm *QueueManager) EnqueueJob(job *AgentJob) error {
 	// 1. Get or create session lane

@@ -130,6 +130,38 @@ func (s *Server) clearRunCancel(sessionKey string) {
 	s.runCancelsMu.Unlock()
 }
 
+// cancelAllWork interrupts every running turn and every workflow run: a
+// gateway that is stopping has nothing to wait for, and the process ends them
+// anyway (#224).
+func (s *Server) cancelAllWork() int {
+	s.runCancelsMu.Lock()
+	cancels := make([]context.CancelFunc, 0, len(s.runCancels))
+	for _, c := range s.runCancels {
+		cancels = append(cancels, c)
+	}
+	s.runCancelsMu.Unlock()
+	if s.workflowRunsState != nil {
+		w := s.workflowRunsState
+		w.mu.Lock()
+		runs := make([]*workflowRun, 0, len(w.runs))
+		for _, r := range w.runs {
+			runs = append(runs, r)
+		}
+		w.mu.Unlock()
+		for _, r := range runs {
+			r.mu.Lock()
+			if r.state == "running" && r.cancel != nil {
+				cancels = append(cancels, r.cancel)
+			}
+			r.mu.Unlock()
+		}
+	}
+	for _, c := range cancels {
+		c()
+	}
+	return len(cancels)
+}
+
 // cancelRun interrupts a session's running turn, if any. Returns whether one was
 // active.
 func (s *Server) cancelRun(sessionKey string) bool {
