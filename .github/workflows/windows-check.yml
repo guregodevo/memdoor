@@ -18,6 +18,7 @@ jobs:
     runs-on: windows-latest
     env:
       CGO_ENABLED: "0"
+      PKGS: memdoor/pkg/secrets memdoor/gateway/config memdoor/pkg/mcp memdoor/pkg/chatgpt memdoor/pkg/modelkey memdoor/pkg/coding/buildscope
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -26,9 +27,12 @@ jobs:
       - name: Every failing test, file and line
         shell: bash
         run: |
-          for p in $(grep -v '^#' .github/windows-known-failing.txt); do
+          for p in $PKGS; do
             log="$RUNNER_TEMP/$(echo "$p" | tr / _).log"
-            go test "$p" -count=1 > "$log" 2>&1 || true
-            echo "=================== $p"
-            grep -E -- '--- FAIL|_test\.go:[0-9]+:|^panic:|^FAIL|undefined|cannot find package' "$log" | head -80
+            go test "$p" -count=1 > "$log" 2>&1
+            rc=$?
+            echo "=================== $p rc=$rc"
+            if [ $rc -ne 0 ]; then
+              grep -E -A6 -- '--- FAIL|^panic:|_test\.go:[0-9]+:' "$log" | head -140
+            fi
           done

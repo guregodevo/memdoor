@@ -2,8 +2,8 @@ package secrets
 
 import (
 	"encoding/base64"
+	"memdoor/internal/testenv"
 	"memdoor/pkg/shared"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,8 +13,7 @@ import (
 // the real ~/.memdoor/master.key.
 func useTempKey(t *testing.T) string {
 	t.Helper()
-	home := t.TempDir()
-	t.Setenv("HOME", home)
+	home := testenv.Home(t)
 	return filepath.Join(home, shared.MemdoorDirName, "master.key")
 }
 
@@ -92,7 +91,7 @@ func TestDecrypt_WrongKeyFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Swap in a fresh key file → new random key.
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if _, err := Decrypt(enc); err == nil {
 		t.Error("ciphertext decrypted under a different master key")
 	}
@@ -108,13 +107,7 @@ func TestGetMasterKey_CreatesPersistent0600Key(t *testing.T) {
 	if len(k1) != 32 {
 		t.Fatalf("key length = %d, want 32 (AES-256)", len(k1))
 	}
-	info, err := os.Stat(p)
-	if err != nil {
-		t.Fatalf("key file not written: %v", err)
-	}
-	if perm := info.Mode().Perm(); perm != 0o600 {
-		t.Errorf("key file perms = %o, want 600", perm)
-	}
+	testenv.OwnerOnly(t, p)
 	// Second call must reuse the same key (stable across restarts).
 	k2, err := getMasterKey()
 	if err != nil {
