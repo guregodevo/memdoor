@@ -11,6 +11,18 @@
 # with every model on your own provider key.
 
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell 5.1, the one most people run `irm | iex` in, redraws the
+# progress bar in the console for every chunk Invoke-WebRequest receives, a
+# known slowdown of large downloads: the 40 MB exe took minutes to arrive, and
+# some never finished (November 2026). The bar is off; the lines this script
+# prints say what it is doing. (A CI runner draws no bar, so it cannot show the
+# difference: 0.7 s with it and without.)
+$ProgressPreference = 'SilentlyContinue'
+
+# `irm | iex` runs this script inside the person's own session: `exit` there
+# closes their window, and the error with it. A failure throws instead, and
+# the message stays on the screen (a file run, powershell -File, still exits 1).
+function Fail($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red; throw 'memdoor was not installed.' }
 
 $Base      = 'https://memdoor.ai/dl'
 # A GitHub release instead of memdoor.ai: MEMDOOR_INSTALL_SOURCE=github, the
@@ -20,22 +32,20 @@ switch ("$env:MEMDOOR_INSTALL_SOURCE") {
     { $_ -in '', 'memdoor.ai' } { break }
     'github' {
         $repo = if ($env:MEMDOOR_GITHUB_REPOSITORY) { $env:MEMDOOR_GITHUB_REPOSITORY } else { 'guregodevo/memdoor' }
-        if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') { Write-Host "ERROR: MEMDOOR_GITHUB_REPOSITORY=$repo is not owner/repository." -ForegroundColor Red; exit 1 }
+        if ($repo -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') { Fail "MEMDOOR_GITHUB_REPOSITORY=$repo is not owner/repository." }
         if ($env:MEMDOOR_GITHUB_RELEASE) {
-            if ($env:MEMDOOR_GITHUB_RELEASE -notmatch '^[A-Za-z0-9_.+-]+$') { Write-Host "ERROR: MEMDOOR_GITHUB_RELEASE=$($env:MEMDOOR_GITHUB_RELEASE) is not a release tag." -ForegroundColor Red; exit 1 }
+            if ($env:MEMDOOR_GITHUB_RELEASE -notmatch '^[A-Za-z0-9_.+-]+$') { Fail "MEMDOOR_GITHUB_RELEASE=$($env:MEMDOOR_GITHUB_RELEASE) is not a release tag." }
             $Base = "https://github.com/$repo/releases/download/$($env:MEMDOOR_GITHUB_RELEASE)"
         } else {
             $Base = "https://github.com/$repo/releases/latest/download"
         }
         break
     }
-    default { Write-Host "ERROR: MEMDOOR_INSTALL_SOURCE=$($env:MEMDOOR_INSTALL_SOURCE): set it to github, or unset it for memdoor.ai." -ForegroundColor Red; exit 1 }
+    default { Fail "MEMDOOR_INSTALL_SOURCE=$($env:MEMDOOR_INSTALL_SOURCE): set it to github, or unset it for memdoor.ai." }
 }
 $Asset     = 'memdoor-windows-amd64.exe'
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Memdoor\bin'
 $Target    = Join-Path $InstallDir 'memdoor.exe'
-
-function Fail($msg) { Write-Host "ERROR: $msg" -ForegroundColor Red; exit 1 }
 
 if ([Environment]::Is64BitOperatingSystem -ne $true) {
     Fail "Memdoor needs 64-bit Windows."
@@ -49,13 +59,25 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) "memdoor-$([guid]::NewGuid())
 # machine that ran this line.
 function Get-VerifiedDownload {
     Write-Host "Downloading $Asset ..."
-    try {
-        # Our own test runs mark their download so adoption counts people only.
-        $ciMark = if ($env:MEMDOOR_CI -and $Base -eq 'https://memdoor.ai/dl') { "?ci=1" } else { "" }
-        Invoke-WebRequest -Uri "$Base/$Asset$ciMark" -OutFile $tmp -UseBasicParsing
-    } catch {
-        Fail "could not download $Base/$Asset — $($_.Exception.Message)"
+    # Our own test runs mark their download so adoption counts people only.
+    $ciMark = if ($env:MEMDOOR_CI -and $Base -eq 'https://memdoor.ai/dl') { "?ci=1" } else { "" }
+    # Three tries: a connection that drops halfway is not the end of the install.
+    $err = $null
+    foreach ($try in 1..3) {
+        try {
+            Invoke-WebRequest -Uri "$Base/$Asset$ciMark" -OutFile $tmp -UseBasicParsing
+            $err = $null
+            break
+        } catch {
+            $err = $_.Exception.Message
+            Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+            if ($try -lt 3) {
+                Write-Host "  the download stopped ($err); trying again ($($try + 1) of 3) ..."
+                Start-Sleep -Seconds 2
+            }
+        }
     }
+    if ($err) { Fail "could not download $Base/$Asset (3 tries) — $err" }
 
     Write-Host "Verifying checksum ..."
     try {
