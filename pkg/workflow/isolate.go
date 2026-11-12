@@ -12,6 +12,8 @@ import (
 	"sync"
 
 	"github.com/guregodevo/mario/tasks"
+
+	"memdoor/pkg/shared"
 )
 
 // NewIsolator is the isolation a workflow's `isolate: true` task and each
@@ -76,6 +78,14 @@ func (gitIsolator) Isolate(ctx context.Context, dir, name string) (tasks.Isolati
 		prefix, _ := git(ctx, dir, "rev-parse", "--show-prefix")
 		worktrees.Lock()
 		_, err := git(ctx, top, "worktree", "add", "--detach", root, "HEAD")
+		// Locked with a reason the write fence reads: a worktree of the
+		// project counts as the project for a coder's writes (#284), and an
+		// attempt wrote its fix into the project's own tree through it; the
+		// fan-out then found every check passing on the tree as it stood and
+		// scored nothing (django-11400, SWE-bench Verified, 2026-11-12).
+		if err == nil {
+			_, err = git(ctx, top, "worktree", "lock", "--reason", shared.IsolatedWorktreeLock, root)
+		}
 		worktrees.Unlock()
 		if err != nil {
 			return fail(fmt.Errorf("git worktree: %w", err))
@@ -161,7 +171,7 @@ func (i *gitIsolation) Changes(ctx context.Context) (string, error) {
 func (i *gitIsolation) Close() error {
 	if i.worktree != "" {
 		worktrees.Lock()
-		if _, err := git(context.Background(), i.worktree, "worktree", "remove", "--force", i.root); err != nil {
+		if _, err := git(context.Background(), i.worktree, "worktree", "remove", "--force", "--force", i.root); err != nil {
 			_, _ = git(context.Background(), i.worktree, "worktree", "prune")
 		}
 		worktrees.Unlock()
