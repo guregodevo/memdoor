@@ -6,7 +6,7 @@
 const SITE = 'https://memdoor.ai';
 
 export const HOME_META = {
-  title: "Memdoor — the CLI coding agent with Team Mode: cheap models, frontier results",
+  title: "Memdoor — the open coding agent with Team Mode: cheap models, frontier results",
   description:
     'Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama, llama.cpp, or any key. One binary, no account.',
 };
