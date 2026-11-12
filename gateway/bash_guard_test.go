@@ -16,6 +16,9 @@ func TestDestructiveBashReason(t *testing.T) {
 		"dd if=/dev/zero of=/dev/sda bs=1M",
 		"echo boom > /dev/sda",
 		":(){ :|:& };:",
+		"tmux kill-server",
+		"cd x && tmux kill-server; echo done",
+		"tmux -L other kill-server",
 	}
 	for _, cmd := range blocked {
 		if _, isBad := destructiveBashReason(cmd); !isBad {
@@ -35,6 +38,9 @@ func TestDestructiveBashReason(t *testing.T) {
 		"grep -rf pattern .", // -rf here is grep flags, not rm; no root target
 		"git rm -r internal/old",
 		"dd if=input of=output.img", // not a /dev/ target
+		"tmux kill-session -t t",
+		"tmux new-session -d -s t",
+		"echo tmux kill-server is dangerous > notes.txt",
 	}
 	for _, cmd := range allowed {
 		if reason, isBad := destructiveBashReason(cmd); isBad {
