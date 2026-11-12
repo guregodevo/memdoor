@@ -18,7 +18,7 @@ jobs:
     runs-on: windows-latest
     env:
       CGO_ENABLED: "0"
-      PKGS: memdoor/gateway/billingsvc memdoor/gateway/memory memdoor/gateway/context memdoor/eval/editbench memdoor/cmd/tui/ui memdoor/pkg/sandbox
+      PKGS: memdoor/cmd/tui/ui
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6

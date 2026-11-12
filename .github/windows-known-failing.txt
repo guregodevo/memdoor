@@ -4,13 +4,8 @@
 # this list in the pull request that makes it pass.
 memdoor/cmd/cli/cmd
 memdoor/cmd/tui/ui
-memdoor/eval/editbench
 memdoor/gateway
-memdoor/gateway/billingsvc
-memdoor/gateway/context
-memdoor/gateway/memory
 memdoor/gateway/providers
-memdoor/pkg/sandbox
 memdoor/pkg/workflow
 memdoor/tools
 memdoor/workflows
