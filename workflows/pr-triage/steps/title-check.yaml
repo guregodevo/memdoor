@@ -22,5 +22,8 @@ requires:
   - table_pattern: diff
 target:
   file: .memdoor/runs/pr-triage-{{.partition}}.titlecheck
-timeout: 20m
+# triage-lean's: the two lean calls start together and a local model answers
+# them one at a time, so this one may wait for the other's prompt first (a
+# 4-vCPU runner reads an 8B prompt at about 10 tokens a second).
+timeout: 30m
 max_retries: 0

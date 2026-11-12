@@ -40,6 +40,15 @@ var oaiStallAfter = 60 * time.Second
 // the 60 s stall dropped the request twice (2026-10-27).
 var keylessStallAfter = 10 * time.Minute
 
+// keylessKeepAliveOnlyAfter is keepAliveOnlyAfter for a runtime connected
+// with no key. Its comments are its own, sent while it reads the prompt
+// (janis: one every 5 s), and a CPU reads a long prompt for longer than
+// keepAliveOnlyAfter: a 4-vCPU machine read 4,307 tokens of an 8B in 7
+// minutes, and pr-triage's title-check was cut at 5 and asked again until
+// its 20-minute timeout (janis#25, 2026-11-12). The client's whole-request
+// limit bounds it (keylessHTTPClient).
+var keylessKeepAliveOnlyAfter = time.Hour
+
 // oaiHTTPClient bounds the wait for response headers; the body is bounded
 // between bytes by idleTimeoutReader (oai_native.go).
 func oaiHTTPClient() *http.Client { return stallBoundClient(oaiStallAfter, 20*time.Minute) }
