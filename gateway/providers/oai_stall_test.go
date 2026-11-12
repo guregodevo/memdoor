@@ -275,8 +275,8 @@ func TestAKeylessRuntimeKeepsItsStreamWhileItReads(t *testing.T) {
 		sse(w, `{"choices":[{"index":0,"delta":{"content":"YES"}}]}`, `{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":1}}`)
 	}))
 	defer srv.Close()
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
-	t.Setenv("HOME", t.TempDir())
+	testenv.Logger(t)
+	testenv.SetHome(t, t.TempDir())
 	local := Provider{ID: "local", API: APIChat, Base: srv.URL + "/v1", Keyless: true}.Client(context.Background(), "Qwen3-8B-4bit")
 	msg, err := ask(local)
 	if err != nil || atomic.LoadInt32(&calls) != 1 || msg.Content[0].Text != "YES" {
