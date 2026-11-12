@@ -133,10 +133,10 @@ func TestCmuxFollowsTheTurn(t *testing.T) {
 // A question rings for a person who is away: the turn waits on them.
 func TestAQuestionRings(t *testing.T) {
 	calls := fakeCmux(t)
-	m := Model{turnRunning: true, blurred: true}
+	m := Model{turnRunning: true, blurred: true, title: "fix the login bug"}
 	_, cmd := m.Update(questionMsg{id: "q1", question: "Which file?"})
 	runAll(cmd)
-	wantCalls(t, calls(), "notify --title Memdoor: "+titleDirName()+" needs your answer")
+	wantCalls(t, calls(), "notify --title Memdoor: fix the login bug needs your answer")
 }
 
 // A run at a gate waits for the person: the pill says so and the ring does
