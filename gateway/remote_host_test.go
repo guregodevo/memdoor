@@ -2,9 +2,9 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -81,10 +81,7 @@ func TestTheGatewayHostsALinkForItsOwner(t *testing.T) {
 	if len(host.started) != 1 || host.started[0].ChannelID != "ch1" || host.started[0].Actor != "user:a" || host.started[0].Dir != "/srv/proj" {
 		t.Fatalf("the host was started with the spec, channel and actor from the request: %+v", host.started)
 	}
-	fi, err := os.Stat(path)
-	if err != nil || fi.Mode().Perm() != 0o600 {
-		t.Fatalf("the link is kept on disk for the owner alone: %v %v", err, fi)
-	}
+	testenv.OwnerOnly(t, path) // the link is kept on disk for the owner alone
 	if _, out = hostedCall(t, h, http.MethodGet, "ch1", "user:a", ""); out["hosted"] != true || out["key"] != "k1" || out["relay"] != "http://box:18789" {
 		t.Fatalf("the owner reads the link back: %v", out)
 	}

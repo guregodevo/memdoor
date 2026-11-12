@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"memdoor/internal/testenv"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -32,7 +33,7 @@ func writeRecents(t *testing.T, home string, slugs ...string) {
 // ways to name the only workspace they have.
 func TestTheOnlyWorkspaceIsTheDefault(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	t.Setenv(envWorkspaceVar, "")
 	writeRecents(t, home, "shipyard")
 	if slug, ok := soleWorkspace(); !ok || slug != "shipyard" {
@@ -44,7 +45,7 @@ func TestTheOnlyWorkspaceIsTheDefault(t *testing.T) {
 // the slugs the person actually has, not a recital of four ways to set one.
 func TestSeveralWorkspacesNameThemselves(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	t.Setenv(envWorkspaceVar, "")
 	writeRecents(t, home, "shipyard", "hackernews")
 	if _, ok := soleWorkspace(); ok {
@@ -64,7 +65,7 @@ func TestSeveralWorkspacesNameThemselves(t *testing.T) {
 // not a lecture about flags, env vars and config keys.
 func TestFreshMachineIsToldToSetUp(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	t.Setenv(envWorkspaceVar, "")
 	if _, ok := soleWorkspace(); ok {
 		t.Fatal("an empty machine has no default workspace")
@@ -84,7 +85,7 @@ func TestFreshMachineIsToldToSetUp(t *testing.T) {
 // "workspace is required" (the ssh door, 2026-10-23).
 func TestARemoteGatewaysOnlyWorkspaceIsTheDefaultForRun(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	t.Setenv(envWorkspaceVar, "")
 	t.Chdir(t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

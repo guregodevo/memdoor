@@ -3,6 +3,7 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -29,7 +30,7 @@ func TestAnLLMTaskKeepsReasoningWithoutRetry(t *testing.T) {
 		{"whitespace reply", " \n", " \n", "stop", "", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("HOME", t.TempDir())
+			testenv.SetHome(t, t.TempDir())
 			t.Setenv("OPEN_ROUTER_API_KEY", "")
 			t.Setenv("OPENROUTER_API_KEY", "")
 			var calls atomic.Int32
@@ -79,7 +80,7 @@ func TestAnLLMTaskMarksAReplyCutAtTheCap(t *testing.T) {
 		{"no term", "thinking high", "", "partial plan", "length", "partial plan"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("HOME", t.TempDir())
+			testenv.SetHome(t, t.TempDir())
 			t.Setenv("OPEN_ROUTER_API_KEY", "")
 			t.Setenv("OPENROUTER_API_KEY", "")
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"memdoor/internal/testenv"
 	"testing"
 
 	"memdoor/gateway/providers"
@@ -28,7 +29,7 @@ func TestAutoDecisionModel(t *testing.T) {
 		t.Fatalf("signed in, no own key: off, never the broker, got %q", got)
 	}
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "")
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if got := autoDecisionModel(readyStub(true), true); got != "systemone" {
 		t.Fatalf("no seat, own key: systemone, got %q", got)
 	}
@@ -41,7 +42,7 @@ func TestAutoDecisionModel(t *testing.T) {
 // contacted: not memdoor.ai's broker, and not OpenRouter on the coding key.
 // Only a decision key the gateway was given explicitly judges.
 func TestNoBrokerDecisionsOnAVendorKey(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "seat-token")
 	t.Cleanup(func() { _ = providers.ClearRemoteEngine() })
 	if err := providers.SetRemoteEngine(providers.RemoteEngine{Name: providers.VendorEngineName, Vendor: providers.VendorAnthropic, Endpoint: "https://api.anthropic.com", APIKey: "k", Model: "claude-sonnet-5"}); err != nil {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"memdoor/pkg/shared"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -15,15 +16,26 @@ import (
 // "/user/alice/../../etc/passwd" would satisfy strings.HasPrefix("/user/alice/")
 // yet resolve (via filepath.Join in ResolvePath) to a location outside the
 // sandbox. After Clean it becomes "/etc/passwd" and fails the prefix check.
-func (ctx SandboxContext) CanAccessPath(path string) bool {
-	path = filepath.Clean(path)
+//
+// A virtual path is POSIX-shaped on every OS, so it is cleaned with path.Clean:
+// filepath.Clean on Windows rewrites "/user/<id>/x" as "\user\<id>\x", and then
+// every prefix below misses and the agent may reach nothing at all (#283).
+func (ctx SandboxContext) CanAccessPath(p string) bool {
+	// Where a backslash is a separator, ResolvePath's filepath.Join would walk
+	// a path such as /user/<me>/..\..\user\<other> into another user's folder,
+	// which path.Clean leaves alone because it does not see the separator. A
+	// virtual path has only slashes, so one with a backslash is refused there.
+	if os.PathSeparator == '\\' && strings.Contains(p, `\`) {
+		return false
+	}
+	p = path.Clean(p)
 	switch ctx.AgentScope {
 	case ScopeUser:
-		return ctx.canAccessAsUser(path)
+		return ctx.canAccessAsUser(p)
 	case ScopeChannel:
-		return ctx.canAccessAsChannel(path)
+		return ctx.canAccessAsChannel(p)
 	case ScopeWorkspace:
-		return ctx.canAccessAsWorkspace(path)
+		return ctx.canAccessAsWorkspace(p)
 	default:
 		return false
 	}

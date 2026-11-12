@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,7 +16,7 @@ import (
 // slug changes nothing.
 func TestOwnWorkspace(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	t.Setenv(envWorkspaceVar, "")
 	project := filepath.Join(home, "project")
 	if err := os.MkdirAll(filepath.Join(project, ".memdoor"), 0o755); err != nil {

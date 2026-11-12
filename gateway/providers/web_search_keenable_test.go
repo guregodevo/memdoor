@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"memdoor/internal/testenv"
 	"testing"
 
 	"memdoor/tools"
@@ -9,7 +10,7 @@ import (
 // Unset, OpenRouter stays the engine; MEMDOOR_WEB_SEARCH=keenable switches
 // it, except in company-key mode (#168).
 func TestWebSearchEngineIsOptIn(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv(KeenableKeyVar, "")
 	t.Cleanup(func() { _ = ClearRemoteEngine() })
 	_ = ClearRemoteEngine()

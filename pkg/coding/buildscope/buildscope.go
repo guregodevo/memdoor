@@ -10,6 +10,7 @@
 package buildscope
 
 import (
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -38,19 +39,11 @@ func Derive(root string, changed []string) Scope {
 			continue
 		}
 		sawGo = true
-		rel := f
-		if filepath.IsAbs(f) {
-			r, err := filepath.Rel(root, f)
-			if err != nil {
-				return full()
-			}
-			rel = r
-		}
-		rel = filepath.ToSlash(rel)
-		if strings.HasPrefix(rel, "../") || rel == ".." {
+		rel, under := relativeTo(root, f)
+		if !under {
 			return full() // outside the root — don't guess a scope
 		}
-		dirs[path0(filepath.ToSlash(filepath.Dir(rel)))] = true
+		dirs[path0(path.Dir(rel))] = true
 	}
 	if !sawGo || len(dirs) == 0 || len(dirs) > maxDistinctPackages {
 		return full()
@@ -78,4 +71,26 @@ func path0(d string) string {
 // BuildArgs returns the `go` args to build this scope, e.g. ["build","./x/..."].
 func (s Scope) BuildArgs() []string {
 	return append([]string{"build"}, s.Patterns...)
+}
+
+// relativeTo returns f as a slash path under root, and whether it is under root
+// at all.
+//
+// A changed path is what git prints, so it holds slashes on every OS — and
+// "/repo/x.go" has no volume name, which on Windows filepath.IsAbs calls
+// relative. So the leading slash decides, not the platform, and the arithmetic
+// is done on slash paths (a Windows path is slash-normalized first).
+func relativeTo(root, f string) (string, bool) {
+	r := strings.TrimSuffix(filepath.ToSlash(root), "/")
+	p := filepath.ToSlash(f)
+	if !strings.HasPrefix(p, "/") && !filepath.IsAbs(f) {
+		if p == ".." || strings.HasPrefix(p, "../") {
+			return p, false
+		}
+		return p, true
+	}
+	if r == "" || !strings.HasPrefix(p, r+"/") {
+		return p, false
+	}
+	return strings.TrimPrefix(p, r+"/"), true
 }

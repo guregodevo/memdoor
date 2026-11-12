@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +16,7 @@ import (
 // see sends the picture the coder names, from the turn's project, to the
 // turn's model as an image part, and returns what the model saw.
 func TestSeeShowsAPictureInTheProjectToTheTurnsModel(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	asked := fakeOpenRouter(t, "A login form; the Submit button overlaps the footer.")
 	project := t.TempDir()
 	if err := os.WriteFile(filepath.Join(project, "shot.png"), []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"), 0o644); err != nil {
@@ -44,7 +45,7 @@ func TestSeeShowsAPictureInTheProjectToTheTurnsModel(t *testing.T) {
 }
 
 func TestSeeRefusesBeforeAskingAModel(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	asked := fakeOpenRouter(t, "never")
 	ar := &AgentRuntime{clientFactory: providers.NewClientFactory()}
 	ctx := context.WithValue(context.Background(), sharedctx.WorkdirKey, t.TempDir())

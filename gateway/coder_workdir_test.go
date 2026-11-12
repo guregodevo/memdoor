@@ -2,13 +2,14 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"path/filepath"
 	"testing"
 )
 
 func TestConfineToCoderWorkdir(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	wd := filepath.Join(home, "memdoor-coder")
 
 	field := func(in json.RawMessage, key string) string {

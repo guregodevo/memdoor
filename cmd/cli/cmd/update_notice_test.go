@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,7 +15,7 @@ import (
 // A HEADLESS COMMAND SAYS A NEW VERSION IS OUT (#90): once a day, with the
 // version it runs, only for run / workflow / cron, never for a dev build.
 func TestAHeadlessCommandSaysANewVersionOnceADay(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	savedV, savedF := Version, fetchHeadlessVersion
 	t.Cleanup(func() { Version, fetchHeadlessVersion = savedV, savedF })
 	Version = "v1.793.0"

@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"github.com/charmbracelet/lipgloss"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -173,7 +174,7 @@ func TestTheDAGBlockCopiesWithoutColours(t *testing.T) {
 // dropdown lists "/w <name>" for each, never "/workflow:<name>"; the old
 // spellings still run.
 func TestSlashWRunsAWorkflowWithItsTask(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	dir := t.TempDir()
 	SetSessionDir(dir)
 	t.Cleanup(func() { SetSessionDir("") })
@@ -328,7 +329,7 @@ func TestTeamSolveWithNoTaskAsksForIt(t *testing.T) {
 // The project's workflows are slash commands: the dropdown completes
 // "/workflow:" with what workflows/ holds, and the command runs it.
 func TestTheProjectsWorkflowsAreSlashCommands(t *testing.T) {
-	t.Setenv("HOME", t.TempDir()) // the person's own library is not this test's
+	testenv.SetHome(t, t.TempDir()) // the person's own library is not this test's
 	dir := t.TempDir()
 	for _, w := range []string{"release", "digest"} {
 		os.MkdirAll(filepath.Join(dir, ".memdoor", "workflows", w, "steps"), 0o755)

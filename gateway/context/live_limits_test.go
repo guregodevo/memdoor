@@ -1,6 +1,7 @@
 package context
 
 import (
+	"memdoor/internal/testenv"
 	"strings"
 	"testing"
 
@@ -14,9 +15,8 @@ import (
 // review. The mutation check: read pc.limits in Check and the second check
 // still refuses.
 func TestPreflightFollowsTheEngineServingTheTurn(t *testing.T) {
-	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
-		t.Fatal(err)
-	}
+	testenv.Logger(t)
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	window := 0
 	SetRemoteWindow(func(string) int { return window })
 	t.Cleanup(func() { SetRemoteWindow(nil) })
@@ -50,9 +50,8 @@ func tokensOf(n int) string {
 // checks: measure against the checker's own model (the pinned small model then
 // never compacts), or drop the ceiling (the 1M model carries 210K).
 func TestPreflightMeasuresTheAnsweringModel(t *testing.T) {
-	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
-		t.Fatal(err)
-	}
+	testenv.Logger(t)
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	SetRemoteWindow(func(model string) int {
 		switch model {
 		case "small/128k":
@@ -95,9 +94,8 @@ func TestPreflightMeasuresTheAnsweringModel(t *testing.T) {
 
 // /context says where compaction starts: the same number the check uses.
 func TestCompactAtIsTheChecksThreshold(t *testing.T) {
-	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
-		t.Fatal(err)
-	}
+	testenv.Logger(t)
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	SetRemoteWindow(func(string) int { return 131_072 })
 	t.Cleanup(func() { SetRemoteWindow(nil) })
 	pc, err := NewPreflightChecker("default", nil, 0, false)
@@ -125,9 +123,8 @@ func TestCountToolOutputTokens(t *testing.T) {
 // compaction.thresholdTokens takes precedence over the percentage, never past
 // the effective limit, and /context says which rule is in force.
 func TestAFixedThresholdTakesPrecedence(t *testing.T) {
-	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
-		t.Fatal(err)
-	}
+	testenv.Logger(t)
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	SetRemoteWindow(func(string) int { return 131_072 })
 	t.Cleanup(func() { SetRemoteWindow(nil) })
 	pc, err := NewPreflightChecker("default", nil, 0, false)

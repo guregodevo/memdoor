@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
 
-	"memdoor/gateway/logs"
 	"memdoor/pkg/llm"
 )
 
@@ -27,7 +27,7 @@ func resetSticky(t *testing.T, eps []Endpoint) {
 // The host that answered is asked first on the next request, by its slug,
 // with fallback left on; a person's own order is never replaced.
 func TestTheServingHostIsAskedFirstNextTime(t *testing.T) {
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	resetSticky(t, []Endpoint{{ProviderName: "AtlasCloud", Tag: "atlas-cloud/fp8"}, {ProviderName: "Together", Tag: "together"}})
 	var sent []map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func TestTheServingHostIsAskedFirstNextTime(t *testing.T) {
 }
 
 func TestAnUnknownHostOrAnOldPinIsNotUsed(t *testing.T) {
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	resetSticky(t, []Endpoint{{ProviderName: "AtlasCloud", Tag: "atlas-cloud/fp8"}})
 	noteServedHost("k", "m/x", "NotListed")
 	if h := stickyHost("m/x"); h != "" {
@@ -90,7 +90,7 @@ func TestAnUnknownHostOrAnOldPinIsNotUsed(t *testing.T) {
 // answers in a row from the same other host do move the pin. A host that
 // answers its own request leaves a half-built move untouched.
 func TestASingleFallbackDoesNotMoveThePin(t *testing.T) {
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	resetSticky(t, []Endpoint{{ProviderName: "AtlasCloud", Tag: "atlas-cloud/fp8"}, {ProviderName: "Together", Tag: "together"}})
 	noteServedHost("k", "m/x", "AtlasCloud")
 	if h := stickyHost("m/x"); h != "atlas-cloud" {

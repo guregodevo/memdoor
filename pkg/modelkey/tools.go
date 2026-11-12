@@ -86,7 +86,9 @@ func keyTokens(s string) []string {
 
 func shortHome(path, home string) string {
 	if home != "" && strings.HasPrefix(path, home+string(filepath.Separator)) {
-		return "~" + path[len(home):]
+		// Slashes, on every OS: a person looking for the file reads "~/.codex/
+		// auth.json", not "~\.codex\auth.json".
+		return "~/" + filepath.ToSlash(path[len(home)+1:])
 	}
 	return path
 }

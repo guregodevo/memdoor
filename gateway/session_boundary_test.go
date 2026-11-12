@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"memdoor/internal/testenv"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -25,7 +26,7 @@ func texts(msgs []llm.MessageParam) string {
 
 func boundaryStore(t *testing.T) (*SessionPersistence, string) {
 	t.Helper()
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	sp, err := NewSessionPersistence(nil, false)
 	if err != nil {
 		t.Fatal(err)

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,7 +20,7 @@ import (
 // machine's links file so `memdoor remote` prints the same one.
 func TestTheWindowHandsTheLinkToTheGateway(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	var got gateway.RemoteHostSpec
 	hosted := false
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

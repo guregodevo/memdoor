@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -56,7 +57,7 @@ func (b byQuestion) Evaluate(_ context.Context, req decision.Request, _ decision
 }
 
 func keepsItsAnswer(t *testing.T, judge map[string]float64) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	ar, err := NewAgentRuntime("", false)
 	if err != nil {
 		t.Skipf("runtime unavailable here: %v", err)

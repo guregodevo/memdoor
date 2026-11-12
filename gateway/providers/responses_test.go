@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"memdoor/gateway/logs"
 	"memdoor/pkg/llm"
 )
 
@@ -28,7 +28,7 @@ func responsesSSE(w http.ResponseWriter, events ...string) {
 
 func responsesTestClient(t *testing.T, handler http.HandlerFunc) (LLMClient, func()) {
 	t.Helper()
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	old := oaiRetryAfter
 	oaiRetryAfter = []time.Duration{0, 0}
 	srv := httptest.NewServer(handler)

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +29,7 @@ func writeWorkflowSteps(t *testing.T, dir, name string, steps map[string]string)
 // that did not ask still starts: fix-tests on a project with nothing to fix
 // runs no model, and the action's self-test runs it with no key.
 func TestARunThatNeedsAModelIsRefusedWithNoModel(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	for _, k := range []string{"OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "XAI_API_KEY"} {
 		t.Setenv(k, "")
 	}

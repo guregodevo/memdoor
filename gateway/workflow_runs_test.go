@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"memdoor/gateway/broadcast"
+	"memdoor/internal/testenv"
 	"memdoor/pkg/shared"
 	"net/http"
 	"net/http/httptest"
@@ -56,7 +57,7 @@ func workflowServerWithRun(t *testing.T) (*Server, *workflowRun, string) {
 }
 
 func TestWorkflowFilesListsTheProjectsWorkflows(t *testing.T) {
-	t.Setenv("HOME", t.TempDir()) // the list includes the library under ~/.memdoor/workflows
+	testenv.SetHome(t, t.TempDir()) // the list includes the library under ~/.memdoor/workflows
 	dir := t.TempDir()
 	if got := workflowFiles(dir); len(got) != 0 {
 		t.Fatalf("an empty project has no workflows, got %v", got)
@@ -345,7 +346,7 @@ func TestTheToolDescribesAListAndARun(t *testing.T) {
 func TestLocalWorkflowsNeedNoSeat(t *testing.T) {
 	s, _, dir := workflowServerWithRun(t)
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "")
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if _, err := s.startWorkflow(dir, "release", "", "", "", "", "", "", 0); err != nil && strings.Contains(err.Error(), "Pro") {
 		t.Fatalf("a local run must not ask for a seat: %v", err)
 	}
