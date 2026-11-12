@@ -142,6 +142,19 @@ check:
 	@go vet ./...
 	@echo "Running go mod tidy..."
 	@go mod tidy
+	@# An untidy go.mod/go.sum must fail HERE, in the branch that leaves it
+	@# (2026-11-11: main shipped a stale mario line, so every PR carried a
+	@# go.sum change unrelated to it). Outside a checkout there is nothing
+	@# to diff, so the guard only runs in git.
+	@if git rev-parse --git-dir >/dev/null 2>&1; then \
+		if ! git diff --quiet go.mod go.sum; then \
+			echo "❌ go mod tidy changed go.mod or go.sum:"; \
+			git diff go.mod go.sum; \
+			echo ""; \
+			echo "Commit the tidied files."; \
+			exit 1; \
+		fi; \
+	fi
 	@echo "✓ Checks passed"
 
 # Run tests
