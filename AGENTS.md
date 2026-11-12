@@ -145,6 +145,7 @@ grep -r "duplicate_code" .    # Search before coding
 ```
 
 ### Critical Patterns
+- **A pull request for every change:** never commit on `main`, never push to `main` (see Git Workflow)
 - **Search first:** `grep -r "pattern" .` before adding code
 - **Factory returns interface:** Never expose concrete types
 - **Duck typing:** Use for circular dependencies
@@ -491,6 +492,27 @@ the Hermes text protocol) is deleted. A gateway with no key
 has no model until one is connected. There is no local model.
 
 ## Git Workflow
+
+### A pull request for every change
+Every change reaches `main` through a pull request. This holds for every agent
+and every model, whatever the task says ("fix it", "commit it", "ship it").
+
+1. Never commit on `main`. Branch from `origin/main` in a worktree:
+   `git fetch origin && git worktree add ../memdoor-wt-<topic> -b <topic> origin/main`.
+2. Commit on that branch. Run `make build`, `make test` and `make check` there.
+3. `git push -u origin <topic>`, then `gh pr create --base main --body-file <file>`,
+   the body filled from `.github/PULL_REQUEST_TEMPLATE.md`, with `Fixes #N` for the issue.
+4. Stop at the PR link. The maintainer merges.
+
+Forbidden without the maintainer's words for it: `git push origin main`,
+`git push origin HEAD:main` or any refspec ending in `main`, `git push --force` to
+`main`, `gh pr merge`, `--admin`.
+
+Branch protection requires a PR and the `Build, vet & test` check, but a push
+with an admin token is not stopped by it. On 2026-11-12, 040d3f7 (#289) reached
+`main` that way: no PR, no `pr-review` run, and CI ran only after it was on `main`.
+
+### Before committing
 - ALWAYS test changes before committing
 - Build the project to ensure no compilation errors: `make build`
 - Test critical paths:
