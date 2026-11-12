@@ -111,17 +111,27 @@ function Get-VerifiedDownload {
 # binary and the next one's hashes. Both are fetched again once, a few
 # seconds later, when they are the same release; a second mismatch is not a
 # deploy and the install is refused.
-$hashes = Get-VerifiedDownload
-if ($hashes.Actual -ne $hashes.Expected) {
-    Write-Host "checksum mismatch for $Asset; a release may have been switching: fetching both again in 5s"
-    Start-Sleep -Seconds 5
+#
+# MEMDOOR_BINARY is an exe already built (the Windows CI installs each pull
+# request's build this way, as `make install` hands install.sh its own): it is
+# placed like a download, with no download and no checksum.
+if ($env:MEMDOOR_BINARY) {
+    if (-not (Test-Path -PathType Leaf $env:MEMDOOR_BINARY)) { Fail "MEMDOOR_BINARY=$($env:MEMDOOR_BINARY) is not a file." }
+    Write-Host "Installing $($env:MEMDOOR_BINARY)"
+    Copy-Item -Path $env:MEMDOOR_BINARY -Destination $tmp -Force
+} else {
     $hashes = Get-VerifiedDownload
+    if ($hashes.Actual -ne $hashes.Expected) {
+        Write-Host "checksum mismatch for $Asset; a release may have been switching: fetching both again in 5s"
+        Start-Sleep -Seconds 5
+        $hashes = Get-VerifiedDownload
+    }
+    if ($hashes.Actual -ne $hashes.Expected) {
+        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+        Fail "checksum mismatch for $Asset.`n  expected $($hashes.Expected)`n  got      $($hashes.Actual)`nRefusing to install."
+    }
+    Write-Host "  ok ($($hashes.Expected.Substring(0,16))...)"
 }
-if ($hashes.Actual -ne $hashes.Expected) {
-    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
-    Fail "checksum mismatch for $Asset.`n  expected $($hashes.Expected)`n  got      $($hashes.Actual)`nRefusing to install."
-}
-Write-Host "  ok ($($hashes.Expected.Substring(0,16))...)"
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 # Replacing a RUNNING exe fails on Windows, unlike Unix, and `memdoor upgrade`

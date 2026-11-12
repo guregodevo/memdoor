@@ -1,0 +1,124 @@
+# Windows on every pull request, before it reaches main and memdoor.ai.
+# installers.yml checks what memdoor.ai serves, after a deploy; until this file
+# a pull request was checked on Linux only, and Windows bugs were found by hand
+# (#276, #277, #285). Three jobs:
+#
+#   build   cross-compiles memdoor.exe as scripts/deploy.sh does (CGO_ENABLED=0),
+#           and vets the tree for Windows, which compiles every test file for
+#           Windows too (a Unix-only call in a test fails here, not on a runner).
+#   test    the Go tests on windows-latest, every package but the ones listed in
+#           .github/windows-known-failing.txt (#283); those are run as well and
+#           the ones that pass now are named.
+#   install the pull request's exe through scripts/install.ps1 (MEMDOOR_BINARY),
+#           under Windows PowerShell 5.1 and PowerShell 7, then the first
+#           commands a person types (scripts/windows-first-commands.ps1).
+name: Windows
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    if: github.repository == 'guregodevo/memdoor'
+    name: Windows build and vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Build web frontend (embedded in the exe)
+        run: cd web && npm ci && npm run build
+      - name: Vet for Windows (every test file compiled for Windows)
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go vet ./...
+      - name: Build memdoor.exe
+        run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -o out/memdoor-windows-amd64.exe ./cmd/cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: out/memdoor-windows-amd64.exe
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 3
+
+  test:
+    if: github.repository == 'guregodevo/memdoor'
+    name: Windows Go tests
+    needs: build
+    runs-on: windows-latest
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+      - name: Every package not on the known-failing list
+        shell: bash
+        run: |
+          grep -v '^#' .github/windows-known-failing.txt | sed '/^$/d' > "$RUNNER_TEMP/skip"
+          go list ./... | grep -v -x -F -f "$RUNNER_TEMP/skip" > "$RUNNER_TEMP/run"
+          echo "$(wc -l < "$RUNNER_TEMP/run") packages, $(wc -l < "$RUNNER_TEMP/skip") skipped (#283)"
+          go test $(cat "$RUNNER_TEMP/run")
+      - name: The known-failing packages (which pass now)
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          for p in $(grep -v '^#' .github/windows-known-failing.txt); do
+            if go test "$p" >/dev/null 2>&1; then echo "PASSES NOW, take it off the list: $p"; else echo "still failing: $p"; fi
+          done
+
+  install:
+    if: github.repository == 'guregodevo/memdoor'
+    name: Windows install and first commands
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-exe
+          path: out
+      - name: Install with Windows PowerShell 5.1, as irm | iex runs it
+        shell: powershell
+        run: |
+          $PSVersionTable.PSVersion.ToString()
+          $env:MEMDOOR_BINARY = (Resolve-Path out\memdoor-windows-amd64.exe).Path
+          Get-Content -Raw -Encoding UTF8 scripts\install.ps1 | iex
+      - name: Install again with PowerShell 7, over the first
+        shell: pwsh
+        run: |
+          $PSVersionTable.PSVersion.ToString()
+          $env:MEMDOOR_BINARY = (Resolve-Path out\memdoor-windows-amd64.exe).Path
+          Get-Content -Raw scripts/install.ps1 | iex
+      - name: Version, gateway, first account, first commands with no key
+        shell: pwsh
+        run: ./scripts/windows-first-commands.ps1
+      - name: Install again over the running exe (what memdoor upgrade does)
+        shell: powershell
+        run: |
+          if (-not (Get-Process memdoor -ErrorAction SilentlyContinue)) { throw "no memdoor running; the step proves nothing" }
+          $env:MEMDOOR_BINARY = (Resolve-Path out\memdoor-windows-amd64.exe).Path
+          Get-Content -Raw -Encoding UTF8 scripts\install.ps1 | iex
+          Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Memdoor\bin')
+      - name: Stop the gateway
+        if: always()
+        shell: pwsh
+        run: Get-Process memdoor -ErrorAction SilentlyContinue | Stop-Process -Force
