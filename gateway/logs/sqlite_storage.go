@@ -69,6 +69,24 @@ func NewSQLiteStorage(dbPath string) (*SQLiteStorage, error) {
 	return storage, nil
 }
 
+// OpenReadOnly opens an existing event log to read only: no schema, no
+// pragma, no write. `memdoor logs` reads this machine's file this way when
+// the gateway on this machine cannot answer.
+func OpenReadOnly(dbPath string) (*SQLiteStorage, error) {
+	if _, err := os.Stat(dbPath); err != nil {
+		return nil, err
+	}
+	db, err := sql.Open(logsDriverName, fmt.Sprintf("file:%s?_regexp=1&mode=ro", dbPath))
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+	return &SQLiteStorage{db: db, path: dbPath}, nil
+}
+
 // createSchema creates the database schema
 func (s *SQLiteStorage) createSchema() error {
 	schema := `

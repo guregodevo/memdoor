@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"memdoor/gateway/logs"
@@ -35,61 +34,13 @@ func (s *Server) handleLogsQuery(w http.ResponseWriter, r *http.Request) {
 
 	s.log.Debug("Logs query request", slog.String("query", r.URL.RawQuery))
 
-	qb := logs.NewQueryBuilder()
-
-	// Parse query parameters
-	if since := r.URL.Query().Get("since"); since != "" {
-		d, err := parseLogDuration(since)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("invalid since: %v", err), http.StatusBadRequest)
-			return
-		}
-		qb = qb.Since(d)
+	query, err := logs.QueryFromParams(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	if levels := r.URL.Query().Get("levels"); levels != "" {
-		logLevels := make([]logs.Level, 0)
-		for _, l := range strings.Split(levels, ",") {
-			logLevels = append(logLevels, logs.Level(strings.TrimSpace(l)))
-		}
-		qb = qb.Levels(logLevels...)
-	}
-
-	if components := r.URL.Query().Get("components"); components != "" {
-		qb = qb.Components(strings.Split(components, ",")...)
-	}
-
-	if session := r.URL.Query().Get("session"); session != "" {
-		qb = qb.Session(session)
-	}
-
-	if runID := r.URL.Query().Get("run"); runID != "" {
-		qb = qb.RunID(runID)
-	}
-
-	if r.URL.Query().Get("errors_only") == "true" {
-		qb = qb.ErrorsOnly()
-	}
-
-	if regex := r.URL.Query().Get("regex"); regex != "" {
-		qb = qb.MessageRegex(regex)
-	}
-
-	// Workspace filter — projects on data.workspace, which the
-	// workspace-scoped event writers attach via slog.String("workspace", ws),
-	// so a dashboard (or the agents' logs_query tool) can ask for one
-	// workspace's events only.
-	if workspace := r.URL.Query().Get("workspace"); workspace != "" {
-		qb = qb.Workspace(workspace)
-	}
-
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if limit, err := strconv.Atoi(limitStr); err == nil {
-			qb = qb.Limit(limit)
-		}
-	}
-
-	result, err := storage.QueryEvents(r.Context(), qb.Build())
+	result, err := storage.QueryEvents(r.Context(), query)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("query failed: %v", err), http.StatusInternalServerError)
 		return
@@ -169,30 +120,13 @@ func (s *Server) handleLogsErrors(w http.ResponseWriter, r *http.Request) {
 
 	s.log.Debug("Logs errors request")
 
-	since := r.URL.Query().Get("since")
-	if since == "" {
-		since = "24h"
-	}
-
-	d, err := parseLogDuration(since)
+	query, err := logs.ErrorsQueryFromParams(r.URL.Query())
 	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid since: %v", err), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	limit := 20
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
-	}
-
-	qb := logs.NewQueryBuilder().
-		Since(d).
-		Levels(logs.LevelError).
-		Limit(limit)
-
-	result, err := storage.QueryEvents(r.Context(), qb.Build())
+	result, err := storage.QueryEvents(r.Context(), query)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("query failed: %v", err), http.StatusInternalServerError)
 		return
@@ -300,16 +234,4 @@ func (s *Server) handleLogsSession(w http.ResponseWriter, r *http.Request) {
 		"events":     events,
 		"count":      len(events),
 	})
-}
-
-func parseLogDuration(s string) (time.Duration, error) {
-	if strings.HasSuffix(s, "d") {
-		days := strings.TrimSuffix(s, "d")
-		var d int
-		if _, err := fmt.Sscanf(days, "%d", &d); err != nil {
-			return 0, fmt.Errorf("invalid duration: %s", s)
-		}
-		return time.Duration(d) * 24 * time.Hour, nil
-	}
-	return time.ParseDuration(s)
 }

@@ -1,14 +1,56 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
+
+	"memdoor/gateway/logs"
 
 	"github.com/spf13/cobra"
 )
+
+// logsGet asks the gateway for a log read and decodes its JSON into out. A
+// gateway on this machine that cannot answer (not running, or the sign-in
+// refused: "authentication required") does not stop the read. The log is
+// this machine's file, which this OS user owns: local reads it, read-only,
+// with the gateway's own query, and stderr says so. A gateway elsewhere keeps
+// its log there, and its error stands.
+func logsGet(path string, out any, local func(context.Context, *logs.SQLiteStorage) (any, error)) error {
+	asked := NewClient().GetJSON(path, out)
+	if asked == nil {
+		return nil
+	}
+	if _, here := localGatewayPort(); !here {
+		return asked
+	}
+	file := logs.DefaultPath()
+	st, err := logs.OpenReadOnly(file)
+	if err != nil {
+		return fmt.Errorf("%w; this machine's log %s could not be read either: %v", asked, file, err)
+	}
+	defer st.Close()
+	v, err := local(context.Background(), st)
+	if err != nil {
+		return err
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(b, out); err != nil {
+		return err
+	}
+	why, _, _ := strings.Cut(asked.Error(), "\n")
+	fmt.Fprintf(os.Stderr, "· the gateway did not answer (%s): read from %s\n", why, file)
+	return nil
+}
 
 var logsCmd = &cobra.Command{
 	Use:   "logs",
@@ -71,7 +113,6 @@ var logsQueryCmd = &cobra.Command{
 	Use:   "query",
 	Short: "Search the log: --regex, --since, --limit",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := NewClient()
 		params := url.Values{}
 		params.Set("limit", strconv.Itoa(logsLimit))
 		if logsSince != "" {
@@ -96,7 +137,13 @@ var logsQueryCmd = &cobra.Command{
 		var result struct {
 			Events []map[string]interface{} `json:"events"`
 		}
-		if err := c.GetJSON("/api/logs/query?"+params.Encode(), &result); err != nil {
+		if err := logsGet("/api/logs/query?"+params.Encode(), &result, func(ctx context.Context, st *logs.SQLiteStorage) (any, error) {
+			q, err := logs.QueryFromParams(params)
+			if err != nil {
+				return nil, err
+			}
+			return st.QueryEvents(ctx, q)
+		}); err != nil {
 			return err
 		}
 		events := result.Events
@@ -156,7 +203,6 @@ var logsErrorsCmd = &cobra.Command{
 	Use:   "errors",
 	Short: "What went wrong lately (--since 5m)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := NewClient()
 		params := url.Values{}
 		if logsSince != "" {
 			params.Set("since", logsSince)
@@ -166,7 +212,13 @@ var logsErrorsCmd = &cobra.Command{
 		var result struct {
 			Errors []map[string]interface{} `json:"events"`
 		}
-		if err := c.GetJSON("/api/logs/errors?"+params.Encode(), &result); err != nil {
+		if err := logsGet("/api/logs/errors?"+params.Encode(), &result, func(ctx context.Context, st *logs.SQLiteStorage) (any, error) {
+			q, err := logs.ErrorsQueryFromParams(params)
+			if err != nil {
+				return nil, err
+			}
+			return st.QueryEvents(ctx, q)
+		}); err != nil {
 			return err
 		}
 		errors := result.Errors
@@ -199,9 +251,10 @@ var logsStatsCmd = &cobra.Command{
 	Use:   "stats",
 	Short: "How many events, by level and source",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := NewClient()
 		var stats map[string]interface{}
-		if err := c.GetJSON("/api/logs/stats", &stats); err != nil {
+		if err := logsGet("/api/logs/stats", &stats, func(ctx context.Context, st *logs.SQLiteStorage) (any, error) {
+			return st.GetStats(ctx)
+		}); err != nil {
 			return err
 		}
 
@@ -224,12 +277,13 @@ var logsTraceCmd = &cobra.Command{
 			return fmt.Errorf("--event-id is required")
 		}
 
-		c := NewClient()
-		body, err := c.GetText("/api/logs/trace?event_id=" + eventID)
-		if err != nil {
+		var body json.RawMessage
+		if err := logsGet("/api/logs/trace?event_id="+url.QueryEscape(eventID), &body, func(ctx context.Context, st *logs.SQLiteStorage) (any, error) {
+			return st.TraceChain(ctx, eventID)
+		}); err != nil {
 			return err
 		}
-		fmt.Println(body)
+		fmt.Println(string(body))
 		return nil
 	},
 }
@@ -246,12 +300,14 @@ var logsSessionCmd = &cobra.Command{
 			return fmt.Errorf("--session-id is required")
 		}
 
-		c := NewClient()
-		body, err := c.GetText("/api/logs/session?session_id=" + sessionID)
-		if err != nil {
+		var body json.RawMessage
+		if err := logsGet("/api/logs/session?session_id="+url.QueryEscape(sessionID), &body, func(ctx context.Context, st *logs.SQLiteStorage) (any, error) {
+			events, err := st.ReconstructSession(ctx, sessionID)
+			return map[string]any{"session_id": sessionID, "events": events}, err
+		}); err != nil {
 			return err
 		}
-		fmt.Println(body)
+		fmt.Println(string(body))
 		return nil
 	},
 }

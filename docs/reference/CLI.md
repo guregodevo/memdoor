@@ -902,7 +902,7 @@ boundary and says so. `bash sed -n` reads a range without a read.
 
 ### logs
 
-Query gateway logs over the RPC API. Logs live in `logs.db` (SQLite) and are written via `slog`, so all queries hit the structured event store — not a text file. Requires the gateway to be running.
+The gateway's event log: `~/.memdoor/logs/events.db` (SQLite), written via `slog`. The CLI asks the gateway first. When the gateway is on this machine and does not answer (not running, or the sign-in refused), `query`, `errors`, `stats`, `trace` and `session` read that file themselves, read-only, and stderr says so. A gateway on another machine keeps its log there: its error stands. `logs prune` needs the gateway.
 
 **Subcommands**:
 | Command | Purpose |

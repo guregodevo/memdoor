@@ -3,7 +3,6 @@ package logs
 import (
 	"context"
 	"fmt"
-	"memdoor/pkg/shared"
 	"os"
 	"path/filepath"
 	"sync"
@@ -421,8 +420,7 @@ func InitGlobalLoggerDefault(verbose bool) error {
 		return InitGlobalLogger(dir, verbose)
 	}
 
-	logsDir := shared.MemdoorHome("logs")
-	return InitGlobalLogger(logsDir, verbose)
+	return InitGlobalLogger(DefaultDir(), verbose)
 }
 
 // GetGlobalStorage returns the storage backend from the global logger.
