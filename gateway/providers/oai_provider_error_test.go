@@ -12,13 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"memdoor/gateway/logs"
 	"memdoor/pkg/llm"
 )
 
 func oaiTestClient(t *testing.T, handler http.HandlerFunc) (LLMClient, func()) {
 	t.Helper()
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	testenv.SetHome(t, t.TempDir())
 	old := oaiRetryAfter
 	oaiRetryAfter = []time.Duration{0, 0}

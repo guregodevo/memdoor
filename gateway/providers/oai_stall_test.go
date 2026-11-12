@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"memdoor/gateway/logs"
 	"memdoor/pkg/llm"
 	sharedctx "memdoor/pkg/shared/context"
 )
@@ -170,7 +169,7 @@ func TestAKeylessRuntimeMayReadInSilence(t *testing.T) {
 		sse(w, `{"choices":[{"index":0,"delta":{"content":"OK"}}]}`, `{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":1}}`)
 	}))
 	defer srv.Close()
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	testenv.SetHome(t, t.TempDir())
 	local := Provider{ID: "local", API: APIChat, Base: srv.URL + "/v1", Keyless: true}.Client(context.Background(), "qwen3:4b")
 	ctx := context.WithValue(context.Background(), sharedctx.EffortKey, "off")

@@ -6,12 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	"memdoor/gateway/logs"
 )
 
 func TestMeterSkipsTrailingGarbage(t *testing.T) {
-	logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	home := t.TempDir()
 	testenv.SetHome(t, home)
 	RecordMeter(MeterEntry{TS: time.Now(), Engine: "e1", InputTokens: 1, OutputTokens: 2})

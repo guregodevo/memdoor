@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"memdoor/gateway/logs"
 	"memdoor/pkg/chatgpt"
 	"memdoor/pkg/llm"
 	"memdoor/pkg/shared"
@@ -23,7 +23,7 @@ import (
 // the fields the preview refuses (temperature, max_output_tokens).
 func TestAChatGPTPlanAnswersAsAConnectedProvider(t *testing.T) {
 	clearProviderEnv(t)
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	if err := chatgpt.NewStore(shared.MemdoorHome()).Save(&chatgpt.Credential{ClientID: "oaiapp_1", Email: "dev@example.com", AccessToken: "plan-token", RefreshToken: "rt", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestAChatGPTPlanAnswersAsAConnectedProvider(t *testing.T) {
 // A refusal of the plan reads in the person's terms, with what to do.
 func TestAPlanRefusalSaysWhatToDo(t *testing.T) {
 	clearProviderEnv(t)
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	_ = chatgpt.NewStore(shared.MemdoorHome()).Save(&chatgpt.Credential{ClientID: "oaiapp_1", AccessToken: "plan-token", RefreshToken: "rt", ExpiresAt: time.Now().Add(time.Hour)})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
@@ -129,7 +129,7 @@ func TestAPlanRefusalSaysWhatToDo(t *testing.T) {
 // is reached by name (openai:<id>); an id only the key lists stays on it.
 func TestABareIDThePlanAndTheOpenAIKeyListGoesToThePlan(t *testing.T) {
 	clearProviderEnv(t)
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	_ = chatgpt.NewStore(shared.MemdoorHome()).Save(&chatgpt.Credential{ClientID: "oaiapp_1", AccessToken: "plan-token", RefreshToken: "rt", ExpiresAt: time.Now().Add(time.Hour)})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
@@ -161,7 +161,7 @@ func TestABareIDThePlanAndTheOpenAIKeyListGoesToThePlan(t *testing.T) {
 // the same as one that arrives as a status: the allowance, and what to do.
 func TestAPlanRefusalInsideTheStreamSaysWhatToDo(t *testing.T) {
 	clearProviderEnv(t)
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	_ = chatgpt.NewStore(shared.MemdoorHome()).Save(&chatgpt.Credential{ClientID: "oaiapp_1", AccessToken: "plan-token", RefreshToken: "rt", ExpiresAt: time.Now().Add(time.Hour)})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		responsesSSE(w, `{"type":"response.failed","response":{"id":"r1","status":"failed","error":{"code":"subscription_sharing_usage_limit_exceeded","message":"The ChatGPT user has reached their Subscription Sharing usage limit."}}}`)

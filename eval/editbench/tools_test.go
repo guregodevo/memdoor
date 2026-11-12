@@ -1,6 +1,7 @@
 package main
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,9 +14,7 @@ import (
 // apply_patch description is the line-anchored one and reads come back
 // tagged and numbered; under patch neither.
 func TestArmsUseTheToolsPackage(t *testing.T) {
-	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
-		t.Fatal(err)
-	}
+	testenv.Logger(t)
 	// Windows will not remove a directory holding events.db, so the store this
 	// test opened is closed before its temporary home goes (#283).
 	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })

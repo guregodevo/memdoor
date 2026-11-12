@@ -10,16 +10,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"memdoor/gateway/logs"
 	"memdoor/pkg/llm"
 )
 
 func checkpointStore(t *testing.T) (*SessionPersistence, *Session, string) {
 	t.Helper()
 	testenv.SetHome(t, t.TempDir())
-	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
-		t.Fatal(err)
-	}
+	testenv.Logger(t)
 	sp, err := NewSessionPersistence(nil, false)
 	if err != nil {
 		t.Fatal(err)

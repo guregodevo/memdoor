@@ -1,5 +1,6 @@
 // Package testenv is the machine a test pretends to be on: a home directory of
-// its own, and the file permissions the platform actually keeps (#283).
+// its own, a log store that is closed again, and the file permissions the
+// platform actually keeps (#283).
 //
 // A test used to set HOME alone. That isolates it on Unix; on Windows
 // os.UserHomeDir reads USERPROFILE, so such a test wrote into the runner's real
@@ -10,7 +11,33 @@ import (
 	"os"
 	"runtime"
 	"testing"
+
+	"memdoor/gateway/logs"
 )
+
+// Logger points the global event logger at a store of this test's own, under a
+// temporary directory, and closes it when the test ends.
+//
+// The close matters on Windows: a directory holding an open events.db cannot be
+// removed, so every test that left the logger running failed its own cleanup
+// ("TempDir RemoveAll cleanup: ... events.db ... used by another process"). The
+// store is closed before the directory goes because this cleanup is registered
+// after t.TempDir's, and cleanups run last-registered-first.
+func Logger(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	if err := logs.InitGlobalLogger(dir, false); err != nil {
+		t.Fatalf("InitGlobalLogger: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = logs.CloseGlobalLogger()
+		// Later tests in this package expect a logger (logs.New panics without
+		// one). InitGlobalLoggerDefault under `go test` writes to a temp
+		// directory of its own, which no test cleans up — so nothing holds the
+		// one that is being removed.
+		_ = logs.InitGlobalLoggerDefault(false)
+	})
+}
 
 // Home points the home directory at a fresh temporary directory for the length
 // of the test, and returns it. os.UserHomeDir and anything built on
