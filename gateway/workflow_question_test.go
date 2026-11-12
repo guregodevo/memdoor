@@ -59,7 +59,7 @@ func TestAWorkflowStepsQuestionReachesTheWindow(t *testing.T) {
 	window := &recordingScreen{id: "win"}
 	sm.AddSubscriber(window)
 	sm.SubscribeToSession(window.id, shared.NewChannelSessionID("ws-a", "chan"))
-	s := &Server{broadcaster: sm, agent: ar}
+	s := runServer(t, &Server{broadcaster: sm, agent: ar})
 	run := &workflowRun{ID: "r1", Workflow: "release", Partition: "p1", Dir: "/proj", Workspace: "ws-a"}
 	defer s.listen(run)()
 
@@ -152,7 +152,7 @@ func TestARunStartedWithoutASessionIsUnattended(t *testing.T) {
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "seat-token")
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
-	s := &Server{}
+	s := runServer(t, &Server{})
 	cli, err := s.startWorkflow(dir, "release", "", "", "", "", "", "", 0)
 	if err != nil {
 		t.Fatal(err)

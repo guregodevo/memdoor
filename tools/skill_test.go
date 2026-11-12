@@ -57,11 +57,7 @@ func TestSkillRequiresName(t *testing.T) {
 // in the binary; ./skills on disk is only an override. Simulate a deployed gateway
 // by chdir'ing to an empty temp dir and loading a built-in skill.
 func TestSkillResolvesFromAnyCwd(t *testing.T) {
-	old, _ := os.Getwd()
-	t.Cleanup(func() { _ = os.Chdir(old) })
-	if err := os.Chdir(t.TempDir()); err != nil {
-		t.Fatal(err)
-	}
+	t.Chdir(t.TempDir())
 	in, _ := json.Marshal(map[string]string{"command": "review"})
 	out, err := Skill(json.RawMessage(in))
 	if err != nil {

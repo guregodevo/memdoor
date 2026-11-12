@@ -99,6 +99,9 @@ func remoteDefaultDir(c *Client) (abs, why string, err error) {
 			if h, err := filepath.EvalSymlinks(home); err == nil {
 				home = h // a home behind a symlink (/var → /private/var on macOS)
 			}
+			if c, err := filepath.EvalSymlinks(cwd); err == nil {
+				cwd = c // and both in the same spelling (a Windows 8.3 name, RUNNER~1)
+			}
 			if rel, rerr := filepath.Rel(home, cwd); rerr == nil && rel != "." && !strings.HasPrefix(rel, "..") {
 				if abs, isDir, exists, serr := fs.Stat("~/" + filepath.ToSlash(rel)); serr == nil && exists && isDir {
 					return abs, "the same path as here", nil

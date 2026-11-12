@@ -285,7 +285,7 @@ func ProjectRoot(workdir string) string {
 			}
 		}
 		parent := filepath.Dir(dir)
-		if parent == dir || dir == home || parent == home && home != "" {
+		if parent == dir || isHome(dir, home) || isHome(parent, home) {
 			return workdir
 		}
 		dir = parent
@@ -545,4 +545,19 @@ func normalizeYAML(v interface{}) interface{} {
 		return x
 	}
 	return v
+}
+
+// isHome is whether dir is the home directory. The same folder has two spellings
+// on Windows (C:\Users\RUNNER~1 and C:\Users\runneradmin), so the names are not
+// compared: the folders are.
+func isHome(dir, home string) bool {
+	if home == "" {
+		return false
+	}
+	if dir == home {
+		return true
+	}
+	a, errA := os.Stat(dir)
+	b, errB := os.Stat(home)
+	return errA == nil && errB == nil && os.SameFile(a, b)
 }

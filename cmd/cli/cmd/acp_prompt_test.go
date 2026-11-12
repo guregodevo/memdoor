@@ -11,6 +11,16 @@ import (
 	"github.com/coder/acp-go-sdk"
 )
 
+// posixURIPath is a path as a file: URI carries it: slashes, and a drive
+// letter (C:/x) behind a leading slash.
+func posixURIPath(p string) string {
+	p = filepath.ToSlash(p)
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	return p
+}
+
 // What an editor attaches reaches the coder: a file as an @mention, an
 // excerpt quoted under its file, a picture saved where git ignores it and
 // mentioned; text stays as it was.
@@ -20,7 +30,7 @@ func TestAnEditorsAttachmentsReachTheCoder(t *testing.T) {
 	mime := "image/png"
 	got := promptText(cwd, []acp.ContentBlock{
 		acp.TextBlock("look at these"),
-		{ResourceLink: &acp.ContentBlockResourceLink{Uri: "file://" + filepath.Join(cwd, "notes.txt"), Name: "notes.txt"}},
+		{ResourceLink: &acp.ContentBlockResourceLink{Uri: "file://" + posixURIPath(filepath.Join(cwd, "notes.txt")), Name: "notes.txt"}},
 		{Resource: &acp.ContentBlockResource{Resource: acp.EmbeddedResourceResource{TextResourceContents: &acp.TextResourceContents{Uri: "file:///src/a.go", Text: "package a\n"}}}},
 		{Image: &acp.ContentBlockImage{Data: base64.StdEncoding.EncodeToString(png), MimeType: "image/png"}},
 		{Resource: &acp.ContentBlockResource{Resource: acp.EmbeddedResourceResource{BlobResourceContents: &acp.BlobResourceContents{Uri: "file:///x.bin", Blob: "AA==", MimeType: &mime}}}},

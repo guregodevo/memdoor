@@ -49,7 +49,7 @@ func TestAWorkflowRunSumsEachStepsTokens(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	s := &Server{clientFactory: providers.NewClientFactory()}
+	s := runServer(t, &Server{clientFactory: providers.NewClientFactory()})
 	run, err := s.startWorkflow(dir, "usage-test", "", "", "", "", "", "", 5*time.Second)
 	if err != nil {
 		t.Fatal(err)

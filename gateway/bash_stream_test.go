@@ -2,7 +2,9 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"memdoor/tools"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -62,7 +64,13 @@ func TestRunStreamingCommand_CapsInfinite(t *testing.T) {
 	if !truncated {
 		t.Error("an infinite command must be reported truncated")
 	}
-	if time.Since(start) > 3*time.Second {
+	// Windows: a handle that escaped the killed tree holds the output until the
+	// streamer's WaitDelay (5 s) ends the wait.
+	prompt := 3 * time.Second
+	if runtime.GOOS == "windows" {
+		prompt = 8 * time.Second
+	}
+	if time.Since(start) > prompt {
 		t.Error("cap did not stop the command promptly")
 	}
 	if !strings.Contains(out, "spam") {
@@ -133,7 +141,8 @@ func TestBashStreamer(t *testing.T) {
 // (live 2026-10-04: `ls -a; echo ---; ls .agents 2>/dev/null`).
 func TestTheStreamerReadsAMissingPathAsAnAnswer(t *testing.T) {
 	dir := t.TempDir()
-	out, err := bashStreamer{}.Stream(context.Background(), []byte(`{"command":"ls -a; echo ---; ls .agents 2>/dev/null","cwd":"`+dir+`"}`), func(string) {})
+	missing, _ := json.Marshal(map[string]string{"command": "ls -a; echo ---; ls .agents 2>/dev/null", "cwd": dir})
+	out, err := bashStreamer{}.Stream(context.Background(), missing, func(string) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +151,8 @@ func TestTheStreamerReadsAMissingPathAsAnAnswer(t *testing.T) {
 	if strings.Contains(out, "FAILED") || strings.Contains(out, "fix IT") || !(strings.Contains(out, "exit status 1") || strings.Contains(out, "exit status 2")) {
 		t.Fatalf("a read's exit status is a result: %q", out)
 	}
-	out, _ = bashStreamer{}.Stream(context.Background(), []byte(`{"command":"false","cwd":"`+dir+`"}`), func(string) {})
+	falseIn, _ := json.Marshal(map[string]string{"command": "false", "cwd": dir})
+	out, _ = bashStreamer{}.Stream(context.Background(), falseIn, func(string) {})
 	if !strings.Contains(out, "Command FAILED") {
 		t.Fatalf("a command that is not a read still fails: %q", out)
 	}

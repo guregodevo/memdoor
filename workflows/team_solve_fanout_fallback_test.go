@@ -54,7 +54,7 @@ func fallbackRun(t *testing.T, rule string) (dir, r string, sh func(script strin
 		return string(out), err
 	}
 	for _, s := range []string{
-		"git init -q && printf 'start\\n' > a.txt && git add a.txt && git commit -qm base",
+		"git init -q && git config core.autocrlf false && printf 'start\\n' > a.txt && git add a.txt && git commit -qm base",
 		"git rev-parse HEAD > .memdoor/runs/team-solve-fanout-1/base.txt && : > .memdoor/runs/team-solve-fanout-1/untracked-before.txt",
 		"printf 'kept\\n' > a.txt && printf 'kept: the direct attempt, untouched\\n' > .memdoor/runs/team-solve-fanout-1/keep.txt",
 		"printf '" + rule + "\\n' > .memdoor/runs/team-solve-fanout-1/review-rule.txt",
