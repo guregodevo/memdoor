@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"memdoor/internal/testenv"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -192,7 +193,7 @@ func TestTheSSHDoorAndARemoteGatewaySayTheNextStep(t *testing.T) {
 	if got := sshReason("me@box", ""); got != "ssh exited before the tunnel was up" {
 		t.Fatalf("no stderr: %q", got)
 	}
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	gatewayAddr = "http://box.lan:18799"
 	t.Cleanup(func() { gatewayAddr = saved })

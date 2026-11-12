@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -42,7 +43,7 @@ func report(id string, toolCall, rightTool, validArgs, roundTrip, patch bool) ma
 // the OpenRouter ranking pins the model they already pay for, and a turn that
 // dies halfway is worse than a sentence beforehand.
 func TestPinWarningSpeaksOnlyWhenTheProbeSawTrouble(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	gw := checksServer(t, map[string]any{
@@ -95,7 +96,7 @@ func TestPinWarningSpeaksOnlyWhenTheProbeSawTrouble(t *testing.T) {
 // A GATEWAY THAT WILL NOT ANSWER IS NOT EVIDENCE. Warning on a failed read
 // would put a scare next to every pin on a machine whose gateway is down.
 func TestPinWarningIsSilentWithoutAGateway(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	dead := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
@@ -113,7 +114,7 @@ func TestPinWarningIsSilentWithoutAGateway(t *testing.T) {
 // The warning reaches the person where the pin is confirmed: /model
 // vendor/name in the window, and the picker's pin, which both land here.
 func TestPinSummaryCarriesTheWarning(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	gw := checksServer(t,
@@ -148,7 +149,7 @@ func TestPinSummaryCarriesTheWarning(t *testing.T) {
 // every host. Each is fixed by something different, so the host's own words go
 // through instead of our summary of a turn that never happened.
 func TestPinWarningRepeatsTheHostWhenTheProbeNeverLanded(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	dead := report("deepseek/deepseek-v4.1", false, false, false, false, false)
@@ -214,7 +215,7 @@ func TestProbedWhenReadsLikeAPerson(t *testing.T) {
 // line calling this is the honest version, and it has to cost nothing on the
 // weeks when every report is still good.
 func TestStaleReProbeAsksTheGatewayAndSpendsNothingWhenFresh(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	var asked []string

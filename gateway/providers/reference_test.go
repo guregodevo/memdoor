@@ -3,9 +3,11 @@ package providers
 import (
 	"context"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -62,9 +64,7 @@ func TestReferenceLimitsAndTheirCache(t *testing.T) {
 		t.Fatalf("read once: %d", *hits)
 	}
 	home, _ := os.UserHomeDir()
-	if st, err := os.Stat(home + "/.memdoor/models-dev.json"); err != nil || st.Mode().Perm() != 0o600 {
-		t.Fatalf("kept on disk, 0600: %v %v", st, err)
-	}
+	testenv.OwnerOnly(t, filepath.Join(home, ".memdoor", "models-dev.json")) // kept on disk, 0600
 }
 
 // In company-key mode the host is never contacted: the disk copy answers

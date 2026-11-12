@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,7 +19,7 @@ func clearProviderEnv(t *testing.T) {
 	for _, v := range []string{"AI_GATEWAY_BASE_URL", "AI_GATEWAY_TOKEN", "AI_GATEWAY_API", "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "OPENAI_API_KEY", "OPENAI_BASE_URL", "GEMINI_API_KEY", "GEMINI_BASE_URL", "XAI_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "LLMGATEWAY_API_KEY", "AIMLAPI_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY", "GROK_API_KEY", "OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY", "MEMDOOR_MODEL", "MEMDOOR_VENDOR_HEADERS", "MEMDOOR_BYOK"} {
 		t.Setenv(v, "")
 	}
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	_ = ClearRemoteEngine()
 	t.Cleanup(func() { _ = ClearRemoteEngine() })
 	modelLists.mu.Lock()
@@ -53,9 +54,7 @@ func TestProvidersAreBuiltInsThenTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	path, _ := providersPath()
-	if st, err := os.Stat(path); err != nil || st.Mode().Perm() != 0o600 {
-		t.Fatalf("providers.json must be 0600: %v %v", st, err)
-	}
+	testenv.OwnerOnly(t, path) // providers.json is 0600
 	byID := map[string]Provider{}
 	var order []string
 	for _, p := range Providers() {

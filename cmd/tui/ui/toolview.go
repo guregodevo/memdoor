@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -251,10 +252,13 @@ func (v judgedView) Body(r ToolRender) string {
 func judgedSummary(out string) (verdict string, places []string) {
 	cwd := SessionDir()
 	rel := func(path string) string {
-		if cwd != "" && strings.HasPrefix(path, cwd+"/") {
-			return strings.TrimPrefix(path, cwd+"/")
+		// A result names files the way the machine does; the frame shows them
+		// in slashes, relative to the session directory, on every OS (#283).
+		p, dir := filepath.ToSlash(path), strings.TrimSuffix(filepath.ToSlash(cwd), "/")
+		if dir != "" && strings.HasPrefix(p, dir+"/") {
+			return strings.TrimPrefix(p, dir+"/")
 		}
-		return path
+		return p
 	}
 	for _, line := range strings.Split(out, "\n") {
 		t := strings.TrimSpace(line)
@@ -264,7 +268,7 @@ func judgedSummary(out string) (verdict string, places []string) {
 		if verdict == "" {
 			verdict = strings.TrimSuffix(strings.TrimPrefix(t, "jgrep: "), ":")
 			if cwd != "" {
-				verdict = strings.ReplaceAll(verdict, cwd+"/", "")
+				verdict = strings.ReplaceAll(verdict, filepath.ToSlash(cwd)+"/", "")
 			}
 			continue
 		}

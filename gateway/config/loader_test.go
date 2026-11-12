@@ -1,6 +1,7 @@
 package config
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -251,23 +252,8 @@ func TestSaveConfigYAML(t *testing.T) {
 
 // TestResolveConfigPath_JSON_Priority tests that JSON config is preferred over YAML
 func TestResolveConfigPath_JSON_Priority(t *testing.T) {
-	// Create temp home directory
-	tmpHome, err := os.MkdirTemp("", "home-*")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpHome)
-
-	// Override home directory for this test
-	originalHome, _ := os.LookupEnv("HOME")
-	os.Setenv("HOME", tmpHome)
-	defer func() {
-		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
-		} else {
-			os.Unsetenv("HOME")
-		}
-	}()
+	// Override home directory for this test (HOME on Unix, USERPROFILE on Windows)
+	tmpHome := testenv.Home(t)
 
 	// Create .memdoor directory
 	configDir := filepath.Join(tmpHome, ".memdoor")

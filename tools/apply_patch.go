@@ -2,10 +2,12 @@ package tools
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go/parser"
 	"go/scanner"
 	"go/token"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path"
@@ -465,7 +467,9 @@ func ApplyPatch(input json.RawMessage) (_ string, err error) {
 				// Updating a GUESSED filename ("greet.go" on a fresh task) dead-ends the
 				// turn with a bare not-found. List what IS here — same absorption as
 				// read_file's missing-file listing — so the next patch targets a real file.
-				if strings.Contains(err.Error(), "no such file") {
+				// The error itself says whether the file was missing: the words do not
+				// travel — Windows says "The system cannot find the file specified" (#283).
+				if errors.Is(err, fs.ErrNotExist) {
 					if files := listSourceFiles(filepath.Dir(target)); len(files) > 0 {
 						return "", fmt.Errorf("apply_patch update %s: the file does not exist. The directory DOES contain: %s — Update one of those (do not guess names), or use *** Add File: to create a new one", h.path, strings.Join(files, ", "))
 					}

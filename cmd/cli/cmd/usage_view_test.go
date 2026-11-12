@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,7 +56,7 @@ func TestUsageWithoutADecisionModelSaysHowToTurnItOn(t *testing.T) {
 // line, a vendor's) counts as a request but never as a price.
 func TestMeterPricesOnlyTheirOwnKey(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	if err := os.MkdirAll(filepath.Join(home, ".memdoor"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +77,7 @@ func TestMeterPricesOnlyTheirOwnKey(t *testing.T) {
 // as two models (2026-09-29).
 func TestUsageCountsOneModelOnce(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	if err := os.MkdirAll(filepath.Join(home, ".memdoor"), 0o755); err != nil {
 		t.Fatal(err)
 	}

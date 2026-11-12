@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"memdoor/internal/testenv"
 	sharedctx "memdoor/pkg/shared/context"
 	"net/http"
 	"strings"
@@ -74,7 +75,7 @@ func TestVendorEngineFromTheEnvironment(t *testing.T) {
 // VendorMode is read from the active engine, so the whole gateway — the
 // decision model, the catalogue, the lease — agrees on what may be contacted.
 func TestVendorModeIsTheActiveEngine(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if VendorMode() {
 		t.Fatal("no engine, no vendor mode")
 	}

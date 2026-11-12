@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -160,7 +161,7 @@ func TestMessageGateAsksOnlyForTheGatewaysOwnChannels(t *testing.T) {
 func TestTheCodingKeyJudgesByDefault(t *testing.T) {
 	// A machine where `memdoor connect local` ran (Memdoor's pr-triage job on
 	// the runner) has a decision provider in ~/.memdoor/providers.json.
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	for _, name := range []string{"OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY", "MEMDOOR_BYOK", envSystemOneKey, envTypeSafeKey, envSystemOneURL, envSystemOneModel} {
 		t.Setenv(name, "")
 	}

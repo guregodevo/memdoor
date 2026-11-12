@@ -65,7 +65,7 @@ func TestDiscoverSkillFiles(t *testing.T) {
 	foundMap := make(map[string]bool)
 	for _, f := range found {
 		relPath, _ := filepath.Rel(tmpDir, f)
-		foundMap[relPath] = true
+		foundMap[filepath.ToSlash(relPath)] = true
 	}
 
 	for _, tf := range testFiles {

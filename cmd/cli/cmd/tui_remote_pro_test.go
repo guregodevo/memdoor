@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"errors"
+	"memdoor/internal/testenv"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,7 @@ import (
 // the relay's refusal never reached the window).
 func TestRemoteSaysProBeforeHandingOutALink(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	t.Setenv("MEMDOOR_REMOTE_URL", "")
 	plan := "free"
 	billing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +67,7 @@ func TestTheRelayStopsOnAPlanRefusal(t *testing.T) {
 // plan is asked (the maintainer, 2026-10-23: "a phone can connect to daemon", "no pro
 // story"). A gateway on this machine still goes through the hosted relay.
 func TestRemoteOnAnotherMachineIsOnThatGateway(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("MEMDOOR_REMOTE_URL", "")
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "")
 	box := remoteSession{Gateway: "http://box.lan:18799/", Token: "gw-token", ChannelID: "c-box"}
@@ -106,7 +107,7 @@ func TestRemoteOnAnotherMachineIsOnThatGateway(t *testing.T) {
 // localhost alone goes through memdoor.ai and says why (the maintainer, 2026-10-23:
 // "/remote should not go through memdoor.ai anymore unless it's needed").
 func TestRemoteLinkIsOnTheGatewayWhenAPhoneCouldReachIt(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("MEMDOOR_REMOTE_URL", "")
 	listen := map[string]any{"host": "0.0.0.0", "port": 18799, "addresses": []string{"192.168.9.9", "100.100.1.2"}}
 	gw := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

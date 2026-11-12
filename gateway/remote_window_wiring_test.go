@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 func TestTheContextLimitFollowsTheServingBrain(t *testing.T) {
 	// A temp HOME first: setting and clearing an engine PERSISTS, and this
 	// test must never touch the machine's real brain configuration.
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	restore := providers.ActiveRemoteEngine()
 	t.Cleanup(func() {
 		if restore != nil {
@@ -68,7 +69,7 @@ func TestTheContextLimitFollowsTheServingBrain(t *testing.T) {
 // catalogue; a model it does not list keeps the engine's (2026-09-29: every
 // model, 128K to 1.3M, was measured against one fixed 262K).
 func TestTheWindowIsTheAnsweringModels(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("OPEN_ROUTER_API_KEY", "sk-test")
 	if _, err := NewAgentRuntime("", false); err != nil {
 		t.Skipf("runtime unavailable in this environment: %v", err)
@@ -120,7 +121,7 @@ func TestTheWindowIsTheAnsweringModels(t *testing.T) {
 // big prompt on a small model that overflowed the window, and the provider
 // refused. The cap is fitted to the room the prompt leaves.
 func TestAnEscalatedReplyFitsTheRoomLeft(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("OPEN_ROUTER_API_KEY", "sk-test")
 	if _, err := NewAgentRuntime("", false); err != nil {
 		t.Skipf("runtime unavailable in this environment: %v", err)

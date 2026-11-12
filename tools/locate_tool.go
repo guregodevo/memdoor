@@ -114,7 +114,10 @@ func repoFiles(dir string) []string {
 			return nil
 		}
 		if !locateSkipped(rel) {
-			files = append(files, rel)
+			// Slash paths, as git lists them: locate's output is read back by
+			// the model and passed to read_file, and "\" is not a separator the
+			// rest of the tools take (#283).
+			files = append(files, filepath.ToSlash(rel))
 		}
 		return nil
 	})
