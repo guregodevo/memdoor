@@ -6,9 +6,10 @@
 # pass through as they are (#110).
 set -u
 export LC_ALL=C
-awk -v P="$2" '
+P="$2" awk '
   BEGIN {
     n = 0
+    P = ENVIRON["P"]
     while ((getline l < P) > 0) { if (l ~ /^## /) l = "#" l; L[++n] = l }
     s = 1; while (s <= n && L[s] ~ /^[ \t\r]*$/) s++
     e = n; while (e >= s && L[e] ~ /^[ \t\r]*$/) e--

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"testing"
 
 	"memdoor/tools"
@@ -83,7 +84,7 @@ func TestContainsNarratedCode(t *testing.T) {
 // build commands in the GATEWAY's cwd (live: "stat stats.go: no such file" from a
 // /tmp deploy dir). An explicit dir is respected.
 func TestConfineVerifyDir(t *testing.T) {
-	out := confineToCoderWorkdir("verify", []byte(`{"command":"go run stats.go"}`), "/tmp/wd")
+	out := confineToCoderWorkdir("verify", []byte(`{"command":"go run stats.go"}`), testenv.Abs("/tmp/wd"))
 	var in map[string]any
 	if err := json.Unmarshal(out, &in); err != nil {
 		t.Fatal(err)
@@ -91,9 +92,11 @@ func TestConfineVerifyDir(t *testing.T) {
 	if d, _ := in["dir"].(string); d == "" {
 		t.Fatal("verify should get the coder workdir as dir")
 	}
-	out2 := confineToCoderWorkdir("verify", []byte(`{"command":"go test","dir":"/explicit"}`), "/tmp/wd")
+	explicit := testenv.Abs("/explicit")
+	explicitIn, _ := json.Marshal(map[string]string{"command": "go test", "dir": explicit})
+	out2 := confineToCoderWorkdir("verify", explicitIn, testenv.Abs("/tmp/wd"))
 	_ = json.Unmarshal(out2, &in)
-	if d, _ := in["dir"].(string); d != "/explicit" {
+	if d, _ := in["dir"].(string); d != explicit {
 		t.Fatalf("explicit dir must be respected, got %q", d)
 	}
 }

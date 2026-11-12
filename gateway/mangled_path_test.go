@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"strings"
 	"testing"
 )
@@ -22,7 +23,7 @@ func TestMangledPathIsRefusedNotCreated(t *testing.T) {
 	mangled := `greetname.go and the full corrected content", "Fix the patch to correctly modify the function"], "default": "Fix it`
 	in, _ := json.Marshal(map[string]any{"file_path": mangled, "content": "x"})
 
-	out := confineToCoderWorkdir("write_file", in, "/Users/you/memdoor-coder")
+	out := confineToCoderWorkdir("write_file", in, testenv.Abs("/Users/you/memdoor-coder"))
 	var got map[string]any
 	if err := json.Unmarshal(out, &got); err != nil {
 		t.Fatal(err)
@@ -36,7 +37,7 @@ func TestMangledPathIsRefusedNotCreated(t *testing.T) {
 // projects use them. Rejecting broadly would start refusing paths people
 // actually have.
 func TestOrdinaryPathsAreUntouched(t *testing.T) {
-	wd := "/Users/you/memdoor-coder"
+	wd := testenv.Abs("/Users/you/memdoor-coder")
 	for _, p := range []string{
 		"stats.go",
 		"internal/server/main.go",
@@ -61,7 +62,7 @@ func TestOrdinaryPathsAreUntouched(t *testing.T) {
 // a tool call that lost its structure.
 func TestMultilinePathRefused(t *testing.T) {
 	in, _ := json.Marshal(map[string]any{"file_path": "good.go\nand then some prose"})
-	out := confineToCoderWorkdir("write_file", in, "/wd")
+	out := confineToCoderWorkdir("write_file", in, testenv.Abs("/wd"))
 	var got map[string]any
 	_ = json.Unmarshal(out, &got)
 	if p, _ := got["file_path"].(string); p != "" {

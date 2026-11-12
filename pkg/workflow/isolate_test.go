@@ -35,6 +35,7 @@ func write(t *testing.T, p, s string) {
 func TestAWorktreeIsolationStartsFromTheTreeAsItStands(t *testing.T) {
 	p := t.TempDir()
 	gitT(t, p, "init", "-q")
+	gitT(t, p, "config", "core.autocrlf", "false") // Git for Windows would write the copy with CRLF
 	write(t, filepath.Join(p, "a.txt"), "one\n")
 	gitT(t, p, "add", "a.txt")
 	gitT(t, p, "commit", "-q", "-m", "base")

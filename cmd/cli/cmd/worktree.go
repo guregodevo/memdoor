@@ -170,6 +170,8 @@ func (w *worktree) finish() string {
 	ahead, _ := gitOut(w.Path, "rev-list", "--count", w.Base+"..HEAD")
 	if strings.TrimSpace(dirty) == "" && (ahead == "" || ahead == "0") {
 		if w.Created {
+			// Windows cannot remove the directory a process stands in.
+			_ = os.Chdir(w.Root)
 			_, _ = gitOut(w.Root, "worktree", "remove", w.Path)
 			_, _ = gitOut(w.Root, "branch", "-D", w.Branch)
 			return fmt.Sprintf("Nothing changed in worktree %s, so it and its branch were removed.", w.Name)

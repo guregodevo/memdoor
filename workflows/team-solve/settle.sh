@@ -57,8 +57,8 @@ if [ ! -s "$v/Done when" ]; then echo "The Prompt is done as written." > "$v/Don
 
 # task.md's own sections, split at their "## " headings; the Prompt's own
 # headings were put one level down by task.sh, so they do not split.
-awk -v V="$v" '
-  function emit(name,   l, f) { f = V "/" name; while ((getline l < f) > 0) print l; close(f) }
+V="$v" awk '
+  function emit(name,   l, f) { f = ENVIRON["V"] "/" name; while ((getline l < f) > 0) print l; close(f) }
   /^## / {
     name = substr($0, 4); sub(/^[ \t]+/, "", name); sub(/[ \t]+$/, "", name)
     print

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 // withStdin runs f with os.Stdin read from a pipe holding text: not a
@@ -37,6 +38,7 @@ func TestRemoteTargetByIDAndLast(t *testing.T) {
 	home := t.TempDir()
 	testenv.SetHome(t, home)
 	recordSession(sessionRecord{ChannelID: "aaaa1111-0000-0000-0000-000000000001", ChannelName: "a", Title: "older", Dir: "/p/one", Workspace: "w"})
+	time.Sleep(20 * time.Millisecond) // Windows' clock ticks about every 16 ms: "newer" must be later
 	recordSession(sessionRecord{ChannelID: "bbbb2222-0000-0000-0000-000000000002", ChannelName: "b", Title: "newer", Dir: "/p/two", Workspace: "w"})
 	recs := loadSessionIndex()
 	if len(recs) != 2 {

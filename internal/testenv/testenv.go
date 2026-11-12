@@ -9,6 +9,7 @@ package testenv
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -75,4 +76,14 @@ func OwnerOnly(t *testing.T, path string) {
 	if perm := fi.Mode().Perm(); perm != 0o600 {
 		t.Fatalf("must be owner-only, got %v", fi.Mode())
 	}
+}
+
+// Abs is a POSIX absolute path as an absolute path on this OS: the same text on
+// Unix, the same path on the drive of the temporary directory on Windows, where
+// "/Users/dev" has no drive and filepath.IsAbs says it is not absolute.
+func Abs(posix string) string {
+	if runtime.GOOS != "windows" {
+		return posix
+	}
+	return filepath.VolumeName(os.TempDir()) + filepath.FromSlash(posix)
 }

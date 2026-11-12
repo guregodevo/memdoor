@@ -45,7 +45,7 @@ func workflowServerWithRun(t *testing.T) (*Server, *workflowRun, string) {
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "seat-token")
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
-	s := &Server{}
+	s := runServer(t, &Server{})
 	wf, err := workflow.Load(filepath.Join(dir, ".memdoor", "workflows", "release"), workflow.Registry(s.workflowTypes(nil)...))
 	if err != nil {
 		t.Fatal(err)
@@ -200,7 +200,7 @@ func TestStopUnknownRunIsAnError(t *testing.T) {
 }
 
 func TestStartWorkflowRefusesARelativeDirAndAMissingFile(t *testing.T) {
-	s := &Server{}
+	s := runServer(t, &Server{})
 	if _, err := s.startWorkflow("relative", "x", "", "", "", "", "", "", 0); err == nil {
 		t.Fatal("a relative dir must be refused")
 	}
@@ -361,7 +361,7 @@ func TestWorkflowHistorySurvivesAGateway(t *testing.T) {
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
 
-	first := &Server{}
+	first := runServer(t, &Server{})
 	repo, _ := first.runRepository(dir)
 	if repo == nil {
 		t.Fatal("a project must get a run table")
@@ -387,7 +387,7 @@ func TestWorkflowHistorySurvivesAGateway(t *testing.T) {
 	}
 
 	// A different gateway — this process never ran anything.
-	second := &Server{}
+	second := runServer(t, &Server{})
 	history, _ := second.workflowHistory(dir, "release", 10)
 	if len(history) != 1 {
 		t.Fatalf("a restarted gateway sees %d runs, want 1: %+v", len(history), history)
@@ -411,7 +411,7 @@ func TestWorkflowHistoryListsARealRun(t *testing.T) {
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "seat-token")
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
-	first := &Server{}
+	first := runServer(t, &Server{})
 	run, err := first.startWorkflow(dir, "release", "", "", "", "", "", "", 0)
 	if err != nil {
 		t.Fatal(err)
@@ -426,7 +426,7 @@ func TestWorkflowHistoryListsARealRun(t *testing.T) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	second := &Server{}
+	second := runServer(t, &Server{})
 	runs, _ := second.workflowHistory(dir, "release", 0)
 	if len(runs) != 1 || runs[0].Workflow != "release" || runs[0].Partition != run.Partition || runs[0].Tasks == 0 {
 		t.Fatalf("a real run, read by a new gateway: %+v", runs)
@@ -444,7 +444,7 @@ func TestResumeAfterARestartFindsTheRunInTheTable(t *testing.T) {
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "seat-token")
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
-	first := &Server{}
+	first := runServer(t, &Server{})
 	run, err := first.startWorkflow(dir, "release", "", "", "", "", "", "", 0)
 	if err != nil {
 		t.Fatal(err)
@@ -461,7 +461,7 @@ func TestResumeAfterARestartFindsTheRunInTheTable(t *testing.T) {
 	}
 	first.stopWorkflow(run.ID)
 
-	restarted := &Server{}
+	restarted := runServer(t, &Server{})
 	again, err := restarted.resumeWorkflow(run.ID, "", dir, "", "")
 	if err != nil {
 		t.Fatalf("resume after a restart: %v", err)
@@ -475,7 +475,7 @@ func TestResumeAfterARestartFindsTheRunInTheTable(t *testing.T) {
 
 	// A RERUN's id (a later trigger of the same partition) is found by the
 	// span its own movement left in the table.
-	rerun, err := (&Server{}).startWorkflow(dir, "release", "", "", "", run.Partition, "", "", 0)
+	rerun, err := runServer(t, &Server{}).startWorkflow(dir, "release", "", "", "", run.Partition, "", "", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -488,7 +488,7 @@ func TestResumeAfterARestartFindsTheRunInTheTable(t *testing.T) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	if _, partition, ok := (&Server{}).runFromTable(dir, rerun.ID); !ok || partition != run.Partition {
+	if _, partition, ok := runServer(t, &Server{}).runFromTable(dir, rerun.ID); !ok || partition != run.Partition {
 		t.Fatalf("a rerun's id maps to its partition: %q %v", partition, ok)
 	}
 
@@ -496,13 +496,13 @@ func TestResumeAfterARestartFindsTheRunInTheTable(t *testing.T) {
 	// An id whose stamp lies in no partition's span is refused with the
 	// partitions named — not given the latest one started before it.
 	stray := "release-" + time.Now().Add(1*time.Hour).Format("20060102-150405")
-	if _, err := (&Server{}).resumeWorkflow(stray, "", dir, "", ""); err == nil || !strings.Contains(err.Error(), "--partition") || !strings.Contains(err.Error(), run.Partition) {
+	if _, err := runServer(t, &Server{}).resumeWorkflow(stray, "", dir, "", ""); err == nil || !strings.Contains(err.Error(), "--partition") || !strings.Contains(err.Error(), run.Partition) {
 		t.Fatalf("an undecidable id is refused with the partitions named: %v", err)
 	}
-	if _, err := (&Server{}).resumeWorkflow("release-20200101-000000", "", dir, "", ""); err == nil || !strings.Contains(err.Error(), "run table") {
+	if _, err := runServer(t, &Server{}).resumeWorkflow("release-20200101-000000", "", dir, "", ""); err == nil || !strings.Contains(err.Error(), "run table") {
 		t.Fatalf("an id the table never saw is refused, naming where it looked: %v", err)
 	}
-	if _, err := (&Server{}).resumeWorkflow(run.ID, "", "", "", ""); err == nil {
+	if _, err := runServer(t, &Server{}).resumeWorkflow(run.ID, "", "", "", ""); err == nil {
 		t.Fatal("no project named, nothing to look in")
 	}
 }
@@ -517,7 +517,7 @@ func TestADoneRunShowsItsResults(t *testing.T) {
 	os.WriteFile(filepath.Join(steps, "a.yaml"), []byte("type: command\ncommand: echo a\ntarget:\n  file: reports/a.json\n"), 0o644)
 	os.WriteFile(filepath.Join(steps, "b.yaml"), []byte("type: command\ncommand: echo b\nrequires:\n  - table_pattern: a\ntarget:\n  file: FINAL-{{.partition}}.md\n"), 0o644)
 	os.WriteFile(filepath.Join(steps, "c.yaml"), []byte("type: command\ncommand: echo c\ntarget:\n  file: never.md\n"), 0o644)
-	s := &Server{}
+	s := runServer(t, &Server{})
 	wf, err := workflow.Load(filepath.Join(dir, ".memdoor", "workflows", "w"), workflow.Registry(s.workflowTypes(nil)...))
 	if err != nil {
 		t.Fatal(err)
@@ -569,7 +569,7 @@ func TestARunReachesItsWorkspacesWindowsOnly(t *testing.T) {
 		sm.AddSubscriber(sub)
 		sm.SubscribeToSession(sub.GetID(), session)
 	}
-	s := &Server{broadcaster: sm}
+	s := runServer(t, &Server{broadcaster: sm})
 	gone := &workflowRun{ID: "w-1", Dir: "/p", Session: shared.NewChannelSessionID("ws-a", "closed-channel"), Workspace: runWorkspace("", shared.NewChannelSessionID("ws-a", "closed-channel"))}
 	s.sendRunEvent(gone, map[string]interface{}{"run": gone.ID, "state": "note", "text": "■ w done"})
 	if reopened.count() != 1 || colleague.count() != 0 {
@@ -614,7 +614,7 @@ func TestAStoppedRunsKilledStepReadsStopped(t *testing.T) {
 // A project's panel lists its own runs, not another project's (dogfood
 // 2026-10-04: the campaign window listed a scratch selftest's runs).
 func TestTheRunListIsThisProjectsOnly(t *testing.T) {
-	s := &Server{}
+	s := runServer(t, &Server{})
 	here, there := t.TempDir(), t.TempDir()
 	w := s.workflows()
 	w.runs["a"] = &workflowRun{ID: "a", Workflow: "w", Dir: here, started: time.Now()}
@@ -678,4 +678,12 @@ func TestTheGatewayForgetsTheOldestFinishedRuns(t *testing.T) {
 			t.Errorf("done-%03d, among the oldest, was kept", i)
 		}
 	}
+}
+
+// runServer closes the server's run table when the test ends: Windows cannot
+// remove a directory holding an open runs.db (#283).
+func runServer(t testing.TB, s *Server) *Server {
+	t.Helper()
+	t.Cleanup(s.closeRunRepos)
+	return s
 }

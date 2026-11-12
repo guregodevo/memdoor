@@ -2,10 +2,12 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
+	"path/filepath"
 	"testing"
 )
 
-const cwd = "/Users/you/memdoor-coder"
+var cwd = testenv.Abs("/Users/you/memdoor-coder")
 
 func pathOf(t *testing.T, tool, input string) string {
 	t.Helper()
@@ -53,10 +55,13 @@ func TestListFilesWithoutPathIsConfined(t *testing.T) {
 // joined to the workdir, absolute ones are left alone (the deliberate "may
 // target a real project on purpose" behaviour).
 func TestSuppliedPathsKeepTheirExistingTreatment(t *testing.T) {
-	if got := pathOf(t, "glob", `{"pattern":"*.go","path":"internal"}`); got != cwd+"/internal" {
+	elsewhere := testenv.Abs("/tmp/elsewhere")
+	b, _ := json.Marshal(map[string]string{"pattern": "*.go", "path": elsewhere})
+	elsewhereInput := string(b)
+	if got := pathOf(t, "glob", `{"pattern":"*.go","path":"internal"}`); got != filepath.Join(cwd, "internal") {
 		t.Errorf("a relative path must be joined to the workdir, got %q", got)
 	}
-	if got := pathOf(t, "glob", `{"pattern":"*.go","path":"/tmp/elsewhere"}`); got != "/tmp/elsewhere" {
+	if got := pathOf(t, "glob", elsewhereInput); got != elsewhere {
 		t.Errorf("an absolute path stays as given, got %q", got)
 	}
 }

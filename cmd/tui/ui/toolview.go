@@ -269,6 +269,9 @@ func judgedSummary(out string) (verdict string, places []string) {
 			verdict = strings.TrimSuffix(strings.TrimPrefix(t, "jgrep: "), ":")
 			if cwd != "" {
 				verdict = strings.ReplaceAll(verdict, filepath.ToSlash(cwd)+"/", "")
+				if sep := string(filepath.Separator); sep != "/" && strings.Contains(verdict, cwd+sep) {
+					verdict = strings.ReplaceAll(strings.ReplaceAll(verdict, cwd+sep, ""), sep, "/")
+				}
 			}
 			continue
 		}

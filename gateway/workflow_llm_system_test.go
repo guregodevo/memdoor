@@ -45,7 +45,7 @@ func TestAnLLMTaskSystemMessageIsTheRequestsSystemRole(t *testing.T) {
 	if err := providers.SaveProvider(providers.ProviderSpec{ID: "local", API: providers.APIChat, Base: srv.URL + "/v1", Keyless: true, Models: []providers.Model{{ID: "qwen3:4b"}}}); err != nil {
 		t.Fatal(err)
 	}
-	c := workflowCompleter{s: &Server{clientFactory: providers.NewClientFactory()}}
+	c := workflowCompleter{s: runServer(t, &Server{clientFactory: providers.NewClientFactory()})}
 	if answer, err := c.CompleteWithSystem(t.Context(), "", "You are the PRIMARY orchestrator.", "the problem"); err != nil || answer != "### PLAN\nok" {
 		t.Fatalf("answer %q, err %v", answer, err)
 	}
@@ -71,10 +71,11 @@ func TestAnLLMTaskSystemMessageIsTheRequestsSystemRole(t *testing.T) {
 	}
 
 	t.Run("workflow steps have separate usage records", func(t *testing.T) {
-		s := &Server{clientFactory: providers.NewClientFactory()}
+		s := runServer(t, &Server{clientFactory: providers.NewClientFactory()})
 		wantSessions := map[string]bool{}
 		for range 2 {
 			dir := t.TempDir()
+			t.Cleanup(s.closeRunRepos) // after the folder's own, so it runs before it
 			steps := filepath.Join(dir, ".memdoor", "workflows", "meter-test", "steps")
 			if err := os.MkdirAll(steps, 0o755); err != nil {
 				t.Fatal(err)
@@ -164,7 +165,7 @@ func TestAnLLMTaskSendsTopPAndTopK(t *testing.T) {
 	if err := providers.SaveProvider(providers.ProviderSpec{ID: "local", API: providers.APIChat, Base: srv.URL + "/v1", Keyless: true, Models: []providers.Model{{ID: "qwen3:4b"}}}); err != nil {
 		t.Fatal(err)
 	}
-	c := workflowCompleter{s: &Server{clientFactory: providers.NewClientFactory()}}
+	c := workflowCompleter{s: runServer(t, &Server{clientFactory: providers.NewClientFactory()})}
 	for _, line := range []string{"temperature 0.3 top_p 0.95 top_k 20", "temperature 0.3"} {
 		if _, err := c.Complete(t.Context(), line, "the problem"); err != nil {
 			t.Fatal(err)

@@ -167,7 +167,7 @@ func relToRun(dir, path string) string {
 		return path
 	}
 	if rel, err := filepath.Rel(dir, path); err == nil && !strings.HasPrefix(rel, "..") {
-		return rel
+		return filepath.ToSlash(rel)
 	}
 	return path
 }

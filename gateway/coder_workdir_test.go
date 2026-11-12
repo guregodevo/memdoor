@@ -28,8 +28,9 @@ func TestConfineToCoderWorkdir(t *testing.T) {
 	// The REWRITE leaves absolute paths alone — but an absolute path outside
 	// the workdir never reaches a tool: coderPathEscape refuses it at the call
 	// site (see TestCoderPathEscape), the same split as bash's cd fence.
-	abs := `{"file_path":"/tmp/elsewhere/x.go","content":"y"}`
-	if got := field(confineToCoderWorkdir("edit_file", json.RawMessage(abs), coderWorkdir()), "file_path"); got != "/tmp/elsewhere/x.go" {
+	elsewhere := testenv.Abs("/tmp/elsewhere/x.go")
+	abs, _ := json.Marshal(map[string]string{"file_path": elsewhere, "content": "y"})
+	if got := field(confineToCoderWorkdir("edit_file", json.RawMessage(abs), coderWorkdir()), "file_path"); got != elsewhere {
 		t.Fatalf("absolute path must be unchanged by the rewrite, got %q", got)
 	}
 

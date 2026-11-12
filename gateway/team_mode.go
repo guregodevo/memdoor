@@ -159,7 +159,7 @@ func teamReport(run *workflowRun) string {
 		lines := strings.Split(strings.TrimRight(string(diff), "\n"), "\n")
 		more := ""
 		if len(lines) > teamReportDiffLines {
-			more = fmt.Sprintf("\n… %d more lines in %s", len(lines)-teamReportDiffLines, filepath.Join(rel, "changes.diff"))
+			more = fmt.Sprintf("\n… %d more lines in %s", len(lines)-teamReportDiffLines, filepath.ToSlash(filepath.Join(rel, "changes.diff")))
 			lines = lines[:teamReportDiffLines]
 		}
 		// Indented, not fenced: the window prints a note's fence marks literally.

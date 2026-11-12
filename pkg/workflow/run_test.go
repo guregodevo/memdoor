@@ -611,8 +611,9 @@ func TestCreatingAWorkflowFromFilesToARun(t *testing.T) {
 // A git root is a project root too: from a subdirectory of a repo with no
 // .memdoor yet, the first run's outputs land at the root, not in src/.
 func TestAGitRootIsAProjectRoot(t *testing.T) {
-	testenv.SetHome(t, t.TempDir())
-	project := t.TempDir()
+	home := t.TempDir()
+	testenv.SetHome(t, home)
+	project := filepath.Join(home, "repo")
 	os.MkdirAll(filepath.Join(project, ".git"), 0o755)
 	sub := filepath.Join(project, "src", "deep")
 	os.MkdirAll(sub, 0o755)
@@ -622,7 +623,8 @@ func TestAGitRootIsAProjectRoot(t *testing.T) {
 	if OutputsDir(sub) != filepath.Join(project, ".memdoor", "runs") {
 		t.Fatalf("outputs = %q", OutputsDir(sub))
 	}
-	loose := t.TempDir() // no .git, no .memdoor: the directory itself
+	loose := filepath.Join(home, "loose") // no .git, no .memdoor: the directory itself
+	os.MkdirAll(loose, 0o755)
 	if ProjectRoot(loose) != loose {
 		t.Fatalf("a loose directory is its own root, got %q", ProjectRoot(loose))
 	}

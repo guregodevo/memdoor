@@ -108,7 +108,13 @@ func TestTeamSolveDoneReproduceProvesItOnTheTreeAsFound(t *testing.T) {
 			t.Fatal(err)
 		}
 		if c.repro != "" {
-			abs, _ := filepath.EvalSymlinks(dir) // what pwd -P prints in the project
+			pwd := exec.Command("bash", "-c", "pwd -P") // what the script compares against: a POSIX path, also under Git Bash
+			pwd.Dir = dir
+			p, err := pwd.Output()
+			if err != nil {
+				t.Fatal(err)
+			}
+			abs := strings.TrimSpace(string(p))
 			if err := os.WriteFile(filepath.Join(r, "repro"), []byte(strings.ReplaceAll(c.repro, "ABS", abs)), 0o755); err != nil {
 				t.Fatal(err)
 			}

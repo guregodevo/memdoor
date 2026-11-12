@@ -45,7 +45,7 @@ func TestBashCannotCdOutOfTheWorkdir(t *testing.T) {
 	if !strings.Contains(got, "refused") {
 		t.Errorf("the refusal must say why, got: %s", got)
 	}
-	if !strings.Contains(got, "/Users/you/.memdoor/workdir/tetris") {
+	if !strings.Contains(got, filepath.FromSlash("/Users/you/.memdoor/workdir/tetris")) {
 		t.Errorf("the refusal must name the offending path so the model can correct it: %s", got)
 	}
 	// It must tell the model what to do instead, or it will simply try again.
@@ -141,7 +141,7 @@ func TestTheCoderWorksInAWorktreeOfItsProject(t *testing.T) {
 			t.Fatalf("git %v: %v\n%s", args, err, out)
 		}
 	}
-	cmd := "cd " + tree + " && go build ./... && go test ./..."
+	cmd := "cd " + filepath.ToSlash(tree) + " && go build ./... && go test ./..."
 	in, _ := json.Marshal(map[string]any{"command": cmd})
 	var got map[string]any
 	_ = json.Unmarshal(confineToCoderWorkdir("bash", in, repo), &got)
@@ -152,7 +152,7 @@ func TestTheCoderWorksInAWorktreeOfItsProject(t *testing.T) {
 	if msg := coderPathEscape("write_file", write, repo); msg != "" {
 		t.Errorf("a write into a worktree of the project must go through: %s", msg)
 	}
-	other, _ := json.Marshal(map[string]any{"command": "cd " + tmp + " && ls"})
+	other, _ := json.Marshal(map[string]any{"command": "cd " + filepath.ToSlash(tmp) + " && ls"})
 	_ = json.Unmarshal(confineToCoderWorkdir("bash", other, repo), &got)
 	if c, _ := got["command"].(string); !strings.Contains(c, "refused") {
 		t.Errorf("the folder holding the worktrees is not the project: %s", c)
