@@ -1,6 +1,6 @@
 type: agent
 agent: coder
-# Lists the cases the task leaves unstated, each settled by the task's words, else by what the project's code already does, else unclear.
+# Lists the cases the task leaves unstated, each settled by the task's words, else by what sibling code already does, else unclear.
 # One read-only turn after the survey, before the attempts. Where right and
 # wrong attempts tie on every check, the wrong ones take the other side of a
 # case the task never states: a field in a multi-field constraint
@@ -12,6 +12,12 @@ agent: coder
 # contradicted no hidden test; on django-12308 and -11532 the lists left it
 # unclear or unstated, and on django-11087 all three ran out of time. From the
 # task alone, without the code, it said unclear on most.
+# Sibling code only, never the current behaviour of the code the task
+# changes: on astropy-14365 a list read `v == "NO"` in the function the task
+# makes case-insensitive and stated that a lower-case `no` stays a value; the
+# two attempts that read it kept it, the one that did not was right, and the
+# pick followed the two (2026-11-12). The deciding cases above were each
+# settled by sibling code.
 # The attempts other than the first read cases.md, as they read the survey.
 # The path checks do not: the lists disagree on cases no test covers, and a
 # check built on one would fail a right attempt.
@@ -26,7 +32,7 @@ prompt: |
 
   For each case, find what settles it, in this order:
   1. the task's own words or reason;
-  2. what this project's code already does in the same kind of case: the function the task changes, its siblings, the same kind of value handled elsewhere. Read that code and name the file and function;
+  2. what this project's code already does in the same kind of case elsewhere: a sibling function, a parallel class or backend, the same kind of value handled in another place. Read that code and name the file and function. Never the current behaviour of the code the task changes: that is what the task may change;
   3. otherwise `unclear`. `unclear` is better than a rule nothing here supports.
 
   Read and search only: do not run the project's code or its tests. Keep no rule with the notes tool. Do not spawn agents.
