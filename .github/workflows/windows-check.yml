@@ -1,0 +1,34 @@
+# Temporary, branch-only (#283): the failing tests in the packages
+# .github/windows-known-failing.txt lists, with the file and line of each.
+# Deleted before the pull request lands.
+name: Windows failure catalogue
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ windows-283 ]
+  workflow_dispatch:
+
+jobs:
+  catalogue:
+    if: github.repository == 'guregodevo/memdoor'
+    name: Failing tests on windows-latest
+    runs-on: windows-latest
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+      - name: Every failing test, file and line
+        shell: bash
+        run: |
+          for p in $(grep -v '^#' .github/windows-known-failing.txt); do
+            log="$RUNNER_TEMP/$(echo "$p" | tr / _).log"
+            go test "$p" -count=1 > "$log" 2>&1 || true
+            echo "=================== $p"
+            grep -E -- '--- FAIL|_test\.go:[0-9]+:|^panic:|^FAIL|undefined|cannot find package' "$log" | head -80
+          done
