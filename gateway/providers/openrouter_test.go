@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,7 +17,7 @@ import (
 // tools on the wire, the routing policy sent, the tool call parsed back, and
 // the tokens reported.
 func TestOpenRouterClientRoundTrip(t *testing.T) {
-	t.Setenv("HOME", t.TempDir()) // the meter ledger lives under $HOME
+	testenv.SetHome(t, t.TempDir()) // the meter ledger lives under $HOME
 	var got struct {
 		path, auth string
 		body       map[string]any
@@ -77,7 +78,7 @@ func TestOpenRouterClientRoundTrip(t *testing.T) {
 // Text streams to the live-typing callback as it arrives, and the whole
 // reply still comes back assembled.
 func TestOpenRouterClientStreamsText(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		for _, part := range []string{"The file ", "is ", "brains.go."} {
@@ -113,7 +114,7 @@ func TestOpenRouterClientStreamsText(t *testing.T) {
 // The coder's prose breaker holds on this provider too: a reply running on as
 // tool-free prose is stopped mid-stream and marked for the turn driver.
 func TestOpenRouterClientHonoursTheProseBreaker(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		for i := 0; i < 50; i++ {

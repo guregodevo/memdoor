@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -85,15 +86,21 @@ func TestToolStoresNegativePaths(t *testing.T) {
 		}
 	}
 	got := FindInTools(stores, home)
+	// Windows keeps no POSIX mode bits: chmod 0 leaves the file readable, so its
+	// key is found there and nowhere else is the difference a failure.
+	modeBitsHide := runtime.GOOS != "windows" && os.Geteuid() != 0
 	for _, k := range got {
 		if k.Value == fakeAnthropic {
 			t.Fatal("a file past the limit is not read")
 		}
-		if k.Value == fakeGemini && os.Geteuid() != 0 {
+		if k.Value == fakeGemini && modeBitsHide {
 			t.Fatal("an unreadable file offers nothing")
 		}
+		if k.Value != fakeGemini {
+			t.Fatalf("no key of a known shape: got %v", got)
+		}
 	}
-	if len(got) != 0 && os.Geteuid() != 0 {
+	if len(got) != 0 && modeBitsHide {
 		t.Fatalf("no key of a known shape: got %v", got)
 	}
 }

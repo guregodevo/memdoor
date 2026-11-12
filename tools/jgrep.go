@@ -26,7 +26,7 @@ import (
 
 const (
 	JgrepName          = "jgrep"
-	jgrepMaxCandidates = 192  // hunks judged per call (8 parallel batches)
+	jgrepMaxCandidates = 192  // hunks judged per call (8 batches; the provider decides how many run at once)
 	jgrepMaxCollected  = 4000 // hunks collected before pre-ranking; more means the pattern is too broad
 	jgrepKeepDefault   = 10
 	jgrepContext       = 3

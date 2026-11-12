@@ -6,8 +6,10 @@
 # exists, and, when a label is given, one without it. The lowest number first: the oldest issue.
 set -u
 tsv="$1"; tried="$2"; label="${3:-}"
-awk -F'\t' -v label="$label" -v tried="$tried" '
-  BEGIN { while ((getline l < tried) > 0) if (l != "") done[l] = 1 }
+# The label and the tried file go in by the environment: awk -v reads backslash escapes, so a
+# Windows path (C:\Users\...) came out mangled.
+LABEL="$label" TRIED="$tried" awk -F'\t' '
+  BEGIN { label = ENVIRON["LABEL"]; tried = ENVIRON["TRIED"]; while ((getline l < tried) > 0) if (l != "") done[l] = 1 }
   NF >= 3 && $1 ~ /^[0-9]+$/ && !($1 in done) && $2 == 0 {
     if (label != "") { n = split($3, ls, ","); ok = 0; for (i = 1; i <= n; i++) if (ls[i] == label) ok = 1; if (!ok) next }
     if (best == "" || $1 + 0 < best + 0) best = $1

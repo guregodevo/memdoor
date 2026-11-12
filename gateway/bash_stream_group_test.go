@@ -1,3 +1,7 @@
+//go:build !windows
+
+// syscall.Kill(pid, 0) is how the test sees the child is gone: Unix only (#283).
+
 package gateway
 
 import (

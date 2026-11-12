@@ -111,7 +111,7 @@ func TestTheWorkflowToolsPromptIsTheRunsPromptFile(t *testing.T) {
 	t.Setenv("MEMDOOR_BILLING_TOKEN", "seat-token")
 	dir := t.TempDir()
 	writeReleaseWorkflow(t, dir)
-	s := &Server{}
+	s := runServer(t, &Server{})
 	ar := &AgentRuntime{workflows: s}
 	ctx := context.WithValue(context.Background(), sharedctx.BuddyToolsKey, []string{"workflow"})
 	ctx = context.WithValue(ctx, sharedctx.WorkdirKey, dir)

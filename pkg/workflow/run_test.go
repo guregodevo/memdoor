@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -418,7 +419,7 @@ func TestStatusReadsMariosRecordWhileRunning(t *testing.T) {
 // project; the project's own of the same name wins; a path still works.
 func TestTheSharedLibraryIsFoundAfterTheProjectsOwn(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	project := t.TempDir()
 	writeWorkflow(t, filepath.Join(home, ".memdoor", "workflows"), "release", map[string]string{"a": "type: agent\nprompt: shared\n"})
 	writeWorkflow(t, filepath.Join(home, ".memdoor", "workflows"), "nightly", map[string]string{"a": "type: agent\nprompt: shared\n"})
@@ -446,7 +447,7 @@ func TestTheSharedLibraryIsFoundAfterTheProjectsOwn(t *testing.T) {
 // A TUI opened in a subdirectory still sees the project's workflows, and
 // the project's .memdoor/.gitignore keeps run outputs out of commits.
 func TestWorkflowsAreFoundFromASubdirectoryAndOutputsAreIgnored(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	project := t.TempDir()
 	dir := writeWorkflow(t, filepath.Join(project, ".memdoor", "workflows"), "digest", map[string]string{"a": "type: agent\nprompt: do x\n"})
 	sub := filepath.Join(project, "cmd", "deep")
@@ -481,7 +482,7 @@ func TestWorkflowsAreFoundFromASubdirectoryAndOutputsAreIgnored(t *testing.T) {
 // paragraph, headings skipped, one line — and where it comes from is said.
 func TestDescribeReadsTheReadmeLead(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	project := t.TempDir()
 	own := writeWorkflow(t, filepath.Join(project, ".memdoor", "workflows"), "digest", map[string]string{"a": "type: agent\nprompt: do x\n"})
 	os.WriteFile(filepath.Join(own, "README.md"), []byte("# digest\n\nLists the last commits\nand writes DIGEST.md.\n\nMore below, not shown.\n"), 0o644)
@@ -519,7 +520,7 @@ func TestEnsureIgnoredLeavesAnExistingFileAlone(t *testing.T) {
 }
 
 func TestNamesWithNoLibraryAndNoProject(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if got := Names(t.TempDir()); len(got) != 0 {
 		t.Fatalf("names = %v", got)
 	}
@@ -562,7 +563,7 @@ func TestResultSummaryAndDone(t *testing.T) {
 // and one file per step under the project's .memdoor/workflows/<name>/, then
 // it is listed, found, loaded, run, and its outputs kept — nothing else.
 func TestCreatingAWorkflowFromFilesToARun(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	project := t.TempDir()
 	dir := filepath.Join(project, ".memdoor", "workflows", "digest")
 	os.MkdirAll(filepath.Join(dir, "steps"), 0o755)
@@ -610,8 +611,9 @@ func TestCreatingAWorkflowFromFilesToARun(t *testing.T) {
 // A git root is a project root too: from a subdirectory of a repo with no
 // .memdoor yet, the first run's outputs land at the root, not in src/.
 func TestAGitRootIsAProjectRoot(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	project := t.TempDir()
+	home := t.TempDir()
+	testenv.SetHome(t, home)
+	project := filepath.Join(home, "repo")
 	os.MkdirAll(filepath.Join(project, ".git"), 0o755)
 	sub := filepath.Join(project, "src", "deep")
 	os.MkdirAll(sub, 0o755)
@@ -621,7 +623,8 @@ func TestAGitRootIsAProjectRoot(t *testing.T) {
 	if OutputsDir(sub) != filepath.Join(project, ".memdoor", "runs") {
 		t.Fatalf("outputs = %q", OutputsDir(sub))
 	}
-	loose := t.TempDir() // no .git, no .memdoor: the directory itself
+	loose := filepath.Join(home, "loose") // no .git, no .memdoor: the directory itself
+	os.MkdirAll(loose, 0o755)
 	if ProjectRoot(loose) != loose {
 		t.Fatalf("a loose directory is its own root, got %q", ProjectRoot(loose))
 	}

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,14 +12,15 @@ import (
 // read, changed or ran, and how it ended; its beats and its end replace its
 // start, by the call's id.
 func TestAStepsCallsAreOneLineEach(t *testing.T) {
-	dir := "/work/proj"
+	dir := testenv.Abs("/work/proj")
+	slashDir := filepath.ToSlash(dir)
 	var c stepCalls
 	type ev = map[string]interface{}
 	steps := []struct {
 		data      ev
 		key, line string
 	}{
-		{ev{"event": "start", "id": "c1", "tool": "apply_patch", "input": `{"input":"*** Begin Patch\n*** Update File: /work/proj/scripts/scan.sh\n@@\n-a\n+b\n*** End Patch"}`}, "c1", "✎ scripts/scan.sh"},
+		{ev{"event": "start", "id": "c1", "tool": "apply_patch", "input": `{"input":"*** Begin Patch\n*** Update File: ` + slashDir + `/scripts/scan.sh\n@@\n-a\n+b\n*** End Patch"}`}, "c1", "✎ scripts/scan.sh"},
 		{ev{"event": "complete", "id": "c1", "tool": "apply_patch", "output": "Success. Updated: scripts/scan.sh"}, "c1", "✎ scripts/scan.sh"},
 		{ev{"event": "start", "id": "c2", "tool": "bash", "input": `{"command":"bash scripts/scan.sh\necho done"}`}, "c2", "$ bash scripts/scan.sh …"},
 		{ev{"event": "update", "id": "c2", "tool": "bash", "output": "partial"}, "", ""},
@@ -28,7 +30,7 @@ func TestAStepsCallsAreOneLineEach(t *testing.T) {
 		{ev{"event": "complete", "id": "c3", "tool": "bash", "output": "ok"}, "c3", "$ go test ./... → exit 0"},
 		{ev{"event": "start", "id": "c4", "tool": "read_file", "input": `{"path":"task.md"}`}, "c4", "read task.md"},
 		{ev{"event": "complete", "id": "c4", "tool": "read_file", "error": "no such file"}, "c4", "read task.md ✗ no such file"},
-		{ev{"event": "start", "id": "c5", "tool": "write_file", "input": `{"path":"/work/proj/review.md"}`}, "c5", "✎ review.md"},
+		{ev{"event": "start", "id": "c5", "tool": "write_file", "input": `{"path":"` + slashDir + `/review.md"}`}, "c5", "✎ review.md"},
 		{ev{"event": "start", "id": "c6", "tool": "todo_write", "input": `{}`}, "c6", "⏺ todo_write"},
 		{ev{"type": "todo"}, "", ""},
 		{ev{"event": "progress", "id": "unknown", "tool": "bash", "seconds": 9}, "", ""},

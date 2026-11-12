@@ -31,7 +31,7 @@ func TestBashIsToldApplyPatchIsAToolOnlyWhenItRanIt(t *testing.T) {
 	}
 
 	readme := filepath.Join(t.TempDir(), "README.md")
-	info := run("cat > " + readme + " <<'EOF'\nPer run: pass, output tokens,\napply_patch calls and failures.\nEOF")
+	info := run("cat > " + filepath.ToSlash(readme) + " <<'EOF'\nPer run: pass, output tokens,\napply_patch calls and failures.\nEOF")
 	if info.Error != "" {
 		t.Fatalf("a heredoc mentioning apply_patch must run: %s", info.Error)
 	}

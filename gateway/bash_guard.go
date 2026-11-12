@@ -28,6 +28,12 @@ func destructiveBashReason(command string) (string, bool) {
 	if rmRecursiveForce.MatchString(c) && rootTarget.MatchString(c) {
 		return "recursive force-delete of a root/home path", true
 	}
+	// A coder testing a terminal program in tmux ends every session on the
+	// default socket, the person's own included. Its own session is
+	// `tmux kill-session -t <name>`; a private socket is `tmux -L <name>`.
+	if tmuxKillServer.MatchString(c) {
+		return "tmux kill-server ends every tmux session on this machine, yours too; kill your own with tmux kill-session -t <name>", true
+	}
 	// Formatting a filesystem or writing a raw disk device.
 	if strings.Contains(c, " mkfs") || strings.Contains(c, "mkfs.") {
 		return "mkfs formats a filesystem", true
@@ -43,6 +49,8 @@ var (
 	rmRecursiveForce = regexp.MustCompile(`\brm\b.*(-[a-z]*r[a-z]*f|-[a-z]*f[a-z]*r|-r[a-z]* .*-f|-f[a-z]* .*-r)`)
 	// A delete target that IS the filesystem root or home dir (not a subpath).
 	rootTarget = regexp.MustCompile(`(^| )(/|/\*|~|~/|\$home|\$home/)( |$)`)
+	// tmux kill-server in command position, with or without a socket flag.
+	tmuxKillServer = regexp.MustCompile(`(^|[;&|(]) *(sudo +)?tmux( +-[a-z] +[^ ]+)* +kill-server( |;|&|\||\)|$)`)
 	// dd of=/dev/... or a redirect to a raw disk device node.
 	rawDeviceWrite = regexp.MustCompile(`(of=/dev/|> ?/dev/(sd|disk|rdisk|nvme|hd|vd))`)
 )

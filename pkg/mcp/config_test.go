@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,9 +84,7 @@ func TestEditsKeepUnknownFields(t *testing.T) {
 	if err := st.Add(ScopeUser, proj, "k", Entry{Command: "x", Headers: map[string]string{"Authorization": "k"}}); err != nil {
 		t.Fatal(err)
 	}
-	if fi, _ := os.Stat(filepath.Join(home, "mcp.json")); fi.Mode().Perm() != 0o600 {
-		t.Fatalf("the user file must be private: %v", fi.Mode())
-	}
+	testenv.OwnerOnly(t, filepath.Join(home, "mcp.json"))
 }
 
 // A project's servers are trusted as they are: a change asks again.

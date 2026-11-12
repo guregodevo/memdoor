@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,7 +31,7 @@ func example() {
 
 	// Test edit
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "    return true",
 		"new_string": "    return false"
 	}`
@@ -91,7 +92,7 @@ func TestEditFile_EmptyOldStringOverwrites(t *testing.T) {
 	}
 
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"new_string": "bar"
 	}`
 
@@ -115,7 +116,7 @@ func TestEditFile_SameOldAndNew(t *testing.T) {
 	}
 
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "foo",
 		"new_string": "foo"
 	}`
@@ -138,7 +139,7 @@ func TestEditFile_SameOldAndNew(t *testing.T) {
 func TestEditFile_CreatesWhenMissing(t *testing.T) {
 	dir := t.TempDir()
 	fp := filepath.Join(dir, "created.txt")
-	input := `{"file_path": "` + fp + `", "old_string": "", "new_string": "hello\n"}`
+	input := `{"file_path": ` + jstr(fp) + `, "old_string": "", "new_string": "hello\n"}`
 
 	if _, err := EditFile([]byte(input)); err != nil {
 		t.Fatalf("edit_file should CREATE a missing file, got error: %v", err)
@@ -163,7 +164,7 @@ func TestEditFile_StringNotFound(t *testing.T) {
 	}
 
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "nonexistent",
 		"new_string": "replacement"
 	}`
@@ -197,7 +198,7 @@ func TestEditFile_MultipleMatches(t *testing.T) {
 	}
 
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "foo",
 		"new_string": "qux"
 	}`
@@ -234,7 +235,7 @@ func TestEditFile_PreservesIndentation(t *testing.T) {
 
 	// Use exact indentation with tab character
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "\treturn true",
 		"new_string": "\treturn false"
 	}`
@@ -276,7 +277,7 @@ Line 4`
 	}
 
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "Line 2\nLine 3",
 		"new_string": "New Line 2\nNew Line 3"
 	}`
@@ -318,7 +319,7 @@ func TestEditFile_EmptyStringReplacement(t *testing.T) {
 	}
 
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": " world",
 		"new_string": ""
 	}`
@@ -359,7 +360,7 @@ Line 4`
 	}
 
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "Line 3",
 		"new_string": "Modified Line 3"
 	}`
@@ -391,7 +392,7 @@ func TestEditFile_WhitespaceMatching(t *testing.T) {
 
 	// Try to match with single space (should fail)
 	input := `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "foo bar",
 		"new_string": "baz"
 	}`
@@ -408,7 +409,7 @@ func TestEditFile_WhitespaceMatching(t *testing.T) {
 
 	// Now try with exact whitespace (two spaces) - should succeed
 	input = `{
-		"file_path": "` + testFile + `",
+		"file_path": ` + jstr(testFile) + `,
 		"old_string": "foo  bar",
 		"new_string": "baz"
 	}`
@@ -496,4 +497,15 @@ func TestFormatEditDiff(t *testing.T) {
 			t.Errorf("unchanged line marked as change: %q", l)
 		}
 	}
+}
+
+// jstr is s as a JSON string literal. A path goes into the tool's input as
+// JSON, and a Windows path is full of backslashes: pasted in raw they read as
+// escape codes and the input never parses (#283).
+func jstr(s string) string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }

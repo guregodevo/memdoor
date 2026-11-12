@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -13,15 +14,31 @@ import (
 // comes through byte for byte (#110: a Python 3.6 with an ASCII locale failed
 // the problem step at once, and the run did nothing).
 func TestTeamSolveTaskNeedsNoPythonAndKeepsAnyText(t *testing.T) {
+	// A PATH of just these tools, so no Python is on it. On Unix it is a folder of
+	// links to them; on Windows a link needs a privilege and a copied bash.exe loses
+	// its DLLs, so it is the folders the tools live in (Git's, with no Python).
 	bin := t.TempDir()
+	bash := filepath.Join(bin, "bash")
+	var dirs []string
 	for _, tool := range []string{"bash", "awk", "grep", "sed", "sort", "tr", "mkdir", "mv", "rm", "cat"} {
 		p, err := exec.LookPath(tool)
 		if err != nil {
 			t.Skipf("%s not found: %v", tool, err)
 		}
+		if tool == "bash" {
+			bash = p
+		}
+		if runtime.GOOS == "windows" {
+			dirs = append(dirs, filepath.Dir(p))
+			continue
+		}
 		if err := os.Symlink(p, filepath.Join(bin, tool)); err != nil {
 			t.Fatal(err)
 		}
+	}
+	path := bin
+	if runtime.GOOS == "windows" {
+		path = strings.Join(dirs, string(os.PathListSeparator))
 	}
 	wf, err := filepath.Abs("team-solve")
 	if err != nil {
@@ -48,9 +65,9 @@ func TestTeamSolveTaskNeedsNoPythonAndKeepsAnyText(t *testing.T) {
 
 	run := func(script string, args ...string) string {
 		t.Helper()
-		cmd := exec.Command(filepath.Join(bin, "bash"), append([]string{filepath.Join(wf, script)}, args...)...)
+		cmd := exec.Command(bash, append([]string{filepath.Join(wf, script)}, args...)...)
 		cmd.Dir = dir
-		cmd.Env = []string{"PATH=" + bin, "LC_ALL=C", "LANG=C", "HOME=" + dir}
+		cmd.Env = []string{"PATH=" + path, "LC_ALL=C", "LANG=C", "HOME=" + dir}
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Fatalf("%s: %v\n%s", script, err, out)

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"io/fs"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +16,7 @@ import (
 // requirement fails here, not in a person's first CI job.
 func TestSeedWritesBuiltinWorkflowsThatLoad(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	SeedEmbeddedWorkflows()
 	lib := filepath.Join(home, ".memdoor", "workflows")
 	names, err := fs.Glob(workflows.FS, "*/README.md")
@@ -46,7 +47,7 @@ func TestSeedWritesBuiltinWorkflowsThatLoad(t *testing.T) {
 // moved aside to <name>-mine, kept whole, and the built-in takes the name.
 func TestSeedMovesASameNameCopyAsideForTheBuiltin(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	lib := filepath.Join(home, ".memdoor", "workflows")
 	mine := filepath.Join(lib, "pr-review")
 	if err := os.MkdirAll(filepath.Join(mine, "steps"), 0o755); err != nil {
@@ -78,7 +79,7 @@ func TestSeedMovesASameNameCopyAsideForTheBuiltin(t *testing.T) {
 // adopted where it is: nothing moves.
 func TestSeedAdoptsAnIdenticalCopyOfABuiltin(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	lib := filepath.Join(home, ".memdoor", "workflows")
 	src, err := fs.Sub(workflows.FS, "team-solve")
 	if err != nil {
@@ -104,7 +105,7 @@ func TestSeedAdoptsAnIdenticalCopyOfABuiltin(t *testing.T) {
 // and the person deleted is written again (the workflow is still ours).
 func TestSeedKeepsAnEditedStep(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	SeedEmbeddedWorkflows()
 	step := filepath.Join(home, ".memdoor", "workflows", "pr-review", "steps", "verdict.yaml")
 	edited := "type: command\ncommand: echo lenient\n"
@@ -128,7 +129,7 @@ func TestSeedKeepsAnEditedStep(t *testing.T) {
 // empty folder gets, and the check script `test` and `verify` call.
 func TestSeedWritesTeamSolveWithItsSampleAndCheck(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	SeedEmbeddedWorkflows()
 	dir := filepath.Join(home, ".memdoor", "workflows", "team-solve")
 	for _, rel := range []string{"check-samples.sh", "changes.sh", "check.sh", "done.sh", "task.template.md", "sample/task.md", "sample/tests/1.in", "sample/tests/5.out", "steps/problem.yaml", "steps/judge.yaml", "scope.sh", "steps/context.yaml", "steps/ideate.yaml", "steps/direct-a.yaml", "steps/save-a.yaml", "steps/pick.yaml", "steps/test-0.yaml", "steps/outline.yaml", "steps/settle.yaml", "steps/recheck.yaml", "verdict.sh", "snapshot.sh", "steps/keep.yaml", "steps/baseline.yaml", "task.sh", "settle.sh", "failures.sh"} {

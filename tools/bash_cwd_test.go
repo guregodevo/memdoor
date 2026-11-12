@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -39,13 +40,20 @@ func TestBashRunsInTheInjectedCwd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	in, _ := json.Marshal(map[string]any{"command": "pwd", "cwd": dir})
+	// A relative path is written and then looked for in dir: that is what
+	// "the process started there" means, and it needs no path dialect. `pwd` is
+	// checked too where its output is comparable — Git Bash on Windows prints
+	// /tmp/… for the same folder (#283).
+	in, _ := json.Marshal(map[string]any{"command": "pwd; printf x > cwd-marker.txt", "cwd": dir})
 	out, err := Bash(in)
 	if err != nil {
 		t.Fatalf("bash failed: %v", err)
 	}
-	got := strings.TrimSpace(out)
-	if got != real && got != dir {
+	if _, err := os.Stat(filepath.Join(dir, "cwd-marker.txt")); err != nil {
+		t.Fatalf("a relative write did not land in %q — cmd.Dir is not being applied: %v", dir, err)
+	}
+	got := strings.TrimSpace(strings.SplitN(strings.TrimSpace(out), "\n", 2)[0])
+	if runtime.GOOS != "windows" && got != real && got != dir {
 		t.Errorf("bash ran in %q, want the injected cwd %q — cmd.Dir is not being applied", got, dir)
 	}
 }

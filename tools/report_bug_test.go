@@ -3,13 +3,12 @@ package tools
 import (
 	"context"
 	"encoding/json"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"memdoor/gateway/logs"
+	"memdoor/internal/testenv"
 )
 
 // setupGlobalLogs ensures logs.GetGlobalStorage() returns a real sqlite
@@ -17,13 +16,7 @@ import (
 // global EventLogger and inspect what landed via QueryEvents.
 func setupGlobalLogs(t *testing.T) logs.Storage {
 	t.Helper()
-	dir := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(dir, "logs"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := logs.InitGlobalLogger(filepath.Join(dir, "logs"), false); err != nil {
-		t.Fatalf("InitGlobalLogger: %v", err)
-	}
+	testenv.Logger(t)
 	return logs.GetGlobalStorage()
 }
 

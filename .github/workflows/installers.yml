@@ -97,44 +97,26 @@ jobs:
       - name: Install
         shell: pwsh
         run: $env:MEMDOOR_CI = '1'; irm 'https://memdoor.ai/install.ps1?ci=1' | iex
-      - name: Version, gateway, status
-        shell: pwsh
+      # Windows PowerShell 5.1 is what `irm | iex` runs in for most people (the
+      # user agents in the server logs), and its downloads were the slow ones:
+      # the install is run there too, over the first, and how long it took is
+      # printed.
+      - name: Install with Windows PowerShell 5.1
+        shell: powershell
         run: |
-          $bin = Join-Path $env:LOCALAPPDATA 'Memdoor\bin\memdoor.exe'
-          & $bin --version
-          $gw = Start-Process -FilePath $bin -ArgumentList 'gateway' -PassThru -RedirectStandardOutput gw.log -RedirectStandardError gw.err
-          $ok = $false
-          foreach ($i in 1..40) {
-            try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:18789/api/status | Out-Null; $ok = $true; break } catch { Start-Sleep 1 }
-          }
-          if (-not $ok) { Get-Content gw.log, gw.err; throw "gateway did not answer" }
-          (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:18789/api/status).Content
-          & $bin setup --non-interactive --admin-email ci@example.test --admin-password ci-first-run-2026 --workspace-name ci
-          Stop-Process -Id $gw.Id
-      - name: First commands, no key (a new shell finds memdoor on PATH)
+          $PSVersionTable.PSVersion.ToString()
+          $env:MEMDOOR_CI = '1'
+          $t = Measure-Command { irm 'https://memdoor.ai/install.ps1?ci=1' | iex }
+          "install took $([int]$t.TotalSeconds) s"
+          & (Join-Path $env:LOCALAPPDATA 'Memdoor\bin\memdoor.exe') --version
+      # The same first commands the pull-request check runs on each build.
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts/windows-first-commands.ps1
+          sparse-checkout-cone-mode: false
+      - name: Version, gateway, first account, first commands with no key
         shell: pwsh
-        run: |
-          $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-          if ($userPath -notlike "*Memdoor\bin*") { throw "installer did not put Memdoor\bin on the user PATH" }
-          $env:Path = "$env:Path;" + (Join-Path $env:LOCALAPPDATA 'Memdoor\bin')
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\proj" | Out-Null
-          Set-Location "$env:USERPROFILE\proj"
-          function Check($want, [string[]]$cmd) {
-            $out = & memdoor @cmd 2>&1 | Out-String; $rc = $LASTEXITCODE
-            Write-Host "--- memdoor $cmd -> exit $rc"; Write-Host ($out.Substring(0, [Math]::Min(400, $out.Length)))
-            if ($out -match 'panic|not supported') { throw "crashed: memdoor $cmd" }
-            if ($rc -ne $want) { throw "memdoor $cmd exit $rc, want $want" }
-          }
-          Check 1 @('run','reply with ok')
-          try { Invoke-WebRequest -UseBasicParsing http://127.0.0.1:18789/api/status | Out-Null } catch { throw "memdoor run did not start a gateway" }
-          Check 0 @('doctor')
-          Check 0 @('providers')
-          Check 0 @('workflow','list')
-          Check 0 @('cron','list')
-          Check 0 @('resume')
-          Check 1 @('resume','--last')
-          Check 1 @('remote','--last')
-          exit 0   # the runner would otherwise fail the step on the last command's expected 1
+        run: ./scripts/windows-first-commands.ps1
       - name: Install again over the running exe (what memdoor upgrade does)
         shell: pwsh
         run: |

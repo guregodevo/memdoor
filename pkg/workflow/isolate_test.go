@@ -35,6 +35,7 @@ func write(t *testing.T, p, s string) {
 func TestAWorktreeIsolationStartsFromTheTreeAsItStands(t *testing.T) {
 	p := t.TempDir()
 	gitT(t, p, "init", "-q")
+	gitT(t, p, "config", "core.autocrlf", "false") // Git for Windows would write the copy with CRLF
 	write(t, filepath.Join(p, "a.txt"), "one\n")
 	gitT(t, p, "add", "a.txt")
 	gitT(t, p, "commit", "-q", "-m", "base")
@@ -175,5 +176,18 @@ func TestAttemptsStartingAndEndingAtOnceKeepTheirWorktrees(t *testing.T) {
 	out, _ := exec.Command("git", "-C", dir, "worktree", "list", "--porcelain").Output()
 	if c := strings.Count(string(out), "worktree "); c != 1 {
 		t.Fatalf("%d worktrees left:\n%s", c, out)
+	}
+}
+
+// An attempt's git commands start no maintenance: a commit's automatic
+// worktree prune removes the entry another attempt's add is still writing
+// (no gitdir file yet), and that add fails "could not open
+// .git/worktrees/…/locked" (CI on ubuntu-26.04, 2026-11-12). The settings
+// come before the subcommand, where git reads them.
+func TestAnAttemptsGitCommandsStartNoMaintenance(t *testing.T) {
+	got := gitArgs("/repo", "commit", "-q", "-m", "isolation base")
+	want := []string{"-C", "/repo", "-c", "maintenance.auto=false", "-c", "gc.auto=0", "commit", "-q", "-m", "isolation base"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("git %v, want git %v", got, want)
 	}
 }

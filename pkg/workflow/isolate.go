@@ -179,8 +179,22 @@ func (i *gitIsolation) Close() error {
 	return os.RemoveAll(filepath.Dir(i.root))
 }
 
+// noAutoMaintenance keeps git from starting maintenance after a command. An
+// attempt's commit starts `git maintenance run --auto` in the background,
+// outside the worktrees lock. Its worktree prune removes an entry with no
+// gitdir file yet, which is what another attempt's add is still writing:
+// "could not open '.git/worktrees/try-…/locked' for writing" (CI on
+// ubuntu-26.04, 2026-11-12). gc.auto=0 is the same for a git older than
+// maintenance.
+var noAutoMaintenance = []string{"-c", "maintenance.auto=false", "-c", "gc.auto=0"}
+
+// gitArgs is the command line of one of the isolator's git commands in dir.
+func gitArgs(dir string, args ...string) []string {
+	return append(append([]string{"-C", dir}, noAutoMaintenance...), args...)
+}
+
 func git(ctx context.Context, dir string, args ...string) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)
+	cmd := exec.CommandContext(ctx, "git", gitArgs(dir, args...)...)
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if err := cmd.Run(); err != nil {

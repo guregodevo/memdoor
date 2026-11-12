@@ -1,8 +1,10 @@
 package gateway
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -63,7 +65,8 @@ func TestTheTaskCannotChangeItsOwnCheck(t *testing.T) {
 	if msg := targetGuardRefuses(s, "write_file", []byte(`{"path":"ok.txt"}`)); msg != "" {
 		t.Errorf("another file is the task's: %q", msg)
 	}
-	if msg := targetGuardRefuses(s, "write_file", []byte(`{"path":"`+abs+`","content":"exit 0"}`)); msg == "" {
+	absIn, _ := json.Marshal(map[string]string{"path": abs, "content": "exit 0"})
+	if msg := targetGuardRefuses(s, "write_file", absIn); msg == "" {
 		t.Error("the absolute path is the same file")
 	}
 	for _, in := range []string{
@@ -91,7 +94,7 @@ func TestTheTaskCannotChangeItsOwnCheck(t *testing.T) {
 	}
 	body, _ := os.ReadFile(abs)
 	st, _ := os.Stat(abs)
-	if string(body) != "#!/bin/sh\nexit 1\n" || st.Mode().Perm() != 0o755 {
+	if string(body) != "#!/bin/sh\nexit 1\n" || (runtime.GOOS != "windows" && st.Mode().Perm() != 0o755) {
 		t.Fatalf("as it was: %q %v", body, st.Mode())
 	}
 	// Deleted: put back too.

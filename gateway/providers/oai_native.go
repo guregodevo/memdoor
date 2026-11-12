@@ -53,6 +53,15 @@ func (c *oaiClient) stallAfter() time.Duration {
 	return oaiStallAfter
 }
 
+// keepAliveOnly is how long this client's provider may send only keep-alive
+// comments.
+func (c *oaiClient) keepAliveOnly() time.Duration {
+	if c.keyless {
+		return keylessKeepAliveOnlyAfter
+	}
+	return keepAliveOnlyAfter
+}
+
 type oaiMessages struct {
 	client *oaiClient
 }
@@ -271,6 +280,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 		// hook the agent runtime uses for AssistantStreamer broadcasts.
 		acc = &streamAccumulator{}
 		body := newIdleTimeoutReader(resp.Body, stall)
+		body.quiet = m.client.keepAliveOnly()
 		if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
 			// Some hosts ignore stream:true and return a complete object.
 			// Keep their legacy reasoning-only answer fallback confined to

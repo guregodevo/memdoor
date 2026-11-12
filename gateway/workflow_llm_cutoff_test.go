@@ -3,6 +3,7 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,7 +17,7 @@ import (
 // client keeps what streamed (a window shows it), but half a review is not
 // a review (2026-10-28: a 4B's ten minutes of review passed as one).
 func TestAnLLMTaskAnswerCutOffByItsClockFails(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	old := llmTaskCallTimeout
 	llmTaskCallTimeout = 300 * time.Millisecond
 	t.Cleanup(func() { llmTaskCallTimeout = old })

@@ -28,6 +28,7 @@ type service struct {
 	resolve   ModelResolver
 	providers map[string]Provider
 	order     []Provider
+	slots     map[string]chan struct{} // provider id -> its requests in flight, for one that serves few (parallel.go)
 }
 
 // NewService builds a Service over the given providers. Fail-fast: a nil
@@ -36,7 +37,7 @@ func NewService(resolve ModelResolver, providers ...Provider) (Service, error) {
 	if resolve == nil {
 		return nil, errors.New("decision: nil model resolver")
 	}
-	s := &service{resolve: resolve, providers: map[string]Provider{}}
+	s := &service{resolve: resolve, providers: map[string]Provider{}, slots: map[string]chan struct{}{}}
 	for _, p := range providers {
 		if p == nil || p.ID() == "" {
 			return nil, errors.New("decision: provider without an id")
@@ -46,6 +47,9 @@ func NewService(resolve ModelResolver, providers ...Provider) (Service, error) {
 		}
 		s.providers[p.ID()] = p
 		s.order = append(s.order, p)
+		if n := fewSlots(p); n > 0 {
+			s.slots[p.ID()] = make(chan struct{}, n)
+		}
 	}
 	return s, nil
 }
@@ -91,6 +95,11 @@ func (s *service) Evaluate(ctx context.Context, req Request, opts Options) Resul
 	if timeout <= 0 || timeout > DefaultTimeout {
 		timeout = DefaultTimeout
 	}
+	release, admitted := s.admit(ctx, p.ID(), timeout)
+	if !admitted {
+		return Unavailable(ReasonDeadline, fmt.Sprintf("provider %q is busy: no turn within %s", p.ID(), timeout))
+	}
+	defer release()
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	deadline := time.Now().Add(timeout)

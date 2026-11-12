@@ -30,7 +30,7 @@ No memdoor.ai call carries a prompt. The hosts table lists each call.
 | `api.anthropic.com` | Anthropic's Messages API | Company-key mode with `ANTHROPIC_API_KEY`; `ANTHROPIC_BASE_URL` replaces it with the company gateway |
 | `auth.openai.com` | Sign in with ChatGPT: the authorize page (opened in your browser), the token endpoint, the signing keys (JWKS) | Only during `memdoor connect chatgpt`, and when the plan's access token is renewed (hourly, with the refresh token) |
 | `api.openai.com` | OpenAI's Responses API on an `OPENAI_API_KEY` (since 2026-10-10; the chat endpoint refuses the gpt-6 models with tools); a signed-in ChatGPT plan's Responses requests and its model list | Company-key mode with `OPENAI_API_KEY`; `OPENAI_BASE_URL` replaces it. A ChatGPT plan: every model call. Also a row in the built-in model table (`pkg/domain/models.go`), never a call by itself |
-| `generativelanguage.googleapis.com` | Gemini's OpenAI-compatible endpoint | Company-key mode with `GEMINI_API_KEY`; `GEMINI_BASE_URL` replaces it |
+| `generativelanguage.googleapis.com` | Gemini's OpenAI-compatible endpoint, and its Decisions API (`/v1beta/decisions`) | Company-key mode with `GEMINI_API_KEY`; `GEMINI_BASE_URL` replaces the chat endpoint and turns the Decisions API off |
 | `api.x.ai` | xAI's Grok API (OpenAI-compatible) | Company-key mode with `XAI_API_KEY`; `XAI_BASE_URL` replaces it |
 | `inference.baseten.co` | Baseten's inference API (OpenAI-compatible) | Company-key mode with `BASETEN_API_KEY`; `BASETEN_BASE_URL` replaces it |
 | `api.groq.com` | Groq's inference API (OpenAI-compatible) | Company-key mode with `GROQ_API_KEY`; `GROQ_BASE_URL` replaces it |

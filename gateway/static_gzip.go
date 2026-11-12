@@ -66,7 +66,7 @@ func (g *gzipStatic) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		g.plain.ServeHTTP(w, r)
 		return
 	}
-	ct := mime.TypeByExtension(ext)
+	ct := servedType(ext)
 	if ct == "" {
 		ct = "text/plain; charset=utf-8"
 	}
@@ -109,4 +109,24 @@ func (g *gzipStatic) remember(p string, body []byte) {
 	g.mu.Lock()
 	g.gz[p] = body
 	g.mu.Unlock()
+}
+
+// servedType is the media type of the bundle's own file kinds. Windows reads
+// mime.TypeByExtension from the registry, where .js is application/javascript
+// or text/plain depending on what is installed; a browser refuses a module
+// script served as anything else.
+func servedType(ext string) string {
+	switch ext {
+	case ".js", ".mjs":
+		return "text/javascript; charset=utf-8"
+	case ".css":
+		return "text/css; charset=utf-8"
+	case ".html":
+		return "text/html; charset=utf-8"
+	case ".json":
+		return "application/json"
+	case ".svg":
+		return "image/svg+xml"
+	}
+	return mime.TypeByExtension(ext)
 }

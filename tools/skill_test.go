@@ -2,6 +2,7 @@ package tools
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +11,7 @@ import (
 
 func TestSkillLoadsByName(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	skills := filepath.Join(home, ".memdoor", "skills")
 	os.MkdirAll(skills, 0o755)
 	os.WriteFile(filepath.Join(skills, "demo.md"), []byte("# Demo\n\nDo the thing.\n"), 0o644)
@@ -32,7 +33,7 @@ func TestSkillLoadsByName(t *testing.T) {
 
 func TestSkillUnknownListsAvailable(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	dir := filepath.Join(home, ".memdoor", "skills")
 	os.MkdirAll(dir, 0o755)
 	os.WriteFile(filepath.Join(dir, "alpha.md"), []byte("a"), 0o644)
@@ -56,11 +57,7 @@ func TestSkillRequiresName(t *testing.T) {
 // in the binary; ./skills on disk is only an override. Simulate a deployed gateway
 // by chdir'ing to an empty temp dir and loading a built-in skill.
 func TestSkillResolvesFromAnyCwd(t *testing.T) {
-	old, _ := os.Getwd()
-	t.Cleanup(func() { _ = os.Chdir(old) })
-	if err := os.Chdir(t.TempDir()); err != nil {
-		t.Fatal(err)
-	}
+	t.Chdir(t.TempDir())
 	in, _ := json.Marshal(map[string]string{"command": "review"})
 	out, err := Skill(json.RawMessage(in))
 	if err != nil {

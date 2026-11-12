@@ -38,9 +38,14 @@ func TestABackupIsACopyThatOpens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer c.Close()
 	var cents int
-	if err := c.QueryRow("SELECT cents FROM credits WHERE ws='sara'").Scan(&cents); err != nil || cents != 14900 {
+	err = c.QueryRow("SELECT cents FROM credits WHERE ws='sara'").Scan(&cents)
+	// Closed before the prune below: Windows will not unlink a file that is
+	// still open, so a handle left here fails the third night's backup (#283).
+	if cerr := c.Close(); cerr != nil {
+		t.Fatal(cerr)
+	}
+	if err != nil || cents != 14900 {
 		t.Fatalf("the copy holds the ledger: %v %d", err, cents)
 	}
 	if b, err := os.ReadFile(filepath.Join(rep.Dir, "billing-auth.json")); err != nil || len(b) == 0 {

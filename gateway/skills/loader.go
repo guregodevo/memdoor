@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -263,10 +264,31 @@ func FilterEligibleSkills(skills []Skill, ctx EligibilityContext) ([]Skill, []Di
 // isBinaryAvailable checks if a binary exists in PATH
 func isBinaryAvailable(binName string, binPath []string) bool {
 	for _, dir := range binPath {
-		binPath := filepath.Join(dir, binName)
-		if _, err := os.Stat(binPath); err == nil {
-			return true
+		for _, name := range binaryNames(binName) {
+			if _, err := os.Stat(filepath.Join(dir, name)); err == nil {
+				return true
+			}
 		}
 	}
 	return false
+}
+
+// binaryNames is binName as the OS spells it: on Windows a program is
+// git.exe or git.cmd, so "git" is looked for under each PATHEXT suffix — a
+// skill that requires git is eligible there too (#283).
+func binaryNames(binName string) []string {
+	names := []string{binName}
+	if runtime.GOOS != "windows" || filepath.Ext(binName) != "" {
+		return names
+	}
+	exts := os.Getenv("PATHEXT")
+	if exts == "" {
+		exts = ".COM;.EXE;.BAT;.CMD"
+	}
+	for _, ext := range filepath.SplitList(exts) {
+		if ext != "" {
+			names = append(names, binName+strings.ToLower(ext))
+		}
+	}
+	return names
 }

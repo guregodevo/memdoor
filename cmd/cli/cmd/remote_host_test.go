@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -19,7 +19,7 @@ import (
 // machine's links file so `memdoor remote` prints the same one.
 func TestTheWindowHandsTheLinkToTheGateway(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	var got gateway.RemoteHostSpec
 	hosted := false
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,9 +67,7 @@ func TestTheWindowHandsTheLinkToTheGateway(t *testing.T) {
 	if kept := loadRemoteLinks()["ch1"]; kept.ID != "abc" {
 		t.Fatalf("and kept in this machine's links file: %+v", kept)
 	}
-	if fi, err := os.Stat(filepath.Join(home, ".memdoor", "remote.json")); err != nil || fi.Mode().Perm()&0o077 != 0 {
-		t.Fatalf("the links file is the owner's alone: %v %v", err, fi)
-	}
+	testenv.OwnerOnly(t, filepath.Join(home, ".memdoor", "remote.json"))
 	unhostRemoteOnGateway(s)
 	if _, ok := s.hostedLink(); ok {
 		t.Fatal("revoked on the gateway")

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"errors"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"sync"
@@ -95,7 +96,7 @@ func TestFreshRefusesWhileATurnWillNotStop(t *testing.T) {
 // the conversation's shared log and another agent's transcript are not.
 func TestFreshDeletesOnlyTheAgentsTranscript(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	sp, err := NewSessionPersistence(nil, false)
 	if err != nil {
 		t.Fatal(err)

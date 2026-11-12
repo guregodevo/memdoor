@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,7 +18,7 @@ import (
 func TestLogsQueryShowsAndFiltersTheSession(t *testing.T) {
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	var asked url.Values
 	gw := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		asked = r.URL.Query()

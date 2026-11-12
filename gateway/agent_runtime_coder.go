@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	sharedctx "memdoor/pkg/shared/context"
@@ -107,7 +108,17 @@ func manglePathReason(p string) string {
 
 // absCd matches a `cd` to an ABSOLUTE path, quoted or bare. Relative cds are
 // left alone: `cd internal/foo` stays inside the workdir by construction.
-var absCd = regexp.MustCompile(`(?:^|[;&|]\s*)cd\s+('|")?(/[^\s;&|'"]*)`)
+//
+// On Windows a drive path (C:/x, C:\x) is absolute as well, and /c/x is Git
+// Bash's spelling of one; without them the fence let every cd on a drive through.
+var absCd = regexp.MustCompile(`(?:^|[;&|]\s*)cd\s+('|")?((?:` + absCdPath() + `)[^\s;&|'"]*)`)
+
+func absCdPath() string {
+	if runtime.GOOS == "windows" {
+		return `/|[A-Za-z]:[\\/]`
+	}
+	return `/`
+}
 
 // escapesWorkdir returns the first absolute directory a command changes to that
 // lies outside the project (wd and its git worktrees), or "" when it stays in.
@@ -121,7 +132,7 @@ func escapesWorkdir(cmd, wd string) string {
 		return ""
 	}
 	for _, m := range absCd.FindAllStringSubmatch(cmd, -1) {
-		target := filepath.Clean(m[2])
+		target := filepath.Clean(shell.NativePath(m[2]))
 		if tools.InProject(wd, target) {
 			continue
 		}

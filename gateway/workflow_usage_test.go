@@ -3,6 +3,7 @@ package gateway
 import (
 	"encoding/json"
 	"fmt"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,7 +19,7 @@ import (
 // written, and the run's state carries them: the window shows them live
 // under each step (#94), as a single turn shows its own.
 func TestAWorkflowRunSumsEachStepsTokens(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasSuffix(r.URL.Path, "/chat/completions") {
 			fmt.Fprint(w, `{"data":[{"id":"qwen3:4b"}]}`)
@@ -48,7 +49,7 @@ func TestAWorkflowRunSumsEachStepsTokens(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	s := &Server{clientFactory: providers.NewClientFactory()}
+	s := runServer(t, &Server{clientFactory: providers.NewClientFactory()})
 	run, err := s.startWorkflow(dir, "usage-test", "", "", "", "", "", "", 5*time.Second)
 	if err != nil {
 		t.Fatal(err)

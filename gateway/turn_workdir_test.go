@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"memdoor/internal/testenv"
 	"path/filepath"
 	"testing"
 
@@ -17,7 +18,7 @@ import (
 // sources that were all in its own project.
 func TestATurnWithNoDirectoryLandsWhereItsWorkIs(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	coder := filepath.Join(home, "memdoor-coder")
 
 	code := context.WithValue(context.Background(), sharedctx.BuddyToolsKey,

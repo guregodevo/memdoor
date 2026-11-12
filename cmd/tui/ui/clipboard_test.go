@@ -2,6 +2,8 @@ package ui
 
 import (
 	"encoding/base64"
+	"memdoor/internal/testenv"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -19,8 +21,8 @@ func TestCopyWithoutAClipboardSpeaksOSC52(t *testing.T) {
 	if !strings.HasPrefix(got, "\x1bPtmux;\x1b\x1b]52;c;") || !strings.HasSuffix(got, "\x1b\\") {
 		t.Fatalf("wrapped for tmux: %q", got)
 	}
-	t.Setenv("HOME", t.TempDir())
-	if p := copyFile(); !strings.HasSuffix(p, "/.memdoor/copy.txt") {
+	testenv.SetHome(t, t.TempDir())
+	if p := copyFile(); !strings.HasSuffix(p, filepath.Join(".memdoor", "copy.txt")) {
 		t.Fatalf("the file is under ~/.memdoor: %q", p)
 	}
 }

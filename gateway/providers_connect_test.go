@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,7 +19,7 @@ import (
 // API shape is found by trying; a refused token fails in words with advice;
 // --probe keeps nothing.
 func TestConnectProbesThenKeeps(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("CORP_TOKEN", "pat-ok")
 	var calls []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +86,7 @@ func TestConnectProbesThenKeeps(t *testing.T) {
 // 2026-10-02: OpenRouter and a custom entry on its base) show each model
 // once in the picker and twice in the groups.
 func TestModelsAreGroupedByProviderAndFlatOncePerID(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	for _, v := range []string{"AI_GATEWAY_BASE_URL", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY"} {
 		t.Setenv(v, "")
 	}
@@ -174,7 +175,7 @@ func TestAScopedProviderFailureIsItsError(t *testing.T) {
 // and a refusal of every model still connects the key, since the provider
 // answered about the model and not about us.
 func TestConnectProbeOutlivesARefusedFirstModel(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	var tested, hits []string
 	refuseAll := false
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -216,7 +217,7 @@ func TestConnectProbeOutlivesARefusedFirstModel(t *testing.T) {
 // key (2026-10-25): the probe sends no Authorization header, the provider
 // counts as connected, and providers.json records keyless, never a token.
 func TestConnectALocalRuntimeNeedsNoKey(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	var auth []string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth = append(auth, r.Header.Get("Authorization"))
@@ -274,7 +275,7 @@ func TestConnectALocalRuntimeNeedsNoKey(t *testing.T) {
 // key: the probe's 402 connects it and says what to do, instead of "not
 // connected" (the mutation check: drop hasNoCredit and res.OK is false).
 func TestConnectAKeyWithNoCreditYet(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/models" {
 			_, _ = io.WriteString(w, `{"data":[{"id":"some/model"}]}`)
@@ -313,7 +314,7 @@ func TestTheNoCreditNoteNamesTheProvider(t *testing.T) {
 // the key connects and the answer says why no model replied. A refused key
 // (401) is still not connected.
 func TestConnectAKeyOnAnAccountWithNoCardYet(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/models" {
 			_, _ = io.WriteString(w, `{"object":"list","data":[{"id":"alibaba/qwen-3-14b","type":"language","supported_parameters":["tools"]}]}`)
@@ -340,7 +341,7 @@ func TestConnectAKeyOnAnAccountWithNoCardYet(t *testing.T) {
 // The menu behind `connect local` lists every default address whose model list
 // answers, in order, and names a runtime by its default port.
 func TestAnsweringRuntimesListsEachThatAnswers(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/models" {
 			_, _ = io.WriteString(w, `{"data":[{"id":"a"},{"id":"b"}]}`)

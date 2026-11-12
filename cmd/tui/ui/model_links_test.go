@@ -18,7 +18,7 @@ func TestLinkifyLine(t *testing.T) {
 	}
 	cases := map[string]string{
 		"/Users/g/app/main.go: 66.00s":    linked("file:///Users/g/app/main.go", "/Users/g/app/main.go") + ": 66.00s",
-		"saved to ~/notes/a.txt.":         "saved to " + linked("file://"+home+"/notes/a.txt", "~/notes/a.txt") + ".",
+		"saved to ~/notes/a.txt.":         "saved to " + linked(fileHref(home, "notes/a.txt"), "~/notes/a.txt") + ".",
 		"see https://memdoor.ai/docs, ok": "see " + linked("https://memdoor.ai/docs", "https://memdoor.ai/docs") + ", ok",
 		"(in /tmp/x/y.png)":               "(in " + linked("file:///tmp/x/y.png", "/tmp/x/y.png") + ")",
 		// Styled text: the escape before the path is not part of it.
@@ -68,8 +68,7 @@ func TestLinkifyBareFilesInSessionDir(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "talk.transcript.txt"), []byte("x"), 0o644)
 	t.Chdir(dir)
 	linked := func(name string) string {
-		full := filepath.Join(dir, name)
-		return "\x1b]8;;file://" + full + "\x1b\\" + name + "\x1b]8;;\x1b\\"
+		return "\x1b]8;;" + fileHref(dir, name) + "\x1b\\" + name + "\x1b]8;;\x1b\\"
 	}
 	cases := map[string]string{
 		"1. report.md (30s)":             "1. " + linked("report.md") + " (30s)",
@@ -84,4 +83,10 @@ func TestLinkifyBareFilesInSessionDir(t *testing.T) {
 			t.Errorf("linkifyLine(%q)\n got %q\nwant %q", in, got, want)
 		}
 	}
+}
+
+// fileHref is the href a clicked file gets: a file:// URL in slashes, with the
+// empty authority a URL needs (file:///C:/… on Windows).
+func fileHref(dir, name string) string {
+	return "file:///" + strings.TrimPrefix(filepath.ToSlash(filepath.Join(dir, name)), "/")
 }

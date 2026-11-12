@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -56,7 +57,7 @@ func (f *sessionFake) OpenSessionFor(_ context.Context, userID string) (*auth.Us
 
 func hostLoginServer(t *testing.T) (*Server, *sessionFake) {
 	t.Helper()
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatal(err)
@@ -98,9 +99,7 @@ func TestHostKeySignsInTheFirstAccountFromTheMachineOnly(t *testing.T) {
 	if len(key) != 64 {
 		t.Fatalf("the key was not written: %q", key)
 	}
-	if st, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".memdoor", hostKeyFile)); err != nil || st.Mode().Perm() != 0o600 {
-		t.Fatalf("the key file must be the owner's only: %v %v", st, err)
-	}
+	testenv.OwnerOnly(t, filepath.Join(os.Getenv("HOME"), ".memdoor", hostKeyFile)) // the owner's only
 
 	if w := hostLogin(s, "10.0.0.7:4000", key, ""); w.Code != http.StatusForbidden {
 		t.Fatalf("over the network: want 403, got %d %s", w.Code, w.Body)
@@ -133,7 +132,7 @@ func TestHostKeySignsInTheFirstAccountFromTheMachineOnly(t *testing.T) {
 
 // A second boot keeps the key: the CLI's copy stays good.
 func TestHostKeyIsKeptAcrossBoots(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	ensureHostKey()
 	first := readHostKey()
 	ensureHostKey()

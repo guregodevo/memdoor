@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"memdoor/pkg/shared"
 	"os"
 	"path/filepath"
@@ -18,7 +19,7 @@ func TestWritePinFileRefusesAtHome(t *testing.T) {
 	// $HOME on Unix, which t.Setenv populates without affecting other
 	// tests.
 	fakeHome := t.TempDir()
-	t.Setenv("HOME", fakeHome)
+	testenv.SetHome(t, fakeHome)
 	prev, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("getwd: %v", err)
@@ -48,7 +49,7 @@ func TestWritePinFileRefusesAtHome(t *testing.T) {
 // EISDIR mid-write.
 func TestWritePinFileRefusesWhenTargetIsDir(t *testing.T) {
 	fakeHome := t.TempDir()
-	t.Setenv("HOME", fakeHome)
+	testenv.SetHome(t, fakeHome)
 
 	projectDir := filepath.Join(fakeHome, "project")
 	if err := os.MkdirAll(projectDir, 0o755); err != nil {
@@ -79,7 +80,7 @@ func TestWritePinFileRefusesWhenTargetIsDir(t *testing.T) {
 // expected contents.
 func TestWritePinFileWritesInProjectDir(t *testing.T) {
 	fakeHome := t.TempDir()
-	t.Setenv("HOME", fakeHome)
+	testenv.SetHome(t, fakeHome)
 	projectDir := filepath.Join(fakeHome, "project")
 	if err := os.MkdirAll(projectDir, 0o755); err != nil {
 		t.Fatalf("mkdir project: %v", err)

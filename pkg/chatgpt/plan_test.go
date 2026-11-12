@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"math/big"
+	"memdoor/internal/testenv"
 	"memdoor/pkg/oidc"
 	"net/http"
 	"net/http/httptest"
@@ -163,9 +164,7 @@ func TestSignInKeepsTheIssuedClientAndVerifiesTheIDToken(t *testing.T) {
 	if err != nil || kept == nil || kept.AccessToken != "at-1" {
 		t.Fatalf("kept: %+v %v", kept, err)
 	}
-	if st, err := os.Stat(store.path); err != nil || st.Mode().Perm() != 0o600 {
-		t.Fatalf("the credential file is owner-only: %v %v", st, err)
-	}
+	testenv.OwnerOnly(t, store.path)
 	if b, _ := os.ReadFile(store.path); strings.Contains(string(b), "at-1") || strings.Contains(string(b), "rt-1") {
 		t.Fatal("tokens are encrypted on disk")
 	}

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -15,7 +16,7 @@ import (
 // A peer is a gateway this person is signed in to: without a session for
 // it, add refuses and says how; with one, the peer is kept with its agents.
 func TestPeerAddNeedsASessionAndKeepsThePeer(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer tok" {
 			http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)

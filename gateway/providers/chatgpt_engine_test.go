@@ -3,13 +3,13 @@ package providers
 import (
 	"context"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"memdoor/gateway/logs"
 	"memdoor/pkg/chatgpt"
 	"memdoor/pkg/shared"
 )
@@ -20,7 +20,7 @@ import (
 func planAndKey(t *testing.T, planModels []string, planDown bool) {
 	t.Helper()
 	clearProviderEnv(t)
-	_ = logs.InitGlobalLogger(t.TempDir(), false)
+	testenv.Logger(t)
 	if err := chatgpt.NewStore(shared.MemdoorHome()).Save(&chatgpt.Credential{ClientID: "oaiapp_1", AccessToken: "plan-token", RefreshToken: "rt", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
 		t.Fatal(err)
 	}

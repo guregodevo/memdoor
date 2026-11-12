@@ -1518,6 +1518,18 @@ func (s *Server) runRepository(dir string) (mario.WorkflowRepository, error) {
 	return repo, nil
 }
 
+// closeRunRepos closes every run table this server opened.
+func (s *Server) closeRunRepos() {
+	s.runReposMu.Lock()
+	defer s.runReposMu.Unlock()
+	for root, repo := range s.runRepos {
+		if c, ok := repo.(interface{ Close() }); ok {
+			c.Close()
+		}
+		delete(s.runRepos, root)
+	}
+}
+
 // workflowHistoryJSON is one run as the history shows it.
 type workflowHistoryJSON struct {
 	Workflow  string `json:"workflow"`
@@ -1795,7 +1807,7 @@ func resultsLine(files []string) string {
 		}
 		names = append(names, filepath.Base(f))
 	}
-	return "results in " + dir + "/: " + strings.Join(names, " · ")
+	return "results in " + filepath.ToSlash(dir) + "/: " + strings.Join(names, " · ")
 }
 
 // resultPreviewLines is how much of the final file a done run shows.

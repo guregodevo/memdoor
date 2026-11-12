@@ -1,0 +1,7 @@
+# Packages whose tests do not pass on Windows yet (#283). The Windows check skips
+# them and runs every other package, so a new failure anywhere else fails the
+# pull request; it also runs these and says which pass now. A package leaves
+# this list in the pull request that makes it pass.
+#
+#
+# Empty: every package passes on Windows (#283).

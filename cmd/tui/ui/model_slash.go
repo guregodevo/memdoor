@@ -2,7 +2,9 @@ package ui
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -146,7 +148,10 @@ func (m *Model) handleSlashCommand(text string) (string, bool) {
 			case err != nil:
 				m.messages = append(m.messages, Message{Role: "assistant",
 					Content: fmt.Sprintf("Cannot check %s on the gateway's machine: %v", parts[1], err), Timestamp: time.Now()})
-			case !exists || !isDir:
+			case !exists:
+				m.messages = append(m.messages, Message{Role: "assistant",
+					Content: fmt.Sprintf("Cannot use %s: it does not exist on the gateway's machine", abs), Timestamp: time.Now()})
+			case !isDir:
 				m.messages = append(m.messages, Message{Role: "assistant",
 					Content: fmt.Sprintf("Cannot use %s: not a directory on the gateway's machine", abs), Timestamp: time.Now()})
 			default:
@@ -157,7 +162,13 @@ func (m *Model) handleSlashCommand(text string) (string, bool) {
 			}
 			return "", true
 		}
-		if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+		fi, statErr := os.Stat(dir)
+		if errors.Is(statErr, fs.ErrNotExist) {
+			m.messages = append(m.messages, Message{Role: "assistant",
+				Content: fmt.Sprintf("Cannot use %s: it does not exist", dir), Timestamp: time.Now()})
+			return "", true
+		}
+		if statErr != nil || !fi.IsDir() {
 			m.messages = append(m.messages, Message{Role: "assistant",
 				Content: fmt.Sprintf("Cannot use %s: not a directory", dir), Timestamp: time.Now()})
 			return "", true

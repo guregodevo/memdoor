@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +15,7 @@ import (
 // prod` overwrote the local token and silently logged the user out of local.
 // Falsifies if a prod login (or logout) disturbs the local session.
 func TestPerGatewayCredentialIsolation(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 
@@ -58,7 +59,7 @@ func TestPerGatewayCredentialIsolation(t *testing.T) {
 // local gateway, so upgrading users aren't logged out.
 func TestLegacyCredentialMigratesToDefaultGateway(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 
@@ -80,7 +81,7 @@ func TestLegacyCredentialMigratesToDefaultGateway(t *testing.T) {
 // live one is no problem at all (the mutation check: drop the expiry
 // comparison and the second case fails).
 func TestExpiredSessionIsNamedNotTheChannel(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	gatewayAddr = "http://localhost:18789"

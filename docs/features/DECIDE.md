@@ -28,13 +28,20 @@ chosen in this order (`autoDecisionModel`, gateway/decision_model.go):
    (`OPENROUTER_API_KEY`). On by default: nothing
    to configure. The log says `System One decision provider registered
    endpoint=… own_openrouter_key=true`.
+3. **A Gemini key, as the vendor engine** (`GEMINI_API_KEY`, no `GEMINI_BASE_URL`):
+   `gemini-decision-1` on Google's Decisions API
+   (`POST generativelanguage.googleapis.com/v1beta/decisions`,
+   `pkg/decision/gemini`). Only when a Gemini vendor key is the engine and
+   neither 1 nor 2 judges. Priced at $0.10 per 1M input tokens, no output
+   charge. The log says `Gemini decision provider registered`.
 No seat supplies a decision key (the maintainer, 2026-10-04: "Pro seat never offer
-key. It's always with user key"): with neither of the above, decisions are
+key. It's always with user key"): with none of the above, decisions are
 off. The broker no longer serves decisions at all.
 
 **On a company's vendor key** (providers/vendor.go) nothing but the vendor may
 be contacted, so neither the broker nor OpenRouter on the coding key judges;
-only an explicit decision key does. With none of the above, decisions answer
+only an explicit decision key does, and on a Gemini key Google's own
+`gemini-decision-1` (3). With none of the above, decisions answer
 `unavailable: not-configured` and the agent works unjudged.
 
 There is no switch (the maintainer, 2026-09-29: "remove the toggle on and off"): the
@@ -109,7 +116,19 @@ from.
 **Jev tools** (`tools/jev_core.go`, `tools/jev_tools.go`, `tools/jgrep.go`) —
 standard tools, in the palettes of the agents that get them; each runs its
 usual source, asks one yes/no per item against the agent's task in parallel
-batches, and returns only the kept items with probabilities. With no model
+batches, and returns only the kept items with probabilities. How many requests
+the judge sends at once is the provider's, never more than eight: a localhost
+decision endpoint serves one at a time (`systemone.LocalParallel`), a hosted
+one eight, and one that says nothing about itself gets eight
+(`decision.DefaultParallel`, `tools/jev_core.go` judgeParallel). A local
+runtime serialises the requests on its own compute lock, so eight sent
+together come back one after another and the later ones past the 30 s wait
+(2026-11-11, issue #288). The limit is the runtime's, not each read's: every
+caller of the decision service (judged reads, tool routing, the effort, the
+turn verdict, the message gate) shares its slots (`pkg/decision/parallel.go`
+admit), so two reads at once still send it one request at a time. A request
+waits for a slot at most its own timeout, and its timeout starts when it is
+sent. A hosted endpoint has no slots. With no model
 jgrep and jread are not offered. When the judge fails, jread returns what
 read_file returns and jgrep what grep returns, each under a one-line note
 (`not judged: …`, `not ranked: …`). The other tools return the unjudged

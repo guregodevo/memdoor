@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"memdoor/internal/testenv"
 	"net"
 	"net/http"
 	"net/url"
@@ -50,7 +51,7 @@ func fakePeerTunnel(t *testing.T) (closings <-chan string) {
 // http://box:18789: the address is the credentials' key and the name in
 // the resume line; the tunnel's local end is what is dialed.
 func TestAnSSHPeerIsKeptUnderTheAddressAsTyped(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	closings := fakePeerTunnel(t)
 	savedRenew := renewSessionForPeer
 	t.Cleanup(func() { renewSessionForPeer = savedRenew })
@@ -103,7 +104,7 @@ func TestAnSSHPeerIsKeptUnderTheAddressAsTyped(t *testing.T) {
 // Two ssh peers are two tunnels: each answers for its own box only, and
 // closing one leaves the other open.
 func TestTwoSSHPeersAreTwoTunnels(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	_ = fakePeerTunnel(t)
 	savedRenew := renewSessionForPeer
 	t.Cleanup(func() { renewSessionForPeer = savedRenew })
@@ -145,7 +146,7 @@ func TestTwoSSHPeersAreTwoTunnels(t *testing.T) {
 // The process's ssh door is not touched by a peer's tunnel: the door's
 // state and the globals that name the gateway stay what they were.
 func TestAPeerTunnelLeavesTheDoorAlone(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	closings := fakePeerTunnel(t)
 	savedRenew := renewSessionForPeer
 	t.Cleanup(func() { renewSessionForPeer = savedRenew })
@@ -178,7 +179,7 @@ func TestAPeerTunnelLeavesTheDoorAlone(t *testing.T) {
 // A peer tunnel ends when the ask does, not when the process ends: peerAsk
 // with an ssh peer whose turn cannot open closes the tunnel on the way out.
 func TestAPeerAskClosesItsTunnel(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := peerTunnelOpen
 	t.Cleanup(func() { peerTunnelOpen = saved })
 	closed := make(chan struct{})

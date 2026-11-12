@@ -101,6 +101,7 @@ func TestEveryRequestToAModelHostNamesTheApp(t *testing.T) {
 			}
 			if builds && !names {
 				rel, _ := filepath.Rel(root, f)
+				rel = filepath.ToSlash(rel)
 				if !notAHost[rel+": "+fn.Name.Name] {
 					missing = append(missing, rel+": "+fn.Name.Name)
 				}

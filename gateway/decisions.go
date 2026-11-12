@@ -16,6 +16,7 @@ import (
 	"memdoor/gateway/logs"
 	"memdoor/gateway/providers"
 	"memdoor/pkg/decision"
+	"memdoor/pkg/decision/gemini"
 	"memdoor/pkg/decision/systemone"
 	"memdoor/pkg/message"
 	"memdoor/pkg/shared"
@@ -74,8 +75,41 @@ func newDecisionService(read func(key string) string) (decision.Service, error) 
 	if direct != nil {
 		provs = append(provs, direct)
 	}
-	resolve := func(string) string { return autoDecisionModel(direct, codingKey) }
+	gem := geminiFromEnv(direct)
+	if gem != nil {
+		provs = append(provs, gem)
+	}
+	resolve := func(string) string {
+		if m := autoDecisionModel(direct, codingKey); m != "" {
+			return m
+		}
+		if gem != nil {
+			return gemini.ProviderID
+		}
+		return ""
+	}
 	return decision.NewService(resolve, provs...)
+}
+
+// geminiFromEnv is the decision model of a gateway that codes on a Gemini key:
+// GEMINI_API_KEY as the company vendor engine, Google's own host, and no other
+// decision provider (a decision key, a connected provider or an OpenRouter key
+// keeps judging as before). nil otherwise: another vendor's key must not reach
+// Google, and a GEMINI_BASE_URL gateway is not known to serve /decisions.
+func geminiFromEnv(direct decision.Provider) decision.Provider {
+	if direct != nil {
+		return nil
+	}
+	re := providers.ActiveRemoteEngine()
+	if re == nil || re.Vendor != providers.VendorGoogle || os.Getenv("GEMINI_BASE_URL") != "" {
+		return nil
+	}
+	c, err := gemini.New(gemini.Config{APIKey: os.Getenv("GEMINI_API_KEY"), Logger: dlog()})
+	if err != nil {
+		return nil
+	}
+	dlog().Info("Gemini decision provider registered", slog.String("endpoint", c.Endpoint()), slog.String("model", gemini.DefaultModel))
+	return c
 }
 
 // systemOneFromEnv builds the System One provider: from a DECISION key
