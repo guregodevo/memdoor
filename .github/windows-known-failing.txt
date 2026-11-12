@@ -1,0 +1,23 @@
+# Packages whose tests do not pass on Windows yet (#283). The Windows check skips
+# them and runs every other package, so a new failure anywhere else fails the
+# pull request; it also runs these and says which pass now. A package leaves
+# this list in the pull request that makes it pass.
+memdoor/cmd/cli/cmd
+memdoor/cmd/tui/ui
+memdoor/eval/editbench
+memdoor/gateway
+memdoor/gateway/billingsvc
+memdoor/gateway/config
+memdoor/gateway/context
+memdoor/gateway/memory
+memdoor/gateway/providers
+memdoor/gateway/skills
+memdoor/pkg/chatgpt
+memdoor/pkg/coding/buildscope
+memdoor/pkg/mcp
+memdoor/pkg/modelkey
+memdoor/pkg/sandbox
+memdoor/pkg/secrets
+memdoor/pkg/workflow
+memdoor/tools
+memdoor/workflows
