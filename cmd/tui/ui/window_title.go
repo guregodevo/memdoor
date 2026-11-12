@@ -2,7 +2,6 @@ package ui
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -20,10 +19,10 @@ import (
 //
 // The state, in the words the title uses:
 //
-//	◐ proj          a turn is running (the circle turns: ◐ ◓ ◑ ◒)
-//	? proj          the agent asked a question and is waiting for the answer
-//	✓ proj          a turn finished and you have not looked yet
-//	proj            idle
+//	◐ fix the bug    a turn is running (the circle turns: ◐ ◓ ◑ ◒)
+//	? fix the bug    the agent asked a question and is waiting for the answer
+//	✓ fix the bug    a turn finished and you have not looked yet
+//	fix the bug      idle
 //
 // THE END OF A TURN IS A SIGNAL, NOT JUST THE ABSENCE OF ●  (the maintainer, 2026-09-27:
 // "signal the end of a turn from tab"). A dot that quietly disappears is easy
@@ -35,14 +34,14 @@ import (
 // notification, which the ones that show notifications turn into one. In the
 // window you are looking at, nothing rings: you can see it.
 //
-// The directory comes first because that is what tells two tabs apart. The
-// marks are one character so a narrow tab still shows the name.
+// The session title (the first thing asked, model_view.go setTitle) is what
+// tells two tabs apart; a window that has not been asked anything yet says
+// "memdoor". The marks are one character so a narrow tab still shows the name.
 
 // windowTitle is the title for the current state. Kept separate from the
 // command so both paths are testable without a terminal.
 func (m Model) windowTitle() string {
-	name := titleDirName()
-	switch {
+	switch name := m.sessionTitle(); {
 	case m.pendingQuestion != nil:
 		return "? " + name
 	case m.working():
@@ -52,6 +51,16 @@ func (m Model) windowTitle() string {
 	default:
 		return name
 	}
+}
+
+// sessionTitle is what the tab calls this conversation: the session's title
+// when it has one (setTitle names it after the first thing asked), else
+// "memdoor".
+func (m Model) sessionTitle() string {
+	if m.title != "" {
+		return m.title
+	}
+	return "memdoor"
 }
 
 // spinFrames turn the running mark (the maintainer, 2026-09-27: "it should be a spinning
@@ -82,20 +91,6 @@ func (m *Model) spin(msg tea.Msg) tea.Cmd {
 	return tick(spinEvery, func(time.Time) tea.Msg { return titleSpinMsg{} })
 }
 
-// titleDirName is the working directory's base name, or "memdoor" when there
-// is nothing useful to say (the root, or a directory that cannot be read).
-func titleDirName() string {
-	d := SessionDir()
-	if d == "" {
-		return "memdoor"
-	}
-	base := filepath.Base(d)
-	if base == "/" || base == "." || strings.TrimSpace(base) == "" {
-		return "memdoor"
-	}
-	return base
-}
-
 // titleCmd sets the terminal title when it has changed, and does nothing when
 // it has not: a title written on every tick would make some terminals blink.
 func (m *Model) titleCmd() tea.Cmd {
@@ -119,7 +114,7 @@ func (m *Model) turnEnded() tea.Cmd {
 	if !m.blurred {
 		return nil
 	}
-	return ring(m.windowStatus().endNote(titleDirName()))
+	return ring(m.windowStatus().endNote(m.sessionTitle()))
 }
 
 // ring tells a person who is not looking: cmux's own notification, which the

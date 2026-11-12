@@ -15,23 +15,25 @@ import (
 // 2026-09-27: "is running state for cmux terminal so that the tab show it is
 // running", "test positive and negative paths").
 func TestTheTitleSaysWhetherATurnIsRunning(t *testing.T) {
-	dir := filepath.Join(t.TempDir(), "myapp")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	cwd, _ := os.Getwd()
-	t.Cleanup(func() { _ = os.Chdir(cwd) })
-	if err := os.Chdir(dir); err != nil {
-		t.Fatal(err)
+	// A conversation that has not been asked anything yet says "memdoor".
+	idle := Model{}
+	if got := idle.windowTitle(); got != "memdoor" {
+		t.Errorf("a fresh window's title is memdoor, got %q", got)
 	}
 
-	idle := Model{}
-	if got := idle.windowTitle(); got != "myapp" {
-		t.Errorf("idle title is the directory, got %q", got)
+	// A session the first turn has named carries that name in the tab, the
+	// same name the header shows (setTitle).
+	named := Model{title: "fix the login bug"}
+	if got := named.windowTitle(); got != "fix the login bug" {
+		t.Errorf("an idle title is the session's title, got %q", got)
+	}
+	named.turnRunning = true
+	if got := named.windowTitle(); got != "◐ fix the login bug" {
+		t.Errorf("a running turn must be visible in the tab, got %q", got)
 	}
 
 	running := Model{turnRunning: true}
-	if got := running.windowTitle(); got != "◐ myapp" {
+	if got := running.windowTitle(); got != "◐ memdoor" {
 		t.Errorf("a running turn must be visible in the tab, got %q", got)
 	}
 	// Every way a turn is busy counts, or the tab lies during the gaps.
@@ -40,7 +42,7 @@ func TestTheTitleSaysWhetherATurnIsRunning(t *testing.T) {
 		"tool":      {activeTools: map[string]time.Time{"bash": time.Now()}},
 		"half call": {pendingCall: "apply_patch"},
 	} {
-		if got := m.windowTitle(); got != "◐ myapp" {
+		if got := m.windowTitle(); got != "◐ memdoor" {
 			t.Errorf("%s must read as running, got %q", name, got)
 		}
 	}
@@ -55,7 +57,7 @@ func TestTheTitleSaysWhetherATurnIsRunning(t *testing.T) {
 		t.Error("one clock at a time")
 	}
 	(&spinning).spin(titleSpinMsg{})
-	if got := spinning.windowTitle(); got != "◓ myapp" {
+	if got := spinning.windowTitle(); got != "◓ memdoor" {
 		t.Errorf("a tick must turn the circle, got %q", got)
 	}
 	spinning.turnRunning = false
@@ -64,7 +66,7 @@ func TestTheTitleSaysWhetherATurnIsRunning(t *testing.T) {
 	}
 
 	asking := Model{turnRunning: true, pendingQuestion: &pendingQuestion{}}
-	if got := asking.windowTitle(); got != "? myapp" {
+	if got := asking.windowTitle(); got != "? memdoor" {
 		t.Errorf("a turn waiting on an answer is not the same as working, got %q", got)
 	}
 
@@ -112,7 +114,7 @@ func TestTheEndOfATurnIsSignalledUntilSeen(t *testing.T) {
 
 	// Looking at it: the ✓, and no ring.
 	m, done := finish(page(false))
-	if !done || m.windowTitle() != "✓ myapp" {
+	if !done || m.windowTitle() != "✓ memdoor" {
 		t.Fatalf("a finished turn must mark the tab, got %q", m.windowTitle())
 	}
 	if (&m).turnEnded() != nil {
@@ -127,13 +129,13 @@ func TestTheEndOfATurnIsSignalledUntilSeen(t *testing.T) {
 
 	// The ✓ clears when the person is back: a key...
 	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
-	if got := next.(Model).windowTitle(); got != "myapp" {
+	if got := next.(Model).windowTitle(); got != "memdoor" {
 		t.Errorf("a key press means the person is back, title %q", got)
 	}
 	// ...or the window regaining focus.
 	m2, _ := finish(page(true))
 	next, _ = m2.Update(tea.FocusMsg{})
-	if got := next.(Model).windowTitle(); got != "myapp" {
+	if got := next.(Model).windowTitle(); got != "memdoor" {
 		t.Errorf("focus coming back means the person saw it, title %q", got)
 	}
 
