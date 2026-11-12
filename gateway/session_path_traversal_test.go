@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,7 @@ import (
 // transcript, and could make directories anywhere, until 2026-10-30.
 func TestASessionKeyCannotLeaveItsDirectory(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	sp, err := NewSessionPersistence(nil, false)
 	if err != nil {
 		t.Fatal(err)

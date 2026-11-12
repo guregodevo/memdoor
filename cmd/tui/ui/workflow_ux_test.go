@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +29,7 @@ func fg(c string) string { return "\x1b[38;5;" + c + "m" }
 // built-in the line /help prints, a workflow the description `memdoor
 // workflow` prints, a skill its own heading. /help prints the same table.
 func TestTheDropdownSaysWhatEachCommandDoes(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	dir := t.TempDir()
 	SetSessionDir(dir)
 	t.Cleanup(func() { SetSessionDir("") })

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,7 +11,7 @@ import (
 // The report has to survive the process, or it cannot warn anyone later.
 func TestModelChecksRoundTripAndKeepTheNewest(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	saveModelCheck(modelCheck{ID: "z-ai/glm-5.3", At: time.Now().Add(-time.Hour), ToolCall: true, Note: "old"})
 	saveModelCheck(modelCheck{ID: "x-ai/grok-4.7", At: time.Now(), ToolCall: true, RightTool: true, ValidArgs: true, RoundTrip: true, Patch: true})
 	saveModelCheck(modelCheck{ID: "z-ai/glm-5.3", At: time.Now(), ToolCall: true, RightTool: true, ValidArgs: true, RoundTrip: true, Note: ""})
@@ -27,7 +28,7 @@ func TestModelChecksRoundTripAndKeepTheNewest(t *testing.T) {
 	}
 
 	// An absent store is not an error: nothing has been probed yet.
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if got := loadModelChecks(); len(got) != 0 {
 		t.Errorf("a fresh machine has probed nothing, got %d", len(got))
 	}

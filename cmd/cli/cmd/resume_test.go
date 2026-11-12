@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"strings"
 	"testing"
 	"time"
@@ -52,7 +53,7 @@ func TestParseTranscriptSurvivesJunk(t *testing.T) {
 // The conversation index is what `memdoor resume` reads. A turn must name a new
 // conversation, and later turns must keep it — not duplicate it.
 func TestRecordSessionAccumulates(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 
 	rec := sessionRecord{
 		ChannelID:   "chan-1",
@@ -86,7 +87,7 @@ func TestRecordSessionAccumulates(t *testing.T) {
 
 // Resume defaults to the directory you are in; --all is what widens it.
 func TestSessionsForFiltersByDirectory(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 
 	recordSession(sessionRecord{ChannelID: "a", Title: "here", Dir: "/tmp/here"})
 	recordSession(sessionRecord{ChannelID: "b", Title: "elsewhere", Dir: "/tmp/elsewhere"})
@@ -102,7 +103,7 @@ func TestSessionsForFiltersByDirectory(t *testing.T) {
 
 // Most recent first: resume --last must take the conversation you were just in.
 func TestSessionsForOrdersByRecency(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 
 	recordSession(sessionRecord{ChannelID: "old", Title: "older"})
 	time.Sleep(5 * time.Millisecond)

@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -10,7 +11,7 @@ import (
 // through to the agent's shared file, and every task loaded every task
 // before it (live 2026-10-03: 105k input tokens for a one-line task).
 func TestEachWorkflowTaskHasItsOwnTranscript(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	sp, err := NewSessionPersistence(nil, false)
 	if err != nil {
 		t.Fatal(err)

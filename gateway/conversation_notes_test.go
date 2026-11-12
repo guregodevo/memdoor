@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,7 +78,7 @@ func TestARuleGoesWhereTheInstructionsAreRead(t *testing.T) {
 // model wrote .agents/notes.md into the project instead (live 2026-09-29).
 func TestTheServersRuntimeWiresNotesOutsideTheProject(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	if _, err := NewAgentRuntimeWithFactory(providers.NewClientFactory(), "", nil, nil, nil, false, ""); err != nil {
 		t.Skipf("runtime unavailable in this environment: %v", err)
 	}
@@ -95,7 +96,7 @@ func TestTheServersRuntimeWiresNotesOutsideTheProject(t *testing.T) {
 // 2026-09-29: "60%, capped at 200k"); an earlier default of 45% compacted a
 // remote model at 49.8% (live the same day).
 func TestTheServersRuntimeCompactsAtSixtyPercent(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	ar, err := NewAgentRuntimeWithFactory(providers.NewClientFactory(), "", nil, nil, nil, false, "")
 	if err != nil || ar.preflight == nil {
 		t.Skipf("runtime unavailable in this environment: %v", err)

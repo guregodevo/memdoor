@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"memdoor/internal/testenv"
 	"testing"
 
 	ctxmgmt "memdoor/gateway/context"
@@ -10,7 +11,7 @@ import (
 // The cut-off escalation asks for twice the cap, but never past the model's
 // own output cap when the reference states one.
 func TestEscalationStopsAtTheModelsOwnCap(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Cleanup(func() { _ = providers.ClearRemoteEngine() })
 	if err := providers.SetRemoteEngine(providers.RemoteEngine{Name: "t", Endpoint: "http://127.0.0.1:1/v1", APIKey: "k", Model: "m", CtxLen: 131072}); err != nil {
 		t.Fatal(err)

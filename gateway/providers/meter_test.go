@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,7 +13,7 @@ import (
 func TestMeterSkipsTrailingGarbage(t *testing.T) {
 	logs.InitGlobalLogger(t.TempDir(), false)
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	RecordMeter(MeterEntry{TS: time.Now(), Engine: "e1", InputTokens: 1, OutputTokens: 2})
 	p := filepath.Join(home, ".memdoor", "meter.jsonl")
 	f, _ := os.OpenFile(p, os.O_APPEND|os.O_WRONLY, 0o600)

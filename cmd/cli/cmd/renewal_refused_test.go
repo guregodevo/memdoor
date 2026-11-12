@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,7 +13,7 @@ import (
 // A generated login the gateway refuses is named in the lapsed session's
 // message; no generated login at all leaves the message as it was.
 func TestRefusedGeneratedLoginIsNamed(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	gw := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

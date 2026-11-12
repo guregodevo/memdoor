@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,7 +16,7 @@ import (
 // MEMDOOR_PORT, which only the installer and the ssh door read: run as told,
 // the window went back to the same port.
 func TestATakenPortNamesWhatTheCLIReads(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	dev := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

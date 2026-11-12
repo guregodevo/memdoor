@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +15,7 @@ import (
 func seedInto(t *testing.T) string {
 	t.Helper()
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	SeedEmbeddedSkills()
 	return filepath.Join(home, ".memdoor", "skills")
 }
@@ -105,7 +106,7 @@ func TestSeedAdoptsAFileThatMatchesTheShippedOne(t *testing.T) {
 // loadable because disk wins over the embedded set).
 func TestSeedRetiresSkillsNoLongerShipped(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	dir := filepath.Join(home, ".memdoor", "skills")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)

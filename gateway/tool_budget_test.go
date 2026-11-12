@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"strings"
 	"testing"
 )
@@ -12,7 +13,7 @@ import (
 // cron and hiding fields the model never sets).
 func TestTheCodersToolboxStaysInBudget(t *testing.T) {
 	const budgetTokens = 3_600
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	ar, err := NewAgentRuntime("", false)
 	if err != nil {
 		t.Skipf("runtime unavailable in this environment: %v", err)

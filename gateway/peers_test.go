@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,7 @@ import (
 // one of those, through the caller the binary provides.
 func TestAPeerIsANamedGatewayAndOnlyThat(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	if err := SavePeers(map[string]PeerEntry{"box": {Gateway: "http://box:18789", Dir: "/srv/app"}}); err != nil {
 		t.Fatal(err)
 	}

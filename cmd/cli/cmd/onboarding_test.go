@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"memdoor/internal/testenv"
 	"strings"
 	"testing"
 )
@@ -51,7 +52,7 @@ func TestSetupNextStepsDoNotSellTheOldProduct(t *testing.T) {
 // not have, instead of the first run (which sets the machine up itself,
 // 2026-10-08; it was `memdoor setup` before).
 func TestFirstRunPointsAtSetup(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	err := sessionProblem()
 	if err == nil {
 		t.Fatal("a machine with no credentials must report a problem")

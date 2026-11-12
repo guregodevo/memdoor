@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,7 +19,7 @@ import (
 // that has run out (the mutation check: count any token as a session and
 // the first case reports ready).
 func TestLapsedLocalSessionRenewsOrAsksToSignIn(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 	logins := 0
@@ -75,7 +76,7 @@ func TestLapsedLocalSessionRenewsOrAsksToSignIn(t *testing.T) {
 // opened on it. The mutation check: count a lapsed token as a session and
 // nothing is adopted; drop the rename and the login goes to the old name.
 func TestSignInAdoptsTheEnginesOwnUser(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved, savedAdopt := gatewayAddr, adoptLocalUser
 	t.Cleanup(func() { gatewayAddr, adoptLocalUser = saved, savedAdopt })
 	var fromEmail, toEmail, setPassword string
@@ -229,7 +230,7 @@ func TestLoginIsTheShortNameOfAccountLogin(t *testing.T) {
 // Signing out of memdoor.ai forgets the seat, never the engine's session: a
 // free user's agent runs on it and nothing would renew it (2026-10-03).
 func TestLogoutForgetsTheSeatNotTheEngine(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if err := saveCredentials(&credentials{Token: "engine", Email: "dev@example.com", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
 		t.Fatal(err)
 	}

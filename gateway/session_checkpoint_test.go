@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +16,7 @@ import (
 
 func checkpointStore(t *testing.T) (*SessionPersistence, *Session, string) {
 	t.Helper()
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
 		t.Fatal(err)
 	}

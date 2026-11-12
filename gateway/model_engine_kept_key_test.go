@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"memdoor/internal/testenv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +16,7 @@ import (
 // question and the catalogue answered by the test.
 func keptKeyGateway(t *testing.T, free, known bool, catalog []providers.Model, catalogErr error) {
 	t.Helper()
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	for _, v := range []string{"OPEN_ROUTER_API_KEY", "OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY",
 		"XAI_API_KEY", "GROK_API_KEY", "BASETEN_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "EUROUTER_API_KEY", "LLMGATEWAY_API_KEY", "AIMLAPI_API_KEY", "AI_GATEWAY_API_KEY", "VERCEL_API_KEY", "AI_GATEWAY_BASE_URL", "AI_GATEWAY_TOKEN",
 		"MEMDOOR_MODEL", "MEMDOOR_VENDOR"} {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,7 +22,7 @@ import (
 // harness sends every role in. Without one, the request has no system
 // message at all, as before.
 func TestAnLLMTaskSystemMessageIsTheRequestsSystemRole(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	var bodies []map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasSuffix(r.URL.Path, "/chat/completions") {
@@ -142,7 +143,7 @@ func TestAnLLMTaskSystemMessageIsTheRequestsSystemRole(t *testing.T) {
 // top_p and top_k on a task's model line reach the request; left out, the
 // request names neither and the host's defaults apply.
 func TestAnLLMTaskSendsTopPAndTopK(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	var bodies []map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasSuffix(r.URL.Path, "/chat/completions") {

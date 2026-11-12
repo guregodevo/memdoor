@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -56,7 +57,7 @@ func (f *sessionFake) OpenSessionFor(_ context.Context, userID string) (*auth.Us
 
 func hostLoginServer(t *testing.T) (*Server, *sessionFake) {
 	t.Helper()
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatal(err)
@@ -133,7 +134,7 @@ func TestHostKeySignsInTheFirstAccountFromTheMachineOnly(t *testing.T) {
 
 // A second boot keeps the key: the CLI's copy stays good.
 func TestHostKeyIsKeptAcrossBoots(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	ensureHostKey()
 	first := readHostKey()
 	ensureHostKey()

@@ -454,7 +454,9 @@ func Glob(input json.RawMessage) (string, error) {
 	// Extract paths
 	var matches []string
 	for _, f := range filesWithTime {
-		matches = append(matches, f.Path)
+		// Slashes on every OS: the model reads and writes slash paths, and a
+		// "src\a.go" it copies back is not the same string as the file it saw (#283).
+		matches = append(matches, filepath.ToSlash(f.Path))
 	}
 
 	// Return newline-separated file paths (Claude Code format)

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,7 +15,7 @@ import (
 // from the gateway's host key, with no password; the key is sent to the
 // gateway on this machine only.
 func TestALapsedSessionRenewsFromTheHostKey(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	saved := gatewayAddr
 	t.Cleanup(func() { gatewayAddr = saved })
 

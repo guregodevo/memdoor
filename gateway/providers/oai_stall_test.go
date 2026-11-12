@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"io"
+	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -170,7 +171,7 @@ func TestAKeylessRuntimeMayReadInSilence(t *testing.T) {
 	}))
 	defer srv.Close()
 	_ = logs.InitGlobalLogger(t.TempDir(), false)
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	local := Provider{ID: "local", API: APIChat, Base: srv.URL + "/v1", Keyless: true}.Client(context.Background(), "qwen3:4b")
 	ctx := context.WithValue(context.Background(), sharedctx.EffortKey, "off")
 	msg, err := local.Messages().New(ctx, llm.MessageNewParams{MaxTokens: 64,

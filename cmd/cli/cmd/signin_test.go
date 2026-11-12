@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"memdoor/internal/testenv"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -28,7 +29,7 @@ type fakeChatGPTGateway struct {
 
 func newFakeChatGPTGateway(t *testing.T) *fakeChatGPTGateway {
 	t.Helper()
-	t.Setenv("HOME", t.TempDir())
+	testenv.SetHome(t, t.TempDir())
 	t.Setenv("MEMDOOR_NO_BROWSER", "1")
 	t.Setenv("SSH_CONNECTION", "")
 	t.Setenv("SSH_TTY", "")

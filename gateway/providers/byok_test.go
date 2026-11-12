@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"memdoor/internal/testenv"
 	"memdoor/pkg/llm"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestByokEngineFromTheKey(t *testing.T) {
-	t.Setenv("HOME", t.TempDir()) // a kept key is a BYOK engine too (byokKey): never this machine's
+	testenv.SetHome(t, t.TempDir()) // a kept key is a BYOK engine too (byokKey): never this machine's
 	t.Setenv("OPENROUTER_API_KEY", "")
 	t.Setenv("OPEN_ROUTER_API_KEY", "")
 	if _, ok := ByokEngine(); ok {
@@ -156,7 +157,7 @@ func TestOpenRouterAttribution(t *testing.T) {
 // The headers must reach the wire, not just the struct: this is the one that
 // would have caught their absence (2026-09-27).
 func TestByokRequestCarriesAttributionAndPolicy(t *testing.T) {
-	t.Setenv("HOME", t.TempDir()) // the meter ledger lives under $HOME
+	testenv.SetHome(t, t.TempDir()) // the meter ledger lives under $HOME
 	t.Setenv("MEMDOOR_OPENROUTER_ATTRIBUTION", "")
 	var got struct {
 		title, referer, auth string
