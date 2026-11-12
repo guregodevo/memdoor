@@ -342,7 +342,7 @@ export function CoderLandingPage() {
               <span className="text-emerald-400">frontier results</span>.
             </h1>
             <p className="mx-auto mb-3 max-w-xl text-xl font-medium text-neutral-100 lg:mx-0">
-              The CLI coding agent in one Go binary. Press Shift+Tab and Go Team Mode.
+              The open coding agent in one Go binary. Press Shift+Tab and Go Team Mode.
             </p>
             <p className="mx-auto mb-8 max-w-xl text-lg text-neutral-300 lg:mx-0">
               Five Qwen3.8-27B agents beat Fable 5 on LiveCodeBench Hard, every run published. Ollama,
