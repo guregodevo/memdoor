@@ -9,6 +9,12 @@ import (
 // directory and, for what belongs to a project, under the project.
 const MemdoorDirName = ".memdoor"
 
+// IsolatedWorktreeLock is the reason a workflow's isolated copy is locked
+// with in git (pkg/workflow/isolate.go). The write fence reads it from `git
+// worktree list`: a turn in such a worktree writes only there, and no turn
+// elsewhere writes into it (tools.InProject).
+const IsolatedWorktreeLock = "memdoor isolation"
+
 // MemdoorHome is ~/.memdoor joined with parts: where Memdoor keeps a person's
 // state. Every path under it is built here, so the place is decided once
 // (the maintainer, 2026-10-04: "DRY"). With no home directory it falls back to
