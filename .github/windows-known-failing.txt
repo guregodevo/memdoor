@@ -10,7 +10,6 @@ memdoor/gateway/billingsvc
 memdoor/gateway/context
 memdoor/gateway/memory
 memdoor/gateway/providers
-memdoor/gateway/skills
 memdoor/pkg/sandbox
 memdoor/pkg/workflow
 memdoor/tools

@@ -74,7 +74,7 @@ func TestFileListAndMatching(t *testing.T) {
 
 func TestPasteTargetUnderMemdoor(t *testing.T) {
 	p := pasteTarget("/w", time.Date(2026, 9, 26, 17, 4, 5, 0, time.UTC))
-	if p != "/w/.memdoor/paste-20260926-170405.png" {
+	if want := filepath.Join("/w", ".memdoor", "paste-20260926-170405.png"); p != want {
 		t.Fatal(p)
 	}
 }

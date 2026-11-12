@@ -18,7 +18,7 @@ jobs:
     runs-on: windows-latest
     env:
       CGO_ENABLED: "0"
-      PKGS: memdoor/gateway/skills memdoor/gateway/billingsvc memdoor/gateway/memory memdoor/gateway/context memdoor/eval/editbench
+      PKGS: memdoor/gateway/billingsvc memdoor/gateway/memory memdoor/gateway/context memdoor/eval/editbench memdoor/cmd/tui/ui
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -29,8 +29,8 @@ jobs:
         run: |
           for p in $PKGS; do
             log="$RUNNER_TEMP/$(echo "$p" | tr / _).log"
-            go test "$p" -count=1 > "$log" 2>&1
-            rc=$?
+            rc=0
+            go test "$p" -count=1 > "$log" 2>&1 || rc=$?
             echo "=================== $p rc=$rc"
             if [ $rc -ne 0 ]; then
               grep -E -A6 -- '--- FAIL|^panic:|_test\.go:[0-9]+:' "$log" | head -140
