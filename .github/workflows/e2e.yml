@@ -1,0 +1,72 @@
+# A real coder turn, on Linux and on Windows, on every pull request.
+# ci and windows.yml run the Go tests; nothing there starts a gateway and has
+# the coder write a file in a folder. This job does: it builds the binary on the
+# runner, starts a gateway with a home of its own, runs one turn in a fresh git
+# folder and checks the file the turn left, never what the model says.
+#
+# The turn is on the repository's OpenRouter key (the same secret pr-review.yml
+# uses). A pull request from a fork has no secret: the job says so and passes.
+name: End to end
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  turn:
+    if: github.repository == 'guregodevo/memdoor'
+    name: Coder turn (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Linux, os: ubuntu-latest }
+          - { name: Windows, os: windows-latest }
+    env:
+      CGO_ENABLED: "0"
+      HAS_KEY: ${{ secrets.OPEN_ROUTER_API_KEY != '' && 'yes' || 'no' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Build web frontend and memdoor
+        shell: bash
+        run: |
+          cd web && npm ci && npm run build && cd ..
+          go build -trimpath -o "$RUNNER_TEMP/memdoor" ./cmd/cli
+      - name: Gateway, setup, one turn, the file it left
+        shell: bash
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPEN_ROUTER_API_KEY }}
+        run: |
+          if [ "$HAS_KEY" != yes ]; then echo "no OPEN_ROUTER_API_KEY here (a fork?): skipped"; exit 0; fi
+          T="$RUNNER_TEMP/e2e"; mkdir -p "$T/home" "$T/proj"
+          # Windows reads USERPROFILE, Unix reads HOME: set both to the same folder.
+          export HOME="$T/home" USERPROFILE="$T/home"
+          M="$RUNNER_TEMP/memdoor"; URL=http://localhost:18900
+          nohup "$M" gateway --port 18900 > "$T/gw.log" 2>&1 &
+          up=no
+          for i in $(seq 1 60); do curl -sf "$URL/api/status" >/dev/null && up=yes && break; sleep 1; done
+          [ "$up" = yes ] || { echo "gateway never answered"; tail -40 "$T/gw.log"; exit 1; }
+          "$M" --gateway "$URL" setup --admin-email ci@example.com --admin-password "ci-$RANDOM-$RANDOM" --workspace-name ci
+          cd "$T/proj" && git init -q
+          ok=no
+          for attempt in 1 2; do
+            timeout 600 "$M" --gateway "$URL" run "Create the file src/greet.txt with exactly the text memdoor-e2e-ok and nothing else, then answer done." || true
+            if [ -f src/greet.txt ] && [ "$(tr -d '\r\n' < src/greet.txt)" = "memdoor-e2e-ok" ]; then ok=yes; break; fi
+            echo "attempt $attempt left no src/greet.txt with the text"
+          done
+          echo "--- files the turn left"; find . -path ./.git -prune -o -type f -print
+          if [ "$ok" != yes ]; then echo "--- gateway log"; tail -60 "$T/gw.log"; exit 1; fi
+          echo "src/greet.txt is right"
