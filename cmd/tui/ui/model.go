@@ -34,6 +34,9 @@ type Model struct {
 	// Network-effect ops (injected by cmd/cli, which owns the authed client).
 	// Model ops (injected by cmd/cli).
 	statusOp           func() Status                                    // footer status: where you are, what is thinking, what it costs
+	turnEndedOp        func()                                           // told when a turn has ended, at the next status tick
+	turnSinceTick      bool                                             // a turn started since the last status tick
+	updateSaid         string                                           // the update notice already said in the conversation, once per version
 	heldPrompt         string                                           // a prompt Enter refused behind the brain gate, back in the box once it lifts
 	usage              func() (string, error)                           // /usage — what this workspace has used
 	agents             func() (string, error)                           // /agents — the gateway's agents, fetched with the person's token
