@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -134,5 +135,78 @@ func TestTheOwnersMachinesMarkTheirCheck(t *testing.T) {
 	}
 	if len(queries) != 2 || queries[0] != "me=1" || queries[1] != "from=cli&me=1" {
 		t.Fatalf("the owner's machines marked, window and headless: %q", queries)
+	}
+}
+
+// The window never waits on the version check, and asks again after a turn
+// once an hour has passed (#290): releases ship several a day.
+func TestTheWindowChecksInTheBackgroundAndAfterATurn(t *testing.T) {
+	savedV, savedF := Version, fetchWindowVersion
+	t.Cleanup(func() {
+		Version, fetchWindowVersion = savedV, savedF
+		updateNotice, updateSay, updateChecked, updateChecking = "", "", time.Time{}, false
+	})
+	updateNotice, updateSay, updateChecked, updateChecking = "", "", time.Time{}, false
+	Version = "v1.821.0"
+	remote, fetches := "v1.822.0", 0
+	release := make(chan struct{})
+	fetchWindowVersion = func() (string, error) { <-release; fetches++; return remote, nil }
+	settled := func() string {
+		t.Helper()
+		for i := 0; i < 200; i++ {
+			updateMu.Lock()
+			busy := updateChecking
+			updateMu.Unlock()
+			if !busy {
+				updateMu.Lock()
+				defer updateMu.Unlock()
+				return updateNotice
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+		t.Fatal("the check never ended")
+		return ""
+	}
+
+	if got, say := tuiUpdateNotice(); got != "" || say != "" {
+		t.Fatalf("the first call answers at once, before the check: %q %q", got, say)
+	}
+	release <- struct{}{}
+	if got := settled(); !strings.Contains(got, "v1.822.0 is out (this is v1.821.0)") {
+		t.Fatalf("after the check: %q", got)
+	}
+	if _, say := tuiUpdateNotice(); !strings.Contains(say, "/update installs it and reopens this conversation") ||
+		!strings.Contains(say, "https://github.com/guregodevo/memdoor/releases/tag/v1.822.0") {
+		t.Fatalf("the conversation's line names /update and links the release: %q", say)
+	}
+
+	remote = "v1.823.0"
+	tuiTurnEnded()
+	if got := settled(); fetches != 1 || !strings.Contains(got, "v1.822.0") {
+		t.Fatalf("a turn within the hour asks nothing: fetches=%d %q", fetches, got)
+	}
+	updateMu.Lock()
+	updateChecked = time.Now().Add(-updateAfterTurn - time.Minute)
+	updateMu.Unlock()
+	tuiTurnEnded()
+	release <- struct{}{}
+	if got := settled(); fetches != 2 || !strings.Contains(got, "v1.823.0 is out") {
+		t.Fatalf("a turn an hour later asks again: fetches=%d %q", fetches, got)
+	}
+
+	fetchWindowVersion = func() (string, error) { fetches++; return "", errors.New("offline") }
+	updateMu.Lock()
+	updateChecked = time.Time{}
+	updateMu.Unlock()
+	tuiUpdateNotice()
+	if got := settled(); !strings.Contains(got, "v1.823.0 is out") {
+		t.Fatalf("a failed check keeps the last answer: %q", got)
+	}
+
+	Version, updateChecked, updateNotice, updateSay = "dev", time.Time{}, "", ""
+	before := fetches
+	tuiTurnEnded()
+	if got, say := tuiUpdateNotice(); got != "" || say != "" || fetches != before {
+		t.Fatalf("a dev build is never told: %q %q fetches %d -> %d", got, say, before, fetches)
 	}
 }
