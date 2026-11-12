@@ -61,12 +61,24 @@ jobs:
           [ "$up" = yes ] || { echo "gateway never answered"; tail -40 "$T/gw.log"; exit 1; }
           "$M" --gateway "$URL" setup --admin-email ci@example.com --admin-password "ci-$RANDOM-$RANDOM" --workspace-name ci
           cd "$T/proj" && git init -q
+          # The cheapest model that passes `memdoor model check` (2026-11-12:
+          # $0.015 / $0.045 per million tokens, against $0.04 / $0.078 for the
+          # default). `run` has no model flag: a first turn makes the
+          # conversation, the pin goes on it, the real turn continues it.
+          MODEL=inclusionai/ling-3.0-tiny
+          TOKEN=$("$M" --gateway "$URL" auth token)
+          CONV=$("$M" --gateway "$URL" run "Reply with the single word ok." 2>&1 | grep -o 'conversation [0-9a-f-]\{36\}' | tail -1 | awk '{print $2}')
+          [ -n "$CONV" ] || { echo "the first turn made no conversation"; tail -40 "$T/gw.log"; exit 1; }
+          curl -sf -X POST "$URL/api/route" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+            -d "{\"workspace\":\"ci\",\"channel_id\":\"$CONV\",\"agent\":\"coder\",\"model\":\"$MODEL\"}" >/dev/null \
+            || { echo "the pin of $MODEL was refused"; exit 1; }
           ok=no
           for attempt in 1 2; do
-            timeout 600 "$M" --gateway "$URL" run "Create the file src/greet.txt with exactly the text memdoor-e2e-ok and nothing else, then answer done." || true
+            timeout 600 "$M" --gateway "$URL" run --conversation "$CONV" "Create the file src/greet.txt with exactly the text memdoor-e2e-ok and nothing else, then answer done." || true
             if [ -f src/greet.txt ] && [ "$(tr -d '\r\n' < src/greet.txt)" = "memdoor-e2e-ok" ]; then ok=yes; break; fi
             echo "attempt $attempt left no src/greet.txt with the text"
           done
           echo "--- files the turn left"; find . -path ./.git -prune -o -type f -print
+          echo "--- calls on the pinned model: $("$M" --gateway "$URL" logs query --regex "LLM response.*model=$MODEL" --since 30m --limit 50 2>&1 | grep -c "model=$MODEL")"
           if [ "$ok" != yes ]; then echo "--- gateway log"; tail -60 "$T/gw.log"; exit 1; fi
           echo "src/greet.txt is right"
