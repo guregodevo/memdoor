@@ -84,9 +84,7 @@ func TestRemoteLink(t *testing.T) {
 	if !strings.Contains(again, link) {
 		t.Fatal("the same conversation keeps its link")
 	}
-	if info, err := os.Stat(remoteLinksPath()); err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("the key file must be owner-only, got %v", info.Mode().Perm())
-	}
+	testenv.OwnerOnly(t, remoteLinksPath()) // the key file is owner-only
 
 	if off, _ := remote("off"); !strings.Contains(off, "off") {
 		t.Fatalf("off: %s", off)

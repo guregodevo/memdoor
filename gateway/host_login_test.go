@@ -99,9 +99,7 @@ func TestHostKeySignsInTheFirstAccountFromTheMachineOnly(t *testing.T) {
 	if len(key) != 64 {
 		t.Fatalf("the key was not written: %q", key)
 	}
-	if st, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".memdoor", hostKeyFile)); err != nil || st.Mode().Perm() != 0o600 {
-		t.Fatalf("the key file must be the owner's only: %v %v", st, err)
-	}
+	testenv.OwnerOnly(t, filepath.Join(os.Getenv("HOME"), ".memdoor", hostKeyFile)) // the owner's only
 
 	if w := hostLogin(s, "10.0.0.7:4000", key, ""); w.Code != http.StatusForbidden {
 		t.Fatalf("over the network: want 403, got %d %s", w.Code, w.Body)

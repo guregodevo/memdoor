@@ -54,9 +54,7 @@ func TestProvidersAreBuiltInsThenTheFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	path, _ := providersPath()
-	if st, err := os.Stat(path); err != nil || st.Mode().Perm() != 0o600 {
-		t.Fatalf("providers.json must be 0600: %v %v", st, err)
-	}
+	testenv.OwnerOnly(t, path) // providers.json is 0600
 	byID := map[string]Provider{}
 	var order []string
 	for _, p := range Providers() {
