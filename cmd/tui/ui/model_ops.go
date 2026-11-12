@@ -47,6 +47,7 @@ type Ops struct {
 	Mode           func(mode string) (string, error)                // Shift+Tab: the mode, auto | team
 	Status         func() Status                                    // the footer
 	Update         func() (string, error)                           // /update — install the published build
+	TurnEnded      func()                                           // a turn ended: the published version is asked again, at most once an hour (#290)
 	MCP            MCPOps                                           // /mcp — the person's MCP servers (mcp_panel.go)
 	Workflow       WorkflowOps                                      // /workflow — DAG runs on mario (workflow_panel.go)
 	Connect        ConnectOps                                       // /connect — add a provider (connect_flow.go)
@@ -154,6 +155,7 @@ func NewPage(cfg PageConfig) Model {
 		effortOp:       cfg.Ops.Effort,
 		modeOp:         cfg.Ops.Mode,
 		statusOp:       cfg.Ops.Status,
+		turnEndedOp:    cfg.Ops.TurnEnded,
 		updateOp:       cfg.Ops.Update,
 		mcp:            cfg.Ops.MCP,
 		workflow:       cfg.Ops.Workflow,
@@ -233,6 +235,9 @@ type Status struct {
 	// Update, when set, says a newer build is published ("memdoor v1.305 is
 	// out — /update installs it"); the footer shows it until it is done.
 	Update string
+	// UpdateSay is the same news for the conversation, said once per
+	// version after the turn, with the release's link (#290).
+	UpdateSay string
 	// Version is the build the window runs, always in the header, next to
 	// live (#90).
 	Version string
