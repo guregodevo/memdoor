@@ -715,8 +715,9 @@ func Start(ctx context.Context, host string, port int, apiKey string, verbose bo
 	// idle auto-stop that makes the /model picker's "auto-stops" true.
 	server.selectModelEngine()
 	// Decisions were wired before the engine was chosen: a free account
-	// (no credit for the decision model) is known only now.
-	if re := providers.ActiveRemoteEngine(); re != nil && re.FreeTier && server.rewireDecisions != nil {
+	// (no credit for the decision model) and a Gemini key (its decision model,
+	// geminiFromEnv) are known only now.
+	if re := providers.ActiveRemoteEngine(); re != nil && (re.FreeTier || re.Vendor == providers.VendorGoogle) && server.rewireDecisions != nil {
 		server.rewireDecisions()
 	}
 	server.startTurnJanitor()
