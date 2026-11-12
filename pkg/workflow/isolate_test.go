@@ -177,3 +177,16 @@ func TestAttemptsStartingAndEndingAtOnceKeepTheirWorktrees(t *testing.T) {
 		t.Fatalf("%d worktrees left:\n%s", c, out)
 	}
 }
+
+// An attempt's git commands start no maintenance: a commit's automatic
+// worktree prune removes the entry another attempt's add is still writing
+// (no gitdir file yet), and that add fails "could not open
+// .git/worktrees/…/locked" (CI on ubuntu-26.04, 2026-11-12). The settings
+// come before the subcommand, where git reads them.
+func TestAnAttemptsGitCommandsStartNoMaintenance(t *testing.T) {
+	got := gitArgs("/repo", "commit", "-q", "-m", "isolation base")
+	want := []string{"-C", "/repo", "-c", "maintenance.auto=false", "-c", "gc.auto=0", "commit", "-q", "-m", "isolation base"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("git %v, want git %v", got, want)
+	}
+}
