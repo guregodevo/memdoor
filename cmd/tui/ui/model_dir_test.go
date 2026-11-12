@@ -2,6 +2,7 @@ package ui
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -27,8 +28,18 @@ func TestSlashDir(t *testing.T) {
 		t.Errorf("a bad /dir moved the session to %q", cwd)
 	}
 	last := m.messages[len(m.messages)-1].Content
-	if !strings.Contains(last, "not/a/dir") {
-		t.Errorf("bad /dir should name the path in its error, got %q", last)
+	if !strings.Contains(last, "not/a/dir") || !strings.Contains(last, "does not exist") {
+		t.Errorf("a missing /dir should name the path and say it does not exist, got %q", last)
+	}
+
+	file := filepath.Join(target, "f.txt")
+	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	m.handleSlashCommand("/dir " + file)
+	last = m.messages[len(m.messages)-1].Content
+	if !strings.Contains(last, "not a directory") {
+		t.Errorf("a file given to /dir should say it is not a directory, got %q", last)
 	}
 
 	m.handleSlashCommand("/dir")
