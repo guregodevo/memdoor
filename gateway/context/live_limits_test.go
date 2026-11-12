@@ -17,6 +17,7 @@ func TestPreflightFollowsTheEngineServingTheTurn(t *testing.T) {
 	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	window := 0
 	SetRemoteWindow(func(string) int { return window })
 	t.Cleanup(func() { SetRemoteWindow(nil) })
@@ -53,6 +54,7 @@ func TestPreflightMeasuresTheAnsweringModel(t *testing.T) {
 	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	SetRemoteWindow(func(model string) int {
 		switch model {
 		case "small/128k":
@@ -98,6 +100,7 @@ func TestCompactAtIsTheChecksThreshold(t *testing.T) {
 	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	SetRemoteWindow(func(string) int { return 131_072 })
 	t.Cleanup(func() { SetRemoteWindow(nil) })
 	pc, err := NewPreflightChecker("default", nil, 0, false)
@@ -128,6 +131,7 @@ func TestAFixedThresholdTakesPrecedence(t *testing.T) {
 	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	SetRemoteWindow(func(string) int { return 131_072 })
 	t.Cleanup(func() { SetRemoteWindow(nil) })
 	pc, err := NewPreflightChecker("default", nil, 0, false)

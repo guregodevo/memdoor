@@ -16,6 +16,9 @@ func TestArmsUseTheToolsPackage(t *testing.T) {
 	if err := logs.InitGlobalLogger(t.TempDir(), false); err != nil {
 		t.Fatal(err)
 	}
+	// Windows will not remove a directory holding events.db, so the store this
+	// test opened is closed before its temporary home goes (#283).
+	t.Cleanup(func() { _ = logs.CloseGlobalLogger() })
 	dir, _ := filepath.EvalSymlinks(t.TempDir())
 	if err := os.WriteFile(filepath.Join(dir, "a.go"), []byte("package a\n"), 0o644); err != nil {
 		t.Fatal(err)

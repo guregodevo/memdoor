@@ -28,6 +28,9 @@ func TestMemoryWorksWithoutFTS5(t *testing.T) {
 	if err != nil {
 		t.Fatalf("store must open whether or not FTS5 is compiled in: %v", err)
 	}
+	// Closed before the temporary directory goes: Windows will not remove a
+	// file that is still open (#283).
+	t.Cleanup(func() { _ = s.Close() })
 	id, err := s.Store("news_summarizer.py parses RSS with the stdlib", []string{"finding"}, nil)
 	if err != nil {
 		t.Fatalf("storing a memory must not depend on FTS5: %v", err)
