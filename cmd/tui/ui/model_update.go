@@ -38,7 +38,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	// A question blocks the turn on the person: tell them if they are away.
 	if m.pendingQuestion == nil && nm.pendingQuestion != nil && nm.blurred {
-		cmd = tea.Batch(cmd, ring(nm.windowStatus().endNote(titleDirName())))
+		cmd = tea.Batch(cmd, ring(nm.windowStatus().endNote(nm.sessionTitle())))
 	}
 	if wasBusy && !nm.working() && nm.pendingQuestion == nil {
 		if ring := (&nm).turnEnded(); ring != nil {
