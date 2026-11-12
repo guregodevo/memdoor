@@ -3,10 +3,5 @@
 # pull request; it also runs these and says which pass now. A package leaves
 # this list in the pull request that makes it pass.
 #
-# What is left is one thing: mario runs a command step with /bin/sh, which a
-# Windows process cannot start. The fix is in mario (guregodevo/mario, "a command
-# runs with the sh on the PATH on Windows"); these three packages leave the list
-# in the pull request that moves go.mod to it (#283).
-memdoor/gateway
-memdoor/pkg/workflow
-memdoor/workflows
+#
+# Empty: every package passes on Windows (#283).
