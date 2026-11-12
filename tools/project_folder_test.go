@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"memdoor/pkg/shared"
 )
 
 // gitWorktree makes a repository with one commit at <tmp>/repo and a worktree
@@ -83,5 +85,44 @@ func TestARefusalNamesTheWorktreesOnlyInARepository(t *testing.T) {
 	plain := t.TempDir()
 	if got := ProjectFolders(plain); got != plain {
 		t.Errorf("outside one: %q", got)
+	}
+}
+
+// A workflow's isolated copy is sealed both ways: a turn in it writes only
+// there (not into the project's tree, not into another attempt's copy), and
+// a turn elsewhere never writes into it. A person's worktree still counts
+// (django-11400, 2026-11-12: an attempt wrote its fix into /testbed).
+func TestAnIsolatedCopyIsSealed(t *testing.T) {
+	tmp, repo, tree := gitWorktree(t)
+	iso, other := filepath.Join(tmp, "iso-1"), filepath.Join(tmp, "iso-2")
+	for _, p := range []string{iso, other} {
+		for _, args := range [][]string{
+			{"-C", repo, "worktree", "add", "-q", "--detach", p, "HEAD"},
+			{"-C", repo, "worktree", "lock", "--reason", shared.IsolatedWorktreeLock, p},
+		} {
+			if out, err := exec.Command("git", args...).CombinedOutput(); err != nil {
+				t.Fatalf("git %v: %v\n%s", args, err, out)
+			}
+		}
+	}
+	for _, c := range []struct {
+		wd, target string
+		want       bool
+	}{
+		{iso, filepath.Join(iso, "django", "x.py"), true},
+		{iso, filepath.Join(repo, "django", "x.py"), false},
+		{iso, filepath.Join(other, "x.py"), false},
+		{iso, filepath.Join(tree, "x.py"), false},
+		{repo, filepath.Join(iso, "x.py"), false},
+		{repo, filepath.Join(tree, "x.py"), true},
+		{tree, filepath.Join(repo, "x.py"), true},
+	} {
+		if got := InProject(c.wd, c.target); got != c.want {
+			t.Errorf("InProject(%s, %s) = %v, want %v", filepath.Base(c.wd), c.target, got, c.want)
+		}
+	}
+	real, _ := filepath.EvalSymlinks(iso)
+	if got := ProjectFolders(iso); got != real+" (an isolated copy of the project)" {
+		t.Errorf("ProjectFolders(iso) = %q, want %q", got, real+" (an isolated copy of the project)")
 	}
 }
