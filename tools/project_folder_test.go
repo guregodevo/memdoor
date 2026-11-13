@@ -122,7 +122,12 @@ func TestAnIsolatedCopyIsSealed(t *testing.T) {
 		}
 	}
 	real, _ := filepath.EvalSymlinks(iso)
-	if got := ProjectFolders(iso); got != real+" (an isolated copy of the project)" {
-		t.Errorf("ProjectFolders(iso) = %q, want %q", got, real+" (an isolated copy of the project)")
+	// git prints the worktree path with forward slashes on Windows; the
+	// refusal text is read by the MODEL, so slashes, not native separators,
+	// are what it is compared with. Live 2026-11-12: the raw EvalSymlinks
+	// form failed the check on windows-latest (#321's Windows Go tests).
+	want := filepath.ToSlash(real) + " (an isolated copy of the project)"
+	if got := filepath.ToSlash(ProjectFolders(iso)); got != want {
+		t.Errorf("ProjectFolders(iso) = %q, want %q", got, want)
 	}
 }

@@ -82,6 +82,16 @@ func (spb *SystemPromptBuilder) Build() (string, error) {
 		// A doer buddy runs on its own seeded prompt, not this builder's
 		// sections — but the project's instructions are the project's, and
 		// every coder turn carries them (AGENTS.md at the workdir's root).
+		// And it needs to know WHERE that project is: its seed says "you are
+		// already in the project directory" but never names it, so the model
+		// guesses one from its training — e2e on Windows 2026-11-13 wrote
+		// src/greet.txt under an invented /workspace (and, on the previous
+		// run, /mnt/c/...), never under the real workdir. One line fixes it.
+		if wd := spb.projectDir; wd != "" {
+			return spb.buildIdentityOnly() + "\n\n# Working directory\n\nYour working directory is: " + wd +
+				"\n\nAll paths are relative to it. bash already runs there; apply_patch, read_file and the search tools take paths relative to it. Do not cd to it, and do not invent an absolute path — write src/x.txt, not /workspace/src/x.txt." +
+				spb.projectSuffix(), nil
+		}
 		if project := spb.buildProjectInstructionsSection(); project != "" {
 			return spb.buildIdentityOnly() + "\n\n" + project, nil
 		}
@@ -420,6 +430,16 @@ func (spb *SystemPromptBuilder) buildIdentityOnly() string {
 func shellHint() string {
 	if h := shell.Hint(); h != "" {
 		return "\n\n" + h
+	}
+	return ""
+}
+
+// projectSuffix is the project's instructions when none mode has already
+// sent a working directory (the instructions and the directory travel
+// together there); "" when there are none.
+func (spb *SystemPromptBuilder) projectSuffix() string {
+	if project := spb.buildProjectInstructionsSection(); project != "" {
+		return "\n\n" + project
 	}
 	return ""
 }
