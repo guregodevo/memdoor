@@ -1,0 +1,18 @@
+type: llm
+model: thinking off
+# The project's areas, one a line, asked once and kept in .memdoor/qa/areas.txt.
+# file and skips this step. Delete .memdoor/qa/areas.txt to ask again.
+prompt: |
+  A project's README and its file list:
+
+  {{ file (printf ".memdoor/runs/qa-%s/readme.txt" .partition) }}
+
+  {{ file (printf ".memdoor/runs/qa-%s/files.txt" .partition) }}
+
+  List the 6 to 12 areas of this project a user can use and a tester could exercise on their own: a command, a feature, an installer, an API. One area a line, a short phrase naming it, in the project's own words, no area twice. Order them by how cheap they are to test: first the ones a tester can run in seconds with nothing but the project built (a parser, a helper, a command that needs no service), last the ones that need a model, a GPU, a network service, credentials or a long job. Write only the list: no numbering, no heading, no blank line.
+requires:
+  - table_pattern: context
+target:
+  file: .memdoor/qa/areas.txt
+timeout: 5m
+max_retries: 0

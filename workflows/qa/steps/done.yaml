@@ -1,0 +1,12 @@
+type: command
+# The run's end: what was found, and what was done with it.
+requires:
+  - table_pattern: settle
+  - table_pattern: file
+command: |
+  r=.memdoor/runs/qa-{{.partition}}
+  cat "$r/summary.txt" 2>/dev/null || echo "qa: nothing written"
+  [ -s "$r/filed.txt" ] && { echo "filed:"; cat "$r/filed.txt"; }
+  exit 0
+timeout: 1m
+max_retries: 0

@@ -1,0 +1,19 @@
+type: command
+# Files the settled bugs as issues with gh, only when the file arg is now.
+# draft, files nothing.
+when: '[ "{{.file}}" = now ]'
+args:
+  file: "draft"   # draft: file nothing; now: file them with gh
+  labels: "bug"   # labels on a filed issue, those the repository has
+  qa_label: "qa"   # counts the workflow's own open issues
+  max_open: "5"   # its own open issues at once; at the cap nothing is filed
+requires:
+  - table_pattern: settle
+command: |
+  set -u
+  r=.memdoor/runs/qa-{{.partition}}
+  w=.memdoor/workflows/qa; [ -d "$w" ] || w="$HOME/.memdoor/workflows/qa"
+  [ -f "$w/file.sh" ] || { echo "no $w/file.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/file.sh" "$r" "{{.labels}}" "{{.qa_label}}" "{{.max_open}}"
+timeout: 5m
+max_retries: 0

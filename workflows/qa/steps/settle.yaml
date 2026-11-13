@@ -1,0 +1,16 @@
+type: command
+# Duplicates dropped, the cap applied, one issue.md a bug ready to file.
+# the run's summary lists them.
+args:
+  max_bugs: "3"   # bugs a run keeps at most
+requires:
+  - table_pattern: confirm
+  - table_pattern: dedupe
+command: |
+  set -u
+  r=.memdoor/runs/qa-{{.partition}}
+  w=.memdoor/workflows/qa; [ -d "$w" ] || w="$HOME/.memdoor/workflows/qa"
+  [ -f "$w/settle.sh" ] || { echo "no $w/settle.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/settle.sh" "$r" "{{.max_bugs}}"
+timeout: 5m
+max_retries: 0

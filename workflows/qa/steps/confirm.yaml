@@ -1,0 +1,13 @@
+type: command
+# Each listed bug run twice by the workflow: exit 1 and a BUG: line both times.
+# `BUG: ` line both times, the project's files untouched. The rest is dropped with the reason.
+requires:
+  - table_pattern: explore
+command: |
+  set -u
+  r=.memdoor/runs/qa-{{.partition}}
+  w=.memdoor/workflows/qa; [ -d "$w" ] || w="$HOME/.memdoor/workflows/qa"
+  [ -f "$w/confirm.sh" ] || { echo "no $w/confirm.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/confirm.sh" "$r"
+timeout: 30m
+max_retries: 0
