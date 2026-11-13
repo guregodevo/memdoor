@@ -10,19 +10,25 @@ r="$1"; issue="${2:-}"
 [ -s "$r/description.md" ] || { echo "no description.md: pr-description wrote nothing"; exit 1; }
 head -1 "$r/description.md" > "$r/title.txt"; tail -n +2 "$r/description.md" | sed '1{/^$/d;}' > "$r/desc-body.md"
 t=.github/PULL_REQUEST_TEMPLATE.md
+# A check's exit status, by its command, from checks.tsv.
+status_of() {
+  while IFS="$(printf '\t')" read -r cmd st; do [ "$cmd" = "$1" ] && { echo "$st"; return; }; done < "$r/checks.tsv"
+}
 if [ -f "$t" ]; then
-  awk -v desc="$r/desc-body.md" -v logs="$r/checks.txt" -v tsv="$r/checks.tsv" -v issue="$issue" '
-    BEGIN { while ((getline l < tsv) > 0) { split(l, a, "\t"); st[a[1]] = a[2] } }
-    /^## / { skip = 0 }
-    skip { next }
-    /^## Description/ { print; print ""; while ((getline l < desc) > 0) print l; print ""; skip = 1; next }
-    /^Fixes #/ { print (issue != "" ? "Fixes #" issue : $0); next }
-    /^- \[ \] `/ {
-      c = $0; sub(/^- \[ \] `/, "", c); sub(/`.*/, "", c)
-      if (c in st) { if (st[c] == "0") { sub(/\[ \]/, "[x]") } else { $0 = $0 " (exit " st[c] ", see the output)" } }
-      print; next }
-    /^<test output>$/ { while ((getline l < logs) > 0) print l; next }
-    { print }' "$t" > "$r/body.md"
+  skip=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in "## "*) skip=0 ;; esac
+    [ "$skip" = 1 ] && continue
+    case "$line" in
+      "## Description"*) printf '%s\n\n' "$line"; cat "$r/desc-body.md"; echo; skip=1; continue ;;
+      "Fixes #"*) [ -n "$issue" ] && line="Fixes #$issue" ;;
+      "<test output>") cat "$r/checks.txt"; continue ;;
+      '- [ ] `'*)
+        c=${line#- \[ \] \`}; c=${c%%\`*}; st=$(status_of "$c")
+        if [ "$st" = 0 ]; then line="- [x] ${line#- \[ \] }"; elif [ -n "$st" ]; then line="$line (exit $st, see the output)"; fi ;;
+    esac
+    printf '%s\n' "$line"
+  done < "$t" > "$r/body.md"
 else
   { cat "$r/desc-body.md"; printf '\n## Test results\n\n```\n'; cat "$r/checks.txt"; printf '```\n'; } > "$r/body.md"
 fi
