@@ -150,3 +150,25 @@ func TestTheBuiltInQALoads(t *testing.T) {
 		}
 	}
 }
+
+// pr-create loads: checks and describe first, body after both, open last; each step a command with an
+// about line (its first comment) the window can show.
+func TestTheBuiltInPRCreateLoads(t *testing.T) {
+	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "pr-create"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dir); err != nil {
+		t.Skip("no built-in pr-create beside this package")
+	}
+	wf := load(t, dir, &fakeRunner{})
+	for _, name := range []string{"sync", "checks", "describe", "body", "open", "ci"} {
+		if _, ok := wf.Task(name); !ok {
+			t.Fatalf("no step %s", name)
+		}
+		about := aboutOf(dir, "pr-create", "pr-create.steps."+name)
+		if n := len([]rune(about)); n == 0 || n > 90 {
+			t.Errorf("%s: about line of %d runes: %q", name, n, about)
+		}
+	}
+}

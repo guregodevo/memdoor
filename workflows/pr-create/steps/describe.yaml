@@ -1,0 +1,16 @@
+type: command
+# pr-description on this branch, nested on this gateway: the title and the text.
+args:
+  model: ""   # the model pr-description runs on; empty: the gateway's own choice
+requires:
+  - table_pattern: sync
+command: |
+  set -u
+  r=.memdoor/runs/pr-create-{{.partition}}; mkdir -p "$r"
+  model='{{.model}}'; set -- ; [ -n "$model" ] && set -- --model "$model"
+  memdoor workflow run pr-description --wait "$@" > "$r/describe-out.txt" 2> "$r/describe-progress.txt" || { tail -5 "$r/describe-progress.txt"; echo "pr-description did not finish"; exit 1; }
+  f=$(ls -t .memdoor/runs/pr-description-*.md 2>/dev/null | head -1)
+  [ -n "$f" ] || { echo "pr-description wrote no description"; exit 1; }
+  cp "$f" "$r/description.md"; echo "description: $f"
+timeout: 20m
+max_retries: 0

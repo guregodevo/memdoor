@@ -36,7 +36,7 @@ and phone are doors onto it.
   GitHub: one step, `uses: guregodevo/memdoor-action@v1`, the workflow's name
   and your key. Built in, no file in the repo: `pr-triage`, `pr-review`,
   `security-review`, `write-tests`, `pr-description`, `explain-failure`,
-  `issue-triage`, `fix-tests`, `release-notes`, `team-solve`, `team-backlog`, `qa`.
+  `issue-triage`, `fix-tests`, `release-notes`, `team-solve`, `team-backlog`, `qa`, `pr-create`.
   [Workflows](/docs/workflows).
 - Editor session. The coder in VS Code, Zed or JetBrains is a conversation on
   the same gateway. [In your editor](/docs/editor).

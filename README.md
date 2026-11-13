@@ -173,6 +173,7 @@ Built in:
 - **`team-solve`**: the task a prompt defines (`memdoor workflow run team-solve "<the task>"`), done by a team of fresh contexts, GVS5H's method on any task and any model: changes across a repository checked by its own tests, a program by its samples, a document by a fresh judge. Its prompts differ from the published steps', so the 9.8 above is theirs, not the built-in's.
 - **`team-backlog`**: the repository's open issues, unattended: the next issue nobody is on, team-solve on it in a branch, a pull request when the Check passed, a comment on the issue when it did not; one issue a run, on a cron (`memdoor cron add --workflow team-backlog "0 2 * * *"`).
 - **`qa`**: uses the project like a user, proves each bug with a script run twice, drops what an open issue already says, and writes the rest as issues (`file: now` files them with `gh`; the default files nothing).
+- **`pr-create`**: opens a pull request from the current branch: runs the checks you name, has `pr-description` write the text, fills the repository's PR template from the recorded output, opens it with `gh`. Draft by default; never merges.
 
 `local-model: Qwen3-8B-4bit` in place of the key: the model runs inside the
 runner ([janis](https://github.com/guregodevo/janis), one file, cached), one
