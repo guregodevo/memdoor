@@ -1,0 +1,54 @@
+type: llm
+# One call that reads the fan-out's saved attempts and names the deciding cases between them.
+# The paper's manager round (arXiv 2608.26480 §2, step 3), rebuilt for a
+# parallel harness and made cheap: the fan-out's checks already answered
+# which attempt leads and where the others disagree — the matrix says which
+# check failed on which attempt, and each attempt's patch shows what it did
+# about it. This call reads that evidence plus the task and the case list and
+# writes the cases the attempts decide differently and what the right answer
+# to each is, so one rework turn can carry the attempts' joint knowledge into
+# the tree instead of leaving it in the pick's binary choice.
+# Runs only when the picked attempt did not pass (test-0): with a passing
+# pick the checks have already settled it, and the team is not needed.
+system: "You answer in this one message. You have no tools: you cannot open a file, list a directory or run a command, and nothing you write will be run. Everything you need is in the message. Do not say what you will look at: answer."
+when: "test \"$(cat .memdoor/runs/team-solve-fanout-{{.partition}}/direct-status.txt 2>/dev/null)\" != 0"
+requires:
+  - table_pattern: direct
+  - table_pattern: test-0
+prompt: |
+  # The task
+
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/task.md" .partition) }}
+
+  # The cases the task leaves unstated, and what settles each
+
+  {{ file (printf ".memdoor/runs/team-solve-fanout-%s/cases.md" .partition) }}
+
+  # The fan-out: one JSON record of the attempts, each with its change (patch),
+  # then the checks' evidence — which check failed on which attempt, each
+  # attempt's points and fails, and which attempt the checks picked.
+
+  ```
+  {{ output "direct" }}
+  ```
+
+  Several attempts solved the task independently and the checks could not keep
+  one: the picked attempt did not pass. The attempts differ where the task or
+  the case list leaves something undecided, and the check results show exactly
+  where each attempt's answer to a deciding case breaks.
+
+  Write .memdoor/runs/team-solve-fanout-{{.partition}}/divergence.md, at most
+  twelve lines:
+  - `skeleton: <attempt N>` — the attempt whose overall approach the evidence
+    favours, and one sentence on why (most check points, or the only one that
+    passes a discriminating check).
+  - `<case>: <attempt N's answer> vs <attempt M's answer> — <which the task's
+    words or the case list settles, and what that means for the change>` — one
+    line per case the attempts decide differently, in the order they matter.
+    Where nothing settles a case, say `unclear` and what the evidence still
+    shows about it.
+  - `stitch: <what the rework turn should do, in one sentence>`.
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/divergence.md
+timeout: 20m
+max_retries: 1
