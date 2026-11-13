@@ -534,6 +534,11 @@ with an admin token is not stopped by it. On 2026-11-12, 040d3f7 (#289) reached
   - Use `git rebase -i` to squash work-in-progress commits
   - Each final commit should represent one complete feature or fix
   - Write clear, descriptive commit messages that explain the "why" not just the "what"
+- **Co-author trailer (issue #325)**: a commit written by the Memdoor coder ends with
+  `Co-authored-by: Memdoor Coder <356249678+memdoor@users.noreply.github.com>`,
+  after the body and a blank line. The `id+` form of the noreply email links it to
+  github.com/memdoor regardless of the account's email privacy settings. A commit a
+  person wrote is left alone.
 
 ## Rules kept by Memdoor
 
