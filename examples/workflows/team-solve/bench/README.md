@@ -31,35 +31,66 @@ The paper's rows: [GVS5H](https://github.com/slee-persis/GVS5H)
 | # | harness | model | solved | $ / pass of 100 | $ / solved | source |
 |---|---|---|---|---|---|---|
 | 1 | GVS5H manager | Qwen3.8-Flash-Next | 93.0% | 5.76 | 0.062 | paper |
-| 2 | GVS5H manager | Qwen3.8-27B | 92.4% | 47.82 | 0.52 | paper |
-| 3 | GVS5H manager | DeepSeek V4.1 Flash | 92.0% | 15.43 | 0.17 | paper |
-| 4 | Memdoor team-solve-fanout | DeepSeek V4.1 Flash (1017) | 92% | ≤ 5.50 | ≤ 0.060 | Memdoor, 1 pass |
-| 5 | single call | Fable 5 | 90.4% | 61.11 | 0.68 | paper |
-| 6 | single call | DeepSeek V4.1 Flash | 88.4% | 3.46 | 0.039 | paper |
-| 7 | GVS5H manager | GPT-5.6-Terra | 88.0% | 11.71 | 0.13 | paper |
-| 8 | single call | Qwen3.8-Flash-Next | 84.2% | 2.73 | 0.032 | paper |
-| 9 | GVS5H manager | GPT-5.6-Luna | 81.2% | 1.50 | 0.018 | paper |
-| 10 | single call | GPT-5.6-Terra | 80.8% | 3.41 | 0.042 | paper |
-| 11 | single call | GPT-5.6-Luna | 70.4% | 0.41 | 0.006 | paper |
-| 12 | single call | Qwen3.8-27B | 66.8% | 18.95 | 0.28 | paper |
-| 13 | Memdoor team-llm-lcb, thinking off | Qwen3.8-27B | 47% | 3.27 for 13 and 14 | | Memdoor, 1 pass |
-| 14 | Memdoor single-lcb, thinking off | Qwen3.8-27B | 35% | | | Memdoor, 1 pass |
+| 2 | Memdoor team-solve-fanout, 2026-11-12 | DeepSeek V4.1 Flash (1017) | 93% | ≤ 11.73 | ≤ 0.13 | Memdoor, 1 pass |
+| 3 | GVS5H manager | Qwen3.8-27B | 92.4% | 47.82 | 0.52 | paper |
+| 4 | GVS5H manager | DeepSeek V4.1 Flash | 92.0% | 15.43 | 0.17 | paper |
+| 5 | Memdoor team-solve-fanout, 2026-11-09 | DeepSeek V4.1 Flash (1017) | 92% | ≤ 5.50 | ≤ 0.060 | Memdoor, 1 pass |
+| 6 | single call | Fable 5 | 90.4% | 61.11 | 0.68 | paper |
+| 7 | single call | DeepSeek V4.1 Flash | 88.4% | 3.46 | 0.039 | paper |
+| 8 | GVS5H manager | GPT-5.6-Terra | 88.0% | 11.71 | 0.13 | paper |
+| 9 | single call | Qwen3.8-Flash-Next | 84.2% | 2.73 | 0.032 | paper |
+| 10 | GVS5H manager | GPT-5.6-Luna | 81.2% | 1.50 | 0.018 | paper |
+| 11 | single call | GPT-5.6-Terra | 80.8% | 3.41 | 0.042 | paper |
+| 12 | single call | GPT-5.6-Luna | 70.4% | 0.41 | 0.006 | paper |
+| 13 | single call | Qwen3.8-27B | 66.8% | 18.95 | 0.28 | paper |
+| 14 | Memdoor team-llm-lcb, thinking off | Qwen3.8-27B | 47% | 3.27 for 14 and 15 | | Memdoor, 1 pass |
+| 15 | Memdoor single-lcb, thinking off | Qwen3.8-27B | 35% | | | Memdoor, 1 pass |
 
 - Grading: the paper's rule for every row. Its reported numbers judge four
   problems that accept more than one answer (abc396_e, arc190_a, arc195_c,
-  abc385_f) with special checkers (`paper/tab-regrade.tex`). Row 4 by the stock
-  grader: 91; abc396_e passes 43 of 43 with the paper's checker. Rows 13 and 14
-  are as graded.
+  abc385_f) with special checkers (`paper/tab-regrade.tex`). Row 2 by the stock
+  grader: 91; abc396_e (43 of 43) and abc385_f (44 of 44) pass with the paper's
+  checkers. Row 5 by the stock grader: 91; abc396_e passes 43 of 43 with the
+  paper's checker. Rows 14 and 15 are as graded.
 - Cost: the paper's is list rate times tokens, no cache discount. Memdoor's is
-  what OpenRouter billed. Row 4 includes three `team-solve` runs stopped early.
-- Row 4 is one pass against means of five. The paper's 95% intervals are ±1.2
-  to ±2.6 points; its rows 1 to 3 do not differ from Fable 5 significantly
-  (p = 0.56 to 0.88).
-- Rows 13 and 14 ran with thinking off (the reason is under "What this is
+  what OpenRouter billed. Row 2 includes four runs broken by a full disk and
+  their reruns. Row 5 includes three `team-solve` runs stopped early.
+- Rows 2 and 5 are one pass each against means of five. The paper's 95%
+  intervals are ±1.2 to ±2.6 points; rows 1, 3 and 4 do not differ from
+  Fable 5 significantly (p = 0.56 to 0.88).
+- Rows 14 and 15 ran with thinking off (the reason is under "What this is
   not"); the paper ran Qwen3.8-27B with thinking on.
 - Not ranked: the parity runs on the first ten problems (Memdoor's rebuild of
   the GVS5H method on Qwen3.8-27B, 9.8 of 10 over five passes, $35.79 for 50
   runs), a different sample.
+
+## team-solve-fanout, DeepSeek V4.1 Flash, 2026-11-12
+
+The same 100 problems, graded the same way. One pass of
+[team-solve-fanout](../../../../workflows/team-solve-fanout/README.md) at #293
+(head 7765806, merged as 80ffb63: `cases` rules, pick scoring, sealed isolated
+copies), `openrouter:deepseek/deepseek-v4.1-flash-1017` on every step.
+
+| arm | solved on all tests | AtCoder (73) | LeetCode (27) | median s / problem |
+|---|---|---|---|---|
+| team-solve-fanout | **91 / 100** (93 under the paper's rules) | 64 | 27 | 1751 |
+
+- Against 2026-11-09: gained 3692, abc398_g, arc196_c; lost abc384_g,
+  abc385_f, arc190_c.
+- Not solved on all tests: abc384_g, abc385_f, abc392_f, abc396_e, abc397_d,
+  abc399_e, arc190_a, arc190_c, arc192_b.
+- abc385_f prints `33.399999999999998579` where the expected output is `33.4`.
+  The contest accepts an error up to 1e-9 and every output is within it. The
+  stock grader compares strings. 44 of 44 with the paper's checker.
+- abc396_e: 43 of 43 with the paper's checker. arc190_a fails with it (14 of
+  44).
+- arc196_a to arc196_d broke on a full disk and were rerun on 2026-11-13 with
+  the same build. All four solved; the file has the reruns.
+- 8 problems in flight on one Mac, 2 for the reruns, about 13 hours in all.
+  $11.73 on OpenRouter for 8,299 calls, the broken runs and reruns included.
+
+`results/team-solve-fanout-lcb-2026-11-12.tsv`: every problem with id, tests
+passed, all tests passed, seconds.
 
 ## team-solve-fanout, DeepSeek V4.1 Flash, 2026-11-09
 
