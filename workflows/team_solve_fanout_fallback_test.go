@@ -58,6 +58,9 @@ func fallbackRun(t *testing.T, rule string) (dir, r string, sh func(script strin
 		"git rev-parse HEAD > .memdoor/runs/team-solve-fanout-1/base.txt && : > .memdoor/runs/team-solve-fanout-1/untracked-before.txt",
 		"printf 'kept\\n' > a.txt && printf 'kept: the direct attempt, untouched\\n' > .memdoor/runs/team-solve-fanout-1/keep.txt",
 		"printf '" + rule + "\\n' > .memdoor/runs/team-solve-fanout-1/review-rule.txt",
+		// The final Check's status on the work keep kept: 0 pass, 1 fail
+		// (recheck.yaml writes it; a run without a check leaves it absent).
+		"printf '1\\n' > .memdoor/runs/team-solve-fanout-1/final-status.txt",
 	} {
 		if out, err := sh(s); err != nil {
 			t.Fatalf("%s: %v\n%s", s, err, out)
@@ -75,15 +78,44 @@ func read(t *testing.T, path string) string {
 	return string(b)
 }
 
-// The three fallback steps share one when: they run only on the review's FAIL.
-func TestTeamSolveFanoutFallbackRunsOnlyWhenTheReviewFailed(t *testing.T) {
+// The three fallback steps share one when: they run on the review's FAIL,
+// and on a kept work that failed its final Check — not on a kept work that
+// passed it, and not on work keep put back.
+func TestTeamSolveFanoutFallbackRunsOnTheReviewOrAFailedCheck(t *testing.T) {
+	states := map[string]bool{
+		"PASS":            false, // the review passed, the check failed: nothing fires
+		"FAIL":            true,  // the review failed, what keep kept did not: the fallback fires
+		"put-back-check1": false, // keep put work back (check 1): no work of keep's to replace
+		"kept-check1":     true,  // keep kept work whose final check failed: the fallback fires
+		"kept-check0":     false, // keep kept work whose final check passed: it stands
+	}
 	for _, step := range []string{"fallback-reset", "fallback", "fallback-done"} {
 		when := loadFallbackStep(t, step).When
-		for rule, want := range map[string]bool{"FAIL": true, "PASS": false} {
+		for name, want := range states {
+			rule, final := "PASS", "1"
+			keep := "kept: the direct attempt, untouched\n"
+			switch name {
+			case "FAIL":
+				rule = "FAIL"
+			case "put-back-check1":
+				keep = "put back: the direct attempt (the team's work did not prove better: check 1, judge none)\n"
+			case "kept-check1":
+				keep = "kept: the team's work (check 1, judge none)\n"
+			case "kept-check0":
+				final = "0"
+			}
 			_, _, sh := fallbackRun(t, rule)
+			keepTxt := ".memdoor/runs/team-solve-fanout-1/keep.txt"
+			finalTxt := ".memdoor/runs/team-solve-fanout-1/final-status.txt"
+			if out, err := sh("printf '%s' \"" + strings.ReplaceAll(keep, "'", "'\\''") + "\" > " + keepTxt); err != nil {
+				t.Fatalf("%s: %v\n%s", name, err, out)
+			}
+			if out, err := sh("printf '%s\\n' \"" + final + "\" > " + finalTxt); err != nil {
+				t.Fatalf("%s: %v\n%s", name, err, out)
+			}
 			_, err := sh(when)
 			if (err == nil) != want {
-				t.Errorf("%s with the review's %s: when %q ran = %v", step, rule, when, err == nil)
+				t.Errorf("%s in the state %s: when ran = %v, want %v", step, name, err == nil, want)
 			}
 		}
 	}
