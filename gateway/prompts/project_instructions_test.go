@@ -50,3 +50,33 @@ func TestProjectInstructionsSurviveNoneMode(t *testing.T) {
 		t.Fatalf("none mode drops the project's instructions: %v %q", err, out)
 	}
 }
+
+// A none-mode builder WITH a project dir says where it is: the doer's seed
+// never names the workdir, and a model left to guess invents one from its
+// training (/workspace on the 2026-11-13 e2e run on Windows) — the file the
+// turn wrote was real, the place it landed was not.
+func TestNoneModeNamesTheWorkingDirectory(t *testing.T) {
+	dir := t.TempDir()
+	spb := NewSystemPromptBuilder(nil, nil, dir, "m")
+	spb.SetAgentName("coder")
+	spb.SetPromptMode(PromptModeNone)
+	spb.SetProjectDir(dir)
+	out, err := spb.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "Your working directory is: "+dir) {
+		t.Fatalf("none mode does not name the workdir: %q", out)
+	}
+	if strings.Contains(out, "All file operations will be relative to this workspace") {
+		t.Fatalf("the guessed-workspace section must not ride along: %q", out)
+	}
+	// No project dir, no section: a conversational agent's prompt stays as it was.
+	spb2 := NewSystemPromptBuilder(nil, nil, dir, "m")
+	spb2.SetAgentName("greeter")
+	spb2.SetPromptMode(PromptModeNone)
+	out2, err := spb2.Build()
+	if err != nil || strings.Contains(out2, "working directory is") {
+		t.Fatalf("no project dir must not add the section: %v %q", err, out2)
+	}
+}
