@@ -14,6 +14,7 @@ import (
 var notTools = map[string]bool{
 	"in_progress": true, // todo_write's status value
 	"tool_call":   true, // the wire format's tag, not a tool
+	"co_author":   true, // the commit trailer's name, prose about git, not a tool
 }
 
 // A seeded agent's prompt must not advertise a tool it cannot call.
