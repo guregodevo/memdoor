@@ -13,7 +13,7 @@ memdoor workflow run team-solve-fanout "Fix the -0.00 in the ledger report; pyth
 - `choose`: mario's `type: pick`. The attempt the checks favour goes into the tree; on a tie, attempt 1 (`prefer: 1`).
 
 - `readonly`: after `test`, the Check runs again in a clean copy with the change's edits to tests that were there before put back as they were (`readonly.sh`). A test that fails there and passes on the tree as found is one the change broke and hid by editing it. `readonly-justify`, one call, decides for each whether the Prompt asks for that behaviour to change. When one is not, `repair` runs on it, and `keep` keeps the direct attempt unless the repair proves better.
-- `fallback`: when the review fails, the fan-out's next attempt replaces what `keep` kept. Mario's pick with `skip: [choose]`, on the fan-out's saved output: no model call (`fallback-reset`, `fallback`, `fallback-done`). With no other attempt, what `keep` kept stays. On saved runs, where the review failed, the next attempt was right on 11 of 11 LiveCodeBench runs and 9 of 11 SWE-bench Verified runs, against 10 and 8 for what the run kept.
+- `fallback`: when the review fails, or when the check on the work `keep` kept fails, the fan-out's next attempt replaces what `keep` kept. Mario's pick with `skip: [choose]`, on the fan-out's saved output: no model call (`fallback-reset`, `fallback`, `fallback-done`). With no other attempt, what `keep` kept stays. On saved runs, where the review failed, the next attempt was right on 11 of 11 LiveCodeBench runs and 9 of 11 SWE-bench Verified runs, against 10 and 8 for what the run kept.
 
 The other steps after `direct` are team-solve's. Run folder: `.memdoor/runs/team-solve-fanout-<partition>`. Scripts: team-solve's.
 

@@ -1,12 +1,13 @@
 type: pick
-# When the review failed, applies the fan-out's next attempt: choose's winner left out, the same rules.
+# When the review or the judge failed the work, applies the fan-out's next attempt: choose's winner left out, the same rules.
 # The attempts are the fan-out's saved output: no model call. Optional: with
 # no other attempt, or one that does not apply, fallback-done puts back what
 # keep kept.
 from: direct
 skip: [choose]
 prefer: 1
-when: grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt
+when: |
+  grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt || { grep -q '^kept:' .memdoor/runs/team-solve-fanout-{{.partition}}/keep.txt && [ "$(cat .memdoor/runs/team-solve-fanout-{{.partition}}/final-status.txt 2>/dev/null)" != 0 ] && grep -qx 'check 1' .memdoor/runs/team-solve-fanout-{{.partition}}/keep.txt; }
 optional: true
 requires:
   - table_pattern: fallback-reset

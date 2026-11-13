@@ -27,6 +27,10 @@ command: |
   # The fallback replaced the work the review and the judge saw: their
   # verdicts are not on the final tree.
   if [ -s "$r/fallback.json" ]; then judged=none; reviewed=none; fi
+  # The fallback's own pick (type: pick, no checks of its own) never fails the
+  # run: a check that fails on attempt-1's tree need not fail on the next
+  # attempt's. The final Check above has already judged the fallback's tree.
+  if grep -q '^fallback:' "$r/keep.txt" 2>/dev/null; then [ "$result" = 0 ] && exit 0; fi
   printf 'judge: %s, review: %s\n' "$judged" "$reviewed"
   [ "$judged" = FAIL ] && exit 1
   [ "$judged" = PASS ] && exit 0

@@ -1,6 +1,7 @@
 type: command
 # Records the fallback in keep.txt; when it applied nothing, puts back what keep kept.
-when: grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt
+when: |
+  grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt || { grep -q '^kept:' .memdoor/runs/team-solve-fanout-{{.partition}}/keep.txt && [ "$(cat .memdoor/runs/team-solve-fanout-{{.partition}}/final-status.txt 2>/dev/null)" != 0 ] && grep -qx 'check 1' .memdoor/runs/team-solve-fanout-{{.partition}}/keep.txt; }
 requires:
   - table_pattern: fallback
 command: |
@@ -8,10 +9,18 @@ command: |
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
   if [ -s "$r/fallback.json" ]; then
     n=$(grep -oE '"winner":[0-9]+' "$r/fallback.json" | grep -oE '[0-9]+')
-    printf 'fallback: the review failed; attempt %s of the fan-out, the next by its checks, replaces it\n' "$n" | tee -a "$r/keep.txt"
+    if grep -qx FAIL "$r/review-rule.txt" 2>/dev/null; then
+      printf 'fallback: the review failed; attempt %s of the fan-out, the next by its checks, replaces it\n' "$n" | tee -a "$r/keep.txt"
+    else
+      printf 'fallback: the check failed; attempt %s of the fan-out, the next by its checks, replaces it\n' "$n" | tee -a "$r/keep.txt"
+    fi
   else
     bash "$w/snapshot.sh" restore "$r" kept
-    printf 'fallback: the review failed and no other attempt applies; what keep kept stays\n' | tee -a "$r/keep.txt"
+    if grep -qx FAIL "$r/review-rule.txt" 2>/dev/null; then
+      printf 'fallback: the review failed and no other attempt applies; what keep kept stays\n' | tee -a "$r/keep.txt"
+    else
+      printf 'fallback: the check failed and no other attempt applies; what keep kept stays\n' | tee -a "$r/keep.txt"
+    fi
   fi
 timeout: 5m
 max_retries: 0
