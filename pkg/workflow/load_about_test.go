@@ -128,3 +128,25 @@ func TestTheBuiltInTeamBacklogLoads(t *testing.T) {
 		}
 	}
 }
+
+// qa loads: context, areas and pick before explore; confirm, dedupe and settle after it; file and
+// done last. Each step has an about line (its first comment) the window can show.
+func TestTheBuiltInQALoads(t *testing.T) {
+	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "qa"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dir); err != nil {
+		t.Skip("no built-in qa beside this package")
+	}
+	wf := load(t, dir, &fakeRunner{})
+	for _, name := range []string{"context", "areas", "pick", "explore", "confirm", "dedupe", "settle", "file", "done"} {
+		if _, ok := wf.Task(name); !ok {
+			t.Fatalf("no step %s", name)
+		}
+		about := aboutOf(dir, "qa", "qa.steps."+name)
+		if n := len([]rune(about)); n == 0 || n > 90 {
+			t.Errorf("%s: about line of %d runes: %q", name, n, about)
+		}
+	}
+}

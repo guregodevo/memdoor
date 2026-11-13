@@ -1,0 +1,21 @@
+type: llm
+model: thinking off
+# Which confirmed bugs an open issue already describes.
+# real issue numbers and slugs by settle; a line that does not name both is ignored.
+when: '[ -s .memdoor/runs/qa-{{.partition}}/confirmed.txt ]'
+prompt: |
+  Bug reports found by QA:
+
+  {{ file (printf ".memdoor/runs/qa-%s/confirmed.md" .partition) }}
+
+  The repository's open issues, "#number title" a line:
+
+  {{ file (printf ".memdoor/runs/qa-%s/open.txt" .partition) }}
+
+  For each bug report whose problem an open issue above already describes, write one line `<slug> #<number>`. A number not in the list above is never used. A report no open issue describes gets no line. When no report is a duplicate, write the word none. Write nothing else.
+requires:
+  - table_pattern: confirm
+target:
+  file: .memdoor/runs/qa-{{.partition}}/dups.txt
+timeout: 10m
+max_retries: 0

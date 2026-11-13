@@ -1,0 +1,15 @@
+type: command
+# The area this run explores: the focus arg, else the next untried one.
+args:
+  focus: ""   # where to look, in words; empty: the next untried area
+  minutes: "8"   # the explorer's soft deadline; the step's own clock is longer
+requires:
+  - table_pattern: areas
+command: |
+  set -u
+  r=.memdoor/runs/qa-{{.partition}}
+  w=.memdoor/workflows/qa; [ -d "$w" ] || w="$HOME/.memdoor/workflows/qa"
+  [ -f "$w/pick-area.sh" ] || { echo "no $w/pick-area.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/pick-area.sh" "$r" "{{.focus}}" "{{.minutes}}"
+timeout: 1m
+max_retries: 0

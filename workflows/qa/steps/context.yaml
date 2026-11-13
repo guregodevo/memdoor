@@ -1,0 +1,16 @@
+type: command
+# The open issues, so the explorer does not report a bug twice.
+# (or signed out) the file says so and the dedupe step has nothing to compare against. Without gh
+# (or signed out) the file says so and the dedupe step has nothing to compare against.
+# A step's args are its own: each step below declares the ones it reads, with the same defaults.
+command: |
+  set -eu
+  r=.memdoor/runs/qa-{{.partition}}; mkdir -p "$r/bugs"
+  gh issue list --state open --limit 200 --json number,title -q '.[] | "#\(.number) \(.title)"' > "$r/open.txt" 2>/dev/null || : > "$r/open.txt"
+  [ -s "$r/open.txt" ] || echo "(no open issues known)" > "$r/open.txt"
+  { sed -n 1,150p README.md 2>/dev/null || :; } > "$r/readme.txt"
+  { git ls-files 2>/dev/null || find . -type f -not -path './.git/*' -not -path './.memdoor/*'; } | head -150 > "$r/files.txt"
+  [ -s "$r/readme.txt" ] || echo "(no README)" > "$r/readme.txt"
+  echo "$(grep -vc '^(no' "$r/open.txt") open issues known"
+timeout: 2m
+max_retries: 1
