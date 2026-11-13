@@ -1,0 +1,16 @@
+type: command
+# After the PR is opened: its CI checks and whether it merges. Only with `open: now`.
+args:
+  open: "draft"   # draft: nothing was opened, nothing to check; now: poll the pull request's CI
+  ci_wait: "10"   # minutes to wait for pending checks
+when: '[ "{{.open}}" = now ]'
+requires:
+  - table_pattern: open
+command: |
+  set -u
+  r=.memdoor/runs/pr-create-{{.partition}}
+  w=.memdoor/workflows/pr-create; [ -d "$w" ] || w="$HOME/.memdoor/workflows/pr-create"
+  [ -f "$w/ci.sh" ] || { echo "no $w/ci.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/ci.sh" "$r" "{{.ci_wait}}"
+timeout: 30m
+max_retries: 0

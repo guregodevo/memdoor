@@ -1,0 +1,14 @@
+type: command
+# Opens the pull request, only with `open: now`. The default, draft, prints what it would do.
+args:
+  open: "draft"   # draft: push nothing; now: push the branch and open the pull request
+requires:
+  - table_pattern: body
+command: |
+  set -u
+  r=.memdoor/runs/pr-create-{{.partition}}
+  w=.memdoor/workflows/pr-create; [ -d "$w" ] || w="$HOME/.memdoor/workflows/pr-create"
+  [ -f "$w/open.sh" ] || { echo "no $w/open.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/open.sh" "$r" "{{.open}}"
+timeout: 5m
+max_retries: 0

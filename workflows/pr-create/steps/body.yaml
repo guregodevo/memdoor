@@ -1,0 +1,15 @@
+type: command
+# The title and the body: the PR template filled from the description and the checks.
+args:
+  issue: ""   # the issue number a `Fixes #` line takes; empty: the template's line stays
+requires:
+  - table_pattern: checks
+  - table_pattern: describe
+command: |
+  set -u
+  r=.memdoor/runs/pr-create-{{.partition}}
+  w=.memdoor/workflows/pr-create; [ -d "$w" ] || w="$HOME/.memdoor/workflows/pr-create"
+  [ -f "$w/body.sh" ] || { echo "no $w/body.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/body.sh" "$r" "{{.issue}}"
+timeout: 2m
+max_retries: 0

@@ -1,0 +1,10 @@
+type: command
+# Whether the branch merges into the default branch cleanly. A conflict stops the run here.
+command: |
+  set -u
+  r=.memdoor/runs/pr-create-{{.partition}}; mkdir -p "$r"
+  w=.memdoor/workflows/pr-create; [ -d "$w" ] || w="$HOME/.memdoor/workflows/pr-create"
+  [ -f "$w/sync.sh" ] || { echo "no $w/sync.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
+  bash "$w/sync.sh" "$r"
+timeout: 3m
+max_retries: 0
