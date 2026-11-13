@@ -241,6 +241,15 @@ Whoever can read the key can read the database beside it, so it grants
 nothing they could not already take; a gateway on another machine never sees
 this machine's key (`renewLocalSession`).
 
+A session can be refused before it runs out. Each start checks it with
+`/api/auth/whoami` on a local gateway and renews it the same way when it is
+refused (`sessionRefused`, `cmd/cli/cmd/tui_firstrun.go`). A gateway that
+refuses the host key as well reads another home: a test run's gateway, or
+another user's, holds the port. The CLI names its pid and says to stop it
+(`strangerGateway`). It never asks for a password there. Before this fix the
+window said "try 'memdoor auth login-direct'" to a person who never had one
+(2026-11-13).
+
 That first account's workspace is the gateway's own (`gateway/gateway_owner.go`).
 Sign-up stays open once it exists (`/api/auth/register` refuses before it, so
 a stranger cannot become the owner of a freshly installed box), and each

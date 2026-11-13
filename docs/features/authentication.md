@@ -14,6 +14,18 @@ Two identities, one command.
   `~/.memdoor/credentials.json`) and renews it when it lapses. Without a
   memdoor.ai account, `memdoor setup` creates it.
 
+On this host nobody types a password. When the gateway has no session
+for the CLI, or refuses the one it has, the CLI signs in again by itself:
+first with `~/.memdoor/local-login`, then with `~/.memdoor/host-key`, the key
+the gateway writes at boot (0600). This holds for an account made by hand
+with `memdoor setup --admin-email`, whose password nobody kept. A gateway on
+the port that refuses the host key was started from another home directory.
+The CLI names its pid and says to stop it.
+
+A password is for a gateway on another host reached over http
+(`memdoor auth login-direct --gateway …`). The ssh door signs in with the
+box's own generated login.
+
 ```bash
 memdoor login you@example.com     # sign in; the engine session is set up behind it
 memdoor account status            # both identities, one line each
