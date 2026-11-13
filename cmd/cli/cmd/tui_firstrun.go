@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/user"
@@ -96,18 +97,24 @@ func machineReady() error {
 			return taken
 		}
 	}
-	if sessionProblem() == nil {
+	if sessionProblem() == nil && !sessionRefused() {
 		return nil
 	}
 	renewal := renewLocalSession()
 	if renewal == nil {
 		return nil
 	}
+	if errors.Is(renewal, errHostKeyRefused) {
+		return strangerGateway()
+	}
 	if sshDoorUp != nil && sshRenewSession() == nil {
 		return nil
 	}
 	if _, err := loadCredentials(); err == nil {
-		return withRefusedRenewal(sessionProblem(), renewal)
+		if p := sessionProblem(); p != nil {
+			return withRefusedRenewal(p, renewal)
+		}
+		return fmt.Errorf("%s refused this host's session, and signing in again failed: %v", normalizeGateway(gatewayKey()), renewal)
 	}
 	var status struct {
 		Initialized bool `json:"initialized"`
@@ -125,6 +132,41 @@ func machineReady() error {
 		workspaceSlug = only
 	}
 	return nil
+}
+
+// sessionRefused reports whether the gateway on this host refuses the
+// session saved for it. A session is refused before it runs out when the
+// gateway on the port was started from another home: a test run's gateway
+// held :18789, and the window told a person who never had a password to run
+// `memdoor auth login-direct` (2026-11-13).
+func sessionRefused() bool {
+	if _, local := localGatewayPort(); !local {
+		return false
+	}
+	if _, err := loadCredentials(); err != nil {
+		return false
+	}
+	resp, err := NewClient().Get("/api/auth/whoami")
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == http.StatusUnauthorized
+}
+
+// strangerGateway is the message for a gateway on this host's port that
+// refused this host's key: it was started from another home, and no
+// password helps. Stopped, it gives the port back to Memdoor's own.
+func strangerGateway() error {
+	port, _ := localGatewayPort()
+	held := "a gateway"
+	var st struct {
+		PID int `json:"pid"`
+	}
+	if NewClient().GetJSON("/api/status", &st) == nil && st.PID > 0 {
+		held = fmt.Sprintf("a gateway (pid %d)", st.PID)
+	}
+	return fmt.Errorf("port %s is held by %s started from another home directory. It does not hold this host's key (~/.memdoor/%s), so it cannot sign you in. Stop it and run memdoor again: your own gateway starts by itself", port, held, hostKeyFile)
 }
 
 // withRefusedRenewal adds to a lapsed session's message that the generated

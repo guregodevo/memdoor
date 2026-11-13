@@ -477,6 +477,11 @@ func renewLocalSession() error {
 // hostKeyFile is the key the gateway writes at boot (gateway/host_login.go).
 const hostKeyFile = "host-key"
 
+// errHostKeyRefused: the gateway on the port does not hold this host's
+// key. A gateway reads the key from its own home, so it was started
+// from another one: a test run's, another user's.
+var errHostKeyRefused = errors.New("that gateway does not hold this host's key")
+
 // readHostKey is the key read, from this machine's disk or a box's over
 // ssh; "" when there is none.
 func readHostKey(read func() (string, error)) string {
@@ -501,7 +506,18 @@ func loginWithHostKey(key string) error {
 			Email string `json:"email"`
 		} `json:"user"`
 	}
-	if err := NewClient().PostJSON("/api/auth/host-login", map[string]string{"key": key, "email": email}, &result); err != nil {
+	resp, err := NewClient().Post("/api/auth/host-login", map[string]string{"key": key, "email": email})
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnauthorized {
+		return errHostKeyRefused
+	}
+	if err := checkStatus(resp); err != nil {
+		return err
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return err
 	}
 	exp := time.Now().Add(auth.SessionTTL)

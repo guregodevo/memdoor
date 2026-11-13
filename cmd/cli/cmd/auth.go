@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -163,7 +164,19 @@ var authWhoamiCmd = &cobra.Command{
 				Role  string `json:"role"`
 			} `json:"user"`
 		}
-		if err := c.GetJSON("/api/auth/whoami", &result); err != nil {
+		err := c.GetJSON("/api/auth/whoami", &result)
+		if _, local := localGatewayPort(); err != nil && local {
+			// Do never renews /api/auth/. On this host whoami signs in
+			// again like every other command, with no password.
+			renewal := renewLocalSession()
+			if errors.Is(renewal, errHostKeyRefused) {
+				return strangerGateway()
+			}
+			if renewal == nil {
+				err = NewClient().GetJSON("/api/auth/whoami", &result)
+			}
+		}
+		if err != nil {
 			return fmt.Errorf("not authenticated: run 'memdoor auth login-direct --email <email> --password <pass>'")
 		}
 
