@@ -1,0 +1,42 @@
+type: agent
+agent: coder
+# A rework turn: starts from the picked attempt and carries the divergence's deciding cases into the tree.
+# The paper's fix-or-switch task (§2 step 5) after a failed pick, fed by the
+# fan-out's own evidence (diverge.yaml): the picked attempt is in the tree and
+# did not pass; divergence.md says which attempt's skeleton the checks favour
+# and which case each attempt answered differently. This turn keeps what is
+# right in the picked attempt, stitches in what the other attempts had right
+# where the evidence says so, and answers each deciding case the way the task's
+# words or the case list settles it. The usual chain judges it: test, review,
+# repair, judge, keep — keep's net still holds (the rework replaces the
+# picked attempt only when it proves better).
+when: test -s .memdoor/runs/team-solve-fanout-{{.partition}}/divergence.md
+requires:
+  - table_pattern: diverge
+prompt: |
+  You are the rework worker in a fresh context. The run's files are in
+  .memdoor/runs/team-solve-fanout-{{.partition}}/: task.md (the task: the prompt
+  and what plan settled), plan.md, notes.md (the ledger), divergence.md (the
+  attempts' deciding cases and the skeleton the checks favour), cases.md,
+  survey.md when it is there. They are never part of the work and never
+  committed. Keep no rule with the notes tool: it writes the project's
+  AGENTS.md. Do not commit, check out, reset or stash: the tree's HEAD stays
+  where it is.
+  The picked attempt is already in the tree, and it did not pass. Read
+  divergence.md first: it names the skeleton to keep and the cases the
+  attempts decided differently. Then change the project's files within the
+  task's Scope: keep the skeleton divergence.md favours, answer each case the
+  way the task's words or cases.md settles it (an unclear case stays as the
+  skeleton has it), and change nothing the task did not ask for.
+  Write a first version of the deliverable early and improve it after: a turn
+  that ends without it has done nothing. Run the Check (the command, or a
+  sample; and the reproduction .memdoor/runs/team-solve-fanout-{{.partition}}/repro
+  when it is there: run from the project's root, it exits 0 once the behaviour
+  the Prompt describes is fixed) before you finish and fix what it shows. Do
+  not change task.md, the prompt, test data or repro. The steps after you
+  check the work. Do not spawn agents or use chat context.
+target:
+  command: bash .memdoor/runs/team-solve-fanout-{{.partition}}/done.sh solve .memdoor/runs/team-solve-fanout-{{.partition}}
+optional: true
+timeout: 90m
+max_retries: 1

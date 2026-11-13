@@ -4,8 +4,11 @@ type: command
 # it: the command, the samples, or nothing (the judge decides). Records the
 # result for the reviewer, and the files changed against the Scope
 # (scope.sh): one outside it is a failing status. Never fails the run itself.
+# Either the solver or the rework turn ran: both leave the tree at the work
+# they did, and both write the same done.sh receipt the Check judges.
 requires:
   - table_pattern: solve
+  - table_pattern: rework
 command: |
   r=.memdoor/runs/team-solve-fanout-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
