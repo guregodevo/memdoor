@@ -18,6 +18,7 @@ next ─ branch ─ solve ─┬─ pr ──────┬─ done
 - `branch`: a git worktree under `.memdoor/backlog/<n>` on `memdoor/issue-<n>`, from the default branch.
 - `solve`: `memdoor workflow run team-solve --wait` in the worktree, the issue's title and body as the prompt, up to three hours. team-solve settles the Check and the Scope from the project, as for any task; its net holds: nothing the Check did not pass is kept.
 - `pr`: when the run passed, the change committed and pushed, a pull request that closes the issue and carries keep's line, the Check's status, the review and the judge, and the Check's last lines.
+- `pr` with `pr_workflow: pr-create` (an arg in `steps/pr.yaml`, empty by default): the change is committed and `pr-create` opens the pull request in the worktree. It merges the default branch in memory first and stops on a conflict, runs its `checks`, fills the repository's PR template with the issue number taken from the branch, adds the same team-solve line, Check, judge and review to the Description, and with `open: now` reads the pull request's CI. The default path is unchanged.
 - `comment`: when it did not, the same findings as a comment on the issue.
 - `done`: the issue goes into `tried.txt`; the worktree is removed, the branch stays.
 

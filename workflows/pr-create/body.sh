@@ -3,12 +3,17 @@
 # line of description.md (what pr-description wrote); the rest is the Description. With the repository's
 # .github/PULL_REQUEST_TEMPLATE.md the template is filled: the Description section replaced, `Fixes #` given
 # the issue number, a checkbox whose backticked command passed in checks.tsv ticked (a failed one stays
-# unticked with its exit status after it), and the `<test output>` line replaced by checks.txt. Without a
+# unticked with its exit status after it), and the `<test output>` line replaced by checks.txt. A non-empty
+# extra.md in the run directory (what the caller found: team-backlog writes its team-solve evidence there) is
+# added to the Description. Without a
 # template the body is the description and the test results. Nothing is added that a run did not record.
 set -u
 r="$1"; issue="${2:-}"
+# No issue arg: the branch name carries it (team-backlog's memdoor/issue-<n>).
+[ -n "$issue" ] || issue=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | sed -nE 's#^.*/issue-([0-9]+)$#\1#p')
 [ -s "$r/description.md" ] || { echo "no description.md: pr-description wrote nothing"; exit 1; }
 head -1 "$r/description.md" > "$r/title.txt"; tail -n +2 "$r/description.md" | sed '1{/^$/d;}' > "$r/desc-body.md"
+[ -s "$r/extra.md" ] && { printf '\n'; cat "$r/extra.md"; } >> "$r/desc-body.md"
 t=.github/PULL_REQUEST_TEMPLATE.md
 if [ -f "$t" ]; then
   awk -v desc="$r/desc-body.md" -v logs="$r/checks.txt" -v tsv="$r/checks.tsv" -v issue="$issue" '

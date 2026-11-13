@@ -292,3 +292,21 @@ func TestPRCreateCINoChecksAndNoPullRequest(t *testing.T) {
 		t.Fatalf("no url: exit %d:\n%s", code, out)
 	}
 }
+
+// body.sh takes the issue number from a memdoor/issue-<n> branch when no issue arg is given, and adds
+// extra.md (what the caller found) to the Description.
+func TestPRCreateBodyTakesTheIssueFromTheBranchAndAddsExtra(t *testing.T) {
+	dir, run := prRun(t, map[string]string{".github/PULL_REQUEST_TEMPLATE.md": prTemplate})
+	gitIn(t, dir, "init", "-q", "-b", "main")
+	writeAll(t, map[string]string{filepath.Join(dir, "a.txt"): "a\n", filepath.Join(run, "checks.tsv"): "", filepath.Join(run, "checks.txt"): "none\n", filepath.Join(run, "extra.md"): "team-solve found it.\n"}, 0o644)
+	gitIn(t, dir, "add", "a.txt")
+	gitIn(t, dir, "commit", "-qm", "base")
+	gitIn(t, dir, "checkout", "-q", "-b", "memdoor/issue-42")
+	if out, code := prScript(t, dir, "body.sh", nil, run, ""); code != 0 {
+		t.Fatalf("exit %d:\n%s", code, out)
+	}
+	body := readPR(t, filepath.Join(run, "body.md"))
+	if !strings.Contains(body, "Fixes #42") || !strings.Contains(body, "team-solve found it.") {
+		t.Fatalf("body:\n%s", body)
+	}
+}

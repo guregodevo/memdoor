@@ -134,3 +134,96 @@ func TestNextEndsQuietlyOnAnEmptyBacklog(t *testing.T) {
 		t.Fatalf("exit %d, output:\n%s", code, out)
 	}
 }
+
+// prStep runs team-backlog's pr step on a worktree with a change in it, a fake gh and a fake memdoor.
+// pw is the pr_workflow arg. It returns the output, the exit code, the project dir and the fake tools' call log.
+func prStep(t *testing.T, pw, memdoorExit string) (string, int, string, string) {
+	t.Helper()
+	var step struct {
+		Command string `yaml:"command"`
+	}
+	raw, err := os.ReadFile(filepath.Join("team-backlog", "steps", "pr.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := yaml.Unmarshal(raw, &step); err != nil {
+		t.Fatal(err)
+	}
+	cmdText := strings.NewReplacer("{{.partition}}", "t", "{{.pr_workflow}}", pw).Replace(step.Command)
+	dir, bin, remote := t.TempDir(), t.TempDir(), t.TempDir()
+	gitIn(t, remote, "init", "-q", "--bare")
+	wt := filepath.Join(dir, "wt")
+	writeAll(t, map[string]string{filepath.Join(wt, "a.txt"): "a\n"}, 0o644)
+	gitIn(t, wt, "init", "-q", "-b", "main")
+	gitIn(t, wt, "add", "a.txt")
+	gitIn(t, wt, "commit", "-qm", "base")
+	gitIn(t, wt, "remote", "add", "origin", remote)
+	gitIn(t, wt, "checkout", "-q", "-b", "memdoor/issue-5")
+	writeAll(t, map[string]string{filepath.Join(wt, "fix.txt"): "fixed\n"}, 0o644)
+	run := filepath.Join(dir, "solve")
+	r := filepath.Join(dir, ".memdoor", "runs", "team-backlog-t")
+	writeAll(t, map[string]string{
+		filepath.Join(r, "number.txt"):         "5\n",
+		filepath.Join(r, "worktree.txt"):       wt + "\n",
+		filepath.Join(r, "solve-run.txt"):      run + "\n",
+		filepath.Join(run, "keep.txt"):         "keep: the change passed\n",
+		filepath.Join(run, "check-kind.txt"):   "tests\n",
+		filepath.Join(run, "final-status.txt"): "0\n",
+	}, 0o644)
+	calls := filepath.Join(bin, "calls.txt")
+	writeAll(t, map[string]string{
+		filepath.Join(bin, "gh"):      "#!/bin/sh\necho \"gh $*\" >> '" + calls + "'\n[ \"$1 $2\" = \"issue view\" ] && echo 'Fix the thing'\n[ \"$1 $2\" = \"pr create\" ] && echo https://github.com/o/r/pull/7\nexit 0\n",
+		filepath.Join(bin, "memdoor"): "#!/bin/sh\necho \"memdoor $*\" >> '" + calls + "'\nwhile [ $# -gt 0 ]; do [ \"$1\" = --dir ] && d=\"$2\"; shift; done\nif [ " + memdoorExit + " = 0 ]; then echo https://github.com/o/r/pull/9 > \"$d/.memdoor/runs/pr-create-backlog-5/url.txt\"; fi\nexit " + memdoorExit + "\n",
+	}, 0o755)
+	cmd := exec.Command("sh", "-c", cmdText)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "PATH="+bin+":"+os.Getenv("PATH"), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+	out, err := cmd.CombinedOutput()
+	code := 0
+	if ee, ok := err.(*exec.ExitError); ok {
+		code = ee.ExitCode()
+	} else if err != nil {
+		t.Fatal(err)
+	}
+	b, _ := os.ReadFile(calls)
+	return string(out), code, dir, string(b)
+}
+
+// With pr_workflow set the named workflow opens the pull request in the worktree, with the team's evidence
+// as extra.md, and the step itself pushes nothing and calls no gh pr create.
+func TestPRStepHandsTheChangeToPRCreate(t *testing.T) {
+	out, code, dir, calls := prStep(t, "pr-create", "0")
+	wt := filepath.Join(dir, "wt")
+	if code != 0 {
+		t.Fatalf("exit %d:\n%s", code, out)
+	}
+	if !strings.Contains(calls, "memdoor workflow run pr-create --dir "+wt+" --partition backlog-5 --wait") || strings.Contains(calls, "pr create") {
+		t.Fatalf("calls:\n%s", calls)
+	}
+	extra, _ := os.ReadFile(filepath.Join(wt, ".memdoor", "runs", "pr-create-backlog-5", "extra.md"))
+	if !strings.Contains(string(extra), "keep: the change passed") || strings.Contains(string(extra), "Closes #5") {
+		t.Fatalf("extra.md:\n%s", extra)
+	}
+	if got := gitIn(t, wt, "log", "--format=%s", "-1"); got != "Fix the thing (#5)" {
+		t.Fatalf("commit %q", got)
+	}
+	if s, _ := os.ReadFile(filepath.Join(dir, ".memdoor", "runs", "team-backlog-t", "summary.txt")); !strings.Contains(string(s), "/pull/9") {
+		t.Fatalf("summary %q", s)
+	}
+}
+
+// A nested workflow that fails leaves the change committed and fails the step, naming the exit status.
+func TestPRStepFailsWhenPRCreateFails(t *testing.T) {
+	out, code, _, _ := prStep(t, "pr-create", "2")
+	if code == 0 || !strings.Contains(out, "pr-create ended with exit 2") {
+		t.Fatalf("exit %d:\n%s", code, out)
+	}
+}
+
+// With no pr_workflow the step opens the pull request itself, as before.
+func TestPRStepDefaultStillOpensItsOwn(t *testing.T) {
+	out, code, _, calls := prStep(t, "", "0")
+	if code != 0 || !strings.Contains(calls, "gh pr create --head memdoor/issue-5") || strings.Contains(calls, "memdoor workflow") {
+		t.Fatalf("exit %d:\n%s\ncalls:\n%s", code, out, calls)
+	}
+}

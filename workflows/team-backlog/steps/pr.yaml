@@ -1,6 +1,9 @@
 type: command
 # The fix the Check passed goes up as a pull request that closes the issue.
 # It carries what the team found: keep's line, the Check, the review and the judge.
+# With pr_workflow set (pr-create) that workflow opens it, with its own checks.
+args:
+  pr_workflow: ""   # a workflow that opens the pull request (pr-create); empty: this step opens it itself
 when: test "$(cat .memdoor/runs/team-backlog-{{.partition}}/solve-status.txt 2>/dev/null)" = 0
 requires:
   - table_pattern: solve
@@ -11,13 +14,25 @@ command: |
   git -C "$wt" add -A -- . ':(exclude).memdoor'
   if git -C "$wt" diff --cached --quiet; then echo "nothing to commit: the run changed no file" | tee "$r/summary.txt"; exit 0; fi
   git -C "$wt" -c user.name="memdoor" -c user.email="memdoor@localhost" commit -q -m "$title (#$n)"
-  git -C "$wt" push -q -u origin "memdoor/issue-$n"
   {
     printf 'Closes #%s.\n\nteam-solve, run `%s`:\n\n- %s\n- the Check: %s\n' "$n" "$(basename "$run")" "$(head -1 "$run/keep.txt" 2>/dev/null || echo 'keep: not reached')" "$(cat "$run/check-kind.txt" 2>/dev/null || echo '?') $(cat "$run/final-status.txt" 2>/dev/null || cat "$run/direct-status.txt" 2>/dev/null || echo '?')"
     [ -s "$run/verdict.md" ] && printf -- '- the judge: %s\n' "$(head -1 "$run/verdict.md")"
     [ -s "$run/review.md" ] && printf -- '- the review: %s\n' "$(head -1 "$run/review.md")"
     printf '\n```\n%s\n```\n' "$(tail -15 "$run/final-check.log" 2>/dev/null || tail -15 "$run/direct-check.log" 2>/dev/null || echo 'no check log')"
   } > "$r/pr-body.md"
+  pw='{{.pr_workflow}}'
+  if [ -n "$pw" ]; then
+    # The named workflow opens it, in the worktree: pr-create syncs with the default branch, runs its checks,
+    # fills the repository's template (the issue number comes from the branch name) and reads CI. What
+    # team-solve found goes in as extra.md, which pr-create adds to the Description.
+    d="$wt/.memdoor/runs/pr-create-backlog-$n"; mkdir -p "$d"; rm -f "$d/url.txt"
+    tail -n +3 "$r/pr-body.md" > "$d/extra.md"
+    memdoor workflow run "$pw" --dir "$wt" --partition "backlog-$n" --wait > "$r/pr-workflow-out.txt" 2> "$r/pr-workflow-progress.txt" && st=0 || st=$?
+    if [ "$st" != 0 ]; then tail -5 "$r/pr-workflow-progress.txt"; echo "$pw ended with exit $st: the change is committed in $wt, no pull request"; exit 1; fi
+    cp "$d/url.txt" "$r/summary.txt" 2>/dev/null || echo "$pw finished without opening a pull request (its open arg is draft): $d/body.md" | tee "$r/summary.txt"
+    exit 0
+  fi
+  git -C "$wt" push -q -u origin "memdoor/issue-$n"
   url=$(gh pr create --head "memdoor/issue-$n" --title "$title" --body-file "$r/pr-body.md")
   printf '%s\n' "$url" | tee "$r/summary.txt"
 timeout: 10m
