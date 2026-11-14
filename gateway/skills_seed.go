@@ -44,7 +44,8 @@ func SeedEmbeddedWorkflows() {
 // is written (unless its unit, as unit names it, is on disk and the seed
 // never wrote any of it); an unedited file is refreshed when the shipped
 // version changes; an edited file is left alone forever (a WARN notes when
-// the shipped version has moved on so the divergence is visible).
+// the shipped version has moved on so the divergence is visible). A unit of
+// several files with one edited file is left alone whole.
 func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return
@@ -125,6 +126,45 @@ func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 		ours[u] = true
 		log.Warn(fmt.Sprintf("%s %s is built in: the copy that was there is kept as %s", strings.ToLower(kind), u, filepath.Base(to)), slog.String("path", to))
 	}
+	// AN EDITED WORKFLOW IS KEPT WHOLE (2026-11-14). A unit of several files is one thing: its steps name
+	// each other. Refreshing the files a person did not touch around the one they did left a DAG that no
+	// longer loads: with review.yaml edited (its budget), a release that folded diff.yaml into another
+	// workflow kept the old review.yaml, which requires diff, and removed diff.yaml. So a unit with one
+	// edited file is frozen: nothing in it is refreshed, added or retired, and a WARN says once that the
+	// built-in moved on and how to take it.
+	frozen := map[string]bool{}
+	for rel, hash := range manifest {
+		u := unit(rel)
+		if u == rel || kept[u] {
+			continue
+		}
+		onDisk, err := os.ReadFile(filepath.Join(dir, filepath.FromSlash(rel)))
+		if err != nil || hashBytes(onDisk) == hash {
+			continue
+		}
+		if shipped, err := fs.ReadFile(fsys, rel); err == nil && hashBytes(onDisk) == hashBytes(shipped) {
+			continue // the shipped file, copied in by hand: adopted below, not an edit
+		}
+		frozen[u] = true
+	}
+	movedOn := map[string]bool{}
+	for _, rel := range files {
+		if u := unit(rel); frozen[u] {
+			if shipped, err := fs.ReadFile(fsys, rel); err == nil && manifest[rel] != hashBytes(shipped) {
+				movedOn[u] = true
+			}
+		}
+	}
+	for rel := range manifest {
+		if u := unit(rel); frozen[u] && !shippedNow[rel] {
+			movedOn[u] = true
+		}
+	}
+	for u := range movedOn {
+		diverged++
+		log.Warn(fmt.Sprintf("%s %s: you edited it, so your copy is kept whole and the newer built-in is not applied. To take the built-in, move %s away and restart", strings.ToLower(kind), u, filepath.Join(dir, filepath.FromSlash(u))),
+			slog.String("unit", u), slog.String("path", filepath.Join(dir, filepath.FromSlash(u))))
+	}
 	for _, rel := range files {
 		if kept[unit(rel)] {
 			continue
@@ -134,6 +174,17 @@ func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 			continue
 		}
 		shippedHash := hashBytes(shipped)
+		if frozen[unit(rel)] {
+			// Nothing new or changed goes into a frozen unit. A file of it that went missing comes back
+			// only when it is the one the seed wrote before: the same step, not the new version's.
+			target := filepath.Join(dir, filepath.FromSlash(rel))
+			if _, err := os.Stat(target); os.IsNotExist(err) && manifest[rel] == shippedHash {
+				if os.MkdirAll(filepath.Dir(target), 0o755) == nil && os.WriteFile(target, shipped, 0o644) == nil {
+					seeded++
+				}
+			}
+			continue
+		}
 		target := filepath.Join(dir, filepath.FromSlash(rel))
 		onDisk, readErr := os.ReadFile(target)
 		switch {
@@ -176,7 +227,7 @@ func seedEmbedded(fsys fs.FS, dir, kind string, unit func(rel string) string) {
 	// seed wrote and nobody edited is removed; an edited copy stays and becomes
 	// the user's. A directory the removal empties goes with it.
 	for rel, hash := range manifest {
-		if shippedNow[rel] {
+		if shippedNow[rel] || frozen[unit(rel)] {
 			continue
 		}
 		target := filepath.Join(dir, filepath.FromSlash(rel))

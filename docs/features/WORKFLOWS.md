@@ -266,7 +266,9 @@ Ten workflows ship in the binary (`workflows/`, embedded) and are seeded
 into the library at the gateway's boot (`SeedEmbeddedWorkflows`, the skill
 seed's rules): so they run in a repository with no `.memdoor` at all, a
 GitHub job's first included. A project's own workflow of the same name wins;
-an edited library copy is never overwritten; a library directory of that
+an edited library copy is never overwritten, and the whole workflow is kept
+as it is once one of its files is edited (a warning says when the built-in
+moved on: move the folder away and restart to take it); a library directory of that
 name the seed did not write is moved to `<name>-mine` and the built-in takes
 the name.
 
