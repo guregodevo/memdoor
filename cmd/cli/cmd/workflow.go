@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -194,6 +195,7 @@ its target exists, never when the model says so; a re-run skips what exists.
   memdoor workflow stop <run-id>         cancel a run
   memdoor workflow approve <run-id> <task>   complete an external task
   memdoor workflow history <name>        what a workflow did: every run, newest first
+  memdoor workflow check <name|path>     load it as a run would, compile included, and start nothing
 
 In the TUI, /workflow draws the graph as it runs. Every run is kept in the
 project's run table (.memdoor/runs.db), so history answers for runs that
@@ -577,8 +579,64 @@ func init() {
 	workflowRunCmd.Flags().StringVar(&workflowModelFlag, "model", "", "the model every agent and llm step runs on: an id memdoor model search shows, provider:id when two providers list it; a step with a model: of its own keeps it")
 	workflowRunCmd.Flags().StringVar(&workflowPartitionFlag, "partition", "", "resume an earlier run by its partition (status shows it), or \"today\" for a DAG run once a day; a run is fresh by default")
 	workflowHistoryCmd.Flags().IntVar(&workflowHistoryLimit, "limit", 0, "history: how many runs back to show (default 20)")
-	workflowCmd.AddCommand(workflowRunCmd, workflowTryCmd, workflowStatusCmd, workflowStopCmd, workflowApproveCmd, workflowChangesCmd, workflowDiffCmd, workflowResumeCmd, workflowHistoryCmd)
+	workflowCmd.AddCommand(workflowRunCmd, workflowTryCmd, workflowStatusCmd, workflowStopCmd, workflowApproveCmd, workflowChangesCmd, workflowDiffCmd, workflowResumeCmd, workflowHistoryCmd, workflowCheckCmd)
 	rootCmd.AddCommand(workflowCmd)
+}
+
+// workflowCheckResponse is what the gateway loaded: the same tasks a run of it would have.
+type workflowCheckResponse struct {
+	Name  string              `json:"name"`
+	Dir   string              `json:"dir"`
+	Tasks []workflowCheckTask `json:"tasks"`
+}
+
+type workflowCheckTask struct {
+	Name     string   `json:"name"`
+	Type     string   `json:"type"`
+	Requires []string `json:"requires"`
+	External bool     `json:"external"`
+	Target   string   `json:"target"`
+}
+
+// workflowCheckCmd loads a workflow as `run` does, mario's compile included,
+// and starts nothing: a changed workflow is refused here, with every problem
+// named, before a run pays for a model call (#333's compile step).
+var workflowCheckCmd = &cobra.Command{
+	Use:   "check <name|path>",
+	Short: "Load a workflow as a run would, its compile included, and start nothing: its tasks, or every problem with the file and the fix (exit 1)",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := firstRunReady(); err != nil {
+			return err
+		}
+		dir, err := workflowDir(projectDirFlag)
+		if err != nil {
+			return err
+		}
+		var out workflowCheckResponse
+		if err := workflowPost("check", map[string]interface{}{"dir": dir, "name": args[0]}, &out); err != nil {
+			return fmt.Errorf("%s does not load: %w", args[0], err)
+		}
+		fprintWorkflowCheck(os.Stdout, out)
+		return nil
+	},
+}
+
+func fprintWorkflowCheck(w io.Writer, out workflowCheckResponse) {
+	fmt.Fprintf(w, "✓ %s loads: %d tasks, nothing ran (%s)\n", out.Name, len(out.Tasks), out.Dir)
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
+	for _, t := range out.Tasks {
+		kind := t.Type
+		if t.External {
+			kind = "external"
+		}
+		requires := ""
+		if len(t.Requires) > 0 {
+			requires = "requires " + strings.Join(t.Requires, ", ")
+		}
+		fmt.Fprintf(tw, "  %s\t%s\t%s\n", t.Name, kind, requires)
+	}
+	tw.Flush()
 }
 
 // tuiWorkflowOps is what the TUI panel is handed: the same gateway calls,

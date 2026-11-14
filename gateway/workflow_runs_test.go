@@ -709,3 +709,50 @@ func TestALedgerRowNamesItsRunFolderAndStep(t *testing.T) {
 		}
 	}
 }
+
+// check loads a workflow as a run would and starts nothing: the tasks of one
+// that loads, and in words what mario refuses, a cycle or a template that
+// reads an arg it does not declare (its compile). Mutation check: answer check
+// with startWorkflow and the run count is no longer 0.
+func TestCheckLoadsAWorkflowAndStartsNoRun(t *testing.T) {
+	dir := t.TempDir()
+	writeReleaseWorkflow(t, dir)
+	write := func(wf, task, yaml string) {
+		steps := filepath.Join(dir, ".memdoor", "workflows", wf, "steps")
+		if err := os.MkdirAll(steps, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(steps, task+".yaml"), []byte(yaml), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("loop", "a", "type: command\ncommand: \"true\"\nrequires:\n  - table_pattern: b\ntarget:\n  command: \"true\"\n")
+	write("loop", "b", "type: command\ncommand: \"true\"\nrequires:\n  - table_pattern: a\ntarget:\n  command: \"true\"\n")
+	write("undeclared", "report", "type: command\ncommand: \"echo {{.day}}\"\ntarget:\n  command: \"true\"\n")
+	s := runServer(t, &Server{})
+	call := func(name string) (int, map[string]interface{}) {
+		b, _ := json.Marshal(map[string]interface{}{"dir": dir, "name": name})
+		rec := httptest.NewRecorder()
+		s.handleWorkflow(rec, authenticatedRequest(http.MethodPost, "/api/workflow/check", bytes.NewReader(b), "system:internal"))
+		var out map[string]interface{}
+		_ = json.Unmarshal(rec.Body.Bytes(), &out)
+		return rec.Code, out
+	}
+	code, out := call("release")
+	tasks, _ := out["tasks"].([]interface{})
+	if code != http.StatusOK || out["name"] != "release" || len(tasks) != 4 {
+		t.Fatalf("release: %d %v", code, out)
+	}
+	if n := len(s.workflows().runs); n != 0 {
+		t.Fatalf("check started %d run(s)", n)
+	}
+	for name, want := range map[string]string{"loop": "cycle", "undeclared": "day", "missing": "no workflow"} {
+		code, out := call(name)
+		if msg, _ := out["error"].(string); code != http.StatusBadRequest || !strings.Contains(strings.ToLower(msg), want) {
+			t.Errorf("%s: %d %q, want 400 naming %q", name, code, msg, want)
+		}
+	}
+	if code, out := call(filepath.Join(dir, ".memdoor", "workflows", "release")); code != http.StatusOK || out["name"] != "release" {
+		t.Errorf("a workflow named by its path: %d %v", code, out)
+	}
+}
