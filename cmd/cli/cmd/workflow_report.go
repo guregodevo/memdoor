@@ -45,12 +45,30 @@ func runFolders(project string) ([]string, error) {
 	}
 	var dirs []string
 	for _, e := range entries {
-		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
-			dirs = append(dirs, filepath.Join(project, ".memdoor", "runs", e.Name()))
+		// A run's folder holds its files (task.md, keep.txt, the logs). .memdoor/runs/<workflow>/ is not
+		// one: it is the tree the engine keeps each step's output in, <group>/<task>/<partition>, and
+		// holds only directories. Written to last, it used to sort first and the report was empty.
+		if dir := filepath.Join(project, ".memdoor", "runs", e.Name()); e.IsDir() && !strings.HasPrefix(e.Name(), ".") && !onlyDirectories(dir) {
+			dirs = append(dirs, dir)
 		}
 	}
 	sort.Slice(dirs, func(i, j int) bool { return runStarted(dirs[i]).After(runStarted(dirs[j])) })
 	return dirs, nil
+}
+
+// onlyDirectories says a folder holds something and none of it is a file: the engine's step-output tree.
+// An empty folder is a run that has written nothing yet.
+func onlyDirectories(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil || len(entries) == 0 {
+		return false
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			return false
+		}
+	}
+	return true
 }
 
 // runStarted reads the partition off the folder name (<workflow>-2006-01-02T150405),

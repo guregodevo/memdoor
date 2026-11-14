@@ -1,0 +1,9 @@
+type: command
+# The change the Check passed, committed on its branch and pushed.
+when: test "{{ output "solve" | trim }}" = "exit 0"
+requires:
+  - table_pattern: solve
+command: |
+  git -C {{ output "branch" | trim }} add -A -- . ':(exclude).memdoor' && git -C {{ output "branch" | trim }} -c user.name=memdoor -c user.email=memdoor@localhost commit -q -m "$(gh issue view {{ output "next" | trim }} --json title --jq .title) (#{{ output "next" | trim }})" && git -C {{ output "branch" | trim }} push -q -u origin memdoor/issue-{{ output "next" | trim }}
+timeout: 5m
+max_retries: 0

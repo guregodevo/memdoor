@@ -6,6 +6,7 @@ args:
 when: test "{{.open}}" = now && test "{{.ci}}" = yes
 requires:
   - table_pattern: open
-command: sleep 45 && gh pr checks {{ output "open" | trim }} --watch --interval 20
+command: |
+  sleep 45 && gh pr checks {{ output "open" | trim }} --watch --interval 20
 timeout: 60m
 max_retries: 0

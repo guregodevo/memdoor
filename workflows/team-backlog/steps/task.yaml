@@ -1,0 +1,9 @@
+type: command
+# The issue as the task team-solve is given: its title, its body, its number.
+when: test -n "{{ output "next" | trim }}"
+requires:
+  - table_pattern: next
+command: |
+  gh issue view {{ output "next" | trim }} --json number,title,body --jq '"# \(.title)\n\n\(.body)\n\n(issue #\(.number))"'
+timeout: 2m
+max_retries: 0
