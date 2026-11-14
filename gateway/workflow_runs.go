@@ -883,15 +883,46 @@ func (e *workflowBusyError) Error() string {
 	return fmt.Sprintf("%s is already running here as %s — stop it or wait for it", e.name, e.run)
 }
 
-func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, model, prompt string, timeout time.Duration) (*workflowRun, error) {
+// checkWorkflow finds the workflow called name for the project at dir and
+// loads it as a run would: every task against its type's schema, then mario's
+// compile (Compose, BuildDAG on a throwaway repository). Nothing runs. A run
+// starts from what it returns, so `workflow check` refuses what a run would.
+func (s *Server) checkWorkflow(dir, name string) (workflow.Workflow, error) {
 	if dir == "" || !filepath.IsAbs(dir) {
-		return nil, fmt.Errorf("a workflow runs in a project: give its absolute directory")
+		return workflow.Workflow{}, fmt.Errorf("a workflow runs in a project: give its absolute directory")
 	}
 	path, err := workflow.Find(dir, name)
 	if err != nil {
-		return nil, err
+		return workflow.Workflow{}, err
 	}
-	spec, err := workflow.Load(path, workflow.Registry(s.workflowTypes(nil)...))
+	return workflow.Load(path, workflow.Registry(s.workflowTypes(nil)...))
+}
+
+// workflowCheckTask is one task of a checked workflow, as the CLI prints it.
+type workflowCheckTask struct {
+	Name     string   `json:"name"`
+	Type     string   `json:"type,omitempty"`
+	Requires []string `json:"requires,omitempty"`
+	External bool     `json:"external,omitempty"`
+	Target   string   `json:"target,omitempty"`
+}
+
+type workflowCheckJSON struct {
+	Name  string              `json:"name"`
+	Dir   string              `json:"dir"`
+	Tasks []workflowCheckTask `json:"tasks"`
+}
+
+func checkJSON(wf workflow.Workflow) workflowCheckJSON {
+	out := workflowCheckJSON{Name: wf.Name, Dir: wf.Dir, Tasks: []workflowCheckTask{}}
+	for _, t := range wf.Tasks {
+		out.Tasks = append(out.Tasks, workflowCheckTask{Name: t.Name, Type: t.Type, Requires: t.Requires, External: t.External, Target: t.Target})
+	}
+	return out
+}
+
+func (s *Server) startWorkflow(dir, name, session, workspace, actor, partition, model, prompt string, timeout time.Duration) (*workflowRun, error) {
+	spec, err := s.checkWorkflow(dir, name)
 	if err != nil {
 		return nil, err
 	}
@@ -1442,6 +1473,13 @@ func (s *Server) handleWorkflow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		ok(run.snapshot())
+	case "check":
+		wf, err := s.checkWorkflow(req.Dir, req.Name)
+		if err != nil {
+			fail(http.StatusBadRequest, err)
+			return
+		}
+		ok(checkJSON(wf))
 	case "history":
 		// What the workflow did, read from the run table rather than from
 		// this gateway's memory: a run this process never saw — one from
