@@ -78,7 +78,8 @@ const agentSchema = `{
           "table_pattern": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$", "description": "The task required, by name."},
           "project_id": {"type": "string", "description": "Another workflow's name (default: this one)."},
           "dataset_id": {"type": "string", "description": "Another group (default: this task's)."},
-          "external": {"type": "boolean", "description": "Made outside this workflow — a person's approval, another system's file. Never run, only checked."}
+          "external": {"type": "boolean", "description": "Made outside this workflow — a person's approval, another system's file. Never run, only checked."},
+          "with": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Args of the required workflow's tasks, bound when it is pulled in: Go templates, rendered when that task runs."}
         },
         "required": ["table_pattern"],
         "additionalProperties": false

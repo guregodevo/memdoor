@@ -204,6 +204,35 @@ the run's first commit) in the conversation, and `memdoor workflow diff
 instead: that step reruns with the comment, then every step after it, and
 the run returns to the same gate.
 
+## A workflow that requires another
+
+A requirement can name a task of another workflow beside this one: `project_id` is that workflow's name.
+Without `external`, the task and what it requires are pulled into this run and run upstream, at this run's
+partition and working directory (`pkg/workflow/load.go`, `pullUpstream`). Names are
+`<workflow>.<group>.<task>`, so mario builds one graph. Only what is required comes in.
+
+```yaml
+# upper/steps/use.yaml
+type: command
+command: echo used
+requires:
+  - table_pattern: hand
+  - project_id: lower
+    dataset_id: steps
+    table_pattern: make
+    with:
+      dir: '{{ output "upper.steps.hand" }}'
+```
+
+- Order: the pulled workflow's first tasks wait for what the requiring task requires here (`hand`), except
+  what that already needs. So `hand` runs, then `lower`'s tasks, then `use`.
+- `with:` binds the pulled tasks' args. A value is a Go template, rendered when the pulled task runs, over
+  the same args and functions as a prompt (`output`, `file`, `.partition`). `output` takes a dotted name
+  for a task of any workflow in the run. Only a task that declares the arg takes the value.
+- Refused when the files are read: a `with:` key no pulled task declares, one task bound to two values, and
+  a `project_id` with no workflow of that name.
+- With `external: true` nothing changes: the other workflow's target is read, nothing of it runs.
+
 ## A library of workflows
 
 A workflow is reusable because it is files (the maintainer: "workflow can be
