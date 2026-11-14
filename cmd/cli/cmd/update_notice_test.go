@@ -5,6 +5,7 @@ import (
 	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -76,7 +77,7 @@ func TestTheHeadlessCheckIsMarked(t *testing.T) {
 	if _, err := fetchRemoteVersion(); err != nil {
 		t.Fatal(err)
 	}
-	if len(queries) != 2 || queries[0] != "from=cli" || queries[1] != "" {
+	if len(queries) != 2 || queries[0] != "from=cli&"+osq || queries[1] != osq {
 		t.Fatalf("headless marked, window not: %q", queries)
 	}
 }
@@ -107,7 +108,7 @@ func TestTheHeadlessCheckSaysCIOnARunner(t *testing.T) {
 	if _, err := fetchRemoteVersionFrom("cli", time.Second); err != nil {
 		t.Fatal(err)
 	}
-	if len(queries) != 3 || queries[0] != "from=cli&ci=1" || queries[1] != "from=cli&ci=1" || queries[2] != "from=cli" {
+	if len(queries) != 3 || queries[0] != "ci=1&from=cli&"+osq || queries[1] != "ci=1&from=cli&"+osq || queries[2] != "from=cli&"+osq {
 		t.Fatalf("ci marked under either variable, not without: %q", queries)
 	}
 }
@@ -134,7 +135,7 @@ func TestTheOwnersMachinesMarkTheirCheck(t *testing.T) {
 	if _, err := fetchRemoteVersionFrom("cli", time.Second); err != nil {
 		t.Fatal(err)
 	}
-	if len(queries) != 2 || queries[0] != "me=1" || queries[1] != "from=cli&me=1" {
+	if len(queries) != 2 || queries[0] != "me=1&"+osq || queries[1] != "from=cli&me=1&"+osq {
 		t.Fatalf("the owner's machines marked, window and headless: %q", queries)
 	}
 }
@@ -211,3 +212,6 @@ func TestTheWindowChecksInTheBackgroundAndAfterATurn(t *testing.T) {
 		t.Fatalf("a dev build is never told: %q %q fetches %d -> %d", got, say, before, fetches)
 	}
 }
+
+// osq is the part of every check that names its operating system.
+var osq = "os=" + runtime.GOOS
