@@ -58,6 +58,25 @@ func SetHome(t *testing.T, dir string) {
 	t.Setenv("USERPROFILE", dir)
 }
 
+// MainHome is Home for a whole package, from its TestMain: a fresh temporary
+// directory as HOME and USERPROFILE for the rest of the process, and a func
+// that removes it. A test that forgets Home then writes there, not into the
+// developer's ~/.memdoor (2026-11-14: a test posting a rung to /api/route as
+// "human:p" kept that pin in the real ~/.memdoor/model.json).
+func MainHome() (string, func(), error) {
+	home, err := os.MkdirTemp("", "memdoor-test-home-*")
+	if err != nil {
+		return "", nil, err
+	}
+	for _, k := range []string{"HOME", "USERPROFILE"} {
+		if err := os.Setenv(k, home); err != nil {
+			os.RemoveAll(home)
+			return "", nil, err
+		}
+	}
+	return home, func() { os.RemoveAll(home) }, nil
+}
+
 // OwnerOnly fails unless path exists and only its owner can read it.
 //
 // On Windows there are no POSIX mode bits to check: os.Chmod there sets the
