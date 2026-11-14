@@ -2,6 +2,7 @@ type: command
 # The branch has a commit of its own beyond the base branch: there is something to open.
 args:
   base: main   # the branch the pull request goes to
-command: git fetch -q origin {{.base}} && test "$(git rev-list --count origin/{{.base}}..HEAD)" -gt 0
+command: |
+  git fetch -q origin {{.base}} && test "$(git rev-list --count origin/{{.base}}..HEAD)" -gt 0
 timeout: 3m
 max_retries: 0

@@ -1,0 +1,15 @@
+type: template
+# The pull request's body: the issue it closes and what the team found.
+when: test "{{ output "solve" | trim }}" = "exit 0"
+requires:
+  - table_pattern: report
+text: |
+  Closes #{{ output "next" | trim }}.
+
+  team-solve passed its Check on this change. Its report:
+
+  {{ output "report" | trim }}
+target:
+  file: .memdoor/runs/team-backlog-{{.partition}}-pr.md
+timeout: 1m
+max_retries: 0

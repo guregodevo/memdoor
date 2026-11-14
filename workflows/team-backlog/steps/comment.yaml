@@ -1,19 +1,9 @@
 type: command
 # When the team did not pass, a comment on the issue with what it found.
-# The next person starts from the review, the judge and the Check's last lines.
-when: test -s .memdoor/runs/team-backlog-{{.partition}}/number.txt && test "$(cat .memdoor/runs/team-backlog-{{.partition}}/solve-status.txt 2>/dev/null)" != 0
+when: test -n "{{ output "next" | trim }}" && test "{{ output "solve" | trim }}" != "exit 0"
 requires:
-  - table_pattern: solve
+  - table_pattern: comment-body
 command: |
-  set -u
-  r=.memdoor/runs/team-backlog-{{.partition}}; n=$(cat "$r/number.txt"); run=$(cat "$r/solve-run.txt")
-  {
-    printf 'team-solve tried this issue and did not pass its Check (exit %s).\n\n' "$(cat "$r/solve-status.txt")"
-    [ -s "$run/review.md" ] && printf -- '- the review: %s\n' "$(head -1 "$run/review.md")"
-    [ -s "$run/verdict.md" ] && printf -- '- the judge: %s\n' "$(head -1 "$run/verdict.md")"
-    [ -s "$run/keep.txt" ] && printf -- '- %s\n' "$(head -1 "$run/keep.txt")"
-    printf '\n```\n%s\n```\n' "$(tail -10 "$run/final-check.log" 2>/dev/null || tail -10 "$run/direct-check.log" 2>/dev/null || tail -10 "$r/solve-progress.txt")"
-  } > "$r/comment.md"
-  gh issue comment "$n" --body-file "$r/comment.md" > /dev/null && echo "issue #$n: commented with what the team found" | tee "$r/summary.txt"
+  gh issue comment {{ output "next" | trim }} --body-file .memdoor/runs/team-backlog-{{.partition}}-comment.md
 timeout: 5m
 max_retries: 0
