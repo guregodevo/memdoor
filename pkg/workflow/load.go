@@ -83,6 +83,11 @@ func Load(dir string, reg factory.Component) (Workflow, error) {
 		}
 		wf.Defs[d.Name] = d
 	}
+	// A requirement on another workflow's task pulls that workflow in: mario composes the graph, this says
+	// where a workflow of that name is (beside this one, else the library).
+	if err := templates.YamlTaskDefinitions(wf.Defs).Compose(wf.sibling); err != nil {
+		return Workflow{}, fmt.Errorf("workflow %s: %w", wf.Name, err)
+	}
 	if wf.Tasks, err = wf.tasks(); err != nil {
 		return Workflow{}, err
 	}
@@ -93,6 +98,33 @@ func Load(dir string, reg factory.Component) (Workflow, error) {
 		return Workflow{}, err
 	}
 	return wf, nil
+}
+
+// sibling loads the workflow called name for mario's Compose: the one beside this workflow, else the
+// library's. No such workflow is nil, and the requirement is refused as before.
+func (w Workflow) sibling(name string) (map[string]*templates.YamlTaskDefinition, error) {
+	for _, dir := range []string{filepath.Join(filepath.Dir(w.Dir), name), filepath.Join(SharedDir(), name)} {
+		if !isWorkflowDir(dir) {
+			continue
+		}
+		// The engine does not follow a symlink at the root (see Find): hand it the real path.
+		if fi, err := os.Lstat(dir); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+			if real, err := filepath.EvalSymlinks(dir); err == nil {
+				dir = real
+			}
+		}
+		walkErr, defs := templates.Walk(&fileio.LocalFileIO{}, nil, factory.NewValidator(w.reg), dir, "", "", "Prompt")
+		if walkErr != nil {
+			return nil, walkErr
+		}
+		for _, d := range defs {
+			if d.Type == TypeAgent && d.Agent == "" {
+				d.Agent = defaultAgent
+			}
+		}
+		return defs, nil
+	}
+	return nil, nil
 }
 
 // tasks lists the definitions and every external they require.

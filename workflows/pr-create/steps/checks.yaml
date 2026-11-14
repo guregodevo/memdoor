@@ -1,15 +1,10 @@
 type: command
-# The repository's checks, run and recorded: the commands in `checks`, comma-separated. A failure is recorded in
-# the PR's test results as it is. Empty: none run, and the PR says so.
+# The repository's checks, run and recorded: the output's last lines, then `exit N`.
 args:
-  checks: ""   # e.g. "make build,make test,make check,make scan"
+  checks: ""   # one shell line, e.g. "make build && make test"; empty: no check is run
+when: test -n "{{.checks}}"
 requires:
-  - table_pattern: sync
-command: |
-  set -u
-  r=.memdoor/runs/pr-create-{{.partition}}; mkdir -p "$r"
-  w=.memdoor/workflows/pr-create; [ -d "$w" ] || w="$HOME/.memdoor/workflows/pr-create"
-  [ -f "$w/checks.sh" ] || { echo "no $w/checks.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
-  bash "$w/checks.sh" "$r" "{{.checks}}"
+  - table_pattern: merges
+command: out=$( ({{.checks}}) 2>&1 ); s=$?; printf '%s\n' "$out" | tail -40; echo "exit $s"
 timeout: 60m
 max_retries: 0

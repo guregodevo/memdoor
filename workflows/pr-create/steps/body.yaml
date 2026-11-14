@@ -1,15 +1,29 @@
-type: command
-# The title and the body: the PR template filled from the description and the checks.
+type: template
+# The pull request's body: the description, the issue it fixes, the checks and their output.
 args:
-  issue: ""   # the issue number a `Fixes #` line takes; empty: the template's line stays
+  issue: ""    # the issue the pull request fixes; empty: none
+  notes: ""    # what a caller found, added after the description
 requires:
   - table_pattern: checks
-  - table_pattern: describe
-command: |
-  set -u
-  r=.memdoor/runs/pr-create-{{.partition}}
-  w=.memdoor/workflows/pr-create; [ -d "$w" ] || w="$HOME/.memdoor/workflows/pr-create"
-  [ -f "$w/body.sh" ] || { echo "no $w/body.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
-  bash "$w/body.sh" "$r" "{{.issue}}"
+  - project_id: pr-description
+    table_pattern: describe
+  - project_id: pr-description
+    table_pattern: describe-lean
+text: |
+  {{ file (printf ".memdoor/runs/pr-description-%s.md" .partition) | trim }}
+  {{ if .notes | trim }}
+  {{ .notes | trim }}
+  {{ end }}{{ if .issue | trim }}
+  Fixes #{{ .issue | trim }}
+  {{ end }}
+  ## Checks
+
+  {{ if output "checks" | trim }}- [{{ if output "checks" | trim | hasSuffix "exit 0" }}x{{ else }} {{ end }}] the checks pass
+
+  ```
+  {{ output "checks" | trim }}
+  ```{{ else }}None run.{{ end }}
+target:
+  file: .memdoor/runs/pr-create-{{.partition}}/body.md
 timeout: 2m
 max_retries: 0

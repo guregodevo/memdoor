@@ -90,7 +90,7 @@ tasks after it can read it.
 
 `type:` says which; the factory registered for it builds the task — mario's
 `tasks.Base` does everything the engine needs from a definition and a type
-is one function. This gateway offers four, mixed freely in a DAG:
+is one function. This gateway offers five, mixed freely in a DAG:
 
 | type | does | the proof |
 |---|---|---|
@@ -98,6 +98,7 @@ is one function. This gateway offers four, mixed freely in a DAG:
 | `command` | a shell line in the project (`command: git log --oneline -8`) — mario's | its target, or its stdout |
 | `llm` | one model call, no tools (`prompt`, `model`) on this gateway's client — mario's; a `file` target is where the answer is written | its target, or the answer |
 | `decision` | the decision model scores a `condition` on a `state` (a template over outputs and files, like a prompt) at a `threshold`; `else` names the task of the DAG whose answer stands in when no decision model answers — mario's, judged by this gateway's decider (#160) | its target, or `{"p", "threshold", "pass", "by"}` |
+| `template` | text rendered from a Go template (`text:`), no model and no shell — mario's (#19) | its target (the text is written to `target.file`), or the text |
 
 Every output lives at `.memdoor/runs/<workflow>/<group>/<task>/<partition>`
 (mario's `Outputs`), and a prompt reads one with `{{ output "log" }}` — the
@@ -130,6 +131,47 @@ tokens a second on OpenRouter's throughput host (Cerebras) and at 44 on the chea
 (Darkbloom); with thinking on it ran past that host's 32K output cap on a planning
 prompt and wrote nothing, with thinking off it planned in 3 s; and an llm task has no
 window to type /model or ctrl+t in.
+## Templates, another workflow, and the compile (2026-11-14)
+
+All three are mario's (#14, #16, #17, #19, #20, #21). `pkg/workflow` only says where a
+workflow of a given name is (`Workflow.sibling`: beside this one, else the library) and
+registers the `template` type.
+
+**Templates.** `prompt`, `command`, `text`, `when`, `target` and arg values are Go templates
+over the file's `args`, `{{.partition}}`, `{{ output "task" }}` and `{{ file "path" }}`.
+String functions take the value last, so they chain:
+`{{ output "test" | trim | hasSuffix "exit 0" }}`, `{{ .issue | default "none" }}`
+(`trim`, `contains`, `hasPrefix`, `hasSuffix`, `default`).
+
+**Another workflow.** A requirement whose `project_id` names another workflow, without
+`external`, pulls that task and what it requires into the run. Its first tasks wait for what
+the requiring task requires here. `with:` sets the pulled tasks' args; a short
+`{{ output "x" }}` in a `with:` value is this workflow's `x`.
+
+```yaml
+requires:
+  - table_pattern: build
+  - project_id: pr-create
+    table_pattern: ci
+    with:
+      issue: '{{ output "build" | trim }}'
+```
+
+**The compile.** mario's `BuildDAG` compiles the definitions first, so a workflow that does
+not compile is refused when it is read and nothing of it runs. Every problem is reported at
+once, each with the file, the key and the fix:
+
+```
+steps/report.yaml: command: uses {{.day}}, an arg this task does not declare; it would render <no value>. Declare it in this file under args: (day: ""), or use one that is declared: dataset_id, partition, project_id, table_name, title
+steps/report.yaml: command: reads {{ output "log" }}, but this task does not require log, so it may run first and find nothing. Add it in this file under requires: (- table_pattern: log)
+```
+
+Checked: every template parses; a template uses only args its file declares; an output is
+read only from a task that runs first. Before, an undeclared arg rendered `<no value>` into
+the command and the run went on.
+
+`workflows/pr-create` is built from these and ships no script: `README.md` and six YAML steps.
+
 ## The target is the turn's definition of done
 
 An agent task's `target` is handed to its turn as the declared done
