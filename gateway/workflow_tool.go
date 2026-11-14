@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"memdoor/pkg/authorization"
 	"memdoor/pkg/llm"
 	sharedctx "memdoor/pkg/shared/context"
 	"memdoor/tools"
@@ -50,7 +49,7 @@ func (ar *AgentRuntime) turnWorkflowTool(ctx context.Context) *tools.ToolDefinit
 	}
 	workdir, _ := ctx.Value(sharedctx.WorkdirKey).(string)
 	session, _ := ctx.Value(sharedctx.SessionIDKey).(string)
-	t := ar.workflowTool(session, workdir, string(authorization.GetActorID(ctx)))
+	t := ar.workflowTool(session, workdir, turnActor(ctx))
 	return &t
 }
 

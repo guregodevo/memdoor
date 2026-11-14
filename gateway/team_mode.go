@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"memdoor/gateway/infra"
-	"memdoor/pkg/authorization"
 )
 
 // TEAM MODE (#86): Shift+Tab flips the mode, auto and team (the thinking
@@ -86,7 +85,7 @@ func (ar *AgentRuntime) teamTurn(ctx context.Context, userMessage string, sessio
 	if dir == "" {
 		return nil, false
 	}
-	actor := string(authorization.GetActorID(ctx))
+	actor := turnActor(ctx)
 	agent, _ := ctx.Value("buddy_agent_name").(string)
 	var text string
 	run, err := ar.workflows.startWorkflow(dir, teamWorkflow, session.ID, "", actor, "", teamModelLine(session), teamPrompt(userMessage, agent), 0)
