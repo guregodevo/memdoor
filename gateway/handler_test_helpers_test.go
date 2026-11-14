@@ -14,6 +14,7 @@ import (
 
 	"memdoor/gateway/logs"
 	"memdoor/gateway/websocket"
+	"memdoor/internal/testenv"
 	"memdoor/pkg/channel"
 	"memdoor/pkg/domain"
 	"memdoor/pkg/message"
@@ -23,7 +24,19 @@ import (
 	"github.com/google/uuid"
 )
 
+// testHome is the home directory every test in this package runs in, unless
+// it sets its own (testenv.Home).
+var testHome string
+
 func TestMain(m *testing.M) {
+	// No test reaches the developer's ~/.memdoor: a handler writes the kept
+	// pin, the skills seed and the workflow library under the home directory.
+	home, removeHome, err := testenv.MainHome()
+	if err != nil {
+		panic("failed to create the test home: " + err.Error())
+	}
+	testHome = home
+
 	// Initialize the global logger for handler tests (writes to temp dir)
 	tmpDir, err := os.MkdirTemp("", "gateway-test-logs-*")
 	if err != nil {
@@ -35,7 +48,9 @@ func TestMain(m *testing.M) {
 		panic("failed to init global logger: " + err.Error())
 	}
 
-	os.Exit(m.Run())
+	code := m.Run()
+	removeHome()
+	os.Exit(code)
 }
 
 // ---------- Mock: BuddyRepository ----------
