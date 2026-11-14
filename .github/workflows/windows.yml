@@ -23,6 +23,11 @@ on:
   pull_request:
     branches: [ main ]
 
+# This repository's runs are the maintainer's: memdoor marks its version
+# checks me=1, and make metrics leaves them out.
+env:
+  MEMDOOR_OWNER: "1"
+
 jobs:
   build:
     if: github.repository == 'guregodevo/memdoor'
