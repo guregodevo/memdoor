@@ -1,0 +1,8 @@
+type: command
+# The last 300 commits' subjects, for a slow model that cannot read every body.
+requires:
+  - table_pattern: since
+command: |
+  git log --no-merges --format='--- %h %s' -300 {{ if output "since" | trim }}{{ output "since" | trim }}..{{ end }}{{ output "to" | trim }}
+timeout: 2m
+max_retries: 0

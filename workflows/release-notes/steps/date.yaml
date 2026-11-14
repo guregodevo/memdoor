@@ -1,0 +1,8 @@
+type: command
+# The date of the release's commit.
+requires:
+  - table_pattern: to
+command: |
+  git log -1 --format=%cs "{{ output "to" | trim }}"
+timeout: 1m
+max_retries: 0

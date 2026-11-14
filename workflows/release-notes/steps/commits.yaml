@@ -1,0 +1,8 @@
+type: command
+# Every commit since the tag before the release: its hash, its subject, its body.
+requires:
+  - table_pattern: since
+command: |
+  git log --no-merges --format='--- %h %s%n%b' {{ if output "since" | trim }}{{ output "since" | trim }}..{{ end }}{{ output "to" | trim }}
+timeout: 2m
+max_retries: 0

@@ -1,0 +1,15 @@
+type: template
+# The short log for a slow model: the same head, then the subjects only.
+requires:
+  - table_pattern: date
+  - table_pattern: subjects
+text: |
+  release: {{ if eq (output "to" | trim) "HEAD" }}unreleased{{ else }}{{ output "to" | trim }}{{ end }}
+  date: {{ output "date" | trim }}
+  since: {{ output "since" | trim | default "the first commit" }}
+
+  {{ output "subjects" }}
+target:
+  file: .memdoor/runs/release-notes-{{.partition}}-lean.log
+timeout: 1m
+max_retries: 0

@@ -6,7 +6,7 @@ model: thinking off
 # instead when it is not set.
 when: test -s .memdoor/runs/release-notes-{{.partition}}-lean.log && [ -n "${MEMDOOR_LEAN:-}" ]
 prompt: |
-  You write release notes. The commit log is below: its first lines name the release, its date and the tag it follows; after them, every commit since, as `--- <hash> <subject>` and the first lines of the message body.
+  You write release notes. The commit log is below: its first lines name the release, its date and the tag it follows; after them, every commit since, as `--- <hash> <subject>`.
 
   Write the notes in exactly this Markdown shape, and nothing else:
 
@@ -27,7 +27,7 @@ prompt: |
   {{ file (printf ".memdoor/runs/release-notes-%s-lean.log" .partition) }}
   ```
 requires:
-  - table_pattern: log
+  - table_pattern: log-lean
 target:
   file: .memdoor/runs/release-notes-{{.partition}}.md
 timeout: 30m

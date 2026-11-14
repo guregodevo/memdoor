@@ -1,30 +1,15 @@
-type: command
-command: |
-  set -e
-  if [ "$(git rev-parse --is-shallow-repository)" = true ]; then git fetch -q --unshallow --tags origin || true; fi
-  git fetch -q --tags origin 2>/dev/null || true
-  p="{{.partition}}"
-  if git rev-parse -q --verify "$p^{commit}" >/dev/null; then to=$p; else to=HEAD; fi
-  if prev=$(git describe --tags --abbrev=0 "$to^" 2>/dev/null); then range="$prev..$to"; else prev=""; range=$to; fi
-  mkdir -p .memdoor/runs
-  out=.memdoor/runs/release-notes-{{.partition}}.log
-  {
-    echo "release: $([ "$to" = HEAD ] && echo unreleased || echo "$to")"
-    echo "date: $(git log -1 --format=%cs "$to")"
-    echo "since: ${prev:-the first commit}"
-    echo
-    git log --no-merges --format='--- %h %s%n%b' "$range"
-  } > "$out"
-  # A short log for the lean notes (MEMDOOR_LEAN): subjects and the first two
-  # lines of each body, at most 300 commits, small enough for the runner's CPU.
-  {
-    sed -n '1,4p' "$out"
-    # Subjects and the first two lines of each body, at most 300 commits.
-    git log --no-merges --format='--- %h %s%n%b' "$range" | awk '
-      /^--- /{ c++; if (c > 300) exit; print; body=0; blank=0; next }
-      c > 0 { if ($0 == "") { if (++blank <= 1) print; next }
-              if (body < 2) print; body++ }'
-  } > .memdoor/runs/release-notes-{{.partition}}-lean.log
-  echo "$(git rev-list --no-merges --count "$range") commits in ${range}"
-timeout: 5m
+type: template
+# The log the notes are written from: the release, its date, the tag before it, every commit.
+requires:
+  - table_pattern: date
+  - table_pattern: commits
+text: |
+  release: {{ if eq (output "to" | trim) "HEAD" }}unreleased{{ else }}{{ output "to" | trim }}{{ end }}
+  date: {{ output "date" | trim }}
+  since: {{ output "since" | trim | default "the first commit" }}
+
+  {{ output "commits" }}
+target:
+  file: .memdoor/runs/release-notes-{{.partition}}.log
+timeout: 1m
 max_retries: 0

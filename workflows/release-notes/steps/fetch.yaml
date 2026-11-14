@@ -1,0 +1,6 @@
+type: command
+# The history and the tags a shallow checkout lacks.
+command: |
+  git fetch -q --unshallow --tags origin 2>/dev/null || git fetch -q --tags origin 2>/dev/null || true
+timeout: 5m
+max_retries: 0

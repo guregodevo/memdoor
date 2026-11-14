@@ -1,0 +1,8 @@
+type: command
+# The newest tag before the release; nothing when there is none.
+requires:
+  - table_pattern: to
+command: |
+  git describe --tags --abbrev=0 "{{ output "to" | trim }}^" 2>/dev/null || true
+timeout: 1m
+max_retries: 0

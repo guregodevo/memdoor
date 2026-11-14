@@ -89,11 +89,11 @@ func TestBacklogShipsNoScript(t *testing.T) {
 	}
 }
 
-// Every command of team-backlog and pr-create is written as a block. In a one-line YAML value a space then
+// Every command of the workflows rewritten without scripts is written as a block. In a one-line YAML value a space then
 // # starts a comment, so a command holding one (a jq string, `(issue #...)`) is cut off mid-quote: the
 // first real run of team-backlog failed at its task step with an unmatched quote. A block cannot be cut.
 func TestCommandsAreWrittenAsBlocks(t *testing.T) {
-	for _, wf := range []string{"team-backlog", "pr-create"} {
+	for _, wf := range []string{"team-backlog", "pr-create", "release-notes"} {
 		steps, _ := filepath.Glob(filepath.Join(wf, "steps", "*.yaml"))
 		if len(steps) == 0 {
 			t.Fatalf("no steps in %s", wf)

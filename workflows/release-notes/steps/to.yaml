@@ -1,0 +1,8 @@
+type: command
+# The release: the partition when it names a tag or a commit, else HEAD.
+requires:
+  - table_pattern: fetch
+command: |
+  git rev-parse -q --verify "{{.partition}}^{commit}" >/dev/null 2>&1 && echo "{{.partition}}" || echo HEAD
+timeout: 1m
+max_retries: 0
