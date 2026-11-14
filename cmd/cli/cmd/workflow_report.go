@@ -7,7 +7,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"text/tabwriter"
 	"time"
+
+	"memdoor/gateway"
+	"memdoor/gateway/providers"
 
 	"github.com/spf13/cobra"
 )
@@ -16,7 +20,8 @@ import (
 // run's folder (.memdoor/runs/<workflow>-<partition>/) with no gateway: the
 // task, which attempt the pick took, the review and the judge with their
 // reasons, what the Check printed, keep's line (whether the team beat its
-// own single call) and the diff. `workflow runs` lists the runs of this
+// own single call), each step's model calls (tokens and cost, from the
+// ledger) and the diff. `workflow runs` lists the runs of this
 // project with their end; `workflow report [run]` prints one; a run followed
 // with --wait prints it as it ends (#175).
 
@@ -31,7 +36,90 @@ type runReport struct {
 	Verdict  string
 	Keep     string
 	Check    string // the last Check log's tail
+	Steps    []stepCost
 	Diff     string
+}
+
+// stepCost is one step's model calls in a run, summed from the ledger
+// (~/.memdoor/meter.jsonl) by the step's session.
+type stepCost struct {
+	Task                string
+	Calls, Priced       int // Priced: the calls the provider gave a cost for
+	In, Cached, Out, MS int64
+	Cost                float64
+}
+
+// runSteps sums the ledger rows of one run's steps, in the order each step
+// first called a model.
+func runSteps(entries []providers.MeterEntry, run string) []stepCost {
+	var steps []stepCost
+	at := map[string]int{}
+	for _, e := range entries {
+		r, task, ok := gateway.WorkflowStepOfSession(e.Session)
+		if !ok || r != run {
+			continue
+		}
+		i, seen := at[task]
+		if !seen {
+			i = len(steps)
+			at[task] = i
+			steps = append(steps, stepCost{Task: task})
+		}
+		s := &steps[i]
+		s.Calls++
+		s.In += e.InputTokens
+		s.Cached += e.CachedTokens
+		s.Out += e.OutputTokens
+		s.MS += e.DurationMS
+		if e.CostUSD > 0 {
+			s.Priced++
+			s.Cost += e.CostUSD
+		}
+	}
+	return steps
+}
+
+// costCell is the cost the provider reported: "-" when it reported none,
+// a "*" when it reported some of the calls only.
+func (s stepCost) costCell() string {
+	switch {
+	case s.Priced == 0:
+		return "-"
+	case s.Priced < s.Calls:
+		return fmt.Sprintf("%.4f*", s.Cost)
+	}
+	return fmt.Sprintf("%.4f", s.Cost)
+}
+
+func writeSteps(w io.Writer, steps []stepCost) {
+	total := stepCost{Task: "total"}
+	fmt.Fprintf(w, "## The steps\n\n```\n")
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', tabwriter.AlignRight)
+	width := len(total.Task)
+	for _, s := range steps {
+		width = max(width, len(s.Task))
+	}
+	// AlignRight right-aligns the numbers; the step's name is padded to stay on the left.
+	fmt.Fprintf(tw, "%-*s\tcalls\ttokens in\tcached\tout\tmodel time\t$\t\n", width, "step")
+	row := func(s stepCost) {
+		fmt.Fprintf(tw, "%-*s\t%d\t%d\t%d\t%d\t%s\t%s\t\n", width, s.Task, s.Calls, s.In, s.Cached, s.Out, (time.Duration(s.MS) * time.Millisecond).Round(time.Second), s.costCell())
+	}
+	for _, s := range steps {
+		row(s)
+		total.Calls += s.Calls
+		total.Priced += s.Priced
+		total.In += s.In
+		total.Cached += s.Cached
+		total.Out += s.Out
+		total.MS += s.MS
+		total.Cost += s.Cost
+	}
+	row(total)
+	tw.Flush()
+	fmt.Fprintf(w, "```\n\n")
+	if total.Priced < total.Calls {
+		fmt.Fprintf(w, "$ is the cost the provider reported: - where it reported none, * where it reported some calls only.\n\n")
+	}
 }
 
 // runFolders lists .memdoor/runs/* of a project, newest first.
@@ -146,6 +234,14 @@ func readRunReport(dir string) runReport {
 	return r
 }
 
+// readSteps reads the ledger for the run's steps. Only the printed report
+// does: the run list would read the whole ledger once per run.
+func (r *runReport) readSteps() {
+	if entries, err := providers.ReadMeter(); err == nil {
+		r.Steps = runSteps(entries, r.Name)
+	}
+}
+
 // verdictLine is the judge's verdict when it ran, else the review's, else none.
 func (r runReport) verdictLine() string {
 	for _, v := range []string{r.Verdict, r.Review} {
@@ -201,6 +297,9 @@ func (r runReport) write(w io.Writer) {
 	if r.Keep != "" {
 		fmt.Fprintf(w, "## What stayed\n\n%s\n\n", r.Keep)
 	}
+	if len(r.Steps) > 0 {
+		writeSteps(w, r.Steps)
+	}
 	if r.Diff != "" {
 		fmt.Fprintf(w, "## The diff\n\n```diff\n%s\n```\n", r.Diff)
 	}
@@ -233,7 +332,7 @@ var workflowRunsCmd = &cobra.Command{
 
 var workflowReportCmd = &cobra.Command{
 	Use:   "report [run]",
-	Short: "A run's report, read off its folder: the task, the attempts, the Check, the review, the judge, what stayed, the diff",
+	Short: "A run's report, read off its folder: the task, the attempts, the Check, the review, the judge, what stayed, each step's tokens and cost, the diff",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dir, err := workflowDir(projectDirFlag)
@@ -256,7 +355,9 @@ var workflowReportCmd = &cobra.Command{
 			}
 			run = dirs[0]
 		}
-		readRunReport(run).write(os.Stdout)
+		r := readRunReport(run)
+		r.readSteps()
+		r.write(os.Stdout)
 		return nil
 	},
 }
@@ -273,6 +374,7 @@ func reportRunEnd(st workflowRunStatus) {
 		return
 	}
 	r := readRunReport(run)
+	r.readSteps()
 	r.Diff = "" // the diff is the run's own output, on stdout already
 	fmt.Fprintln(os.Stderr)
 	r.write(os.Stderr)

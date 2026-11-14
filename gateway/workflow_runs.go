@@ -290,6 +290,24 @@ func (r *workflowRun) taskOfSession(session string) string {
 	return ""
 }
 
+// WorkflowStepOfSession reads a ledger row's session back into the run's
+// folder name (<workflow>-<partition>, as .memdoor/runs/ holds it) and the
+// step, so a run's report sums its steps' calls with no gateway. Every
+// trigger of one partition is the same folder: a resumed run's calls add up.
+func WorkflowStepOfSession(session string) (run, task string, ok bool) {
+	rest, found := strings.CutPrefix(session, workflowSessionPrefix)
+	if !found {
+		return "", "", false
+	}
+	wf, rest, found := strings.Cut(rest, ":")
+	i := strings.LastIndex(rest, ":")
+	if !found || wf == "" || i <= 0 || i == len(rest)-1 {
+		return "", "", false
+	}
+	partition, _, _ := strings.Cut(rest[:i], "@")
+	return wf + "-" + partition, rest[i+1:], true
+}
+
 // ---- the task types this gateway offers ------------------------------------
 
 // workflowTypes is what a DAG on this gateway may be made of: an agent turn

@@ -687,3 +687,25 @@ func runServer(t testing.TB, s *Server) *Server {
 	t.Cleanup(s.closeRunRepos)
 	return s
 }
+
+// The report reads the ledger with no gateway: a step's session, as
+// taskSession writes it, names the run's folder and the step. Two triggers of
+// one partition (a resume) are one folder. Mutation check: keep the "@stamp"
+// in the folder name and the resumed run's calls are lost.
+func TestALedgerRowNamesItsRunFolderAndStep(t *testing.T) {
+	for _, r := range []*workflowRun{
+		{ID: "team-solve-fanout-20261114-204149", Workflow: "team-solve-fanout", Partition: "2026-11-14T204149"},
+		{ID: "team-solve-fanout-20261114-210000-2", Workflow: "team-solve-fanout", Partition: "2026-11-14T204149"},
+		{ID: "solve-one", Workflow: "solve-one", Partition: "django__django-11099"},
+	} {
+		run, task, ok := WorkflowStepOfSession(r.taskSession("direct-b"))
+		if !ok || run != r.Workflow+"-"+r.Partition || task != "direct-b" {
+			t.Errorf("%s: run %q task %q ok %v", r.taskSession("direct-b"), run, task, ok)
+		}
+	}
+	for _, s := range []string{"", "ws:chan", "workflow:", "workflow:team-solve", "workflow:team-solve:2026-11-14", "workflow:team-solve:2026-11-14:"} {
+		if _, _, ok := WorkflowStepOfSession(s); ok {
+			t.Errorf("%q is no step's session", s)
+		}
+	}
+}

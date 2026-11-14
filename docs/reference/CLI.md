@@ -274,10 +274,13 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
   - `changes` — Request changes at a gate: the task reruns with your comment, then the steps after it, and the run comes back to the gate
   - `diff` — The full diff a run made since it started, committed or not: what you approve at its gate
   - `history` — What a workflow did before: every run, newest first (survives a restart)
+  - `report` — A run's report, read off its folder: the task, the attempts, the Check, the review, the judge, what stayed, each step's tokens and cost, the diff
   - `resume` — Continue a failed or stopped run: what it finished is skipped
   - `run` — Start .memdoor/workflows/<name>/ in this project — a fresh run; the prompt, when given, is the task
+  - `runs` — The runs of this project, newest first, each with its end: the verdict, what stayed, the files changed
   - `status` — Every task's state in a run
   - `stop` — Cancel a run: nothing more starts, the running task is told
+  - `try` — The team on a sample problem, in a fresh folder, followed to its verdict: about two minutes on a key
 
 **Providers and models it runs them on**
 
