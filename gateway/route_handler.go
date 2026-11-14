@@ -241,6 +241,27 @@ func setEffort(s *Session, effort string) error {
 	return nil
 }
 
+// viewSessionRoute is the GET of /api/route. A conversation with no route of
+// its own will start on the kept pin (persistent_pin.go): the footer says so
+// before the first turn, not after it (the maintainer, 2026-10-03: "if someone
+// pins it he should see it pinned"). The pin is laid on a copy of the
+// conversation's metadata, so the mode and effort set before the first turn
+// stay in the view: on a blank copy the footer went back to auto a tick after
+// Shift+Tab or ctrl+t, and the next Shift+Tab sent team again.
+func viewSessionRoute(actor string, re *providers.RemoteEngine, key string, sess *Session, agent string) routeView {
+	if sess == nil || !sessionRouted(sess) {
+		meta := map[string]interface{}{}
+		if sess != nil {
+			meta = sess.GetMetadata()
+		}
+		tmp := &Session{ID: key, Metadata: meta}
+		if applyPersistentPin(actor, tmp) {
+			sess = tmp
+		}
+	}
+	return viewRoute(re, sess, agent)
+}
+
 // handleRoute is GET/POST /api/route.
 func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -287,17 +308,7 @@ func (s *Server) handleRoute(w http.ResponseWriter, r *http.Request) {
 	re := providers.ActiveRemoteEngine()
 	if r.Method == http.MethodGet {
 		sess, _ := s.sessions.GetSession(key) // nil before the first turn
-		if sess == nil || !sessionRouted(sess) {
-			// A conversation with no route of its own will start on the kept
-			// pin (persistent_pin.go): the footer says so before the first
-			// turn, not after it (the maintainer, 2026-10-03: "if someone pins it he
-			// should see it pinned").
-			tmp := &Session{ID: key, Metadata: map[string]interface{}{}}
-			if applyPersistentPin(string(authorization.GetActorID(r.Context())), tmp) {
-				sess = tmp
-			}
-		}
-		_ = json.NewEncoder(w).Encode(viewRoute(re, sess, in.Agent))
+		_ = json.NewEncoder(w).Encode(viewSessionRoute(string(authorization.GetActorID(r.Context())), re, key, sess, in.Agent))
 		return
 	}
 	rung := 0
