@@ -103,8 +103,8 @@ func TestTheBuiltInTeamSolveFanoutLoads(t *testing.T) {
 	}
 }
 
-// team-backlog loads: one issue a run, next to done, each step a command
-// with a clock; the three that answer (pr, comment, done) wait on solve.
+// team-backlog loads: one issue a run, next to done, each step one command or one template with a clock;
+// pr and comment branch on solve's output.
 func TestTheBuiltInTeamBacklogLoads(t *testing.T) {
 	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "team-backlog"))
 	if err != nil {
@@ -114,7 +114,7 @@ func TestTheBuiltInTeamBacklogLoads(t *testing.T) {
 		t.Skip("no built-in team-backlog beside this package")
 	}
 	wf := load(t, dir, &fakeRunner{})
-	for _, name := range []string{"next", "branch", "solve", "pr", "comment", "done"} {
+	for _, name := range []string{"next", "task", "branch", "solve", "report", "commit", "pr-body", "pr", "comment-body", "comment", "done"} {
 		task, ok := wf.Task(name)
 		if !ok {
 			t.Fatalf("no step %s", name)

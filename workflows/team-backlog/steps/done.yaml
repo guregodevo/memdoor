@@ -1,14 +1,11 @@
 type: command
-# The issue is marked tried, so it is never run twice; the worktree goes, the branch stays.
-when: test -s .memdoor/runs/team-backlog-{{.partition}}/number.txt
+# The worktree goes; the branch stays, with the pull request or the comment as the outcome.
+when: test -n "{{ output "next" | trim }}"
 requires:
   - table_pattern: pr
   - table_pattern: comment
+  - table_pattern: branch
 command: |
-  set -u
-  r=.memdoor/runs/team-backlog-{{.partition}}; n=$(cat "$r/number.txt"); wt=$(cat "$r/worktree.txt" 2>/dev/null)
-  printf '%s\n' "$n" >> .memdoor/backlog/tried.txt
-  [ -n "$wt" ] && git worktree remove --force "$wt" 2>/dev/null; git worktree prune
-  echo "issue #$n: $(cat "$r/summary.txt" 2>/dev/null || echo tried)"
+  git worktree remove --force {{ output "branch" | trim }} && git worktree prune
 timeout: 5m
 max_retries: 0

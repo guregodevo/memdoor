@@ -6,6 +6,7 @@ args:
 when: test "{{.open}}" = now
 requires:
   - table_pattern: body
-command: git push -q -u origin HEAD && gh pr create --base {{.base}} --title "$(head -1 .memdoor/runs/pr-description-{{.partition}}.md)" --body-file .memdoor/runs/pr-create-{{.partition}}/body.md
+command: |
+  git push -q -u origin HEAD && gh pr create --base {{.base}} --title "$(head -1 .memdoor/runs/pr-description-{{.partition}}.md)" --body-file .memdoor/runs/pr-create-{{.partition}}/body.md
 timeout: 5m
 max_retries: 0

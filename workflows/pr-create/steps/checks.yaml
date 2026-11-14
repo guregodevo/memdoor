@@ -5,6 +5,7 @@ args:
 when: test -n "{{.checks}}"
 requires:
   - table_pattern: merges
-command: out=$( ({{.checks}}) 2>&1 ); s=$?; printf '%s\n' "$out" | tail -40; echo "exit $s"
+command: |
+  out=$( ({{.checks}}) 2>&1 ); s=$?; printf '%s\n' "$out" | tail -40; echo "exit $s"
 timeout: 60m
 max_retries: 0

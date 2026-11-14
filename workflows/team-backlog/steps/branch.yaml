@@ -1,17 +1,11 @@
 type: command
-# A worktree on a branch of its own, memdoor/issue-<n>, from the default branch.
-# team-solve works there, the repository's own tree untouched.
-when: test -s .memdoor/runs/team-backlog-{{.partition}}/number.txt
+# A worktree on a branch of its own, memdoor/issue-<n>, from the base branch. Its output is the worktree.
+args:
+  base: main   # the branch the work starts from and the pull request goes to
+when: test -n "{{ output "next" | trim }}"
 requires:
   - table_pattern: next
 command: |
-  set -eu
-  r=.memdoor/runs/team-backlog-{{.partition}}; n=$(cat "$r/number.txt")
-  base=$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##'); [ -n "$base" ] || base=$(git rev-parse --abbrev-ref HEAD)
-  git fetch -q origin "$base" 2>/dev/null || true
-  wt=.memdoor/backlog/$n; rm -rf "$wt"; git worktree prune
-  git worktree add -q "$wt" -b "memdoor/issue-$n" "origin/$base" 2>/dev/null || git worktree add -q "$wt" -b "memdoor/issue-$n" "$base"
-  printf '%s\n' "$wt" > "$r/worktree.txt"; printf '%s\n' "$base" > "$r/base.txt"
-  echo "branch memdoor/issue-$n from $base, in $wt"
+  git fetch -q origin {{.base}} && git worktree add -q .memdoor/backlog/{{ output "next" | trim }} -b memdoor/issue-{{ output "next" | trim }} origin/{{.base}} && echo .memdoor/backlog/{{ output "next" | trim }}
 timeout: 5m
 max_retries: 0

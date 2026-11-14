@@ -1,0 +1,9 @@
+type: command
+# What the team found, read off its run: the Check, the review, the judge, what stayed.
+when: test -n "{{ output "next" | trim }}"
+requires:
+  - table_pattern: solve
+command: |
+  memdoor workflow report --dir {{ output "branch" | trim }} | sed -n '/^## The Check/,/^## The diff/p' | sed '$d'
+timeout: 2m
+max_retries: 0

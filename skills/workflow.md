@@ -48,8 +48,11 @@ in one workflow.
 
 - **`agent`** — a turn of a Memdoor agent: `prompt` (+ `agent`). For work
   that needs reading, editing, running, judgement.
-- **`command`** — a shell line, `command: git log --oneline -8`, run in the
-  project; its stdout is kept as the output. For anything deterministic: a
+- **`command`** — a shell line run in the project; its stdout is kept as the
+  output. **Always write it as a block**, `command: |` with the line under
+  it: in a one-line value a space then `#` starts a YAML comment and cuts the
+  command there (`--jq '"(issue #\(.number))"'` reaches the shell as an
+  unclosed quote). For anything deterministic: a
   build, a fetch, a script, a page through `memdoor chrome run`. Cheaper and
   surer than asking an agent to run it.
 - **`llm`** — one model call, no tools, no loop: `prompt` (+ `model`); the
@@ -78,7 +81,8 @@ needs a scored yes or no, `agent` only when the step needs hands.
 ```yaml
 # .memdoor/workflows/digest/steps/log.yaml
 type: command
-command: git log --oneline -10
+command: |
+  git log --oneline -10
 
 # .memdoor/workflows/digest/steps/summary.yaml
 type: llm
@@ -129,7 +133,8 @@ before the task that asked. Never `memdoor workflow run` from a step.
 ```yaml
 # .memdoor/workflows/ship/steps/done.yaml
 type: command
-command: echo shipped
+command: |
+  echo shipped
 requires:
   - table_pattern: build
   - project_id: pr-create
@@ -316,11 +321,13 @@ one" or "for every project", write it there.
 ```
 .memdoor/workflows/release-check/steps/vet.yaml
   type: command
-  command: go vet ./...
+  command: |
+    go vet ./...
 
 .memdoor/workflows/release-check/steps/tests.yaml
   type: command
-  command: go test ./...
+  command: |
+    go test ./...
 
 .memdoor/workflows/release-check/steps/notes.yaml
   type: agent

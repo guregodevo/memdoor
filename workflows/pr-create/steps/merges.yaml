@@ -4,6 +4,7 @@ args:
   base: main   # the branch the pull request goes to
 requires:
   - table_pattern: ahead
-command: git merge-tree --write-tree --name-only origin/{{.base}} HEAD
+command: |
+  git merge-tree --write-tree --name-only origin/{{.base}} HEAD
 timeout: 3m
 max_retries: 0

@@ -57,3 +57,30 @@ func TestARunsReportIsReadOffItsFolder(t *testing.T) {
 		t.Errorf("a folder with nothing in it: %s", empty.line())
 	}
 }
+
+// The engine's own tree of step outputs, .memdoor/runs/<workflow>/<group>/<task>/<partition>, is not a
+// run: it holds directories only. Written to last, it sorted first, and `memdoor workflow report` with no
+// run named printed a header and nothing else (a pull request body on 2026-11-14).
+func TestTheStepOutputsTreeIsNotARun(t *testing.T) {
+	project := t.TempDir()
+	run := filepath.Join(project, ".memdoor", "runs", "team-solve-2026-11-14T124825")
+	outputs := filepath.Join(project, ".memdoor", "runs", "team-solve", "steps", "keep")
+	for _, d := range []string{run, outputs} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(run, "keep.txt"), []byte("kept: the direct attempt\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(outputs, "2026-11-14T124825"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	dirs, err := runFolders(project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dirs) != 1 || filepath.Base(dirs[0]) != "team-solve-2026-11-14T124825" {
+		t.Fatalf("runs = %v, want only the run's folder", dirs)
+	}
+}

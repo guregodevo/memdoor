@@ -1,0 +1,13 @@
+type: template
+# The comment for an issue the team did not solve: what it found, for the next person.
+when: test -n "{{ output "next" | trim }}" && test "{{ output "solve" | trim }}" != "exit 0"
+requires:
+  - table_pattern: report
+text: |
+  team-solve tried this issue and did not pass its Check ({{ output "solve" | trim }}). Its report:
+
+  {{ output "report" | trim }}
+target:
+  file: .memdoor/runs/team-backlog-{{.partition}}-comment.md
+timeout: 1m
+max_retries: 0

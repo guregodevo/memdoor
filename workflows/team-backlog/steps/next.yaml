@@ -1,31 +1,10 @@
 type: command
-# The next open issue nobody is on and nobody tried, within the caps; none ends the run.
-# The run ends quietly when there is none or at the cap.
-# The caps are the workflow's, not a prompt's: at most max_open_prs pull requests of its own open at
-# once (branches memdoor/issue-<n>), one issue a run (the cron's cadence is the budget), never an
-# issue with a human assignee, never one tried before (.memdoor/backlog/tried.txt, or its branch).
+# The next open issue nobody is on: unassigned, no linked pull request, no comment of ours.
 args:
-  label: ""          # only issues with this label; empty: any open issue
-  max_open_prs: "5"  # its own pull requests open at once, by branch prefix memdoor/
+  label: ""           # only issues with this label; empty: any open issue
+  max_open_prs: "1"   # this account's pull requests open at once; at the cap nothing starts
+when: test "$(gh pr list --state open --author @me --json number --jq length)" -lt {{.max_open_prs}}
 command: |
-  set -u
-  r=.memdoor/runs/team-backlog-{{.partition}}; mkdir -p "$r" .memdoor/backlog
-  w=.memdoor/workflows/team-backlog; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-backlog"
-  [ -f "$w/pick-issue.sh" ] || { echo "no $w/pick-issue.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
-  : > "$r/number.txt"
-  command -v gh >/dev/null || { echo "gh is not installed: team-backlog reads and answers issues with it"; exit 1; }
-  gh auth status >/dev/null 2>&1 || { echo "gh is not signed in: run gh auth login (or set GH_TOKEN); team-backlog cannot read this repository's issues without it"; exit 1; }
-  open=$(gh pr list --state open --limit 100 --json headRefName --jq '[.[] | select(.headRefName | startswith("memdoor/issue-"))] | length' 2>/dev/null || echo 0)
-  if [ "$open" -ge "{{.max_open_prs}}" ]; then echo "cap: $open pull requests of team-backlog open, the most is {{.max_open_prs}}; nothing started" | tee "$r/summary.txt"; exit 0; fi
-  gh issue list --state open --limit 200 --json number,title,assignees,labels \
-    --jq '.[] | "\(.number)\t\(.assignees | length)\t\(.labels | map(.name) | join(","))\t\(.title)"' > "$r/issues.tsv" \
-    || { echo "gh issue list failed: no issue was read, so none was tried"; exit 1; }
-  touch .memdoor/backlog/tried.txt
-  { cat .memdoor/backlog/tried.txt; git branch --list 'memdoor/issue-*' --format='%(refname:short)' | sed 's#^memdoor/issue-##'; } | sort -u > "$r/tried.txt"
-  n=$(bash "$w/pick-issue.sh" "$r/issues.tsv" "$r/tried.txt" '{{.label}}')
-  [ -n "$n" ] || { echo "no open issue left to try (label '{{.label}}', $(wc -l < "$r/tried.txt" | tr -d ' ') tried)" | tee "$r/summary.txt"; exit 0; }
-  gh issue view "$n" --json number,title,body --jq '"# \(.title)\n\n\(.body)\n\n(issue #\(.number))"' > "$r/issue.md"
-  printf '%s\n' "$n" > "$r/number.txt"
-  echo "next: issue #$n, $(gh issue view "$n" --json title --jq .title)"
-timeout: 5m
+  gh issue list --search 'no:assignee -linked:pr -commenter:@me {{ if .label }}label:"{{.label}}" {{ end }}sort:created-asc' --limit 1 --json number --jq '.[0].number // empty'
+timeout: 2m
 max_retries: 0
