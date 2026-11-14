@@ -3,6 +3,8 @@ package subagents
 import (
 	"fmt"
 	"strings"
+
+	"memdoor/pkg/shell"
 )
 
 // SubagentPromptParams contains parameters for building a subagent system prompt
@@ -41,7 +43,7 @@ func BuildSubagentSystemPrompt(params SubagentPromptParams) string {
 		"this one task; no side quests.\n\n")
 
 	if params.WorkspaceDir != "" {
-		sb.WriteString(fmt.Sprintf("Working directory for file operations: `%s`\n\n", params.WorkspaceDir))
+		sb.WriteString(fmt.Sprintf("Working directory for file operations: `%s`\n\n", shell.PromptPath(params.WorkspaceDir)))
 	}
 
 	sb.WriteString("When the task is actually done, reply with one or two sentences on what you " +
