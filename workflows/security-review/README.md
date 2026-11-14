@@ -2,7 +2,7 @@
 
 Reviews the change in front of it for security only — a pull request, a branch or the last commit — and fails on what an attacker could use. Not style, not general bugs.
 
-`diff` takes the change the way pr-review's does: in a GitHub pull request, the PR against its base branch; elsewhere, the branch against the default branch, or the last commit, with uncommitted edits included. The review (one step of two, exactly one runs) looks the diff over for what an attacker could reach in the code the change adds:
+The `change` workflow's `diff` step, required here, takes the change: in a GitHub pull request, the PR against its base branch; elsewhere, the branch against the default branch, or the last commit, with uncommitted edits included. The review (one step of two, exactly one runs) looks the diff over for what an attacker could reach in the code the change adds:
 
 - secrets or keys committed
 - injection: SQL, shell, template, path traversal

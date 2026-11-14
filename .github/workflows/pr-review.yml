@@ -3,7 +3,8 @@
 # deepseek/deepseek-v4.1-flash reads the diff in one call (MEMDOOR_LEAN, no
 # agent loop that builds and runs the tests: seconds, not minutes) and each P0
 # gets a second look. Its P0s are advisory: the review is the job summary. A
-# pull request from a fork has no secret and is not reviewed here. It runs on
+# pull request from a fork has no secret and is not reviewed here. The workflow
+# that reviews is the base branch's, never the pull request's own. It runs on
 # pull_request, never pull_request_target: a stranger's code never runs beside
 # a secret.
 name: PR review (Memdoor)
@@ -31,13 +32,26 @@ jobs:
       - uses: actions/checkout@v5
         if: env.HAS_KEY == 'yes'
 
+      # The reviewer is the base's, the reviewed is the head. The checkout is the pull request, so the
+      # diff is its change against the base. The pr-review that reads it, and the workflows it requires,
+      # are taken out of the base commit into a folder outside the checkout and run from there: a pull
+      # request cannot change or break the workflow that reviews it (#342 deleted a step its own
+      # reviewer needed, and the released binary could not run the new one).
+      - name: Take the reviewer from the base
+        if: env.HAS_KEY == 'yes'
+        run: |
+          git fetch -q --no-tags --depth=1 origin "$GITHUB_BASE_REF"
+          mkdir -p "$RUNNER_TEMP/reviewer"
+          git archive FETCH_HEAD workflows | tar -x -C "$RUNNER_TEMP/reviewer"
+          ls "$RUNNER_TEMP/reviewer/workflows/pr-review/steps"
+
       - name: Review on the OpenRouter key
         if: env.HAS_KEY == 'yes'
         uses: guregodevo/memdoor-action@v1
         env:
           MEMDOOR_LEAN: '1'
         with:
-          workflow: pr-review
+          workflow: ${{ runner.temp }}/reviewer/workflows/pr-review
           openrouter-api-key: ${{ secrets.OPEN_ROUTER_API_KEY }}
           model: deepseek/deepseek-v4.1-flash
           timeout: 10m

@@ -4,7 +4,7 @@ model: thinking off
 # GitHub Action sets it with local-model, a model on the runner's CPU): the
 # diff and the commits in the prompt, no tools, no loop. The agent's describe
 # (describe.yaml) runs instead when it is not set.
-when: test -s .memdoor/runs/pr-description-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
+when: test -s .memdoor/runs/change-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
 prompt: |
   You write a pull request description. The unified diff is below: lines starting with + are added, lines starting with - are removed. After it, the commit messages of the change.
 
@@ -29,11 +29,11 @@ prompt: |
   The changed files, with their added and removed line counts:
 
   ```
-  {{ file (printf ".memdoor/runs/pr-description-%s.stat" .partition) }}
+  {{ file (printf ".memdoor/runs/change-%s.stat" .partition) }}
   ```
 
   ```diff
-  {{ file (printf ".memdoor/runs/pr-description-%s.diff" .partition) }}
+  {{ file (printf ".memdoor/runs/change-%s.diff" .partition) }}
   ```
 
   Commit messages:
@@ -42,7 +42,8 @@ prompt: |
   {{ file (printf ".memdoor/runs/pr-description-%s.commits" .partition) }}
   ```
 requires:
-  - table_pattern: diff
+  - project_id: change
+    table_pattern: diff
   - table_pattern: commits
 target:
   file: .memdoor/runs/pr-description-{{.partition}}.md

@@ -4,7 +4,7 @@ model: thinking off
 # Action sets it with local-model, a model on the runner's CPU): the diff in
 # the prompt, no tools, no loop. The agent's review (review.yaml) runs instead
 # when MEMDOOR_LEAN is not set.
-when: test -s .memdoor/runs/security-review-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
+when: test -s .memdoor/runs/change-{{.partition}}.diff && [ -n "${MEMDOOR_LEAN:-}" ]
 prompt: |
   You review a code change for security only. The unified diff is below: lines starting with + are added, lines starting with - are removed. You look for what an attacker could use, and nothing else: not style, not general bugs.
   Look for, in order:
@@ -32,10 +32,11 @@ prompt: |
   **P0** is exploitable now, by the code this change adds: it must not merge. **P1** is exploitable under a condition the change does not itself create; **P2** is hardening. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
 
   ```diff
-  {{ file (printf ".memdoor/runs/security-review-%s.diff" .partition) }}
+  {{ file (printf ".memdoor/runs/change-%s.diff" .partition) }}
   ```
 requires:
-  - table_pattern: diff
+  - project_id: change
+    table_pattern: diff
 target:
   file: .memdoor/runs/security-review-{{.partition}}.md
 timeout: 30m

@@ -4,7 +4,7 @@ type: command
 command: |
   r=.memdoor/runs/write-tests-{{.partition}}
   [ -f "$r.check.sh" ] || exit 1   # baseline failed: its report stands
-  if [ ! -s "$r.diff" ]; then echo "## write-tests" > "$r.md"; echo >> "$r.md"; echo "Nothing changed: no tests to write." >> "$r.md"; exit 0; fi
+  if [ ! -s ".memdoor/runs/change-{{.partition}}.diff" ]; then echo "## write-tests" > "$r.md"; echo >> "$r.md"; echo "Nothing changed: no tests to write." >> "$r.md"; exit 0; fi
   ok=1; sh "$r.check.sh" "$r" > "$r.check" 2>&1 || ok=
   if [ -s "$r.found" ]; then
     {

@@ -11,7 +11,7 @@ prompt: |
   Here is a code change. Lines starting with - are the code before, lines starting with + the code after.
 
   ```diff
-  {{ file (printf ".memdoor/runs/security-review-%s.diff" .partition) }}
+  {{ file (printf ".memdoor/runs/change-%s.diff" .partition) }}
   ```
 
   A security reviewer says:

@@ -162,8 +162,9 @@ func TestTheBuiltInPRCreateLoads(t *testing.T) {
 		t.Skip("no built-in pr-create beside this package")
 	}
 	wf := load(t, dir, &fakeRunner{})
-	// pr-description comes in by requirement: body needs its description, no step runs another workflow.
-	for _, full := range []string{"pr-description.steps.diff", "pr-description.steps.commits", "pr-description.steps.describe", "pr-description.steps.describe-lean"} {
+	// pr-description comes in by requirement, and brings the change workflow's diff with it: body needs its
+	// description, no step runs another workflow.
+	for _, full := range []string{"change.steps.diff", "pr-description.steps.commits", "pr-description.steps.describe", "pr-description.steps.describe-lean"} {
 		if _, ok := wf.Defs[full]; !ok {
 			t.Fatalf("%s was not pulled in", full)
 		}

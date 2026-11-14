@@ -262,7 +262,7 @@ the run's receipt in its README) and are copied the same way.
 
 ### Built in
 
-Ten workflows ship in the binary (`workflows/`, embedded) and are seeded
+The workflows in `workflows/` ship in the binary (embedded) and are seeded
 into the library at the gateway's boot (`SeedEmbeddedWorkflows`, the skill
 seed's rules): so they run in a repository with no `.memdoor` at all, a
 GitHub job's first included. A project's own workflow of the same name wins;
@@ -271,6 +271,11 @@ as it is once one of its files is edited (a warning says when the built-in
 moved on: move the folder away and restart to take it); a library directory of that
 name the seed did not write is moved to `<name>-mine` and the built-in takes
 the name.
+
+`change` is one step, `diff`: it finds the change (a PR against its base, else
+the branch or the last commit) and writes `.memdoor/runs/change-<partition>.diff`,
+`.stat` and `.base`. `pr-review`, `pr-team-review`, `security-review`,
+`write-tests` and `pr-description` require it and carry no diff step of their own.
 
 | Workflow | What it does | Fails when |
 |---|---|---|

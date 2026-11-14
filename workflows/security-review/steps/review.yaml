@@ -3,9 +3,9 @@ agent: coder
 # The full review: an agent that reads the diff, opens the changed files and
 # what they call, and looks for what an attacker could use. Runs when a model
 # key is set; review-lean.yaml runs instead when MEMDOOR_LEAN is.
-when: test -s .memdoor/runs/security-review-{{.partition}}.diff && [ -z "${MEMDOOR_LEAN:-}" ]
+when: test -s .memdoor/runs/change-{{.partition}}.diff && [ -z "${MEMDOOR_LEAN:-}" ]
 prompt: |
-  Review a code change for SECURITY ONLY with the `review` skill (load it first). The change is the unified diff in `.memdoor/runs/security-review-{{.partition}}.diff`; read it to the end, then open the changed files and what they call, so every finding is about the code as it now is.
+  Review a code change for SECURITY ONLY with the `review` skill (load it first). The change is the unified diff in `.memdoor/runs/change-{{.partition}}.diff`; read it to the end, then open the changed files and what they call, so every finding is about the code as it now is.
   You look for what an attacker could use, and nothing else: not style, not general bugs. In order:
   - secrets or keys committed (in the diff, in files it adds, in test fixtures it ships): API keys, tokens, passwords, private keys, connection strings with credentials.
   - injection: SQL built from user input, shell commands built from user input, template or format strings a user reaches, path traversal (`../` in a user-supplied path that reaches a file open, a copy, an archive extract).
@@ -31,7 +31,8 @@ prompt: |
   **P0** is exploitable now, by the code this change adds: it must not merge. **P1** is exploitable under a condition the change does not itself create (an env, a flag, a deploy), or a real hole the attacker reaches only with effort. **P2** is hardening: a defense the change omits, a dependency worth watching. One line per finding, most severe first, each one about a line of the diff. With no findings, write `No findings.` under the heading.
   Change no file in the project: this step reads, runs and writes the review only.
 requires:
-  - table_pattern: diff
+  - project_id: change
+    table_pattern: diff
 target:
   file: .memdoor/runs/security-review-{{.partition}}.md
 budget: 300000

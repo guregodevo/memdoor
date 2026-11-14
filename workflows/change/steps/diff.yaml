@@ -1,7 +1,8 @@
 type: command
+# The change under review: its diff, its stat and its base, whatever the checkout is.
 command: |
   set -e
-  out=.memdoor/runs/pr-review-{{.partition}}.diff
+  out=.memdoor/runs/change-{{.partition}}.diff
   mkdir -p .memdoor/runs
   shallow=$(git rev-parse --is-shallow-repository)
   if [ -n "${GITHUB_BASE_REF:-}" ]; then
@@ -21,7 +22,11 @@ command: |
     else base=$(git hash-object -t tree /dev/null); what="first commit"; fi
   fi
   git diff "$base" > "$out"
-  echo "reviewing the $what: $(git diff --shortstat "$base" | sed 's/^ //')"
-  [ -s "$out" ] || echo "nothing changed: no review"
+  # The files it touches, each with its line counts.
+  git diff --stat=200 "$base" | sed '$d' > .memdoor/runs/change-{{.partition}}.stat
+  # The base, for a step that needs the commits on the change's side.
+  git rev-parse "$base" > .memdoor/runs/change-{{.partition}}.base
+  echo "the change is the $what: $(git diff --shortstat "$base" | sed 's/^ //')"
+  [ -s "$out" ] || echo "nothing changed"
 timeout: 5m
 max_retries: 0

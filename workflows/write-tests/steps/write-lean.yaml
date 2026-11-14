@@ -7,7 +7,7 @@ prompt: |
   You write tests for a code change. The diff (lines starting with + are added, - removed):
 
   ```diff
-  {{ file (printf ".memdoor/runs/write-tests-%s.diff" .partition) }}
+  {{ file (printf ".memdoor/runs/change-%s.diff" .partition) }}
   ```
 
   The changed files, and an existing test of this project to follow for style:

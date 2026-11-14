@@ -3,7 +3,8 @@ type: command
 # merge read it, so what the change fixes is not filed as its fault (a small
 # model blames a change for the bug it removes; see p0-check-1).
 requires:
-  - table_pattern: diff
+  - project_id: change
+    table_pattern: diff
 command: |
   git log -1 --format=%B 2>/dev/null | head -40 > .memdoor/runs/pr-team-review-{{.partition}}.intent
   [ -s .memdoor/runs/pr-team-review-{{.partition}}.intent ] || echo "(no commit message)" > .memdoor/runs/pr-team-review-{{.partition}}.intent

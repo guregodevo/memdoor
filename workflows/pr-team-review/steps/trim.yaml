@@ -7,7 +7,7 @@ type: command
 # MEMDOOR_LEAN_BUDGET bytes (24000, about 6K tokens, a few minutes). The note
 # of what was left out goes to the job summary (verdict). Nothing left to
 # read: the review is written here and review-lean is skipped.
-when: test -s .memdoor/runs/pr-team-review-{{.partition}}.diff
+when: test -s .memdoor/runs/change-{{.partition}}.diff
 command: |
   set -e
   r=.memdoor/runs/pr-team-review-{{.partition}}
@@ -68,13 +68,14 @@ command: |
       if (commentonly) printf "Only comments or blank lines changed, not reviewed: %d files.\n", commentonly > NOTE
       if (comment_hunks) printf "Comment-only hunks dropped inside reviewed files: %d.\n", comment_hunks > NOTE
   }
-  ' "$r.diff"
+  ' ".memdoor/runs/change-{{.partition}}.diff"
   if [ ! -s "$r.lean.diff" ]; then
     printf '## Summary\nThe change touches no code line a model on a CPU can judge: see what was left out below.\n\n## Findings\nNo findings.\n' > "$r.md"
   fi
   cat "$r.trim.txt"
 requires:
-  - table_pattern: diff
+  - project_id: change
+    table_pattern: diff
 target:
   file: .memdoor/runs/pr-team-review-{{.partition}}.trim.txt
 timeout: 2m
