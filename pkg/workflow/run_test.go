@@ -90,7 +90,7 @@ func (echoModel) Complete(_ context.Context, model, prompt string) (string, erro
 // decider (the host without a decision model: every decision task answers
 // by its else command), and mario's pick.
 func types(r *fakeRunner) []tasks.Base {
-	return []tasks.Base{Agent(r), tasks.Command(), tasks.LLM(echoModel{}), tasks.Decision(nil), tasks.Pick()}
+	return []tasks.Base{Agent(r), tasks.Command(), tasks.LLM(echoModel{}), tasks.Decision(nil), tasks.Pick(), tasks.Template()}
 }
 
 func load(t *testing.T, dir string, r *fakeRunner) Workflow {

@@ -1,31 +1,37 @@
 # pr-create
 
-Opens a pull request from the current branch. It runs the repository's checks, has `pr-description` write the title and text, fills the repository's PR template from them and the recorded check output, and opens the pull request. It never merges and never touches the default branch. The default `open: draft` pushes nothing and writes the title and body for you to read:
+Opens a pull request from the current branch. It checks the branch has commits of its own and merges into the base branch, runs the repository's checks, takes the title and text from `pr-description`, writes the body from a template, and opens the pull request. It never merges. The default `open: draft` pushes nothing and writes the body for you to read:
 
 ```
-memdoor workflow run pr-create --wait     # .memdoor/runs/pr-create-<run>/title.txt and body.md
+memdoor workflow run pr-create --wait     # .memdoor/runs/pr-create-<run>/body.md
 ```
 
 ```
-sync ─┬─ checks ─┬─ body ─ open ─ ci
-      └─ describe ┘
+ahead ─ merges ─ checks ───┬─ body ─ open ─ ci
+(pr-description) describe ─┘
 ```
 
-- `sync`: `sync.sh` fetches the default branch and asks git to merge it with the branch in memory. A conflict lists the files and stops the run before any check runs: rebase first. Being behind is reported, not a failure.
-- `checks`: `checks.sh` runs each command of the `checks` arg (comma-separated, e.g. `make build,make test,make check,make scan`) and records its exit status and last 15 lines. A command that fails is recorded as it is, and does not stop the next. Empty: none run, and the body says so.
-- `describe`: `pr-description` on this branch, nested on this gateway: a title, then What, Why, How to test and Risk.
-- `body`: `body.sh` writes `title.txt` and `body.md`. With `.github/PULL_REQUEST_TEMPLATE.md` it replaces the Description section, gives `Fixes #` the `issue` arg, ticks a checkbox whose backticked command passed, leaves a failed one unticked with its exit status, and puts the recorded output where the template has `<test output>`. Without a template the body is the description and the test results. Nothing is added that a run did not record: no attribution line, no claim of a check that did not run.
-- `open`: `open.sh` with `open: now` pushes the branch to `origin` and runs `gh pr create` against the default branch. It refuses on the default branch and when `sync` found a conflict.
-- `ci`: with `open: now`, `ci.sh` polls `gh pr checks` every 20 seconds for up to `ci_wait` minutes, then writes `ci.txt`: each check's result and the pull request's mergeable state. It exits 1 when a check failed or the pull request conflicts. Checks still pending at the end are reported, not failed. A repository with no CI reports `no checks`.
+Every step is YAML. There is no script in this directory.
+
+- `ahead`: a command. The branch has at least one commit beyond `origin/<base>`. On the base branch, or with nothing committed, it fails and the run stops.
+- `merges`: a command, `git merge-tree`. It merges the base into the branch in memory. A conflict fails the step and its output names the files: rebase first. Being behind is not a failure. It needs git 2.38 or later.
+- `checks`: a command. It runs the `checks` line and prints the last 40 lines of output, then `exit N`. Empty `checks`: the step is skipped.
+- `pr-description` is required, not run by a script: its `diff`, `commits` and `describe` steps come into this run and write the title and the What, Why, How to test and Risk.
+- `body`: a `template` step. The description, `Fixes #<issue>` when `issue` is set, `notes`, then the checks: a box ticked when their output ends `exit 0`, and the output under it. No check run reads `None run.` The first line of the body is the title, as `pr-description` wrote it.
+- `open`: a command, only with `open: now`. `git push -u origin HEAD`, then `gh pr create` against `base`, titled with the description's first line. Its output is the pull request's URL.
+- `ci`: a command, only with `open: now` and `ci: yes`. It waits 45 seconds for GitHub to register the checks, then `gh pr checks <url> --watch`. A failed check fails the step. On a repository with no CI on pull requests set `ci: no`: `gh` reports "no checks" as an error.
 
 Args belong to the step that reads them, edited in `~/.memdoor/workflows/pr-create/steps/`:
 
 | arg | default | step | |
 |---|---|---|---|
-| `checks` | empty | `checks` | commands to run, comma-separated |
-| `model` | empty | `describe` | the model `pr-description` runs on |
-| `issue` | empty | `body` | the issue number for `Fixes #` |
-| `open` | `draft` | `open`, `ci` | `now` pushes and opens the pull request, then reads its CI; change both |
-| `ci_wait` | `10` | `ci` | minutes to wait for pending checks |
+| `base` | `main` | `ahead`, `merges`, `open` | the branch the pull request goes to; change all three |
+| `checks` | empty | `checks` | one shell line, e.g. `make build && make test` |
+| `issue` | empty | `body` | the issue the pull request fixes |
+| `notes` | empty | `body` | text added after the description |
+| `open` | `draft` | `open`, `ci` | `now` pushes and opens the pull request; change both |
+| `ci` | `yes` | `ci` | `no` on a repository with no CI on pull requests |
+
+A workflow that requires `pr-create`'s `ci` binds these with `with:`. The body's shape is this workflow's template, not the repository's `.github/PULL_REQUEST_TEMPLATE.md`.
 
 `gh` must be signed in (or `GH_TOKEN` set) for `open: now`. To open it as another account, set `GH_TOKEN` for the run.

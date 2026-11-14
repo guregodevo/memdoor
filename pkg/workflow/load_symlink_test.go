@@ -47,3 +47,26 @@ func TestASymlinkedWorkflowDirIsListed(t *testing.T) {
 		t.Fatalf("Find must return the real directory, got %q want %q", dir, want)
 	}
 }
+
+// A workflow that requires another one finds it through a symlink too: a library entry linked to a
+// checkout is required like any other.
+func TestARequiredWorkflowIsFoundThroughASymlink(t *testing.T) {
+	root := t.TempDir()
+	real := writeWorkflow(t, filepath.Join(root, "elsewhere"), "lower", map[string]string{
+		"make": "type: command\ncommand: echo made\n",
+	})
+	lib := filepath.Join(root, "lib")
+	if err := os.MkdirAll(lib, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(real, filepath.Join(lib, "lower")); err != nil {
+		t.Skip("no symlinks here")
+	}
+	dir := writeWorkflow(t, lib, "upper", map[string]string{
+		"use": "type: command\ncommand: echo used\nrequires:\n  - project_id: lower\n    table_pattern: make\n",
+	})
+	wf := load(t, dir, &fakeRunner{})
+	if _, ok := wf.Defs["lower.steps.make"]; !ok {
+		t.Fatal("the symlinked workflow was not pulled in")
+	}
+}

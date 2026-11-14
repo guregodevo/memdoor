@@ -151,8 +151,8 @@ func TestTheBuiltInQALoads(t *testing.T) {
 	}
 }
 
-// pr-create loads: checks and describe first, body after both, open last; each step a command with an
-// about line (its first comment) the window can show.
+// pr-create loads: ahead and merges first, then checks, body, open and ci, with pr-description pulled in.
+// Each step has an about line (its first comment) the window can show.
 func TestTheBuiltInPRCreateLoads(t *testing.T) {
 	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "pr-create"))
 	if err != nil {
@@ -162,8 +162,14 @@ func TestTheBuiltInPRCreateLoads(t *testing.T) {
 		t.Skip("no built-in pr-create beside this package")
 	}
 	wf := load(t, dir, &fakeRunner{})
-	for _, name := range []string{"sync", "checks", "describe", "body", "open", "ci"} {
-		if _, ok := wf.Task(name); !ok {
+	// pr-description comes in by requirement: body needs its description, no step runs another workflow.
+	for _, full := range []string{"pr-description.steps.diff", "pr-description.steps.commits", "pr-description.steps.describe", "pr-description.steps.describe-lean"} {
+		if _, ok := wf.Defs[full]; !ok {
+			t.Fatalf("%s was not pulled in", full)
+		}
+	}
+	for _, name := range []string{"ahead", "merges", "checks", "body", "open", "ci"} {
+		if _, ok := wf.Defs["pr-create.steps."+name]; !ok {
 			t.Fatalf("no step %s", name)
 		}
 		about := aboutOf(dir, "pr-create", "pr-create.steps."+name)

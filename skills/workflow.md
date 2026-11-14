@@ -27,19 +27,21 @@ requires:               # optional: the tasks this one waits for, by name
   - table_pattern: vet
   - table_pattern: approve
     external: true      # made OUTSIDE the workflow (a person) — see gates
+  - project_id: pr-create   # a task of ANOTHER workflow: it is pulled into this run — see "Using another workflow"
+    table_pattern: ci
 target:                 # optional: what PROVES it done
   file: RELEASE_NOTES.md            # a file that must exist under the project, OR
   command: go test ./pkg/workflow/  # a command that must exit 0 there
 timeout: 10m            # optional, per task; stopped at it with its target there, the task is done
 max_retries: 1          # optional: tries again on failure, this many times
 optional: true          # optional: failed past its retries, the task is passed over and the tasks after it run
-args:                   # optional: values the prompt can use as {{.version}}
-  version: v1.2.0
+args:                   # optional: values THIS file's templates can use as {{.version}}
+  version: v1.2.0       # every {{.name}} a file uses is declared here, in that file
 ```
 
 Only these keys. Anything else is refused with the file and the key named.
 
-## Three kinds of task
+## The kinds of task
 
 `type:` says which; the factory behind it builds the task. Mix them freely
 in one workflow.
@@ -63,9 +65,15 @@ in one workflow.
   settle and a model's bare word should not: score what an `llm` step wrote
   with what the commands printed, then branch on `pass` with `when:`.
 
-Prefer `command` when a shell line does it, `llm` when one answer does it,
-`decision` when the DAG needs a scored yes or no, `agent` only when the
-step needs hands.
+- **`template`** — text rendered from a Go template, no model and no shell:
+  `text:`. The rendered text is the output, and with `target: {file: …}` it
+  is written to that file. For anything assembled from what other tasks
+  produced: a report, a pull request body, an issue. Never a `command` with
+  `cat <<EOF` or `printf` to build text.
+
+Prefer `command` when one shell line does it, `template` when the step
+only assembles text, `llm` when one answer does it, `decision` when the DAG
+needs a scored yes or no, `agent` only when the step needs hands.
 
 ```yaml
 # .memdoor/workflows/digest/steps/log.yaml
@@ -80,6 +88,80 @@ prompt: |
 requires:
   - table_pattern: log
 ```
+
+## Templates
+
+`prompt`, `command`, `text`, `when`, `target` and the values of `args` are
+Go templates. What they can read:
+
+- `{{.name}}`: an arg declared under `args:` in the same file; `{{.partition}}`
+  for the run; `{{.item}}` in a task with `each:`.
+- `{{ output "log" }}`: the output of a task this one requires.
+- `{{ file "path" }}`: a file of the project, as it is when the task runs.
+- `trim`, `contains`, `hasPrefix`, `hasSuffix`, `default`, with the value
+  last so they chain: `{{ output "test" | trim | hasSuffix "exit 0" }}`,
+  `{{ .issue | default "none" }}`.
+
+```yaml
+# .memdoor/workflows/report/steps/body.yaml
+type: template
+args:
+  issue: ""
+requires:
+  - table_pattern: test
+text: |
+  - [{{ if output "test" | trim | hasSuffix "exit 0" }}x{{ else }} {{ end }}] the tests pass
+  {{ if .issue }}Fixes #{{ .issue }}{{ end }}
+target:
+  file: .memdoor/runs/report-{{.partition}}.md
+```
+
+A `command` that must report a failure, not stop the run, prints its own
+exit status as its last line and the template reads it:
+`command: out=$( (go test ./...) 2>&1 ); s=$?; printf '%s\n' "$out" | tail -40; echo "exit $s"`.
+
+## Using another workflow
+
+A workflow uses another by requiring one of its tasks: `project_id` is the
+other workflow's name. That task, and what it requires, run in this run,
+before the task that asked. Never `memdoor workflow run` from a step.
+
+```yaml
+# .memdoor/workflows/ship/steps/done.yaml
+type: command
+command: echo shipped
+requires:
+  - table_pattern: build
+  - project_id: pr-create
+    table_pattern: ci
+    with:
+      issue: '{{ output "build" | trim }}'
+```
+
+- The other workflow's tasks wait for what this task requires here: `build`
+  runs, then `pr-create`'s tasks, then `done`.
+- `with:` sets the other workflow's args. Write a value as you would in this
+  file: `{{ output "build" }}` is this workflow's `build`. Only args the
+  other workflow's tasks declare can be set; its README lists them.
+- With nothing under `with:` the other workflow runs on its own defaults.
+
+## A workflow is compiled before it runs
+
+When a workflow is read, every file is checked, and everything wrong is
+reported at once. Nothing runs until it compiles. Each line names the file,
+the key, the problem and the fix:
+
+```
+steps/report.yaml: command: uses {{.day}}, an arg this task does not declare; it would render <no value>. Declare it in this file under args: (day: ""), or use one that is declared: dataset_id, partition, project_id, table_name, title
+steps/report.yaml: command: reads {{ output "log" }}, but this task does not require log, so it may run first and find nothing. Add it in this file under requires: (- table_pattern: log)
+```
+
+Do what the line says, in the file it names, then run again. The two
+mistakes it catches most:
+
+- An arg is used in one file and declared in another. Args are per file:
+  declare it in each file that uses it.
+- A task reads `{{ output "x" }}` without `x` under its `requires`.
 
 ## The rules that matter
 
@@ -128,7 +210,10 @@ requires:
    or the file by name). Never a Python or shell orchestrator, never a
    script that calls a model API itself; the only code is a `command` task
    that checks or lands something (runs the samples, builds, writes a reply
-   to its file). A loop is unrolled: round 1, round 2, … to its bound, and
+   to its file). **A workflow is its YAML files and a README: no `.sh` beside
+   the steps.** A `command` is one line that is the work itself (`go test
+   ./...`, `git push`, `gh pr create …`). Text is assembled by a `template`
+   task. Another workflow is used by requiring it. A loop is unrolled: round 1, round 2, … to its bound, and
    a round whose predecessor already finished does nothing but pass the
    files on. (2026-10-26: asked to reproduce a published five-agent
    harness, the first two builds wrote a pipeline.py and asked how to call
@@ -204,8 +289,9 @@ how the next person knows what they got.
    in the background and draws itself in the conversation; the person
    watches it. If they asked you to follow it, `workflow(action:
    "status", run_id: …)` or a `cron` every 30 s, never a sleep.
-5. If the run is refused, the error names the file and the key: fix that
-   file and run again.
+5. If the run is refused, each line of the error names the file, the key
+   and the fix ("A workflow is compiled before it runs"): make every fix it
+   lists, then run again.
 6. Never stop a run the person did not ask you to stop. A run that is
    still going is not a problem; a run that failed reports why.
 7. **"Nightly", "every morning", "each Monday"** — Memdoor schedules it, in

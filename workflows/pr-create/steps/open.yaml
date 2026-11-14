@@ -1,14 +1,11 @@
 type: command
-# Opens the pull request, only with `open: now`. The default, draft, prints what it would do.
+# Pushes the branch and opens the pull request, only with `open: now`. Its output is the URL.
 args:
-  open: "draft"   # draft: push nothing; now: push the branch and open the pull request
+  open: draft   # draft: push nothing; now: push the branch and open the pull request
+  base: main    # the branch the pull request goes to
+when: test "{{.open}}" = now
 requires:
   - table_pattern: body
-command: |
-  set -u
-  r=.memdoor/runs/pr-create-{{.partition}}
-  w=.memdoor/workflows/pr-create; [ -d "$w" ] || w="$HOME/.memdoor/workflows/pr-create"
-  [ -f "$w/open.sh" ] || { echo "no $w/open.sh: the workflow's library copy is missing (memdoor setup puts it there)"; exit 1; }
-  bash "$w/open.sh" "$r" "{{.open}}"
+command: git push -q -u origin HEAD && gh pr create --base {{.base}} --title "$(head -1 .memdoor/runs/pr-description-{{.partition}}.md)" --body-file .memdoor/runs/pr-create-{{.partition}}/body.md
 timeout: 5m
 max_retries: 0
