@@ -1,8 +1,12 @@
 type: template
 # Why the fallback runs: review, check, or nothing. Written once, read by the three fallback steps' when.
-# review: the review's rule said FAIL. check: keep kept the work, the final
-# Check did not pass it, and keep.txt holds the line `check 1`. Nothing: the
-# fallback steps are passed over.
+# review: the review's rule said FAIL. check: keep kept the work (a `kept:`
+# line, not `put back:`) and the final Check failed on it: a status other
+# than 0 (recheck's final-status.txt; none, with nothing to run, is not a
+# failure). Nothing: the fallback steps are passed over.
+# Until 2026-11-14 the check branch asked keep.txt for a line that is exactly
+# `check 1`, which keep never writes: only the review's FAIL fired the
+# fallback (#322 meant both).
 requires:
   - table_pattern: keep
 text: |
@@ -11,8 +15,8 @@ text: |
   {{- $keep := printf "%s/keep.txt" $run }}
   {{- $final := printf "%s/final-status.txt" $run }}
   {{- $reviewFailed := and (exists $rule) (file $rule | match "(?m)^FAIL$") }}
-  {{- $checkPassed := and (exists $final) (eq (file $final | trim) "0") }}
-  {{- $checkFailed := and (exists $keep) (file $keep | match "(?m)^kept:") (file $keep | match "(?m)^check 1$") (not $checkPassed) }}
+  {{- $kept := and (exists $keep) (file $keep | match "(?m)^kept:") }}
+  {{- $checkFailed := and $kept (exists $final) (file $final | trim | match "^[1-9][0-9]*$") }}
   {{- if $reviewFailed }}review{{ else if $checkFailed }}check{{ end }}
 timeout: 1m
 max_retries: 0

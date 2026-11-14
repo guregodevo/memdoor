@@ -128,3 +128,49 @@ func TestTeamSolveFanoutFallbackWithNothingAppliedPutsBackWhatKeepKept(t *testin
 		t.Errorf("keep.txt = %q", got)
 	}
 }
+
+// The final Check failed the work keep kept, the review passed it: the fallback applies the next attempt
+// and keep.txt says the check, not the review, sent it there.
+func TestTeamSolveFanoutFallbackOnAFailedCheckAppliesTheNextAttempt(t *testing.T) {
+	dir, r, sh := fallbackRun(t, "PASS")
+	if out, err := sh("printf '1\\n' > .memdoor/runs/team-solve-fanout-1/final-status.txt"); err != nil {
+		t.Fatal(out)
+	}
+	if out, err := sh(loadFallbackStep(t, "fallback-reset").Command); err != nil {
+		t.Fatalf("fallback-reset: %v\n%s", err, out)
+	}
+	if got := read(t, filepath.Join(dir, "a.txt")); got != "start\n" {
+		t.Fatalf("after fallback-reset a.txt = %q, want the tree as the run found it", got)
+	}
+	if out, err := sh("printf 'attempt 2\\n' > a.txt && printf '{\"winner\":2,\"by\":\"prefer\",\"leaders\":[2,3]}\\n' > .memdoor/runs/team-solve-fanout-1/fallback.json"); err != nil {
+		t.Fatal(out)
+	}
+	if out, err := sh(loadFallbackStep(t, "fallback-done").Command); err != nil {
+		t.Fatalf("fallback-done: %v\n%s", err, out)
+	}
+	if got := read(t, filepath.Join(dir, "a.txt")); got != "attempt 2\n" {
+		t.Errorf("a.txt = %q, want attempt 2", got)
+	}
+	if got := read(t, filepath.Join(r, "keep.txt")); !strings.Contains(got, "fallback: the check failed; attempt 2 of the fan-out") {
+		t.Errorf("keep.txt = %q", got)
+	}
+}
+
+// The final Check failed the work keep kept and no other attempt applies: what keep kept stays.
+func TestTeamSolveFanoutFallbackOnAFailedCheckWithNothingAppliedKeepsWhatKeepKept(t *testing.T) {
+	dir, r, sh := fallbackRun(t, "PASS")
+	if out, err := sh("printf '1\\n' > .memdoor/runs/team-solve-fanout-1/final-status.txt"); err != nil {
+		t.Fatal(out)
+	}
+	for _, step := range []string{"fallback-reset", "fallback-done"} {
+		if out, err := sh(loadFallbackStep(t, step).Command); err != nil {
+			t.Fatalf("%s: %v\n%s", step, err, out)
+		}
+	}
+	if got := read(t, filepath.Join(dir, "a.txt")); got != "kept\n" {
+		t.Errorf("a.txt = %q, want what keep kept", got)
+	}
+	if got := read(t, filepath.Join(r, "keep.txt")); !strings.Contains(got, "fallback: the check failed and no other attempt applies; what keep kept stays") {
+		t.Errorf("keep.txt = %q", got)
+	}
+}
