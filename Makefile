@@ -50,8 +50,8 @@ up: build stop-gateway
 	@echo "  → $(HOME)/.local/bin/memdoor -> $(CURDIR)/memdoor"
 	@set -a; [ ! -f .envrc ] || . ./.envrc; set +a; \
 	 echo "=== gateway start $$(date) ===" >> gateway.log; nohup ./memdoor gateway --port $(GATEWAY_PORT) >> gateway.log 2>&1 &
-	@for i in $$(seq 1 30); do curl -sf -m 1 http://127.0.0.1:$(GATEWAY_PORT)/v1/health >/dev/null && break; sleep 1; done
-	@curl -sf -m 2 http://127.0.0.1:$(GATEWAY_PORT)/v1/health >/dev/null \
+	@for i in $$(seq 1 60); do curl -sf -m 1 http://127.0.0.1:$(GATEWAY_PORT)/api/status >/dev/null && break; sleep 1; done
+	@curl -sf -m 2 http://127.0.0.1:$(GATEWAY_PORT)/api/status >/dev/null \
 		&& echo "✅ gateway up on :$(GATEWAY_PORT) — $$(./memdoor --version | head -1)" \
 		|| echo "⚠️  the gateway did not answer on :$(GATEWAY_PORT) — see gateway.log"
 	@./memdoor providers 2>/dev/null | grep -E "connected \(" \
