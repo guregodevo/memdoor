@@ -1,12 +1,14 @@
 package gateway
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
 
 	"memdoor/gateway/providers"
+	"memdoor/pkg/authorization"
 	"memdoor/pkg/shared"
 )
 
@@ -99,6 +101,22 @@ func writePersistentPin(actor string, p *persistentPin) error {
 	}
 	b, _ := json.MarshalIndent(f, "", "  ")
 	return os.WriteFile(path, append(b, '\n'), 0o644)
+}
+
+// turnActor is who a turn is for: the request's actor, else the execution
+// context's. A window's turn comes over the websocket, which carries the
+// person in the execution context only (wsPersonContext). Read as the actor
+// key alone it was nobody, and the kept pin reached it only while one person
+// had kept one: with a second pin in the file the turn ran on the ladder's
+// first rung under a footer that said "pinned by you" (2026-11-14).
+func turnActor(ctx context.Context) string {
+	if a := authorization.GetActorID(ctx); a != "" {
+		return string(a)
+	}
+	if ec := shared.GetExecutionContext(ctx); ec != nil {
+		return string(ec.ActorID)
+	}
+	return ""
 }
 
 // applyPersistentPin puts the actor's kept pin on a conversation that has no

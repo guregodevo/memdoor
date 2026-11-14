@@ -1,9 +1,13 @@
 package gateway
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"memdoor/pkg/authorization"
+	"memdoor/pkg/shared"
 )
 
 // The pin stays: written by /model, taken by every conversation that has no
@@ -154,5 +158,36 @@ func TestTheKeptPinKeepsTheModeAndEffortInTheView(t *testing.T) {
 	}
 	if sessionRouted(sess) {
 		t.Fatal("the view must not pin the conversation itself")
+	}
+}
+
+// A window's turn comes over the websocket with the person in the execution
+// context only (wsPersonContext). With a second kept pin in the file it took
+// none and ran the ladder's first rung (2026-11-14); it takes the person's.
+func TestATurnFromTheWindowTakesThePersonsPin(t *testing.T) {
+	dir := t.TempDir()
+	old := persistentPinPath
+	persistentPinPath = func() string { return filepath.Join(dir, ".memdoor", "model.json") }
+	t.Cleanup(func() { persistentPinPath = old })
+	if err := writePersistentPin("human:greg", &persistentPin{Model: "deepseek/deepseek-v4.1-flash"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writePersistentPin("human:p", &persistentPin{Rung: 2}); err != nil {
+		t.Fatal(err)
+	}
+	ws := shared.WithExecutionContext(context.Background(), &shared.ExecutionContext{ActorID: "human:greg", WorkspaceID: "w"})
+	if got := turnActor(ws); got != "human:greg" {
+		t.Fatalf("the turn is the person's: %q", got)
+	}
+	sess := &Session{ID: "s1", Metadata: map[string]interface{}{}}
+	if !applyPersistentPin(turnActor(ws), sess) || sessionModel(sess) != "deepseek/deepseek-v4.1-flash" {
+		t.Fatalf("the person's pin, not the other one or none: %q", sessionModel(sess))
+	}
+	rest := authorization.WithActorID(ws, "human:p")
+	if got := turnActor(rest); got != "human:p" {
+		t.Fatalf("a request's own actor comes first: %q", got)
+	}
+	if got := turnActor(context.Background()); got != "" {
+		t.Fatalf("no context, no actor: %q", got)
 	}
 }

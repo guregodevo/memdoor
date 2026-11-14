@@ -7,7 +7,6 @@ import (
 
 	"memdoor/gateway/infra"
 	"memdoor/gateway/logs"
-	"memdoor/pkg/authorization"
 	"memdoor/pkg/platform"
 	"memdoor/pkg/shared"
 )
@@ -164,7 +163,7 @@ func (a *AgentExecutorAdapter) ProcessMessage(
 		if a.routes != nil && session.ID != "" {
 			reg, _ = a.routes.GetSession(session.ID)
 		}
-		applyPersistentPin(string(authorization.GetActorID(ctx)), session, reg)
+		applyPersistentPin(turnActor(ctx), session, reg)
 	}
 	ctx = withRouteSink(ctx, a.routeSink(session))
 
