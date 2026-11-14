@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"memdoor/pkg/shell"
 )
 
 func TestProjectInstructionsAreReadFromTheProjectRoot(t *testing.T) {
@@ -65,8 +67,13 @@ func TestNoneModeNamesTheWorkingDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, "Your working directory is: "+dir) {
+	if !strings.Contains(out, "Your working directory is: "+shell.PromptPath(dir)) {
 		t.Fatalf("none mode does not name the workdir: %q", out)
+	}
+	// #337: under Git Bash the model copied D:\a\proj into a redirect and the
+	// backslashes were lost; it is shown /d/a/proj and told why.
+	if h := shell.PathHint(); h != "" && (strings.Contains(out, `\`) || !strings.Contains(out, h)) {
+		t.Fatalf("under Git Bash the workdir is shown as Git Bash writes it: %q", out)
 	}
 	if strings.Contains(out, "All file operations will be relative to this workspace") {
 		t.Fatalf("the guessed-workspace section must not ride along: %q", out)

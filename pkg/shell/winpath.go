@@ -1,6 +1,10 @@
 package shell
 
-import "runtime"
+import (
+	"path/filepath"
+	"runtime"
+	"strings"
+)
 
 // NativePath turns a drive path spelled the POSIX-shell way into the Windows
 // form, on Windows: /i/x, /cygdrive/i/x and /mnt/i/x become I:/x. On Windows
@@ -37,3 +41,37 @@ func nativePath(goos, p string) string {
 }
 
 func isLetter(c byte) bool { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') }
+
+// PromptPath is a path as the model is shown it: in the form the bash tool's
+// shell takes. Under Git Bash on Windows that is the form Git Bash prints,
+// /d/a/proj for D:\a\proj: the model copies the path it is shown into its
+// commands, and bash reads a backslash as an escape. `> D:\a\_temp\proj\src\greet.txt`
+// wrote a file named D:a_tempprojsrcgreet.txt in the working directory, and
+// D:/a/proj became /D:/a/proj, another folder (#337). The file tools take the
+// Git Bash form too (NativePath). PowerShell and cmd keep D:\a\proj, and off
+// Windows a path is unchanged.
+func PromptPath(p string) string {
+	if runtime.GOOS != "windows" || (Name() != Bash && Name() != Sh) {
+		return p
+	}
+	return gitBashPath(p)
+}
+
+// gitBashPath is D:\a\proj as Git Bash writes it, /d/a/proj. filepath.VolumeName
+// is "" off Windows, so there the path only has its separators turned.
+func gitBashPath(p string) string {
+	vol := filepath.VolumeName(p)
+	if len(vol) != 2 || vol[1] != ':' {
+		return filepath.ToSlash(p)
+	}
+	return "/" + strings.ToLower(vol[:1]) + filepath.ToSlash(p[2:])
+}
+
+// PathHint is the line the model gets under Git Bash on Windows about the
+// paths it writes; "" elsewhere.
+func PathHint() string {
+	if runtime.GOOS != "windows" || (Name() != Bash && Name() != Sh) {
+		return ""
+	}
+	return "The bash tool's shell is Git Bash: write paths as it prints them, /d/a/proj/src/x.txt, with forward slashes. A backslash is an escape in bash: the file lands under another name."
+}

@@ -87,10 +87,14 @@ func (spb *SystemPromptBuilder) Build() (string, error) {
 		// guesses one from its training — e2e on Windows 2026-11-13 wrote
 		// src/greet.txt under an invented /workspace (and, on the previous
 		// run, /mnt/c/...), never under the real workdir. One line fixes it.
+		// Under Git Bash on Windows the path is shown as Git Bash writes it,
+		// /d/a/proj, and the model is told why (#337): copied with backslashes
+		// into a bash redirect, the path lost them and the file landed under
+		// another name.
 		if wd := spb.projectDir; wd != "" {
-			return spb.buildIdentityOnly() + "\n\n# Working directory\n\nYour working directory is: " + wd +
+			return spb.buildIdentityOnly() + "\n\n# Working directory\n\nYour working directory is: " + shell.PromptPath(wd) +
 				"\n\nAll paths are relative to it. bash already runs there; apply_patch, read_file and the search tools take paths relative to it. Do not cd to it, and do not invent an absolute path — write src/x.txt, not /workspace/src/x.txt." +
-				spb.projectSuffix(), nil
+				pathHintLine() + spb.projectSuffix(), nil
 		}
 		if project := spb.buildProjectInstructionsSection(); project != "" {
 			return spb.buildIdentityOnly() + "\n\n" + project, nil
@@ -430,6 +434,14 @@ func (spb *SystemPromptBuilder) buildIdentityOnly() string {
 func shellHint() string {
 	if h := shell.Hint(); h != "" {
 		return "\n\n" + h
+	}
+	return ""
+}
+
+// pathHintLine is the Windows line about slashes in paths, "" elsewhere.
+func pathHintLine() string {
+	if h := shell.PathHint(); h != "" {
+		return " " + h
 	}
 	return ""
 }
