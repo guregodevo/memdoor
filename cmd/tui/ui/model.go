@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // Model represents the TUI state
@@ -216,9 +217,14 @@ func (m Model) permissionModeString() string {
 	return "acceptEdits"
 }
 
-// modeLabel is the header badge. Always-auto: the coder works without asking;
-// questions interrupt via the picker.
+// modeLabel is the header badge: the mode Shift+Tab flips, as the footer says
+// it. It read "⏵⏵ auto" in team mode too, and with the footer scrolled off by
+// a long graph (ctrl+o) it was the only mode on screen (2026-11-14). Team
+// wears the footer's hue.
 func (m Model) modeLabel() string {
+	if m.status.Mode == "team" {
+		return lipgloss.NewStyle().Foreground(lipgloss.Color(colRead)).Render("⏵⏵ team")
+	}
 	return "⏵⏵ auto"
 }
 

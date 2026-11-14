@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // runCmd executes a tea.Cmd (and any batched children) to trigger side effects
@@ -156,5 +157,25 @@ func TestRunCompleteClearsSpinner(t *testing.T) {
 	step(runCompleteMsg{})
 	if m.isThinking {
 		t.Fatal("runCompleteMsg should clear the spinner on a silent completion")
+	}
+}
+
+// The header says the mode Shift+Tab flipped: it read "⏵⏵ auto" in team mode
+// too (2026-11-14), the only mode on screen once ctrl+o's graph pushed the
+// footer off.
+func TestTheHeaderSaysTheMode(t *testing.T) {
+	m := NewModel("http://x", "ws/demo", "chan", "", func(a, w, tx, mode string) error { return nil })
+	m.modeOp = func(mode string) (string, error) { return mode, nil }
+	if got := ansi.Strip(m.modeLabel()); got != "⏵⏵ auto" {
+		t.Fatalf("a new window is auto: %q", got)
+	}
+	var mm tea.Model = m
+	mm, _ = mm.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+	if got := ansi.Strip(mm.(Model).modeLabel()); got != "⏵⏵ team" {
+		t.Fatalf("after Shift+Tab the header must say team: %q", got)
+	}
+	mm, _ = mm.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
+	if got := ansi.Strip(mm.(Model).modeLabel()); got != "⏵⏵ auto" {
+		t.Fatalf("Shift+Tab again: %q", got)
 	}
 }
