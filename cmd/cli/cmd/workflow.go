@@ -196,6 +196,7 @@ its target exists, never when the model says so; a re-run skips what exists.
   memdoor workflow approve <run-id> <task>   complete an external task
   memdoor workflow history <name>        what a workflow did: every run, newest first
   memdoor workflow check <name|path>     load it as a run would, compile included, and start nothing
+  memdoor workflow check <name> --dry-run   then walk every task: what it would run, nothing run
 
 In the TUI, /workflow draws the graph as it runs. Every run is kept in the
 project's run table (.memdoor/runs.db), so history answers for runs that
@@ -578,6 +579,7 @@ func init() {
 	workflowRunCmd.Flags().StringVar(&workflowTimeoutFlag, "timeout", "", "a clock on the whole run, e.g. 90m (default 2h, at most 24h)")
 	workflowRunCmd.Flags().StringVar(&workflowModelFlag, "model", "", "the model every agent and llm step runs on: an id memdoor model search shows, provider:id when two providers list it; a step with a model: of its own keeps it")
 	workflowRunCmd.Flags().StringVar(&workflowPartitionFlag, "partition", "", "resume an earlier run by its partition (status shows it), or \"today\" for a DAG run once a day; a run is fresh by default")
+	workflowCheckCmd.Flags().BoolVar(&workflowCheckDryRun, "dry-run", false, "then walk every task with mario's dry run: each renders what it would run, no command runs, no model is called, no gate is waited at; exit 1 when a task fails")
 	workflowHistoryCmd.Flags().IntVar(&workflowHistoryLimit, "limit", 0, "history: how many runs back to show (default 20)")
 	workflowCmd.AddCommand(workflowRunCmd, workflowTryCmd, workflowStatusCmd, workflowStopCmd, workflowApproveCmd, workflowChangesCmd, workflowDiffCmd, workflowResumeCmd, workflowHistoryCmd, workflowCheckCmd)
 	rootCmd.AddCommand(workflowCmd)
@@ -585,10 +587,26 @@ func init() {
 
 // workflowCheckResponse is what the gateway loaded: the same tasks a run of it would have.
 type workflowCheckResponse struct {
-	Name  string              `json:"name"`
-	Dir   string              `json:"dir"`
-	Tasks []workflowCheckTask `json:"tasks"`
+	Name   string              `json:"name"`
+	Dir    string              `json:"dir"`
+	Tasks  []workflowCheckTask `json:"tasks"`
+	DryRun *workflowDryRun     `json:"dry_run"`
 }
+
+// workflowDryRun is check --dry-run's walk: each task's end and what it would have run.
+type workflowDryRun struct {
+	Partition string            `json:"partition"`
+	Tasks     []workflowDryTask `json:"tasks"`
+}
+
+type workflowDryTask struct {
+	Name   string `json:"name"`
+	State  string `json:"state"`
+	Error  string `json:"error"`
+	Answer string `json:"answer"`
+}
+
+var workflowCheckDryRun bool
 
 type workflowCheckTask struct {
 	Name     string   `json:"name"`
@@ -614,10 +632,15 @@ var workflowCheckCmd = &cobra.Command{
 			return err
 		}
 		var out workflowCheckResponse
-		if err := workflowPost("check", map[string]interface{}{"dir": dir, "name": args[0]}, &out); err != nil {
+		if err := workflowPost("check", map[string]interface{}{"dir": dir, "name": args[0], "dry_run": workflowCheckDryRun}, &out); err != nil {
 			return fmt.Errorf("%s does not load: %w", args[0], err)
 		}
 		fprintWorkflowCheck(os.Stdout, out)
+		if out.DryRun != nil {
+			if failed := fprintWorkflowDryRun(os.Stdout, out, dir); failed > 0 {
+				return fmt.Errorf("%d task(s) failed the dry run", failed)
+			}
+		}
 		return nil
 	},
 }
@@ -637,6 +660,53 @@ func fprintWorkflowCheck(w io.Writer, out workflowCheckResponse) {
 		fmt.Fprintf(tw, "  %s\t%s\t%s\n", t.Name, kind, requires)
 	}
 	tw.Flush()
+}
+
+// fprintWorkflowDryRun prints each task's end in the walk, the texts that do
+// not render yet (they read what a run would have made), and where each
+// answer is kept; it answers how many tasks failed.
+func fprintWorkflowDryRun(w io.Writer, out workflowCheckResponse, project string) int {
+	d := out.DryRun
+	fmt.Fprintf(w, "\nDry run, partition %s: every task walked, nothing ran, no model called\n", d.Partition)
+	failed := 0
+	for _, t := range d.Tasks {
+		mark := "✓"
+		if t.State != "done" && t.State != "skipped" {
+			mark = "✗"
+			failed++
+		}
+		fmt.Fprintf(w, "  %s %s  %s\n", mark, t.Name, t.State)
+		if t.Error != "" {
+			fmt.Fprintln(w, "      "+strings.ReplaceAll(t.Error, "\n", "\n      "))
+		}
+		for _, l := range strings.Split(t.Answer, "\n") {
+			if key, why, ok := strings.Cut(l, ": does not render yet: "); ok {
+				fmt.Fprintf(w, "      %s does not render yet: %s\n", key, dryReason(why, project))
+			}
+		}
+	}
+	fmt.Fprintf(w, "\nWhat each task would have run: .memdoor/runs/%s/<group>/<task>/%s\n", out.Name, d.Partition)
+	return failed
+}
+
+// dryReason is a template's error without the template's own location, with
+// the project's paths relative: `executing "x" at <file …>: error calling
+// file: file /p/a.md: open /p/a.md: no such file` is `file a.md: no such file`.
+func dryReason(why, project string) string {
+	if _, after, ok := strings.Cut(why, "error calling "); ok {
+		if _, rest, ok := strings.Cut(after, ": "); ok {
+			why = rest
+		}
+	}
+	if project != "" {
+		why = strings.ReplaceAll(why, strings.TrimRight(project, "/")+"/", "")
+	}
+	if strings.HasPrefix(why, "file ") {
+		if path, rest, ok := strings.Cut(strings.TrimPrefix(why, "file "), ": "); ok {
+			why = "file " + path + ": " + strings.TrimPrefix(rest, "open "+path+": ")
+		}
+	}
+	return why
 }
 
 // tuiWorkflowOps is what the TUI panel is handed: the same gateway calls,

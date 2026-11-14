@@ -926,9 +926,18 @@ type workflowCheckTask struct {
 }
 
 type workflowCheckJSON struct {
-	Name  string              `json:"name"`
-	Dir   string              `json:"dir"`
-	Tasks []workflowCheckTask `json:"tasks"`
+	Name   string              `json:"name"`
+	Dir    string              `json:"dir"`
+	Tasks  []workflowCheckTask `json:"tasks"`
+	DryRun *workflowDryRunJSON `json:"dry_run,omitempty"` // check --dry-run: the walk
+}
+
+func (s *Server) checkWorkflowJSON(dir, name string) (workflowCheckJSON, error) {
+	wf, err := s.checkWorkflow(dir, name)
+	if err != nil {
+		return workflowCheckJSON{}, err
+	}
+	return checkJSON(wf), nil
 }
 
 func checkJSON(wf workflow.Workflow) workflowCheckJSON {
@@ -1393,6 +1402,7 @@ type workflowRequest struct {
 	RequireModel bool   `json:"require_model"` // run: refuse at the start when no model is configured (workflow try)
 	Comment      string `json:"comment"`       // changes: what the reviewer wants changed
 	Limit        int    `json:"limit"`         // history: how many runs back (0 = the default)
+	DryRun       bool   `json:"dry_run"`       // check: walk every task with mario's dry run, nothing run
 }
 
 // handleWorkflow is the gateway's own workspace's alone (gatewayMember): a
@@ -1492,12 +1502,16 @@ func (s *Server) handleWorkflow(w http.ResponseWriter, r *http.Request) {
 		}
 		ok(run.snapshot())
 	case "check":
-		wf, err := s.checkWorkflow(req.Dir, req.Name)
+		check := s.checkWorkflowJSON
+		if req.DryRun {
+			check = s.dryRunWorkflow
+		}
+		out, err := check(req.Dir, req.Name)
 		if err != nil {
 			fail(http.StatusBadRequest, err)
 			return
 		}
-		ok(checkJSON(wf))
+		ok(out)
 	case "history":
 		// What the workflow did, read from the run table rather than from
 		// this gateway's memory: a run this process never saw — one from
