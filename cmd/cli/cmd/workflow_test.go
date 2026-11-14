@@ -66,3 +66,17 @@ func TestWorkflowWaitEnds(t *testing.T) {
 		t.Errorf("a running run stands at no gate, got %q", g)
 	}
 }
+
+// A workflow that loads prints its name, its task count and each task with its
+// type (external for one made outside) and what it requires.
+func TestACheckedWorkflowPrintsItsTasks(t *testing.T) {
+	out := workflowCheckResponse{Name: "release", Dir: "/p/.memdoor/workflows/release"}
+	out.Tasks = []workflowCheckTask{{Name: "approve", External: true}, {Name: "deploy", Type: "agent", Requires: []string{"approve", "changelog"}}}
+	var b strings.Builder
+	fprintWorkflowCheck(&b, out)
+	for _, want := range []string{"✓ release loads: 2 tasks, nothing ran", "approve  external", "deploy   agent     requires approve, changelog"} {
+		if !strings.Contains(b.String(), want) {
+			t.Errorf("lacks %q:\n%s", want, b.String())
+		}
+	}
+}
