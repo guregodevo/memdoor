@@ -141,7 +141,9 @@ registers the `template` type.
 over the file's `args`, `{{.partition}}`, `{{ output "task" }}` and `{{ file "path" }}`.
 String functions take the value last, so they chain:
 `{{ output "test" | trim | hasSuffix "exit 0" }}`, `{{ .issue | default "none" }}`
-(`trim`, `contains`, `hasPrefix`, `hasSuffix`, `default`).
+(`trim`, `contains`, `hasPrefix`, `hasSuffix`, `default`). `head N` and `tail N` keep lines,
+`json "a.b"` reads a field of a JSON text, `match "regex"` is what a regular expression finds,
+and `{{ exists "path" }}` says whether a file is there (`file` fails on a missing one).
 
 **Another workflow.** A requirement whose `project_id` names another workflow, without
 `external`, pulls that task and what it requires into the run. Its first tasks wait for what

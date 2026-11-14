@@ -105,6 +105,19 @@ Go templates. What they can read:
 - `trim`, `contains`, `hasPrefix`, `hasSuffix`, `default`, with the value
   last so they chain: `{{ output "test" | trim | hasSuffix "exit 0" }}`,
   `{{ .issue | default "none" }}`.
+- `{{ exists "path" }}`: whether a file is there. `file` fails on a missing
+  file; use `{{ if exists "x.md" }}{{ file "x.md" }}{{ end }}` for a file a
+  passed-over step may not have written.
+- `head N`, `tail N`: the first or last N lines.
+  `{{ output "test" | tail 400 }}`.
+- `json "a.b.0.c"`: one field of a JSON text; a missing field is empty.
+  `{{ file "event.json" | json "issue.number" }}`.
+- `match "regex"`: what a regular expression (Go syntax) finds: its first
+  group, else the whole match, else empty.
+  `{{ file "review.md" | head 10 | match "(?im)^verdict: (pass|fail)" }}`.
+  A bad expression is refused when the workflow loads.
+
+Use these before a shell pipeline of `cat`, `head`, `tail`, `grep`, `jq`.
 
 ```yaml
 # .memdoor/workflows/report/steps/body.yaml

@@ -1,16 +1,24 @@
-type: command
+type: template
 # The review's verdict read without a model: PASS, or no verdict with a passing Check.
 # The branch a decision model does not take, as a task of the DAG (#160):
 # review-score passes this through when no decision model answers. PASS
 # when the reviewer wrote `verdict: PASS`, or narrated without a verdict
 # while the Check passed; FAIL otherwise. The rule repair ran on before
-# there were scores, unchanged.
+# there were scores, unchanged. The verdict is the first `verdict:` line in
+# the review's first ten, markdown emphasis aside.
 requires:
   - table_pattern: review
-command: |
-  r=.memdoor/runs/team-solve-fanout-{{.partition}}
-  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
-  v=$(bash "$w/verdict.sh" "$r/review.md")
-  if [ "$v" = PASS ] || { [ "$v" = none ] && [ "$(cat "$r/test-status.txt")" = 0 ]; }; then echo PASS; else echo FAIL; fi | tee "$r/review-rule.txt"
+text: |
+  {{- $run := printf ".memdoor/runs/team-solve-fanout-%s" .partition }}
+  {{- $answer := printf "%s/review.md" $run }}
+  {{- $status := printf "%s/test-status.txt" $run }}
+  {{- $verdict := "" }}
+  {{- if exists $answer }}
+  {{- $verdict = file $answer | head 10 | match "(?im)^[\\s*`_]*verdict[*`_]*:[ \\t\\r*`_]*(pass|fail)" }}
+  {{- end }}
+  {{- $checkPassed := and (exists $status) (eq (file $status | trim) "0") }}
+  {{- if or ($verdict | match "(?i)^pass$") (and (not $verdict) $checkPassed) }}PASS{{ else }}FAIL{{ end }}
+target:
+  file: .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt
 timeout: 1m
 max_retries: 0

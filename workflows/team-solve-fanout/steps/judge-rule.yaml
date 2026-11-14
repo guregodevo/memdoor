@@ -1,18 +1,24 @@
-type: command
+type: template
 # The judge's verdict read without a model: PASS, or none with a passing final Check.
 # The branch a decision model does not take, as a task of the DAG (#160):
 # judge-score passes this through when no decision model answers. Runs
 # when the judge ran: its verdict is there. PASS when the judge wrote
 # `verdict: PASS`, or narrated without a verdict while the final Check
 # passed; FAIL otherwise. The rule keep and verify read before there were
-# scores, unchanged.
+# scores, unchanged. The verdict is the first `verdict:` line in the judge's
+# first ten, markdown emphasis aside.
 when: "[ -s .memdoor/runs/team-solve-fanout-{{.partition}}/verdict.md ]"
 requires:
   - table_pattern: judge
-command: |
-  r=.memdoor/runs/team-solve-fanout-{{.partition}}
-  w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
-  v=$(bash "$w/verdict.sh" "$r/verdict.md")
-  if [ "$v" = PASS ] || { [ "$v" = none ] && [ "$(cat "$r/final-status.txt")" = 0 ]; }; then echo PASS; else echo FAIL; fi
+text: |
+  {{- $run := printf ".memdoor/runs/team-solve-fanout-%s" .partition }}
+  {{- $answer := printf "%s/verdict.md" $run }}
+  {{- $status := printf "%s/final-status.txt" $run }}
+  {{- $verdict := "" }}
+  {{- if exists $answer }}
+  {{- $verdict = file $answer | head 10 | match "(?im)^[\\s*`_]*verdict[*`_]*:[ \\t\\r*`_]*(pass|fail)" }}
+  {{- end }}
+  {{- $checkPassed := and (exists $status) (eq (file $status | trim) "0") }}
+  {{- if or ($verdict | match "(?i)^pass$") (and (not $verdict) $checkPassed) }}PASS{{ else }}FAIL{{ end }}
 timeout: 1m
 max_retries: 0
