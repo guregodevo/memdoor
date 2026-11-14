@@ -778,8 +778,8 @@ func workflowGraphRows(r WorkflowRun, width int, expanded bool) []string {
 				line += dim.Render("  ← " + strings.Join(t.Requires, ", "))
 			}
 			rows = append(rows, "  "+line)
-			for _, l := range stepLinesOf(t, expanded) {
-				rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
+			for _, l := range stepLinesShownOf(t, expanded, width-10) {
+				rows = append(rows, "      "+l)
 			}
 			if t.State != "running" {
 				for _, l := range []string{t.Receipt, t.Outcome} {
@@ -821,6 +821,65 @@ func stepLinesOf(t WorkflowTask, expanded bool) []string {
 		out = append(out, l.text)
 	}
 	return out
+}
+
+// graphWidth is how wide a run's graph is drawn in the conversation: the
+// window's width, not a panel's 100 columns. At the cap a step's command was
+// cut at 90 columns in a window twice as wide (2026-11-14: "too narrow").
+func graphWidth(termWidth int) int {
+	if w := termWidth - 4; w > 20 {
+		return w
+	}
+	return 20
+}
+
+// stepLineEnd is how a step's call ended, after its line (gateway/
+// workflow_step_lines.go stepCallEnd): an exit status, a failure, the seconds
+// it has run.
+var stepLineEnd = regexp.MustCompile(`^(.*?)( → exit -?\d+| → failed| ✗ .*| · \d+s)$`)
+
+// stepLineVerbs colour what a step's call is the way its tool frame is
+// coloured (toolview.go): a command, a read or search, a change.
+var stepLineVerbs = []struct{ prefix, colour string }{
+	{"$ ", colRun}, {"✎ ", colWrite}, {"read ", colRead}, {"grep ", colRead}, {"jgrep ", colRead}, {"glob ", colRead},
+}
+
+// stepLinesShownOf is stepLinesOf drawn: each call's verb in its tool's hue,
+// what it ran or touched in body text for the newest call of a running step
+// (what it is doing now) and grey for the ones before, how it ended grey, red
+// for a failure. All lines grey read as one block (2026-11-14: "same color",
+// "i cant see clearly").
+func stepLinesShownOf(t WorkflowTask, expanded bool, width int) []string {
+	lines := stepLinesOf(t, expanded)
+	out := make([]string, 0, len(lines))
+	for i, l := range lines {
+		out = append(out, stepLineShown(truncateEnd(l, width), t.State == "running" && i == len(lines)-1))
+	}
+	return out
+}
+
+func stepLineShown(l string, now bool) string {
+	style := func(c string) lipgloss.Style { return lipgloss.NewStyle().Foreground(lipgloss.Color(c)) }
+	for _, v := range stepLineVerbs {
+		rest, ok := strings.CutPrefix(l, v.prefix)
+		if !ok {
+			continue
+		}
+		body, end := rest, ""
+		if m := stepLineEnd.FindStringSubmatch(rest); m != nil {
+			body, end = m[1], m[2]
+		}
+		bodyColour := colDim
+		if now {
+			bodyColour = colText
+		}
+		endColour := colDim
+		if strings.HasPrefix(end, " ✗") || end == " → failed" || strings.HasPrefix(end, " → exit ") && end != " → exit 0" {
+			endColour = colErr
+		}
+		return style(v.colour).Render(v.prefix) + style(bodyColour).Render(body) + style(endColour).Render(end)
+	}
+	return style(colDim).Render(l)
 }
 
 // workflowCompactAfter is how many steps a graph draws in full in the
@@ -908,8 +967,8 @@ func workflowCompactRows(r WorkflowRun, width int) []string {
 					// 2026-11-06: "should be grey or highlighted").
 					rows = append(rows, "      "+faint.Render(truncateEnd(t.About, width-10)))
 				}
-				for _, l := range stepLinesOf(t, false) {
-					rows = append(rows, "      "+dim.Render(truncateEnd(l, width-10)))
+				for _, l := range stepLinesShownOf(t, false, width-10) {
+					rows = append(rows, "      "+l)
 				}
 			}
 		case "failed":
@@ -1169,7 +1228,7 @@ func (m Model) renderWorkflowPanel() string {
 
 // upsertWorkflowGraph replaces the run's block in the conversation, or adds it.
 func (m *Model) upsertWorkflowGraph(r WorkflowRun) {
-	msg := workflowGraphMessage(r, boxWidth(m.width), m.expandTools)
+	msg := workflowGraphMessage(r, graphWidth(m.width), m.expandTools)
 	for i := len(m.messages) - 1; i >= 0; i-- {
 		if m.messages[i].ToolID == msg.ToolID && m.messages[i].Role == "workflow" {
 			if i < m.printedThrough {
@@ -1192,7 +1251,7 @@ func (m *Model) redrawWorkflowGraphs() {
 		}
 		id, ok := strings.CutPrefix(m.messages[i].ToolID, "workflow:")
 		if r, found := m.workflowLast[id]; ok && found {
-			msg := workflowGraphMessage(r, boxWidth(m.width), m.expandTools)
+			msg := workflowGraphMessage(r, graphWidth(m.width), m.expandTools)
 			msg.Timestamp = m.messages[i].Timestamp
 			m.messages[i] = msg
 		}
