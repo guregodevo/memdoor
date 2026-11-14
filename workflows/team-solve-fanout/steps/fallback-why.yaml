@@ -1,0 +1,18 @@
+type: template
+# Why the fallback runs: review, check, or nothing. Written once, read by the three fallback steps' when.
+# review: the review's rule said FAIL. check: keep kept the work, the final
+# Check did not pass it, and keep.txt holds the line `check 1`. Nothing: the
+# fallback steps are passed over.
+requires:
+  - table_pattern: keep
+text: |
+  {{- $run := printf ".memdoor/runs/team-solve-fanout-%s" .partition }}
+  {{- $rule := printf "%s/review-rule.txt" $run }}
+  {{- $keep := printf "%s/keep.txt" $run }}
+  {{- $final := printf "%s/final-status.txt" $run }}
+  {{- $reviewFailed := and (exists $rule) (file $rule | match "(?m)^FAIL$") }}
+  {{- $checkPassed := and (exists $final) (eq (file $final | trim) "0") }}
+  {{- $checkFailed := and (exists $keep) (file $keep | match "(?m)^kept:") (file $keep | match "(?m)^check 1$") (not $checkPassed) }}
+  {{- if $reviewFailed }}review{{ else if $checkFailed }}check{{ end }}
+timeout: 1m
+max_retries: 0

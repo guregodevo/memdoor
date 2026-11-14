@@ -75,16 +75,13 @@ func read(t *testing.T, path string) string {
 	return string(b)
 }
 
-// The three fallback steps share one when: they run only on the review's FAIL.
-func TestTeamSolveFanoutFallbackRunsOnlyWhenTheReviewFailed(t *testing.T) {
+// The three fallback steps share one when: it reads fallback-why, the step that says why the fallback runs.
+// What fallback-why says, state by state, is tested where the workflow is loaded
+// (pkg/workflow: TestFanoutFallbackWhySaysWhatTheShellConditionSaid).
+func TestTeamSolveFanoutFallbackStepsReadFallbackWhy(t *testing.T) {
 	for _, step := range []string{"fallback-reset", "fallback", "fallback-done"} {
-		when := loadFallbackStep(t, step).When
-		for rule, want := range map[string]bool{"FAIL": true, "PASS": false} {
-			_, _, sh := fallbackRun(t, rule)
-			_, err := sh(when)
-			if (err == nil) != want {
-				t.Errorf("%s with the review's %s: when %q ran = %v", step, rule, when, err == nil)
-			}
+		if when := strings.TrimSpace(loadFallbackStep(t, step).When); when != `test -n "{{ output "fallback-why" | trim }}"` {
+			t.Errorf("%s: when %q", step, when)
 		}
 	}
 }
