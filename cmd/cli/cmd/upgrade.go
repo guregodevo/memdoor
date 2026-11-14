@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -165,7 +166,8 @@ func fetchRemoteVersion() (string, error) { return fetchRemoteVersionFrom("", 10
 // fetchRemoteVersionFrom is fetchRemoteVersion with the door that asks named
 // in the query (?from=cli for a headless command): memdoor-ops' metrics count
 // only the window's daily check as a person that day, so the headless one is
-// marked and left out (#90). Nothing about the person is sent.
+// marked and left out (#90). Nothing about the person is sent: the
+// operating system, and the marks.
 func fetchRemoteVersionFrom(from string, timeout time.Duration) (string, error) {
 	if g, ok, err := installSource(); err != nil {
 		return "", err
@@ -173,26 +175,26 @@ func fetchRemoteVersionFrom(from string, timeout time.Duration) (string, error) 
 		return githubTagOnce(g, timeout)
 	}
 	client := &http.Client{Timeout: timeout}
-	u := versionEndpoint
-	var q []string
+	// Every check names its operating system (os=windows, darwin or
+	// linux), so the metrics can say which systems people use: an install
+	// or a download says it, a window opened later did not.
+	q := url.Values{"os": {runtime.GOOS}}
 	if from != "" {
-		q = append(q, "from="+from)
+		q.Set("from", from)
 		// On a CI runner the check is nobody's (#182): marked ci=1, as
 		// install.sh marks its download under MEMDOOR_CI; GITHUB_ACTIONS is
 		// set on every GitHub runner, self-hosted included.
 		if os.Getenv("MEMDOOR_CI") != "" || os.Getenv("GITHUB_ACTIONS") != "" {
-			q = append(q, "ci=1")
+			q.Set("ci", "1")
 		}
 	}
-	// The maintainer's own machines (MEMDOOR_OWNER set: a benchmark VM, a box,
+	// The maintainer's own hosts (MEMDOOR_OWNER set: a benchmark VM, a box,
 	// the laptop) say so, window and headless alike: me=1, and the check is
-	// not a person's. Set by hand on those machines only.
+	// not a person's. Set by hand on those hosts only.
 	if os.Getenv("MEMDOOR_OWNER") != "" {
-		q = append(q, "me=1")
+		q.Set("me", "1")
 	}
-	if len(q) > 0 {
-		u += "?" + strings.Join(q, "&")
-	}
+	u := versionEndpoint + "?" + q.Encode()
 	resp, err := client.Get(u)
 	if err != nil {
 		return "", err
