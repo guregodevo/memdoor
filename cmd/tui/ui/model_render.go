@@ -278,7 +278,7 @@ func (m Model) renderMessage(msg Message) string {
 			colour = colErr
 		}
 		note := lipgloss.NewStyle().Foreground(lipgloss.Color(colour)).Italic(true).PaddingLeft(2)
-		return note.Render(m.formatMarkdown(msg.Content))
+		return note.Render(m.formatNote(msg.Content))
 	}
 
 	if msg.Role == "user" {
@@ -695,6 +695,62 @@ func (m Model) formatMarkdown(text string) string {
 	}
 
 	return strings.Join(formatted, "\n")
+}
+
+// noteCodeIndent opens a line a note shows as it is: a team run's Scope and
+// diff, a workflow's result file (gateway/team_mode.go teamReport,
+// gateway/workflow_runs.go). Indented, as markdown writes code, because the
+// window prints a note's fence marks literally.
+const noteCodeIndent = "    "
+
+// formatNote is formatMarkdown for a note, except its indented lines: those
+// are code, shown as written and wrapped under their own indent. Through the
+// markdown pass a diff of a markdown file lost its backticks and bold marks,
+// and each wrapped line fell back to the left edge without its + (the run
+// report of 2026-11-14).
+func (m Model) formatNote(text string) string {
+	var out, prose []string
+	flush := func() {
+		if len(prose) > 0 {
+			out = append(out, m.formatMarkdown(strings.Join(prose, "\n")))
+			prose = nil
+		}
+	}
+	for _, line := range strings.Split(text, "\n") {
+		if !strings.HasPrefix(line, noteCodeIndent) {
+			prose = append(prose, line)
+			continue
+		}
+		flush()
+		out = append(out, m.noteCodeLine(line))
+	}
+	flush()
+	return strings.Join(out, "\n")
+}
+
+// noteCodeLine wraps one indented line with a hanging indent: a continuation
+// starts under the line's text, one column past a diff's + or -.
+func (m Model) noteCodeLine(line string) string {
+	line = strings.ReplaceAll(line, "\t", noteCodeIndent)
+	body := strings.TrimLeft(line, " ")
+	indent := line[:len(line)-len(body)]
+	hang := indent
+	if strings.HasPrefix(body, "+") || strings.HasPrefix(body, "-") {
+		hang += " "
+	}
+	width := m.width - 8 - len(hang)
+	if width < 20 {
+		width = 20
+	}
+	parts := strings.Split(ansi.Wrap(body, width, ""), "\n")
+	for i := range parts {
+		if i == 0 {
+			parts[i] = indent + parts[i]
+		} else {
+			parts[i] = hang + parts[i]
+		}
+	}
+	return linkifyLine(strings.Join(parts, "\n"))
 }
 
 // stripInlineMarks removes the markdown emphasis marks from a line that is
