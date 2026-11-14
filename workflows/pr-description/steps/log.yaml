@@ -1,0 +1,11 @@
+type: command
+# The commit messages on the change's side of the diff, newest first.
+# When git log cannot read the base, the step is passed over and the description is written from the diff.
+optional: true
+requires:
+  - project_id: change
+    table_pattern: diff
+command: |
+  git log --no-decorate --format='--- %h %s%n%b' {{ file (printf ".memdoor/runs/change-%s.base" .partition) | trim }}..HEAD
+timeout: 1m
+max_retries: 0
