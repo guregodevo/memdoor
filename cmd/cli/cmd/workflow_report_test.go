@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"memdoor/internal/testenv"
 )
 
 // A run folder as team-solve leaves it, read into the report and the list line.
@@ -92,7 +94,7 @@ func TestTheStepOutputsTreeIsNotARun(t *testing.T) {
 // match in runSteps and the other run's 999 tokens are counted.
 func TestARunsReportSumsEachStepsCallsFromTheLedger(t *testing.T) {
 	home := t.TempDir()
-	t.Setenv("HOME", home)
+	testenv.SetHome(t, home)
 	ledger := strings.Join([]string{
 		`{"session":"workflow:team-solve-fanout:2026-11-14T204149@20261114-204149:direct-a","input_tokens":1000,"cached_tokens":800,"output_tokens":100,"duration_ms":2000,"cost_usd":0.01}`,
 		`{"session":"workflow:team-solve-fanout:2026-11-14T204149@20261114-204149:direct-b","input_tokens":2000,"output_tokens":200,"duration_ms":3000}`,
