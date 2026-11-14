@@ -126,3 +126,33 @@ func TestThePinIsThePersons(t *testing.T) {
 		t.Fatalf("Alice's auto leaves Bob's pin: %+v", p)
 	}
 }
+
+// Shift+Tab and ctrl+t before the first turn (the report 2026-11-14, "shift
+// tab seems broken"): with a kept pin, the footer's route view must carry the
+// mode and effort just set on the conversation, not a blank copy's auto.
+func TestTheKeptPinKeepsTheModeAndEffortInTheView(t *testing.T) {
+	dir := t.TempDir()
+	old := persistentPinPath
+	persistentPinPath = func() string { return filepath.Join(dir, ".memdoor", "model.json") }
+	t.Cleanup(func() { persistentPinPath = old })
+	if err := writePersistentPin("greg", &persistentPin{Model: "zai-org/GLM-5.3"}); err != nil {
+		t.Fatal(err)
+	}
+	sess := &Session{ID: "s1", Metadata: map[string]interface{}{}}
+	if err := setMode(sess, "team"); err != nil {
+		t.Fatal(err)
+	}
+	if err := setEffort(sess, "low"); err != nil {
+		t.Fatal(err)
+	}
+	v := viewSessionRoute("greg", nil, "s1", sess, "coder")
+	if v.Mode != "team" || v.Effort != "low" {
+		t.Fatalf("the view lost what was set: mode %q effort %q", v.Mode, v.Effort)
+	}
+	if !v.Pinned || v.Model != "zai-org/GLM-5.3" {
+		t.Fatalf("the view must still show the kept pin: %+v", v)
+	}
+	if sessionRouted(sess) {
+		t.Fatal("the view must not pin the conversation itself")
+	}
+}
