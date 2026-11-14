@@ -6,9 +6,10 @@ type: command
 # 11 LiveCodeBench runs and 9 of 11 SWE-bench Verified runs, against 10 and 8
 # for what the run kept; no run lost.
 when: |
-  grep -qx FAIL .memdoor/runs/team-solve-fanout-{{.partition}}/review-rule.txt || { grep -q '^kept:' .memdoor/runs/team-solve-fanout-{{.partition}}/keep.txt && [ "$(cat .memdoor/runs/team-solve-fanout-{{.partition}}/final-status.txt 2>/dev/null)" != 0 ] && grep -qx 'check 1' .memdoor/runs/team-solve-fanout-{{.partition}}/keep.txt; }
+  test -n "{{ output "fallback-why" | trim }}"
 requires:
   - table_pattern: keep
+  - table_pattern: fallback-why
 command: |
   r=.memdoor/runs/team-solve-fanout-{{.partition}}
   w=.memdoor/workflows/team-solve; [ -d "$w" ] || w="$HOME/.memdoor/workflows/team-solve"
