@@ -172,6 +172,15 @@ Checked: every template parses; a template uses only args its file declares; an 
 read only from a task that runs first. Before, an undeclared arg rendered `<no value>` into
 the command and the run went on.
 
+`memdoor workflow check <name|path>` loads a workflow as a run would, this compile included,
+and starts nothing. It prints the tasks, or every problem, and exits 1. A path checks a copy:
+a changed workflow is refused before a run pays for a model call.
+
+```
+$ memdoor workflow check ./candidate
+./candidate does not load: steps/verify.yaml: command: uses {{.attempts}}, an arg this task does not declare; it would render <no value>. Declare it in this file under args: (attempts: ""), or use one that is declared: dataset_id, partition, project_id, table_name
+```
+
 `workflows/pr-create` is built from these and ships no script: `README.md` and six YAML steps.
 
 ## The target is the turn's definition of done

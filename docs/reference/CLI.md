@@ -272,6 +272,7 @@ and nowhere else in this file is documented by its own `memdoor <command> --help
 - `workflow` — A workflow is a directory, .memdoor/workflows/<name>/ in a project (or in
   - `approve` — Complete an external task: your yes, written where the DAG looks for it
   - `changes` — Request changes at a gate: the task reruns with your comment, then the steps after it, and the run comes back to the gate
+  - `check` — Load a workflow as a run would, its compile included, and start nothing: its tasks, or every problem with the file and the fix (exit 1)
   - `diff` — The full diff a run made since it started, committed or not: what you approve at its gate
   - `history` — What a workflow did before: every run, newest first (survives a restart)
   - `resume` — Continue a failed or stopped run: what it finished is skipped

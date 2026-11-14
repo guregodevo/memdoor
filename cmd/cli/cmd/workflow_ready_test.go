@@ -17,7 +17,8 @@ func TestEveryWorkflowCommandSetsTheMachineUpFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[string]bool{"workflowCmd": false, "workflowRunCmd": false, "workflowStatusCmd": false, "workflowStopCmd": false,
-		"workflowApproveCmd": false, "workflowChangesCmd": false, "workflowDiffCmd": false, "workflowResumeCmd": false, "workflowHistoryCmd": false}
+		"workflowApproveCmd": false, "workflowChangesCmd": false, "workflowDiffCmd": false, "workflowResumeCmd": false, "workflowHistoryCmd": false,
+		"workflowCheckCmd": false}
 	callsReady := func(n ast.Node) bool {
 		found := false
 		ast.Inspect(n, func(n ast.Node) bool {
