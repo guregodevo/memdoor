@@ -181,6 +181,22 @@ $ memdoor workflow check ./candidate
 ./candidate does not load: steps/verify.yaml: command: uses {{.attempts}}, an arg this task does not declare; it would render <no value>. Declare it in this file under args: (attempts: ""), or use one that is declared: dataset_id, partition, project_id, table_name
 ```
 
+`--dry-run` then walks every task with mario's dry run: each renders what it would run, no
+command runs, no model is called, no gate is waited at. A task's answer is that rendered text,
+kept under `.memdoor/runs/<workflow>/<group>/<task>/dry-run-<time>`; no run is recorded. A text
+that reads what an earlier step writes (`file "…/task.md"`) cannot render before that step ran,
+and says so. The command exits 1 when a task fails the walk.
+
+```
+$ memdoor workflow check team-solve-fanout --dry-run
+…
+Dry run, partition dry-run-2026-11-15T001831: every task walked, nothing ran, no model called
+  ✓ baseline  done
+  ✓ direct  done
+      prompt does not render yet: file .memdoor/runs/team-solve-fanout-dry-run-2026-11-15T001831/prompt.md: no such file or directory
+  …
+```
+
 `workflows/pr-create` is built from these and ships no script: `README.md` and six YAML steps.
 
 ## The target is the turn's definition of done

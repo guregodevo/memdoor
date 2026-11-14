@@ -80,3 +80,22 @@ func TestACheckedWorkflowPrintsItsTasks(t *testing.T) {
 		}
 	}
 }
+
+// The dry run prints each task's end, the texts that do not render yet, and
+// where the answers are; a failed task is counted for the exit status.
+func TestADryRunPrintsEachTasksEnd(t *testing.T) {
+	out := workflowCheckResponse{Name: "release", DryRun: &workflowDryRun{Partition: "dry-run-2026-11-15T090000"}}
+	out.DryRun.Tasks = []workflowDryTask{
+		{Name: "notes", State: "done", Answer: "dry run of release.steps.notes: nothing ran\ntext: does not render yet: template: release.steps.notes:1:3: executing \"release.steps.notes\" at <file \"NOTES.md\">: error calling file: file /p/NOTES.md: open /p/NOTES.md: no such file or directory"},
+		{Name: "deploy", State: "failed", Error: "no agent runs on this host"},
+	}
+	var b strings.Builder
+	if failed := fprintWorkflowDryRun(&b, out, "/p"); failed != 1 {
+		t.Errorf("failed = %d, want 1", failed)
+	}
+	for _, want := range []string{"partition dry-run-2026-11-15T090000", "✓ notes  done", "      text does not render yet: file NOTES.md: no such file or directory\n", "✗ deploy  failed", "no agent runs on this host", ".memdoor/runs/release/<group>/<task>/dry-run-2026-11-15T090000"} {
+		if !strings.Contains(b.String(), want) {
+			t.Errorf("lacks %q:\n%s", want, b.String())
+		}
+	}
+}

@@ -756,3 +756,42 @@ func TestCheckLoadsAWorkflowAndStartsNoRun(t *testing.T) {
 		t.Errorf("a workflow named by its path: %d %v", code, out)
 	}
 }
+
+// check --dry-run walks every task and runs none: release's agent steps end
+// done with no turn and no CHANGELOG.md, the approve gate is not waited at,
+// each answer is the step's rendered prompt, and no run is recorded.
+// Mutation check: leave DryRun off in dryRunWorkflow and the walk fails (no
+// runner for the agent steps) or waits at the gate.
+func TestADryRunWalksTheWorkflowAndRunsNothing(t *testing.T) {
+	dir := t.TempDir()
+	writeReleaseWorkflow(t, dir)
+	s := runServer(t, &Server{})
+	b, _ := json.Marshal(map[string]interface{}{"dir": dir, "name": "release", "dry_run": true})
+	rec := httptest.NewRecorder()
+	s.handleWorkflow(rec, authenticatedRequest(http.MethodPost, "/api/workflow/check", bytes.NewReader(b), "system:internal"))
+	var out workflowCheckJSON
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil || rec.Code != http.StatusOK || out.DryRun == nil {
+		t.Fatalf("%d %s", rec.Code, rec.Body.String())
+	}
+	if !strings.HasPrefix(out.DryRun.Partition, "dry-run-") || len(out.DryRun.Tasks) != 4 {
+		t.Fatalf("dry run = %+v", out.DryRun)
+	}
+	for _, task := range out.DryRun.Tasks {
+		if task.State != "done" && task.State != "skipped" {
+			t.Errorf("%s ended %s: %s", task.Name, task.State, task.Error)
+		}
+	}
+	answers := map[string]string{}
+	for _, task := range out.DryRun.Tasks {
+		answers[task.Name] = task.Answer
+	}
+	if !strings.Contains(answers["changelog"], "prompt:\nwrite the changelog") || !strings.Contains(answers["changelog"], "target.file:\nCHANGELOG.md") {
+		t.Errorf("changelog's answer:\n%s", answers["changelog"])
+	}
+	if _, err := os.Stat(filepath.Join(dir, "CHANGELOG.md")); err == nil {
+		t.Error("a dry run made the changelog")
+	}
+	if n := len(s.workflows().runs); n != 0 {
+		t.Errorf("a dry run recorded %d run(s)", n)
+	}
+}
