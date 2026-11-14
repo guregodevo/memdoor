@@ -68,5 +68,6 @@ jobs:
         ~/.local/bin/memdoor --version
 
 env:
+  MEMDOOR_OWNER: "1"  # the maintainer's runs: version checks marked me=1, left out of make metrics
   CGO_ENABLED: "1"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true

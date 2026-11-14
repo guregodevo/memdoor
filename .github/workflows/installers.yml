@@ -21,6 +21,11 @@ on:
 
 # Runs on the public repo only: the private one has no Actions minutes, and
 # the public tree carries these same files, so its runs are the checks.
+# This repository's runs are the maintainer's: memdoor marks its version
+# checks me=1, and make metrics leaves them out.
+env:
+  MEMDOOR_OWNER: "1"
+
 jobs:
   unix:
     if: github.repository == 'guregodevo/memdoor'
