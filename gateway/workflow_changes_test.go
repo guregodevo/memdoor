@@ -111,7 +111,14 @@ func TestScheduledWorkflowMessage(t *testing.T) {
 // instruction file of its own, a project's rules go under .memdoor/ and are
 // git-ignored; an existing AGENTS.md is still the one written to.
 func TestKeptRulesStayOutOfTheTree(t *testing.T) {
+	// A project: its .git stops the walk up for a project root here. Without
+	// it the walk went on above the temporary directory and kept the
+	// .gitignore in the first folder holding a .memdoor (on windows-latest,
+	// once the package's home was no longer an ancestor of %TEMP%).
 	dir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(dir, ".git"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	p := projectRulesFile(dir)
 	if p != filepath.Join(dir, ".memdoor", "AGENTS.md") {
 		t.Fatalf("no instruction file: rules under .memdoor, got %s", p)
