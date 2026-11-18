@@ -30,6 +30,7 @@ jobs:
   unix:
     if: github.repository == 'guregodevo/memdoor'
     strategy:
+      fail-fast: false   # each platform says its own result
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -67,6 +68,22 @@ jobs:
           check 1 memdoor resume --last
           check 1 memdoor remote --last
           pkill -f "memdoor gateway" || true
+      # A newcomer's first session (scripts/first-session.sh): a key in the
+      # shell, memdoor connect with the key pasted, /connect in the window with
+      # the key pasted over the prefilled name; a first turn on each, the key
+      # still there after a gateway restart and after the installer runs over
+      # the running gateway. The model is the stand-in provider
+      # (internal/standin): one fixed reply, only to its own key, no secret.
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: First session, the three ways a model is connected
+        run: |
+          command -v tmux >/dev/null || { if [ "$RUNNER_OS" = macOS ]; then brew install tmux; else sudo apt-get install -y tmux; fi; }
+          go build -o "$RUNNER_TEMP/standin" ./internal/standin
+          MEMDOOR_BIN="$HOME/.local/bin/memdoor" STANDIN_BIN="$RUNNER_TEMP/standin" UPGRADE=1 scripts/first-session.sh
       # The gateway as a service (memdoor gateway install, 2026-10-23): the
       # unit renders on both platforms; where the runner has a service
       # manager for its user it is installed for real, answers, is restarted
@@ -116,9 +133,6 @@ jobs:
           & (Join-Path $env:LOCALAPPDATA 'Memdoor\bin\memdoor.exe') --version
       # The same first commands the pull-request check runs on each build.
       - uses: actions/checkout@v5
-        with:
-          sparse-checkout: scripts/windows-first-commands.ps1
-          sparse-checkout-cone-mode: false
       - name: Version, gateway, first account, first commands with no key
         shell: pwsh
         run: ./scripts/windows-first-commands.ps1
@@ -130,6 +144,19 @@ jobs:
           $bin = Join-Path $env:LOCALAPPDATA 'Memdoor\bin\memdoor.exe'
           & $bin --version
           Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Memdoor\bin')
+      # A newcomer's first session (scripts/windows-first-session.ps1): memdoor
+      # connect with the key, a turn, the key still there after the gateway
+      # restarts. The stand-in provider is the model (internal/standin).
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+          cache: false
+      - name: First session, memdoor connect and run
+        shell: pwsh
+        run: |
+          go build -o "$env:RUNNER_TEMP\standin.exe" ./internal/standin
+          $env:STANDIN_BIN = "$env:RUNNER_TEMP\standin.exe"
+          ./scripts/windows-first-session.ps1
       - name: Stop the gateway
         shell: pwsh
         if: always()
