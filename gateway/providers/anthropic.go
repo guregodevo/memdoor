@@ -150,6 +150,15 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 		setAttributionHeaders(ctx, req.Header)
 		resp, err = m.client.httpClient.Do(req)
 		if err != nil {
+			if providerSilent(err) && ctx.Err() == nil {
+				if attempt < len(oaiRetryAfter) {
+					logs.New("Remote").Warn("provider sent no answer; asking again", slog.Duration("silent_for", oaiStallAfter), slog.Int("attempt", attempt+1), slog.String("model", model))
+					llm.Notify(ctx, fmt.Sprintf("The model's provider sent nothing for %s — asking again.", oaiStallAfter))
+					time.Sleep(oaiRetryAfter[attempt])
+					continue
+				}
+				return nil, errProviderSilent(oaiStallAfter)
+			}
 			return nil, fmt.Errorf("anthropic request failed: %w", err)
 		}
 		// 429 and 529 (overloaded) are asked again after a pause, as the

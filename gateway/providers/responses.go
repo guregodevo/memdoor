@@ -222,6 +222,15 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		setAttributionHeaders(ctx, hr.Header)
 		resp, err = m.client.httpClient.Do(hr)
 		if err != nil {
+			if providerSilent(err) && ctx.Err() == nil {
+				if attempt < len(oaiRetryAfter) {
+					logs.New("Remote").Warn("provider sent no answer; asking again", slog.Duration("silent_for", oaiStallAfter), slog.Int("attempt", attempt+1), slog.String("model", model))
+					llm.Notify(ctx, fmt.Sprintf("The model's provider sent nothing for %s — asking again.", oaiStallAfter))
+					time.Sleep(oaiRetryAfter[attempt])
+					continue
+				}
+				return nil, errProviderSilent(oaiStallAfter)
+			}
 			return nil, fmt.Errorf("gateway request failed: %w", err)
 		}
 		if (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500) && attempt < len(oaiRetryAfter) && ctx.Err() == nil {
