@@ -290,7 +290,7 @@ func offerFileKeys(found []modelkey.Found, in *bufio.Reader) {
 // OpenRouter, free; 2 with a ChatGPT plan; n leaves it.
 func offerSignIn(in *bufio.Reader) {
 	fmt.Fprintln(os.Stderr, "No model connected yet, and no key here that works.")
-	fmt.Fprintln(os.Stderr, "  1. Sign in with OpenRouter (free account, in the browser, nothing to copy)")
+	fmt.Fprintln(os.Stderr, "  1. Sign in with OpenRouter ("+openRouterSignInHow()+")")
 	fmt.Fprintln(os.Stderr, "  2. Sign in with ChatGPT (a Plus or Pro plan)")
 	fmt.Fprint(os.Stderr, "Which? [Enter: 1 · 2 · n: not now; memdoor connect <provider> takes a key] ")
 	line, _ := in.ReadString('\n')
@@ -308,6 +308,17 @@ func offerSignIn(in *bufio.Reader) {
 	if err := providerSignIn(kind, os.Stderr, in, false); err != nil {
 		fmt.Fprintf(os.Stderr, "✗ not signed in: %v\n", err)
 	}
+}
+
+// openRouterSignInHow says what the OpenRouter sign-in asks of the person on
+// this machine: with a browser, nothing to copy; with none (an ssh session, a
+// Linux box with no display), a link to open elsewhere and a code to paste
+// back (localSignInStart takes the same test).
+func openRouterSignInHow() string {
+	if noBrowserHere() {
+		return "free account: open a link on any machine, paste back the code it shows"
+	}
+	return "free account, in the browser, nothing to copy"
 }
 
 // pickFound reads the answer to the offer: "" is the first, a number from
