@@ -442,7 +442,10 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   "when not connected suggest /connect"): the token step opens with the
   kind's variable name prefilled — `> ANTHROPIC_API_KEY`, *is set on the
   gateway — enter keeps it* — shown as a name (no secret on screen), empty
-  for a company gateway whose variable is its own; a built-in connected
+  for a company gateway whose variable is its own; a key pasted or typed
+  there replaces the name, Backspace deletes it whole and Enter keeps it
+  (2026-11-18: the key was appended to the name, and OpenRouter answered
+  401); a built-in connected
   through `/connect` is kept in `providers.json` under its id and fills
   the built-in at the next start (the environment wins when it has one —
   `TestAConnectedBuiltInSurvivesARestart`); a model whose provider is not
