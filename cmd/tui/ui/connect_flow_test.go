@@ -1,12 +1,14 @@
 package ui
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func press(t tea.KeyType, r ...rune) tea.KeyMsg { return tea.KeyMsg{Type: t, Runes: r} }
@@ -263,5 +265,45 @@ func TestConnectKeyPasteReplacesThePrefilledName(t *testing.T) {
 	typeKey(m, press(tea.KeyRunes, 'X'))
 	if m.input.Value() != "OPENROUTER_API_KEXY" {
 		t.Fatalf("after a cursor key the name is edited, not replaced: %q", m.input.Value())
+	}
+}
+
+// The kind list keeps its columns: every hint starts where the others do, a
+// hint too long for the row goes on under its own column, never back at the
+// left edge, and a name too wide for the column has its hint on the next line (2026-11-18: four names were wider than the fixed 32 columns, and
+// "its address" wrapped to column 0 as if it were the next row).
+func TestConnectKindListKeepsItsColumns(t *testing.T) {
+	number := regexp.MustCompile(`^[ >] *[0-9]+\. `)
+	withHint := regexp.MustCompile(`^[ >] *[0-9]+\. \S+( \S+)*  +`)
+	for _, width := range []int{120, 100} {
+		m := &Model{width: width, input: textarea.New()}
+		m.connectOps = ConnectOps{Connect: func(ConnectRequest) (ConnectResult, error) { return ConnectResult{}, nil }}
+		m.connectCommand(nil)
+		v := ansi.Strip(m.renderConnect(lipglossPlain(), lipglossPlain()))
+		col, rows := -1, 0
+		for _, l := range strings.Split(v, "\n")[1:] {
+			l = strings.TrimRight(l, " ")
+			if l == "" || strings.Contains(l, "esc cancel") {
+				continue
+			}
+			at := len(l) - len(strings.TrimLeft(l, " "))
+			if number.MatchString(l) {
+				rows++
+				r := withHint.FindString(l)
+				if r == "" {
+					continue // a name wider than the column: its hint is on the next line
+				}
+				at = len(r)
+			}
+			if col == -1 {
+				col = at
+			}
+			if at != col {
+				t.Fatalf("width %d: %q starts its hint at %d, the first row at %d:\n%s", width, l, at, col, v)
+			}
+		}
+		if rows != len(ConnectKinds) {
+			t.Fatalf("width %d: %d rows, %d kinds:\n%s", width, rows, len(ConnectKinds), v)
+		}
 	}
 }
