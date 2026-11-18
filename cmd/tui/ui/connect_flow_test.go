@@ -49,9 +49,10 @@ func TestConnectFlowPicksTypesProbesAndSays(t *testing.T) {
 		t.Fatalf("a typed value is drawn as dots: %q", v)
 	}
 	m.input.SetValue("ANTHROPIC_API_KEY")
-	if h, _ := m.connectKey(press(tea.KeyRunes, 'x')); h {
-		t.Fatal("a letter on a text step goes to the input line")
+	if h, _ := m.connectKey(press(tea.KeyRunes, 'x')); h || m.input.Value() != "" {
+		t.Fatalf("a letter on a text step goes to the input line, in place of the prefilled name: %q", m.input.Value())
 	}
+	m.input.SetValue("ANTHROPIC_API_KEY")
 	h, cmd := m.connectKey(press(tea.KeyEnter))
 	if !h || cmd == nil || m.connect.step != connectStepProbing {
 		t.Fatalf("enter on the key sends (Anthropic asks no model): %+v", m.connect)
@@ -192,5 +193,75 @@ func TestAChatGPTSignInSaysThePlanAnswersAndThePinMoved(t *testing.T) {
 	m.connectDone(connectResultMsg{req: ConnectRequest{ID: "chatgpt", API: "chatgpt"}, res: ConnectResult{OK: true, ID: "chatgpt", Models: 8, Tested: "gpt-6.1-sol", Answer: "ok"}})
 	if last := m.messages[len(m.messages)-1].Content; strings.Contains(last, "by default") || strings.Contains(last, "pin moved") {
 		t.Fatalf("a company key answering: no default line, no pin line:\n%s", last)
+	}
+}
+
+// The prefilled variable name is a default: a key pasted into the field takes
+// its place. It was appended (2026-11-18, a first run on Linux): the field held
+// OPENROUTER_API_KEYsk-or-…, drawn as dots, and OpenRouter answered 401.
+func TestConnectKeyPasteReplacesThePrefilledName(t *testing.T) {
+	var got ConnectRequest
+	open := func() *Model {
+		m := &Model{width: 100, input: textarea.New()}
+		m.input.Focus()
+		m.connectOps = ConnectOps{Connect: func(req ConnectRequest) (ConnectResult, error) {
+			got = req
+			return ConnectResult{OK: true, ID: req.ID}, nil
+		}}
+		m.connectCommand([]string{"openrouter"})
+		if m.connect.step != connectStepBase {
+			t.Fatalf("/connect openrouter asks the base: %+v", m.connect)
+		}
+		m.connectKey(press(tea.KeyEnter))
+		if m.connect.step != connectStepKey || m.input.Value() != "OPENROUTER_API_KEY" || m.connect.keySet {
+			t.Fatalf("the name prefilled, not set on the gateway: %+v %q", m.connect, m.input.Value())
+		}
+		return m
+	}
+	// type sends a key through the window's order: /connect first, then the input line.
+	typeKey := func(m *Model, k tea.KeyMsg) {
+		if h, _ := m.connectKey(k); !h {
+			m.input, _ = m.input.Update(k)
+		}
+	}
+	send := func(m *Model) string {
+		_, cmd := m.connectKey(press(tea.KeyEnter))
+		if cmd == nil {
+			t.Fatalf("enter on the key sends: %+v %q", m.connect, m.input.Value())
+		}
+		cmd()
+		return got.Key
+	}
+
+	m := open()
+	typeKey(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("sk-or-v1-pasted"), Paste: true})
+	if k := send(m); k != "sk-or-v1-pasted" {
+		t.Fatalf("a pasted key replaces the name: %q", k)
+	}
+
+	m = open()
+	for _, r := range "sk-or-v1-typed" {
+		typeKey(m, press(tea.KeyRunes, r))
+	}
+	if k := send(m); k != "sk-or-v1-typed" {
+		t.Fatalf("a typed key replaces the name, and the letters after the first add up: %q", k)
+	}
+
+	m = open()
+	if k := send(m); k != "OPENROUTER_API_KEY" {
+		t.Fatalf("enter keeps the name: %q", k)
+	}
+
+	m = open()
+	typeKey(m, press(tea.KeyBackspace))
+	if m.input.Value() != "" {
+		t.Fatalf("backspace deletes the prefilled name whole: %q", m.input.Value())
+	}
+
+	m = open()
+	typeKey(m, press(tea.KeyLeft))
+	typeKey(m, press(tea.KeyRunes, 'X'))
+	if m.input.Value() != "OPENROUTER_API_KEXY" {
+		t.Fatalf("after a cursor key the name is edited, not replaced: %q", m.input.Value())
 	}
 }

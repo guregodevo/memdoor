@@ -165,6 +165,9 @@ type connectFlow struct {
 	model  string
 	keyVar string // prefilled on the token step: the kind's variable, or the one the gateway has
 	keySet bool   // the gateway already holds it
+	// keyAsIs: the token step still holds the prefilled name, untouched; the
+	// first letter or paste replaces it instead of adding to it.
+	keyAsIs bool
 	// The browser sign-in, once started.
 	loginID  string
 	loginURL string
@@ -342,7 +345,27 @@ func (m *Model) connectPrefill() {
 			m.input.SetValue(f.keyVar)
 			m.input.CursorEnd()
 		}
+		f.keyAsIs = f.keyVar != ""
 	}
+}
+
+// connectKeyReplace makes the prefilled name a default, as a selected word
+// is: a pasted or typed key takes its place and Backspace deletes it whole.
+// Enter keeps it; a cursor key starts editing it.
+func (m *Model) connectKeyReplace(k tea.KeyMsg) (handled bool) {
+	f := m.connect
+	if f.step != connectStepKey || !f.keyAsIs || k.Type == tea.KeyEnter {
+		return false
+	}
+	f.keyAsIs = false
+	switch k.Type {
+	case tea.KeyRunes:
+		m.input.Reset()
+	case tea.KeyBackspace, tea.KeyCtrlH:
+		m.input.Reset()
+		return true
+	}
+	return false
 }
 
 // connectKey handles keys while /connect is open. handled is false when the
@@ -391,6 +414,9 @@ func (m *Model) connectKey(k tea.KeyMsg) (handled bool, cmd tea.Cmd) {
 		}
 		return true, nil
 	case connectStepProbing:
+		return true, nil
+	}
+	if m.connectKeyReplace(k) {
 		return true, nil
 	}
 	if k.Type == tea.KeyEnter {
@@ -590,9 +616,9 @@ func (m Model) renderConnect(inputStyle, helpStyle lipgloss.Style) string {
 		b.WriteString(head.Render(f.kind.Name+" — token or key (not shown)") + "\n")
 		switch {
 		case f.keySet:
-			b.WriteString(dim.Render(f.keyVar+" is set on the gateway — enter keeps it; or type the value, another variable's NAME, or !command") + "\n")
+			b.WriteString(dim.Render(f.keyVar+" is set on the gateway — enter keeps it; typing replaces it: the value, another variable's NAME, or !command") + "\n")
 		case f.keyVar != "":
-			b.WriteString(dim.Render(f.keyVar+" prefilled (not set on the gateway yet) — or type the value, a variable's NAME, or !command that prints it") + "\n")
+			b.WriteString(dim.Render(f.keyVar+" prefilled (not set on the gateway yet) — typing replaces it: the value, a variable's NAME, or !command that prints it") + "\n")
 		default:
 			b.WriteString(dim.Render("the value, the NAME of an environment variable the gateway has, or !command that prints it") + "\n")
 		}
