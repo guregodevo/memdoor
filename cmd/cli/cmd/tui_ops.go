@@ -145,7 +145,7 @@ func brainGate(state string) string {
 		// One way per line (2026-11-11: the one-line version, its ways
 		// joined by semicolons, was read as a wall).
 		return "no model yet. Connect one:\n" +
-			"  memdoor connect openrouter-login   sign in with OpenRouter: free, nothing to copy\n" +
+			"  memdoor connect openrouter-login   sign in with OpenRouter, " + openRouterSignInHow() + "\n" +
 			"  memdoor connect chatgpt            sign in with a ChatGPT Plus or Pro plan\n" +
 			"  memdoor connect <provider>         a key (memdoor connect lists them)\n" +
 			"  or export OPENROUTER_API_KEY=…     (or ANTHROPIC_API_KEY, …) and start again\n" +
