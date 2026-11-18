@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -568,6 +569,27 @@ func (m *Model) connectDone(msg connectResultMsg) {
 	}
 }
 
+// connectKindLine is one row of the kind list: the number, the name in a
+// column names wide, then the hint, wrapped under its own column (a hint that
+// wrapped to the left edge read as the next row). A name wider than the column
+// puts its hint on the next line; a window too narrow for a column of hints
+// wraps the row as it comes.
+func (m Model) connectKindLine(number, name string, names int, hint string, width int) string {
+	col := lipgloss.Width(number) + names + 2
+	if width-col < 24 {
+		return number + name + "  " + hint
+	}
+	pad := strings.Repeat(" ", col)
+	lines := strings.Split(m.wrapText(hint, width-col), "\n")
+	for n := 1; n < len(lines); n++ {
+		lines[n] = pad + lines[n]
+	}
+	if lipgloss.Width(name) > names {
+		return number + name + "\n" + pad + strings.Join(lines, "\n")
+	}
+	return number + name + strings.Repeat(" ", names-lipgloss.Width(name)+2) + strings.Join(lines, "\n")
+}
+
 // renderConnect is the footer while /connect runs: the kind list, or the
 // step's prompt over the input line — the token drawn as dots.
 func (m Model) renderConnect(inputStyle, helpStyle lipgloss.Style) string {
@@ -594,9 +616,18 @@ func (m Model) renderConnect(inputStyle, helpStyle lipgloss.Style) string {
 			}
 			b.WriteString(dim.Render("Or a provider:") + "\n")
 		}
+		// The name column: the widest name that fits in a third of the
+		// window; a longer one puts its hint on the next line.
+		names := 0
+		for _, k := range ConnectKinds {
+			if n := lipgloss.Width(k.Name); n <= w/3 {
+				names = max(names, n)
+			}
+		}
+		digits := len(strconv.Itoa(len(f.found) + len(ConnectKinds)))
 		for j, k := range ConnectKinds {
 			i := len(f.found) + j
-			line := fmt.Sprintf("  %d. %-32s %s", i+1, k.Name, k.Hint)
+			line := m.connectKindLine(fmt.Sprintf("  %*d. ", digits, i+1), k.Name, names, k.Hint, w)
 			if i == f.index {
 				b.WriteString(head.Render(">"+line[1:]) + "\n")
 			} else {
