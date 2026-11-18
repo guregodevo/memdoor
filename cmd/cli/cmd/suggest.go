@@ -31,6 +31,9 @@ var nextStepSuggestions = map[string]string{
 	// After an upgrade nothing is new to set up: the conversations and the
 	// keys are the same, on the new binary.
 	"upgrade": `memdoor resume --last   (same conversations, same keys, on the new binary)`,
+	// A provider connected: the window is what comes next, as the installer
+	// says (2026-11-18: "memdoor --help" followed a first connect).
+	"connect": `cd <your-project> && memdoor   (the window, on the model just connected)`,
 	// workspace use is the last step before the first turn, so it points at it.
 	"workspace use":     `memdoor tui   (the agent works in this directory)`,
 	"auth login-direct": `memdoor tui   (the agent works in this directory)`,

@@ -336,7 +336,7 @@ a wrong URL or token fails here, in words. Kept in ~/.memdoor/providers.json
 		// none, so signing in comes first (the maintainer, 2026-10-31).
 		if flagKey, _ := cmd.Flags().GetString("key"); pick.ID == providers.OpenRouterID && flagKey == "" &&
 			term.IsTerminal(int(os.Stdin.Fd())) && providerKeySource(pick.ID) == "" {
-			fmt.Println("  1. Sign in with OpenRouter in the browser (no key to copy; sign up is free)")
+			fmt.Println("  1. Sign in with OpenRouter (" + openRouterSignInHow() + ")")
 			fmt.Println("  2. Paste a key")
 			if ask("Number", "1") == "1" {
 				return providerSignIn(ui.KindOpenRouterLogin, os.Stdout, in, true)
