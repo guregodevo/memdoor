@@ -329,6 +329,26 @@ func (m Model) tickStatus() tea.Cmd {
 	return tick(30*time.Second, func(time.Time) tea.Msg { return statusTickMsg{} })
 }
 
+// readStatus reads the gateway's status into the footer. The footer names
+// the model that answers this session's agent; once a turn has answered,
+// the model that actually did. With the gate down, a message the gate held
+// comes back into an empty box.
+func (m *Model) readStatus() {
+	if m.statusOp != nil {
+		m.status = m.statusOp()
+		if mdl := m.status.AgentModels[m.codeAgent]; mdl != "" {
+			m.status.Model = mdl
+		}
+		if m.answeredBy != "" {
+			m.status.Model = m.answeredBy
+		}
+	}
+	if m.status.Gate == "" && m.heldPrompt != "" && strings.TrimSpace(m.input.Value()) == "" {
+		m.input.SetValue(m.heldPrompt)
+		m.heldPrompt = ""
+	}
+}
+
 // statusTickSoon is the footer's cadence while a gate is up: a brain
 // that is starting is watched, not waited for.
 func statusTickSoon() tea.Cmd {
