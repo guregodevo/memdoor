@@ -83,6 +83,10 @@ type PageConfig struct {
 	// is on the gateway's machine, and Dir is that directory there.
 	FS  FS
 	Dir string
+	// OfferConnect: the command asked no sign-in question before the window
+	// (no key anywhere on a first run); the window opens on its /connect list
+	// while no model is connected.
+	OfferConnect bool
 }
 
 // NewPage is a page for one agent (pages.go): its conversation, its look,
@@ -156,6 +160,7 @@ func NewPage(cfg PageConfig) Model {
 		modeOp:         cfg.Ops.Mode,
 		statusOp:       cfg.Ops.Status,
 		turnEndedOp:    cfg.Ops.TurnEnded,
+		offerConnect:   cfg.OfferConnect,
 		updateOp:       cfg.Ops.Update,
 		mcp:            cfg.Ops.MCP,
 		workflow:       cfg.Ops.Workflow,

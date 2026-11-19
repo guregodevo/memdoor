@@ -224,9 +224,18 @@ func printConnected(out io.Writer, res ui.ConnectResult) {
 // bill); another tool's saved keys are looked in after a yes and the first
 // that works is connected; with none, a sign-in is offered. On a gateway
 // with a model, or with nobody to answer, it does nothing.
-func offerFoundKey(c *Client) {
+func offerFoundKey(c *Client) { offerFoundKeyBefore(c, false) }
+
+// offerFoundKeyBefore is offerFoundKey for a command that opens the window
+// next (window true). Nothing is then asked in the terminal: a question stood
+// between a newcomer and the window, and one who left there never saw it. A
+// key in this shell is still connected, with no question. Otherwise the
+// window opens on its /connect list (true): the keys found in the project
+// first, picked there instead of answered here, then the two sign-ins.
+// Other tools' saved keys are not looked in: that needs a yes.
+func offerFoundKeyBefore(c *Client, window bool) (connectInWindow bool) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) || readBrain(c).State != "none" {
-		return
+		return false
 	}
 	in := bufio.NewReader(os.Stdin)
 	var shell, files []modelkey.Found
@@ -238,16 +247,20 @@ func offerFoundKey(c *Client) {
 		}
 	}
 	if connectFirstThatWorks(shell, os.Stderr) {
-		return
+		return false
+	}
+	if window {
+		return true
 	}
 	if len(files) > 0 {
 		offerFileKeys(files, in)
-		return
+		return false
 	}
 	if connectFirstThatWorks(askToolStores(in, os.Stderr), os.Stderr) {
-		return
+		return false
 	}
 	offerSignIn(in)
+	return false
 }
 
 // connectFirstThatWorks connects the keys in order until one is taken, and

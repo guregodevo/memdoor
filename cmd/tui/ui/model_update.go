@@ -1283,6 +1283,18 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.updateSaid = u
 			m.note(u)
 		}
+		// The first run with no key: the terminal asked no sign-in question,
+		// so the window opens on the way to a model (PageConfig.OfferConnect).
+		if m.offerConnect {
+			m.offerConnect = false
+			if m.status.Gate != "" && m.connectOps.Connect != nil && m.connect == nil {
+				m.note("No model connected yet: pick one below. Esc closes the list; /connect opens it again.")
+				cmd := m.connectCommand(nil)
+				m.viewport.SetContent(m.renderMessages())
+				m.viewport.GotoBottom()
+				return m, tea.Batch(cmd, statusTickSoon())
+			}
+		}
 		if m.status.Gate != "" {
 			return m, statusTickSoon()
 		}
