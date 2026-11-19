@@ -201,9 +201,10 @@ MEMDOOR_BIN=$FIRST_BIN
 echo "== 3. /connect deepseek in the window: the key pasted over the prefilled name"
 new_home window
 open_pane fs-window window "$(env_line "$WORK/window/home" "$MEMDOOR_BIN" --gateway "$GATEWAY")"
-wait_for fs-window 'No model connected yet' 60 "the first run did not say no model is connected"
-tmux send-keys -t fs-window n Enter
-wait_for fs-window '^ >' 60 "the window did not open"
+wait_for fs-window 'No model connected yet: pick one below' 60 "the first run did not open the window on /connect"
+wait_for fs-window 'Sign in with OpenRouter' 10 "the /connect list does not offer the OpenRouter sign-in"
+tmux send-keys -t fs-window Escape
+wait_gone fs-window 'Sign in with OpenRouter' 10 "Esc did not close the /connect list"
 tmux send-keys -t fs-window -l "/connect deepseek"; tmux send-keys -t fs-window Enter
 wait_for fs-window 'DeepSeek — base URL' 10 "/connect deepseek did not ask for the base URL"
 tmux send-keys -t fs-window C-u; tmux send-keys -t fs-window -l "$STANDIN_URL"; tmux send-keys -t fs-window Enter
