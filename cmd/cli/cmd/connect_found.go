@@ -299,28 +299,43 @@ func offerFileKeys(found []modelkey.Found, in *bufio.Reader) {
 }
 
 // offerSignIn is the first run with no key anywhere: a choice instead of a
-// sentence (the maintainer, 2026-10-31: "they dont know the key"). Enter signs in with
-// OpenRouter, free; 2 with a ChatGPT plan; n leaves it.
+// sentence (the maintainer, 2026-10-31: "they dont know the key"), and the
+// whole of it (2026-11-20: "Not just openrouter", "Yes full list"): the list
+// `memdoor connect` prints, the sign-ins first, then every kind that takes a
+// key. Enter signs in with OpenRouter, free; a number picks that entry; n
+// leaves it.
 func offerSignIn(in *bufio.Reader) {
 	fmt.Fprintln(os.Stderr, "No model connected yet, and no key here that works.")
-	fmt.Fprintln(os.Stderr, "  1. Sign in with OpenRouter ("+openRouterSignInHow()+")")
-	fmt.Fprintln(os.Stderr, "  2. Sign in with ChatGPT (a Plus or Pro plan)")
-	fmt.Fprint(os.Stderr, "Which? [Enter: 1 · 2 · n: not now; memdoor connect <provider> takes a key] ")
+	menu := connectMenu(nil, nil, os.Stderr)
+	fmt.Fprint(os.Stderr, "Which? [Enter: 1 · a number · n: not now] ")
 	line, _ := in.ReadString('\n')
-	kind := ""
-	switch a := strings.ToLower(strings.TrimSpace(line)); {
-	case a == "" || a == "1" || a == "y" || a == "yes":
-		kind = ui.KindOpenRouterLogin
-	case a == "2":
-		kind = ui.KindChatGPT
-	default:
+	pick, ok := pickFound(strings.TrimSpace(line), len(menu))
+	if !ok {
 		return
 	}
-	// No paste-anytime reader: the window opens next, and a reader left on
+	kind := menu[pick].kind
+	if !signsIn(kind.ID) {
+		// A kind that takes a key, an address or a local runtime: the
+		// questions `memdoor connect <kind>` asks, from the same code.
+		if err := connectKind(kind.ID); err != nil {
+			fmt.Fprintf(os.Stderr, "✗ not connected: %v\n", err)
+		}
+		return
+	}
+	// No paste-anytime reader: the run starts next, and a reader left on
 	// stdin would take its keys. A headless sign-in reads its code once.
-	if err := providerSignIn(kind, os.Stderr, in, false); err != nil {
+	if err := providerSignIn(kind.ID, os.Stderr, in, false); err != nil {
 		fmt.Fprintf(os.Stderr, "✗ not signed in: %v\n", err)
 	}
+}
+
+// connectKind runs `memdoor connect <kind>` from inside another command. A
+// variable, set in init: connectCmd's own body reaches offerSignIn through
+// the first-run setup, and a direct call would be an initialization cycle.
+var connectKind func(kind string) error
+
+func init() {
+	connectKind = func(kind string) error { return connectCmd.RunE(connectCmd, []string{kind}) }
 }
 
 // openRouterSignInHow says what the OpenRouter sign-in asks of the person on
