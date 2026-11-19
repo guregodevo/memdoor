@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"memdoor/internal/testenv"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -149,10 +151,11 @@ func TestTheWindowChecksInTheBackgroundAndAfterATurn(t *testing.T) {
 		updateNotice, updateSay, updateChecked, updateChecking = "", "", time.Time{}, false
 	})
 	updateNotice, updateSay, updateChecked, updateChecking = "", "", time.Time{}, false
+	answeredSince, answeredAsked = false, false
 	Version = "v1.821.0"
 	remote, fetches := "v1.822.0", 0
 	release := make(chan struct{})
-	fetchWindowVersion = func() (string, error) { <-release; fetches++; return remote, nil }
+	fetchWindowVersion = func(bool) (string, error) { <-release; fetches++; return remote, nil }
 	settled := func() string {
 		t.Helper()
 		for i := 0; i < 200; i++ {
@@ -196,7 +199,7 @@ func TestTheWindowChecksInTheBackgroundAndAfterATurn(t *testing.T) {
 		t.Fatalf("a turn an hour later asks again: fetches=%d %q", fetches, got)
 	}
 
-	fetchWindowVersion = func() (string, error) { fetches++; return "", errors.New("offline") }
+	fetchWindowVersion = func(bool) (string, error) { fetches++; return "", errors.New("offline") }
 	updateMu.Lock()
 	updateChecked = time.Time{}
 	updateMu.Unlock()
@@ -215,3 +218,89 @@ func TestTheWindowChecksInTheBackgroundAndAfterATurn(t *testing.T) {
 
 // osq is the part of every check that names its operating system.
 var osq = "os=" + runtime.GOOS
+
+// The window's check says answered=1 when a reply arrived since the check
+// before it, and nothing else about the turn. The first reply asks at once;
+// later ones wait for the check after a turn, at most once an hour.
+func TestTheWindowsCheckSaysAReplyArrived(t *testing.T) {
+	savedV, savedF := Version, fetchWindowVersion
+	reset := func() {
+		updateNotice, updateSay, updateChecked, updateChecking = "", "", time.Time{}, false
+		answeredSince, answeredAsked = false, false
+	}
+	t.Cleanup(func() { Version, fetchWindowVersion = savedV, savedF; reset() })
+	reset()
+	Version = "v1.834.0"
+	var mu sync.Mutex
+	var sent []bool
+	fetchWindowVersion = func(answered bool) (string, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		sent = append(sent, answered)
+		return "v1.834.0", nil
+	}
+	checks := func(want ...bool) {
+		t.Helper()
+		for i := 0; i < 200; i++ {
+			updateMu.Lock()
+			busy := updateChecking
+			updateMu.Unlock()
+			mu.Lock()
+			n := len(sent)
+			mu.Unlock()
+			if !busy && n >= len(want) {
+				break
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if fmt.Sprint(sent) != fmt.Sprint(want) {
+			t.Fatalf("checks sent answered=%v, want %v", sent, want)
+		}
+	}
+
+	tuiUpdateNotice()
+	checks(false)
+	tuiAnswered()
+	checks(false, true)
+	tuiAnswered()
+	tuiTurnEnded()
+	checks(false, true)
+
+	updateMu.Lock()
+	updateChecked = time.Now().Add(-updateAfterTurn - time.Minute)
+	updateMu.Unlock()
+	tuiTurnEnded()
+	checks(false, true, true)
+
+	updateMu.Lock()
+	updateChecked = time.Time{}
+	updateMu.Unlock()
+	tuiUpdateNotice()
+	checks(false, true, true, false)
+}
+
+// answered=1 is in the query only when the window says so.
+func TestTheAnsweredMarkIsInTheQuery(t *testing.T) {
+	var queries []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.RawQuery)
+		_, _ = w.Write([]byte("v1.800.0\n"))
+	}))
+	defer srv.Close()
+	saved := versionEndpoint
+	t.Cleanup(func() { versionEndpoint = saved })
+	versionEndpoint = srv.URL + "/dl/VERSION"
+	t.Setenv("MEMDOOR_CI", "")
+	t.Setenv("GITHUB_ACTIONS", "")
+	t.Setenv("MEMDOOR_OWNER", "")
+	for _, a := range []bool{true, false} {
+		if _, err := fetchRemoteVersionMarked("", time.Second, a); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(queries) != 2 || queries[0] != "answered=1&"+osq || queries[1] != osq {
+		t.Fatalf("answered=1 only when a reply arrived: %q", queries)
+	}
+}

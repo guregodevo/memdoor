@@ -922,6 +922,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.messages = append(m.messages, responseMsg)
 		}
 		m.roundClosed = true
+		// A reply with text: the window's version check says one arrived. A
+		// failed turn is an executionFailedMsg and says nothing.
+		if m.answeredOp != nil && strings.TrimSpace(msg.content) != "" {
+			m.answeredOp()
+		}
 		// Recommend a next command when the answer signals a recall gap.
 		// Send anything the user queued while this turn was running, batched.
 		flush := m.flushQueue()

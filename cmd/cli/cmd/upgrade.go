@@ -169,6 +169,15 @@ func fetchRemoteVersion() (string, error) { return fetchRemoteVersionFrom("", 10
 // marked and left out (#90). Nothing about the person is sent: the
 // operating system, and the marks.
 func fetchRemoteVersionFrom(from string, timeout time.Duration) (string, error) {
+	return fetchRemoteVersionMarked(from, timeout, false)
+}
+
+// fetchRemoteVersionMarked is fetchRemoteVersionFrom with the window's one
+// mark about its use: answered=1 when a reply arrived in the window since its
+// last check (tuiAnswered). memdoor-ops counts the windows that got an answer
+// with it, not only the ones that opened. Which model, what was asked and
+// what was answered are not sent.
+func fetchRemoteVersionMarked(from string, timeout time.Duration, answered bool) (string, error) {
 	if g, ok, err := installSource(); err != nil {
 		return "", err
 	} else if ok {
@@ -193,6 +202,9 @@ func fetchRemoteVersionFrom(from string, timeout time.Duration) (string, error) 
 	// not a person's. Set by hand on those hosts only.
 	if os.Getenv("MEMDOOR_OWNER") != "" {
 		q.Set("me", "1")
+	}
+	if answered {
+		q.Set("answered", "1")
 	}
 	u := versionEndpoint + "?" + q.Encode()
 	resp, err := client.Get(u)

@@ -48,6 +48,7 @@ type Ops struct {
 	Status         func() Status                                    // the footer
 	Update         func() (string, error)                           // /update — install the published build
 	TurnEnded      func()                                           // a turn ended: the published version is asked again, at most once an hour (#290)
+	Answered       func()                                           // a reply arrived: the next version check says answered=1
 	MCP            MCPOps                                           // /mcp — the person's MCP servers (mcp_panel.go)
 	Workflow       WorkflowOps                                      // /workflow — DAG runs on mario (workflow_panel.go)
 	Connect        ConnectOps                                       // /connect — add a provider (connect_flow.go)
@@ -156,6 +157,7 @@ func NewPage(cfg PageConfig) Model {
 		modeOp:         cfg.Ops.Mode,
 		statusOp:       cfg.Ops.Status,
 		turnEndedOp:    cfg.Ops.TurnEnded,
+		answeredOp:     cfg.Ops.Answered,
 		updateOp:       cfg.Ops.Update,
 		mcp:            cfg.Ops.MCP,
 		workflow:       cfg.Ops.Workflow,

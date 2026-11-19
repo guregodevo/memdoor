@@ -36,6 +36,7 @@ type Model struct {
 	// Model ops (injected by cmd/cli).
 	statusOp           func() Status                                    // footer status: where you are, what is thinking, what it costs
 	turnEndedOp        func()                                           // told when a turn has ended, at the next status tick
+	answeredOp         func()                                           // told when a reply arrives
 	turnSinceTick      bool                                             // a turn started since the last status tick
 	updateSaid         string                                           // the update notice already said in the conversation, once per version
 	heldPrompt         string                                           // a prompt Enter refused behind the brain gate, back in the box once it lifts

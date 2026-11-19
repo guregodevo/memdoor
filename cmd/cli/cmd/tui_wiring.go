@@ -114,6 +114,7 @@ func (w *tuiWiring) baseConfig(agent, chID, chName string, page int) ui.PageConf
 			},
 			Update:    tuiUpdate,
 			TurnEnded: tuiTurnEnded,
+			Answered:  tuiAnswered,
 			// /fresh and /clear: the gateway wipes the agent's memory of
 			// this conversation (gateway/session_fresh.go).
 			Fresh: func(agent string) error {

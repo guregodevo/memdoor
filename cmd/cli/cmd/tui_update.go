@@ -21,6 +21,10 @@ var (
 	updateNotice   string
 	updateSay      string
 	updateChecking bool
+	// answeredSince: a reply arrived in this window since the last check.
+	// answeredAsked: the first reply has had its own check.
+	answeredSince bool
+	answeredAsked bool
 )
 
 // How often the window asks for the published version: when it opens and
@@ -33,7 +37,9 @@ const (
 )
 
 // fetchWindowVersion is the window's check; a test replaces it.
-var fetchWindowVersion = fetchRemoteVersion
+var fetchWindowVersion = func(answered bool) (string, error) {
+	return fetchRemoteVersionMarked("", 10*time.Second, answered)
+}
 
 // tuiUpdateNotice is the footer's "memdoor vX is out (this is vY) —
 // /update installs it" and the conversation's line, with the release's
@@ -75,6 +81,20 @@ func tuiTurnEnded() {
 	}
 }
 
+// tuiAnswered is told each reply in the window. The next check says so
+// (answered=1). The first reply asks at once: a first session that ends
+// within the hour would otherwise not be counted, since a turn asks again
+// only once an hour has passed.
+func tuiAnswered() {
+	updateMu.Lock()
+	defer updateMu.Unlock()
+	answeredSince = true
+	if !answeredAsked && !updateChecking {
+		answeredAsked = true
+		startUpdateCheckLocked()
+	}
+}
+
 // startUpdateCheckLocked runs one check in the background. An error keeps
 // the last answer: the check is a convenience, not a gate.
 func startUpdateCheckLocked() {
@@ -82,12 +102,22 @@ func startUpdateCheckLocked() {
 		return
 	}
 	updateChecking, updateChecked = true, time.Now()
+	answered := answeredSince
+	answeredSince = false
 	fetch, local := fetchWindowVersion, Version
 	go func() {
-		remote, err := fetch()
+		remote, err := fetch(answered)
 		updateMu.Lock()
 		defer updateMu.Unlock()
 		updateChecking = false
+		if err != nil && answered {
+			answeredSince = true // said by the next check
+		}
+		// The first reply came while this check was on its way.
+		if answeredSince && !answeredAsked {
+			answeredAsked = true
+			defer startUpdateCheckLocked()
+		}
 		switch {
 		case err != nil || remote == "":
 		case versionNewer(remote, local):
