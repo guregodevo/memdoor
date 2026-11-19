@@ -12,6 +12,7 @@ A team of small open models on one task, each role a fresh context, the work che
 The SWE-bench run, with every patch, log and trajectory and the kit that ran it: [guregodevo/swe-bench](https://github.com/guregodevo/swe-bench); the summary: [bench/memdoor-swe-bench](bench/memdoor-swe-bench/README.md). The LiveCodeBench runs: [bench/results/parity-5pass](bench/results/parity-5pass/).
 
     curl -fsSL https://memdoor.ai/install.sh | bash
+    memdoor connect                                             # any provider: a sign-in, a key or a local model
     memdoor workflow try                                        # the team on a sample problem, two minutes to a verdict
     cd your-project && memdoor workflow run team-solve "fix the failing test in pkg/auth; go test ./... must pass"
 
@@ -65,7 +66,7 @@ on one page: [memdoor.ai/docs/team-solve](https://memdoor.ai/docs/team-solve).
 ## Run it
 
     curl -fsSL https://memdoor.ai/install.sh | bash
-    memdoor connect openrouter        # or anthropic, openai, gemini, chatgpt
+    memdoor connect                   # any provider: a sign-in or a key
     # or no key: memdoor connect local   (Ollama, llama.cpp, vLLM, LM Studio; Ollama needs a 32K window, not its 4K default)
     git clone --depth 1 https://github.com/guregodevo/memdoor
 
