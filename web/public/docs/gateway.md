@@ -57,7 +57,7 @@ Or on the box, once:
 ```bash
 curl -fsSL https://memdoor.ai/install.sh | bash
 cd <your-project> && memdoor run "say hi"   # the first run creates the first account there
-memdoor connect openrouter                   # a key kept on disk; the service reads it
+memdoor connect                              # any provider; the key is kept on disk and the service reads it
 memdoor gateway install                      # systemd --user on Linux, launchd on macOS; no root
 memdoor gateway status
 ```
