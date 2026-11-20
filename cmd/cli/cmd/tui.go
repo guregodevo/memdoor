@@ -111,7 +111,7 @@ func runTUI(opts tuiOptions) error {
 			return err
 		}
 		c := NewClient()
-		offerFoundKey(c)
+		connectInWindow := offerFoundKeyBefore(c, true)
 
 		// The conversation is scoped to the workspace, and the session key the
 		// gateway builds carries it.
@@ -209,6 +209,7 @@ func runTUI(opts tuiOptions) error {
 		}
 
 		first := pageConfig(ui.FirstAgent(), channelID, channelName, 0)
+		first.OfferConnect = connectInWindow
 		if opts.resumeChannelID != "" {
 			// A resumed conversation should look like the one you left: its
 			// title in the header and the last exchanges in view. The agent's

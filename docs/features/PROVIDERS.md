@@ -658,8 +658,12 @@ the connect probe to the key's own provider.
   trying the OpenRouter key in $MY_OR_KEY … ✓ … memdoor connect --remove
   openrouter forgets it"); a key in the project's files is asked about once
   (it may be the project's production key, another's bill); other tools'
-  saved keys after a yes, the first that works connected; with none, a
-  sign-in is offered (below).
+  saved keys after a yes, the first that works connected; with none, the
+  list `memdoor connect` prints is offered (`offerSignIn`): the sign-ins,
+  then every kind that takes a key; Enter is Sign in with OpenRouter, a
+  number runs that kind's connect, `n` leaves it. `memdoor` asks none of these: a key in the
+  shell is connected, and otherwise the window opens on its `/connect` list,
+  the project's keys first, then the two sign-ins.
 - **`memdoor connect` with no kind** (`connectMenu`): the found keys that
   would change something are numbered first, then the sign-ins under "Sign
   in, no key:" (never buried; live 2026-10-31 Sign in with OpenRouter was
@@ -751,9 +755,11 @@ says OpenRouter's words). One POST to `/api/v1/auth/keys` returns a key of
 the person's own; a gateway that does not take it at once is asked three
 times before the person is told the key is on their account.
 
-- **Where**: the first run with no key that works offers "1. Sign in with
-  OpenRouter (free) 2. Sign in with ChatGPT" (both with any gateway: ChatGPT's
-  browser return is relayed, above); `memdoor connect openrouter-login`;
+- **Where**: a first `memdoor run` with no key that works offers the whole
+  `memdoor connect` list, "1. Sign in with OpenRouter" first and "2. ChatGPT
+  plan" next (both with any gateway: ChatGPT's browser return is relayed,
+  above), then every provider that takes a key; a first `memdoor` opens the window on
+  `/connect`; `memdoor connect openrouter-login`;
   `memdoor connect openrouter` with no key asks "1. sign in 2. paste a key";
   the window's `/connect` lists it first. The "no model yet" line names it.
 - **Shared code**: the gateway's sign-in registry and steps

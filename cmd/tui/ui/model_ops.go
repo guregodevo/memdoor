@@ -83,6 +83,10 @@ type PageConfig struct {
 	// is on the gateway's machine, and Dir is that directory there.
 	FS  FS
 	Dir string
+	// OfferConnect: the command asked no sign-in question before the window
+	// (no key anywhere on a first run); the window opens on its /connect list
+	// while no model is connected.
+	OfferConnect bool
 }
 
 // NewPage is a page for one agent (pages.go): its conversation, its look,
@@ -156,6 +160,7 @@ func NewPage(cfg PageConfig) Model {
 		modeOp:         cfg.Ops.Mode,
 		statusOp:       cfg.Ops.Status,
 		turnEndedOp:    cfg.Ops.TurnEnded,
+		offerConnect:   cfg.OfferConnect,
 		updateOp:       cfg.Ops.Update,
 		mcp:            cfg.Ops.MCP,
 		workflow:       cfg.Ops.Workflow,
@@ -327,6 +332,26 @@ type statusTickMsg struct{}
 
 func (m Model) tickStatus() tea.Cmd {
 	return tick(30*time.Second, func(time.Time) tea.Msg { return statusTickMsg{} })
+}
+
+// readStatus reads the gateway's status into the footer. The footer names
+// the model that answers this session's agent; once a turn has answered,
+// the model that actually did. With the gate down, a message the gate held
+// comes back into an empty box.
+func (m *Model) readStatus() {
+	if m.statusOp != nil {
+		m.status = m.statusOp()
+		if mdl := m.status.AgentModels[m.codeAgent]; mdl != "" {
+			m.status.Model = mdl
+		}
+		if m.answeredBy != "" {
+			m.status.Model = m.answeredBy
+		}
+	}
+	if m.status.Gate == "" && m.heldPrompt != "" && strings.TrimSpace(m.input.Value()) == "" {
+		m.input.SetValue(m.heldPrompt)
+		m.heldPrompt = ""
+	}
 }
 
 // statusTickSoon is the footer's cadence while a gate is up: a brain

@@ -50,7 +50,11 @@ var ConnectKinds = []ConnectKind{
 	// machine or the box, no token; nothing leaves the machine it runs on.
 	{"local", "Local runtime (janis, Ollama, llama.cpp, LM Studio)", "chat", "", "no key: blank finds one on the gateway's machine, or give its address", true, "", true},
 	{"openrouter", "OpenRouter", "openrouter", "https://openrouter.ai/api/v1", "an API key from openrouter.ai/keys: every model, one key", false, "OPENROUTER_API_KEY", false},
-	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY", false},
+	// The routers with one key for many vendors come next (the maintainer,
+	// 2026-11-20: AI/ML API, EUrouter, Vercel, in that order).
+	{"aimlapi", "AI/ML API (one key, many vendors)", "chat", "https://api.aimlapi.com/v1", "an API key from aimlapi.com/app/keys", false, "AIMLAPI_API_KEY", false},
+	{"eurouter", "EUrouter (models served in the EU)", "chat", "https://api.eurouter.ai/api/v1", "an API key from eurouter.ai", false, "EUROUTER_API_KEY", false},
+	{"vercel", "Vercel AI Gateway", "chat", "https://ai-gateway.vercel.sh/v1", "an AI Gateway API key from vercel.com (AI Gateway → API Keys)", false, "AI_GATEWAY_API_KEY", false},
 	{"openai", "OpenAI", "responses", "https://api.openai.com/v1", "an API key from platform.openai.com", false, "OPENAI_API_KEY", false},
 	{"gemini", "Google Gemini", "chat", "https://generativelanguage.googleapis.com/v1beta/openai", "an API key from Google AI Studio", false, "GEMINI_API_KEY", false},
 	{"deepseek", "DeepSeek", "chat", "https://api.deepseek.com/v1", "an API key from platform.deepseek.com", false, "DEEPSEEK_API_KEY", false},
@@ -58,11 +62,11 @@ var ConnectKinds = []ConnectKind{
 	{"groq", "Groq", "chat", "https://api.groq.com/openai/v1", "an API key from console.groq.com", false, "GROQ_API_KEY", false},
 	{"baseten", "Baseten", "chat", "https://inference.baseten.co/v1", "an API key from app.baseten.co", false, "BASETEN_API_KEY", false},
 	{"llmgateway", "LLM Gateway (one key, many vendors)", "chat", "https://api.llmgateway.io/v1", "an API key from llmgateway.io", false, "LLMGATEWAY_API_KEY", false},
-	{"aimlapi", "AI/ML API (one key, many vendors)", "chat", "https://api.aimlapi.com/v1", "an API key from aimlapi.com/app/keys", false, "AIMLAPI_API_KEY", false},
-	{"vercel", "Vercel AI Gateway", "chat", "https://ai-gateway.vercel.sh/v1", "an AI Gateway API key from vercel.com (AI Gateway → API Keys)", false, "AI_GATEWAY_API_KEY", false},
-	{"eurouter", "EUrouter (models served in the EU)", "chat", "https://api.eurouter.ai/api/v1", "an API key from eurouter.ai", false, "EUROUTER_API_KEY", false},
 	{"gateway", "Company AI gateway", "", "https://ai-gateway.example.com/ai", "the base before /v1; a personal or service-account token", true, "", false},
 	{"custom", "Any OpenAI-compatible endpoint", "", "https://host/v1", "a base URL and its key", true, "", false},
+	// Anthropic is the last chat provider on the list (the maintainer,
+	// 2026-11-20: "anthropic is last"). /connect anthropic still names it.
+	{"anthropic", "Anthropic", "anthropic", "https://api.anthropic.com", "an API key from console.anthropic.com", false, "ANTHROPIC_API_KEY", false},
 	// The decision model is not a chat provider: last, and said to be
 	// optional, so a newcomer choosing a model does not take it for one
 	// (2026-11-11). /connect typesafe still names it.

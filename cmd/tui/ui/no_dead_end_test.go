@@ -64,3 +64,43 @@ func TestModelWithANameSearches(t *testing.T) {
 		t.Fatalf("/model deepseek searched %q", asked)
 	}
 }
+
+// A connect that answers lifts the gate at once: the next status tick was up
+// to 5 s away, and a message sent right after "✓ connected" went back to the
+// picker with "No model yet" (scripts/first-session.sh, 2026-11-18). The
+// message the gate held comes back into the box, and Enter sends it.
+func TestAConnectLiftsTheGateAtOnce(t *testing.T) {
+	var sent []string
+	m := NewModel("http://x", "ws", "chan", "", func(agent, w, text, mode string) error {
+		sent = append(sent, text)
+		return nil
+	})
+	gate := "no model yet — no key? memdoor connect openrouter-login …"
+	m.statusOp = func() Status { return Status{Gate: gate} }
+	m.connectOps = ConnectOps{Connect: func(req ConnectRequest) (ConnectResult, error) {
+		return ConnectResult{OK: true, ID: req.ID}, nil
+	}}
+	step := func(msg tea.Msg) { nm, _ := m.Update(msg); m = nm.(Model) }
+	step(tea.WindowSizeMsg{Width: 100, Height: 40})
+	step(websocketConnectedMsg{})
+	m.status.Gate = gate
+	typeAndEnter(step, "add a hello.py that prints hi")
+	if m.connect == nil || m.heldPrompt == "" {
+		t.Fatalf("the gate did not hold the message and open the picker: %+v", m.connect)
+	}
+
+	gate = "" // the gateway has a model once the connect answers
+	step(connectResultMsg{req: ConnectRequest{ID: "deepseek"}, res: ConnectResult{OK: true, ID: "deepseek"}})
+	if m.status.Gate != "" {
+		t.Fatalf("the gate is still up after ✓ connected: %q", m.status.Gate)
+	}
+	if m.input.Value() != "add a hello.py that prints hi" {
+		t.Fatalf("the held message is not back in the box: %q", m.input.Value())
+	}
+	nm, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m = nm.(Model)
+	runCmd(cmd)
+	if len(sent) != 1 && len(m.queued) != 1 {
+		t.Fatalf("Enter did not send the message: sent %q, queued %d, notes:\n%s", sent, len(m.queued), notesOf(m))
+	}
+}

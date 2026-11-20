@@ -283,6 +283,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	if r, ok := msg.(connectResultMsg); ok {
 		m.connectDone(r)
+		if r.err == nil && r.res.OK {
+			// The gate lifts now, not at the next tick up to 5 s away: a
+			// message sent right after "✓ connected" went back to the picker.
+			m.readStatus()
+		}
 		m.viewport.SetContent(m.renderMessages())
 		m.gotoBottom()
 		return m, nil
@@ -1270,17 +1275,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.turnEndedOp()
 			}
 		}
-		if m.statusOp != nil {
-			m.status = m.statusOp()
-			// The footer names the model that answers this session's agent;
-			// once a turn has answered, the model that actually did.
-			if mdl := m.status.AgentModels[m.codeAgent]; mdl != "" {
-				m.status.Model = mdl
-			}
-			if m.answeredBy != "" {
-				m.status.Model = m.answeredBy
-			}
-		}
+		m.readStatus()
 		// A newer build is said once in the conversation, never during a
 		// turn: the line above the footer is the one place a person looks
 		// least (#290). A later build is said again.
@@ -1288,9 +1283,17 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.updateSaid = u
 			m.note(u)
 		}
-		if m.status.Gate == "" && m.heldPrompt != "" && strings.TrimSpace(m.input.Value()) == "" {
-			m.input.SetValue(m.heldPrompt)
-			m.heldPrompt = ""
+		// The first run with no key: the terminal asked no sign-in question,
+		// so the window opens on the way to a model (PageConfig.OfferConnect).
+		if m.offerConnect {
+			m.offerConnect = false
+			if m.status.Gate != "" && m.connectOps.Connect != nil && m.connect == nil {
+				m.note("No model connected yet: pick one below. Esc closes the list; /connect opens it again.")
+				cmd := m.connectCommand(nil)
+				m.viewport.SetContent(m.renderMessages())
+				m.viewport.GotoBottom()
+				return m, tea.Batch(cmd, statusTickSoon())
+			}
 		}
 		if m.status.Gate != "" {
 			return m, statusTickSoon()

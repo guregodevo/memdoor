@@ -310,6 +310,7 @@ func ensureGatewayRunning() {
 	cmd := exec.Command(binary, "gateway", "--port", port)
 	cmd.Stdout = logF
 	cmd.Stderr = logF
+	detachFromTerminal(cmd)
 	if err := cmd.Start(); err != nil {
 		_ = logF.Close()
 		return

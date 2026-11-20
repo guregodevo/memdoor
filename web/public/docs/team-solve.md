@@ -59,7 +59,7 @@ Parity check, hosts, what the rebuild took, where it lost:
 
 ```
 curl -fsSL https://memdoor.ai/install.sh | bash
-memdoor connect openrouter          # or anthropic, openai, gemini, chatgpt
+memdoor connect                     # any provider: a sign-in or a key
 memdoor connect local               # or no key: a model on this machine (Ollama, llama.cpp, vLLM, LM Studio)
 mkdir my-problem && cd my-problem
 memdoor workflow run team-solve --wait   # built in; an empty folder gets the sample problem; exit 0 when every sample passes
