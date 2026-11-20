@@ -250,8 +250,15 @@ func NewToolUseBlock(id, inputJSON, name string) ContentBlockParamUnion {
 }
 
 // NewToolResultBlock builds a tool_result-shaped ContentBlockParamUnion.
-// content is wrapped as a single text content entry.
+// content is wrapped as a single text content entry. An empty result is
+// written as "(no output)": a tool_result text block may not be empty (a
+// Claude request refuses the whole message for it, live 2026-11-18, a grep
+// with no matches), and a tool that succeeded with nothing to say still
+// says so.
 func NewToolResultBlock(toolUseID, content string, isError bool) ContentBlockParamUnion {
+	if content == "" {
+		content = "(no output)"
+	}
 	return ContentBlockParamUnion{OfToolResult: &ToolResultBlockParam{
 		Type:      "tool_result",
 		ToolUseID: toolUseID,

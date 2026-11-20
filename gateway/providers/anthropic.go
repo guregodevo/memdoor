@@ -68,6 +68,8 @@ func anthropicMessagesOf(in []llm.MessageParam) ([]anthropicMessage, error) {
 			case b.OfImage != nil:
 				raw, err = json.Marshal(map[string]any{"type": "image", "source": map[string]string{
 					"type": "base64", "media_type": b.OfImage.MediaType, "data": b.OfImage.Data}})
+			case b.OfToolResult != nil:
+				raw, err = json.Marshal(toolResultWithOutput(b.OfToolResult))
 			default:
 				raw, err = json.Marshal(b)
 			}
@@ -82,6 +84,35 @@ func anthropicMessagesOf(in []llm.MessageParam) ([]anthropicMessage, error) {
 		out = append(out, am)
 	}
 	return out, nil
+}
+
+// toolResultWithOutput returns tr with every empty text block written as
+// "(no output)": the Messages API refuses a tool_result whose text is empty
+// ("text type must have non-empty text field", live 2026-11-18, a grep with
+// no matches), and the empty record is already in the transcript by the time
+// the request is built — so the request, not the record, carries the words.
+// The OpenAI shape keeps the same promise in toolResultText.
+func toolResultWithOutput(tr *llm.ToolResultBlockParam) *llm.ToolResultBlockParam {
+	empty := false
+	for _, c := range tr.Content {
+		if c.OfText != nil && c.OfText.Text == "" {
+			empty = true
+			break
+		}
+	}
+	if !empty {
+		return tr
+	}
+	out := *tr
+	out.Content = append([]llm.ToolResultBlockParamContentUnion(nil), tr.Content...)
+	for i, c := range out.Content {
+		if c.OfText != nil && c.OfText.Text == "" {
+			t := *c.OfText
+			t.Text = "(no output)"
+			out.Content[i].OfText = &t
+		}
+	}
+	return &out
 }
 
 // anthropicResponse is the reply; content blocks decode straight into
@@ -150,6 +181,15 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 		setAttributionHeaders(ctx, req.Header)
 		resp, err = m.client.httpClient.Do(req)
 		if err != nil {
+			if providerSilent(err) && ctx.Err() == nil {
+				if attempt < len(oaiRetryAfter) {
+					logs.New("Remote").Warn("provider sent no answer; asking again", slog.Duration("silent_for", oaiStallAfter), slog.Int("attempt", attempt+1), slog.String("model", model))
+					llm.Notify(ctx, fmt.Sprintf("The model's provider sent nothing for %s — asking again.", oaiStallAfter))
+					time.Sleep(oaiRetryAfter[attempt])
+					continue
+				}
+				return nil, errProviderSilent(oaiStallAfter)
+			}
 			return nil, fmt.Errorf("anthropic request failed: %w", err)
 		}
 		// 429 and 529 (overloaded) are asked again after a pause, as the
