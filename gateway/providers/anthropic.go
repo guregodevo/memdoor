@@ -65,6 +65,10 @@ func anthropicMessagesOf(in []llm.MessageParam) ([]anthropicMessage, error) {
 			var raw []byte
 			var err error
 			switch {
+			case b.OfText != nil && b.OfText.Text == "":
+				// An empty text block is refused by the Messages API; the
+				// chat shape drops it too (anthropic_wire_test.go).
+				continue
 			case b.OfImage != nil:
 				raw, err = json.Marshal(map[string]any{"type": "image", "source": map[string]string{
 					"type": "base64", "media_type": b.OfImage.MediaType, "data": b.OfImage.Data}})
@@ -93,6 +97,12 @@ func anthropicMessagesOf(in []llm.MessageParam) ([]anthropicMessage, error) {
 // the request is built — so the request, not the record, carries the words.
 // The OpenAI shape keeps the same promise in toolResultText.
 func toolResultWithOutput(tr *llm.ToolResultBlockParam) *llm.ToolResultBlockParam {
+	if len(tr.Content) == 0 {
+		// No content at all: the same words, as the other two shapes send.
+		out := *tr
+		out.Content = []llm.ToolResultBlockParamContentUnion{{OfText: &llm.TextBlockParam{Type: "text", Text: "(no output)"}}}
+		return &out
+	}
 	empty := false
 	for _, c := range tr.Content {
 		if c.OfText != nil && c.OfText.Text == "" {
@@ -168,6 +178,9 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 
 	start := time.Now()
 	var resp *http.Response
+	var acc *anthropicStream
+	var streamErr error
+	streamed := false
 	for attempt := 0; ; attempt++ {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.client.baseURL+"/v1/messages", bytes.NewReader(body))
 		if err != nil {
@@ -200,9 +213,25 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 			time.Sleep(retryAfter(resp.Header, oaiRetryAfter[attempt]))
 			continue
 		}
+		// The stream is read here, inside the attempts: one that breaks
+		// after its headers with nothing shown is asked again, as the
+		// chat shape does (askAgainAfterBrokenStream).
+		if resp.StatusCode == http.StatusOK && !strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			shown := false
+			acc, streamErr = consumeAnthropicStream(newIdleTimeoutReader(resp.Body, oaiStallAfter), shownBy(llm.StreamCallbackFromContext(ctx), &shown), llm.StreamGuardFromContext(ctx))
+			var again bool
+			if again, streamErr = askAgainAfterBrokenStream(ctx, streamErr, shown, attempt, model); again {
+				resp.Body.Close()
+				continue
+			}
+			streamed = true
+		}
 		break
 	}
 	defer resp.Body.Close()
+	if streamErr != nil {
+		return nil, streamErr
+	}
 	if resp.StatusCode != http.StatusOK {
 		raw, _ := io.ReadAll(resp.Body)
 		var ar anthropicResponse
@@ -214,8 +243,7 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 	}
 	// Streamed (stream: true): text deltas reach the window as they are
 	// written; the blocks are assembled in order for the turn.
-	var acc *anthropicStream
-	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+	if !streamed {
 		// A proxy that answers one object although a stream was asked.
 		raw, _ := io.ReadAll(resp.Body)
 		var ar anthropicResponse
@@ -240,11 +268,6 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 				acc.thinking.WriteString(b.Thinking)
 			}
 			acc.blocks = append(acc.blocks, blk)
-		}
-	} else {
-		acc, err = consumeAnthropicStream(newIdleTimeoutReader(resp.Body, oaiStallAfter), llm.StreamCallbackFromContext(ctx), llm.StreamGuardFromContext(ctx))
-		if err != nil {
-			return nil, err
 		}
 	}
 	out := &llm.Message{ID: acc.id, Type: "message", Role: "assistant", Model: llm.Model(acc.model), StopReason: llm.StopReason(acc.stopReason), Thinking: acc.thinking.String()}
@@ -410,7 +433,7 @@ func consumeAnthropicStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 		return nil
 	})
 	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("anthropic stream: %w", err)
+		return nil, brokenStream{fmt.Errorf("anthropic stream: %w", err)}
 	}
 	if streamErr != nil {
 		return nil, streamErr

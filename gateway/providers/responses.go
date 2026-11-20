@@ -100,6 +100,11 @@ func responsesInput(msgs []llm.MessageParam) []any {
 		for _, b := range m.Content {
 			switch {
 			case b.OfText != nil:
+				// An empty text part says nothing and may be refused; the
+				// chat shape drops it too.
+				if b.OfText.Text == "" {
+					continue
+				}
 				parts = append(parts, map[string]any{"type": textType, "text": b.OfText.Text})
 			case b.OfImage != nil:
 				parts = append(parts, map[string]any{"type": "input_image", "image_url": "data:" + b.OfImage.MediaType + ";base64," + b.OfImage.Data})
@@ -215,6 +220,10 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 
 	start := time.Now()
 	var resp *http.Response
+	var rr *responsesResponse
+	var guarded bool
+	var streamErr error
+	streamed := false
 	for attempt := 0; ; attempt++ {
 		hr, err := http.NewRequestWithContext(ctx, http.MethodPost, m.client.url, bytes.NewReader(body))
 		if err != nil {
@@ -246,9 +255,29 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 			time.Sleep(retryAfter(resp.Header, oaiRetryAfter[attempt]))
 			continue
 		}
+		// The stream is read here, inside the attempts: one that breaks
+		// after its headers with nothing shown is asked again, as the
+		// chat shape does (askAgainAfterBrokenStream).
+		if resp.StatusCode == http.StatusOK && !strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+			shown := false
+			rr, guarded, streamErr = consumeResponsesStream(newIdleTimeoutReader(resp.Body, oaiStallAfter), shownBy(llm.StreamCallbackFromContext(ctx), &shown), llm.StreamGuardFromContext(ctx))
+			var again bool
+			if again, streamErr = askAgainAfterBrokenStream(ctx, streamErr, shown, attempt, model); again {
+				resp.Body.Close()
+				continue
+			}
+			streamed = true
+		}
 		break
 	}
 	defer resp.Body.Close()
+	if streamErr != nil {
+		var sf *streamFailure
+		if m.client.plan && errors.As(streamErr, &sf) {
+			return nil, chatgptRefusal(http.StatusOK, sf.code, sf.message)
+		}
+		return nil, streamErr
+	}
 	if resp.StatusCode != http.StatusOK {
 		raw, _ := io.ReadAll(resp.Body)
 		var rr responsesResponse
@@ -269,9 +298,7 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 	// reply, assembled from the deltas when a gateway sends no final object.
 	// A gateway that answers one JSON object although a stream was asked
 	// (its content type says so) is read as that object.
-	var rr *responsesResponse
-	var guarded bool
-	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+	if !streamed {
 		raw, _ := io.ReadAll(resp.Body)
 		var one responsesResponse
 		if err := json.Unmarshal(raw, &one); err != nil {
@@ -281,15 +308,6 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 			return nil, fmt.Errorf("the gateway answered: %s: %s", one.Error.Code, one.Error.Message)
 		}
 		rr = &one
-	} else {
-		rr, guarded, err = consumeResponsesStream(newIdleTimeoutReader(resp.Body, oaiStallAfter), llm.StreamCallbackFromContext(ctx), llm.StreamGuardFromContext(ctx))
-		if err != nil {
-			var sf *streamFailure
-			if m.client.plan && errors.As(err, &sf) {
-				return nil, chatgptRefusal(http.StatusOK, sf.code, sf.message)
-			}
-			return nil, err
-		}
 	}
 	out := &llm.Message{ID: rr.ID, Type: "message", Role: "assistant", Model: llm.Model(rr.Model), StopReason: llm.StopReasonEndTurn}
 	out.Usage.InputTokens, out.Usage.OutputTokens = rr.Usage.InputTokens, rr.Usage.OutputTokens
@@ -505,7 +523,7 @@ func consumeResponsesStream(r io.Reader, cb llm.StreamCallback, guard llm.Stream
 		return nil
 	})
 	if err != nil && err != io.EOF {
-		return nil, false, fmt.Errorf("responses stream: %w", err)
+		return nil, false, brokenStream{fmt.Errorf("responses stream: %w", err)}
 	}
 	if streamErr != nil {
 		return nil, false, streamErr
