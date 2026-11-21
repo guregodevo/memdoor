@@ -111,6 +111,14 @@ The same solution files graded by the same code:
 - Row 5's misses under fair grading: 3692, abc398_g and abc399_e (one test
   each), arc196_c (no `solution.py`).
 
+The tools, beside `grade.py` and with its setup (`problems.json` from
+`dump.py`, `LCB_RUNNER`):
+
+    python3 fair.py <id> [solution.py]     # one solution graded fairly, the wrong tests dropped
+    python3 audit.py <folder>...           # suspect tests across the solution.py files under the folders
+
+Grade arc190_c with nothing else running: under load its test 20 times out.
+
 ## team-solve-fanout, DeepSeek V4.1 Flash, 2026-11-12
 
 The same 100 problems, graded the same way. One pass of
