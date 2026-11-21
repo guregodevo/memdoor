@@ -30,16 +30,14 @@ func TestEnterIsGatedWhileTheBrainIsNotOn(t *testing.T) {
 	}
 
 	// Still gated: the text stays held.
-	mm, _ = m.Update(statusTickMsg{})
-	m = mm.(Model)
+	m, _ = statusRead(m, statusTickMsg{})
 	if m.input.Value() != "" {
 		t.Fatalf("still gated, the box must stay empty, got %q", m.input.Value())
 	}
 
 	// The gate lifts: the text is back in the box.
 	gate = ""
-	mm, _ = m.Update(statusTickMsg{})
-	m = mm.(Model)
+	m, _ = statusRead(m, statusTickMsg{})
 	if m.input.Value() != "cut the best minute" {
 		t.Fatalf("the kept text must come back once the gate lifts, got %q", m.input.Value())
 	}
@@ -56,11 +54,11 @@ func TestEnterIsGatedWhileTheBrainIsNotOn(t *testing.T) {
 // minute otherwise — a starting brain is watched, not waited for.
 func TestTheFooterWatchesAGatedBrain(t *testing.T) {
 	m := NewPage(PageConfig{Agent: "coder", Ops: Ops{Status: func() Status { return Status{Gate: "no brain here"} }}})
-	mm, cmd := m.Update(statusTickMsg{})
+	mm, cmd := statusRead(m, statusTickMsg{})
 	if cmd == nil {
 		t.Fatal("no follow-up tick")
 	}
-	if mm.(Model).status.Gate == "" {
+	if mm.status.Gate == "" {
 		t.Fatal("the status was not refreshed")
 	}
 }

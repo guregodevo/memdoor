@@ -143,8 +143,8 @@ func settle(mm tea.Model, cmd tea.Cmd, depth int) tea.Model {
 		return mm
 	}
 	if _, ok := msg.(statusTickMsg); ok {
-		mm, _ = mm.Update(msg)
-		return mm
+		m, _ := statusRead(mm.(Model), msg)
+		return m
 	}
 	mm, next := mm.Update(msg)
 	return settle(mm, next, depth-1)

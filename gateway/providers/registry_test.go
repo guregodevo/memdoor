@@ -24,6 +24,7 @@ func clearProviderEnv(t *testing.T) {
 	t.Cleanup(func() { _ = ClearRemoteEngine() })
 	modelLists.mu.Lock()
 	modelLists.at, modelLists.list = map[string]time.Time{}, map[string][]Model{}
+	modelLists.failAt, modelLists.failed = map[string]time.Time{}, map[string]error{}
 	modelLists.mu.Unlock()
 	// No reference catalogue in these tests: the host is unreachable and
 	// the cache empty, so a window the provider does not state is the default.
@@ -93,6 +94,42 @@ func TestProvidersAreBuiltInsThenTheFile(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Dir(path)); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// A list that does not answer is not asked again for a while: a pin looked
+// up across every provider waited 15 s per status read on one endpoint
+// that never answered (2026-11-21). A forget asks again at once, and an
+// answer clears the failure. Mutation check: drop the failure record in
+// ModelsOf and the second read calls the endpoint again.
+func TestAListThatFailedIsNotAskedAgainAtOnce(t *testing.T) {
+	clearProviderEnv(t)
+	calls, up := 0, false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if !up {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		_, _ = io.WriteString(w, `{"data":[{"id":"m-1","context_length":1000}]}`)
+	}))
+	defer srv.Close()
+	ctx := context.Background()
+	p := Provider{ID: "flaky", API: APIChat, Base: srv.URL + "/v1", Key: "k"}
+
+	if _, err := ModelsOf(ctx, p); err == nil {
+		t.Fatal("a list that failed reads as a list")
+	}
+	if _, err := ModelsOf(ctx, p); err == nil || calls != 1 {
+		t.Fatalf("the failed list was asked again at once: %d calls, err %v", calls, err)
+	}
+	up = true
+	ForgetModels("flaky")
+	if list, err := ModelsOf(ctx, p); err != nil || len(list) != 1 || calls != 2 {
+		t.Fatalf("forgotten, the list is asked again: %d calls, %+v %v", calls, list, err)
+	}
+	if _, err := ModelsOf(ctx, p); err != nil || calls != 2 {
+		t.Fatalf("an answer is cached as before: %d calls, err %v", calls, err)
 	}
 }
 

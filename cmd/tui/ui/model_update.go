@@ -286,7 +286,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if r.err == nil && r.res.OK {
 			// The gate lifts now, not at the next tick up to 5 s away: a
 			// message sent right after "✓ connected" went back to the picker.
-			m.readStatus()
+			m.viewport.SetContent(m.renderMessages())
+			m.gotoBottom()
+			return m, m.readStatusCmd(false)
 		}
 		m.viewport.SetContent(m.renderMessages())
 		m.gotoBottom()
@@ -1275,7 +1277,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.turnEndedOp()
 			}
 		}
-		m.readStatus()
+		return m, m.readStatusCmd(true)
+
+	case statusReadMsg:
+		m.applyStatus(msg)
+		if !msg.tick {
+			return m, nil
+		}
 		// A newer build is said once in the conversation, never during a
 		// turn: the line above the footer is the one place a person looks
 		// least (#290). A later build is said again.
