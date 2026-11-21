@@ -1,6 +1,5 @@
 type: agent
 agent: coder
-model: thinking medium
 # Adds a test and a check that fails on the tree as it is, before any fix.
 # Rule 4, goal-driven. Its target proves the failure: a check that passes
 # already tests nothing.
