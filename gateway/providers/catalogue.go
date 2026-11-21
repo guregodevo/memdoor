@@ -104,10 +104,13 @@ func GetModel(ctx context.Context, p Provider, id string) (Model, error) {
 	return m, nil
 }
 
+// listTimeout is how long a provider's endpoint is waited for.
+var listTimeout = 15 * time.Second
+
 // getJSON reads a provider's endpoint into v with the headers the provider
 // takes; a company's attribution headers travel too.
 func getJSON(ctx context.Context, rawURL string, headers map[string]string, v any) error {
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, listTimeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
@@ -120,7 +123,7 @@ func getJSON(ctx context.Context, rawURL string, headers map[string]string, v an
 	setAttributionHeaders(ctx, req.Header)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("the model list did not answer: %v", err)
+		return fmt.Errorf("the model list did not answer: %w", err)
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
