@@ -7,7 +7,7 @@ memdoor workflow run karpathy "Reject an empty name in ParseSlug; go test ./pkg/
 ```
 
 ```
-think-before-coding ─ (approve) ─ goal ─ lock ─ simplicity-first ─ diff ─ surgical-review ─ surgical-trim ─ verify ─ report
+folder ─ think-before-coding ─ (approve) ─ goal ─ lock ─ simplicity-first ─ diff ─ surgical-review ─ surgical-trim ─ verify ─ report
 ```
 
 The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills), each held by a step of the DAG instead of a line in a prompt:
@@ -21,6 +21,7 @@ The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-
 
 | Step | Kind | Does | Done when |
 |---|---|---|---|
+| `folder` | command | Creates `.memdoor/runs/karpathy-<run>/lab/`, the only folder the later steps write in. | — |
 | `think-before-coding` | agent | Reads the code. Writes `assumptions.md`: readings, assumptions, a simpler way, questions, the check. Its experiments go in `lab/`. Changes no file of the project. | `assumptions.md` exists |
 | `approve` | gate | Waits. Correct `assumptions.md` in place, then open it: `a` in `/workflow` or `memdoor workflow approve <run> approve`. Later steps take the file over the prompt. | opened |
 | `goal` | agent | Reuses what `lab/` holds, adds a test to the project's test files and writes `check`, an executable that runs it. | `check` exists and fails |
@@ -36,6 +37,8 @@ The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-
 |---|---|
 | The change and its test | the working tree, uncommitted |
 | `assumptions.md`, `lab/`, `check`, `check.lock`, `report.md` | `.memdoor/runs/karpathy-<run>/`, out of git |
+
+`think-before-coding`, `goal` and `simplicity-first` run at `thinking medium`: at `high` they hit the 32K-token cap on single replies on hard problems and ended without their file. The line has no model id, so `--model` still picks the model.
 
 Needs a model on your key.
 
