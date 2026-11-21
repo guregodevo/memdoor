@@ -111,3 +111,25 @@ func TestAnAgentStepTakesItsTemperature(t *testing.T) {
 		t.Fatalf("no temperature on the line keeps the agent's: %v", got)
 	}
 }
+
+// A step's line with no id sets options on the run's --model; a line with an
+// id keeps its own model; no line takes the run's.
+func TestAStepLineWithNoIDKeepsTheRunsModel(t *testing.T) {
+	cases := []struct{ step, run, want string }{
+		{"thinking medium", "openrouter:deepseek/deepseek-v4.1-flash", "openrouter:deepseek/deepseek-v4.1-flash thinking medium"},
+		{"throughput thinking low", "qwen/qwen3.8-27b", "qwen/qwen3.8-27b throughput thinking low"},
+		{"thinking off", "", "thinking off"},
+		{"openrouter:qwen/qwen3.8-27b thinking off", "openrouter:deepseek/deepseek-v4.1-flash", "openrouter:qwen/qwen3.8-27b thinking off"},
+		{"", "openrouter:deepseek/deepseek-v4.1-flash", "openrouter:deepseek/deepseek-v4.1-flash"},
+		{"", "", ""},
+	}
+	for _, c := range cases {
+		got := stepModel(c.step, c.run)
+		if got != c.want {
+			t.Errorf("stepModel(%q, %q) = %q, want %q", c.step, c.run, got, c.want)
+		}
+		if m := parseTaskModel(got); c.step == "thinking medium" && (m.ID != c.run || m.Effort != "medium") {
+			t.Errorf("%q parses to id %q effort %q", got, m.ID, m.Effort)
+		}
+	}
+}
