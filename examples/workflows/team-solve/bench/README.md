@@ -63,6 +63,53 @@ The paper's rows: [GVS5H](https://github.com/slee-persis/GVS5H)
 - Not ranked: the parity runs on the first ten problems (Memdoor's rebuild of
   the GVS5H method on Qwen3.8-27B, 9.8 of 10 over five passes, $35.79 for 50
   runs), a different sample.
+- Five tests are wrong, and seven problems accept answers an exact compare
+  rejects. Fairly graded, row 5 solves 96 and two of row 4's five passes
+  solve 96 and 97: [Audit of the tests, 2026-11-21](#audit-of-the-tests-2026-11-21).
+
+## Audit of the tests, 2026-11-21
+
+991 saved solutions, each run on every test separately, no model call: up to
+ten distinct solutions per problem from GVS5H's runs and Memdoor's 2026-11-09
+fan-out. A test is suspect when two or more solutions that fail at most two
+tests all fail it. A problem that accepts more than one answer is judged by a
+validator of the statement's rule.
+
+Wrong or invalid tests:
+
+| problem | test | input | stored | right |
+|---|---|---|---|---|
+| arc192_b | 21 | `10` / `7 16 3 3 9 8 16 12 8 3` | `Snuke` | `Fennec`. An exact search of the game (the untouched indices and the spare decrements) gives it and reproduces the three samples. |
+| arc190_a | 15 | N = 10, M = 15, operation 11 is (1, 10) | cost 2 | Cost 1: operation 1 on (1, 10) alone. |
+| abc392_f | 17 | `6` / `3 3 2 5 4 6` | `0 3 0 5 2 1` | Invalid input: P_1 = 3 breaks P_i ≤ i. |
+| abc392_f | 26 | `5` / `5 4 3 2 1` | `5 0 4 0 1` | Invalid input: P_1 = 5. |
+| abc397_d | 42 | `27` | `3 0` | `-1`: y must be positive, and no positive pair exists. |
+
+The stock grader compares strings. These statements accept other answers:
+abc396_e, abc397_d, arc190_a, arc191_c and arc195_c (any valid answer),
+arc192_b (case-insensitive), abc385_f (an error up to 1e-9). The paper's
+checkers cover four of them (abc396_e, arc190_a, arc195_c, abc385_f) and keep
+arc190_a's test 15.
+
+arc190_c test 20 is valid. Correct solutions take 5.7 to 5.9 s against the
+grader's 6 s, so its verdict depends on the host's load.
+
+With the wrong tests dropped and the validators in place, 99 of the 100
+problems have a solution that passes every test. The 100th is arc190_c, whose
+solutions pass test 20 when the host is not loaded.
+
+The same solution files graded by the same code:
+
+| run | exact compare, each test on its own | fair |
+|---|---|---|
+| team-solve-fanout, 2026-11-09 (row 5) | 91 | 96 |
+| GVS5H manager, DeepSeek V4.1 Flash (row 4), pass 1 | 88 | 96 |
+| GVS5H manager, DeepSeek V4.1 Flash (row 4), pass 2 | 89 | 97 |
+
+- Row 4's passes 3 to 5 kept no `solution.py`, and row 2's solutions are not
+  on the host the audit ran on. Neither is re-graded.
+- Row 5's misses under fair grading: 3692, abc398_g and abc399_e (one test
+  each), arc196_c (no `solution.py`).
 
 ## team-solve-fanout, DeepSeek V4.1 Flash, 2026-11-12
 
