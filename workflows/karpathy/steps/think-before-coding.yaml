@@ -6,9 +6,9 @@ agent: coder
 prompt: |
   The task, as the person wrote it:
 
-  {{ file (printf ".memdoor/runs/careful-change-%s/prompt.md" .partition) }}
+  {{ file (printf ".memdoor/runs/karpathy-%s/prompt.md" .partition) }}
 
-  Do not write any code and do not change any file of the project. Read the code the task concerns, then write, in a few lines per section, `.memdoor/runs/careful-change-{{.partition}}/assumptions.md` with these sections:
+  Do not write any code and do not change any file of the project. Read the code the task concerns, then write, in a few lines per section, `.memdoor/runs/karpathy-{{.partition}}/assumptions.md` with these sections:
 
   ## Readings
   Each way the task can be understood, one line each. When there is one, say so.
@@ -25,7 +25,7 @@ prompt: |
   ## Done when
   One check that fails now and passes once the task is done: the command, and what it shows.
 target:
-  file: .memdoor/runs/careful-change-{{.partition}}/assumptions.md
+  file: .memdoor/runs/karpathy-{{.partition}}/assumptions.md
 budget: 200000
 timeout: 15m
 max_retries: 1

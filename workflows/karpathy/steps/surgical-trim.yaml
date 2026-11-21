@@ -1,0 +1,15 @@
+type: agent
+agent: coder
+# On a FAIL, puts back the lines the review listed, and nothing else.
+when: '{{ if output "surgical-review" | match "(?im)^verdict: *(fail)" }}true{{ else }}false{{ end }}'
+prompt: |
+  A review found lines in the change that the task did not need:
+
+  {{ output "surgical-review" }}
+
+  Put back each line it lists as it was before the change, and nothing else. Keep `.memdoor/runs/karpathy-{{.partition}}/check.lock` passing: run it when you are done. Do not change the check or its test.
+requires:
+  - table_pattern: surgical-review
+budget: 200000
+timeout: 15m
+max_retries: 1

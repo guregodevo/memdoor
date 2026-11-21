@@ -4,11 +4,11 @@ type: llm
 prompt: |
   The task:
 
-  {{ file (printf ".memdoor/runs/careful-change-%s/prompt.md" .partition) }}
+  {{ file (printf ".memdoor/runs/karpathy-%s/prompt.md" .partition) }}
 
   The approved assumptions:
 
-  {{ file (printf ".memdoor/runs/careful-change-%s/assumptions.md" .partition) }}
+  {{ file (printf ".memdoor/runs/karpathy-%s/assumptions.md" .partition) }}
 
   The change (git status, then git diff):
 

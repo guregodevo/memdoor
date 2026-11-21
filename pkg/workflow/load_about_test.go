@@ -180,27 +180,27 @@ func TestTheBuiltInPRCreateLoads(t *testing.T) {
 	}
 }
 
-// careful-change loads: assumptions, the approve gate, check, lock, change, diff, review, trim, verify and
-// report. Each step has an about line (its first comment) the window can show.
-func TestTheBuiltInCarefulChangeLoads(t *testing.T) {
-	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "careful-change"))
+// karpathy loads: think-before-coding, the approve gate, goal, lock, simplicity-first, diff, surgical-review,
+// surgical-trim, verify and report. Each step has an about line (its first comment) the window can show.
+func TestTheBuiltInKarpathyLoads(t *testing.T) {
+	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "karpathy"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(dir); err != nil {
-		t.Skip("no built-in careful-change beside this package")
+		t.Skip("no built-in karpathy beside this package")
 	}
 	wf := load(t, dir, &fakeRunner{})
-	for _, name := range []string{"assumptions", "check", "lock", "change", "diff", "review", "trim", "verify", "report"} {
+	for _, name := range []string{"think-before-coding", "goal", "lock", "simplicity-first", "diff", "surgical-review", "surgical-trim", "verify", "report"} {
 		if _, ok := wf.Task(name); !ok {
 			t.Fatalf("no step %s", name)
 		}
-		about := aboutOf(dir, "careful-change", "careful-change.steps."+name)
+		about := aboutOf(dir, "karpathy", "karpathy.steps."+name)
 		if n := len([]rune(about)); n == 0 || n > 90 {
 			t.Errorf("%s: about line of %d runes: %q", name, n, about)
 		}
 	}
-	if _, ok := wf.Defs["careful-change.steps.approve"]; ok {
-		t.Error("approve has a definition; it is the person's gate, an external requirement of check")
+	if _, ok := wf.Defs["karpathy.steps.approve"]; ok {
+		t.Error("approve has a definition; it is the person's gate, an external requirement of goal")
 	}
 }
