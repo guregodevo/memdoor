@@ -1,5 +1,6 @@
 type: agent
 agent: coder
+model: thinking medium
 # Makes check.lock pass with the smallest change that does the task.
 # Rules 2 and 3, simplicity and surgical changes; the target is the locked check.
 prompt: |
