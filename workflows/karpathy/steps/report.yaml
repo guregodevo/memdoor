@@ -1,0 +1,21 @@
+type: template
+# Writes report.md: the assumptions, the review and the diff stat.
+requires:
+  - table_pattern: verify
+  - table_pattern: surgical-review
+text: |
+  ## karpathy
+
+  {{ file (printf ".memdoor/runs/karpathy-%s/assumptions.md" .partition) }}
+
+  ## Review
+
+  {{ output "surgical-review" }}
+
+  ## Changed
+
+  ```
+  {{ output "verify" }}
+  ```
+target:
+  file: .memdoor/runs/karpathy-{{.partition}}/report.md

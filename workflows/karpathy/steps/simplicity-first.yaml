@@ -5,13 +5,13 @@ agent: coder
 prompt: |
   The task:
 
-  {{ file (printf ".memdoor/runs/careful-change-%s/prompt.md" .partition) }}
+  {{ file (printf ".memdoor/runs/karpathy-%s/prompt.md" .partition) }}
 
   The approved assumptions:
 
-  {{ file (printf ".memdoor/runs/careful-change-%s/assumptions.md" .partition) }}
+  {{ file (printf ".memdoor/runs/karpathy-%s/assumptions.md" .partition) }}
 
-  Make `.memdoor/runs/careful-change-{{.partition}}/check.lock` pass with the smallest change that does the task. Run it after each change until it exits 0.
+  Make `.memdoor/runs/karpathy-{{.partition}}/check.lock` pass with the smallest change that does the task. Run it after each change until it exits 0.
 
   - Write only what the task asks. No feature, option, abstraction or error case it did not ask for.
   - Touch only the lines the task needs. Do not reformat, rename, re-comment or refactor code around them, and keep the file's style.
@@ -22,7 +22,7 @@ prompt: |
 requires:
   - table_pattern: lock
 target:
-  command: .memdoor/runs/careful-change-{{.partition}}/check.lock
+  command: .memdoor/runs/karpathy-{{.partition}}/check.lock
 budget: 400000
 timeout: 30m
 max_retries: 1

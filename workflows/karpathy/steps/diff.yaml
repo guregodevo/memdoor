@@ -4,6 +4,6 @@ type: command
 command: |
   git add --intent-to-add -- . ':(exclude).memdoor' && git status --short -- . ':(exclude).memdoor' && git diff -- . ':(exclude).memdoor'
 requires:
-  - table_pattern: change
+  - table_pattern: simplicity-first
 timeout: 1m
 max_retries: 0

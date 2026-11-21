@@ -2,8 +2,8 @@ type: command
 # Copies the check to check.lock, the copy every later step runs.
 # A change to the check then cannot pass it.
 command: |
-  cp .memdoor/runs/careful-change-{{.partition}}/check .memdoor/runs/careful-change-{{.partition}}/check.lock
+  cp .memdoor/runs/karpathy-{{.partition}}/check .memdoor/runs/karpathy-{{.partition}}/check.lock
 requires:
-  - table_pattern: check
+  - table_pattern: goal
 timeout: 1m
 max_retries: 0
