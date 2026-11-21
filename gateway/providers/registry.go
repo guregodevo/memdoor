@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"memdoor/pkg/price"
 	"memdoor/pkg/shared"
@@ -52,10 +53,11 @@ const (
 
 	providersFile = "providers.json"
 	modelsTTL     = time.Hour
-	// modelsRetry is how long a list that did not answer is not asked again:
-	// a pin looked up across every provider waited 15 s per read on one
-	// endpoint that never answered (2026-11-21). A key change and
-	// `memdoor providers --refresh` ask again at once.
+	// modelsRetry is how long a list that timed out is not asked again: a
+	// pin looked up across every provider waited 15 s per read on one
+	// endpoint that never answered (2026-11-21). A list that fails fast
+	// (refused, an HTTP error) is asked again on the next call, as before.
+	// A key change and `memdoor providers --refresh` ask again at once.
 	modelsRetry = 5 * time.Minute
 )
 
@@ -480,9 +482,13 @@ func ModelsOf(ctx context.Context, p Provider) ([]Model, error) {
 		}
 	}
 	if err != nil && len(list) == 0 {
-		modelLists.mu.Lock()
-		modelLists.failAt[p.ID], modelLists.failed[p.ID] = time.Now(), err
-		modelLists.mu.Unlock()
+		// The provider's own timeout, not the caller's deadline: a probe
+		// that gives up early says nothing about the provider.
+		if errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil {
+			modelLists.mu.Lock()
+			modelLists.failAt[p.ID], modelLists.failed[p.ID] = time.Now(), err
+			modelLists.mu.Unlock()
+		}
 		return nil, err
 	}
 	modelLists.mu.Lock()

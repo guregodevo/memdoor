@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -97,39 +98,65 @@ func TestProvidersAreBuiltInsThenTheFile(t *testing.T) {
 	}
 }
 
-// A list that does not answer is not asked again for a while: a pin looked
-// up across every provider waited 15 s per status read on one endpoint
-// that never answered (2026-11-21). A forget asks again at once, and an
-// answer clears the failure. Mutation check: drop the failure record in
-// ModelsOf and the second read calls the endpoint again.
-func TestAListThatFailedIsNotAskedAgainAtOnce(t *testing.T) {
+// A list that timed out is not asked again for a while: a pin looked up
+// across every provider waited 15 s per status read on one endpoint that
+// never answered (2026-11-21). A list that fails fast is asked again on the
+// next call, as before; so is one the caller's own deadline cut short; a
+// forget asks again at once. Mutation check: drop the failure record in
+// ModelsOf and the second read of the hanging list calls it again.
+func TestAListThatTimedOutIsNotAskedAgainAtOnce(t *testing.T) {
 	clearProviderEnv(t)
-	calls, up := 0, false
+	old := listTimeout
+	listTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { listTimeout = old })
+	var mu sync.Mutex
+	calls := map[string]int{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		if !up {
+		mu.Lock()
+		calls[r.URL.Path]++
+		mu.Unlock()
+		switch r.URL.Path {
+		case "/hang/v1/models":
+			<-r.Context().Done()
+		case "/down/v1/models":
 			w.WriteHeader(http.StatusBadGateway)
-			return
+		default:
+			_, _ = io.WriteString(w, `{"data":[{"id":"m-1","context_length":1000}]}`)
 		}
-		_, _ = io.WriteString(w, `{"data":[{"id":"m-1","context_length":1000}]}`)
 	}))
 	defer srv.Close()
+	count := func(path string) int { mu.Lock(); defer mu.Unlock(); return calls[path] }
 	ctx := context.Background()
-	p := Provider{ID: "flaky", API: APIChat, Base: srv.URL + "/v1", Key: "k"}
 
-	if _, err := ModelsOf(ctx, p); err == nil {
-		t.Fatal("a list that failed reads as a list")
+	hang := Provider{ID: "hang", API: APIChat, Base: srv.URL + "/hang/v1", Key: "k"}
+	if _, err := ModelsOf(ctx, hang); err == nil {
+		t.Fatal("a list that timed out reads as a list")
 	}
-	if _, err := ModelsOf(ctx, p); err == nil || calls != 1 {
-		t.Fatalf("the failed list was asked again at once: %d calls, err %v", calls, err)
+	if _, err := ModelsOf(ctx, hang); err == nil || count("/hang/v1/models") != 1 {
+		t.Fatalf("the timed-out list was asked again at once: %d calls, err %v", count("/hang/v1/models"), err)
 	}
-	up = true
-	ForgetModels("flaky")
-	if list, err := ModelsOf(ctx, p); err != nil || len(list) != 1 || calls != 2 {
-		t.Fatalf("forgotten, the list is asked again: %d calls, %+v %v", calls, list, err)
+	ForgetModels("hang")
+	hang.Base = srv.URL + "/v1"
+	if list, err := ModelsOf(ctx, hang); err != nil || len(list) != 1 {
+		t.Fatalf("forgotten, the list is asked again: %+v %v", list, err)
 	}
-	if _, err := ModelsOf(ctx, p); err != nil || calls != 2 {
-		t.Fatalf("an answer is cached as before: %d calls, err %v", calls, err)
+
+	down := Provider{ID: "down", API: APIChat, Base: srv.URL + "/down/v1", Key: "k"}
+	ModelsOf(ctx, down)
+	ModelsOf(ctx, down)
+	if n := count("/down/v1/models"); n != 2 {
+		t.Fatalf("a list that failed fast is asked again on the next call, as before: %d calls", n)
+	}
+
+	listTimeout = time.Minute
+	probe := Provider{ID: "probe", API: APIChat, Base: srv.URL + "/hang/v1", Key: "k"}
+	for i := 0; i < 2; i++ {
+		short, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+		ModelsOf(short, probe)
+		cancel()
+	}
+	if n := count("/hang/v1/models"); n != 3 {
+		t.Fatalf("a caller's own deadline marks nothing: %d calls to the hanging list, want 3", n)
 	}
 }
 
