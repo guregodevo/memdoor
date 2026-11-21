@@ -8,7 +8,7 @@ prompt: |
 
   {{ file (printf ".memdoor/runs/karpathy-%s/prompt.md" .partition) }}
 
-  Do not write any code and do not change any file of the project. Read the code the task concerns, then write, in a few lines per section, `.memdoor/runs/karpathy-{{.partition}}/assumptions.md` with these sections:
+  Do not change any file of the project. Read the code the task concerns. An experiment you run to test an assumption (a brute force, a reference, a script that reproduces the bug) goes in `.memdoor/runs/karpathy-{{.partition}}/lab/`, never in /tmp: the next step reuses it. Then write, in a few lines per section, `.memdoor/runs/karpathy-{{.partition}}/assumptions.md` with these sections:
 
   ## Readings
   Each way the task can be understood, one line each. When there is one, say so.
@@ -23,7 +23,7 @@ prompt: |
   What only the person can answer. "none" when nothing.
 
   ## Done when
-  One check that fails now and passes once the task is done: the command, and what it shows.
+  One check that fails now and passes once the task is done: the command, and what it shows. Name each file in `lab/` it can reuse, and what that file proves.
 target:
   file: .memdoor/runs/karpathy-{{.partition}}/assumptions.md
 budget: 200000

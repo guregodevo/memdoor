@@ -21,9 +21,9 @@ The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-
 
 | Step | Kind | Does | Done when |
 |---|---|---|---|
-| `think-before-coding` | agent | Reads the code. Writes `assumptions.md`: readings, assumptions, a simpler way, questions, the check. Changes no file. | `assumptions.md` exists |
+| `think-before-coding` | agent | Reads the code. Writes `assumptions.md`: readings, assumptions, a simpler way, questions, the check. Its experiments go in `lab/`. Changes no file of the project. | `assumptions.md` exists |
 | `approve` | gate | Waits. Correct `assumptions.md` in place, then open it: `a` in `/workflow` or `memdoor workflow approve <run> approve`. Later steps take the file over the prompt. | opened |
-| `goal` | agent | Adds a test to the project's test files and writes `check`, an executable that runs it. | `check` exists and fails |
+| `goal` | agent | Reuses what `lab/` holds, adds a test to the project's test files and writes `check`, an executable that runs it. | `check` exists and fails |
 | `lock` | command | Copies `check` to `check.lock`. Every later step runs the copy. | — |
 | `simplicity-first` | agent | The smallest change that passes `check.lock`: nothing the task did not ask for, no edit around it, no change to the check. | `check.lock` passes |
 | `diff` | command | `git status` and `git diff`, new files included, `.memdoor` left out. | — |
@@ -35,7 +35,7 @@ The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-
 | Leaves | Where |
 |---|---|
 | The change and its test | the working tree, uncommitted |
-| `assumptions.md`, `check`, `check.lock`, `report.md` | `.memdoor/runs/karpathy-<run>/`, out of git |
+| `assumptions.md`, `lab/`, `check`, `check.lock`, `report.md` | `.memdoor/runs/karpathy-<run>/`, out of git |
 
 Needs a model on your key.
 
@@ -45,3 +45,7 @@ Needs a model on your key.
 | LiveCodeBench arc192_b | DeepSeek V4.1 Flash 1017 | 42 of 43 tests and 400 of 400 random inputs against an exact search; the failure is a wrong stored test. The coder had read the hidden tests. | 101 | 0.051 |
 | LiveCodeBench abc399_e, gate opened unedited | DeepSeek V4.1 Flash 1017 | 44 of 44 (`fair.py`). team-solve-fanout: 43 of 44 on both of its runs. | 221 | 0.183 |
 | LiveCodeBench 3562, gate opened unedited | DeepSeek V4.1 Flash 1017 | 42 of 42 (`fair.py`) | 116 | 0.070 |
+
+| Run, 2026-11-21, as karpathy, `goal` reusing `lab/` | Model | Result | Calls | $ |
+|---|---|---|---|---|
+| LiveCodeBench abc399_e, gate opened unedited | DeepSeek V4.1 Flash 1017 | 44 of 44 (`fair.py`), 939 s | 105 | 0.075 |
