@@ -1,0 +1,9 @@
+type: command
+# Takes the change: git status and git diff, new files included.
+# Intent-to-add puts a new file in the diff; .memdoor stays out of it.
+command: |
+  git add --intent-to-add -- . ':(exclude).memdoor' && git status --short -- . ':(exclude).memdoor' && git diff -- . ':(exclude).memdoor'
+requires:
+  - table_pattern: change
+timeout: 1m
+max_retries: 0

@@ -1,0 +1,25 @@
+type: llm
+# Lists each hunk the task did not need, then verdict: PASS or FAIL.
+# Rule 3's test, by a model call that did not write the change.
+prompt: |
+  The task:
+
+  {{ file (printf ".memdoor/runs/careful-change-%s/prompt.md" .partition) }}
+
+  The approved assumptions:
+
+  {{ file (printf ".memdoor/runs/careful-change-%s/assumptions.md" .partition) }}
+
+  The change (git status, then git diff):
+
+  ```
+  {{ output "diff" }}
+  ```
+
+  Review the change against two rules. 1: every changed line traces to the task; a reformat, rename, comment edit or refactor the task did not need breaks it. 2: nothing speculative; a feature, option, abstraction or error case the task did not ask for breaks it. The test the change added for the check is part of the task.
+
+  List each hunk that breaks a rule as `file:line — rule — what to put back`. Then end with one line, `verdict: PASS` when no hunk breaks a rule, else `verdict: FAIL`.
+requires:
+  - table_pattern: diff
+timeout: 10m
+max_retries: 1

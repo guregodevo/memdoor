@@ -1,0 +1,28 @@
+type: agent
+agent: coder
+# Makes check.lock pass with the smallest change that does the task.
+# Rules 2 and 3, simplicity and surgical changes; the target is the locked check.
+prompt: |
+  The task:
+
+  {{ file (printf ".memdoor/runs/careful-change-%s/prompt.md" .partition) }}
+
+  The approved assumptions:
+
+  {{ file (printf ".memdoor/runs/careful-change-%s/assumptions.md" .partition) }}
+
+  Make `.memdoor/runs/careful-change-{{.partition}}/check.lock` pass with the smallest change that does the task. Run it after each change until it exits 0.
+
+  - Write only what the task asks. No feature, option, abstraction or error case it did not ask for.
+  - Touch only the lines the task needs. Do not reformat, rename, re-comment or refactor code around them, and keep the file's style.
+  - Remove the imports, variables and functions your change left unused. Leave dead code that was there before; name it in your answer instead.
+  - Do not change the check or the test it runs.
+
+  Answer with one line per file you changed: the file and why the task needed it.
+requires:
+  - table_pattern: lock
+target:
+  command: .memdoor/runs/careful-change-{{.partition}}/check.lock
+budget: 400000
+timeout: 30m
+max_retries: 1
