@@ -52,6 +52,11 @@ const (
 
 	providersFile = "providers.json"
 	modelsTTL     = time.Hour
+	// modelsRetry is how long a list that did not answer is not asked again:
+	// a pin looked up across every provider waited 15 s per read on one
+	// endpoint that never answered (2026-11-21). A key change and
+	// `memdoor providers --refresh` ask again at once.
+	modelsRetry = 5 * time.Minute
 )
 
 // Model is one entry of a provider's list; prices are the provider's own
@@ -378,10 +383,12 @@ func FindProvider(id string) (Provider, bool) {
 var OpenRouterModels func(key string) ([]Model, error)
 
 var modelLists = struct {
-	mu   sync.Mutex
-	at   map[string]time.Time
-	list map[string][]Model
-}{at: map[string]time.Time{}, list: map[string][]Model{}}
+	mu     sync.Mutex
+	at     map[string]time.Time
+	list   map[string][]Model
+	failAt map[string]time.Time
+	failed map[string]error
+}{at: map[string]time.Time{}, list: map[string][]Model{}, failAt: map[string]time.Time{}, failed: map[string]error{}}
 
 // ModelsOf is the provider's list: declared models first, then what its
 // list endpoint says, cached for an hour. A provider with no credential
@@ -398,6 +405,10 @@ func ModelsOf(ctx context.Context, p Provider) ([]Model, error) {
 	if list, ok := modelLists.list[p.ID]; ok && time.Since(modelLists.at[p.ID]) < modelsTTL {
 		modelLists.mu.Unlock()
 		return list, nil
+	}
+	if err, ok := modelLists.failed[p.ID]; ok && time.Since(modelLists.failAt[p.ID]) < modelsRetry {
+		modelLists.mu.Unlock()
+		return nil, err
 	}
 	modelLists.mu.Unlock()
 	// The provider's own metadata API, through its reader (catalogue.go).
@@ -469,10 +480,15 @@ func ModelsOf(ctx context.Context, p Provider) ([]Model, error) {
 		}
 	}
 	if err != nil && len(list) == 0 {
+		modelLists.mu.Lock()
+		modelLists.failAt[p.ID], modelLists.failed[p.ID] = time.Now(), err
+		modelLists.mu.Unlock()
 		return nil, err
 	}
 	modelLists.mu.Lock()
 	modelLists.at[p.ID], modelLists.list[p.ID] = time.Now(), list
+	delete(modelLists.failAt, p.ID)
+	delete(modelLists.failed, p.ID)
 	modelLists.mu.Unlock()
 	return list, nil
 }
@@ -482,6 +498,7 @@ func ModelsOf(ctx context.Context, p Provider) ([]Model, error) {
 func ForgetAllModels() {
 	modelLists.mu.Lock()
 	modelLists.at, modelLists.list = map[string]time.Time{}, map[string][]Model{}
+	modelLists.failAt, modelLists.failed = map[string]time.Time{}, map[string]error{}
 	modelLists.mu.Unlock()
 	modelsDev.mu.Lock()
 	modelsDev.doc, modelsDev.at = nil, time.Time{}
@@ -496,6 +513,8 @@ func ForgetModels(id string) {
 	modelLists.mu.Lock()
 	delete(modelLists.at, id)
 	delete(modelLists.list, id)
+	delete(modelLists.failAt, id)
+	delete(modelLists.failed, id)
 	modelLists.mu.Unlock()
 }
 

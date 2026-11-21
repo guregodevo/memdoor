@@ -334,13 +334,34 @@ func (m Model) tickStatus() tea.Cmd {
 	return tick(30*time.Second, func(time.Time) tea.Msg { return statusTickMsg{} })
 }
 
-// readStatus reads the gateway's status into the footer. The footer names
-// the model that answers this session's agent; once a turn has answered,
-// the model that actually did. With the gate down, a message the gate held
+// statusReadMsg is a status read that has come back. tick: the status tick
+// asked for it, and the next tick is scheduled when it lands.
+type statusReadMsg struct {
+	st   Status
+	read bool // false: no status op, the footer keeps what it has
+	tick bool
+}
+
+// readStatusCmd reads the gateway's status off the event loop. Read inside
+// Update, a gateway that took 15 s to answer froze the window for 15 s,
+// ctrl+c and Esc included (2026-11-21: a model list that never answered).
+func (m Model) readStatusCmd(tick bool) tea.Cmd {
+	op := m.statusOp
+	return func() tea.Msg {
+		if op == nil {
+			return statusReadMsg{tick: tick}
+		}
+		return statusReadMsg{st: op(), read: true, tick: tick}
+	}
+}
+
+// applyStatus puts a status read into the footer. The footer names the
+// model that answers this session's agent; once a turn has answered, the
+// model that actually did. With the gate down, a message the gate held
 // comes back into an empty box.
-func (m *Model) readStatus() {
-	if m.statusOp != nil {
-		m.status = m.statusOp()
+func (m *Model) applyStatus(r statusReadMsg) {
+	if r.read {
+		m.status = r.st
 		if mdl := m.status.AgentModels[m.codeAgent]; mdl != "" {
 			m.status.Model = mdl
 		}

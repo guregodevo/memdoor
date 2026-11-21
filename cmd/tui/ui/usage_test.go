@@ -220,8 +220,7 @@ func TestUpdateNoticeIsSaidOnceAfterTheTurn(t *testing.T) {
 		return n
 	}
 	tick := func() {
-		next, _ := m.Update(statusTickMsg{})
-		m = next.(Model)
+		m, _ = statusRead(m, statusTickMsg{})
 	}
 
 	m.turnRunning, m.turnSinceTick = true, true

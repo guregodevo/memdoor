@@ -15,10 +15,8 @@ func TestTheWindowOpensOnConnectWhenAskedAndNoModel(t *testing.T) {
 	open := func(offer bool, gate string) Model {
 		m := NewPage(PageConfig{Agent: "coder", OfferConnect: offer,
 			Ops: Ops{Connect: connect, Status: func() Status { return Status{Gate: gate} }}})
-		for _, msg := range []tea.Msg{tea.WindowSizeMsg{Width: 100, Height: 40}, statusTickMsg{}} {
-			nm, _ := m.Update(msg)
-			m = nm.(Model)
-		}
+		nm, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 40})
+		m, _ = statusRead(nm.(Model), statusTickMsg{})
 		return m
 	}
 
@@ -32,8 +30,7 @@ func TestTheWindowOpensOnConnectWhenAskedAndNoModel(t *testing.T) {
 	// Esc closes it; the next status read does not open it again.
 	nm, _ := m.Update(tea.KeyMsg{Type: tea.KeyEsc})
 	m = nm.(Model)
-	nm, _ = m.Update(statusTickMsg{})
-	m = nm.(Model)
+	m, _ = statusRead(m, statusTickMsg{})
 	if m.connect != nil {
 		t.Fatal("the list came back after Esc")
 	}

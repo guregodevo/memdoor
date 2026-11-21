@@ -90,7 +90,7 @@ func TestAConnectLiftsTheGateAtOnce(t *testing.T) {
 	}
 
 	gate = "" // the gateway has a model once the connect answers
-	step(connectResultMsg{req: ConnectRequest{ID: "deepseek"}, res: ConnectResult{OK: true, ID: "deepseek"}})
+	m, _ = statusRead(m, connectResultMsg{req: ConnectRequest{ID: "deepseek"}, res: ConnectResult{OK: true, ID: "deepseek"}})
 	if m.status.Gate != "" {
 		t.Fatalf("the gate is still up after ✓ connected: %q", m.status.Gate)
 	}
