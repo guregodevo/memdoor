@@ -1,0 +1,31 @@
+type: agent
+agent: coder
+# Writes the readings, assumptions, a simpler way and the questions, before any code.
+# Rule 1, think before coding. The person reads them at the gate (approve) and
+# corrects the file before the work starts.
+prompt: |
+  The task, as the person wrote it:
+
+  {{ file (printf ".memdoor/runs/careful-change-%s/prompt.md" .partition) }}
+
+  Do not write any code and do not change any file of the project. Read the code the task concerns, then write, in a few lines per section, `.memdoor/runs/careful-change-{{.partition}}/assumptions.md` with these sections:
+
+  ## Readings
+  Each way the task can be understood, one line each. When there is one, say so.
+
+  ## Assumptions
+  What you assume that the task does not say: the files, the behaviour, the inputs. One line each, the file:line it rests on when there is one.
+
+  ## Simpler
+  A simpler way to get what the task wants than the obvious one, if there is one, and what it gives up. Otherwise "none".
+
+  ## Questions
+  What only the person can answer. "none" when nothing.
+
+  ## Done when
+  One check that fails now and passes once the task is done: the command, and what it shows.
+target:
+  file: .memdoor/runs/careful-change-{{.partition}}/assumptions.md
+budget: 200000
+timeout: 15m
+max_retries: 1

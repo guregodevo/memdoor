@@ -1,0 +1,24 @@
+type: agent
+agent: coder
+# Adds a test and a check that fails on the tree as it is, before any fix.
+# Rule 4, goal-driven. Its target proves the failure: a check that passes
+# already tests nothing.
+prompt: |
+  The task:
+
+  {{ file (printf ".memdoor/runs/careful-change-%s/prompt.md" .partition) }}
+
+  The assumptions the person approved, which win over the task where they differ:
+
+  {{ file (printf ".memdoor/runs/careful-change-%s/assumptions.md" .partition) }}
+
+  Write the check from "Done when" before any fix: an executable `.memdoor/runs/careful-change-{{.partition}}/check`, run from the project's root, that exits non-zero now and 0 once the task is done. Use the project's own test runner where it has one: add a test that reproduces the bug or asks for the feature to the project's own test files, where it stays as part of the change, and have the check run the project's tests. Run the check and see it fail for the right reason. Do not change any code but the test.
+requires:
+  - table_pattern: assumptions
+  - table_pattern: approve
+    external: true
+target:
+  command: '[ -x .memdoor/runs/careful-change-{{.partition}}/check ] && ! .memdoor/runs/careful-change-{{.partition}}/check'
+budget: 300000
+timeout: 20m
+max_retries: 1

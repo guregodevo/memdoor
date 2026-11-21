@@ -169,6 +169,7 @@ Built in:
 - **`explain-failure`**: a failed run's logs and the diff; the cause, file:line, the fix.
 - **`issue-triage`**: labels, kind, summary, duplicates.
 - **`fix-tests`**: finds the test command, fixes the code until the tests pass, leaves the fix in the working tree.
+- **`careful-change`**: one coding task as assumptions, your approval, a failing check, the smallest change, a review that every changed line traces to the task.
 - **`release-notes`**: commits since the last tag as Added / Changed / Fixed.
 - **`team-solve`**: the task a prompt defines (`memdoor workflow run team-solve "<the task>"`), done by a team of fresh contexts, GVS5H's method on any task and any model: changes across a repository checked by its own tests, a program by its samples, a document by a fresh judge. Its prompts differ from the published steps', so the 9.8 above is theirs, not the built-in's.
 - **`team-backlog`**: the repository's open issues, unattended: the next issue nobody is on, team-solve on it in a branch, a pull request when the Check passed, a comment on the issue when it did not; one issue a run, on a cron (`memdoor cron add --workflow team-backlog "0 2 * * *"`).

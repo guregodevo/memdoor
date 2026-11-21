@@ -1,0 +1,8 @@
+type: command
+# Fails the run when check.lock does not pass on the tree the run leaves.
+command: |
+  .memdoor/runs/careful-change-{{.partition}}/check.lock && git diff --stat
+requires:
+  - table_pattern: trim
+timeout: 30m
+max_retries: 0
