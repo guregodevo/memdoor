@@ -55,6 +55,9 @@ box = os.environ.get("FAKE_SSH_BOX")
 if box:
     cmd = args[-1]
     with open(os.path.join(box, "commands.log"), "a") as f: f.write(cmd + "\n")
+    hang = os.environ.get("FAKE_SSH_HANG")
+    if hang and hang in cmd:
+        import time; time.sleep(3600)  # a process on the box holds the channel open
     installed, running = os.path.join(box, "installed"), os.path.join(box, "running")
     if "command -v memdoor" in cmd:
         if os.path.exists(installed): print("/home/me/.local/bin/memdoor"); sys.exit(0)
@@ -293,6 +296,30 @@ func TestTheSSHDoorStartsTheGatewayWhereThereIsNoServiceManager(t *testing.T) {
 	}
 	if !strings.Contains(log, "nohup /home/me/.local/bin/memdoor gateway --port") {
 		t.Errorf("the gateway is started in the background:\n%s", log)
+	}
+}
+
+// A setup command that never ends fails the door with a reason, in its
+// limit, instead of hanging it: here the background start holds the
+// channel open, as it did before #394.
+func TestASetupCommandThatNeverEndsFailsTheDoor(t *testing.T) {
+	withFakeSSH(t)
+	dir, port, commands := boxOnFakeSSH(t)
+	if err := os.WriteFile(filepath.Join(dir, "installed"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("FAKE_SSH_NO_SERVICE", "1")
+	t.Setenv("FAKE_SSH_HANG", "nohup")
+	saved := sshCommandLimit
+	sshCommandLimit = 500 * time.Millisecond
+	t.Cleanup(func() { sshCommandLimit = saved })
+	start := time.Now()
+	_, err := openSSHDoor(fmt.Sprintf("ssh://me@box?port=%d", port))
+	if err == nil || !strings.Contains(err.Error(), "no answer from me@box within 500ms") {
+		t.Fatalf("a hung start: %v\n%s", err, commands())
+	}
+	if took := time.Since(start); took > 30*time.Second {
+		t.Errorf("the door took %s to give up", took)
 	}
 }
 
