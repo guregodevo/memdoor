@@ -1,8 +1,10 @@
 type: command
 # Copies the check to check.lock, the copy every later step runs.
-# A change to the check then cannot pass it.
+# A change to the check then cannot pass it. Records the project's tree hash, tree.locked:
+# simplicity-first's target holds only once the project differs from it.
 command: |
   cp .memdoor/runs/karpathy-{{.partition}}/check .memdoor/runs/karpathy-{{.partition}}/check.lock
+  GIT_INDEX_FILE=.memdoor/runs/karpathy-{{.partition}}/tree.index git add -A -- . ':(exclude).memdoor' ':(exclude,glob)**/__pycache__/**' && GIT_INDEX_FILE=.memdoor/runs/karpathy-{{.partition}}/tree.index git write-tree > .memdoor/runs/karpathy-{{.partition}}/tree.locked
 requires:
   - table_pattern: goal
 timeout: 1m
