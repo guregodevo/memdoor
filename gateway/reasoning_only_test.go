@@ -81,3 +81,70 @@ func TestALongAnswerThatNarratesThenFinishesIsNotRetried(t *testing.T) {
 		t.Error("a finished answer was flagged because of its narration, and would be thrown away")
 	}
 }
+
+// A CREATE/BUILD REQUEST gets the file-mutating nudge on the reasoning-only
+// retry: "create a tetris game" answered with narration and zero tools is a
+// hard failure (live 2026-11-22, ssh gateway). The request must be detected so
+// the retry names apply_patch instead of a generic "act now".
+func TestWantsFileCreatedDetectsCreateBuildAsks(t *testing.T) {
+	for _, s := range []string{
+		"@coder create a tetris game", // the live request, with the mention
+		"create a tetris game",
+		"build a todo app",
+		"write a hello world program",
+		"make a small script that downloads files",
+		"implement a parser for CSV",
+		"add a function to sum.go",
+		"generate a project skeleton",
+		"start a new service",
+		"set up a Go module",
+	} {
+		if !wantsFileCreated(s) {
+			t.Errorf("wantsFileCreated(%q) = false, want true", s)
+		}
+	}
+}
+
+// Ask-for-information turns are NOT create/build: retrying them into a
+// file-mutating tool would be wrong.
+func TestWantsFileCreatedRejectsNonCreateAsks(t *testing.T) {
+	for _, s := range []string{
+		"debug this build failure",
+		"why does the test fail?",
+		"review this PR",
+		"explain the routing code",
+		"fix the failing test",
+		"help me understand the gateway",
+		"code review the change",
+	} {
+		if wantsFileCreated(s) {
+			t.Errorf("wantsFileCreated(%q) = true, want false", s)
+		}
+	}
+}
+
+// The deliberation bound: after the reasoning-only retry ran once, a second
+// no-tool reply must END the turn visibly, not loop again (live 2026-11-22,
+// ssh gateway — "Considering… 1m45s" with no tool call).
+func TestDeliberationBoundStopsTheSilentSpin(t *testing.T) {
+	// After the retry, a reply with no tool call and no tool executed stops.
+	if !deliberationBoundWanted(true, false, 0, true) {
+		t.Error("a second no-tool reply after the retry must stop the turn")
+	}
+	// A reply WITH a tool call is progress — never stop it.
+	if deliberationBoundWanted(true, true, 0, true) {
+		t.Error("a reply with a tool call must not hit the deliberation bound")
+	}
+	// Tools that already ran this turn are progress — not a deliberation loop.
+	if deliberationBoundWanted(true, false, 3, true) {
+		t.Error("a turn with tools executed is not a deliberation loop")
+	}
+	// Before the retry has run, the bound must not fire (the retry is the bound).
+	if deliberationBoundWanted(false, false, 0, true) {
+		t.Error("the bound must not fire before the single retry")
+	}
+	// A chat agent (no codebase) whose prose IS the answer must not be stopped.
+	if deliberationBoundWanted(true, false, 0, false) {
+		t.Error("a non-codebase agent's prose is the answer — must not be stopped")
+	}
+}

@@ -68,3 +68,34 @@ func nextRungAfterEmpty(ctx context.Context, agent string) (int, string) {
 	}
 	return cur + 1, next
 }
+// wantsFileCreated reports whether the person's request asks the agent to
+// MAKE something. The signal is the IMPERATIVE VERB as the first content word
+// of the request — a small closed class — not the artifact noun ("a tetris
+// game", "an app"), which is unbounded and misses any phrasing. An @mention
+// ("@coder create a tetris game") is stripped first; "create a tetris game"
+// and "build the todo app" both start with a creation verb, and "debug this
+// failure", "review the PR", "why does this fail" do not.
+func wantsFileCreated(request string) bool {
+	s := strings.ToLower(strings.TrimSpace(request))
+	if _, rest, ok := leadingMention(s); ok {
+		s = rest
+	}
+	for _, verb := range []string{
+		"create ", "build ", "write ", "make ", "implement ",
+		"add ", "generate ", "new ", "start a ", "set up ",
+	} {
+		if strings.HasPrefix(s, verb) {
+			return true
+		}
+	}
+	return false
+}
+// deliberationBoundWanted reports whether the turn must STOP instead of
+// looping again: the reasoning-only retry ran once (reasoningOnlyRetried) and
+// the next reply STILL has no tool call and no tool executed this turn. The
+// window sat at "Considering… 1m45s" while the 27B deliberated in circles
+// (live 2026-11-22, ssh gateway); a second retry is not offered — the turn
+// ends with a visible notice instead of a silent spin.
+func deliberationBoundWanted(reasoningRetried, hasToolUse bool, toolsExecuted int, codebase bool) bool {
+	return reasoningRetried && !hasToolUse && toolsExecuted == 0 && codebase
+}

@@ -887,6 +887,16 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 				// names, to the 16k cap); one sentence at the top of the
 				// system prompt is what turns the next reply into a call.
 				nudge := "Your previous reply ran long without acting. Call the next tool now; keep any explanation to one sentence."
+				// A CREATE/BUILD REQUEST IS NOT A DISCUSSION TOPIC: "create a
+				// tetris game" answered with "I'll create a complete Tetris
+				// game…" and stopped (live 2026-11-22, ssh gateway). The
+				// generic nudge produced another empty completion. When the
+				// person asked the agent to MAKE something, the retry must name
+				// the file-mutating tool explicitly — the small model needs the
+				// concrete call, not a general "act now".
+				if wantsFileCreated(userMessage) {
+					nudge = "Your previous reply described the work without doing it. Call apply_patch NOW and write the file the request asks for; verify it with bash.\nKeep any explanation to one sentence."
+				}
 				if extraSystemPrompt != "" {
 					nudge = extraSystemPrompt + "\n\n" + nudge
 				}
@@ -897,6 +907,19 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 				}
 				conversation = append(conversation, withLeadingText(message.ToParam(), shown))
 				continue
+			}
+			// DELIBERATION BOUND (2026-11-22): the reasoning-only retry above
+			// already ran once and produced another reply with NO tool call and
+			// NO tool executed this turn. The loop must not spin silently —
+			// the window sat at "Considering… 1m45s" while the 27B deliberated
+			// in circles (ssh gateway). End with the same visible "not shown
+			// done" steer the budget path uses, so the person knows nothing
+			// happened and what to say next.
+			if deliberationBoundWanted(reasoningOnlyRetried, hasToolUse, len(response.ToolsExecuted), ar.agentWorksOnCodebase(ctx)) {
+				log.Warn("Deliberation loop not broken by the retry — ending the turn visibly",
+					slog.Int("tools_executed", 0))
+				response.Text += "\n\n⚠ The agent deliberated without acting — nothing was done this turn. Say continue, or what to do instead."
+				break
 			}
 			// A RECAP AFTER A LOT OF WORK (recap.go): a long turn that ends on a
 			// line is asked, once, to end on what was made and what is next.
