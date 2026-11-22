@@ -313,3 +313,39 @@ func TestTheSSHDoorLeavesASlowRunningGatewayAlone(t *testing.T) {
 		t.Errorf("a running gateway was touched:\n%s", log)
 	}
 }
+
+// The background start returns while the gateway runs: ssh waits for the
+// command's output to close, and a shell left holding it kept the door
+// waiting as long as the gateway lived. A stand-in memdoor that keeps
+// running plays the gateway; Output reads until the output closes, as ssh
+// does.
+func TestTheBackgroundStartReturnsWhileTheGatewayRuns(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("a POSIX shell command")
+	}
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("no bash")
+	}
+	home := t.TempDir()
+	bin := filepath.Join(home, "memdoor")
+	if err := os.WriteFile(bin, []byte("#!/bin/sh\nsleep 30\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "-c", backgroundGateway(bin, "18789"))
+	cmd.Env = append(os.Environ(), "HOME="+home)
+	done := make(chan error, 1)
+	go func() { _, err := cmd.Output(); done <- err }()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("the start failed: %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		_ = cmd.Process.Kill()
+		t.Fatal("the start did not return while the gateway ran")
+	}
+	if _, err := os.Stat(filepath.Join(home, ".memdoor", "gateway.log")); err != nil {
+		t.Errorf("no gateway log: %v", err)
+	}
+	_ = exec.Command("pkill", "-f", bin).Run()
+}

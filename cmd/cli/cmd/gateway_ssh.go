@@ -303,8 +303,7 @@ func sshBoxSetup(target, sshPort, gatewayPort string) error {
 	out, err := sshRun(target, sshPort, bin+" gateway install --port "+gatewayPort)
 	if err != nil {
 		say("no service manager on %s (%v): starting the gateway in the background there instead", target, err)
-		start := "mkdir -p ~/.memdoor && nohup " + bin + " gateway --port " + gatewayPort + " >> ~/.memdoor/gateway.log 2>&1 </dev/null &"
-		if _, err := sshRun(target, sshPort, start); err != nil {
+		if _, err := sshRun(target, sshPort, backgroundGateway(bin, gatewayPort)); err != nil {
 			return fmt.Errorf("starting the gateway on %s: %v", target, err)
 		}
 		return nil
@@ -315,6 +314,15 @@ func sshBoxSetup(target, sshPort, gatewayPort string) error {
 		}
 	}
 	return nil
+}
+
+// backgroundGateway is the shell command that starts the gateway on a box
+// with no service manager and returns at once. The gateway runs in a
+// subshell of its own: backgrounding the whole "mkdir && nohup" list kept a
+// shell alive on ssh's stdout, and the door waited on it for as long as the
+// gateway ran (a vast.ai container, 2026-11-22).
+func backgroundGateway(bin, port string) string {
+	return "mkdir -p ~/.memdoor && (nohup " + bin + " gateway --port " + port + " >> ~/.memdoor/gateway.log 2>&1 </dev/null &)"
 }
 
 // sshRenewSession signs in to the gateway on the box with the login that
