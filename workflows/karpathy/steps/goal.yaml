@@ -13,9 +13,9 @@ prompt: |
 
   {{ file (printf ".memdoor/runs/karpathy-%s/assumptions.md" .partition) }}
 
-  Start from what the last step left in `.memdoor/runs/karpathy-{{.partition}}/lab/` ("Done when" names it): reuse a brute force, a reference or a reproduction found there instead of writing a new one, and write only what is missing.
+  Start from what the last step left in `.memdoor/runs/karpathy-{{.partition}}/lab/` ("Done when" names it): reuse a brute force, a reference or a reproduction found there instead of writing a new one, and write only what is missing. What you reuse stays in `lab/`, where the check runs it: never copy it into the project.
 
-  Write the check from "Done when" before any fix: an executable `.memdoor/runs/karpathy-{{.partition}}/check`, run from the project's root, that exits non-zero now and 0 once the task is done. Use the project's own test runner where it has one: add a test that reproduces the bug or asks for the feature to the project's own test files, where it stays as part of the change, and have the check run the project's tests. Run the check and see it fail for the right reason. Do not change any code but the test.
+  Write the check from "Done when" before any fix: an executable `.memdoor/runs/karpathy-{{.partition}}/check`, run from the project's root, that exits non-zero now and 0 once the task is done. Use the project's own test runner where it has one: add a test that reproduces the bug or asks for the feature to the project's own test files, where it stays as part of the change, and have the check run the project's tests. Run the check and see it fail for the right reason. Do not change any code but the test: `simplicity-first` makes the change. If the check passes because the project already holds a fix, take the fix out, not the check.
 requires:
   - table_pattern: think-before-coding
   - table_pattern: approve
