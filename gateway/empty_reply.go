@@ -68,3 +68,42 @@ func nextRungAfterEmpty(ctx context.Context, agent string) (int, string) {
 	}
 	return cur + 1, next
 }
+// wantsFileCreated reports whether the person's request asks the agent to
+// MAKE something — create/build/write a file, a program, an app. Such a
+// request answered with narration (zero tools) is a hard failure, not a
+// discussion: the retry must name the file-mutating tool explicitly (see
+// agent_runtime_process.go reasoning-only retry).
+func wantsFileCreated(request string) bool {
+	s := strings.ToLower(strings.TrimSpace(request))
+	for _, stem := range []string{
+		"create ", "build ", "write ", "make ", "implement ", "add ",
+		"new ", "generate ", "start a ", "set up ",
+	} {
+		if strings.HasPrefix(s, stem) {
+			return true
+		}
+	}
+	// "a tetris game", "the program", "a small app" as the whole ask —
+	// an ARTICLE + a NOUN (with anything between) that names something to
+	// make. "debug this failure" has no such noun-phrase; "a service" does.
+	for _, frag := range []string{
+		"a game", "a tetris", "an app", "a program", "a script", "a file",
+		"a project", "a tool", "a service", "a module", "a function",
+		"a parser", "a website", "a server", "a cli", "a library",
+		"a rest api", "a model", "a workflow",
+	} {
+		if strings.Contains(s, frag) {
+			return true
+		}
+	}
+	return false
+}
+// deliberationBoundWanted reports whether the turn must STOP instead of
+// looping again: the reasoning-only retry ran once (reasoningOnlyRetried) and
+// the next reply STILL has no tool call and no tool executed this turn. The
+// window sat at "Considering… 1m45s" while the 27B deliberated in circles
+// (live 2026-11-22, ssh gateway); a second retry is not offered — the turn
+// ends with a visible notice instead of a silent spin.
+func deliberationBoundWanted(reasoningRetried, hasToolUse bool, toolsExecuted int, codebase bool) bool {
+	return reasoningRetried && !hasToolUse && toolsExecuted == 0 && codebase
+}
