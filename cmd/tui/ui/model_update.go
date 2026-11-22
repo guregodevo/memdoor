@@ -538,6 +538,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				// Check if this is a slash command
+				// AN @MENTION BEFORE A SLASH COMMAND IS STILL A SLASH COMMAND:
+				// "@coder /model deepseek" names the agent, then runs the
+				// command as the intent. Before this, "@coder /model …" fell
+				// through (looksLikeSlashCommand saw the leading "@coder",
+				// not the "/") and reached the gateway as a plain message the
+				// model answered with prose or ignored. A mention of this
+				// window's own agent is kept: "@coder /model" routes "coder"
+				// and runs the command (2026-11-22).
+				mentionAgent, mentionBody := routeByMention(m.codeAgent, text)
+				if mentionAgent == m.codeAgent && looksLikeSlashCommand(mentionBody) {
+					text = mentionBody
+				}
+
 				if looksLikeSlashCommand(text) {
 					// Add user message FIRST to show what they typed
 					userMsg := Message{

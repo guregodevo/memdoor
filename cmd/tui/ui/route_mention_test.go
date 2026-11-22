@@ -1,6 +1,46 @@
 package ui
 
-import "testing"
+import (
+	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// "@coder /model deepseek" is a slash command, not a message: the leading
+// mention names the agent, and the command after it is the intent. Before
+// this, /model with a mention fell through to the gateway as plain text and
+// the model answered with prose (live 2026-11-22). A mention of ANOTHER
+// agent still routes to that agent with the command as its task.
+func TestMentionBeforeSlashIsACommand(t *testing.T) {
+	var posted string
+	m := NewModel("http://x", "ws", "chan", "", func(agent, w, text, mode string) error {
+		posted = agent + "|" + text
+		return nil
+	})
+	m.route = func(string) (string, error) { t.Fatal("route called"); return "", nil }
+	m.modelCatalog = func(q, provider string) ([]CatalogModel, error) { return nil, nil }
+	step := func(msg tea.Msg) { nm, cmd := m.Update(msg); m = nm.(Model); runCmd(cmd) }
+	step(tea.WindowSizeMsg{Width: 100, Height: 40})
+	step(websocketConnectedMsg{})
+
+	// "@coder /model deepseek" opens the search picker; nothing is posted.
+	typeAndEnter(step, "@coder /model deepseek")
+	if posted != "" {
+		t.Fatalf("@coder /model deepseek posted to the gateway: %q", posted)
+	}
+	if m.routePicker == nil || m.routePicker.query != "deepseek" {
+		t.Fatalf("@coder /model deepseek did not open the search picker on deepseek: picker=%v", m.routePicker)
+	}
+
+	// Close the picker so the next input reaches the message box.
+	step(tea.KeyMsg{Type: tea.KeyEsc})
+
+	// "@planner /model 2" routes to the planner as its task.
+	typeAndEnter(step, "@planner /model 2")
+	if posted != "planner|/model 2" {
+		t.Fatalf("@planner /model 2 route wrong: %q", posted)
+	}
+}
 
 // A leading @name runs the turn as THAT agent. The poster prepends the agent
 // mention to every turn, so before this the server saw "@coder @planner …"
