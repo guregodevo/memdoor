@@ -234,18 +234,35 @@ func lastLine(s string) string {
 	return ""
 }
 
+// sshCommandLimit is how long one setup command on the box may take, and
+// sshInstallLimit the install, which downloads memdoor. A command still
+// running then is killed and fails: a box that does not answer, a dropped
+// connection or a process there that holds the channel open (#393) ends
+// the door with a reason instead of hanging it.
+var (
+	sshCommandLimit = 2 * time.Minute
+	sshInstallLimit = 10 * time.Minute
+)
+
 // sshRun runs one command on the box, with the keys ssh has and no prompt,
 // and answers its stdout; an error carries the command's or ssh's last line.
-func sshRun(target, sshPort, command string) (string, error) {
-	args := []string{"-T", "-o", "BatchMode=yes"}
+// It gives up after limit, and after a minute of silence from the box.
+func sshRun(target, sshPort, command string, limit time.Duration) (string, error) {
+	args := []string{"-T", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=4"}
 	if sshPort != "" {
 		args = append(args, "-p", sshPort)
 	}
 	args = append(args, target, command)
+	ctx, cancel := context.WithTimeout(context.Background(), limit)
+	defer cancel()
 	var stdout, stderr bytes.Buffer
-	c := exec.Command("ssh", args...)
+	c := exec.CommandContext(ctx, "ssh", args...)
 	c.Stdout, c.Stderr = &stdout, &stderr
+	c.WaitDelay = 2 * time.Second
 	if err := c.Run(); err != nil {
+		if ctx.Err() != nil {
+			return stdout.String(), fmt.Errorf("no answer from %s within %s", target, limit)
+		}
 		why := strings.TrimSpace(lastLine(stderr.String()))
 		if why == "" {
 			why = strings.TrimSpace(lastLine(stdout.String()))
@@ -276,7 +293,7 @@ const sshFindMemdoor = `command -v memdoor 2>/dev/null || { [ -x "$HOME/.local/b
 func sshBoxSetup(target, sshPort, gatewayPort string) error {
 	say := func(format string, a ...any) { fmt.Fprintf(os.Stderr, "  "+format+"\n", a...) }
 	find := func() string {
-		out, _ := sshRun(target, sshPort, sshFindMemdoor)
+		out, _ := sshRun(target, sshPort, sshFindMemdoor, sshCommandLimit)
 		return strings.TrimSpace(lastLine(out))
 	}
 	bin := find()
@@ -288,7 +305,7 @@ func sshBoxSetup(target, sshPort, gatewayPort string) error {
 		// is for (2026-10-24: run against a scratch box on the developer's
 		// own machine, it found the developer's gateway on 18789 and
 		// restarted it under the scratch home).
-		if _, err := sshRun(target, sshPort, "curl -fsSL "+installScriptURL+" | MEMDOOR_PORT="+gatewayPort+" bash"); err != nil {
+		if _, err := sshRun(target, sshPort, "curl -fsSL "+installScriptURL+" | MEMDOOR_PORT="+gatewayPort+" bash", sshInstallLimit); err != nil {
 			return fmt.Errorf("installing memdoor on %s: %v", target, err)
 		}
 		if bin = find(); bin == "" {
@@ -296,14 +313,14 @@ func sshBoxSetup(target, sshPort, gatewayPort string) error {
 		}
 	}
 	status := bin + " --gateway http://127.0.0.1:" + gatewayPort + " gateway status >/dev/null 2>&1"
-	if _, err := sshRun(target, sshPort, status); err == nil {
+	if _, err := sshRun(target, sshPort, status, sshCommandLimit); err == nil {
 		return nil
 	}
 	say("the gateway on %s is not running: installing it as a service there, on port %s", target, gatewayPort)
-	out, err := sshRun(target, sshPort, bin+" gateway install --port "+gatewayPort)
+	out, err := sshRun(target, sshPort, bin+" gateway install --port "+gatewayPort, sshCommandLimit)
 	if err != nil {
 		say("no service manager on %s (%v): starting the gateway in the background there instead", target, err)
-		if _, err := sshRun(target, sshPort, backgroundGateway(bin, gatewayPort)); err != nil {
+		if _, err := sshRun(target, sshPort, backgroundGateway(bin, gatewayPort), sshCommandLimit); err != nil {
 			return fmt.Errorf("starting the gateway on %s: %v", target, err)
 		}
 		return nil
@@ -366,7 +383,7 @@ func sshRenewSessionFor(ctx context.Context, d *sshDoor) error {
 // whoever may ssh in as that user may read either.
 func sshSignIn(target, sshPort string) error {
 	loginErr := func() error {
-		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+localLoginFile)
+		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+localLoginFile, sshCommandLimit)
 		if err != nil {
 			return fmt.Errorf("no generated login on %s: %v", target, err)
 		}
@@ -383,7 +400,7 @@ func sshSignIn(target, sshPort string) error {
 		return nil
 	}
 	key := readHostKey(func() (string, error) {
-		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+hostKeyFile)
+		out, err := sshRun(target, sshPort, "cat ~/.memdoor/"+hostKeyFile, sshCommandLimit)
 		return hostKeyIn(out), err
 	})
 	if key == "" {
