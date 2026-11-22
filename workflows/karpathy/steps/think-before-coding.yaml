@@ -9,7 +9,7 @@ prompt: |
 
   {{ file (printf ".memdoor/runs/karpathy-%s/prompt.md" .partition) }}
 
-  The run's folder `.memdoor/runs/karpathy-{{.partition}}/` exists, with `lab/` in it: write there and in no other folder. Do not change any file of the project. Write `.memdoor/runs/karpathy-{{.partition}}/assumptions.md` first, with what the task says, before any experiment; then update it as each experiment settles a point, so it holds your best answer if the turn ends early. Read the code the task concerns. An experiment you run to test an assumption (a brute force, a reference, a script that reproduces the bug) goes in `.memdoor/runs/karpathy-{{.partition}}/lab/`, never in /tmp: the next step reuses it. The sections of `assumptions.md`, a few lines each:
+  The run's folder `.memdoor/runs/karpathy-{{.partition}}/` exists, with `lab/` in it: write there and in no other folder. Do not change any file of the project: a candidate solution stays in `lab/`, and `simplicity-first` makes the change. The target checks that the project's files are as the run found them (`tree.before`). Write `.memdoor/runs/karpathy-{{.partition}}/assumptions.md` first, with what the task says, before any experiment; then update it as each experiment settles a point, so it holds your best answer if the turn ends early. Read the code the task concerns. An experiment you run to test an assumption (a brute force, a reference, a script that reproduces the bug) goes in `.memdoor/runs/karpathy-{{.partition}}/lab/`, never in /tmp: the next step reuses it. The sections of `assumptions.md`, a few lines each:
 
   ## Readings
   Each way the task can be understood, one line each. When there is one, say so.
@@ -28,7 +28,8 @@ prompt: |
 requires:
   - table_pattern: folder
 target:
-  file: .memdoor/runs/karpathy-{{.partition}}/assumptions.md
+  command: |-
+    [ -f .memdoor/runs/karpathy-{{.partition}}/assumptions.md ] && [ "$(GIT_INDEX_FILE=.memdoor/runs/karpathy-{{.partition}}/tree.index git add -A -- . ':(exclude).memdoor' ':(exclude,glob)**/__pycache__/**' && GIT_INDEX_FILE=.memdoor/runs/karpathy-{{.partition}}/tree.index git write-tree)" = "$(cat .memdoor/runs/karpathy-{{.partition}}/tree.before)" ]
 budget: 200000
 timeout: 15m
 max_retries: 1

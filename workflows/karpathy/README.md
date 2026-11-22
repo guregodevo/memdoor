@@ -21,10 +21,10 @@ The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-
 
 | Step | Kind | Does | Done when |
 |---|---|---|---|
-| `folder` | command | Creates `.memdoor/runs/karpathy-<run>/lab/`, the only folder the later steps write in. | — |
-| `think-before-coding` | agent | Reads the code. Writes `assumptions.md`: readings, assumptions, a simpler way, questions, the check. Its experiments go in `lab/`. Changes no file of the project. | `assumptions.md` exists |
+| `folder` | command | Creates `.memdoor/runs/karpathy-<run>/lab/`, the only folder the later steps write in. Records the project's files as one tree hash, `tree.before`, in an index of its own. | — |
+| `think-before-coding` | agent | Reads the code. Writes `assumptions.md`: readings, assumptions, a simpler way, questions, the check. Its experiments go in `lab/`. Changes no file of the project. | `assumptions.md` exists and the project's files still hash to `tree.before` |
 | `approve` | gate | Waits. Correct `assumptions.md` in place, then open it: `a` in `/workflow` or `memdoor workflow approve <run> approve`. Later steps take the file over the prompt. | opened |
-| `goal` | agent | Reuses what `lab/` holds, adds a test to the project's test files and writes `check`, an executable that runs it. | `check` exists and fails |
+| `goal` | agent | Reuses what `lab/` holds, there: nothing of it is copied into the project. Adds a test to the project's test files and writes `check`, an executable that runs it. | `check` exists and fails |
 | `lock` | command | Copies `check` to `check.lock`. Every later step runs the copy. | — |
 | `simplicity-first` | agent | The smallest change that passes `check.lock`: nothing the task did not ask for, no edit around it, no change to the check. | `check.lock` passes |
 | `diff` | command | `git status` and `git diff`, new files included, `.memdoor` left out. | — |
@@ -36,7 +36,7 @@ The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-
 | Leaves | Where |
 |---|---|
 | The change and its test | the working tree, uncommitted |
-| `assumptions.md`, `lab/`, `check`, `check.lock`, `report.md` | `.memdoor/runs/karpathy-<run>/`, out of git |
+| `assumptions.md`, `lab/`, `tree.before`, `check`, `check.lock`, `report.md` | `.memdoor/runs/karpathy-<run>/`, out of git |
 
 `think-before-coding`, `goal` and `simplicity-first` run at `thinking medium`: at `high` they hit the 32K-token cap on single replies on hard problems and ended without their file. The line has no model id, so `--model` still picks the model.
 

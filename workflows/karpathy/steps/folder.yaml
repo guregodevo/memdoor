@@ -1,6 +1,9 @@
 type: command
 # Creates the run's folder and its lab/, the only folder the later steps write in.
+# Records the project's files as one tree hash, tree.before, in an index of its
+# own: think-before-coding's target holds the project to it.
 command: |
   mkdir -p .memdoor/runs/karpathy-{{.partition}}/lab
+  GIT_INDEX_FILE=.memdoor/runs/karpathy-{{.partition}}/tree.index git add -A -- . ':(exclude).memdoor' ':(exclude,glob)**/__pycache__/**' && GIT_INDEX_FILE=.memdoor/runs/karpathy-{{.partition}}/tree.index git write-tree > .memdoor/runs/karpathy-{{.partition}}/tree.before
 timeout: 1m
 max_retries: 0
