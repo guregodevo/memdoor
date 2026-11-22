@@ -1,0 +1,6 @@
+type: command
+# Creates the run's folder and its lab/, the only folder the later steps write in.
+command: |
+  mkdir -p .memdoor/runs/karpathy-{{.partition}}/lab
+timeout: 1m
+max_retries: 0

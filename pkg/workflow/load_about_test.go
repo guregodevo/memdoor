@@ -180,7 +180,7 @@ func TestTheBuiltInPRCreateLoads(t *testing.T) {
 	}
 }
 
-// karpathy loads: think-before-coding, the approve gate, goal, lock, simplicity-first, diff, surgical-review,
+// karpathy loads: folder, think-before-coding, the approve gate, goal, lock, simplicity-first, diff, surgical-review,
 // surgical-trim, verify and report. Each step has an about line (its first comment) the window can show.
 func TestTheBuiltInKarpathyLoads(t *testing.T) {
 	dir, err := filepath.Abs(filepath.Join("..", "..", "workflows", "karpathy"))
@@ -191,7 +191,7 @@ func TestTheBuiltInKarpathyLoads(t *testing.T) {
 		t.Skip("no built-in karpathy beside this package")
 	}
 	wf := load(t, dir, &fakeRunner{})
-	for _, name := range []string{"think-before-coding", "goal", "lock", "simplicity-first", "diff", "surgical-review", "surgical-trim", "verify", "report"} {
+	for _, name := range []string{"folder", "think-before-coding", "goal", "lock", "simplicity-first", "diff", "surgical-review", "surgical-trim", "verify", "report"} {
 		if _, ok := wf.Task(name); !ok {
 			t.Fatalf("no step %s", name)
 		}
