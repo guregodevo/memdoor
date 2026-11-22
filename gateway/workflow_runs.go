@@ -411,9 +411,8 @@ func (c workflowCompleter) CompleteWithSystem(ctx context.Context, model, system
 	}
 	ctx = cheapestRung(ctx)
 	var tm taskModel
-	if model = strings.TrimSpace(model); model == "" {
-		model, _ = ctx.Value(runModelKey{}).(string) // --model on the run
-	}
+	runModel, _ := ctx.Value(runModelKey{}).(string) // --model on the run
+	model = stepModel(strings.TrimSpace(model), runModel)
 	if model != "" {
 		tm = parseTaskModel(model)
 		model = tm.ID
@@ -567,7 +566,7 @@ func (r *workflowRunner) Run(ctx context.Context, t workflow.TaskRun) (string, e
 			if t.Task.Budget > 0 {
 				sess.SetMetadata(turnBudgetKey, t.Task.Budget)
 			}
-			if err := pinTaskModel(sess, firstNonEmptyString(t.Task.Model, r.run.Model), r.run.Actor); err != nil {
+			if err := pinTaskModel(sess, stepModel(t.Task.Model, r.run.Model), r.run.Actor); err != nil {
 				return "", fmt.Errorf("task %s: %w", t.Task.Name, err)
 			}
 		}
@@ -1960,6 +1959,20 @@ func pinTaskModel(sess *Session, model, actor string) error {
 	}
 	applyPersistentPin(actor, sess)
 	return nil
+}
+
+// stepModel is the model line a step answers on: its own, else the run's
+// --model. A line with no id (`thinking medium`) sets options, not the model,
+// so it goes on the run's --model; without one it keeps the model that answers
+// here.
+func stepModel(step, run string) string {
+	switch {
+	case step == "":
+		return run
+	case run != "" && parseTaskModel(step).ID == "":
+		return run + " " + step
+	}
+	return step
 }
 
 // parseTaskModel reads a task's `model:` the way /model reads its line:

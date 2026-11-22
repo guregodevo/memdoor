@@ -38,6 +38,8 @@ The four rules of [andrej-karpathy-skills](https://github.com/multica-ai/andrej-
 | The change and its test | the working tree, uncommitted |
 | `assumptions.md`, `lab/`, `check`, `check.lock`, `report.md` | `.memdoor/runs/karpathy-<run>/`, out of git |
 
+`think-before-coding`, `goal` and `simplicity-first` run at `thinking medium`: at `high` they hit the 32K-token cap on single replies on hard problems and ended without their file. The line has no model id, so `--model` still picks the model.
+
 Needs a model on your key.
 
 | Run, 2026-11-21, as careful-change | Model | Result | Calls | $ |
