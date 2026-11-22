@@ -38,27 +38,32 @@ The paper's rows: [GVS5H](https://github.com/slee-persis/GVS5H)
 | 6 | single call | Fable 5 | 90.4% | 61.11 | 0.68 | paper |
 | 7 | single call | DeepSeek V4.1 Flash | 88.4% | 3.46 | 0.039 | paper |
 | 8 | GVS5H manager | GPT-5.6-Terra | 88.0% | 11.71 | 0.13 | paper |
-| 9 | single call | Qwen3.8-Flash-Next | 84.2% | 2.73 | 0.032 | paper |
-| 10 | GVS5H manager | GPT-5.6-Luna | 81.2% | 1.50 | 0.018 | paper |
-| 11 | single call | GPT-5.6-Terra | 80.8% | 3.41 | 0.042 | paper |
-| 12 | single call | GPT-5.6-Luna | 70.4% | 0.41 | 0.006 | paper |
-| 13 | single call | Qwen3.8-27B | 66.8% | 18.95 | 0.28 | paper |
-| 14 | Memdoor team-llm-lcb, thinking off | Qwen3.8-27B | 47% | 3.27 for 14 and 15 | | Memdoor, 1 pass |
-| 15 | Memdoor single-lcb, thinking off | Qwen3.8-27B | 35% | | | Memdoor, 1 pass |
+| 9 | Memdoor karpathy, 2026-11-22 | DeepSeek V4.1 Flash (1017) | 86% | 6.15 | 0.072 | Memdoor, 1 pass |
+| 10 | single call | Qwen3.8-Flash-Next | 84.2% | 2.73 | 0.032 | paper |
+| 11 | GVS5H manager | GPT-5.6-Luna | 81.2% | 1.50 | 0.018 | paper |
+| 12 | single call | GPT-5.6-Terra | 80.8% | 3.41 | 0.042 | paper |
+| 13 | single call | GPT-5.6-Luna | 70.4% | 0.41 | 0.006 | paper |
+| 14 | single call | Qwen3.8-27B | 66.8% | 18.95 | 0.28 | paper |
+| 15 | Memdoor team-llm-lcb, thinking off | Qwen3.8-27B | 47% | 3.27 for 15 and 16 | | Memdoor, 1 pass |
+| 16 | Memdoor single-lcb, thinking off | Qwen3.8-27B | 35% | | | Memdoor, 1 pass |
 
 - Grading: the paper's rule for every row. Its reported numbers judge four
   problems that accept more than one answer (abc396_e, arc190_a, arc195_c,
   abc385_f) with special checkers (`paper/tab-regrade.tex`). Row 2 by the stock
   grader: 91; abc396_e (43 of 43) and abc385_f (44 of 44) pass with the paper's
   checkers. Row 5 by the stock grader: 91; abc396_e passes 43 of 43 with the
-  paper's checker. Rows 14 and 15 are as graded.
+  paper's checker. Rows 15 and 16 are as graded.
 - Cost: the paper's is list rate times tokens, no cache discount. Memdoor's is
   what OpenRouter billed. Row 2 includes four runs broken by a full disk and
   their reruns. Row 5 includes three `team-solve` runs stopped early.
-- Rows 2 and 5 are one pass each against means of five. The paper's 95%
+- Row 9 by the stock grader: 84; abc385_f (44 of 44) and abc396_e (43 of 43)
+  pass with the paper's checkers, arc190_a does not (43 of 44). Fairly graded:
+  91. Its cost is the runs kept; $6.89 was billed in all, runs redone
+  included. Section: [karpathy, DeepSeek V4.1 Flash, 2026-11-22](#karpathy-deepseek-v41-flash-2026-11-22).
+- Rows 2, 5 and 9 are one pass each against means of five. The paper's 95%
   intervals are ±1.2 to ±2.6 points; rows 1, 3 and 4 do not differ from
   Fable 5 significantly (p = 0.56 to 0.88).
-- Rows 14 and 15 ran with thinking off (the reason is under "What this is
+- Rows 15 and 16 ran with thinking off (the reason is under "What this is
   not"); the paper ran Qwen3.8-27B with thinking on.
 - Not ranked: the parity runs on the first ten problems (Memdoor's rebuild of
   the GVS5H method on Qwen3.8-27B, 9.8 of 10 over five passes, $35.79 for 50
@@ -118,6 +123,53 @@ The tools, beside `grade.py` and with its setup (`problems.json` from
     python3 audit.py <folder>...           # suspect tests across the solution.py files under the folders
 
 Grade arc190_c with nothing else running: under load its test 20 times out.
+
+## karpathy, DeepSeek V4.1 Flash, 2026-11-22
+
+The same 100 problems. One pass of [karpathy](../../../../workflows/karpathy/README.md)
+in a bench copy: the `approve` gate removed, the prompt from `task.md`, no
+token budget, `openrouter:deepseek/deepseek-v4.1-flash-1017` on every agent
+step, `thinking medium` on `think-before-coding`, `goal` and
+`simplicity-first`. Each problem folder held `task.md` and the samples only.
+
+| grading | solved | AtCoder (73) | LeetCode (27) |
+|---|---|---|---|
+| stock grader (`grade.py --private`) | 84 / 100 | 57 | 27 |
+| the paper's rule | **86 / 100** | 59 | 27 |
+| fair (`fair.py`) | **91 / 100** | 64 | 27 |
+
+- Off for the run, by `tool_guards` on the bench gateway: `web_search`,
+  `web_fetch`, MCP, `curl`, `wget`, `memdoor chrome` and URLs in any tool,
+  and paths outside the problem's folder (the hidden tests, the grader's
+  code, other runs). A scan of every session found no page fetched and no
+  hidden test read. 17 runs read other problems' `check` files in the bench
+  folder, which the guard covered only from the arc189_d rerun; none read
+  anything of its own problem.
+- Not solved, fairly graded: abc384_g, arc190_c, arc191_d, arc193_b,
+  arc193_d, arc195_c, arc195_d, arc196_c, arc196_d. Each stopped at a step's
+  target before a `solution.py` existed: the 32K output cap on one reply, a
+  step timeout, or a check the change could not pass.
+- Solved fairly, not by the stock grader: abc385_f, abc392_f, abc396_e,
+  abc397_d, arc190_a, arc191_c, arc192_b, the problems the
+  [audit](#audit-of-the-tests-2026-11-21) found with wrong tests or more than
+  one right answer.
+- Workflow versions, by problem: 73 at #389, 20 at #388, 6 at #384 (run on
+  2026-11-21), and arc189_d at #397. At #389 arc189_d finished with no
+  `solution.py`: its check ran `lab/solution.py`, so every target held on an
+  unchanged project. #397 fixes it; the rerun solved it 42 of 42 ($0.230).
+  Without it: 83, 85 and 90.
+- The first pass ran at #388 until the OpenRouter key stopped working: 79 runs
+  failed in about 5 s each. Their reruns started at #388. After 9 of them,
+  3562 and 3762 showed `think-before-coding` writing `solution.py` into the
+  project before `simplicity-first`. #389 keeps the project as the run found
+  it; the other reruns and those two ran at #389.
+- 4 problems in flight on one Mac, median 911 s a problem, 33.2 h summed over
+  the runs kept. $6.15 on OpenRouter for the 100 runs kept, median $0.037 a solved
+  problem, max $0.256; $6.89 billed in all.
+
+`results/karpathy-lcb-2026-11-22.tsv`: every problem with id, tests passed
+and all tests (stock grader), the paper's rule, fair tests and fair, the
+workflow version, seconds and cost.
 
 ## team-solve-fanout, DeepSeek V4.1 Flash, 2026-11-12
 
