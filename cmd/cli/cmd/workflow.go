@@ -577,7 +577,7 @@ func init() {
 	workflowRunCmd.Flags().BoolVar(&workflowWaitFlag, "wait", false, "follow the run to its end: progress on stderr, the files it produced on stdout, exit 0 done / 2 failed / 1 stopped")
 	workflowRunCmd.Flags().BoolVar(&workflowStopAtGateFlag, "stop-at-gate", false, "--wait, except a gate ends the command with exit 3 and its review on stderr: for a CI job nobody can approve from (the run stays waiting on the gateway)")
 	workflowRunCmd.Flags().StringVar(&workflowTimeoutFlag, "timeout", "", "a clock on the whole run, e.g. 90m (default 2h, at most 24h)")
-	workflowRunCmd.Flags().StringVar(&workflowModelFlag, "model", "", "the model every agent and llm step runs on: an id memdoor model search shows, provider:id when two providers list it; a step with a model: of its own keeps it")
+	workflowRunCmd.Flags().StringVar(&workflowModelFlag, "model", "", "the model every agent and llm step runs on: an id memdoor model search shows, provider:id when two providers list it; a step whose model: names an id keeps it, one with options only (thinking medium) adds them to this")
 	workflowRunCmd.Flags().StringVar(&workflowPartitionFlag, "partition", "", "resume an earlier run by its partition (status shows it), or \"today\" for a DAG run once a day; a run is fresh by default")
 	workflowCheckCmd.Flags().BoolVar(&workflowCheckDryRun, "dry-run", false, "then walk every task with mario's dry run: each renders what it would run, no command runs, no model is called, no gate is waited at; exit 1 when a task fails")
 	workflowHistoryCmd.Flags().IntVar(&workflowHistoryLimit, "limit", 0, "history: how many runs back to show (default 20)")
