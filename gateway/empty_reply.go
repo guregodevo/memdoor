@@ -36,16 +36,13 @@ const emptyReplyNotice = "The brain answered nothing readable twice in a row, so
 const scrubbedNudge = "Your last reply was a tool call that could not be read — it had no \"name\", or its JSON was broken. " +
 	"Write it again as ONE object, {\"name\": \"<tool>\", \"arguments\": {…}}, inside <tool_call></tool_call>."
 
-// emptyRetryPrompt is the system prompt for the empty-step retry: unchanged
-// for a bare blank, with the nudge when the blank was scrubbed.
-func emptyRetryPrompt(extra string, stop llm.StopReason) string {
+// emptyRetryNudge is what the empty-step retry adds to the conversation:
+// nothing for a bare blank, the nudge when the blank was scrubbed.
+func emptyRetryNudge(stop llm.StopReason) string {
 	if stop != llm.StopReasonScrubbed {
-		return extra
+		return ""
 	}
-	if extra == "" {
-		return scrubbedNudge
-	}
-	return extra + "\n\n" + scrubbedNudge
+	return scrubbedNudge
 }
 
 // nextRungAfterEmpty is the rung to try once the answering rung has
