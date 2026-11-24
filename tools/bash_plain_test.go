@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -78,3 +79,27 @@ func mustRunBash(t *testing.T, cmd string) string {
 	}
 	return out
 }
+
+// A binary file catted into a conversation (a git index, live 2026-11-23)
+// made a 27B model answer in imitation of it until the step timed out. The
+// text around it stays; each run of binary lines becomes one note.
+func TestBashOutputNamesBinaryInsteadOfShowingIt(t *testing.T) {
+	for _, tc := range []struct{ name, cmd, want string }{
+		{"a git index between text", `printf 'before\nDIRC\000\000\000\002k\004\n\377\376TREE\n---\nafter\n'`,
+			"before\n[binary data, 18 bytes, not shown]\n---\nafter"},
+		{"binary at the end, no newline", `printf 'ok\n\000\001'`, "ok\n[binary data, 2 bytes, not shown]"},
+		{"text in another script", `printf 'héllo — 日本語\n'`, "héllo — 日本語"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			out, err := Bash([]byte(`{"command":` + jsonString(tc.cmd) + `}`))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out != tc.want {
+				t.Errorf("got %q, want %q", out, tc.want)
+			}
+		})
+	}
+}
+
+func jsonString(s string) string { b, _ := json.Marshal(s); return string(b) }

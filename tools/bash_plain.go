@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // bash_plain: running a shell command so its output is TEXT.
@@ -72,11 +73,11 @@ func runPlainBash(command, dir string, timeout time.Duration) (string, error) {
 		if errors.Is(err, exec.ErrWaitDelay) && cmd.ProcessState != nil && cmd.ProcessState.Success() {
 			err = nil
 		}
-		return stripTerminalEscapes([]byte(buf.String())), err
+		return WithoutBinary(stripTerminalEscapes([]byte(buf.String()))), err
 	case <-time.After(timeout):
 		_ = killProcessGroup(cmd)
 		<-done
-		return stripTerminalEscapes([]byte(buf.String())),
+		return WithoutBinary(stripTerminalEscapes([]byte(buf.String()))),
 			fmt.Errorf("timed out after %s and was killed; narrow it (a path, -maxdepth, head)%s or run it in the background", timeout, BashLongerHint())
 	}
 }
@@ -195,4 +196,36 @@ func stripTerminalEscapes(b []byte) string {
 		}
 	}
 	return out.String()
+}
+
+// WithoutBinary keeps a command's text lines and puts one note in place of
+// each run of lines that are not text (a NUL byte, or bytes that are not
+// UTF-8). read_file already refuses a binary file; bash did not. Live
+// 2026-11-23: `cat .memdoor/runs/…/tree.index` put a git index into a
+// Qwen3.8-27B conversation, and every reply after it began with imitation
+// "DIRC …" lines instead of a tool call, until the step timed out.
+func WithoutBinary(s string) string {
+	if strings.IndexByte(s, 0) < 0 && utf8.ValidString(s) {
+		return s // the common case: nothing to do, no copy
+	}
+	lines := strings.SplitAfter(s, "\n")
+	var out strings.Builder
+	out.Grow(len(s))
+	for i := 0; i < len(lines); {
+		if !isBinaryLine(lines[i]) {
+			out.WriteString(lines[i])
+			i++
+			continue
+		}
+		n := 0
+		for ; i < len(lines) && isBinaryLine(lines[i]); i++ {
+			n += len(lines[i])
+		}
+		fmt.Fprintf(&out, "[binary data, %d bytes, not shown]\n", n)
+	}
+	return out.String()
+}
+
+func isBinaryLine(line string) bool {
+	return strings.IndexByte(line, 0) >= 0 || !utf8.ValidString(line)
 }

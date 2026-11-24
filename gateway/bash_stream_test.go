@@ -175,3 +175,15 @@ func TestRunStreamingCommand_BackgroundLaunchIsNotAFailure(t *testing.T) {
 		t.Fatal("a non-zero exit must still fail")
 	}
 }
+
+// The coder's bash streams: its result names binary lines as the one-shot
+// tool does (tools.WithoutBinary), the text around them kept.
+func TestRunStreamingCommand_NamesBinary(t *testing.T) {
+	out, _, err := runStreamingCommand(context.Background(), `printf 'tree\nDIRC\000\002\n---\n'`, "", tools.BashTimeout(), func(string) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "tree\n[binary data, 7 bytes, not shown]\n---\n"; out != want {
+		t.Errorf("output = %q, want %q", out, want)
+	}
+}
