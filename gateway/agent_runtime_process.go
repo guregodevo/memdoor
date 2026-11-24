@@ -316,6 +316,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 			slog.String("model", sessionModel(session)), slog.String("reason", sessionReason(session)), slog.String("session", session.ID))
 	}
 	ctx = context.WithValue(ctx, ctxSession, session)
+	ctx = withTurnSystem(ctx)
 
 	// Emit thinking event before API call
 	ar.events.EmitEvent(runID, infra.EventStreamAssistant, session.ID, map[string]interface{}{
@@ -790,11 +791,10 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 					slog.Int("tools_executed", len(response.ToolsExecuted)))
 				conversation = conversation[:len(conversation)-1] // drop the empty assistant msg
 				retryCtx := context.WithValue(ctx, retryTemperatureKey{}, 0.7)
-				retryPrompt := extraSystemPrompt
 				if message != nil {
-					retryPrompt = emptyRetryPrompt(extraSystemPrompt, message.StopReason)
+					conversation = nudged(conversation, emptyRetryNudge(message.StopReason))
 				}
-				message, conversation, err = ar.runInference(retryCtx, conversation, retryPrompt)
+				message, conversation, err = ar.runInference(retryCtx, conversation, extraSystemPrompt)
 				if err != nil {
 					log.WithError(err).Error("Empty-step retry inference failed")
 					break
@@ -884,13 +884,11 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 				// The retry says WHY it is a retry. A hotter temperature and
 				// nothing else got the same deliberation again on the 27B
 				// (2026-09-07: the cut card, then four minutes weighing file
-				// names, to the 16k cap); one sentence at the top of the
-				// system prompt is what turns the next reply into a call.
+				// names, to the 16k cap); one sentence is what turns the next
+				// reply into a call. It ends the conversation (nudge.go), not
+				// the system prompt, so the prompt's prefix stays cached.
 				nudge := "Your previous reply ran long without acting. Call the next tool now; keep any explanation to one sentence."
-				if extraSystemPrompt != "" {
-					nudge = extraSystemPrompt + "\n\n" + nudge
-				}
-				message, conversation, err = ar.runInference(retryCtx, conversation, nudge)
+				message, conversation, err = ar.runInference(retryCtx, nudged(conversation, nudge), extraSystemPrompt)
 				if err != nil {
 					log.WithError(err).Error("Reasoning-only retry inference failed")
 					break
@@ -906,11 +904,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 					slog.Int("tools_executed", len(response.ToolsExecuted)), slog.Int("chars", len(response.Text)))
 				conversation = conversation[:len(conversation)-1]
 				response.Text = strings.TrimSpace(strings.TrimSuffix(response.Text, responseText))
-				nudge := recapNudge(len(response.ToolsExecuted))
-				if extraSystemPrompt != "" {
-					nudge = extraSystemPrompt + "\n\n" + nudge
-				}
-				message, conversation, err = ar.runInference(ctx, conversation, nudge)
+				message, conversation, err = ar.runInference(ctx, nudged(conversation, recapNudge(len(response.ToolsExecuted))), extraSystemPrompt)
 				if err != nil {
 					log.WithError(err).Error("Recap retry inference failed")
 					break
@@ -967,10 +961,7 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 						nudge = doneWhenNudge(label)
 						ar.decisionNote(runID, session.ID, "the "+label+" is missing — continuing, round "+strconv.Itoa(doneRounds))
 					}
-					if extraSystemPrompt != "" {
-						nudge = extraSystemPrompt + "\n\n" + nudge
-					}
-					message, conversation, err = ar.runInference(llm.WithForcedToolCall(ctx), conversation, nudge)
+					message, conversation, err = ar.runInference(llm.WithForcedToolCall(ctx), nudged(conversation, nudge), extraSystemPrompt)
 					if err != nil {
 						log.WithError(err).Error("Done retry inference failed")
 						break
@@ -1246,7 +1237,8 @@ func (ar *AgentRuntime) wrapUpTurn(ctx context.Context, conversation []llm.Messa
 		conversation = append(conversation, llm.NewUserMessage(toolResults...))
 	}
 	conversation = append(conversation, llm.NewUserMessage(llm.NewTextBlock(brief)))
-	wrap, _, err := ar.runInference(withTurnToolsAllow(ctx, nil), conversation, extraSystemPrompt)
+	// No tools, so its own system prompt: the turn's lists the tools it had.
+	wrap, _, err := ar.runInference(withTurnSystem(withTurnToolsAllow(ctx, nil)), conversation, extraSystemPrompt)
 	if err != nil || wrap == nil {
 		if err != nil {
 			logs.New("Agent").Warn("Wrap-up round failed", slog.String("error", err.Error()))

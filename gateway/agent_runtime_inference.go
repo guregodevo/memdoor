@@ -83,67 +83,78 @@ func (ar *AgentRuntime) runInference(ctx context.Context, conversation []llm.Mes
 		}
 	}
 
-	// Build system prompt
-	workspace := ar.agentConfig.GetWorkspace()
-	if workspace == "" {
-		workspace = "."
-	}
-
+	// Build the system prompt: once a turn (turn_system.go), so every call
+	// of the turn sends the same bytes and a prefix cache keeps them.
 	model := ar.resolvedModel
-	systemPromptBuilder := prompts.NewSystemPromptBuilder(ar.agentConfig, submitted, workspace, model)
-	// The project's AGENTS.md, from the directory this turn works
-	// in (the TUI's cwd, a spawned run's workdir), not the agent's own home.
-	systemPromptBuilder.SetProjectDir(turnWorkdir(ctx))
-	systemPromptBuilder.SetProjectInstructions(projectInstructionsFor(ctx, turnWorkdir(ctx)))
-	// Identify the agent by the buddy actually running (e.g. "coder"), not the shared
-	// runtime's static config id — so the identity line doesn't contradict the buddy's
-	// own prompt ("You are the coder" vs "You are agent 'main'").
-	if name, _ := ctx.Value("buddy_agent_name").(string); name != "" {
-		systemPromptBuilder.SetAgentName(name)
-	}
-
-	// Buddy agents are defined by their seeded system_prompt + palette, not by
-	// hardcoded prompt sections. A codebase task agent (coder or planner) gets an
-	// identity-only prompt so its OWN seed is the whole instruction — no chat
-	// "stay silent / REPLY_SKIP" collaboration block bolted on (which makes a
-	// small model skip the task). Conversational buddies keep chat mode.
-	if isBuddy, _ := ctx.Value(sharedctx.IsBuddyChatKey).(bool); isBuddy {
-		if ar.agentWorksOnCodebase(ctx) {
-			systemPromptBuilder.SetPromptMode(prompts.PromptModeNone)
-		} else {
-			systemPromptBuilder.SetPromptMode(prompts.PromptModeChat)
+	build := func() (string, error) {
+		workspace := ar.agentConfig.GetWorkspace()
+		if workspace == "" {
+			workspace = "."
 		}
-	}
 
-	// Add skills to the system prompt (OpenClaw pattern)
-	if len(ar.loadedSkills) > 0 {
-		systemPromptBuilder.SetSkills(ar.loadedSkills)
-	}
+		systemPromptBuilder := prompts.NewSystemPromptBuilder(ar.agentConfig, submitted, workspace, model)
+		// The project's AGENTS.md, from the directory this turn works
+		// in (the TUI's cwd, a spawned run's workdir), not the agent's own home.
+		systemPromptBuilder.SetProjectDir(turnWorkdir(ctx))
+		systemPromptBuilder.SetProjectInstructions(projectInstructionsFor(ctx, turnWorkdir(ctx)))
+		// Identify the agent by the buddy actually running (e.g. "coder"), not the shared
+		// runtime's static config id — so the identity line doesn't contradict the buddy's
+		// own prompt ("You are the coder" vs "You are agent 'main'").
+		if name, _ := ctx.Value("buddy_agent_name").(string); name != "" {
+			systemPromptBuilder.SetAgentName(name)
+		}
 
-	// Add secret names to system prompt if agent has secrets
-	if ar.secretRepo != nil {
-		if sandboxCtxValue := ctx.Value(sharedctx.SandboxContextKey); sandboxCtxValue != nil {
-			if sctx, ok := sandboxCtxValue.(sandbox.SandboxContext); ok && sctx.CurrentAgentID != "" {
-				names, err := ar.secretRepo.List(ctx, sctx.CurrentAgentID)
-				if err == nil && len(names) > 0 {
-					systemPromptBuilder.SetSecretNames(names)
-					log.Info("Injected secret names into system prompt",
-						slog.String("agent_id", sctx.CurrentAgentID),
-						slog.Int("secret_count", len(names)),
-						slog.Any("secrets", names))
+		// Buddy agents are defined by their seeded system_prompt + palette, not by
+		// hardcoded prompt sections. A codebase task agent (coder or planner) gets an
+		// identity-only prompt so its OWN seed is the whole instruction — no chat
+		// "stay silent / REPLY_SKIP" collaboration block bolted on (which makes a
+		// small model skip the task). Conversational buddies keep chat mode.
+		if isBuddy, _ := ctx.Value(sharedctx.IsBuddyChatKey).(bool); isBuddy {
+			if ar.agentWorksOnCodebase(ctx) {
+				systemPromptBuilder.SetPromptMode(prompts.PromptModeNone)
+			} else {
+				systemPromptBuilder.SetPromptMode(prompts.PromptModeChat)
+			}
+		}
+
+		// Add skills to the system prompt (OpenClaw pattern)
+		if len(ar.loadedSkills) > 0 {
+			systemPromptBuilder.SetSkills(ar.loadedSkills)
+		}
+
+		// Add secret names to system prompt if agent has secrets
+		if ar.secretRepo != nil {
+			if sandboxCtxValue := ctx.Value(sharedctx.SandboxContextKey); sandboxCtxValue != nil {
+				if sctx, ok := sandboxCtxValue.(sandbox.SandboxContext); ok && sctx.CurrentAgentID != "" {
+					names, err := ar.secretRepo.List(ctx, sctx.CurrentAgentID)
+					if err == nil && len(names) > 0 {
+						systemPromptBuilder.SetSecretNames(names)
+						log.Info("Injected secret names into system prompt",
+							slog.String("agent_id", sctx.CurrentAgentID),
+							slog.Int("secret_count", len(names)),
+							slog.Any("secrets", names))
+					} else {
+						log.Debug("No secrets found for agent",
+							slog.String("agent_id", sctx.CurrentAgentID))
+					}
 				} else {
-					log.Debug("No secrets found for agent",
-						slog.String("agent_id", sctx.CurrentAgentID))
+					log.Info("No CurrentAgentID in sandbox context for secrets")
 				}
 			} else {
-				log.Info("No CurrentAgentID in sandbox context for secrets")
+				log.Info("No sandbox_context in context for secrets")
 			}
-		} else {
-			log.Info("No sandbox_context in context for secrets")
 		}
-	}
 
-	systemPrompt, err := systemPromptBuilder.Build()
+		return systemPromptBuilder.Build()
+	}
+	var systemPrompt string
+	var err error
+	turnSys := turnSystemOf(ctx)
+	if turnSys != nil {
+		systemPrompt, err = turnSys.builtOnce(build)
+	} else {
+		systemPrompt, err = build()
+	}
 	if err != nil {
 		log.WithError(err).Error("Failed to build system prompt")
 		// Continue without system prompt rather than failing
@@ -160,6 +171,11 @@ func (ar *AgentRuntime) runInference(ctx context.Context, conversation []llm.Mes
 		} else {
 			systemPrompt = extraSystemPrompt
 		}
+	}
+
+	if turnSys != nil && turnSys.changed(systemPrompt) {
+		log.Warn("System prompt changed within the turn — a prefix cache reads the whole prompt again",
+			slog.Int("system_prompt_chars", len(systemPrompt)))
 	}
 
 	// Populate ContextToolState for context inspection tool and post-execution context tracking

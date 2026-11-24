@@ -291,6 +291,8 @@ func (ar *AgentRuntime) flushNotes(ctx context.Context, conversation []llm.Messa
 	flushCtx, cancel := context.WithTimeout(llm.WithUtilityCall(cheapestRung(ctx)), 30*time.Second)
 	defer cancel()
 	flushCtx = context.WithValue(flushCtx, ctxSkipCompaction, true)
+	// Its own system prompt: another model and no extra prompt, not the turn's.
+	flushCtx = withTurnSystem(flushCtx)
 
 	result, _, err := ar.runInference(flushCtx, flushConv, "")
 	if err != nil || result == nil {
