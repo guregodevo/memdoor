@@ -187,7 +187,7 @@ func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Du
 	flushWG.Wait()
 
 	mu.Lock()
-	out := string(buf)
+	out := tools.WithoutBinary(string(buf))
 	wasCapped := capped
 	mu.Unlock()
 
