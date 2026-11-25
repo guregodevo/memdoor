@@ -168,6 +168,10 @@ func (ar *AgentRuntime) ProcessMessage(ctx context.Context, userMessage string, 
 	// (agent_runtime_progress.go); it does nothing for an ordinary turn.
 	stopMirror := ar.watchTurnForRequester(session, runID)
 	defer stopMirror()
+	// A command a bash call left running past its time limit ends with the
+	// turn (bash_stream.go).
+	ctx, endTurn := withTurnEnd(ctx)
+	defer endTurn()
 
 	resp, err := ar.processMessage(ctx, userMessage, session, runID, extraSystemPrompt)
 	if err != nil && runID != "" {

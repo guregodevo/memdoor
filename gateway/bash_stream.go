@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memdoor/pkg/secrets"
 	"memdoor/pkg/shell"
 	"memdoor/tools"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -53,15 +56,20 @@ func (bashStreamer) Stream(ctx context.Context, input json.RawMessage, emit func
 		Cwd string `json:"cwd"` // harness-injected workdir; see tools.BashInput
 	}
 	_ = json.Unmarshal(input, &in)
-	out, truncated, runErr := runStreamingCommand(ctx, command, in.Cwd, tools.ParseBashTimeout(input), emit)
-	if runErr != nil {
-		return tools.BashFailedResult(command, out, input, runErr), nil
+	limit := tools.ParseBashTimeout(input)
+	r := runStreamingCommand(ctx, command, in.Cwd, limit, emit)
+	switch {
+	case r.runErr != nil:
+		return tools.BashFailedResult(command, r.out, input, r.runErr), nil
+	case r.running:
+		return r.out + fmt.Sprintf("\n[still running after %s, not stopped: process group %d. Its output goes on in %s, "+
+			"and its last line says when it ended. Read the log (tail %s) to follow it, or stop it with kill -- -%d "+
+			"when it is not worth more time. It is stopped when this turn ends.]", limit.Round(time.Second), r.pid, r.log, r.log, r.pid), nil
+	case r.capped:
+		return r.out + "\n[stopped: the command printed more than the output limit, and it was killed with everything it started, background jobs too. " +
+			"Narrow its output (grep, head, tail), or send it to a file — <cmd> > <log> 2>&1 — and read the log]", nil
 	}
-	if truncated {
-		return out + "\n[stopped: the command was still running at the time or output limit, and it was killed with everything it started, background jobs too. " +
-			"To run something longer" + tools.BashLongerHint() + " start it alone in a command that returns at once — nohup <cmd> > <log> 2>&1 & — and read the log in later commands]", nil
-	}
-	return out, nil
+	return r.out, nil
 }
 
 // Bounds on a streamed bash call so a non-terminating command (tail -f) can't
@@ -80,25 +88,54 @@ var (
 	bashStreamFlushEvery  = 100 * time.Millisecond
 )
 
+// streamRun is how a streamed command ended: its output, and either its
+// exit (runErr), a cut (capped: the byte cap stopped it), or still running
+// at the call's time limit (running, its pid and the log its output goes
+// on to).
+type streamRun struct {
+	out     string
+	capped  bool
+	running bool
+	pid     int
+	log     string
+	runErr  error
+}
+
+// bashLeftLogMax bounds the log a command left running writes to.
+var bashLeftLogMax int64 = 64 << 20
+
 // runStreamingCommand runs `bash -c command`, calling emit with each new chunk
 // of combined stdout/stderr as it is produced (coalesced to at most one call
-// per bashStreamFlushEvery so a flood does not become a flood of events). It
-// returns the full captured output and whether it was cut short by the time or
-// size cap — in which case the process is killed and the turn continues.
+// per bashStreamFlushEvery so a flood does not become a flood of events).
+//
+// A command still running at limit is not killed: some take longer, and
+// that is the model's call, not the harness's ("no hard timeout", 2026-11-25:
+// a karpathy coder's exhaustive search ran into bash's 300 s kill). The call
+// returns its output so far; the command goes on in its process group, its
+// output appended to a log, until it exits or ctx ends (the turn, or Esc),
+// which stops it and everything it started. The byte cap still stops a
+// command whose output floods (yes, tail -f).
 //
 // This is what lets the TUI render a live tail: emit feeds the streaming pane
-// while the command runs; the returned string is the final tool result.
-func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Duration, emit func(chunk string)) (output string, truncated bool, runErr error) {
+// while the command runs; the returned output is the final tool result.
+func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Duration, emit func(chunk string)) streamRun {
 	if bashStreamMaxDuration != 0 {
 		limit = min(limit, bashStreamMaxDuration)
 	}
-	cctx, cancel := context.WithTimeout(ctx, limit)
-	defer cancel()
+	cctx, cancel := context.WithCancel(ctx)
+	left := false
+	defer func() {
+		if !left {
+			cancel()
+		}
+	}()
 
 	var mu sync.Mutex
 	var buf []byte     // everything captured (capped)
 	var pending []byte // produced since the last flush
 	capped := false
+	var logf *os.File // set once the call returned with the command running
+	var logged int64
 
 	// A POINTER, so Stdout and Stderr compare equal and os/exec hands the
 	// child ONE pipe: output arrives in the order the command wrote it. A
@@ -110,6 +147,13 @@ func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Du
 	w := &streamWriter{write: func(p []byte) (int, error) {
 		mu.Lock()
 		defer mu.Unlock()
+		if logf != nil {
+			if logged < bashLeftLogMax {
+				n, _ := logf.Write(p[:min(int64(len(p)), bashLeftLogMax-logged)])
+				logged += int64(n)
+			}
+			return len(p), nil
+		}
 		if capped {
 			return len(p), nil // keep draining so the pipe doesn't block; ignore
 		}
@@ -134,7 +178,7 @@ func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Du
 	cmd := shell.Command(cctx, command)
 	// The workdir comes from the harness, not from a cd inside the command.
 	cmd.Dir = cwd
-	// The cap kills the whole process group, not only bash. Killing bash
+	// A stop kills the whole process group, not only bash. Killing bash
 	// alone left its child (sleep, find) holding the output pipe, and Run
 	// waited for it: a 30 s cap held a coder turn 401 s on `sleep 401`, and
 	// for over an hour on `find ~ -maxdepth 4 …` (2026-09-25). WaitDelay
@@ -176,7 +220,46 @@ func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Du
 		}
 	}()
 
-	err := cmd.Run()
+	if err := cmd.Start(); err != nil {
+		close(done)
+		flushWG.Wait()
+		return streamRun{runErr: err}
+	}
+	exited := make(chan error, 1)
+	go func() { exited <- cmd.Wait() }()
+
+	var err error
+	select {
+	case err = <-exited:
+	case <-time.After(limit):
+		if r, ok := leaveRunning(cmd, &mu, &buf, &logf, done, &flushWG); ok {
+			left = true
+			go func() {
+				var werr error
+				select {
+				case werr = <-exited:
+				case <-turnEnded(ctx):
+					cancel() // the turn is over: so is what it left running
+					werr = <-exited
+				}
+				mu.Lock()
+				if logf != nil {
+					fmt.Fprintf(logf, "\n[memdoor: the command ended: %s]\n", exitWords(werr))
+					logf.Close()
+				}
+				mu.Unlock()
+				cancel()
+			}()
+			return r
+		}
+		cancel() // no log to leave it with: stopped, as before
+		<-exited
+		close(done)
+		flushWG.Wait()
+		mu.Lock()
+		defer mu.Unlock()
+		return streamRun{out: tools.WithoutBinary(string(buf)), runErr: fmt.Errorf("still running after %s, and stopped: no log could be made for it to go on in", limit)}
+	}
 	// The command exited; what Run waited WaitDelay for was a backgrounded
 	// child still holding the output pipe (`(…) & echo bg`). That is the
 	// shape of running something in the background, not a failure: the
@@ -187,21 +270,60 @@ func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Du
 	flushWG.Wait()
 
 	mu.Lock()
-	out := tools.WithoutBinary(string(buf))
-	wasCapped := capped
+	r := streamRun{out: tools.WithoutBinary(string(buf)), capped: capped || cctx.Err() != nil && ctx.Err() == nil}
 	mu.Unlock()
-
-	// A timeout (deadline exceeded) also counts as truncated even if the byte
-	// cap was not hit — the command was still running when we cut it off.
-	if wasCapped || cctx.Err() == context.DeadlineExceeded {
-		truncated = true
-	}
-	// A cap we imposed is not a command failure — the caller reports truncation
+	// A cap we imposed is not a command failure — the caller reports it
 	// separately, so don't surface the "signal: killed" as an exit error.
-	if !truncated {
-		runErr = err
+	if !r.capped {
+		r.runErr = err
 	}
-	return out, truncated, runErr
+	return r
+}
+
+type turnEndKey struct{}
+
+// withTurnEnd marks ctx with a channel end closes when the turn returns: a
+// command a bash call left running is stopped then (runStreamingCommand).
+func withTurnEnd(ctx context.Context) (context.Context, func()) {
+	ch := make(chan struct{})
+	var once sync.Once
+	return context.WithValue(ctx, turnEndKey{}, ch), func() { once.Do(func() { close(ch) }) }
+}
+
+// turnEnded is ctx's turn-end channel; nil (never ready) outside a turn.
+func turnEnded(ctx context.Context) <-chan struct{} {
+	ch, _ := ctx.Value(turnEndKey{}).(chan struct{})
+	return ch
+}
+
+// leaveRunning moves a command still running at the call's limit to a log
+// of its own: what it printed so far is the call's output and the log's
+// start. False when no log can be made.
+func leaveRunning(cmd *exec.Cmd, mu *sync.Mutex, buf *[]byte, logf **os.File, done chan struct{}, flushWG *sync.WaitGroup) (streamRun, bool) {
+	f, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("memdoor-bash-%d.log", cmd.Process.Pid)))
+	if err != nil {
+		return streamRun{}, false
+	}
+	close(done)
+	flushWG.Wait()
+	mu.Lock()
+	defer mu.Unlock()
+	_, _ = f.Write(*buf)
+	*logf = f
+	return streamRun{out: tools.WithoutBinary(string(*buf)), running: true, pid: cmd.Process.Pid, log: f.Name()}, true
+}
+
+// exitWords says how a command left running ended, for the end of its log.
+func exitWords(err error) string {
+	var ee *exec.ExitError
+	switch {
+	case err == nil:
+		return "exit 0"
+	case errors.As(err, &ee) && ee.Exited():
+		return fmt.Sprintf("exit %d", ee.ExitCode())
+	default:
+		return err.Error()
+	}
 }
 
 // ignoreWaitDelayAfterExit returns nil for exec.ErrWaitDelay when the process

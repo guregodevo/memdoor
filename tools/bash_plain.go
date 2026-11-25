@@ -137,8 +137,8 @@ func SetBashTimeouts(limit, most time.Duration) {
 	BashDefinition.Description = bashDescription
 	BashDefinition.InputSchema = BashInputSchema
 	if bashLongerOffered() {
-		BashDefinition.Description += fmt.Sprintf(" A command is killed after %d seconds; for one that must run longer "+
-			"(a full test suite, a release build), pass timeout in seconds, at most %d.",
+		BashDefinition.Description += fmt.Sprintf(" A command still running after %d seconds goes on, and you get its output so far and the log the rest goes to; "+
+			"to wait longer for one (a full test suite, a release build), pass timeout in seconds, at most %d.",
 			int(BashTimeoutLimit.Seconds()), int(BashTimeoutMax.Seconds()))
 		BashDefinition.InputSchema = bashTimedInputSchema
 	}
@@ -147,7 +147,7 @@ func SetBashTimeouts(limit, most time.Duration) {
 // bashTimedInput is the bash input when a longer timeout is offered.
 type bashTimedInput struct {
 	BashInput
-	Timeout int `json:"timeout,omitempty" jsonschema_description:"Seconds the command may run before it is killed, for a command that runs longer than the default. The default and the maximum are in the tool description."`
+	Timeout int `json:"timeout,omitempty" jsonschema_description:"Seconds to wait for the command before it goes on in the background, for a command that runs longer than the default. The default and the maximum are in the tool description."`
 }
 
 var bashTimedInputSchema = GenerateSchema[bashTimedInput]()

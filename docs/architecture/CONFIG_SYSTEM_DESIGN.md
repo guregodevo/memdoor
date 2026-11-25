@@ -198,11 +198,19 @@ TUI's websocket, the CLI, the remote page, cron, peers.
 `gateway/a2a_integration.go` turns it into the authorization policy for
 `sessions_send`; absent, `authorization.DefaultA2APolicy()` applies.
 
-**`tools.bash`** (`BashToolConfig`): `timeout_seconds`, how long a command
-runs when the call names no timeout (default 300), and `max_timeout_seconds`,
-the most a call may ask for. Only with a maximum above the default does the
-bash tool offer a `timeout` field and say both figures in its description.
-Read once at start (`gateway/server.go`, `tools.SetBashTimeouts`).
+**`tools.bash`** (`BashToolConfig`): `timeout_seconds`, how long the coder's
+bash call waits for a command when the call names no timeout (default 300),
+and `max_timeout_seconds`, the most a call may ask for. Only with a maximum
+above the default does the bash tool offer a `timeout` field and say both
+figures in its description. Read once at start (`gateway/server.go`,
+`tools.SetBashTimeouts`).
+
+A command still running at that time is not killed. The call returns its
+output so far; the command goes on in its process group, its output in
+`$TMPDIR/memdoor-bash-<pid>.log`, whose last line says how it ended. It is
+stopped when the turn ends, or on Esc (`gateway/bash_stream.go`). A command
+that prints more than 256 KB is still stopped. The harness's own checks
+(`verify`, `tools/bash_plain.go`) keep the kill at the limit.
 
 ```json
 { "tools": { "bash": { "max_timeout_seconds": 1800 } } }
