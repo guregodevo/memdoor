@@ -258,7 +258,7 @@ func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Du
 		flushWG.Wait()
 		mu.Lock()
 		defer mu.Unlock()
-		return streamRun{out: tools.WithoutBinary(string(buf)), runErr: fmt.Errorf("still running after %s, and stopped: no log could be made for it to go on in", limit)}
+		return streamRun{out: tools.CommandText(buf), runErr: fmt.Errorf("still running after %s, and stopped: no log could be made for it to go on in", limit)}
 	}
 	// The command exited; what Run waited WaitDelay for was a backgrounded
 	// child still holding the output pipe (`(…) & echo bg`). That is the
@@ -270,7 +270,7 @@ func runStreamingCommand(ctx context.Context, command, cwd string, limit time.Du
 	flushWG.Wait()
 
 	mu.Lock()
-	r := streamRun{out: tools.WithoutBinary(string(buf)), capped: capped || cctx.Err() != nil && ctx.Err() == nil}
+	r := streamRun{out: tools.CommandText(buf), capped: capped || cctx.Err() != nil && ctx.Err() == nil}
 	mu.Unlock()
 	// A cap we imposed is not a command failure — the caller reports it
 	// separately, so don't surface the "signal: killed" as an exit error.
@@ -310,7 +310,7 @@ func leaveRunning(cmd *exec.Cmd, mu *sync.Mutex, buf *[]byte, logf **os.File, do
 	defer mu.Unlock()
 	_, _ = f.Write(*buf)
 	*logf = f
-	return streamRun{out: tools.WithoutBinary(string(*buf)), running: true, pid: cmd.Process.Pid, log: f.Name()}, true
+	return streamRun{out: tools.CommandText(*buf), running: true, pid: cmd.Process.Pid, log: f.Name()}, true
 }
 
 // exitWords says how a command left running ended, for the end of its log.

@@ -103,3 +103,18 @@ func TestBashOutputNamesBinaryInsteadOfShowingIt(t *testing.T) {
 }
 
 func jsonString(s string) string { b, _ := json.Marshal(s); return string(b) }
+
+// Output still being written is read in pieces, and a piece can end inside a
+// character. That is not binary data: the bytes wait for the rest.
+func TestLiveTextHoldsBackAHalfReadCharacter(t *testing.T) {
+	whole := "caf\u00e9 \u2584\u2584\n"
+	for cut := 1; cut <= len(whole); cut++ {
+		got := LiveText([]byte(whole[:cut]))
+		if strings.Contains(got, "binary data") || !strings.HasPrefix(whole, got) {
+			t.Errorf("LiveText(%q) = %q", whole[:cut], got)
+		}
+	}
+	if got, want := LiveText([]byte("ok\n\x00\x01\xff\n\x1b[31mred\x1b[0m")), "ok\n[binary data, 4 bytes, not shown]\nred"; got != want {
+		t.Errorf("LiveText = %q, want %q", got, want)
+	}
+}

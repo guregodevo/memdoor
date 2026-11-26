@@ -165,3 +165,15 @@ func TestRunStreamingCommand_NamesBinary(t *testing.T) {
 		t.Errorf("output = %q, want %q", out, want)
 	}
 }
+
+// And it carries no terminal escapes, as the one-shot tool's does not
+// (tools.CommandText): llama-cli, docker and git colour their output.
+func TestRunStreamingCommand_StripsTerminalEscapes(t *testing.T) {
+	out, _, err := stream(context.Background(), `printf '\033[2J\033[31mred\033[0m\n'`, "", tools.BashTimeout(), func(string) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "red\n"; out != want {
+		t.Errorf("output = %q, want %q", out, want)
+	}
+}
