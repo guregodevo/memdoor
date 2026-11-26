@@ -1183,7 +1183,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.messages[i].Role == "tool_call" && m.messages[i].ToolName == msg.toolName && !m.messages[i].toolSettled() {
 				// The event carries the output SO FAR (the whole buffer), so
 				// replace — appending would duplicate everything each tick.
-				m.messages[i].LiveOutput = msg.chunk
+				m.messages[i].LiveOutput = drawable(msg.chunk)
 				m.messages[i].Streamed = true
 				break
 			}
@@ -1272,8 +1272,8 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				if matched {
 					m.messages[i].ToolDone = true
-					m.messages[i].ToolOutput = msg.toolOutput
-					m.messages[i].ToolError = msg.toolError
+					m.messages[i].ToolOutput = drawable(msg.toolOutput)
+					m.messages[i].ToolError = drawable(msg.toolError)
 					m.messages[i].ToolTook = time.Since(m.messages[i].Timestamp)
 					m.messages[i].LiveOutput = "" // the compact final view takes over
 					break

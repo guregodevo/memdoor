@@ -73,11 +73,11 @@ func runPlainBash(command, dir string, timeout time.Duration) (string, error) {
 		if errors.Is(err, exec.ErrWaitDelay) && cmd.ProcessState != nil && cmd.ProcessState.Success() {
 			err = nil
 		}
-		return WithoutBinary(stripTerminalEscapes([]byte(buf.String()))), err
+		return CommandText([]byte(buf.String())), err
 	case <-time.After(timeout):
 		_ = killProcessGroup(cmd)
 		<-done
-		return WithoutBinary(stripTerminalEscapes([]byte(buf.String()))),
+		return CommandText([]byte(buf.String())),
 			fmt.Errorf("timed out after %s and was killed; narrow it (a path, -maxdepth, head)%s or run it in the background", timeout, BashLongerHint())
 	}
 }
@@ -224,6 +224,27 @@ func WithoutBinary(s string) string {
 		fmt.Fprintf(&out, "[binary data, %d bytes, not shown]\n", n)
 	}
 	return out.String()
+}
+
+// CommandText is a command's output as a model reads it and a window draws
+// it: no terminal escapes, a note in place of binary data.
+func CommandText(out []byte) string {
+	return WithoutBinary(stripTerminalEscapes(out))
+}
+
+// LiveText is CommandText for output still being written. A read can end in
+// the middle of a UTF-8 character; those last bytes are held back until the
+// rest arrives, so a line of text is not called binary for one flush.
+func LiveText(sofar []byte) string {
+	for cut := 1; cut < utf8.UTFMax && cut <= len(sofar); cut++ {
+		if b := sofar[len(sofar)-cut]; utf8.RuneStart(b) {
+			if b >= utf8.RuneSelf && !utf8.FullRune(sofar[len(sofar)-cut:]) {
+				sofar = sofar[:len(sofar)-cut]
+			}
+			break
+		}
+	}
+	return CommandText(sofar)
 }
 
 func isBinaryLine(line string) bool {

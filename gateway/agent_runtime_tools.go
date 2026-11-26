@@ -694,10 +694,12 @@ func (ar *AgentRuntime) executeToolUnredacted(ctx context.Context, toolUse *llm.
 		var sofar strings.Builder
 		out, err := streamer.Stream(ctx, toolUse.Input, func(chunk string) {
 			sofar.WriteString(chunk)
+			// The same cleaning the result gets: a `cat` of a binary file
+			// drew its bytes in the window while it ran.
 			ar.events.EmitEvent(runID, infra.EventStreamTool, sessionID, map[string]interface{}{
 				"event":  "update",
 				"tool":   toolUse.Name,
-				"output": sofar.String(),
+				"output": tools.LiveText([]byte(sofar.String())),
 			})
 		})
 		if err != nil {
