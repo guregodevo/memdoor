@@ -377,6 +377,9 @@ steps in before its quota ran out. The maintainer enabled billing on the key and
   carries `X-AIMLAPI-Source: agent/memdoor`, the header AI/ML API reads
   (`TestATurnOnAIMLAPICarriesItsSource`); `MEMDOOR_OPENROUTER_ATTRIBUTION=0`
   leaves it off.
+  A redirect off `api.aimlapi.com`, a subdomain included, carries neither
+  the key nor the header (#407,
+  `TestAIMLAPIRedirectKeepsKeyAndSourceOnItsHost`).
 
   A first start with only `AIMLAPI_API_KEY` set ran `model check` on the
   cheapest models (#206) and picked `inclusionai/ling-3.0-tiny`. The
