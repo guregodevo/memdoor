@@ -247,6 +247,9 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 				}
 				return nil, errProviderSilent(oaiStallAfter)
 			}
+			if loop := redirectLoop(err); loop != nil {
+				return nil, loop
+			}
 			return nil, fmt.Errorf("gateway request failed: %w", err)
 		}
 		if (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500) && attempt < len(oaiRetryAfter) && ctx.Err() == nil {
@@ -291,7 +294,7 @@ func (m *responsesMessages) New(ctx context.Context, params llm.MessageNewParams
 		if m.client.plan {
 			return nil, chatgptRefusal(resp.StatusCode, "", msg)
 		}
-		return nil, fmt.Errorf("HTTP %d from the gateway: %s", resp.StatusCode, msg)
+		return nil, noteRedirect(resp, fmt.Errorf("HTTP %d from the gateway: %s", resp.StatusCode, msg))
 	}
 	// Streamed: output_text deltas reach the window as they are written;
 	// the final response object (response.completed / .incomplete) is the
