@@ -61,7 +61,7 @@ func keylessHTTPClient() *http.Client { return stallBoundClient(keylessStallAfte
 func stallBoundClient(stall, total time.Duration) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.ResponseHeaderTimeout = stall
-	return &http.Client{Transport: totalBound{next: t, total: total}}
+	return &http.Client{Transport: totalBound{next: t, total: total}, CheckRedirect: keepAIMLAPIOnItsHost}
 }
 
 // totalBound bounds a request, its body read included, by total, unless the

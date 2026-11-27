@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"errors"
 	"net/http"
 
 	"memdoor/pkg/attribution"
@@ -34,6 +35,27 @@ func SetAppHeaders(req *http.Request) {
 	if req.URL != nil {
 		attribution.SetFor(req.Header, req.URL.Host)
 	}
+}
+
+// keepAIMLAPIOnItsHost is a client's CheckRedirect: a redirect off
+// api.aimlapi.com, to a subdomain too, leaves its key and X-AIMLAPI-Source
+// behind (Go forwards a custom header to any host and Authorization to a
+// subdomain). Every other host's redirects are as Go follows them.
+func keepAIMLAPIOnItsHost(req *http.Request, via []*http.Request) error {
+	if len(via) >= 10 {
+		return errors.New("stopped after 10 redirects")
+	}
+	if attribution.Host(req.URL.Host) == aimlapiHost {
+		return nil
+	}
+	for _, prev := range via {
+		if attribution.Host(prev.URL.Host) == aimlapiHost {
+			req.Header.Del("Authorization")
+			req.Header.Del(attribution.HeaderAIMLAPISource)
+			return nil
+		}
+	}
+	return nil
 }
 
 // AppHeaders is the same identity as a map, for callers that carry headers

@@ -121,7 +121,7 @@ func getJSON(ctx context.Context, rawURL string, headers map[string]string, v an
 	}
 	setVendorHeaders(req.Header)
 	setAttributionHeaders(ctx, req.Header)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := newListClient().Do(req)
 	if err != nil {
 		return fmt.Errorf("the model list did not answer: %w", err)
 	}
@@ -134,6 +134,11 @@ func getJSON(ctx context.Context, rawURL string, headers map[string]string, v an
 		return fmt.Errorf("the model list was not JSON")
 	}
 	return nil
+}
+
+// newListClient is the default client with keepAIMLAPIOnItsHost.
+func newListClient() *http.Client {
+	return &http.Client{Transport: http.DefaultTransport, CheckRedirect: keepAIMLAPIOnItsHost}
 }
 
 func bearer(p Provider) map[string]string {
