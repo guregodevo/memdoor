@@ -23,13 +23,17 @@ var redirectSafeHeaders = map[string]bool{
 // anywhere. Here a chain that left the first request's host, or went from
 // https to http, carries redirectSafeHeaders only, even after it comes back.
 // keepAIMLAPIOnItsHost runs first: AI/ML API's own rule for its host (#407),
-// and the limit of 10 redirects.
+// and the limit of 10 redirects. Its refusal at that limit is the one that
+// stops the chain; it is returned as a redirectLoopError for its wording.
 func keepHeadersOnTheirHost(req *http.Request, via []*http.Request) error {
-	if len(via) >= maxRedirects {
-		return redirectLoopError{host: via[0].URL.Hostname()}
-	}
-	if err := keepAIMLAPIOnItsHost(req, via); err != nil || len(via) == 0 {
+	if err := keepAIMLAPIOnItsHost(req, via); err != nil {
+		if len(via) >= maxRedirects {
+			return redirectLoopError{host: via[0].URL.Hostname()}
+		}
 		return err
+	}
+	if len(via) == 0 {
+		return nil
 	}
 	left := leftHost(via[0], req)
 	for _, hop := range via[1:] {
@@ -46,7 +50,7 @@ func keepHeadersOnTheirHost(req *http.Request, via []*http.Request) error {
 	return nil
 }
 
-// maxRedirects is Go's own limit, and keepAIMLAPIOnItsHost's.
+// maxRedirects is the limit keepAIMLAPIOnItsHost stops a chain at, Go's own.
 const maxRedirects = 10
 
 // redirectLoopError is a chain stopped at maxRedirects, in words for the
