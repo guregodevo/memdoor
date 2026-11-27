@@ -44,7 +44,7 @@ func ChatGPTStore() *chatgpt.Store { return chatgpt.NewStore(shared.MemdoorHome(
 // chatgptSource is the token source over the store: the access token,
 // refreshed before it expires.
 func chatgptSource() *chatgpt.Source {
-	return chatgpt.NewSource(chatgptEndpoints(), ChatGPTStore(), &http.Client{Timeout: 30 * time.Second})
+	return chatgpt.NewSource(chatgptEndpoints(), ChatGPTStore(), providerHTTPClient(&http.Client{Timeout: 30 * time.Second}))
 }
 
 // chatgptProvider is the built-in entry: connected once a sign-in is kept.

@@ -59,6 +59,18 @@ key, or direct on a decision key. On a vendor key or a company gateway alone
 it is off; every read returns unjudged. `memdoor connect typesafe` turns it
 on with your key.
 
+## Redirects from a provider
+
+A provider's host can answer with a redirect. The request that follows it is cut down once the chain leaves the host it was made for (`gateway/providers/redirect.go`, `TestARedirectOffTheHostLeavesTheKeyBehind`).
+
+| Redirect goes to | The request carries |
+|---|---|
+| The same host; http to https on it | Every header, as before |
+| Another host, a subdomain, a parent domain | `Content-Type`, `Accept`, `User-Agent` only |
+| The same host, https to http | `Content-Type`, `Accept`, `User-Agent` only |
+
+What stays behind: the key under any name (`Authorization`, `x-api-key`), the app headers, `MEMDOOR_VENDOR_HEADERS` and the attribution headers. It covers turns, model lists, OpenRouter's host listing and the ChatGPT token endpoint. A chain that left the host and came back stays cut down. A company gateway that redirects to another host, a subdomain included, and expects its token there is refused by that host.
+
 ## Verifying a download
 
 | File | Covers | Checked by |

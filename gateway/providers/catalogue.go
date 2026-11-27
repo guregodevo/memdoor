@@ -136,9 +136,9 @@ func getJSON(ctx context.Context, rawURL string, headers map[string]string, v an
 	return nil
 }
 
-// newListClient is the default client with keepAIMLAPIOnItsHost.
+// newListClient is the default client with keepHeadersOnTheirHost.
 func newListClient() *http.Client {
-	return &http.Client{Transport: http.DefaultTransport, CheckRedirect: keepAIMLAPIOnItsHost}
+	return &http.Client{Transport: http.DefaultTransport, CheckRedirect: keepHeadersOnTheirHost}
 }
 
 func bearer(p Provider) map[string]string {
