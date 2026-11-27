@@ -123,12 +123,15 @@ func getJSON(ctx context.Context, rawURL string, headers map[string]string, v an
 	setAttributionHeaders(ctx, req.Header)
 	resp, err := newListClient().Do(req)
 	if err != nil {
+		if loop := redirectLoop(err); loop != nil {
+			return loop
+		}
 		return fmt.Errorf("the model list did not answer: %w", err)
 	}
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 8<<20))
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("the model list answered HTTP %d: %s", resp.StatusCode, truncate(string(body), 160))
+		return noteRedirect(resp, fmt.Errorf("the model list answered HTTP %d: %s", resp.StatusCode, truncate(string(body), 160)))
 	}
 	if err := json.Unmarshal(body, v); err != nil {
 		return fmt.Errorf("the model list was not JSON")

@@ -223,6 +223,9 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 				}
 				return nil, errProviderSilent(stall)
 			}
+			if loop := redirectLoop(err); loop != nil {
+				return nil, loop
+			}
 			return nil, fmt.Errorf("oai request failed: %w", err)
 		}
 		if resp.StatusCode != http.StatusOK {
@@ -270,7 +273,7 @@ func (m *oaiMessages) New(ctx context.Context, params llm.MessageNewParams) (*ll
 					slog.Int("max_tokens", reqBody.MaxTokens), slog.String("model", modelLabel))
 				continue
 			}
-			return nil, providerRefusal(m.client.baseURL, resp.StatusCode, body)
+			return nil, noteRedirect(resp, providerRefusal(m.client.baseURL, resp.StatusCode, body))
 		}
 
 		// Stream the response body via SSE. The accumulator reconstructs

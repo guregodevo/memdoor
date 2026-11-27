@@ -203,6 +203,9 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 				}
 				return nil, errProviderSilent(oaiStallAfter)
 			}
+			if loop := redirectLoop(err); loop != nil {
+				return nil, loop
+			}
 			return nil, fmt.Errorf("anthropic request failed: %w", err)
 		}
 		// 429 and 529 (overloaded) are asked again after a pause, as the
@@ -239,7 +242,7 @@ func (m *anthropicMessages) New(ctx context.Context, params llm.MessageNewParams
 		if json.Unmarshal(raw, &ar) == nil && ar.Error != nil {
 			msg = ar.Error.Type + ": " + ar.Error.Message
 		}
-		return nil, fmt.Errorf("HTTP %d from the vendor: %s", resp.StatusCode, msg)
+		return nil, noteRedirect(resp, fmt.Errorf("HTTP %d from the vendor: %s", resp.StatusCode, msg))
 	}
 	// Streamed (stream: true): text deltas reach the window as they are
 	// written; the blocks are assembled in order for the turn.
