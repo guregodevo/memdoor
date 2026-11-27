@@ -112,7 +112,8 @@ const (
 	vercelDefaultContext = 128_000
 	// AI/ML API (#223): an OpenAI-compatible router, one key for many
 	// vendors; its list states every window and price.
-	aimlapiDefaultBase    = "https://api.aimlapi.com/v1"
+	aimlapiHost           = "api.aimlapi.com"
+	aimlapiDefaultBase    = "https://" + aimlapiHost + "/v1"
 	aimlapiDefaultContext = 128_000
 )
 
