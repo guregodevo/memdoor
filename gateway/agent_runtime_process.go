@@ -284,6 +284,11 @@ func (ar *AgentRuntime) processMessage(ctx context.Context, userMessage string, 
 	ctx = context.WithValue(ctx, ctxRunID, runID)
 	ctx = context.WithValue(ctx, ctxSessionID, session.ID)
 	ctx = context.WithValue(ctx, sharedctx.SessionIDKey, session.ID)
+	// A turn outside a workflow is a run of its own; a workflow's steps are
+	// released when the workflow run ends (workflow_runs.go).
+	if !strings.HasPrefix(session.ID, workflowSessionPrefix) {
+		defer providers.RunDone(runID)
+	}
 	if t := sessionTier(session); t > 0 {
 		ctx = context.WithValue(ctx, sharedctx.TierKey, t)
 	}

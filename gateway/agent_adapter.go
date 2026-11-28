@@ -20,7 +20,6 @@ import (
 	"memdoor/pkg/notes"
 	"memdoor/pkg/repository"
 	"memdoor/pkg/shared"
-	sharedctx "memdoor/pkg/shared/context"
 	"memdoor/tools"
 )
 
@@ -184,12 +183,9 @@ func NewAgentRuntimeWithFactory(clientFactory *providers.ClientFactory, apiKey s
 		if wd := turnWorkdir(ctx); wd != "" {
 			out[providers.AttrProject] = filepath.Base(wd)
 		}
-		// The run a request belongs to: a workflow run, else the conversation.
 		// boostr keys its ring on this header (X-Memdoor-Run).
-		if rid, _ := ctx.Value(ctxRunID).(string); rid != "" {
-			out[providers.AttrRun] = rid
-		} else if sid, _ := ctx.Value(sharedctx.SessionIDKey).(string); sid != "" {
-			out[providers.AttrRun] = sid
+		if run := runKey(ctx); run != "" {
+			out[providers.AttrRun] = run
 		}
 		return out
 	})
