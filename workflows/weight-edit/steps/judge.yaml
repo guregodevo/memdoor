@@ -1,0 +1,17 @@
+type: decision
+# Whether the edit beat the checkpoint on the dev problems. `pass` in its
+# JSON is what withdraw and the held-out steps read. Without a decision model
+# the answer is judge-rule's.
+requires:
+  - table_pattern: judge-rule
+condition: "The edited model is better than both the checkpoint and the control (the checkpoint with a repetition penalty) on these problems: against each it gained more problems than it lost, and the paired test's final verdict is PASS."
+state: |
+  # The edited model paired with the checkpoint and with the control, on the same problems and seeds
+
+  {{ output "judge-rule" }}
+threshold: 0.7
+else: judge-rule
+target:
+  file: .memdoor/runs/weight-edit-{{.partition}}/judge.json
+timeout: 5m
+max_retries: 0

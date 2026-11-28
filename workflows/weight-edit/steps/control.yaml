@@ -1,0 +1,11 @@
+type: command
+# The control on the dev problems: the checkpoint with a repetition penalty,
+# same seeds and cap. An edit that only stops answers looping until the cap
+# should not beat it. Runs before edit, while the server serves the checkpoint.
+requires:
+  - table_pattern: settings
+  - table_pattern: checkpoint
+command: |
+  '{{ output "settings" | json "janis" }}' eval --url '{{ output "settings" | json "url" }}' --problems '{{ output "settings" | json "dev" }}' --seed '{{ output "settings" | json "dev_seed" }}' --max-tokens '{{ output "settings" | json "max_tokens" }}' --parallel '{{ output "settings" | json "parallel" }}' --repetition-penalty '{{ output "settings" | json "control_penalty" }}' --out .memdoor/runs/weight-edit-{{.partition}}/dev-control.json
+timeout: 600m
+max_retries: 0

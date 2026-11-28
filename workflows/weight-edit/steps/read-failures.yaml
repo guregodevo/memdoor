@@ -1,0 +1,18 @@
+type: llm
+# Names how the checkpoint fails on the dev problems, from its own answers:
+# the paper's diagnosis was answers that die at the token cap. The report
+# carries it; it does not choose the edit, which settings fixed before the run.
+requires:
+  - table_pattern: checkpoint
+prompt: |
+  A model answered math problems with a cap on its reply's tokens. Its score: {{ output "checkpoint" }}
+
+  Each problem's result, from the score file (`at_cap`: the reply ran out of tokens; `got`: its last \boxed{} answer; `tail`: the reply's last characters):
+
+  ```json
+  {{ file (printf ".memdoor/runs/weight-edit-%s/dev-base.json" .partition) | head 400 }}
+  ```
+
+  Name how it fails, in at most eight lines: how many wrong answers ran out of tokens and how many finished with a wrong number, and for each kind what the tails show it doing (looping, re-checking, slow arithmetic, a misread problem). Quote a tail when it shows the pattern. State only what the results show.
+timeout: 10m
+max_retries: 1

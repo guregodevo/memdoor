@@ -1,0 +1,11 @@
+type: command
+# Applies the edit fixed in settings, once checkpoint and control are scored, and saves it to edit.safetensors, the
+# file keep loads back.
+requires:
+  - table_pattern: settings
+  - table_pattern: checkpoint
+  - table_pattern: control
+command: |
+  '{{ output "settings" | json "janis" }}' weights shift --url '{{ output "settings" | json "url" }}' --match '{{ output "settings" | json "match" }}' --by '{{ output "settings" | json "by" }}' && '{{ output "settings" | json "janis" }}' weights save --url '{{ output "settings" | json "url" }}' .memdoor/runs/weight-edit-{{.partition}}/edit.safetensors
+timeout: 10m
+max_retries: 0

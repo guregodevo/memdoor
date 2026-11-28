@@ -1,0 +1,12 @@
+type: command
+# On a PASS, the checkpoint on the same held-out problems and seeds. Puts
+# every weight back first; keep loads the edit again.
+when: '{{ if eq (output "judge" | json "pass") "true" }}true{{ else }}false{{ end }}'
+requires:
+  - table_pattern: settings
+  - table_pattern: judge
+  - table_pattern: heldout-edit
+command: |
+  '{{ output "settings" | json "janis" }}' weights revert --url '{{ output "settings" | json "url" }}' && '{{ output "settings" | json "janis" }}' eval --url '{{ output "settings" | json "url" }}' --problems '{{ output "settings" | json "heldout" }}' --seed '{{ output "settings" | json "heldout_seed" }}' --max-tokens '{{ output "settings" | json "max_tokens" }}' --parallel '{{ output "settings" | json "parallel" }}' --out .memdoor/runs/weight-edit-{{.partition}}/heldout-base.json
+timeout: 600m
+max_retries: 0
