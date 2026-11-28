@@ -37,6 +37,7 @@ func postRunDone(base, token, run string) error {
 	if err != nil {
 		return err
 	}
+	SetAppHeaders(req)
 	req.Header.Set(attributionHeaderNames()[AttrRun], run)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
