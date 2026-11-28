@@ -1,0 +1,12 @@
+type: command
+# On a held-out PASS, loads the edit back: the server serves the edited
+# model, and edit.safetensors is the edit to keep. Otherwise the server stays
+# on the checkpoint heldout-base put back.
+when: '{{ if output "final" | trim | hasSuffix "PASS" }}true{{ else }}false{{ end }}'
+requires:
+  - table_pattern: settings
+  - table_pattern: final
+command: |
+  '{{ output "settings" | json "janis" }}' weights load --url '{{ output "settings" | json "url" }}' .memdoor/runs/weight-edit-{{.partition}}/edit.safetensors
+timeout: 5m
+max_retries: 0

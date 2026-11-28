@@ -1,0 +1,9 @@
+type: command
+# The checkpoint on the dev problems. Puts every weight back first: a run
+# starts from the checkpoint whatever an earlier run left on the server.
+requires:
+  - table_pattern: settings
+command: |
+  mkdir -p .memdoor/runs/weight-edit-{{.partition}} && '{{ output "settings" | json "janis" }}' weights revert --url '{{ output "settings" | json "url" }}' && '{{ output "settings" | json "janis" }}' eval --url '{{ output "settings" | json "url" }}' --problems '{{ output "settings" | json "dev" }}' --seed '{{ output "settings" | json "dev_seed" }}' --max-tokens '{{ output "settings" | json "max_tokens" }}' --parallel '{{ output "settings" | json "parallel" }}' --out .memdoor/runs/weight-edit-{{.partition}}/dev-base.json
+timeout: 600m
+max_retries: 0

@@ -1,0 +1,12 @@
+type: command
+# On a PASS, the held-out scores paired: the edit against the checkpoint and
+# the control, the result the run reports. PASS or FAIL on the last line.
+when: '{{ if eq (output "judge" | json "pass") "true" }}true{{ else }}false{{ end }}'
+requires:
+  - table_pattern: settings
+  - table_pattern: judge
+  - table_pattern: heldout-control
+command: |
+  '{{ output "settings" | json "janis" }}' eval compare --alpha '{{ output "settings" | json "alpha" }}' .memdoor/runs/weight-edit-{{.partition}}/heldout-base.json .memdoor/runs/weight-edit-{{.partition}}/heldout-control.json .memdoor/runs/weight-edit-{{.partition}}/heldout-edit.json
+timeout: 1m
+max_retries: 0

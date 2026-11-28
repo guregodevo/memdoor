@@ -1,0 +1,10 @@
+type: command
+# On a FAIL, puts every weight back: the server serves the checkpoint.
+when: '{{ if eq (output "judge" | json "pass") "true" }}false{{ else }}true{{ end }}'
+requires:
+  - table_pattern: settings
+  - table_pattern: judge
+command: |
+  '{{ output "settings" | json "janis" }}' weights revert --url '{{ output "settings" | json "url" }}'
+timeout: 5m
+max_retries: 0

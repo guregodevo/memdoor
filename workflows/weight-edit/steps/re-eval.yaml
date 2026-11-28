@@ -1,0 +1,9 @@
+type: command
+# The edited model on the same dev problems, with the same seeds.
+requires:
+  - table_pattern: settings
+  - table_pattern: edit
+command: |
+  '{{ output "settings" | json "janis" }}' eval --url '{{ output "settings" | json "url" }}' --problems '{{ output "settings" | json "dev" }}' --seed '{{ output "settings" | json "dev_seed" }}' --max-tokens '{{ output "settings" | json "max_tokens" }}' --parallel '{{ output "settings" | json "parallel" }}' --out .memdoor/runs/weight-edit-{{.partition}}/dev-edit.json
+timeout: 600m
+max_retries: 0

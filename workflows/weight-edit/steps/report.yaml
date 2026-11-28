@@ -1,0 +1,42 @@
+type: template
+# Writes report.md: the settings, the diagnosis, both comparisons and what
+# the server serves at the end.
+requires:
+  - table_pattern: settings
+  - table_pattern: checkpoint
+  - table_pattern: read-failures
+  - table_pattern: judge-rule
+  - table_pattern: judge
+  - table_pattern: withdraw
+  - table_pattern: final
+  - table_pattern: keep
+text: |
+  ## weight-edit
+
+  | | |
+  |---|---|
+  | Edit | weights matching `{{ output "settings" | json "match" }}`, each element `+{{ output "settings" | json "by" }}` |
+  | Dev | `{{ output "settings" | json "dev" }}`, seeds from {{ output "settings" | json "dev_seed" }} |
+  | Held out | `{{ output "settings" | json "heldout" }}`, seeds from {{ output "settings" | json "heldout_seed" }} |
+  | Token cap | {{ output "settings" | json "max_tokens" }} |
+  | Control | the checkpoint with repetition_penalty {{ output "settings" | json "control_penalty" }} |
+
+  ## How the checkpoint fails (dev)
+
+  {{ output "read-failures" }}
+
+  ## Dev: the edit against the checkpoint and the control
+
+  {{ output "judge-rule" }}
+
+  judge: `{{ output "judge" | trim }}`
+
+  ## Held out: the edit against the checkpoint and the control
+
+  {{ if output "final" | trim }}{{ output "final" }}{{ else }}Not run: the edit did not pass on dev.{{ end }}
+
+  ## The server now serves
+
+  {{ if output "keep" | trim }}the edit, `edit.safetensors` ({{ output "keep" | trim }}){{ else }}the checkpoint{{ if output "withdraw" | trim }} ({{ output "withdraw" | trim }}){{ end }}{{ end }}
+target:
+  file: .memdoor/runs/weight-edit-{{.partition}}/report.md

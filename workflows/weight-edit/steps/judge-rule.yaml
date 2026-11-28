@@ -1,0 +1,11 @@
+type: command
+# The edit's dev score paired problem by problem with the checkpoint's and
+# the control's: PASS on the last line when it gained more than it lost at
+# p < alpha (one-sided exact sign test) against both, else FAIL. What judge answers when no decision model does.
+requires:
+  - table_pattern: settings
+  - table_pattern: re-eval
+command: |
+  '{{ output "settings" | json "janis" }}' eval compare --alpha '{{ output "settings" | json "alpha" }}' .memdoor/runs/weight-edit-{{.partition}}/dev-base.json .memdoor/runs/weight-edit-{{.partition}}/dev-control.json .memdoor/runs/weight-edit-{{.partition}}/dev-edit.json
+timeout: 1m
+max_retries: 0

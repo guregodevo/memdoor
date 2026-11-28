@@ -1,0 +1,11 @@
+type: command
+# On a PASS, the edited model on the held-out problems: none of them was
+# scored before this step, and their seeds are not dev's.
+when: '{{ if eq (output "judge" | json "pass") "true" }}true{{ else }}false{{ end }}'
+requires:
+  - table_pattern: settings
+  - table_pattern: judge
+command: |
+  '{{ output "settings" | json "janis" }}' eval --url '{{ output "settings" | json "url" }}' --problems '{{ output "settings" | json "heldout" }}' --seed '{{ output "settings" | json "heldout_seed" }}' --max-tokens '{{ output "settings" | json "max_tokens" }}' --parallel '{{ output "settings" | json "parallel" }}' --out .memdoor/runs/weight-edit-{{.partition}}/heldout-edit.json
+timeout: 600m
+max_retries: 0

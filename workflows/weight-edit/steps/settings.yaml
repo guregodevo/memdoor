@@ -1,0 +1,26 @@
+type: template
+# Every setting of the run, in one place: the other steps read them from this
+# step's output ({{ output "settings" | json "url" }}). Edit the values here, in
+# ~/.memdoor/workflows/weight-edit/steps/settings.yaml. The edit is fixed
+# before the run (match, by): the paired test is honest only for an edit
+# chosen before any problem is scored.
+args:
+  janis: janis                       # the janis binary: janis eval and janis weights
+  url: http://127.0.0.1:8090         # a server started with janis serve --edit
+  dev: ""                            # the development problems, JSONL {"question","answer"}
+  dev_seed: "5000"                   # dev problem i is asked with seed dev_seed+i
+  heldout: ""                        # the final problems: none of them in dev
+  heldout_seed: "9000"               # different seeds from dev's
+  max_tokens: "16384"                # one reply's cap, thinking included
+  parallel: "1"                      # requests in flight: the server's JANIS_PARALLEL
+  match: 'linear_attn\.dt_bias$'     # the weights the edit changes, a regular expression
+  by: "0.5"                          # the value the edit adds to each of their elements
+  control_penalty: "1.1"             # the control: the checkpoint with this repetition_penalty
+  alpha: "0.05"                      # PASS needs p below it, one-sided, against each
+text: |
+  {"janis": {{ printf "%q" .janis }}, "url": {{ printf "%q" .url }},
+   "dev": {{ printf "%q" .dev }}, "dev_seed": {{ printf "%q" .dev_seed }},
+   "heldout": {{ printf "%q" .heldout }}, "heldout_seed": {{ printf "%q" .heldout_seed }},
+   "max_tokens": {{ printf "%q" .max_tokens }}, "parallel": {{ printf "%q" .parallel }},
+   "match": {{ printf "%q" .match }}, "by": {{ printf "%q" .by }},
+   "control_penalty": {{ printf "%q" .control_penalty }}, "alpha": {{ printf "%q" .alpha }}}
