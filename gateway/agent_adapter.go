@@ -183,6 +183,10 @@ func NewAgentRuntimeWithFactory(clientFactory *providers.ClientFactory, apiKey s
 		if wd := turnWorkdir(ctx); wd != "" {
 			out[providers.AttrProject] = filepath.Base(wd)
 		}
+		// boostr keys its ring on this header (X-Memdoor-Run).
+		if run := runKey(ctx); run != "" {
+			out[providers.AttrRun] = run
+		}
 		return out
 	})
 	providers.SetReasoningSupport(func(model string) bool {

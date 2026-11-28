@@ -269,7 +269,28 @@ func (r *workflowRun) attended() bool { return r.Session != "" }
 // so their turns queued behind one another and read each other's
 // (2026-11-05: ten bench runs, four on one "direct" session).
 func (r *workflowRun) taskSession(task string) string {
-	return workflowSessionPrefix + r.Workflow + ":" + r.sessionRun() + ":" + task
+	return r.runKey() + ":" + task
+}
+
+// runKey names the whole run, every step of it: a company gateway gets it in
+// X-Memdoor-Run, and a run's requests stay on one box behind boostr's pool.
+func (r *workflowRun) runKey() string {
+	return workflowSessionPrefix + r.Workflow + ":" + r.sessionRun()
+}
+
+// runKey is the run a request belongs to: the workflow run for any of its
+// steps, else the turn's run, else the conversation.
+func runKey(ctx context.Context) string {
+	sid, _ := ctx.Value(sharedctx.SessionIDKey).(string)
+	if strings.HasPrefix(sid, workflowSessionPrefix) {
+		if p := strings.SplitN(sid, ":", 4); len(p) >= 3 {
+			return strings.Join(p[:3], ":")
+		}
+	}
+	if rid, _ := ctx.Value(ctxRunID).(string); rid != "" {
+		return rid
+	}
+	return sid
 }
 
 // sessionRun is the partition and the run's own stamp ("2026-11-05T151249@
@@ -1051,6 +1072,9 @@ func (s *Server) triggerWorkflow(run *workflowRun) {
 		}
 		state := run.state
 		run.mu.Unlock()
+		if state != "waiting" {
+			providers.RunDone(run.runKey())
+		}
 		// note carries the run's whole state, so the block reads the end
 		// (done, failed, waiting) with the same message as the line.
 		if state == "waiting" {
@@ -1307,6 +1331,7 @@ func (s *Server) requestChangesWithRunner(id, task, comment string, step func(co
 		run.mu.Lock()
 		if ctx.Err() != nil || run.state == "stopping" || run.state == "stopped" {
 			run.state, run.ended = "stopped", time.Now()
+			providers.RunDone(run.runKey())
 			run.mu.Unlock()
 			run.note(s, "■ "+run.Workflow+" stopped during requested changes")
 			return

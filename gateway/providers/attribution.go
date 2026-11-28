@@ -30,6 +30,7 @@ const (
 	AttrTeam    = "team"
 	AttrProject = "project"
 	AttrSession = "session"
+	AttrRun     = "run"
 )
 
 var attributionFunc func(ctx context.Context) map[string]string
@@ -79,7 +80,7 @@ func Attribution(ctx context.Context) map[string]string {
 // attributionHeaderNames is the header for each field: the company's
 // names from MEMDOOR_ATTRIBUTION_HEADERS, else X-Memdoor-<Field>.
 func attributionHeaderNames() map[string]string {
-	names := map[string]string{AttrUser: "X-Memdoor-User", AttrTeam: "X-Memdoor-Team", AttrProject: "X-Memdoor-Project", AttrSession: "X-Memdoor-Session"}
+	names := map[string]string{AttrUser: "X-Memdoor-User", AttrTeam: "X-Memdoor-Team", AttrProject: "X-Memdoor-Project", AttrSession: "X-Memdoor-Session", AttrRun: "X-Memdoor-Run"}
 	for k, v := range parsePairs(os.Getenv("MEMDOOR_ATTRIBUTION_HEADERS")) {
 		names[k] = v
 	}
