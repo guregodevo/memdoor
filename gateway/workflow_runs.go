@@ -370,18 +370,22 @@ type workflowCompleter struct{ s *Server }
 
 // llmTaskMaxTokens is the reply an llm task may write: the provider's output
 // ceiling for the model, within what the window leaves after the prompt,
-// and never less than an agent turn's reserve. An agent turn keeps its reply
+// and never less than an agent turn's reserve. With no ceiling listed for the
+// model (a local runtime's, a company gateway's) it is 0: the request names no
+// max_tokens and the host's own limit holds, the window for an OpenAI-style
+// server (janis, vLLM, llama.cpp, Ollama) — no cap by default, not an agent
+// turn's reserve (8,192 cut Inkling's single-call replies, 2026-11-27). An agent turn keeps its reply
 // to a quarter of the window, 16K at most, to protect the conversation after
 // it; an llm task is one prompt and one reply, and with reasoning on the
 // model needs the real ceiling (2026-10-26: the 27B thinking high on a hard
 // problem spent all of a 16K cap on reasoning and wrote nothing; the
 // provider allows 235K).
 func llmTaskMaxTokens(model string, promptChars int) int64 {
-	reserve := maxOutputTokens(model)
 	l, err := ctxmgmt.GetModelLimits(model)
 	if err != nil || l.MaxOutputCeiling <= 0 {
-		return reserve
+		return 0
 	}
+	reserve := maxOutputTokens(model)
 	room := int64(l.ContextWindow) - int64(promptChars)/3 - 1024 // a rough token count of the prompt, and a margin
 	cap := int64(l.MaxOutputCeiling)
 	if room < cap {

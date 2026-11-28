@@ -7,7 +7,8 @@ import (
 )
 
 // An llm task may write up to the provider's ceiling within its window; an
-// agent turn's 16K reserve is its floor, not its cap.
+// agent turn's 16K reserve is its floor, not its cap; with no ceiling listed
+// there is no cap at all.
 func TestAnLLMTaskWritesUpToTheProvidersCeiling(t *testing.T) {
 	windows := map[string]int{"openrouter:qwen/qwen3.8-27b": 1_000_000, "groq:qwen/qwen3.8-27b": 131_072, "small": 32_768}
 	outputs := map[string]int{"openrouter:qwen/qwen3.8-27b": 235_929, "groq:qwen/qwen3.8-27b": 16_384, "small": 0}
@@ -22,8 +23,10 @@ func TestAnLLMTaskWritesUpToTheProvidersCeiling(t *testing.T) {
 	if got := llmTaskMaxTokens("groq:qwen/qwen3.8-27b", 4000); got != 16_384 {
 		t.Errorf("the 27B on Groq: %d, want its 16384 ceiling", got)
 	}
-	if got := llmTaskMaxTokens("small", 4000); got != 8_192 {
-		t.Errorf("a model with no ceiling: %d, want the agent turn's reserve", got)
+	// No ceiling listed: no max_tokens on the request (0), the host's own
+	// limit holds, not the agent turn's reserve.
+	if got := llmTaskMaxTokens("small", 4000); got != 0 {
+		t.Errorf("a model with no ceiling: %d, want 0 (no cap)", got)
 	}
 	// A prompt that fills most of the window leaves the reply the rest.
 	if got := llmTaskMaxTokens("openrouter:qwen/qwen3.8-27b", 2_900_000); got != 1_000_000-2_900_000/3-1024 {
